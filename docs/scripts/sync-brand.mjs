@@ -1,5 +1,5 @@
 // Copies the docs' brand assets from a checkout of xena-studios/brand, the
-// single source of truth for logos, icons and colours. The copies are
+// single source of truth for logos, icons, the horizon and colours. The copies are
 // committed, so builds never fetch the brand repo.
 //
 //   npm run brand:sync                 # expects ../../brand (next to this repo)
@@ -20,6 +20,7 @@ const files = [
   ["logo/xena-studios.svg", "src/assets/xena-studios-dark.svg"],
   ["logo/xena-studios-black.svg", "src/assets/xena-studios-light.svg"],
   ["avatar/favicon.svg", "public/favicon.svg"],
+  ["scene/horizon.svg", "src/assets/horizon.svg"],
   ["plugins/xutilities/icon.svg", "src/assets/plugins/xutilities.svg"],
   ["plugins/zchat/icon.svg", "src/assets/plugins/zchat.svg"],
   ["plugins/xlimbo/icon.svg", "src/assets/plugins/xlimbo.svg"],

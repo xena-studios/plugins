@@ -1,0 +1,40 @@
+---
+// A plugin's pages carry its icon beside the title: the plugin's own identity,
+// shown in its mark rather than as a site colour (as on xenastudios.co).
+import Default from "@astrojs/starlight/components/PageTitle.astro";
+import xutilities from "../assets/plugins/xutilities.svg";
+import zchat from "../assets/plugins/zchat.svg";
+import xlimbo from "../assets/plugins/xlimbo.svg";
+
+const icons = { xutilities, zchat, xlimbo };
+const id = Astro.locals.starlightRoute.id;
+const plugin = (Object.keys(icons) as (keyof typeof icons)[]).find((p) => id === p || id.startsWith(`${p}/`));
+---
+{
+  plugin ? (
+    <div class="plugin-title">
+      <img src={icons[plugin].src} alt="" width="44" height="44" />
+      <Default />
+    </div>
+  ) : (
+    <Default />
+  )
+}
+
+<style>
+  .plugin-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .plugin-title img {
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 10px;
+  }
+  .plugin-title :global(h1) {
+    margin-top: 0;
+  }
+</style>

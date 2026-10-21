@@ -1,103 +1,249 @@
-/* The plugin family (xena-studios/brand, tokens/plugins.json) mapped onto
-   Starlight: deepslate neutrals, Space Grotesk for words, JetBrains Mono for
-   code and labels. Pages outside a plugin use the family's neutral accent;
-   each plugin's pages swap in its own (public/accents/, via src/routeData.ts). */
-@import "@fontsource-variable/space-grotesk";
+/* xenastudios.co's look (xena-studios/website, src/styles/global.css) mapped onto
+   Starlight: the brand's deep-space neutrals, Ion Blue as the one accent,
+   JetBrains Mono for everything, hairlines instead of shadows, dark only.
+   Colours are xena-studios/brand tokens/colors.json. */
 @import "@fontsource-variable/jetbrains-mono";
 
 :root {
-  --sl-font: "Space Grotesk Variable", system-ui, sans-serif;
-  --sl-font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --void: #06080D;
+  --space: #0A0E16;
+  --surface: #121824;
+  --line: #222B3B;
+  --muted: #8A93A6;
+  --text: #EDF1F7;
+  --accent: #5CB4FF;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Deepslate (dark) */
-  --sl-color-white: #F2F0F5;
-  --sl-color-gray-1: #E2E0E8;
-  --sl-color-gray-2: #C4C1CD;
-  --sl-color-gray-3: #9C99A8;
-  --sl-color-gray-4: #5E5B69;
-  --sl-color-gray-5: #2A2832;
-  --sl-color-gray-6: #1B1A21;
-  --sl-color-black: #121116;
-  --sl-color-bg-sidebar: #0F0E13;
-  --sl-color-bg-nav: #0F0E13;
+  --sl-font: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --sl-font-mono: var(--sl-font);
 
-  /* The family's neutral accent: a pale lavender grey, no plugin's colour. */
-  --sl-color-accent-low: #2A2735;
-  --sl-color-accent: #C9C2E0;
-  --sl-color-accent-high: #E6E1F5;
-}
+  --sl-color-white: var(--text);
+  --sl-color-gray-1: #D5DBE6;
+  --sl-color-gray-2: #B3BBC9;
+  --sl-color-gray-3: var(--muted);
+  --sl-color-gray-4: #4A5468;
+  --sl-color-gray-5: var(--line);
+  --sl-color-gray-6: var(--surface);
+  --sl-color-black: var(--void);
+  --sl-color-bg-sidebar: var(--void);
+  --sl-color-bg-nav: color-mix(in srgb, var(--void) 82%, transparent);
+  --sl-color-hairline: var(--line);
+  --sl-color-hairline-light: var(--line);
+  --sl-color-hairline-shade: var(--line);
 
-:root[data-theme="light"] {
-  --sl-color-white: #18171D;
-  --sl-color-gray-1: #24232A;
-  --sl-color-gray-2: #34323C;
-  --sl-color-gray-3: #55525F;
-  --sl-color-gray-4: #8A8794;
-  --sl-color-gray-5: #DCDAE2;
-  --sl-color-gray-6: #EFEEF3;
-  --sl-color-gray-7: #F5F4F8;
-  --sl-color-black: #FBFAFC;
-  --sl-color-bg-sidebar: #F5F4F8;
-  --sl-color-bg-nav: #F5F4F8;
+  --sl-color-accent-low: #0E2238;
+  --sl-color-accent: var(--accent);
+  --sl-color-accent-high: #A9D6FF;
+  --sl-color-text-accent: var(--accent);
 
-  --sl-color-accent-low: #E7E3F2;
-  --sl-color-accent: #5B4F86;
-  --sl-color-accent-high: #3E3561;
-}
-
-/* Flat: depth from tone and hairlines, no shadows. */
-:root,
-:root[data-theme="light"] {
   --sl-shadow-sm: none;
   --sl-shadow-md: none;
   --sl-shadow-lg: none;
-  --sl-color-text-accent: var(--sl-color-accent);
+
+  /* The website's heading scale. */
+  --sl-text-h1: clamp(1.75rem, 1.3rem + 1.9vw, 2.75rem);
+  --sl-text-h2: clamp(1.375rem, 1.15rem + 0.9vw, 1.875rem);
+  --sl-text-h3: clamp(1.125rem, 1.05rem + 0.4vw, 1.375rem);
+  --sl-line-height-headings: 1.12;
+
+  color-scheme: dark;
+  scrollbar-color: var(--line) var(--void);
+}
+
+body {
+  font-variant-ligatures: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings: 600, tight tracking, balanced, as on the website. */
+h1,
+.sl-markdown-content :is(h2, h3, h4) {
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.sl-markdown-content p,
+.sl-markdown-content li {
+  text-wrap: pretty;
+}
+
+/* Links: quiet underlines that firm up on hover. In prose they take the accent. */
+a {
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 1px;
+  transition: color 160ms var(--ease), text-decoration-color 160ms var(--ease);
+}
+a:hover {
+  text-decoration-color: currentColor;
 }
 
 :focus-visible {
-  outline-color: var(--sl-color-accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
-/* Headings in Space Grotesk Bold with the family's tight tracking. */
-.sl-markdown-content :is(h1, h2, h3, h4),
-h1#_top {
-  font-weight: 700;
-  letter-spacing: -0.02em;
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--text);
 }
 
-/* XENA STUDIOS, then which site this is, as a mono label. */
+/* Header: the website's frosted bar with a hairline. */
+.header {
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border-bottom-color: color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+/* No divider after the GitHub link: it separated the theme picker, which is gone. */
+.social-icons::after {
+  display: none;
+}
+
+/* XENA STUDIOS, then which site this is, as the website's mono label. */
 .site-title {
-  gap: 0.75rem;
+  gap: 0.875rem;
 }
 .site-title img {
-  height: 0.95rem;
+  height: 0.8125rem;
   width: auto;
 }
 .site-title::after {
   content: "Plugin docs";
-  font-family: var(--sl-font-mono);
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--sl-color-gray-3);
+  color: var(--muted);
 }
 
-/* The home page's plugin list: icon, name and one line, as hairline rows. */
+/* Sidebar: muted links, the current page in Ion Blue on a faint tint. */
+.sidebar-content a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.sidebar-content a:hover {
+  color: var(--text);
+}
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  font-weight: 600;
+}
+.sidebar-content .group-label .large {
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* "On this page": the same muted-to-text links. */
+starlight-toc a {
+  color: var(--muted);
+  text-decoration: none;
+}
+starlight-toc a[aria-current="true"] {
+  color: var(--accent);
+}
+
+/* Buttons: the website's 44px pills. Primary is solid Ion Blue on void. */
+.sl-link-button {
+  min-height: 2.75rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.sl-link-button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--void);
+  font-weight: 600;
+}
+.sl-link-button.primary:hover {
+  background: color-mix(in oklch, var(--accent) 88%, white);
+}
+.sl-link-button.minimal {
+  border: 1px solid var(--line);
+  padding-inline: 1.25rem;
+}
+.sl-link-button.minimal:hover {
+  border-color: color-mix(in oklch, var(--accent) 55%, var(--line));
+}
+
+/* Inline code: a hairline chip on `space`. */
+.sl-markdown-content :not(pre) > code {
+  background: var(--space);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+}
+
+/* Tables: hairline rows, mono labels for the header. */
+.sl-markdown-content table {
+  border-collapse: collapse;
+}
+.sl-markdown-content :is(th, td) {
+  border-color: var(--line);
+}
+.sl-markdown-content th {
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: none;
+}
+
+/* Asides: hairline boxes with an Ion Blue edge, no fill. */
+.starlight-aside {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--accent);
+  background: var(--space);
+}
+.starlight-aside__title {
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Home: the website's hero scale over the horizon. */
+.hero {
+  padding-block: clamp(3rem, 2rem + 4vw, 6rem) 0;
+}
+.hero h1 {
+  font-size: clamp(1.75rem, 1.1rem + 3.9vw, 4.5rem);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.hero .tagline {
+  max-width: 64ch;
+  font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+  line-height: 1.75;
+  color: var(--muted);
+}
+
+/* The home page's plugins, as the website's hairline rows. */
 .plugin-list {
   list-style: none;
   padding: 0;
-  margin: 2rem 0 0;
-  border-top: 1px solid var(--sl-color-gray-5);
+  margin: 0;
+  border-top: 1px solid var(--line);
 }
 .plugin-list li {
   display: grid;
   grid-template-columns: 3rem 1fr;
-  gap: 0.25rem 1rem;
+  gap: 0.25rem 1.5rem;
   align-items: center;
   margin: 0;
-  padding-block: 1rem;
-  border-bottom: 1px solid var(--sl-color-gray-5);
+  padding-block: 1.5rem;
+  border-bottom: 1px solid var(--line);
 }
 .plugin-list img {
   grid-row: span 2;
@@ -106,11 +252,22 @@ h1#_top {
   border-radius: 10px;
 }
 .plugin-list a {
-  font-weight: 700;
-  font-size: var(--sl-text-lg);
+  color: var(--text);
+  font-weight: 600;
   text-decoration: none;
+}
+.plugin-list a:hover {
+  color: var(--accent);
 }
 .plugin-list p {
   margin: 0;
-  color: var(--sl-color-gray-3);
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+  }
 }

@@ -20,6 +20,14 @@ export default defineConfig({
       // XENA STUDIOS, then "Plugin docs" as a mono label from theme.css.
       logo: { dark: "./src/assets/xena-studios-dark.svg", light: "./src/assets/xena-studios-light.svg", replacesTitle: true },
       favicon: "/favicon.svg",
+      // One link preview for every page (xena-studios/brand social/docs-og.png).
+      head: [
+        { tag: "meta", attrs: { property: "og:image", content: "https://docs.xenastudios.co/og.png" } },
+        { tag: "meta", attrs: { property: "og:image:width", content: "2400" } },
+        { tag: "meta", attrs: { property: "og:image:height", content: "1260" } },
+        { tag: "meta", attrs: { property: "og:image:alt", content: "XENA STUDIOS plugin docs over a planet horizon: xUtilities, zChat and xLimbo, setup, commands, config." } },
+        { tag: "meta", attrs: { name: "twitter:image", content: "https://docs.xenastudios.co/og.png" } },
+      ],
       customCss: ["./src/styles/theme.css"],
       // Code in the site's own surfaces: a `space` panel with a `line` hairline.
       expressiveCode: {

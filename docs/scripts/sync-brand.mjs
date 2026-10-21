@@ -21,6 +21,7 @@ const files = [
   ["logo/xena-studios-black.svg", "src/assets/xena-studios-light.svg"],
   ["avatar/favicon.svg", "public/favicon.svg"],
   ["scene/horizon.svg", "src/assets/horizon.svg"],
+  ["social/docs-og.png", "public/og.png"],
   ["plugins/xutilities/icon.svg", "src/assets/plugins/xutilities.svg"],
   ["plugins/zchat/icon.svg", "src/assets/plugins/zchat.svg"],
   ["plugins/xlimbo/icon.svg", "src/assets/plugins/xlimbo.svg"],

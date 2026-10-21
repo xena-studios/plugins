@@ -1,0 +1,72 @@
+name: Plugins
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", ".github/workflows/docs.yml", "**.md"]
+  pull_request:
+    paths-ignore: ["docs/**", ".github/workflows/docs.yml", "**.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+      # Compiles, runs the tests, and fails any jar over its size budget.
+      - run: ./gradlew build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: jars
+          # Plugin jars only: core and build-logic are libraries, and -plain
+          # jars lack the core.
+          path: |
+            */build/libs/*.jar
+            !core/build/libs/*
+            !build-logic/build/libs/*
+            !*/build/libs/*-plain.jar
+          if-no-files-found: error
+
+  # Boots every plugin on a real server, at the oldest version we support and
+  # the newest, on Paper and Folia.
+  boot:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [paper, folia]
+        # Keep the first in step with `paper` in gradle/libs.versions.toml, and
+        # the second at the newest release.
+        target:
+          - { version: "1.21.11", java: 21 }
+          - { version: "26.3", java: 25 }
+    name: boot (${{ matrix.project }} ${{ matrix.target.version }})
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.target.java }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: jars
+          path: jars
+      - uses: actions/cache@v6
+        with:
+          path: .cache/servers
+          key: servers-${{ matrix.project }}-${{ matrix.target.version }}
+      - run: >
+          find jars -name '*.jar' -exec
+          scripts/boot-test.sh
+          --project ${{ matrix.project }} --version ${{ matrix.target.version }}
+          --run "sandbox selftest" --expect "SELFTEST PASS"
+          {} +

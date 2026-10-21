@@ -29,7 +29,7 @@ npm run build   # static site in dist/, with every internal link checked
 
 Pages are Markdown in `docs/src/content/docs/`, one folder per plugin and `start/` for what they share. The look is the plugin family's, from [xena-studios/brand](https://github.com/xena-studios/brand): `npm run brand:sync` copies the logo, favicon and plugin icons in. Each plugin's pages use its own accent (`docs/public/accents/`).
 
-Pushes to `main` that touch `docs/` deploy to Cloudflare once the repo has `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets; pull requests only build.
+Pushes to `main` that touch `docs/` deploy to Cloudflare once the repo has a `CLOUDFLARE_API_TOKEN` secret and a `CLOUDFLARE_ACCOUNT_ID` variable; pull requests only build.
 
 ## Reporting bugs
 

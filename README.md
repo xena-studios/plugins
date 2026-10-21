@@ -11,10 +11,29 @@ Small, fast plugins for Paper servers, by [Xena Studios](https://xenastudios.co)
 ## What's here
 
 ```
-docs/    docs.xenastudios.co: the docs for every plugin (Starlight)
+build-logic/   the xena.plugin Gradle convention every plugin applies
+core/          code every plugin shares, shaded into each jar
+sandbox/       a plugin that's never released: boots the core on real servers in CI
+scripts/       boot-test.sh (runs jars on a real Paper or Folia server), changelog.sh
+docs/          docs.xenastudios.co: the docs for every plugin (Starlight)
 ```
 
-The plugins' source moves into this repo, one folder per plugin plus shared code, as each one is rebuilt. Until then, the released jars are on [Modrinth](https://modrinth.com/organization/xena-studios), and the docs describe those releases: xUtilities 1.0.1, zChat 2.0.0 and xLimbo 1.0.1.
+Each plugin moves into its own folder as it's rebuilt, in this order: xUtilities 2, zChat 3, xLimbo 2. Until then, the released jars are on [Modrinth](https://modrinth.com/organization/xena-studios), and the docs describe those releases: xUtilities 1.0.1, zChat 2.0.0 and xLimbo 1.0.1. Why the plugins are built the way they are: [DECISIONS.md](DECISIONS.md).
+
+## Plugins
+
+Needs a JDK 21 or newer. Every plugin supports Paper 1.21.11 and newer (Java 21 bytecode), and Folia unless it says otherwise.
+
+```sh
+./gradlew build                  # compile, test, and check each jar against its size budget
+./gradlew :<plugin>:runServer    # a Paper server with the plugin, in <plugin>/run/
+scripts/boot-test.sh --project paper --version 1.21.11 \
+  --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/*.jar
+```
+
+A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 100 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth.
+
+CI builds every push and boots every plugin on Paper and Folia at 1.21.11 and the newest release. To release, bump the plugin's `version`, add a `## <version>` section to its `CHANGELOG.md`, and push a tag such as `xutilities-v2.0.0`: the release workflow publishes to Modrinth (needs a `MODRINTH_TOKEN` secret) and GitHub.
 
 ## Docs
 

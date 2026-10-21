@@ -27,7 +27,7 @@ npm run dev     # http://localhost:4321
 npm run build   # static site in dist/, with every internal link checked
 ```
 
-Pages are Markdown in `docs/src/content/docs/`, one folder per plugin and `start/` for what they share. The look is [xenastudios.co](https://xenastudios.co)'s (Ion Blue on deep space, JetBrains Mono, dark only), with each plugin's icon beside its pages' titles. `npm run brand:sync` copies the logo, favicon, horizon and plugin icons in from [xena-studios/brand](https://github.com/xena-studios/brand).
+Pages are Markdown in `docs/src/content/docs/`, one folder per plugin and `start/` for what they share. The docs wear the plugin family's brand, as Raptor's docs wear Raptor's: deepslate, Space Grotesk, dark only, and each plugin's pages in its own accent (`docs/public/accents/`) with its icon beside the title. `npm run brand:sync` copies the logo, favicon, stepped horizon, link preview and plugin icons in from [xena-studios/brand](https://github.com/xena-studios/brand).
 
 Pushes to `main` that touch `docs/` deploy to Cloudflare once the repo has a `CLOUDFLARE_API_TOKEN` secret and a `CLOUDFLARE_ACCOUNT_ID` variable; pull requests only build.
 

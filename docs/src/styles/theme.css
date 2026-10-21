@@ -1,66 +1,66 @@
-/* xenastudios.co's look (xena-studios/website, src/styles/global.css) mapped onto
-   Starlight: the brand's deep-space neutrals, Ion Blue as the one accent,
-   JetBrains Mono for everything, hairlines instead of shadows, dark only.
-   Colours are xena-studios/brand tokens/colors.json. */
+/* The plugin family's brand (xena-studios/brand, tokens/plugins.json) mapped onto
+   Starlight, as docs.raptorpanel.net wears Raptor's: deepslate neutrals, Space
+   Grotesk for words, JetBrains Mono for code and labels, dark only. Pages outside
+   a plugin use the family's neutral accent; each plugin's pages swap in its own
+   (public/accents/, via src/routeData.ts). The details (link underlines, focus
+   rings, hairlines, pill buttons, frosted header) follow xenastudios.co. */
+@import "@fontsource-variable/space-grotesk";
 @import "@fontsource-variable/jetbrains-mono";
 
 :root {
-  --void: #06080D;
-  --space: #0A0E16;
-  --surface: #121824;
-  --line: #222B3B;
-  --muted: #8A93A6;
-  --text: #EDF1F7;
-  --accent: #5CB4FF;
+  --bg: #121116;
+  --raised: #1B1A21;
+  --rule: #2A2832;
+  --text: #F2F0F5;
+  --muted: #9C99A8;
+  /* The family's neutral accent: pale lavender, no plugin's colour. */
+  --accent: #C9C2E0;
+  --mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --sl-font: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --sl-font-mono: var(--sl-font);
+  --sl-font: "Space Grotesk Variable", system-ui, sans-serif;
+  --sl-font-mono: var(--mono);
 
   --sl-color-white: var(--text);
-  --sl-color-gray-1: #D5DBE6;
-  --sl-color-gray-2: #B3BBC9;
+  --sl-color-gray-1: #E2E0E8;
+  --sl-color-gray-2: #C4C1CD;
   --sl-color-gray-3: var(--muted);
-  --sl-color-gray-4: #4A5468;
-  --sl-color-gray-5: var(--line);
-  --sl-color-gray-6: var(--surface);
-  --sl-color-black: var(--void);
-  --sl-color-bg-sidebar: var(--void);
-  --sl-color-bg-nav: color-mix(in srgb, var(--void) 82%, transparent);
-  --sl-color-hairline: var(--line);
-  --sl-color-hairline-light: var(--line);
-  --sl-color-hairline-shade: var(--line);
+  --sl-color-gray-4: #5E5B69;
+  --sl-color-gray-5: var(--rule);
+  --sl-color-gray-6: var(--raised);
+  --sl-color-black: var(--bg);
+  --sl-color-bg-sidebar: #0F0E13;
+  --sl-color-bg-nav: color-mix(in srgb, #0F0E13 82%, transparent);
+  --sl-color-hairline: var(--rule);
+  --sl-color-hairline-light: var(--rule);
+  --sl-color-hairline-shade: var(--rule);
 
-  --sl-color-accent-low: #0E2238;
+  --sl-color-accent-low: #2A2735;
   --sl-color-accent: var(--accent);
-  --sl-color-accent-high: #A9D6FF;
-  --sl-color-text-accent: var(--accent);
+  --sl-color-accent-high: #E6E1F5;
+  --sl-color-text-accent: var(--sl-color-accent);
 
   --sl-shadow-sm: none;
   --sl-shadow-md: none;
   --sl-shadow-lg: none;
 
-  /* The website's heading scale. */
   --sl-text-h1: clamp(1.75rem, 1.3rem + 1.9vw, 2.75rem);
-  --sl-text-h2: clamp(1.375rem, 1.15rem + 0.9vw, 1.875rem);
-  --sl-text-h3: clamp(1.125rem, 1.05rem + 0.4vw, 1.375rem);
   --sl-line-height-headings: 1.12;
 
   color-scheme: dark;
-  scrollbar-color: var(--line) var(--void);
+  scrollbar-color: var(--rule) var(--bg);
 }
 
 body {
-  font-variant-ligatures: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Headings: 600, tight tracking, balanced, as on the website. */
+/* Headings: Space Grotesk Bold with the family's tight tracking. */
 h1,
 .sl-markdown-content :is(h2, h3, h4) {
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
@@ -69,7 +69,7 @@ h1,
   text-wrap: pretty;
 }
 
-/* Links: quiet underlines that firm up on hover. In prose they take the accent. */
+/* Links: quiet underlines that firm up on hover (xenastudios.co). */
 a {
   text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
   text-underline-offset: 0.25em;
@@ -81,21 +81,21 @@ a:hover {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--sl-color-accent);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--sl-color-accent) 35%, transparent);
   color: var(--text);
 }
 
-/* Header: the website's frosted bar with a hairline. */
+/* Header: a frosted bar with a hairline. */
 .header {
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
-  border-bottom-color: color-mix(in srgb, var(--line) 70%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--rule) 70%, transparent);
 }
 
 /* No divider after the GitHub link: it separated the theme picker, which is gone. */
@@ -103,7 +103,7 @@ a:hover {
   display: none;
 }
 
-/* XENA STUDIOS, then which site this is, as the website's mono label. */
+/* XENA STUDIOS (the endorsement), then which site this is, as a mono label. */
 .site-title {
   gap: 0.875rem;
 }
@@ -113,6 +113,7 @@ a:hover {
 }
 .site-title::after {
   content: "Plugin docs";
+  font-family: var(--mono);
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.14em;
@@ -120,7 +121,8 @@ a:hover {
   color: var(--muted);
 }
 
-/* Sidebar: muted links, the current page in Ion Blue on a faint tint. */
+/* Sidebar: muted links, the current page in the accent on a faint tint, group
+   names as mono labels. */
 .sidebar-content a {
   color: var(--muted);
   text-decoration: none;
@@ -130,55 +132,65 @@ a:hover {
 }
 .sidebar-content a[aria-current="page"],
 .sidebar-content a[aria-current="page"]:hover {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--sl-color-accent);
+  background: color-mix(in srgb, var(--sl-color-accent) 12%, transparent);
   font-weight: 600;
 }
 .sidebar-content .group-label .large {
+  font-family: var(--mono);
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
 }
+/* Links that leave the docs get the outbound arrow. */
+.sidebar-content a[href^="http"]::after {
+  content: "";
+  display: inline-block;
+  width: 0.62em;
+  height: 0.62em;
+  margin-inline-start: 0.4em;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 1.5h5.5V7M8.5 1.5 1.5 8.5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 1.5h5.5V7M8.5 1.5 1.5 8.5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 
-/* "On this page": the same muted-to-text links. */
 starlight-toc a {
   color: var(--muted);
   text-decoration: none;
 }
 starlight-toc a[aria-current="true"] {
-  color: var(--accent);
+  color: var(--sl-color-accent);
 }
 
-/* Buttons: the website's 44px pills. Primary is solid Ion Blue on void. */
+/* Buttons: 44px pills. Primary is solid accent on deepslate. */
 .sl-link-button {
   min-height: 2.75rem;
   border-radius: 999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-.sl-link-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--void);
+  font-size: 0.9375rem;
   font-weight: 600;
 }
+.sl-link-button.primary {
+  background: var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+  color: var(--bg);
+}
 .sl-link-button.primary:hover {
-  background: color-mix(in oklch, var(--accent) 88%, white);
+  background: color-mix(in oklch, var(--sl-color-accent) 88%, white);
 }
 .sl-link-button.minimal {
-  border: 1px solid var(--line);
+  border: 1px solid var(--rule);
   padding-inline: 1.25rem;
 }
 .sl-link-button.minimal:hover {
-  border-color: color-mix(in oklch, var(--accent) 55%, var(--line));
+  border-color: color-mix(in oklch, var(--sl-color-accent) 55%, var(--rule));
 }
 
-/* Inline code: a hairline chip on `space`. */
+/* Inline code: a hairline chip on the raised surface. */
 .sl-markdown-content :not(pre) > code {
-  background: var(--space);
-  border: 1px solid var(--line);
+  background: var(--raised);
+  border: 1px solid var(--rule);
   border-radius: 4px;
   padding: 0.05em 0.35em;
 }
@@ -188,9 +200,10 @@ starlight-toc a[aria-current="true"] {
   border-collapse: collapse;
 }
 .sl-markdown-content :is(th, td) {
-  border-color: var(--line);
+  border-color: var(--rule);
 }
 .sl-markdown-content th {
+  font-family: var(--mono);
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.14em;
@@ -199,42 +212,43 @@ starlight-toc a[aria-current="true"] {
   background: none;
 }
 
-/* Asides: hairline boxes with an Ion Blue edge, no fill. */
+/* Asides: hairline boxes with an accent edge. */
 .starlight-aside {
   border-radius: 12px;
-  border: 1px solid var(--line);
-  border-inline-start: 3px solid var(--accent);
-  background: var(--space);
+  border: 1px solid var(--rule);
+  border-inline-start: 3px solid var(--sl-color-accent);
+  background: var(--raised);
 }
 .starlight-aside__title {
+  font-family: var(--mono);
   font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-/* Home: the website's hero scale over the horizon. */
+/* Home: a big Space Grotesk title over the family's horizon. */
 .hero {
   padding-block: clamp(3rem, 2rem + 4vw, 6rem) 0;
 }
 .hero h1 {
-  font-size: clamp(1.75rem, 1.1rem + 3.9vw, 4.5rem);
+  font-size: clamp(2rem, 1.2rem + 4vw, 4.5rem);
   line-height: 1.05;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.03em;
 }
 .hero .tagline {
-  max-width: 64ch;
+  max-width: 60ch;
   font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
-  line-height: 1.75;
+  line-height: 1.7;
   color: var(--muted);
 }
 
-/* The home page's plugins, as the website's hairline rows. */
+/* The home page's lists: hairline rows, icon then name and one line. */
 .plugin-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--rule);
 }
 .plugin-list li {
   display: grid;
@@ -243,7 +257,7 @@ starlight-toc a[aria-current="true"] {
   align-items: center;
   margin: 0;
   padding-block: 1.5rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--rule);
 }
 .plugin-list img {
   grid-row: span 2;
@@ -253,15 +267,56 @@ starlight-toc a[aria-current="true"] {
 }
 .plugin-list a {
   color: var(--text);
-  font-weight: 600;
+  font-size: var(--sl-text-lg);
+  font-weight: 700;
   text-decoration: none;
 }
 .plugin-list a:hover {
-  color: var(--accent);
+  color: var(--sl-color-accent);
 }
 .plugin-list p {
   margin: 0;
   color: var(--muted);
+}
+/* Each plugin's row lights up in its own accent on hover. */
+.plugin-list a[href="/xutilities/"]:hover { color: #F5B83D; }
+.plugin-list a[href="/zchat/"]:hover { color: #5EE08A; }
+.plugin-list a[href="/xlimbo/"]:hover { color: #B48CFF; }
+
+.more-label {
+  margin-top: 3rem !important;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.more-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  border-top: 1px solid var(--rule);
+}
+.more-list li {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 0.25rem 1.5rem;
+  margin: 0;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+.more-list a {
+  color: var(--text);
+  font-weight: 700;
+}
+.more-list p {
+  margin: 0;
+  color: var(--muted);
+}
+@media (max-width: 40rem) {
+  .more-list li {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

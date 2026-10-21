@@ -1,7 +1,8 @@
 // docs.xenastudios.co: the docs for Xena's plugins (xUtilities, zChat, xLimbo),
-// a static Starlight site served by a Cloudflare Worker. Styled like
-// xenastudios.co (Ion Blue on deep space, JetBrains Mono, dark only), with each
-// plugin's icon beside its pages' titles.
+// a static Starlight site served by a Cloudflare Worker. It wears the plugin
+// family's brand (xena-studios/brand), as docs.raptorpanel.net wears Raptor's:
+// deepslate, Space Grotesk, each plugin's pages in its accent with its icon by
+// the title, and xenastudios.co's details (hairlines, pills, focus rings).
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
@@ -29,26 +30,26 @@ export default defineConfig({
         { tag: "meta", attrs: { name: "twitter:image", content: "https://docs.xenastudios.co/og.png" } },
       ],
       customCss: ["./src/styles/theme.css"],
-      // Code in the site's own surfaces: a `space` panel with a `line` hairline.
+      // Code on the family's raised surface with a hairline.
       expressiveCode: {
         themes: ["github-dark-default"],
         styleOverrides: {
           borderRadius: "12px",
-          borderColor: "#222B3B",
+          borderColor: "#2A2832",
           codeFontFamily: '"JetBrains Mono Variable", ui-monospace, monospace',
-          uiFontFamily: '"JetBrains Mono Variable", ui-monospace, monospace',
-          codeBackground: "#0A0E16",
+          uiFontFamily: '"Space Grotesk Variable", system-ui, sans-serif',
+          codeBackground: "#0D0C10",
           frames: {
             shadowColor: "transparent",
             frameBoxShadowCssValue: "none",
-            terminalBackground: "#0A0E16",
-            terminalTitlebarBackground: "#0A0E16",
-            terminalTitlebarBorderBottomColor: "#222B3B",
-            editorBackground: "#0A0E16",
-            editorTabBarBackground: "#0A0E16",
-            editorActiveTabBackground: "#0A0E16",
-            editorActiveTabIndicatorBottomColor: "#5CB4FF",
-            editorTabBarBorderBottomColor: "#222B3B",
+            terminalBackground: "#0D0C10",
+            terminalTitlebarBackground: "#0D0C10",
+            terminalTitlebarBorderBottomColor: "#2A2832",
+            editorBackground: "#0D0C10",
+            editorTabBarBackground: "#0D0C10",
+            editorActiveTabBackground: "#0D0C10",
+            editorActiveTabIndicatorBottomColor: "#C9C2E0",
+            editorTabBarBorderBottomColor: "#2A2832",
           },
         },
       },
@@ -61,11 +62,21 @@ export default defineConfig({
       editLink: { baseUrl: "https://github.com/xena-studios/plugins/edit/main/docs/" },
       lastUpdated: true,
       plugins: [starlightLinksValidator()],
+      // Each plugin's pages load that plugin's accent (public/accents/).
+      routeMiddleware: "./src/routeData.ts",
       sidebar: [
         { label: "Start here", items: [{ autogenerate: { directory: "start" } }] },
         { label: "xUtilities", items: [{ autogenerate: { directory: "xutilities" } }] },
         { label: "zChat", items: [{ autogenerate: { directory: "zchat" } }] },
         { label: "xLimbo", items: [{ autogenerate: { directory: "xlimbo" } }] },
+        {
+          label: "More from Xena Studios",
+          items: [
+            { label: "Raptor docs", link: "https://docs.raptorpanel.net" },
+            { label: "NeoSkript", link: "https://github.com/xena-studios/neoskript", badge: { text: "Soon", variant: "note" } },
+            { label: "xenastudios.co", link: "https://xenastudios.co" },
+          ],
+        },
       ],
     }),
   ],

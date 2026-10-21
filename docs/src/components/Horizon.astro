@@ -1,6 +1,6 @@
 ---
-// The brand's horizon scene (xena-studios/brand scene/horizon.svg), as under
-// xenastudios.co's hero: scaled from the bottom edge, fading into the page.
+// The plugin family's stepped horizon (xena-studios/brand plugins/horizon.svg),
+// its rim in all three accents: scaled from the bottom edge, fading into the page.
 import raw from "../assets/horizon.svg?raw";
 const svg = raw.replace(/ width="[^"]*" height="[^"]*"/, ` preserveAspectRatio="xMidYMax slice" class="horizon" aria-hidden="true" focusable="false"`);
 ---
@@ -10,7 +10,7 @@ const svg = raw.replace(/ width="[^"]*" height="[^"]*"/, ` preserveAspectRatio="
   .horizon-wrap {
     width: 100vw;
     margin-inline: calc(50% - 50vw);
-    height: clamp(8rem, 22vw, 15rem);
+    height: clamp(6rem, 15vw, 10.5rem);
     margin-top: clamp(1rem, 3vw, 2.5rem);
     pointer-events: none;
   }

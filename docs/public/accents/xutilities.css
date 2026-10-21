@@ -1,0 +1,13 @@
+/* xutilities's accent (xena-studios/brand, scripts/plugin-brand.mjs), loaded on its pages.
+   Starlight puts route head entries before the bundled theme, so these selectors
+   outrank theme.css's instead of relying on order. */
+:root:not([data-theme="light"]) {
+  --sl-color-accent-low: #3A2E14;
+  --sl-color-accent: #F5B83D;
+  --sl-color-accent-high: #FAD58A;
+}
+:root:root[data-theme="light"] {
+  --sl-color-accent-low: #F7EBD0;
+  --sl-color-accent: #8A5A00;
+  --sl-color-accent-high: #6B4600;
+}

@@ -1,0 +1,37 @@
+---
+title: Xena plugin docs
+description: Docs for xUtilities, zChat and xLimbo, small and fast plugins for Paper servers by Xena Studios.
+template: splash
+hero:
+  tagline: Small, fast plugins for Paper servers. Each one does one job, costs next to nothing to run, and lets you switch off anything you don't use.
+  actions:
+    - text: Get started
+      link: /start/requirements/
+      icon: right-arrow
+    - text: Modrinth
+      link: https://modrinth.com/organization/xena-studios
+      icon: external
+      variant: minimal
+---
+
+import xutilities from "../../assets/plugins/xutilities.svg";
+import zchat from "../../assets/plugins/zchat.svg";
+import xlimbo from "../../assets/plugins/xlimbo.svg";
+
+<ul class="plugin-list">
+  <li>
+    <img src={xutilities.src} alt="" width="48" height="48" />
+    <a href="/xutilities/">xUtilities</a>
+    <p>Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.</p>
+  </li>
+  <li>
+    <img src={zchat.src} alt="" width="48" height="48" />
+    <a href="/zchat/">zChat</a>
+    <p>Format your chat. Keep it clean. Group-based formatting with a filter, cooldown and chat mute.</p>
+  </li>
+  <li>
+    <img src={xlimbo.src} alt="" width="48" height="48" />
+    <a href="/xlimbo/">xLimbo</a>
+    <p>Never drop a player again. A fallback server that holds players when your main server goes down.</p>
+  </li>
+</ul>

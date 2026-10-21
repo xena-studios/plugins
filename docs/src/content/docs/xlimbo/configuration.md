@@ -1,0 +1,173 @@
+---
+title: Configuration
+description: Every setting in xLimbo's config.yml.
+sidebar:
+  order: 7
+---
+
+The config is `plugins/xLimbo/config.yml`, written on first start. Apply changes with `/xlimbo reload`. These need a restart: `world.name`, `world.floor-y`, `world.floor-block` and `join-command.aliases`.
+
+| Section | What it covers |
+| --- | --- |
+| `world` | The void world, its floor, border and distances: [The world](/xlimbo/world/#the-world). |
+| `player`, `join`, `quit`, `death`, `action-bar` | What arriving players get and see: [Arriving players](/xlimbo/world/#arriving-players). |
+| `main-server`, `auto-join` | Where `/join` sends players, and sending them automatically: [Network setup](/xlimbo/network-setup/#point-join-at-your-main-server). |
+| `join-command` | `/join`'s aliases, permission, cooldown and messages: [Commands](/xlimbo/commands/). |
+| `protections` | What's blocked: [Protections](/xlimbo/protections/). |
+
+## The full default config
+
+```yaml title="plugins/xLimbo/config.yml"
+# ============================================================================
+#  xLimbo — fallback void-sandbox plugin
+# ----------------------------------------------------------------------------
+#  Every feature is individually toggleable and every tunable has a safe
+#  default. Bad values fall back to the default with a warning in console —
+#  the plugin never disables itself or crashes over config. All player-facing
+#  text is MiniMessage: https://docs.advntr.dev/minimessage/format.html
+#
+#  Apply changes at runtime with:  /xlimbo reload
+# ============================================================================
+
+# Internal config version. DO NOT edit by hand — the plugin uses this to
+# migrate older configs forward without wiping your settings.
+config-version: 1
+
+world:
+  # Name of the xLimbo world. Created automatically if it does not exist.
+  #
+  # To make the server's DEFAULT world the limbo (single-world setup), set this to
+  # your default world's name (usually "world", matching level-name in
+  # server.properties) AND point its generator at xLimbo in bukkit.yml:
+  #   worlds:
+  #     world:
+  #       generator: xLimbo
+  # The server then loads that world using xLimbo's void generator, and xLimbo
+  # applies its settings once it loads. floor-y / floor-block still take effect;
+  # reset-on-startup does not apply to an already-loaded default world.
+  name: "xlimbo"
+  # Block that makes up the shared, unbreakable floor (one layer per chunk).
+  floor-block: "GLASS"
+  # Y level of the floor layer. Players are spawned one block above it.
+  floor-y: 64
+  # Ephemeral world: keep this false so nothing is ever saved to disk
+  # (recommended — keeps disk usage flat). Set true only if you want it to persist.
+  auto-save: false
+  # Delete the world folder on startup so xLimbo resets between restarts.
+  # Done safely and non-blocking; disabled by default to be conservative.
+  reset-on-startup: false
+
+  border:
+    # Total width of the square world border in blocks (radius = size / 2).
+    size: 10000
+    # Random-spawn spread: players spawn within +/- this many blocks of the
+    # world center. Keep it comfortably inside the border (buffer > a few
+    # chunks) so nobody spawns against the wall. Auto-clamped if too large.
+    spawn-radius: 4000
+
+  # Reduce per-world footprint. -1 leaves the server default in place.
+  # These also matter server-side (spigot.yml / pufferfish.yml) — see README.
+  view-distance: 4
+  simulation-distance: 4
+
+player:
+  # Put joining players into creative mode.
+  set-creative: true
+  # Grant + enable flight on join (kept enforced so nobody falls without it).
+  enable-flight: true
+
+join:
+  # Suppress the vanilla join broadcast.
+  suppress-join-message: true
+  # Optional custom join message shown to the joining player. Empty = none.
+  custom-join-message: "<gray>Welcome to <aqua>xLimbo</aqua>. Type <yellow>/join</yellow> to return to the server.</gray>"
+  # Clear the player's chat on join.
+  clear-chat-on-join: false
+
+quit:
+  # Suppress the vanilla quit broadcast.
+  suppress-quit-message: true
+
+death:
+  # Suppress vanilla death broadcasts (deaths should be near-impossible here).
+  suppress-death-message: true
+
+# The proxy server name players are sent to (must match your proxy config).
+main-server: "main"
+
+auto-join:
+  # Automatically send players back to the main server after a delay.
+  enabled: false
+  # Delay in seconds before the automatic connect fires.
+  delay-seconds: 30
+  # Message shown to the player when the auto-connect fires. Empty = none.
+  message: "<green>Sending you to the server...</green>"
+
+# /join — sends the player to the main server via the proxy.
+join-command:
+  enabled: true
+  # Extra aliases (the base "join" command always exists via plugin.yml).
+  aliases:
+    - "server"
+    - "lobby"
+  # Permission required to use it (granted to everyone by default).
+  permission: "xlimbo.join"
+  # Per-player cooldown in seconds to stop proxy/command spam.
+  cooldown-seconds: 3
+  # Feedback messages.
+  message-sending: "<green>Connecting you to <aqua><server></aqua>...</green>"
+  message-cooldown: "<red>Please wait <yellow><seconds></yellow>s before trying again.</red>"
+
+# Repeating action-bar message. Component is parsed once and reused.
+action-bar:
+  enabled: true
+  # Ticks between updates (20 ticks = 1 second). Minimum 1.
+  interval-ticks: 40
+  message: "<gray>Use <yellow>/join</yellow> to join the server!</gray>"
+
+# ----------------------------------------------------------------------------
+#  Protections — safe defaults ON. Each independently toggleable.
+# ----------------------------------------------------------------------------
+protections:
+  # Floor layer cannot be broken, replaced, or built over.
+  floor: true
+
+  void:
+    # Rescue players who fall below the threshold back onto the floor.
+    enabled: true
+    # Y level that triggers the rescue teleport.
+    threshold-y: 0
+    # Cancel void/fall damage so rescues never turn into death loops.
+    cancel-void-damage: true
+
+  # Cancel nether/end portal creation and Eye-of-Ender on End frames.
+  portals: true
+  # Block liquid placement and flow (buckets + BlockFromToEvent).
+  liquids: true
+  # Block placement of gravity blocks (sand/gravel/anvil/concrete powder)
+  # and cancel any block -> falling-entity conversion.
+  gravity-blocks: true
+  # Disable fire tick + cancel ignition, spread and burn.
+  fire: true
+  # Disable explosions (block + entity).
+  explosions: true
+  # Cancel natural/hostile mob spawns.
+  mob-spawns: true
+  # Disable redstone activity.
+  redstone: true
+  # Cancel item drops (creative building shouldn't leave dropped items).
+  item-drops: true
+
+  entities:
+    # Block placing/spawning entity-heavy items that accumulate: armor stands,
+    # boats, minecarts, item frames, paintings, end crystals, spawn eggs.
+    block-entity-items: true
+    # Periodically remove stray non-player entities. 0 disables the sweep.
+    cleanup-interval-seconds: 300
+
+  # Defeat deliberate lag-machine builds.
+  build-guard:
+    enabled: false
+    # Max block placements per player per second. 0 = unlimited.
+    max-places-per-second: 30
+```

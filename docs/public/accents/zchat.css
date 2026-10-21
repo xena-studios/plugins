@@ -1,0 +1,13 @@
+/* zchat's accent (xena-studios/brand, scripts/plugin-brand.mjs), loaded on its pages.
+   Starlight puts route head entries before the bundled theme, so these selectors
+   outrank theme.css's instead of relying on order. */
+:root:not([data-theme="light"]) {
+  --sl-color-accent-low: #163A25;
+  --sl-color-accent: #5EE08A;
+  --sl-color-accent-high: #A6F0BF;
+}
+:root:root[data-theme="light"] {
+  --sl-color-accent-low: #D9F3E2;
+  --sl-color-accent: #187A3E;
+  --sl-color-accent-high: #105C2E;
+}

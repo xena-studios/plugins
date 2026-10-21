@@ -1,0 +1,13 @@
+/* xlimbo's accent (xena-studios/brand, scripts/plugin-brand.mjs), loaded on its pages.
+   Starlight puts route head entries before the bundled theme, so these selectors
+   outrank theme.css's instead of relying on order. */
+:root:not([data-theme="light"]) {
+  --sl-color-accent-low: #2E2346;
+  --sl-color-accent: #B48CFF;
+  --sl-color-accent-high: #D7C2FF;
+}
+:root:root[data-theme="light"] {
+  --sl-color-accent-low: #EAE0FB;
+  --sl-color-accent: #6A3FD0;
+  --sl-color-accent-high: #4F2DA3;
+}

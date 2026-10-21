@@ -57,6 +57,7 @@ names=()
 for jar in "${jars[@]}"; do
   # unzip complains about whichever descriptor the jar doesn't have.
   descriptor=$({ unzip -p "$jar" paper-plugin.yml plugin.yml 2>/dev/null || true; })
+  [[ -n $descriptor ]] || { echo "$(basename "$jar") isn't a plugin: it has no paper-plugin.yml or plugin.yml" >&2; exit 2; }
   if [[ $project == folia ]] && ! grep -q '^folia-supported: true' <<<"$descriptor"; then
     echo "Skipping $(basename "$jar"): not for Folia"
     continue

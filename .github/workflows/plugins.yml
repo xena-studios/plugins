@@ -26,10 +26,12 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: jars
-          # Plugin jars only: core's jar is a library, and -plain jars lack the core.
+          # Plugin jars only: core and build-logic are libraries, and -plain
+          # jars lack the core.
           path: |
             */build/libs/*.jar
             !core/build/libs/*
+            !build-logic/build/libs/*
             !*/build/libs/*-plain.jar
           if-no-files-found: error
 

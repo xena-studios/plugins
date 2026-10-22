@@ -37,30 +37,33 @@ So give your ranks their group permission in your permissions plugin, for exampl
 /lp group staff permission set zchat.group.staff true
 ```
 
-The `zchat.group.*` permissions default to `op`, so operators see the admin format until you set this up.
+Group permissions are given to nobody by default, operators included, so an operator doesn't get the admin format unless you give it to them. (zChat 2 gave them to operators.)
 
 ## Add a group
 
-Add an entry under `groups` with a `weight`, a `permission` and a `format`, then run `/zchat reload`:
+Add an entry under `groups` with a `weight` and a `format`, then run `/zchat reload`. Its permission is `zchat.group.<name>` unless you set one:
 
 ```yaml
     builder:
       weight: 15
-      permission: "zchat.group.builder"
       format: "<green>[Builder] <player></green> <dark_gray>»</dark_gray> <white><message></white>"
 ```
 
-To use only one format for everyone, leave `groups` empty (`groups: {}`).
+To use only one format for everyone, leave `groups` empty (`groups: {}`). To let the server or another plugin draw chat, set `enabled: false`; the filter, cooldown and the rest still work.
 
 ## Placeholders
 
 | Placeholder | What it is |
 | --- | --- |
 | `<player>` | The sender's name, as plain text. |
-| `<displayname>` | The sender's display name, which may already have colours (from a nickname plugin, for example). |
-| `<message>` | What they typed, after the [filter](/zchat/moderation/#filter). |
-| `%...%` | Any [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) placeholder, such as `%vault_prefix%`, when PlaceholderAPI is installed. Without it, they aren't filled in. |
+| `<displayname>` | The sender's display name, with any colours a nickname plugin gave it. Clicks and hovers are taken out. |
+| `<message>` | What they typed, after the [filter](/zchat/moderation/#filter), with [mentions](/zchat/messages/#mentions) highlighted. |
+| `%...%` | Any [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) placeholder, such as `%vault_prefix%` or `%luckperms_prefix%`, when PlaceholderAPI is installed. Without it, they show nothing, and the console says so. |
+
+Formats can also use the [theme](/start/formatting/#the-theme)'s `<highlight>`, `<success>` and `<error>`.
+
+PlaceholderAPI values go into the format as text with their colours (`&` codes, or MiniMessage colour tags), after the format is read. So a placeholder that shows something a player chose, such as a nickname, can't add a clickable link or hover text to chat. A placeholder whose expansion breaks shows nothing rather than breaking chat.
 
 ## Letting players use colours
 
-Players holding the `color-permission` (default `zchat.chat.color`, `op` by default) can use MiniMessage colour and style tags in their own messages, such as `<red>` or `<bold>`. Only colours and styles work: never clicks, hovers or anything else. Set `color-permission: ""` so nobody can.
+Players holding the `color-permission` (default `zchat.chat.color`, `op` by default) can use MiniMessage colour and style tags in their own messages, such as `<red>`, `<bold>` or `<gradient:gold:red>`. Only colours and styles work: never clicks, hovers or anything else. Set `color-permission: ""` so nobody can.

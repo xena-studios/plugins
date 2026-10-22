@@ -15,11 +15,12 @@ build-logic/   the xena.plugin Gradle convention every plugin applies
 core/          code every plugin shares, shaded into each jar
 sandbox/       a plugin that's never released: boots the core on real servers in CI
 xutilities/    xUtilities 2
+zchat/         zChat 3
 scripts/       boot-test.sh (runs jars on a real Paper or Folia server), changelog.sh
 docs/          docs.xenastudios.co: the docs for every plugin (Starlight)
 ```
 
-Each plugin moves into its own folder as it's rebuilt, in this order: xUtilities 2, zChat 3, xLimbo 2. Until then, the released jars are on [Modrinth](https://modrinth.com/organization/xena-studios), and the docs describe those releases: xUtilities 2.0.0, zChat 2.0.0 and xLimbo 1.0.1. Why the plugins are built the way they are: [DECISIONS.md](DECISIONS.md).
+Each plugin moves into its own folder as it's rebuilt, in this order: xUtilities 2, zChat 3, xLimbo 2. Until then, the released jars are on [Modrinth](https://modrinth.com/organization/xena-studios), and the docs describe those releases: xUtilities 2.0.0, zChat 3.0.0 and xLimbo 1.0.1. Why the plugins are built the way they are: [DECISIONS.md](DECISIONS.md).
 
 ## Plugins
 

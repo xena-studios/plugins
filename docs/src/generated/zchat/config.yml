@@ -1,0 +1,196 @@
+# zChat: format your chat. Keep it clean.
+# Docs: https://docs.xenastudios.co/zchat/configuration/
+#
+# Apply changes with /zchat reload (or /zc reload). Everything applies, even turning
+# commands on or off. A bad value falls back to its default with a warning in the
+# console; zChat never stops over config. All text is MiniMessage:
+# https://docs.xenastudios.co/start/formatting/
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 2
+
+# The look zChat's own messages share. The default messages use these as tags, so
+# changing a colour here restyles them all. Chat formats can use them too. Write a
+# style as MiniMessage tags: <gray>, <#B48CFF>, or <gold><bold>.
+theme:
+  # <prefix> starts the default messages. Make it your server's name, such as
+  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+  prefix: "<#B48CFF>»</#B48CFF> "
+  # The colour of message text that has no tag of its own.
+  base: "<gray>"
+  # <highlight>: names and values, such as a player or a speed.
+  highlight: "<#B48CFF>"
+  # <success>: something turned on or done.
+  success: "<#5EE08A>"
+  # <error>: something refused or turned off.
+  error: "<#FF6B6B>"
+
+# Messages the commands share.
+messages:
+  error:
+    # The console or a command block ran a command only players can use.
+    player-only: "<prefix><error>Only players can use this command."
+    # The sender lacks the command's permission.
+    no-permission: "<prefix><error>You don't have permission to do that."
+    # No online player has that name. <player> is the name typed.
+    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
+    # The command was typed wrong. <usage> is how to type it.
+    usage: "<prefix><error>Usage:</error> <usage>"
+    # The command hit an error. The console has the details.
+    failed: "<prefix><error>Something went wrong. The console has the details."
+
+# How chat looks. Formats can use <player> (the name), <displayname> (the name with
+# any nickname colours), <message>, and PlaceholderAPI placeholders such as
+# %vault_prefix% when PlaceholderAPI is installed.
+formatting:
+  # false leaves chat as the server shows it.
+  enabled: true
+  # Players with this permission can use colour and style tags, such as <red> or
+  # <bold>, in their own messages. Never clicks or hovers. Blank lets nobody.
+  color-permission: "zchat.chat.color"
+  # The format for players in no group below.
+  default-format: "<gray><player>:</gray> <white><message></white>"
+
+  # Each group's format goes to players with its permission (zchat.group.<name> if left
+  # out). A player in several groups gets the one with the highest weight.
+  groups:
+    vip:
+      weight: 10
+      permission: "zchat.group.vip"
+      format: "<gold>[VIP] <player></gold> <dark_gray>»</dark_gray> <white><message></white>"
+    staff:
+      weight: 20
+      permission: "zchat.group.staff"
+      format: "<aqua>[Staff] <player></aqua> <dark_gray>»</dark_gray> <white><message></white>"
+    admin:
+      weight: 30
+      permission: "zchat.group.admin"
+      format: "<red>[Admin] <player></red> <dark_gray>»</dark_gray> <white><message></white>"
+
+# Catches words you don't want in chat and private messages. Players with
+# zchat.bypass.filter skip it.
+filter:
+  enabled: true
+  # censor hides what matched and lets the message through; block stops the message.
+  mode: "censor"
+  censor-char: "*"
+  # Also catch words dressed up to get past the filter: s p a c e d out, b4dw0rd,
+  # baaadword, bädword. false matches words only as typed.
+  smart: true
+  # Words to catch, matched as whole words. Put * at either end to also catch longer
+  # words: "bad*" catches badly.
+  words: ["badword1", "badword2"]
+  # Java regular expressions, matched anywhere in the message as typed, ignoring case.
+  # For anything words can't express. Not smart.
+  patterns: []
+  message-blocked: "<prefix><error>Your message was blocked by the chat filter."
+
+# The shortest gap between one player's messages. zchat.bypass.cooldown skips it.
+cooldown:
+  enabled: true
+  seconds: 3
+  # <seconds> is the whole seconds left.
+  message: "<prefix><error>Wait <highlight><seconds>s</highlight> before chatting again."
+
+# Stops a player sending the same message again soon after. Messages under three
+# letters, like "gg", are let through. zchat.bypass.anti-repeat skips it.
+anti-repeat:
+  enabled: true
+  # How long a message counts as recent.
+  seconds: 30
+  # How alike two messages must be, in percent, to count as a repeat. 100 catches
+  # only exact repeats; lower also catches small changes.
+  similarity: 90
+  message: "<prefix><error>You just said that."
+
+# Writing a player's name, or @name, highlights it and pings them. Players who've
+# hidden chat aren't pinged.
+mentions:
+  enabled: true
+  # How a mention looks, to everyone. <name> is the mentioned player's name.
+  format: "<highlight>@<name></highlight>"
+  # Played to the mentioned player. Blank for none.
+  sound: "entity.experience_orb.pickup 0.5 1.2"
+  # Players with this permission can write @everyone to mention everyone. Blank lets
+  # nobody.
+  everyone-permission: "zchat.mention.everyone"
+
+# Every command has the same settings:
+#   enabled     false removes the command entirely
+#   aliases     other names for it
+#   permission  needed to use it; blank ("") lets anyone
+#
+# /clearchat: clears chat for everyone. zchat.bypass.clearchat keeps a player's.
+clearchat:
+  enabled: true
+  aliases: ["cc"]
+  permission: "zchat.command.clearchat"
+  # How many blank lines push chat out of view.
+  lines: 100
+  # <player> is who cleared it.
+  message-cleared: "<prefix>Chat was cleared by <highlight><player></highlight>."
+
+# /mutechat: mutes chat for everyone but zchat.bypass.mute until it's run again.
+mutechat:
+  enabled: true
+  aliases: ["mc"]
+  permission: "zchat.command.mutechat"
+  # <player> is who muted it.
+  message-muted: "<prefix>Chat has been <error>muted</error> by <highlight><player></highlight>."
+  message-unmuted: "<prefix>Chat has been <success>unmuted</success> by <highlight><player></highlight>."
+  # Shown to a player who talks while chat is muted.
+  message-blocked: "<prefix><error>Chat is muted right now."
+
+# /togglechat: hides other players' chat for yourself, or shows it again.
+togglechat:
+  enabled: true
+  aliases: ["tc"]
+  permission: "zchat.command.togglechat"
+  # Keep a player's choice when they rejoin.
+  remember: true
+  message-on: "<prefix>Chat is now <success>shown</success>."
+  message-off: "<prefix>Chat is now <error>hidden</error>. Run it again to show it."
+
+# Private messages. The filter applies to them; the mute and cooldown don't.
+private-messages:
+
+  # /msg <player> <message>. Replaces Minecraft's /msg, /tell and /w. <player> is the
+  # other player and <message> what was said.
+  msg:
+    enabled: true
+    aliases: ["tell", "w", "whisper", "m", "pm"]
+    permission: "zchat.command.msg"
+    format-sent: "<highlight>You → <player></highlight><dark_gray>:</dark_gray> <white><message>"
+    format-received: "<highlight><player> → You</highlight><dark_gray>:</dark_gray> <white><message>"
+    # Played to whoever receives a message. Blank for none.
+    sound: "entity.experience_orb.pickup 0.5 1.2"
+
+  # /reply <message>: answers whoever you last messaged, or who last messaged you.
+  reply:
+    enabled: true
+    aliases: ["r"]
+    permission: "zchat.command.reply"
+    # Nobody has messaged you, or you them.
+    message-nobody: "<prefix><error>You have nobody to reply to."
+
+  # /socialspy: shows staff every private message. <sender> and <receiver> are filled in.
+  socialspy:
+    enabled: true
+    aliases: ["spy"]
+    permission: "zchat.command.socialspy"
+    # Keep a player's choice when they rejoin.
+    remember: true
+    # Also log every private message to the console.
+    log-to-console: true
+    format: "<dark_gray>[Spy]</dark_gray> <gray><sender> → <receiver>: <message>"
+    message-on: "<prefix>Social spy <success>on</success>."
+    message-off: "<prefix>Social spy <error>off</error>."
+
+# Tells you when a new version is out.
+update-checker:
+  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
+  # only the plugin version, the platform and the Minecraft version.
+  enabled: true
+  # Logged, and shown to admins when they join, when a newer version is out.
+  # <plugin>, <current>, <latest> and <url> are filled in.
+  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"

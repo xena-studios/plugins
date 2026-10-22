@@ -80,6 +80,8 @@ modrinth {
     token = providers.environmentVariable("MODRINTH_TOKEN")
     projectId = xena.modrinthId
     versionNumber = provider { project.version.toString() }
+    // "xUtilities 2.0.0", as the plugin names itself.
+    versionName = paperPluginYaml.name.map { "$it ${project.version}" }
     // "2.0.0-beta.1" is a beta; "2.0.0" a release.
     versionType = provider { if ("-" in project.version.toString()) "beta" else "release" }
     uploadFile.set(tasks.shadowJar)

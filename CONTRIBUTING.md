@@ -73,11 +73,13 @@ By contributing, you agree your contribution is licensed under the repo's licenc
 
 ## Adding a plugin
 
-A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 150 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth. Give it a `README.md`, a `CHANGELOG.md` and a `boot-checks.txt` (CI picks that up on its own), a banner (add it to `docs/scripts/sync-brand.mjs`), and a folder in the docs. xUtilities is the example to copy.
+A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 150 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth. Give it a `README.md`, a `CHANGELOG.md`, a `modrinth.md` (its Modrinth page) and a `boot-checks.txt` (CI picks that up on its own), a banner (add it to `docs/scripts/sync-brand.mjs`), and a folder in the docs. xUtilities is the example to copy.
 
 ## Releasing
 
 For maintainers. Bump the plugin's `version` in its `build.gradle.kts`, rename `## Unreleased` in its `CHANGELOG.md` to `## <version>`, merge, then push a tag such as `xutilities-v2.1.0`. The release workflow checks the two match, then publishes to Modrinth and GitHub with that changelog section as the notes. Publishing to Modrinth needs the repo's `MODRINTH_TOKEN` secret.
+
+Each plugin's Modrinth page is its `modrinth.md`. When one changes on `main`, [`modrinth.yml`](.github/workflows/modrinth.yml) publishes it, and every release publishes it again; edit the file, never the page on Modrinth, or the next sync overwrites the edit. Anything between `<!-- modrinth_exclude.start -->` and `<!-- modrinth_exclude.end -->` is left out. To check what would be sent without sending it: `MODRINTH_TOKEN=x ./gradlew :<plugin>:modrinthSyncBody -Pxena.modrinthDryRun=true --info`.
 
 ## Dependency updates
 

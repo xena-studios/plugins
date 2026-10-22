@@ -1,0 +1,47 @@
+name: Modrinth pages
+
+# Publishes <plugin>/modrinth.md as the plugin's Modrinth project page when it
+# changes on main, or every page when run by hand. Releases publish it too.
+on:
+  push:
+    branches: [main]
+    paths: ["*/modrinth.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency: modrinth-pages
+
+jobs:
+  sync:
+    runs-on: ubuntu-26.04
+    environment: release
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: plugins
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [[ $GITHUB_EVENT_NAME == push ]]; then
+            changed=$(git diff --name-only "$BEFORE" HEAD -- '*/modrinth.md')
+          else
+            changed=$(printf '%s\n' ./*/modrinth.md | sed 's#^\./##')
+          fi
+          tasks=$(for f in $changed; do printf ':%s:modrinthSyncBody ' "${f%/modrinth.md}"; done)
+          echo "tasks=$tasks" >> "$GITHUB_OUTPUT"
+      - if: steps.plugins.outputs.tasks != ''
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - if: steps.plugins.outputs.tasks != ''
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+      - if: steps.plugins.outputs.tasks != ''
+        run: ./gradlew ${{ steps.plugins.outputs.tasks }}
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}

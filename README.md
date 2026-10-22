@@ -1,8 +1,8 @@
-<p align="center"><img src="docs/public/og.png" alt="Xena Studios plugins: xUtilities, zChat and xLimbo"></p>
+![Xena Studios plugins. The xUtilities, zChat and xLimbo icons and names over a stepped horizon in their three accents, with "Small, fast plugins for Paper servers."](.github/assets/banner.png)
 
-# Xena Studios plugins
+**Small, fast plugins for Paper servers.**
 
-Small, fast plugins for Paper servers, by [Xena Studios](https://xenastudios.co). Each one does one job, costs next to nothing to run, and lets you switch off anything you don't use.
+By [Xena Studios](https://xenastudios.co). Each one does one job, costs next to nothing to run, and lets you switch off anything you don't use.
 
 | | Plugin | | |
 |---|---|---|---|

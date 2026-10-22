@@ -97,7 +97,7 @@ final class Emitter {
             return value.toString();
         }
         if (value instanceof Double d) {
-            return d.toString();
+            return Writer.number(d);
         }
         if (value instanceof Message message) {
             return quote(message.template());

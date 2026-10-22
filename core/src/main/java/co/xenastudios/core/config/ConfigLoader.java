@@ -61,6 +61,17 @@ public final class ConfigLoader {
                 throw new ConfigException(file.getFileName() + " isn't valid YAML: " + firstLine(e), e);
             }
 
+            if (spec.foreign != null && spec.foreign.test(yaml)) {
+                Path aside = file.resolveSibling(file.getFileName() + ".old");
+                for (int n = 2; Files.exists(aside); n++) {
+                    aside = file.resolveSibling(file.getFileName() + ".old-" + n);
+                }
+                Files.move(file, aside);
+                write(file, Emitter.render(spec));
+                notices.add(spec.foreignNotice + " It's kept as " + aside.getFileName() + ", and the defaults are in " + file.getFileName() + ".");
+                return new Result<>(spec.defaults, List.of(), notices);
+            }
+
             List<String> warnings = new ArrayList<>();
             int version = spec.version;
             Object rawVersion = yaml.get(Writer.VERSION_KEY);

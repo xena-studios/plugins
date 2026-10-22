@@ -54,6 +54,16 @@ Every plugin's config starts with a `theme`: a prefix, a base colour, and `<high
 
 When a default message changes, its old text goes in the spec with `formerDefault`. Carrying an old file forward gives any setting still on an old default the new one, in place, so owners who never touched their messages get the new look and owners who did keep theirs.
 
+## zChat's chat path (2026-10-22)
+
+Every chat message runs through one `AsyncChatEvent` handler, cheapest check first: mute, cooldown, filter, anti-repeat, then mentions and the format. The format is set as a viewer-unaware renderer, so Paper draws the line once and sends it to every viewer. Measured on MockBukkit, a whole message costs about 40 µs off the main thread; the filter is about 2.5 µs and drawing the format about 10 µs.
+
+- **State is safe from any thread.** Chat runs on many threads at once (Folia especially), so the mute, cooldowns, hidden chat, spies and reply targets live in concurrent maps. Mentions look names up in zChat's own concurrent index, kept on join and quit, not the server's player map, which isn't meant for that.
+- **The smart filter folds, then matches whole tokens.** Each character is lowercased, stripped of accents, and has number-for-letter swaps undone; everything else is a gap. Runs of single letters ("b a d") are joined. A word becomes a regex where each run of a letter matches that many or more ("baad" → `b+a{2,}d+`), so stretched letters are caught but "as" never matches "ass". Matching whole tokens is what keeps *class* clean. The original index of every folded character is kept, so censoring hits exactly what was typed.
+- **PlaceholderAPI values are inserted, not pasted.** `%name%` in a format is rewritten to `<papi:'name'>` at load; the tag inserts the value as legacy-coloured text after parsing. Pasting it into the template first, as zChat 2 did, let any placeholder that shows player-chosen text inject clicks and hovers.
+- **Group permissions default to false.** An operator getting the admin format because they're an operator surprised owners.
+- **A zChat 1.x config is set aside, not migrated.** It was a different plugin with no `config-version`; `ConfigSpec.foreign` recognises it, moves it to `config.yml.old` and writes the defaults.
+
 ## MockBukkit for command logic, real servers for the rest (2026-10-21)
 
 MockBukkit runs the commands' logic in milliseconds, but it can't `teleportAsync`, cancel Folia-style tasks, or tell harmful potion effects apart, and plugin classes it loads can't be `final`. Those paths are covered by `boot-checks.txt` on real servers, or by reading the code. CI also compiles against the newest Paper with removal warnings as errors (`-Pxena.newestPaper`), which is how `PotionEffectType#getCategory` (marked for removal in 26.3) was caught before release.

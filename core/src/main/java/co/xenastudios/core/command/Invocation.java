@@ -2,6 +2,7 @@ package co.xenastudios.core.command;
 
 import co.xenastudios.core.ErrorMessages;
 import co.xenastudios.core.text.Placeholders;
+import java.util.Arrays;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -39,6 +40,11 @@ public final class Invocation {
     /** The argument at {@code index}, or null if there isn't one. */
     public String arg(int index) {
         return index < args.length ? args[index] : null;
+    }
+
+    /** The arguments from {@code index} on, joined with spaces, or null if there are none. */
+    public String rest(int index) {
+        return index < args.length ? String.join(" ", Arrays.copyOfRange(args, index, args.length)) : null;
     }
 
     /** The sender as a player. Stops with the players-only error for the console. */

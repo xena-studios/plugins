@@ -1,0 +1,28 @@
+# zChat on a real server, from the console.
+run: zchat info
+expect: zChat 3.0.0 on
+
+# Ours replaces Minecraft's /msg (vanilla says "No player was found").
+run: msg Nobody hi
+expect: No player named Nobody is online.
+run: tell Nobody hi
+expect: No player named Nobody is online.
+
+run: mutechat
+expect: Chat has been muted by
+run: mutechat
+expect: Chat has been unmuted by
+run: clearchat
+expect: Chat was cleared by
+
+# Reloading re-registers commands while the server runs.
+run: zc reload
+expect: Reloaded zChat in
+run: msg Nobody hi
+expect: No player named Nobody is online.
+
+# A datapack reload rebuilds the server's command tree; ours must survive it.
+paper run: minecraft:reload
+paper expect: advancements
+paper run: msg Nobody hi
+paper expect: No player named Nobody is online.

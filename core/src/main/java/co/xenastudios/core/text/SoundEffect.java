@@ -12,7 +12,7 @@ import net.kyori.adventure.sound.Sound;
 /**
  * A sound from the config, written as its Minecraft name with an optional volume and
  * pitch: {@code "block.ender_chest.open"} or {@code "block.note_block.pling 0.5 1.5"}.
- * Blank plays nothing. Plays in the Blocks volume, so players can turn it down.
+ * Blank plays nothing. Plays in a volume players control, so they can turn it down.
  */
 public final class SoundEffect {
 
@@ -89,10 +89,17 @@ public final class SoundEffect {
         return sound == null;
     }
 
-    /** Plays the sound to a player, where they stand. */
+    /** Plays the sound to a player, where they stand, in the Blocks volume. */
     public void play(Audience audience) {
         if (sound != null) {
             audience.playSound(sound, Sound.Emitter.self());
+        }
+    }
+
+    /** Plays the sound to a player, where they stand, in the volume for {@code source}. */
+    public void play(Audience audience, Sound.Source source) {
+        if (sound != null) {
+            audience.playSound(Sound.sound(sound).source(source).build(), Sound.Emitter.self());
         }
     }
 

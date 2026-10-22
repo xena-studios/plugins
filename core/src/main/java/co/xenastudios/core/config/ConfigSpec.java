@@ -12,7 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import org.bukkit.configuration.ConfigurationSection;
 
 /**
  * A plugin's config, declared once: a record type whose components are the settings,
@@ -36,6 +38,8 @@ public final class ConfigSpec<C extends Record> {
     final Map<Class<?>, Codec<?>> codecs;
     final Map<Class<?>, Record> templates;
     final Map<String, List<String>> formerDefaults;
+    final Predicate<ConfigurationSection> foreign;
+    final String foreignNotice;
 
     private ConfigSpec(Builder<C> builder) {
         this.type = builder.type;
@@ -46,6 +50,8 @@ public final class ConfigSpec<C extends Record> {
         this.codecs = Map.copyOf(builder.codecs);
         this.templates = Map.copyOf(builder.templates);
         this.formerDefaults = Map.copyOf(builder.formerDefaults);
+        this.foreign = builder.foreign;
+        this.foreignNotice = builder.foreignNotice;
         check(type, type.getSimpleName());
         for (String path : formerDefaults.keySet()) {
             if (Writer.defaultAt(defaults, path) == null) {
@@ -120,6 +126,8 @@ public final class ConfigSpec<C extends Record> {
         private final Map<Class<?>, Codec<?>> codecs = new HashMap<>();
         private final Map<Class<?>, Record> templates = new HashMap<>();
         private final Map<String, List<String>> formerDefaults = new HashMap<>();
+        private Predicate<ConfigurationSection> foreign;
+        private String foreignNotice;
 
         private Builder(Class<C> type, C defaults) {
             this.type = Objects.requireNonNull(type);
@@ -169,6 +177,17 @@ public final class ConfigSpec<C extends Record> {
          */
         public Builder<C> formerDefault(String path, String... values) {
             formerDefaults.computeIfAbsent(path, key -> new ArrayList<>()).addAll(List.of(values));
+            return this;
+        }
+
+        /**
+         * Recognises a file that can't be carried forward, such as one from an old
+         * plugin of the same name. Such a file is set aside as {@code config.yml.old}
+         * and the defaults written in its place, with {@code notice} in the console.
+         */
+        public Builder<C> foreign(Predicate<ConfigurationSection> test, String notice) {
+            this.foreign = test;
+            this.foreignNotice = notice;
             return this;
         }
 

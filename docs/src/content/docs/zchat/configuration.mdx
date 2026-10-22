@@ -1,0 +1,31 @@
+---
+title: Configuration
+description: Every setting in zChat's config.yml.
+sidebar:
+  order: 6
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/zchat/config.yml?raw";
+
+The config is `plugins/zChat/config.yml`, written on first start. Apply changes with `/zchat reload` (or `/zc reload`): everything applies, including turning commands on or off and changing aliases and permissions. The mute, hidden chat, social spy and reply targets all last through a reload.
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours zChat's own messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages.error` | Shared errors: players only, no permission, player not found, wrong usage, and a command that hit an error. |
+| `formatting` | Formats per group, the fallback format, and the colour permission: [Chat formats](/zchat/formats/). |
+| `filter` | Words and patterns to censor or block: [Filter](/zchat/moderation/#filter). |
+| `cooldown`, `anti-repeat` | Time between messages, and repeated messages: [Moderation](/zchat/moderation/). |
+| `mentions` | Highlighting and pinging named players: [Mentions](/zchat/messages/#mentions). |
+| `clearchat`, `mutechat`, `togglechat` | Each command's switch, aliases, permission and messages: [Moderation](/zchat/moderation/). |
+| `private-messages` | `/msg`, `/reply` and `/socialspy`: [Private messages](/zchat/messages/#private-messages). |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+Every command has the same three settings: `enabled` (`false` removes the command entirely, and gives a command it replaced, such as Minecraft's `/msg`, back), `aliases`, and `permission` (blank lets anyone).
+
+A bad value falls back to its default with a warning in the console. A colour or sound with nothing after it, such as `highlight: #B48CFF` without quotes (YAML reads `#` as a comment), also warns.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/zChat/config.yml" />

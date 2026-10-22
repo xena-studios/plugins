@@ -56,7 +56,7 @@ bStats lives in the core, relocated into each plugin's package; a plugin opts in
 
 Renovate, not Dependabot: it groups every minor and patch update into one weekly PR, merges it once CI passes, and shares one config across the org's repos (`xena-studios/.github`'s `renovate-config.json`). Automerge is per repo: here and in NeoSkript, where CI covers what a merge changes and nothing goes live; not in Raptor, the website (a merge deploys it) or brand (no CI). The minimum Paper is excluded, because raising it is a breaking change for owners.
 
-New Minecraft versions aren't a dependency bump. They append to `xena.gameVersions` (Modrinth's list) and move two CI pins together, which Renovate can't express, and "released" means Paper has a stable build, not just a Maven artifact. `scripts/new-minecraft.sh` reads that from Paper's download API; `minecraft.yml` runs it daily (it costs nothing on a public repo, and a PR only opens when there's a new version) and opens the PR. A PR opened with the workflow's token doesn't trigger other workflows, so it starts `plugins.yml` itself.
+New Minecraft versions aren't a dependency bump. They append to `xena.gameVersions` (Modrinth's list) and move two CI pins together, which Renovate can't express, and "released" means Paper has a stable build, not just a Maven artifact. `scripts/new-minecraft.sh` reads that from Paper's download API; `minecraft.yml` runs it on Mondays, with Renovate's batch, and opens the PR; it can also be run by hand when a version comes out. A PR opened with the workflow's token doesn't trigger other workflows, so it starts `plugins.yml` itself.
 
 ## Messages share a theme (2026-10-21)
 

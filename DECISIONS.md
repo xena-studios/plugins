@@ -52,6 +52,12 @@ bStats lives in the core, relocated into each plugin's package; a plugin opts in
 
 "Lightweight" means what a plugin costs while it runs: no repeating tasks, listeners only while their feature is on, messages parsed once. Jar size barely affects that, since a 160 KiB jar loads as fast as a 100 KiB one. Budgets that sat within 5 KiB of each jar failed on every reasonable feature, so each is now about 50 KiB above its jar (xUtilities 200, zChat 210, xLimbo 220) and a new plugin starts at 150 (the core and bStats alone are about 75). They still catch what they're for: a library shaded in by mistake, or code copied instead of shared, which add hundreds of KiB. A plugin within 10 KiB of its budget should get it raised on purpose, with the reason beside it.
 
+## Renovate for dependencies, a workflow for Minecraft (2026-10-22)
+
+Renovate, not Dependabot: it groups updates into a few weekly PRs, merges minor and patch ones itself once CI passes, and can share one config across the org's repos as they adopt it. The minimum Paper is excluded, because raising it is a breaking change for owners.
+
+New Minecraft versions aren't a dependency bump. They append to `xena.gameVersions` (Modrinth's list) and move two CI pins together, which Renovate can't express, and "released" means Paper has a stable build, not just a Maven artifact. `scripts/new-minecraft.sh` reads that from Paper's download API; `minecraft.yml` runs it weekly and opens the PR. A PR opened with the workflow's token doesn't trigger other workflows, so it starts `plugins.yml` itself.
+
 ## Messages share a theme (2026-10-21)
 
 Every plugin's config starts with a `theme`: a prefix, a base colour, and `<highlight>`, `<success>` and `<error>` styles that messages use as MiniMessage tags. Default messages are written only in those, so an owner restyles a whole plugin in five lines, and every plugin in the family looks alike out of the box. The base colour wraps each chat message rather than being a tag, so messages don't need to open and close it. A message is parsed the first time it's sent and again only if the theme changes (on reload); messages with placeholders parse per send, as before.

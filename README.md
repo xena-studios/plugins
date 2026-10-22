@@ -19,7 +19,8 @@ sandbox/       a plugin that's never released: boots the core on real servers in
 xutilities/    xUtilities 2
 zchat/         zChat 3
 xlimbo/        xLimbo 2
-scripts/       boot-test.sh (runs jars on a real Paper or Folia server), changelog.sh
+scripts/       boot-test.sh (runs jars on a real Paper or Folia server), changelog.sh,
+               new-minecraft.sh (finds new Minecraft versions)
 docs/          docs.xenastudios.co: the docs for every plugin (Starlight)
 ```
 
@@ -37,6 +38,12 @@ scripts/boot-test.sh --project paper --version 1.21.11 \
 ```
 
 A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 150 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth. The plugin class extends `XenaPlugin`: it declares its config as records (`ConfigSpec`) and, in `setup`, the commands and modules that config wants; the core does the rest, on startup and on every reload. xUtilities is the example to copy.
+
+## Updates
+
+[Renovate](https://docs.renovatebot.com) opens PRs for the libraries, Gradle, GitHub Actions and the docs site's packages on Monday mornings ([`renovate.json`](renovate.json)). Minor and patch updates merge themselves once CI passes; majors wait for a review. The minimum Paper in `gradle/libs.versions.toml` is never touched: raising it drops servers, so it's changed by hand.
+
+New Minecraft versions come from a weekly workflow ([`minecraft.yml`](.github/workflows/minecraft.yml)), not Renovate. When Paper has a stable build of a newer version, it opens a PR that adds the version to `xena.gameVersions` and moves the boot tests and the newest-API compile onto it. Merge it if the checks pass. Modrinth lists the plugins for the new version from their next release.
 
 Each plugin also has:
 

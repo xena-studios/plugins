@@ -43,7 +43,7 @@ A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin
 
 [Renovate](https://docs.renovatebot.com) opens PRs for the libraries, Gradle, GitHub Actions and the docs site's packages on Monday mornings, every minor and patch update in one PR ([`renovate.json`](renovate.json), on top of the org's shared settings in [`xena-studios/.github`](https://github.com/xena-studios/.github/blob/main/renovate-config.json)). That PR merges itself once CI passes; majors wait for a review. The minimum Paper in `gradle/libs.versions.toml` is never touched: raising it drops servers, so it's changed by hand.
 
-New Minecraft versions come from a daily workflow ([`minecraft.yml`](.github/workflows/minecraft.yml)), not Renovate. When Paper has a stable build of a newer version, it opens a PR that adds the version to `xena.gameVersions` and moves the boot tests and the newest-API compile onto it. Merge it if the checks pass. Modrinth lists the plugins for the new version from their next release.
+New Minecraft versions come from a workflow that runs on Mondays, alongside Renovate ([`minecraft.yml`](.github/workflows/minecraft.yml)). To check sooner, run it from the Actions tab (New Minecraft → Run workflow). When Paper has a stable build of a newer version, it opens a PR that adds the version to `xena.gameVersions` and moves the boot tests and the newest-API compile onto it. Merge it if the checks pass. Modrinth lists the plugins for the new version from their next release.
 
 Each plugin also has:
 

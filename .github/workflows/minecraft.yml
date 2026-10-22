@@ -1,11 +1,12 @@
 name: New Minecraft
 
-# Daily, opens a PR when Paper has a stable build of a Minecraft version newer
-# than the newest in xena.gameVersions (see scripts/new-minecraft.sh). The PR
-# boots every plugin on it; merging lists the plugins for it on their next release.
+# On Mondays, or by hand from the Actions tab, opens a PR when Paper has a
+# stable build of a Minecraft version newer than the newest in
+# xena.gameVersions (see scripts/new-minecraft.sh). The PR boots every plugin
+# on it; merging lists the plugins for it on their next release.
 on:
   schedule:
-    - cron: "0 9 * * *"
+    - cron: "0 9 * * 1"
   workflow_dispatch:
 
 permissions:

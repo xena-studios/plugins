@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -39,7 +39,7 @@ jobs:
   # Compiles against the newest Paper API, failing on anything it marks for
   # removal, so a coming break shows up here before it reaches a server.
   newest-api:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -54,7 +54,7 @@ jobs:
   # the newest, on Paper and Folia.
   boot:
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:

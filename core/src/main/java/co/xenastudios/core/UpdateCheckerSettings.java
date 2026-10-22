@@ -16,5 +16,5 @@ public record UpdateCheckerSettings(
 
     public static final UpdateCheckerSettings DEFAULTS = new UpdateCheckerSettings(
         true,
-        Message.of("<gray><plugin> <yellow><latest></yellow> is out (you have <current>): <click:open_url:'<url>'><aqua><underlined><url></underlined></aqua></click></gray>"));
+        Message.of("<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"));
 }

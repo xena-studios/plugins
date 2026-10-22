@@ -27,13 +27,35 @@ class MigrationTest {
         }
         String original = Files.readString(file);
         // An owner's own change, which must survive.
-        Files.writeString(file, original.replace("max: 10", "max: 7").replace("https://discord.gg/example", "https://discord.gg/mine"));
+        Files.writeString(file, original.replace("max: 10", "max: 7").replace("https://discord.gg/example", "https://discord.gg/mine")
+            .replace("<green>You have been healed.</green>", "<gold>Patched up!"));
 
         ConfigLoader.Result<XConfig> result = ConfigLoader.load(XConfig.SPEC, file);
         assertEquals(List.of(), result.warnings(), "1.0.1's defaults are all valid in 2.0");
         assertEquals(7, result.config().commands().speed().max());
         assertTrue(result.config().infoCommands().get("discord").message().template().contains("discord.gg/mine"));
         assertEquals(XConfig.DEFAULTS.commands().stonecutter(), result.config().commands().stonecutter(), "new commands added");
+        // Messages the owner never touched get 2.0's look; ones they changed are theirs.
+        assertEquals(XConfig.DEFAULTS.commands().fly().messageOnSelf(), result.config().commands().fly().messageOnSelf());
+        assertEquals(XConfig.DEFAULTS.messages().error().noPermission(), result.config().messages().error().noPermission());
+        assertEquals("<gold>Patched up!", result.config().commands().heal().messageSelf().template());
+        assertEquals(XConfig.DEFAULTS.theme(), result.config().theme());
+        // Every 1.0.1 message the owner left alone is now 2.0's.
+        XConfig.Commands expected = XConfig.DEFAULTS.commands();
+        XConfig.Commands actual = result.config().commands();
+        assertEquals(expected.survival(), actual.survival());
+        assertEquals(expected.fly(), actual.fly());
+        assertEquals(expected.top(), actual.top());
+        assertEquals(expected.back(), actual.back());
+        assertEquals(expected.feed(), actual.feed());
+        assertEquals(expected.repair(), actual.repair());
+        assertEquals(expected.clear(), actual.clear());
+        assertEquals(expected.ping(), actual.ping());
+        assertEquals(expected.setrotation(), actual.setrotation());
+        assertEquals(expected.enderchest(), actual.enderchest());
+        assertEquals(XConfig.DEFAULTS.messages(), result.config().messages());
+        assertEquals(XConfig.DEFAULTS.infoCommands().get("store"), result.config().infoCommands().get("store"));
+        assertTrue(result.notices().stream().anyMatch(notice -> notice.startsWith("Gave ")), result.notices().toString());
 
         String migrated = Files.readString(file);
         assertTrue(migrated.contains("config-version: 2"), migrated);

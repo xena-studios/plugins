@@ -7,12 +7,13 @@ import co.xenastudios.core.config.ConfigException;
 import co.xenastudios.core.config.ConfigLoader;
 import co.xenastudios.core.config.ConfigSpec;
 import co.xenastudios.core.task.Tasks;
+import co.xenastudios.core.text.Message;
+import co.xenastudios.core.text.Placeholders;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -32,6 +33,17 @@ import org.bukkit.plugin.java.JavaPlugin;
 public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlugin {
 
     private static final String CONFIG_FILE = "config.yml";
+
+    // The admin command's replies. Not in the config, but in the plugin's theme.
+    private static final Message RELOADED = Message.of("<prefix><success>Reloaded</success> <plugin> in <highlight><ms> ms</highlight>.");
+    private static final Message RELOAD_WARNINGS = Message.of(
+        "<prefix><error><settings> fell back to the default.</error> The console says which.");
+    private static final Message RELOAD_FAILED = Message.of("<prefix><error><reason></error> Nothing changed.");
+    private static final Message INFO = Message.of("""
+        <prefix><highlight><plugin> <version></highlight> on <server>
+        <highlight>Commands</highlight> (<count>): <commands>
+        <highlight>Updates</highlight>: <updates>
+        <highlight>Config</highlight>: <config>""");
 
     private volatile C config;
     private volatile int configWarnings;
@@ -106,6 +118,7 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
             getLogger().severe("Running on the default settings until " + CONFIG_FILE + " is fixed and reloaded.");
             config = spec.defaults();
             configWarnings = 1;
+            Message.theme(config.theme());
         }
         apply();
 
@@ -142,16 +155,15 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
             accept(ConfigLoader.load(spec, configFile()));
         } catch (ConfigException e) {
             getLogger().severe(e.getMessage());
-            return Component.text(e.getMessage() + " Nothing changed.", NamedTextColor.RED);
+            return RELOAD_FAILED.chat(Placeholders.text("reason", e.getMessage()));
         }
         apply();
         long millis = (System.nanoTime() - start) / 1_000_000;
-        Component done = Component.text("Reloaded " + getName() + " in " + millis + " ms.", NamedTextColor.GREEN);
+        Component done = RELOADED.chat(Placeholders.text("plugin", getName()), Placeholders.text("ms", millis));
         int warnings = configWarnings;
         if (warnings > 0) {
-            done = done.appendNewline().append(Component.text(
-                warnings + (warnings == 1 ? " setting" : " settings") + " fell back to the default. The console says which.",
-                NamedTextColor.YELLOW));
+            done = done.appendNewline().append(RELOAD_WARNINGS.chat(
+                Placeholders.text("settings", warnings + (warnings == 1 ? " setting" : " settings"))));
         }
         return done;
     }
@@ -165,6 +177,7 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
         result.warnings().forEach(warning -> getLogger().warning(CONFIG_FILE + ": " + warning));
         configWarnings = result.warnings().size();
         config = result.config();
+        Message.theme(config.theme());
     }
 
     private void apply() {
@@ -211,17 +224,15 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
         String update = !config.updateChecker().enabled() ? "off"
             : latest == null ? "up to date" : latest + " is out";
         List<String> names = commands.names();
-        return Component.text()
-            .append(Component.text(getName() + " " + getPluginMeta().getVersion(), NamedTextColor.GREEN))
-            .append(Component.text(" on " + Bukkit.getName() + " " + Bukkit.getMinecraftVersion(), NamedTextColor.GRAY))
-            .appendNewline()
-            .append(Component.text(names.size() + " commands on: /" + String.join(" /", names), NamedTextColor.GRAY))
-            .appendNewline()
-            .append(Component.text("Updates: " + update, NamedTextColor.GRAY))
-            .appendNewline()
-            .append(configWarnings == 0
-                ? Component.text("Config: no problems", NamedTextColor.GRAY)
-                : Component.text("Config: " + configWarnings + " setting(s) fell back to the default. Reload to see which.", NamedTextColor.YELLOW))
-            .build();
+        int warnings = configWarnings;
+        return INFO.chat(
+            Placeholders.text("plugin", getName()),
+            Placeholders.text("version", getPluginMeta().getVersion()),
+            Placeholders.text("server", Bukkit.getName() + " " + Bukkit.getMinecraftVersion()),
+            Placeholders.text("count", names.size()),
+            Placeholders.text("commands", "/" + String.join(" /", names)),
+            Placeholders.text("updates", update),
+            Placeholders.text("config", warnings == 0 ? "no problems"
+                : warnings + (warnings == 1 ? " setting" : " settings") + " fell back to the default. Reload to see which."));
     }
 }

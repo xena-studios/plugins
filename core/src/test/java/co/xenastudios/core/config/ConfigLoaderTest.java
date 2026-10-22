@@ -147,7 +147,7 @@ class ConfigLoaderTest {
         assertTrue(text.contains("# my own comment\nenabled: false"), text);
         assertTrue(text.contains("# Speed settings.\nspeed:"), text);
         assertTrue(text.contains("config-version: 1"), text);
-        assertTrue(result.notices().contains("Added speed with its default."), result.notices().toString());
+        assertTrue(result.notices().getFirst().startsWith("Added 5 new settings with their defaults: ") && result.notices().getFirst().contains("speed"), result.notices().toString());
     }
 
     @Test

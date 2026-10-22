@@ -1,6 +1,8 @@
 package co.xenastudios.core.config;
 
 import co.xenastudios.core.text.Message;
+import co.xenastudios.core.text.SoundEffect;
+import co.xenastudios.core.text.TextStyle;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
@@ -10,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.function.UnaryOperator;
 
 /**
  * A plugin's config, declared once: a record type whose components are the settings,
@@ -17,7 +20,7 @@ import java.util.TreeMap;
  * file, reads and checks the live one, and carries old files forward.
  *
  * <p>Settings can be {@code boolean}, {@code int}, {@code long}, {@code double},
- * {@code String}, {@link Message}, enums, nested records, {@code List}s of those
+ * {@code String}, {@link Message}, {@link TextStyle}, {@link SoundEffect}, enums, nested records, {@code List}s of those
  * scalars, {@code Map<String, R>} of records with a {@linkplain Builder#template
  * template}, and any type with a {@linkplain Builder#codec codec}.
  *
@@ -32,6 +35,7 @@ public final class ConfigSpec<C extends Record> {
     final TreeMap<Integer, Migration> migrations;
     final Map<Class<?>, Codec<?>> codecs;
     final Map<Class<?>, Record> templates;
+    final Map<String, List<String>> formerDefaults;
 
     private ConfigSpec(Builder<C> builder) {
         this.type = builder.type;
@@ -41,7 +45,13 @@ public final class ConfigSpec<C extends Record> {
         this.migrations = new TreeMap<>(builder.migrations);
         this.codecs = Map.copyOf(builder.codecs);
         this.templates = Map.copyOf(builder.templates);
+        this.formerDefaults = Map.copyOf(builder.formerDefaults);
         check(type, type.getSimpleName());
+        for (String path : formerDefaults.keySet()) {
+            if (Writer.defaultAt(defaults, path) == null) {
+                throw new IllegalStateException("former default " + path + " isn't a setting");
+            }
+        }
         for (int from = 1; from < version; from++) {
             if (!migrations.containsKey(from)) {
                 throw new IllegalStateException("no migration from config version " + from);
@@ -109,10 +119,13 @@ public final class ConfigSpec<C extends Record> {
         private final Map<Integer, Migration> migrations = new HashMap<>();
         private final Map<Class<?>, Codec<?>> codecs = new HashMap<>();
         private final Map<Class<?>, Record> templates = new HashMap<>();
+        private final Map<String, List<String>> formerDefaults = new HashMap<>();
 
         private Builder(Class<C> type, C defaults) {
             this.type = Objects.requireNonNull(type);
             this.defaults = Objects.requireNonNull(defaults);
+            codecs.put(TextStyle.class, TextStyle.CODEC);
+            codecs.put(SoundEffect.class, SoundEffect.CODEC);
         }
 
         /** Lines written at the top of the default config. */
@@ -145,6 +158,23 @@ public final class ConfigSpec<C extends Record> {
         public <R extends Record> Builder<C> template(Class<R> type, R template) {
             templates.put(type, template);
             return this;
+        }
+
+        /**
+         * What a setting's default used to be. When an old file is carried forward, a
+         * setting still on one of these was never changed by its owner, so it gets the
+         * current default instead: owners who never touched the messages get the new ones.
+         * It happens only while carrying a file forward, so a changed default needs a
+         * new config version to reach existing files.
+         */
+        public Builder<C> formerDefault(String path, String... values) {
+            formerDefaults.computeIfAbsent(path, key -> new ArrayList<>()).addAll(List.of(values));
+            return this;
+        }
+
+        /** Passes the builder through a function, to keep long declarations readable. */
+        public Builder<C> apply(UnaryOperator<Builder<C>> step) {
+            return step.apply(this);
         }
 
         public ConfigSpec<C> build() {

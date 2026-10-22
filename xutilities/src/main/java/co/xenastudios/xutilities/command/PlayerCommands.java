@@ -12,6 +12,7 @@ import co.xenastudios.xutilities.config.Settings;
 import co.xenastudios.xutilities.config.XConfig;
 import java.util.ArrayList;
 import java.util.List;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -72,15 +73,23 @@ final class PlayerCommands {
                 .executes(invocation -> {
                     double value = parseSpeed(invocation, speed);
                     Player target = invocation.target(1, speed.permissionOthers());
-                    Specs.change(tasks, invocation, target, player -> {
+                    tasks.entity(target, () -> {
                         // 1 to 10 maps to Minecraft's 0.1 to 1.0.
                         float minecraft = (float) (value / 10);
-                        if (player.isFlying()) {
-                            player.setFlySpeed(minecraft);
+                        boolean flying = target.isFlying();
+                        if (flying) {
+                            target.setFlySpeed(minecraft);
                         } else {
-                            player.setWalkSpeed(minecraft);
+                            target.setWalkSpeed(minecraft);
                         }
-                    }, speed.messageSelf(), speed.messageOthers(), Placeholders.text("speed", Specs.number(value)));
+                        TagResolver[] placeholders = {
+                            Placeholders.text("speed", Specs.number(value)),
+                            Placeholders.text("type", flying ? speed.typeFlying() : speed.typeWalking())};
+                        speed.messageSelf().send(target, placeholders);
+                        if (invocation.isOther(target)) {
+                            speed.messageOthers().send(invocation.sender(), Specs.withPlayer(target, placeholders));
+                        }
+                    });
                 }));
         }
 
@@ -210,6 +219,7 @@ final class PlayerCommands {
                             return;
                         }
                         viewer.openInventory(owner.getEnderChest());
+                        enderChest.sound().play(viewer);
                         if (invocation.isOther(owner)) {
                             enderChest.messageOthers().send(viewer, Specs.withPlayer(owner));
                         }

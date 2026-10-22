@@ -81,6 +81,11 @@ public final class ConfigLoader {
                     step.getValue().apply(yaml);
                 }
                 yaml.set(Writer.VERSION_KEY, spec.version);
+                int refreshed = Writer.refreshDefaults(spec, yaml);
+                if (refreshed > 0) {
+                    notices.add("Gave %d setting%s you hadn't changed the new default%s."
+                        .formatted(refreshed, refreshed == 1 ? "" : "s", refreshed == 1 ? "" : "s"));
+                }
                 Writer.recomment(spec, yaml);
                 notices.add("Carried %s forward from config version %d to %d. The old file is %s."
                     .formatted(file.getFileName(), version, spec.version, backup.getFileName()));
@@ -104,11 +109,17 @@ public final class ConfigLoader {
                         blank.parent().set(blank.key(), blank.value() instanceof List<?> ? new ArrayList<>() : "");
                     }
                 }
+                List<String> added = new ArrayList<>();
                 for (Reader.Missing missing : reader.missing) {
                     Writer.add(spec, missing.parent(), missing.key(), missing.component(), missing.value());
                     String path = missing.parent().getCurrentPath();
-                    notices.add("Added " + (path == null || path.isEmpty() ? "" : path + ".") + missing.key() + " with its default.");
+                    added.add((path == null || path.isEmpty() ? "" : path + ".") + missing.key());
                     changed = true;
+                }
+                if (added.size() == 1) {
+                    notices.add("Added " + added.getFirst() + " with its default.");
+                } else if (!added.isEmpty()) {
+                    notices.add("Added " + added.size() + " new settings with their defaults: " + String.join(", ", added) + ".");
                 }
                 if (changed) {
                     // Bukkit indents the blank lines it writes; trim them.

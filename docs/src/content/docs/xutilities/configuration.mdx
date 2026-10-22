@@ -8,7 +8,22 @@ sidebar:
 import { Code } from "@astrojs/starlight/components";
 import config from "../../../generated/xutilities/config.yml?raw";
 
-The config is `plugins/xUtilities/config.yml`, written on first start. Apply changes with `/xutilities reload`: everything applies, including turning commands on or off and changing aliases and permissions.
+The config is `plugins/xUtilities/config.yml`, written on first start. Apply changes with `/xutilities reload` (or `/xu reload`): everything applies, including turning commands on or off and changing aliases and permissions.
+
+## Make it look like your server
+
+The `theme` section at the top sets the look of every message: a prefix, the text colour, and three styles the messages use as tags. Change a colour there and every message that uses it follows.
+
+```yaml
+theme:
+  prefix: "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> "
+  base: "<gray>"            # text with no tag of its own
+  highlight: "<#B48CFF>"    # <highlight>: names and values
+  success: "<#5EE08A>"      # <success>: turned on, done
+  error: "<#FF6B6B>"        # <error>: refused, turned off
+```
+
+The default messages start with `<prefix>` and use these tags, as in `"<prefix>Flight <success><state></success>."`. Your own messages can use them too, or ignore them and set colours directly. See [Formatting text](/start/formatting/#the-theme).
 
 ## Every command has the same four settings
 
@@ -33,12 +48,15 @@ Beyond messages, a few commands have their own settings:
 | Setting | Default | What it does |
 | --- | --- | --- |
 | `speed.min`, `speed.max` | `1`, `10` | The range `/speed` accepts, on a 1 to 10 scale (Minecraft's 0.1 to 1.0). |
+| `speed.type-flying`, `speed.type-walking` | `flying`, `walking` | The words `/speed` fills in for `<type>`, such as "Your **flying** speed is now 5". |
 | `heal.restore-hunger` | `true` | `/heal` also restores hunger. |
 | `heal.extinguish-fire` | `true` | `/heal` also puts out fire. |
 | `heal.clear-negative-effects` | `true` | `/heal` also removes harmful potion effects. |
 | `clear.include-armor` | `true` | `/clear` also empties armour and off-hand; `false` clears only the main 36 slots. |
 | `trash.title` | `Disposal` | The `/trash` menu's title. |
 | `<workstation>.message` | blank | Sent when a workstation menu opens. Blank sends nothing. |
+| `<workstation>.sound` | blank | Played when a workstation menu opens: a Minecraft sound name, optionally with a volume (0 to 10) and pitch (0.5 to 2), such as `"block.anvil.use 0.5 1.2"`. Blank plays nothing. |
+| `enderchest.sound`, `trash.sound` | the block's own | Played as the menu opens: the Ender Chest's and a barrel's opening sounds, at half volume. |
 
 ## Messages and placeholders
 
@@ -50,9 +68,13 @@ Each command's messages are under its own key (`message-self`, `message-others` 
 | `<mode>` | gamemode messages |
 | `<state>` | `/fly` messages: the word from `messages.state` (`enabled` / `disabled`) |
 | `<speed>`, `<min>`, `<max>` | `/speed` messages |
+| `<type>` | `/speed` messages: `speed.type-flying` or `speed.type-walking` (`flying` / `walking`) |
 | `<yaw>`, `<pitch>` | `/setrotation` messages |
 | `<ping>` | `/ping` messages, in milliseconds |
 | `<usage>` | `messages.error.usage`: how to type the command |
+| `<player>` | `messages.error.player-not-found`: the name typed |
+
+Every message can also use the [theme](#make-it-look-like-your-server)'s `<prefix>`, `<highlight>`, `<success>` and `<error>`.
 
 Shared errors are under `messages.error`: players only, no permission, player not found, wrong usage, and the message shown if a command hits an error (the console gets the details).
 

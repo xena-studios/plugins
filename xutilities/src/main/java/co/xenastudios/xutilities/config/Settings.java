@@ -3,6 +3,7 @@ package co.xenastudios.xutilities.config;
 import co.xenastudios.core.config.Comment;
 import co.xenastudios.core.config.Range;
 import co.xenastudios.core.text.Message;
+import co.xenastudios.core.text.SoundEffect;
 import java.util.List;
 
 /** The record for each kind of command's settings. */
@@ -27,6 +28,8 @@ public final class Settings {
         boolean enabled, List<String> aliases, String permission, String permissionOthers,
         @Range(min = 1, max = 10) int min,
         @Range(min = 1, max = 10) int max,
+        @Comment("The words filled in for <type>: which speed changed.") String typeFlying,
+        String typeWalking,
         Message messageSelf, Message messageOthers, Message messageInvalid) implements OthersToggle {
 
         public Speed {
@@ -57,12 +60,16 @@ public final class Settings {
 
     public record EnderChest(
         boolean enabled, List<String> aliases, String permission, String permissionOthers,
-        Message messageOthers, @Comment("Folia only: the other player is too far away to share their chest safely.") Message messageTooFar)
+        @Comment("Played as the chest opens.") SoundEffect sound,
+        Message messageOthers,
+        @Comment("Folia only: the other player is too far away to share their chest safely.") Message messageTooFar)
         implements OthersToggle {}
 
-    public record Workstation(boolean enabled, List<String> aliases, String permission, Message message) implements Toggle {}
+    public record Workstation(boolean enabled, List<String> aliases, String permission, Message message, SoundEffect sound)
+        implements Toggle {}
 
-    public record Trash(boolean enabled, List<String> aliases, String permission, Message title, Message message) implements Toggle {}
+    public record Trash(boolean enabled, List<String> aliases, String permission, Message title, Message message, SoundEffect sound)
+        implements Toggle {}
 
     /**
      * A command defined in the config that sends a message.

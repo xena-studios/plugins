@@ -14,6 +14,9 @@ A rewrite. Replace the jar and restart: your 1.x config is carried forward, and 
 
 ### New
 
+- A `theme` at the top of the config: a prefix and four colours every message uses, so five lines restyle the whole plugin. The messages have a new look to match. If you never changed a 1.x message, it gets the new look; any you changed are kept. Text with no colour of its own is now `theme.base` (gray) rather than white: set `base: "<white>"` to keep the old look.
+- Workstation menus, `/enderchest` and `/trash` can play a sound as they open. `/enderchest` and `/trash` play their blocks' own sounds by default.
+- `/xu`, short for `/xutilities`.
 - `/stonecutter` and `/cartography` (alias `/cartographytable`) workstation menus.
 - An update checker: the console, and players with `xutilities.admin` when they join, hear when a new version is on Modrinth. It sends only the plugin version, platform and Minecraft version, and `update-checker.enabled: false` turns it off. See [Privacy](https://docs.xenastudios.co/start/privacy/).
 - [bStats](https://bstats.org/plugin/bukkit/XenaUtilities/34866) anonymous usage statistics. Turn them off for every plugin in `plugins/bStats/config.yml`. See [Privacy](https://docs.xenastudios.co/start/privacy/).

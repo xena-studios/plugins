@@ -41,6 +41,7 @@ final class MenuCommands {
                         // checkReachable(false): the menu stays open with no block nearby.
                         station.menu().builder().checkReachable(false).build(player).open();
                         station.settings().message().send(player);
+                        station.settings().sound().play(player);
                     });
                 }));
         });
@@ -55,6 +56,7 @@ final class MenuCommands {
                         // Nothing holds this inventory, so whatever's in it is gone once it closes.
                         player.openInventory(Bukkit.createInventory(null, TRASH_SLOTS, trash.title().render()));
                         trash.message().send(player);
+                        trash.sound().play(player);
                     });
                 }));
         }

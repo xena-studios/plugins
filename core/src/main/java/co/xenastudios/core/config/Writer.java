@@ -54,6 +54,48 @@ final class Writer {
         }
     }
 
+    /**
+     * Gives each setting still on a {@linkplain ConfigSpec.Builder#formerDefault former
+     * default} the current one, in place. Returns how many it changed.
+     */
+    static int refreshDefaults(ConfigSpec<?> spec, ConfigurationSection root) {
+        int changed = 0;
+        for (Map.Entry<String, List<String>> former : spec.formerDefaults.entrySet()) {
+            String path = former.getKey();
+            if (root.get(path) instanceof String value && former.getValue().contains(value)) {
+                Object current = defaultAt(spec.defaults, path);
+                if (current != null && !value.equals(scalar(spec, current))) {
+                    root.set(path, scalar(spec, current));
+                    changed++;
+                }
+            }
+        }
+        return changed;
+    }
+
+    static Object defaultAt(Object node, String path) {
+        for (String key : path.split("\\.")) {
+            if (node instanceof Record record) {
+                Object next = null;
+                for (RecordComponent component : record.getClass().getRecordComponents()) {
+                    if (Names.key(component.getName()).equals(key)) {
+                        try {
+                            next = component.getAccessor().invoke(record);
+                        } catch (ReflectiveOperationException e) {
+                            throw new IllegalStateException(e);
+                        }
+                    }
+                }
+                node = next;
+            } else if (node instanceof Map<?, ?> map) {
+                node = map.get(key);
+            } else {
+                return null;
+            }
+        }
+        return node;
+    }
+
     /** Adds one setting, with its comment, to an existing file. */
     static void add(ConfigSpec<?> spec, ConfigurationSection parent, String key, RecordComponent component, Object value) {
         write(spec, parent, key, component, component.getGenericType(), value, depth(parent));

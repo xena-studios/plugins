@@ -58,13 +58,19 @@ final class Reader {
             String key = Names.key(component.getName());
             Object defaultValue = get(component, fallback);
             if (!section.contains(key)) {
-                Object blank = isBlank(join(path, key)) ? blank(component.getType()) : null;
+                boolean empty = isBlank(join(path, key));
+                Object blank = empty ? blank(component.getType()) : null;
                 if (blank != null) {
                     values[i] = blank;
                     blanks.add(new Blank(section, key, blank));
                     continue;
                 }
                 values[i] = defaultValue;
+                if (empty) {
+                    // Often a colour like "highlight: #B48CFF", which YAML reads as a comment.
+                    warn(join(path, key), null, "is empty; write \"\" for none, and quote values that start with #");
+                    continue;
+                }
                 if (trackMissing) {
                     missing.add(new Missing(section, key, component, defaultValue));
                 }

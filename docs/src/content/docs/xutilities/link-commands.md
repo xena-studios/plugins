@@ -15,7 +15,7 @@ info-commands:
     enabled: true
     aliases: []
     permission: "xutilities.command.discord"
-    message: "<blue>Join our Discord: <click:open_url:'https://discord.gg/yourserver'><hover:show_text:'<gray>Click to open'><underlined>discord.gg/yourserver</underlined></hover></click></blue>"
+    message: "<prefix>Join our Discord: <click:open_url:'https://discord.gg/yourserver'><hover:show_text:'<gray>Click to open'><highlight><underlined>discord.gg/yourserver"
 ```
 
 ## Add one
@@ -27,10 +27,10 @@ info-commands:
   # ...discord, store, website...
   vote:
     aliases: ["votes"]
-    message: "<green>Vote for us: <click:open_url:'https://example.com/vote'><underlined>example.com/vote</underlined></click></green>"
+    message: "<prefix>Vote for us: <click:open_url:'https://example.com/vote'><highlight><underlined>example.com/vote"
 ```
 
-Then run `/xutilities reload`. Adding, removing or renaming a link command, and changing anything about it, applies on reload.
+Then run `/xu reload`. Adding, removing or renaming a link command, and changing anything about it, applies on reload.
 
 ## More than one line
 
@@ -39,9 +39,9 @@ Use `<newline>` in the message, or a YAML block, where each line of the block is
 ```yaml
   rules:
     message: |-
-      <gold>Server rules</gold>
-      <gray>1. Be kind.</gray>
-      <gray>2. No griefing.</gray>
+      <highlight>Server rules</highlight>
+      1. Be kind.
+      2. No griefing.
 ```
 
 ## Settings
@@ -51,6 +51,6 @@ Use `<newline>` in the message, or a YAML block, where each line of the block is
 | `enabled` | `true` | `false` removes the command. |
 | `aliases` | none | Other names for it, such as `["votes"]`. |
 | `permission` | `xutilities.command.<name>` | Who can use it. The default is everyone's. Blank (`""`) means no restriction. |
-| `message` | | What the player sees, in [MiniMessage](/start/formatting/). |
+| `message` | | What the player sees, in [MiniMessage](/start/formatting/). It can use the [theme](/xutilities/configuration/#make-it-look-like-your-server)'s tags, like `<prefix>` and `<highlight>`. |
 
 A link command whose name or alias clashes with one of xUtilities' own commands is skipped, with a warning in the console.

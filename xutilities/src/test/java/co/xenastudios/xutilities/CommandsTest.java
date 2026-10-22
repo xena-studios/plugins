@@ -55,12 +55,12 @@ class CommandsTest {
     void flyTogglesAndTellsBothPlayers() {
         admin.performCommand("fly");
         assertTrue(admin.getAllowFlight());
-        assertEquals("Flight enabled.", next(admin));
+        assertEquals("» Flight enabled.", next(admin));
 
         admin.performCommand("fly Steve");
         assertTrue(player.getAllowFlight());
-        assertEquals("Flight enabled.", next(player));
-        assertEquals("Flight enabled for Steve.", next(admin));
+        assertEquals("» Flight enabled.", next(player));
+        assertEquals("» Flight enabled for Steve.", next(admin));
 
         admin.performCommand("flight");
         assertFalse(admin.getAllowFlight());
@@ -70,14 +70,14 @@ class CommandsTest {
     void commandsDefaultToOpsAndOthersNeedTheirOwnPermission() {
         player.performCommand("fly");
         assertFalse(player.getAllowFlight());
-        assertEquals("You don't have permission to do that.", next(player));
+        assertEquals("» You don't have permission to do that.", next(player));
 
         player.addAttachment(plugin, "xutilities.command.heal", true);
         player.performCommand("heal Admin");
-        assertEquals("You don't have permission to do that.", next(player));
+        assertEquals("» You don't have permission to do that.", next(player));
         // Naming yourself isn't acting on someone else.
         player.performCommand("heal steve");
-        assertEquals("You have been healed.", next(player));
+        assertEquals("» You've been healed.", next(player));
     }
 
     @Test
@@ -86,25 +86,31 @@ class CommandsTest {
         assertEquals(PermissionDefault.TRUE, Bukkit.getPluginManager().getPermission("xutilities.command.discord").getDefault());
         assertEquals(PermissionDefault.OP, Bukkit.getPluginManager().getPermission("xutilities.command.fly.others").getDefault());
         player.performCommand("discord");
-        assertEquals("Join our Discord: discord.gg/example", next(player));
+        assertEquals("» Join our Discord: discord.gg/example", next(player));
     }
 
     @Test
     void unknownPlayersAndBadArguments() {
         admin.performCommand("heal Nobody");
-        assertEquals("That player could not be found.", next(admin));
+        assertEquals("» No player named Nobody is online.", next(admin));
         admin.performCommand("speed 11");
-        assertEquals("Speed must be between 1 and 10.", next(admin));
+        assertEquals("» Speed must be from 1 to 10.", next(admin));
         admin.performCommand("setrotation up");
-        assertEquals("Usage: /setrotation <yaw> <pitch> [player]", next(admin));
+        assertEquals("» Usage: /setrotation <yaw> <pitch> [player]", next(admin));
         server.getConsoleSender().getServer().dispatchCommand(server.getConsoleSender(), "anvil");
+    }
+
+    @Test
+    void adminCommandAnswersToXu() {
+        admin.performCommand("xu info");
+        assertTrue(next(admin).startsWith("» xUtilities 2.0.0 on "));
     }
 
     @Test
     void speedSetsWalkSpeedOnTheOneToTenScale() {
         admin.performCommand("speed 5");
         assertEquals(0.5f, admin.getWalkSpeed(), 0.0001);
-        assertEquals("Speed set to 5.", next(admin));
+        assertEquals("» Your walking speed is now 5.", next(admin));
     }
 
     @Test
@@ -129,7 +135,7 @@ class CommandsTest {
         assertEquals(20, admin.getHealth());
         assertEquals(20, admin.getFoodLevel());
         assertEquals(0, admin.getFireTicks());
-        assertEquals("You have been healed.", next(admin));
+        assertEquals("» You've been healed.", next(admin));
     }
 
     @Test
@@ -138,10 +144,10 @@ class CommandsTest {
         sword.editMeta(Damageable.class, meta -> meta.setDamage(500));
         admin.getInventory().setItemInMainHand(sword);
         admin.performCommand("repair");
-        assertEquals("Repaired your held item(s).", next(admin));
+        assertEquals("» Your gear has been repaired.", next(admin));
         assertEquals(0, ((Damageable) admin.getInventory().getItemInMainHand().getItemMeta()).getDamage());
         admin.performCommand("fix");
-        assertEquals("Nothing to repair.", next(admin));
+        assertEquals("» Nothing needs repairing.", next(admin));
 
         admin.getInventory().setHelmet(new ItemStack(Material.IRON_HELMET));
         admin.getInventory().addItem(new ItemStack(Material.DIRT, 5));
@@ -183,16 +189,16 @@ class CommandsTest {
     void backReturnsToTheLastTeleport() {
         var start = admin.getLocation().clone();
         admin.performCommand("back");
-        assertEquals("You have no previous location to return to.", next(admin));
+        assertEquals("» You have nowhere to go back to.", next(admin));
         admin.teleport(start.clone().add(100, 0, 0));
         assertEquals(start.getX() + 100, admin.getLocation().getX(), 0.001);
         // MockBukkit can't teleportAsync, so this checks /back found the location and
         // tried; the teleport itself is checked on a real server.
         admin.performCommand("back");
-        assertNotEquals("You have no previous location to return to.", next(admin));
+        assertNotEquals("» You have nowhere to go back to.", next(admin));
 
         server.getPluginManager().callEvent(new PlayerQuitEvent(admin, Component.empty(), PlayerQuitEvent.QuitReason.DISCONNECTED));
         admin.performCommand("back");
-        assertEquals("You have no previous location to return to.", next(admin), "forgotten on quit");
+        assertEquals("» You have nowhere to go back to.", next(admin), "forgotten on quit");
     }
 }

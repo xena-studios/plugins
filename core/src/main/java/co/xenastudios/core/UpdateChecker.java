@@ -139,7 +139,7 @@ final class UpdateChecker {
     }
 
     private Component notice(String version) {
-        return plugin.config().updateChecker().message().render(
+        return plugin.config().updateChecker().message().chat(
             Placeholders.text("plugin", plugin.getName()),
             Placeholders.text("current", current),
             Placeholders.text("latest", version),

@@ -71,6 +71,8 @@ These open the real Minecraft menu without the block placed. They act only on yo
 
 `/trash` opens an empty inventory; anything left in it is deleted when it closes.
 
+Each menu can send a message and play a sound as it opens; both are off by default, since the menu itself shows it worked. `/enderchest` plays the Ender Chest's opening sound and `/trash` a barrel's, as the real blocks would. Set them in the [config](/xutilities/configuration/).
+
 ## Link commands
 
 `/discord`, `/store`, `/website`, and any you add. Each uses `xutilities.command.<name>`, which defaults to **everyone**. See [Link commands](/xutilities/link-commands/).
@@ -81,6 +83,8 @@ These open the real Minecraft menu without the block placed. They act only on yo
 | --- | --- | --- |
 | `/xutilities reload` | `xutilities.admin` | Re-reads the config and applies all of it, commands included. |
 | `/xutilities info` | `xutilities.admin` | Shows the version, which commands are on, whether an update is out, and any config problems. |
+
+`/xu` is short for `/xutilities`: `/xu reload` works the same.
 
 ## If another plugin has the same command
 

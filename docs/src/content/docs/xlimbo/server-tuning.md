@@ -22,6 +22,16 @@ xLimbo sets view and simulation distance on its own world, but the server-wide v
 
 Lower the `entity-tracking-range` values and `merge-radius`, and keep `view-distance` in step with `server.properties`.
 
-## Paper and Pufferfish
+## Paper
 
-In `config/paper-world-defaults.yml` (and `pufferfish.yml` on Pufferfish), tighten entity activation ranges, stop ticking entities far from players, and keep `max-auto-save-chunks-per-tick` low. xLimbo runs with autosave off anyway.
+In `config/paper-global.yml`, raise `chunk-loading-basic.player-max-chunk-send-rate` only if arrivals feel slow; void chunks are tiny, so sending them is cheap.
+
+In `config/paper-world-defaults.yml`, tighten entity activation ranges and keep `max-auto-save-chunks-per-tick` low. xLimbo keeps its world off disk anyway.
+
+## What xLimbo already does
+
+You don't need to tune these yourself:
+
+- The limbo world has its own view and simulation distance (`world.view-distance`, `world.simulation-distance`).
+- Arrivals land on land kept loaded around spawn, placed before they're in the world, so a mass arrival never generates chunks or teleports anyone.
+- There's no weather, nothing saves to disk, no mobs can spawn in the void biome, and stray entities are swept up every five minutes.

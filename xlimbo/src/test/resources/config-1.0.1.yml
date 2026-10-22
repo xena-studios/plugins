@@ -1,23 +1,3 @@
----
-title: Configuration
-description: Every setting in xLimbo's config.yml.
-sidebar:
-  order: 7
----
-
-The config is `plugins/xLimbo/config.yml`, written on first start. Apply changes with `/xlimbo reload`. These need a restart: `world.name`, `world.floor-y`, `world.floor-block` and `join-command.aliases`.
-
-| Section | What it covers |
-| --- | --- |
-| `world` | The void world, its floor, border and distances: [The world](/xlimbo/world/#the-world). |
-| `player`, `join`, `quit`, `death`, `action-bar` | What arriving players get and see: [Arriving players](/xlimbo/world/#arriving-players). |
-| `main-server`, `auto-join` | Where `/join` sends players, and sending them automatically: [Network setup](/xlimbo/network-setup/#point-join-at-your-main-server). |
-| `join-command` | `/join`'s aliases, permission, cooldown and messages: [Commands](/xlimbo/commands/). |
-| `protections` | What's blocked: [Protections](/xlimbo/protections/). |
-
-## The full default config
-
-```yaml title="plugins/xLimbo/config.yml"
 # ============================================================================
 #  xLimbo — fallback void-sandbox plugin
 # ----------------------------------------------------------------------------
@@ -170,4 +150,3 @@ protections:
     enabled: false
     # Max block placements per player per second. 0 = unlimited.
     max-places-per-second: 30
-```

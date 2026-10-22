@@ -33,7 +33,7 @@ final class Writer {
 
     private static void recomment(ConfigurationSection section, Class<?> type, int depth) {
         for (RecordComponent component : type.getRecordComponents()) {
-            String key = Names.key(component.getName());
+            String key = Names.key(component);
             if (!section.contains(key)) {
                 continue;
             }
@@ -78,7 +78,7 @@ final class Writer {
             if (node instanceof Record record) {
                 Object next = null;
                 for (RecordComponent component : record.getClass().getRecordComponents()) {
-                    if (Names.key(component.getName()).equals(key)) {
+                    if (Names.key(component).equals(key)) {
                         try {
                             next = component.getAccessor().invoke(record);
                         } catch (ReflectiveOperationException e) {
@@ -109,7 +109,7 @@ final class Writer {
             } catch (ReflectiveOperationException e) {
                 throw new IllegalStateException(e);
             }
-            write(spec, target, Names.key(component.getName()), component, component.getGenericType(), componentValue, depth);
+            write(spec, target, Names.key(component), component, component.getGenericType(), componentValue, depth);
         }
     }
 
@@ -152,7 +152,7 @@ final class Writer {
             } catch (ReflectiveOperationException e) {
                 throw new IllegalStateException(e);
             }
-            String key = Names.key(component.getName());
+            String key = Names.key(component);
             if (componentValue instanceof Record record) {
                 writeUncommented(spec, target.createSection(key), record);
             } else if (componentValue instanceof List<?> list) {

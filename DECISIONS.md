@@ -64,6 +64,19 @@ Every chat message runs through one `AsyncChatEvent` handler, cheapest check fir
 - **Group permissions default to false.** An operator getting the admin format because they're an operator surprised owners.
 - **A zChat 1.x config is set aside, not migrated.** It was a different plugin with no `config-version`; `ConfigSpec.foreign` recognises it, moves it to `config.yml.old` and writes the defaults.
 
+## xLimbo is Paper only (2026-10-22)
+
+Folia can't create worlds at runtime, and creating its void world is xLimbo's core job. A limbo also has nothing for Folia to parallelise: no mobs, no redstone, players standing still. Its real load is a mass arrival (logins and chunk sending), which Folia barely helps. So `folia = false`, and xLimbo is free to use Paper-only API.
+
+- **Players are placed before they're in the world.** `AsyncPlayerSpawnLocationEvent` sets the spawn while the player is still configuring, so there's no teleport after joining and each arrival loads one spot once.
+- **The spawn area is kept loaded** with plugin chunk tickets (at most 17×17 chunks), and the default spread is 64 blocks, not 1.x's 4000: a mass arrival is a few dozen ready chunks, not a fresh chunk per player.
+- **The return queue is main-thread state** fed by an async status ping (a raw Server List Ping, about 60 lines, no library). A server only answers status once it's ticking, so an answer means it's ready for players. Players are tried at most three times in five minutes, so a ban on the main server can't bounce someone forever.
+- **No game rules.** Minecraft 1.21.11 renamed them and Paper marked the old constants for removal; every rule xLimbo wanted already had a better route (event cancels, the void biome's empty spawn list, a long clear-weather spell).
+- **xLimbo only deletes what it made.** A world folder xLimbo creates gets an `xlimbo.dat` marker with the floor it was made with; only marked folders are ever deleted, rebuilt or unloaded. A world it didn't make (the main world, a Multiverse world) is configured and nothing more, and an unloaded folder it didn't make is refused rather than adopted or deleted. Folders are found through the server, since 26.1 keeps extra worlds under `<main world>/dimensions/minecraft/`.
+- **Players can't see each other by default** (`player.hide-others`). Hundreds of players arriving in one spot each tracking every other one is a limbo's biggest load by far, much more than anything xLimbo itself does.
+- **The jar budget is 170 KiB**: the shared core and bStats are about 75 KiB, and the world safety, return queue, status ping and protections the rest.
+- **Rebuilding on reload** moves players to the server's main world, unloads the limbo, deletes it if it's temporary, makes it again and puts them back. The main world itself can't be rebuilt, so in single-world mode floor changes say "restart".
+
 ## MockBukkit for command logic, real servers for the rest (2026-10-21)
 
 MockBukkit runs the commands' logic in milliseconds, but it can't `teleportAsync`, cancel Folia-style tasks, or tell harmful potion effects apart, and plugin classes it loads can't be `final`. Those paths are covered by `boot-checks.txt` on real servers, or by reading the code. CI also compiles against the newest Paper with removal warnings as errors (`-Pxena.newestPaper`), which is how `PotionEffectType#getCategory` (marked for removal in 26.3) was caught before release.

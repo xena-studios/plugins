@@ -53,7 +53,7 @@ final class Emitter {
                     comment(depth, line);
                 }
             }
-            String key = key(Names.key(component.getName()));
+            String key = key(Names.key(component));
             if (child instanceof Record nested) {
                 indent(depth).append(key).append(":\n");
                 record(nested, depth + 1, comments);

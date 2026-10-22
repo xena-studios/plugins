@@ -87,7 +87,7 @@ public final class ConfigSpec<C extends Record> {
         if (type instanceof Class<?> c) {
             if (c.isRecord()) {
                 for (RecordComponent component : c.getRecordComponents()) {
-                    check(component.getGenericType(), path + "." + Names.key(component.getName()));
+                    check(component.getGenericType(), path + "." + Names.key(component));
                 }
             } else if (!isScalar(c)) {
                 throw new IllegalStateException(path + ": the config can't hold a " + c.getName());

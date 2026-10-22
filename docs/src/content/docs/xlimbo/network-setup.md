@@ -50,18 +50,47 @@ Set `main-server` in `plugins/xLimbo/config.yml` to your main server's name **in
 main-server: "main"
 ```
 
-Players can also be sent back on their own after a delay:
+## Send everyone back when it's up
+
+With **server-check** on, xLimbo asks your main server for its status every few seconds, the way the multiplayer screen does. The moment it answers, everyone waiting is sent back:
+
+```yaml
+server-check:
+  enabled: true
+  address: "127.0.0.1:25566"
+  interval-seconds: 5
+```
+
+`address` is the main server's own address as the xLimbo server can reach it, **not** the proxy's: with the Velocity example above, `127.0.0.1:25566`. IPv6 addresses go in brackets: `[::1]:25566`. The main server must answer server-list pings (`enable-status=true`, the default). A server only answers once it's fully started, so nobody is sent to one that's still loading. If your backends are firewalled, allow the xLimbo server to reach the main server's port.
+
+Players who arrive while the main server is up (sent here on purpose, say) are sent back after five seconds. A player the main server keeps sending back, such as one who's banned there, is tried at most three times in five minutes, so they aren't bounced forever; `/join` still works for them.
+
+### Pacing
+
+Sending a whole network back in the same second can flatten a server that's just started. The queue sends a few players each second instead, and shows each one their place in line on the action bar:
+
+```yaml
+queue:
+  per-second: 5
+  action-bar: "<gray>Sending you back: <highlight>#<position></highlight> of <total> in line"
+```
+
+`per-second: 0` sends everyone at once.
+
+## Send players back after a delay
+
+Without server-check, players can be sent back on their own after a delay, paced by the same queue. With server-check on, it takes over: players go back as soon as the main server is up, and `auto-join` isn't used.
 
 ```yaml
 auto-join:
   enabled: true
   delay-seconds: 30
-  message: "<green>Sending you to the server...</green>"
+  message: "<prefix>Sending you back to the server..."
 ```
 
 ## Test it
 
-With a player online, stop your main server. They should land in xLimbo with a welcome message instead of being disconnected. Start it again and run `/join`.
+With a player online, stop your main server. They should land in xLimbo with a welcome message instead of being disconnected. Start it again: with server-check on, they're sent back on their own once it's up; otherwise run `/join`.
 
 ## Securing the proxy
 

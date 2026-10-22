@@ -1,0 +1,21 @@
+# xLimbo on a real server, from the console. Paper only: xLimbo doesn't run on Folia.
+paper logged: World xlimbo is ready
+paper run: xlimbo info
+paper expect: xLimbo 2.0.0 on
+
+# The void world exists, with its purple glass floor at y 64 and nothing below it.
+paper run: execute in minecraft:xlimbo if block 7 64 -9 minecraft:purple_stained_glass run say FLOOR OK
+paper expect: FLOOR OK
+paper run: execute in minecraft:xlimbo if block 7 63 -9 minecraft:air run say VOID OK
+paper expect: VOID OK
+
+paper run: join
+paper expect: Only players can use this command.
+
+# Reloading keeps the world and re-registers /join.
+paper run: xlimbo reload
+paper expect: Reloaded xLimbo in
+paper run: execute in minecraft:xlimbo if block 7 64 -9 minecraft:purple_stained_glass run say STILL OK
+paper expect: STILL OK
+paper run: join
+paper expect: Only players can use this command.

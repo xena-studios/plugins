@@ -7,8 +7,9 @@
 #     [--checks file]... [--run "console command"]... [--expect "log text"]... plugin.jar...
 #
 # Steps run in order. Each --expect waits for text logged after the --run before
-# it. A checks file holds the same steps, one per line: "run: <command>" or
-# "expect: <text>"; blank lines and lines starting with # are skipped. A step
+# it. A checks file holds the same steps, one per line: "run: <command>",
+# "expect: <text>", or "logged: <text>" for text logged at any point, such as
+# during startup; blank lines and lines starting with # are skipped. A step
 # that starts with "paper " or "folia " runs only on that server.
 #
 # Server jars, Mojang's jar and libraries are cached in .cache/servers/.
@@ -127,7 +128,8 @@ for step in "${steps[@]+"${steps[@]}"}"; do
       since=$(wc -l <"$log")
       echo "${step#run: }" >&3 ;;
     "expect: "*) wait_for "${step#expect: }" 60 "$since" ;;
-    *) fail "a step must start with \"run: \" or \"expect: \": $step" ;;
+    "logged: "*) wait_for "${step#logged: }" 60 0 ;;
+    *) fail "a step must start with \"run: \", \"expect: \" or \"logged: \": $step" ;;
   esac
 done
 

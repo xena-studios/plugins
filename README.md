@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/public/og.png" alt="Xena Studios plugins: xUtilities, zChat and xLimbo"></p>
+
 # Xena Studios plugins
 
 Small, fast plugins for Paper servers, by [Xena Studios](https://xenastudios.co). Each one does one job, costs next to nothing to run, and lets you switch off anything you don't use.

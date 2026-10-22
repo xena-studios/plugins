@@ -1,62 +1,3 @@
----
-title: Configuration
-description: Every setting in xUtilities' config.yml.
-sidebar:
-  order: 4
----
-
-The config is `plugins/xUtilities/config.yml`, written on first start. Apply changes with `/xutilities reload`; [some need a restart](/start/installing/#reload-or-restart).
-
-## Every command has the same four settings
-
-```yaml
-commands:
-  fly:
-    enabled: true                                   # false removes the command (restart)
-    aliases: ["flight", "togglefly", "toggleflymode"] # restart
-    permission: "xutilities.command.fly"            # blank = anyone (restart)
-    permission-others: "xutilities.command.fly.others"
-    # ...then the command's messages
-```
-
-`permission-others` exists only on commands with a `[player]` form. All text is [MiniMessage](/start/formatting/).
-
-## Command options
-
-Beyond messages, a few commands have their own settings:
-
-| Setting | Default | What it does |
-| --- | --- | --- |
-| `speed.min`, `speed.max` | `1`, `10` | The range `/speed` accepts, on a 1 to 10 scale (Minecraft's 0.1 to 1.0). |
-| `heal.restore-hunger` | `true` | `/heal` also restores hunger. |
-| `heal.extinguish-fire` | `true` | `/heal` also puts out fire. |
-| `heal.clear-negative-effects` | `true` | `/heal` also removes harmful potion effects. |
-| `clear.include-armor` | `true` | `/clear` also empties armour and off-hand; `false` clears only the main 36 slots. |
-| `trash.title` | `Disposal` | The `/trash` menu's title. |
-| `<workstation>.message` | blank | Sent when a workstation menu opens. Blank sends nothing. |
-
-## Messages and placeholders
-
-Each command's messages are under its own key (`message-self`, `message-others` and so on). These placeholders are available where they apply:
-
-| Placeholder | In |
-| --- | --- |
-| `<player>` | any `-others` message: the other player's name |
-| `<mode>` | gamemode messages |
-| `<state>` | `/fly` messages: the word from `messages.state` (`enabled` / `disabled`) |
-| `<speed>`, `<min>`, `<max>` | `/speed` messages |
-| `<yaw>`, `<pitch>` | `/setrotation` messages |
-| `<ping>` | `/ping` messages, in milliseconds |
-
-Shared error messages (no permission, player not found, players only) are under `messages.error`.
-
-## Link commands
-
-`info-commands` holds `/discord`, `/store`, `/website` and any you add: see [Link commands](/xutilities/link-commands/).
-
-## The full default config
-
-```yaml title="plugins/xUtilities/config.yml"
 # ============================================================================
 #  xUtilities — lightweight, highly-configurable utility commands
 # ----------------------------------------------------------------------------
@@ -303,4 +244,3 @@ info-commands:
     aliases: []
     permission: "xutilities.command.website"
     message: "<aqua>Visit our website: <click:open_url:'https://example.com'><hover:show_text:'<gray>Click to open'><underlined>example.com</underlined></hover></click></aqua>"
-```

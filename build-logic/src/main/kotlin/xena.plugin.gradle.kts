@@ -14,12 +14,15 @@ val xena = extensions.create<XenaPluginExtension>("xena").apply {
     modrinthId.convention(project.name)
 }
 
+val libs = the<VersionCatalogsExtension>().named("libs")
+
 // "1.21.11-R0.1-SNAPSHOT" -> "1.21.11"
-val minecraftVersion = the<VersionCatalogsExtension>().named("libs")
-    .findVersion("paper").get().requiredVersion.substringBefore("-R0.1")
+val minecraftVersion = libs.findVersion("paper").get().requiredVersion.substringBefore("-R0.1")
 
 dependencies {
     implementation(project(":core"))
+    testImplementation(testFixtures(project(":core")))
+    testImplementation(libs.findLibrary("mockbukkit").get())
 }
 
 paperPluginYaml {
@@ -38,6 +41,9 @@ tasks.shadowJar {
     // Each plugin carries its own copy of the core, so two plugins built on
     // different core versions never see each other's classes.
     relocate("co.xenastudios.core", "co.xenastudios.${project.name}.core")
+    // bStats insists on being relocated, and into the plugin's own package so
+    // each plugin reports on its own.
+    relocate("org.bstats", "co.xenastudios.${project.name}.bstats")
     // Drop core classes the plugin never uses.
     minimize()
 }

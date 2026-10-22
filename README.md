@@ -14,11 +14,12 @@ Small, fast plugins for Paper servers, by [Xena Studios](https://xenastudios.co)
 build-logic/   the xena.plugin Gradle convention every plugin applies
 core/          code every plugin shares, shaded into each jar
 sandbox/       a plugin that's never released: boots the core on real servers in CI
+xutilities/    xUtilities 2
 scripts/       boot-test.sh (runs jars on a real Paper or Folia server), changelog.sh
 docs/          docs.xenastudios.co: the docs for every plugin (Starlight)
 ```
 
-Each plugin moves into its own folder as it's rebuilt, in this order: xUtilities 2, zChat 3, xLimbo 2. Until then, the released jars are on [Modrinth](https://modrinth.com/organization/xena-studios), and the docs describe those releases: xUtilities 1.0.1, zChat 2.0.0 and xLimbo 1.0.1. Why the plugins are built the way they are: [DECISIONS.md](DECISIONS.md).
+Each plugin moves into its own folder as it's rebuilt, in this order: xUtilities 2, zChat 3, xLimbo 2. Until then, the released jars are on [Modrinth](https://modrinth.com/organization/xena-studios), and the docs describe those releases: xUtilities 2.0.0, zChat 2.0.0 and xLimbo 1.0.1. Why the plugins are built the way they are: [DECISIONS.md](DECISIONS.md).
 
 ## Plugins
 
@@ -31,7 +32,14 @@ scripts/boot-test.sh --project paper --version 1.21.11 \
   --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/*.jar
 ```
 
-A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 100 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth.
+A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 100 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth. The plugin class extends `XenaPlugin`: it declares its config as records (`ConfigSpec`) and, in `setup`, the commands and modules that config wants; the core does the rest, on startup and on every reload. xUtilities is the example to copy.
+
+Each plugin also has:
+
+- a `boot-checks.txt`: console commands CI runs on real servers, and the output each must log;
+- a test that its default config matches `docs/src/generated/<plugin>/config.yml`, which the docs show. After changing a default or a comment, run `./gradlew test -PupdateGolden` and commit the file.
+
+`./gradlew compileJava -Pxena.newestPaper=<paper-api version>` compiles against a newer Paper than the minimum and fails on anything it marks for removal; CI does this for the newest release.
 
 CI builds every push and boots every plugin on Paper and Folia at 1.21.11 and the newest release. To release, bump the plugin's `version`, add a `## <version>` section to its `CHANGELOG.md`, and push a tag such as `xutilities-v2.0.0`: the release workflow publishes to Modrinth (needs a `MODRINTH_TOKEN` secret) and GitHub.
 

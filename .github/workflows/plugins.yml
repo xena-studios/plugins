@@ -1,19 +1,46 @@
 name: Plugins
 
 # Everything but the docs, except the files the plugins' tests generate for them.
+# Pull requests always run, so the `plugins-ok` check main requires always reports;
+# `changes` skips the rest when only the docs or Markdown changed.
 on:
   push:
     branches: [main]
     paths: ["**", "!docs/**", "docs/src/generated/**", "!**.md", "!.github/workflows/docs.yml"]
   pull_request:
-    paths: ["**", "!docs/**", "docs/src/generated/**", "!**.md", "!.github/workflows/docs.yml"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-26.04
+    permissions:
+      pull-requests: read
+    outputs:
+      plugins: ${{ steps.check.outputs.plugins }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ $GITHUB_EVENT_NAME != pull_request ]]; then echo "plugins=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          plugins=false
+          while read -r file; do
+            case $file in
+              *.md | .github/workflows/docs.yml) ;;
+              docs/src/generated/*) plugins=true ;;
+              docs/*) ;;
+              *) plugins=true ;;
+            esac
+          done < <(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only)
+          echo "plugins=$plugins" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: changes
+    if: needs.changes.outputs.plugins == 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -39,6 +66,8 @@ jobs:
   # Compiles against the newest Paper API, failing on anything it marks for
   # removal, so a coming break shows up here before it reaches a server.
   newest-api:
+    needs: changes
+    if: needs.changes.outputs.plugins == 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -86,3 +115,14 @@ jobs:
           mapfile -t jars < <(find jars -name '*.jar' | sort)
           scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
             "${checks[@]}" "${jars[@]}"
+
+  # The one check main requires: passes when every job above passed or was
+  # skipped because nothing they cover changed.
+  plugins-ok:
+    needs: [changes, build, newest-api, boot]
+    if: always()
+    runs-on: ubuntu-26.04
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "ok"

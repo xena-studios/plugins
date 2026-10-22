@@ -18,6 +18,6 @@ xena {
     // Folia can't create worlds, and a limbo has nothing to spread across regions.
     folia = false
     // The shared core and bStats (about 75 KiB), plus the world, the return queue with
-    // its status ping, and the protections.
-    jarBudgetKb = 170
+    // its status ping, and the protections. About 165 KiB, with ~50 KiB of room.
+    jarBudgetKb = 220
 }

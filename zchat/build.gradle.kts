@@ -22,8 +22,8 @@ paperPluginYaml {
 
 xena {
     // The shared core and bStats (about 75 KiB), plus chat formats, the filter,
-    // mentions, anti-repeat and private messages.
-    jarBudgetKb = 160
+    // mentions, anti-repeat and private messages. About 159 KiB, with ~50 KiB of room.
+    jarBudgetKb = 210
 }
 
 tasks.runServer {

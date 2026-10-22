@@ -9,7 +9,7 @@ plugins {
 }
 
 val xena = extensions.create<XenaPluginExtension>("xena").apply {
-    jarBudgetKb.convention(100)
+    jarBudgetKb.convention(150)
     folia.convention(true)
     modrinthId.convention(project.name)
 }

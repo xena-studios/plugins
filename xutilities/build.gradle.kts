@@ -13,6 +13,7 @@ paperPluginYaml {
 xena {
     // 1.0.1 was 100.5 KiB. 2.0 adds the shared core (reload for everything, config
     // migration, the theme, the update checker), bStats, and 1.x's messages so
-    // untouched ones get the new look. 155 since zChat 3 grew the shared core.
-    jarBudgetKb = 155
+    // untouched ones get the new look. About 151 KiB; the budget leaves ~50 KiB of
+    // room, so it catches accidents (a library shaded in), not normal growth.
+    jarBudgetKb = 200
 }

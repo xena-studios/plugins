@@ -46,7 +46,7 @@ Built with xUtilities 2. A plugin extends `XenaPlugin`, declares its config as r
 
 xUtilities 2 is about 132 KiB against 1.x's 100.5: roughly 55 KiB of core (reload for everything, config migration, the update checker), 15 KiB of bStats and 50 KiB of commands, plus zip overhead. Compiling without local variable tables (keeping line numbers, for stack traces) saved 13 KiB. Its budget is 140 KiB, so anything that grows it is a decision, not drift.
 
-bStats lives in the core, relocated into each plugin's package; a plugin opts in by overriding `bStatsId()`. The IDs: xUtilities 34866, zChat 21533 (registered for zChat 2, so its history carries on), xLimbo 34867. bStats' Bukkit class submits from its own thread on Folia, so it needs no scheduler of ours. Tests never start it (`xena.offline`). Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every parse done at load.
+bStats lives in the core, relocated into each plugin's package; a plugin opts in by overriding `bStatsId()`. The IDs: xUtilities 34866, zChat 21533 (from zChat 1.0, which still reports to it, so zChat 3 carries its history on), xLimbo 34867. bStats' Bukkit class submits from its own thread on Folia, so it needs no scheduler of ours. Tests never start it (`xena.offline`). Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every parse done at load.
 
 ## MockBukkit for command logic, real servers for the rest (2026-10-21)
 

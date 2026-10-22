@@ -36,7 +36,7 @@ scripts/boot-test.sh --project paper --version 1.21.11 \
   --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/*.jar
 ```
 
-A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 100 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth. The plugin class extends `XenaPlugin`: it declares its config as records (`ConfigSpec`) and, in `setup`, the commands and modules that config wants; the core does the rest, on startup and on every reload. xUtilities is the example to copy.
+A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 150 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth. The plugin class extends `XenaPlugin`: it declares its config as records (`ConfigSpec`) and, in `setup`, the commands and modules that config wants; the core does the rest, on startup and on every reload. xUtilities is the example to copy.
 
 Each plugin also has:
 

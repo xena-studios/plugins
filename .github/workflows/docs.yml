@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   docs:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     defaults:
       run:
         working-directory: docs
@@ -23,8 +23,8 @@ jobs:
       # Not sensitive (it's in every dashboard URL), so a variable, not a secret.
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm

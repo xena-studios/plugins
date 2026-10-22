@@ -1,0 +1,23 @@
+name: Docs problem
+description: Something on docs.xenastudios.co is wrong, unclear or missing.
+labels: [documentation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a small fix, the **Edit page** link at the bottom of every page is quickest.
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The page's address.
+      placeholder: https://docs.xenastudios.co/zchat/formats/
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong or missing
+      description: What you read, and what you expected to find.
+    validations:
+      required: true

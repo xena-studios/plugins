@@ -1,0 +1,28 @@
+---
+title: Configuration
+description: Every setting in xLimbo's config.yml.
+sidebar:
+  order: 7
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/xlimbo/config.yml?raw";
+
+The config is `plugins/xLimbo/config.yml`, written on first start. Apply changes with `/xlimbo reload`: everything applies, including `/join`'s aliases. Changing the world's `name`, `floor-block` or `floor-y` [rebuilds the world](/xlimbo/world/#changing-the-world).
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours xLimbo's messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages.error` | Shared errors: players only, no permission, player not found, wrong usage, and a command that hit an error. |
+| `world` | The void world, its floor, border and distances: [The world](/xlimbo/world/#the-world). |
+| `player`, `join`, `quit`, `death`, `action-bar` | What arriving players get and see: [Arriving players](/xlimbo/world/#arriving-players). |
+| `main-server`, `auto-join`, `server-check`, `queue` | Where players go back to, and sending them back on their own: [Network setup](/xlimbo/network-setup/). |
+| `join-command` | `/join`'s aliases, permission, cooldown and messages: [Commands](/xlimbo/commands/). |
+| `protections` | What's blocked: [Protections](/xlimbo/protections/). |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+A bad value falls back to its default with a warning in the console.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/xLimbo/config.yml" />

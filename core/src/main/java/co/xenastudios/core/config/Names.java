@@ -1,9 +1,17 @@
 package co.xenastudios.core.config;
 
+import java.lang.reflect.RecordComponent;
+
 /** Setting names: a record component {@code permissionOthers} is the key {@code permission-others}. */
 final class Names {
 
     private Names() {}
+
+    /** A component's key: its {@link Key}, or its name in kebab case. */
+    static String key(RecordComponent component) {
+        Key key = component.getAnnotation(Key.class);
+        return key != null ? key.value() : key(component.getName());
+    }
 
     static String key(String componentName) {
         StringBuilder key = new StringBuilder(componentName.length() + 4);

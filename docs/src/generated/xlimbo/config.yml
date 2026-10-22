@@ -1,0 +1,190 @@
+# xLimbo: never drop a player again.
+# Docs: https://docs.xenastudios.co/xlimbo/configuration/
+#
+# Apply changes with /xlimbo reload. Everything applies, even the world's name and
+# floor. A bad value falls back to its default with a warning in the console; xLimbo
+# never stops over config. All text is MiniMessage:
+# https://docs.xenastudios.co/start/formatting/
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 2
+
+# The look xLimbo's messages share. The default messages use these as tags, so changing
+# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
+# <#B48CFF>, or <gold><bold>.
+theme:
+  # <prefix> starts the default messages. Make it your server's name, such as
+  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+  prefix: "<#B48CFF>»</#B48CFF> "
+  # The colour of message text that has no tag of its own.
+  base: "<gray>"
+  # <highlight>: names and values, such as a player or a speed.
+  highlight: "<#B48CFF>"
+  # <success>: something turned on or done.
+  success: "<#5EE08A>"
+  # <error>: something refused or turned off.
+  error: "<#FF6B6B>"
+
+# Messages the commands share.
+messages:
+  error:
+    # The console or a command block ran a command only players can use.
+    player-only: "<prefix><error>Only players can use this command."
+    # The sender lacks the command's permission.
+    no-permission: "<prefix><error>You don't have permission to do that."
+    # No online player has that name. <player> is the name typed.
+    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
+    # The command was typed wrong. <usage> is how to type it.
+    usage: "<prefix><error>Usage:</error> <usage>"
+    # The command hit an error. The console has the details.
+    failed: "<prefix><error>Something went wrong. The console has the details."
+
+# The void world players wait in: one floor layer, nothing else. Changing its name,
+# floor-block or floor-y rebuilds it on /xlimbo reload; players are moved out and back.
+world:
+  # The limbo world, created on startup. To use the server's main world instead, set
+  # this to its name (level-name in server.properties) and give it xLimbo's generator
+  # in bukkit.yml (worlds: <name>: generator: xLimbo).
+  name: "xlimbo"
+  # The one-block-thick floor everyone stands on.
+  floor-block: "purple_stained_glass"
+  # The floor's height. Players stand one block above it.
+  floor-y: 64
+  # false keeps the world off disk: it starts fresh every time the server does. true
+  # saves it, for builds that should last.
+  auto-save: false
+  # Start fresh on every startup even when auto-save is on.
+  reset-on-startup: false
+  border:
+    # The world border's width in blocks. It caps how much world can ever exist.
+    size: 10000
+    # Arriving players land up to this many blocks from the centre, so they don't stack.
+    # Small keeps a mass arrival to a handful of chunks; the land around it is kept ready.
+    spawn-radius: 64
+  # Chunks sent to players in this world, 2 to 32. -1 keeps the server's setting.
+  view-distance: 4
+  # Chunks that tick around players in this world, 2 to 32. -1 keeps the server's setting.
+  simulation-distance: 4
+
+# What arriving players get.
+player:
+  # Put arriving players in creative.
+  set-creative: true
+  # Give arriving players flight, and keep it on.
+  enable-flight: true
+  # Players can't see each other. With hundreds arriving at once, everyone tracking
+  # everyone else is the biggest load a limbo has; this takes it away.
+  hide-others: true
+
+join:
+  # Hide the "joined the game" broadcast.
+  suppress-join-message: true
+  # Sent to a player when they arrive. Blank for none.
+  custom-join-message: "<prefix>The server is unavailable right now, so you're waiting here. Type <highlight>/join</highlight> to go back."
+  clear-chat-on-join: false
+
+quit:
+  # Hide the "left the game" broadcast.
+  suppress-quit-message: true
+
+death:
+  # Hide death messages.
+  suppress-death-message: true
+
+# The server /join and automatic returns send players to: its name in your proxy's
+# config, such as "main".
+main-server: "main"
+
+# Send players back on their own this long after they arrive.
+auto-join:
+  # Only without server-check, which sends players back as soon as the main server is up.
+  enabled: false
+  # How long after arriving.
+  delay-seconds: 30
+  # Sent as a player is sent back. Blank for none.
+  message: "<prefix>Sending you back to the server..."
+
+# Watch the main server, and send everyone back as soon as it's up, instead of waiting
+# for /join or auto-join.
+server-check:
+  enabled: false
+  # Your main server's address as xLimbo can reach it (not the proxy's), such as
+  # "127.0.0.1:25566". xLimbo asks it for its status, as a server list does.
+  address: "127.0.0.1:25566"
+  interval-seconds: 5
+  # Sent to everyone here when the main server comes back up. Blank for none.
+  message-up: "<prefix><success>The server is back up!</success> Sending everyone back..."
+
+# How automatic returns are paced.
+queue:
+  # How many players are sent back each second, so the main server isn't flooded the
+  # moment it's back. 0 sends everyone at once.
+  per-second: 5
+  # Shown on the action bar while a player waits their turn. <position> and <total>
+  # are filled in. Blank shows the normal action bar instead.
+  action-bar: "<gray>Sending you back: <highlight>#<position></highlight> of <total> in line"
+
+# /join: sends you to main-server. Everyone has it by default.
+join-command:
+  enabled: true
+  aliases: ["server", "lobby"]
+  permission: "xlimbo.join"
+  # Seconds between uses, per player, so nobody can spam your proxy.
+  cooldown-seconds: 3
+  # <server> is main-server.
+  message-sending: "<prefix>Connecting you to <highlight><server></highlight>..."
+  # <seconds> is the whole seconds left.
+  message-cooldown: "<prefix><error>Wait <highlight><seconds>s</highlight> before trying again."
+
+# A hint repeated on every player's action bar.
+action-bar:
+  enabled: true
+  # Ticks between updates (20 is one second).
+  interval-ticks: 40
+  message: "<gray>Type <highlight>/join</highlight> to go back to the server"
+
+# Players here are in creative, so these stop them breaking, lagging or escaping the
+# server. Each can be turned off; one that's off costs nothing.
+protections:
+  # The floor can't be broken, pushed, or built under.
+  floor: true
+  void:
+    # Put players who fall below threshold-y back on the floor.
+    enabled: true
+    threshold-y: 0
+    # No void or fall damage, so a rescue never becomes a death loop.
+    cancel-void-damage: true
+  # Nether and End portals, and Eyes of Ender in End portal frames.
+  portals: true
+  # Placing water and lava, and liquids flowing.
+  liquids: true
+  # Sand, gravel, anvils, concrete powder and other blocks that fall.
+  gravity-blocks: true
+  # Fire spreading, burning and being lit.
+  fire: true
+  # Every explosion.
+  explosions: true
+  # Mobs spawning.
+  mob-spawns: true
+  # Redstone and pistons.
+  redstone: true
+  # Dropped items.
+  item-drops: true
+  entities:
+    # Armour stands, boats, minecarts, item frames, paintings, End crystals and spawn eggs.
+    block-entity-items: true
+    # Removes stray entities other than players this often. 0 turns it off.
+    cleanup-interval-seconds: 300
+  build-guard:
+    # Limits how fast each player can place blocks, against lag machines.
+    enabled: false
+    max-places-per-second: 30
+
+# Tells you when a new version is out.
+update-checker:
+  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
+  # only the plugin version, the platform and the Minecraft version.
+  enabled: true
+  # Logged, and shown to admins when they join, when a newer version is out.
+  # <plugin>, <current>, <latest> and <url> are filled in.
+  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"

@@ -55,7 +55,7 @@ final class Reader {
         for (int i = 0; i < components.length; i++) {
             RecordComponent component = components[i];
             types[i] = component.getType();
-            String key = Names.key(component.getName());
+            String key = Names.key(component);
             Object defaultValue = get(component, fallback);
             if (!section.contains(key)) {
                 boolean empty = isBlank(join(path, key));

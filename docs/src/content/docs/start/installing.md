@@ -13,18 +13,10 @@ sidebar:
 
 ## Reload or restart?
 
-**xUtilities 2 and zChat 3 apply everything on reload**, including turning commands on or off, aliases and permissions.
-
-xLimbo 1.0.1 applies most settings on reload, every message included. A few are read only when the server starts:
-
-- turning a command on or off;
-- a command's aliases and permission;
-- the world's name, floor height and floor block.
-
-Change one of those and restart the server. xLimbo 2 will apply these on reload too.
+**Every plugin applies everything on reload**, including turning commands on or off, aliases and permissions. xLimbo even rebuilds its world when its name or floor changes.
 
 ## A bad value never breaks the plugin
 
 If a config value is invalid, the plugin logs a warning in the console and uses the default for that one value. It never disables itself or stops the server over config.
 
-If the whole file can't be read, such as a YAML syntax error, xUtilities 2 and zChat 3 say where in the console and leaves the file alone. On a reload it keeps running with the settings it had; at startup it runs on the defaults until you fix the file and reload.
+If the whole file can't be read, such as a YAML syntax error, the plugin says where in the console and leaves the file alone. On a reload it keeps running with the settings it had; at startup it runs on the defaults until you fix the file and reload.

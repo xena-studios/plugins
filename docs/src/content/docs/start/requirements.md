@@ -11,12 +11,10 @@ Every plugin runs on **Paper** and its forks (Purpur, Pufferfish), with a **Java
 | --- | --- | --- | --- |
 | [xUtilities](/xutilities/) | 1.21.11 or newer | Yes | 21 |
 | [zChat](/zchat/) | 1.21.11 or newer | Yes | 21 |
-| [xLimbo](/xlimbo/) | 1.18.2 or newer | No | 21 |
-
-xLimbo 2 will need Paper 1.21.11 or newer too, the same as the others.
+| [xLimbo](/xlimbo/) | 1.21.11 or newer | No | 21 |
 
 Spigot and CraftBukkit aren't supported: the plugins rely on APIs only Paper has.
 
-**Folia** runs the same xUtilities and zChat jars as Paper. There's nothing to configure: they make every change to a player on the region that owns that player.
+**Folia** runs the same xUtilities and zChat jars as Paper. There's nothing to configure: they make every change to a player on the region that owns that player. xLimbo doesn't run on Folia: Folia can't create worlds, and a fallback server has nothing for Folia to spread across threads.
 
 **Optional:** zChat fills in [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) placeholders in chat formats when PlaceholderAPI is installed. Without it, they show nothing, and the console says so.

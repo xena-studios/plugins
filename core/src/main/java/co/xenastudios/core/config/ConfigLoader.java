@@ -28,8 +28,9 @@ public final class ConfigLoader {
      * @param config the settings to use
      * @param warnings settings that couldn't be used and fell back to their defaults
      * @param notices what the loader changed in the file, such as adding new settings
+     * @param carriedFrom the config version the file was carried forward from, or 0 if it wasn't
      */
-    public record Result<C>(C config, List<String> warnings, List<String> notices) {}
+    public record Result<C>(C config, List<String> warnings, List<String> notices, int carriedFrom) {}
 
     /** The default config file, as written on first start. */
     public static String defaultText(ConfigSpec<?> spec) {
@@ -50,7 +51,7 @@ public final class ConfigLoader {
             if (Files.notExists(file)) {
                 write(file, Emitter.render(spec));
                 notices.add("Wrote the default " + file.getFileName() + ".");
-                return new Result<>(spec.defaults, List.of(), notices);
+                return new Result<>(spec.defaults, List.of(), notices, 0);
             }
 
             String text = Files.readString(file, StandardCharsets.UTF_8);
@@ -69,7 +70,7 @@ public final class ConfigLoader {
                 Files.move(file, aside);
                 write(file, Emitter.render(spec));
                 notices.add(spec.foreignNotice + " It's kept as " + aside.getFileName() + ", and the defaults are in " + file.getFileName() + ".");
-                return new Result<>(spec.defaults, List.of(), notices);
+                return new Result<>(spec.defaults, List.of(), notices, 0);
             }
 
             List<String> warnings = new ArrayList<>();
@@ -82,12 +83,14 @@ public final class ConfigLoader {
             }
 
             boolean changed = false;
+            int carriedFrom = 0;
             boolean newer = version > spec.version;
             if (newer) {
                 warnings.add("%s is from a newer version of the plugin (config version %d; this one reads %d). Settings it doesn't know are ignored, and the file is left as it is."
                     .formatted(file.getFileName(), version, spec.version));
             } else if (version < spec.version) {
                 Path backup = backup(file, version);
+                carriedFrom = version;
                 for (Map.Entry<Integer, Migration> step : spec.migrations.tailMap(Math.max(version, 1)).entrySet()) {
                     step.getValue().apply(yaml);
                 }
@@ -137,7 +140,7 @@ public final class ConfigLoader {
                     write(file, BLANK_WITH_SPACES.matcher(yaml.saveToString()).replaceAll(""));
                 }
             }
-            return new Result<>(config, List.copyOf(warnings), List.copyOf(notices));
+            return new Result<>(config, List.copyOf(warnings), List.copyOf(notices), carriedFrom);
         } catch (IOException e) {
             throw new ConfigException("couldn't read or write " + file + ": " + e.getMessage(), e);
         }

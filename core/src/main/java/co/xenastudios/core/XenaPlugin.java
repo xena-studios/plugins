@@ -47,6 +47,7 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
 
     private volatile C config;
     private volatile int configWarnings;
+    private int carriedFrom;
     private ConfigSpec<C> spec;
     private Tasks tasks;
     private CommandRegistry commands;
@@ -60,6 +61,14 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
 
     /** Declares the commands, permissions and modules this config wants running. */
     protected abstract void setup(Setup setup, C config);
+
+    /**
+     * The config version this run carried the file forward from, such as 1 for a plugin
+     * just updated from 1.x; 0 if it was already current.
+     */
+    protected final int configCarriedFrom() {
+        return carriedFrom;
+    }
 
     /** Extra names for {@code /<plugin>}, such as {@code zc} for {@code /zchat}. */
     protected List<String> adminAliases() {
@@ -176,6 +185,9 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
         result.notices().forEach(getLogger()::info);
         result.warnings().forEach(warning -> getLogger().warning(CONFIG_FILE + ": " + warning));
         configWarnings = result.warnings().size();
+        if (result.carriedFrom() > 0) {
+            carriedFrom = result.carriedFrom();
+        }
         config = result.config();
         Message.theme(config.theme());
     }

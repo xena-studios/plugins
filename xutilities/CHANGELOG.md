@@ -24,6 +24,8 @@ A rewrite. Replace the jar and restart: your 1.x config is carried forward, and 
 
 ### Changed
 
+- `/speed` says which speed it set: "Your flying speed is now 5" or walking.
+- "Player not found" says which name it couldn't find.
 - A player changed by someone else (healed, fed, given flight, a gamemode and so on) is now told, with the message they'd get doing it themselves.
 - `/gamemode <mode>` also needs that mode's own permission, so giving a rank `/gamemode` doesn't give it creative. It accepts names, numbers, letters and the mode commands' aliases.
 - A renamed permission keeps its command's default: rename `/ping`'s and it's still everyone's.

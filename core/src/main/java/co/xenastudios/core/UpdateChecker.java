@@ -34,7 +34,9 @@ final class UpdateChecker {
     private volatile String latest;
     private String announced;
     private ScheduledTask task;
-    private HttpClient client;
+    private boolean enabled;
+    // Only while a check runs: an idle client keeps a thread alive, and checks are a day apart.
+    private HttpClient inFlight;
 
     UpdateChecker(XenaPlugin<?> plugin, String project) {
         this.plugin = plugin;
@@ -52,14 +54,17 @@ final class UpdateChecker {
         // Tests run with -Dxena.offline=true so they never reach Modrinth.
         enabled &= !Boolean.getBoolean("xena.offline");
         if (enabled && task == null) {
-            client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+            this.enabled = true;
             task = plugin.tasks().asyncRepeating(this::check, Duration.ZERO, PERIOD);
         } else if (!enabled && task != null) {
+            this.enabled = false;
             task.cancel();
             task = null;
-            // Not close(): that waits for a check in flight, stalling the thread that turned us off.
-            client.shutdownNow();
-            client = null;
+            // Not close(): that waits for the check, stalling the thread that turned us off.
+            if (inFlight != null) {
+                inFlight.shutdownNow();
+                inFlight = null;
+            }
             latest = null;
         }
     }
@@ -88,10 +93,11 @@ final class UpdateChecker {
     private void check() {
         HttpClient http;
         synchronized (this) {
-            http = client;
-        }
-        if (http == null) {
-            return;
+            if (!enabled) {
+                return;
+            }
+            http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+            inFlight = http;
         }
         try {
             String query = "?loaders=" + encode("[\"" + (plugin.isFolia() ? "folia" : "paper") + "\"]")
@@ -119,6 +125,13 @@ final class UpdateChecker {
         } catch (Exception e) {
             // Offline, Modrinth down, or an unexpected reply: try again next time, quietly.
             plugin.getLogger().fine("Update check failed: " + e);
+        } finally {
+            synchronized (this) {
+                if (inFlight == http) {
+                    inFlight = null;
+                }
+            }
+            http.shutdownNow();
         }
     }
 

@@ -50,9 +50,10 @@ jobs:
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
       - name: Publish to GitHub
+        # Titled with the plugin's own name, such as "xUtilities 2.0.0", from its descriptor.
         run: >
           gh release create "$GITHUB_REF_NAME"
-          --title "${{ steps.tag.outputs.module }} ${{ steps.tag.outputs.version }}"
+          --title "$(unzip -p ${{ steps.tag.outputs.module }}/build/libs/${{ steps.tag.outputs.module }}-${{ steps.tag.outputs.version }}.jar paper-plugin.yml | sed -n 's/^name: //p') ${{ steps.tag.outputs.version }}"
           --notes-file "$RUNNER_TEMP/changelog.md"
           ${{ contains(steps.tag.outputs.version, '-') && '--prerelease' || '' }}
           ${{ steps.tag.outputs.module }}/build/libs/${{ steps.tag.outputs.module }}-${{ steps.tag.outputs.version }}.jar

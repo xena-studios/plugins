@@ -24,7 +24,7 @@ message: "<prefix>Join our Discord: <click:open_url:'https://discord.gg/example'
 
 ## The theme
 
-xUtilities 2's config starts with a `theme`: the look its messages share. zChat and xLimbo get the same in their next major versions.
+Every plugin's config starts with a `theme`: the look its messages share.
 
 ```yaml
 theme:

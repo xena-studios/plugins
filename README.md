@@ -2,76 +2,49 @@
 
 **Small, fast plugins for Paper servers.**
 
-By [Xena Studios](https://xenastudios.co). Each one does one job, costs next to nothing to run, and lets you switch off anything you don't use.
+By [Xena Studios](https://xenastudios.co). Each one does one job, costs next to nothing to run, and lets you switch off anything you don't use. Every setting applies on reload, and old configs are carried forward on update.
 
 | | Plugin | | |
 |---|---|---|---|
-| <img src="docs/src/assets/plugins/xutilities.svg" width="40" alt=""> | **xUtilities** | Every command you need. None you don't. | [Docs](https://docs.xenastudios.co/xutilities/) · [Modrinth](https://modrinth.com/plugin/xutilities) |
-| <img src="docs/src/assets/plugins/zchat.svg" width="40" alt=""> | **zChat** | Format your chat. Keep it clean. | [Docs](https://docs.xenastudios.co/zchat/) · [Modrinth](https://modrinth.com/plugin/zchat) |
-| <img src="docs/src/assets/plugins/xlimbo.svg" width="40" alt=""> | **xLimbo** | Never drop a player again. | [Docs](https://docs.xenastudios.co/xlimbo/) · [Modrinth](https://modrinth.com/plugin/xlimbo) |
+| <img src="docs/src/assets/plugins/xutilities.svg" width="40" alt=""> | **[xUtilities](xutilities)** | Every command you need. None you don't. | [Docs](https://docs.xenastudios.co/xutilities/) · [Modrinth](https://modrinth.com/plugin/xutilities) |
+| <img src="docs/src/assets/plugins/zchat.svg" width="40" alt=""> | **[zChat](zchat)** | Format your chat. Keep it clean. | [Docs](https://docs.xenastudios.co/zchat/) · [Modrinth](https://modrinth.com/plugin/zchat) |
+| <img src="docs/src/assets/plugins/xlimbo.svg" width="40" alt=""> | **[xLimbo](xlimbo)** | Never drop a player again. | [Docs](https://docs.xenastudios.co/xlimbo/) · [Modrinth](https://modrinth.com/plugin/xlimbo) |
+
+All three run on Paper 1.21.11 and newer with Java 21, and on Folia except xLimbo. Download them from [Modrinth](https://modrinth.com/organization/xena-studios); the [docs](https://docs.xenastudios.co) cover setup, commands, permissions and every config option.
 
 ## What's here
 
 ```
-build-logic/   the xena.plugin Gradle convention every plugin applies
+xutilities/    xUtilities
+zchat/         zChat
+xlimbo/        xLimbo
 core/          code every plugin shares, shaded into each jar
+build-logic/   the Gradle convention every plugin applies
 sandbox/       a plugin that's never released: boots the core on real servers in CI
-xutilities/    xUtilities 2
-zchat/         zChat 3
-xlimbo/        xLimbo 2
-scripts/       boot-test.sh (runs jars on a real Paper or Folia server), changelog.sh,
-               new-minecraft.sh (finds new Minecraft versions)
-docs/          docs.xenastudios.co: the docs for every plugin (Starlight)
+docs/          docs.xenastudios.co
+scripts/       boot tests, changelogs and the new-Minecraft check
 ```
 
-The released jars are on [Modrinth](https://modrinth.com/organization/xena-studios), and the docs describe the current releases: xUtilities 2.0.0, zChat 3.0.0 and xLimbo 2.0.0. Why the plugins are built the way they are: [DECISIONS.md](DECISIONS.md).
+Each plugin's folder has its own README and changelog.
 
-## Plugins
+## Building
 
-Needs a JDK 21 or newer. Every plugin supports Paper 1.21.11 and newer (Java 21 bytecode), and Folia unless it says otherwise.
+Needs a JDK 21 or newer.
 
 ```sh
-./gradlew build                  # compile, test, and check each jar against its size budget
-./gradlew :<plugin>:runServer    # a Paper server with the plugin, in <plugin>/run/
-scripts/boot-test.sh --project paper --version 1.21.11 \
-  --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/*.jar
+./gradlew build                  # every plugin, tested, into <plugin>/build/libs/
+./gradlew :<plugin>:runServer    # a Paper server with that plugin
 ```
 
-A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 150 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth. The plugin class extends `XenaPlugin`: it declares its config as records (`ConfigSpec`) and, in `setup`, the commands and modules that config wants; the core does the rest, on startup and on every reload. xUtilities is the example to copy.
+[CONTRIBUTING.md](CONTRIBUTING.md) has the rest: tests, boot checks, the rules a change keeps, pull requests and releases. [DECISIONS.md](DECISIONS.md) records why the plugins are built the way they are.
 
-## Updates
+## Help
 
-[Renovate](https://docs.renovatebot.com) opens PRs for the libraries, Gradle, GitHub Actions and the docs site's packages on Monday mornings, every minor and patch update in one PR ([`renovate.json`](renovate.json), on top of the org's shared settings in [`xena-studios/.github`](https://github.com/xena-studios/.github/blob/main/renovate-config.json)). That PR merges itself once CI passes; majors wait for a review. The minimum Paper in `gradle/libs.versions.toml` is never touched: raising it drops servers, so it's changed by hand.
+- **Bugs and ideas:** [open an issue](https://github.com/xena-studios/plugins/issues/new/choose).
+- **Security problems:** privately, as [SECURITY.md](SECURITY.md) describes.
+- **Anything else:** [contact@xenastudios.co](mailto:contact@xenastudios.co).
 
-New Minecraft versions come from a workflow that runs on Mondays, alongside Renovate ([`minecraft.yml`](.github/workflows/minecraft.yml)). To check sooner, run it from the Actions tab (New Minecraft → Run workflow). When Paper has a stable build of a newer version, it opens a PR that adds the version to `xena.gameVersions` and moves the boot tests and the newest-API compile onto it. Merge it if the checks pass. Modrinth lists the plugins for the new version from their next release.
-
-Each plugin also has:
-
-- a `boot-checks.txt`: console commands CI runs on real servers, and the output each must log;
-- a test that its default config matches `docs/src/generated/<plugin>/config.yml`, which the docs show. After changing a default or a comment, run `./gradlew test -PupdateGolden` and commit the file.
-
-`./gradlew compileJava -Pxena.newestPaper=<paper-api version>` compiles against a newer Paper than the minimum and fails on anything it marks for removal; CI does this for the newest release.
-
-CI builds every push and boots every plugin on Paper and Folia at 1.21.11 and the newest release. To release, bump the plugin's `version`, add a `## <version>` section to its `CHANGELOG.md`, and push a tag such as `xutilities-v2.0.0`: the release workflow publishes to Modrinth (needs a `MODRINTH_TOKEN` secret) and GitHub.
-
-## Docs
-
-Needs Node 24.
-
-```sh
-cd docs
-npm install
-npm run dev     # http://localhost:4321
-npm run build   # static site in dist/, with every internal link checked
-```
-
-Pages are Markdown in `docs/src/content/docs/`, one folder per plugin and `start/` for what they share. The docs wear the plugin family's brand, as Raptor's docs wear Raptor's: deepslate, Space Grotesk, dark only, and each plugin's pages in its own accent (`docs/public/accents/`) with its icon beside the title. `npm run brand:sync` copies the logo, favicon, stepped horizon, link preview and plugin icons in from [xena-studios/brand](https://github.com/xena-studios/brand).
-
-Pushes to `main` that touch `docs/` deploy to Cloudflare once the repo has a `CLOUDFLARE_API_TOKEN` secret and a `CLOUDFLARE_ACCOUNT_ID` variable; pull requests only build.
-
-## Reporting bugs
-
-Open an [issue](https://github.com/xena-studios/plugins/issues) with the plugin and version (`/<plugin> info`), your server software and version, and any console errors.
+Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## Licence
 

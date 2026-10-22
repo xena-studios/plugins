@@ -1,0 +1,79 @@
+name: Bug report
+description: Something in xUtilities, zChat or xLimbo doesn't work as the docs say it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. For a security problem, don't use this form: see [SECURITY.md](https://github.com/xena-studios/plugins/blob/main/SECURITY.md).
+  - type: dropdown
+    id: plugin
+    attributes:
+      label: Plugin
+      options:
+        - xUtilities
+        - zChat
+        - xLimbo
+        - More than one, or not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version
+      description: From `/xutilities info`, `/zchat info` or `/xlimbo info`.
+      placeholder: "2.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: software
+    attributes:
+      label: Server software
+      options:
+        - Paper
+        - Folia
+        - Purpur
+        - Something else (say which below)
+    validations:
+      required: true
+  - type: input
+    id: server-version
+    attributes:
+      label: Server version
+      description: The first lines of `/version`.
+      placeholder: "Paper 26.3 build 214"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest way to make it happen on a fresh server, if you know one.
+      placeholder: |
+        1. Set `...` in config.yml
+        2. Run `/... reload`
+        3. ...
+  - type: textarea
+    id: errors
+    attributes:
+      label: Console errors
+      description: Anything the plugin logged, from the server's console or `logs/latest.log`. Paste the whole error, not just the first line.
+      render: text
+  - type: textarea
+    id: config
+    attributes:
+      label: Config
+      description: The parts of the plugin's `config.yml` that matter, if you changed them. Remove anything private, such as server addresses.
+      render: yaml
+  - type: input
+    id: other-plugins
+    attributes:
+      label: Other plugins
+      description: Especially permissions, chat or proxy plugins. `/plugins` lists them.

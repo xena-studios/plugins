@@ -15,7 +15,7 @@ if (!fs.existsSync(path.join(BRAND, "tokens/plugins.json"))) {
   process.exit(1);
 }
 
-// [from (in brand), to (in docs)]
+// [from (in brand), to (relative to docs/)]
 const files = [
   ["logo/xena-studios.svg", "src/assets/xena-studios-dark.svg"],
   ["logo/xena-studios-black.svg", "src/assets/xena-studios-light.svg"],
@@ -25,6 +25,12 @@ const files = [
   ["plugins/xutilities/icon.svg", "src/assets/plugins/xutilities.svg"],
   ["plugins/zchat/icon.svg", "src/assets/plugins/zchat.svg"],
   ["plugins/xlimbo/icon.svg", "src/assets/plugins/xlimbo.svg"],
+  // The READMEs' banners, for the repo, the docs and each plugin.
+  ["github/plugins-banner.png", "../.github/assets/banner.png"],
+  ["github/plugin-docs-banner.png", "../.github/assets/docs-banner.png"],
+  ["plugins/xutilities/banner.png", "../.github/assets/xutilities-banner.png"],
+  ["plugins/zchat/banner.png", "../.github/assets/zchat-banner.png"],
+  ["plugins/xlimbo/banner.png", "../.github/assets/xlimbo-banner.png"],
 ];
 
 for (const [from, to] of files) {

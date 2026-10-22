@@ -23,6 +23,6 @@ Grant them to your ranks with a permissions plugin such as [LuckPerms](https://l
 Each command's permission is set in its plugin's config, so you can rename it to fit your setup. Two rules:
 
 - **Blank (`""`) means no restriction**: anyone can use the command.
-- A permission you invent that the plugin doesn't declare defaults to `op` until you grant it.
+- In xUtilities 2, a renamed permission keeps the default the command had: rename `/ping`'s and the new one is still everyone's. In zChat and xLimbo, a permission you invent defaults to `op` until you grant it.
 
 The full lists: [xUtilities](/xutilities/commands/), [zChat](/zchat/commands/), [xLimbo](/xlimbo/commands/).

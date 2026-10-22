@@ -20,7 +20,7 @@ Spike (`sandbox/`, checked in CI): a command registered through the Bukkit comma
 
 So turning a command on or off, its aliases and permission, and adding or removing link commands can all apply on `/<plugin> reload` (followed by `Player#updateCommands`), instead of needing a restart. A disabled command isn't registered at all, so another plugin can take its name. Paper's Brigadier lifecycle API can't do this: it only registers at startup and on a datapack reload.
 
-Still to confirm with a real client in phase 1: that `updateCommands` refreshes tab completion for players already online.
+Still to confirm with a real client: that `updateCommands` refreshes tab completion for players already online. (It's the call LuckPerms and others make for the same reason.)
 
 Gotcha: a command dispatched while another command is running is queued until that one finishes, so code that dispatches commands must run outside a command's execution.
 
@@ -31,3 +31,23 @@ Spike (`core/src/test/.../ConfigEmissionSpikeTest`): Paper's `YamlConfiguration`
 ## Boot tests on real servers (2026-10-21)
 
 `scripts/boot-test.sh` boots a real Paper or Folia server with the plugin jars, runs console commands, stops it, and fails on any error in the log or any warning from our plugins. CI runs it at the minimum version and the newest, on both. Unit tests can't catch a plugin that fails to enable, or a Folia threading mistake; this does.
+
+## The core: what every plugin gets (2026-10-21)
+
+Built with xUtilities 2. A plugin extends `XenaPlugin`, declares its config as records (`ConfigSpec`), and says in `setup(config)` which commands, permissions and modules that config wants. The core applies the difference on startup and on every reload, so a plugin never handles reload itself. It also gives every plugin `/<plugin> reload|info` and the update checker, and isolates failures: a command that throws sends "something went wrong" and logs the trace; a module that won't start stays off; neither takes the rest down.
+
+- **Permissions are declared from the config**, with the command's default, so a renamed permission keeps it (a renamed `/ping` permission is still everyone's).
+- **Server commands are replaced and given back.** Paper wraps vanilla commands in a new object on every lookup, so they're recognised as "not a plugin's" rather than by identity. Another plugin's command is never replaced: that clash is a console warning, and ours stays reachable namespaced.
+- **The default config is written by the core's own emitter**, not Bukkit's: quoted strings, inline lists, comments, blank lines between sections. Carrying an old file forward still goes through Bukkit, which keeps the owner's values and comments.
+- **A file that isn't valid YAML is never overwritten.** On reload the running config stays; at startup the defaults run until it's fixed.
+- **Tests never reach the network**: they run with `-Dxena.offline=true`, which keeps the update checker off.
+
+## Jar budgets are per plugin, and honest (2026-10-21)
+
+xUtilities 2 is about 119 KiB against 1.x's 100.5: roughly 55 KiB of core (reload for everything, config migration, the update checker) and 50 KiB of commands, plus zip overhead. Compiling without local variable tables (keeping line numbers, for stack traces) saved 13 KiB. Its budget is 130 KiB, so anything that grows it is a decision, not drift.
+
+bStats (13 KiB) waits until each plugin has a bStats ID: without one it would ship and send nothing. Adding it back is the dependency, a relocation of `org.bstats` in the convention, and `new Metrics(this, id)` in `XenaPlugin`. Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every parse done at load.
+
+## MockBukkit for command logic, real servers for the rest (2026-10-21)
+
+MockBukkit runs the commands' logic in milliseconds, but it can't `teleportAsync`, cancel Folia-style tasks, or tell harmful potion effects apart, and plugin classes it loads can't be `final`. Those paths are covered by `boot-checks.txt` on real servers, or by reading the code. CI also compiles against the newest Paper with removal warnings as errors (`-Pxena.newestPaper`), which is how `PotionEffectType#getCategory` (marked for removal in 26.3) was caught before release.

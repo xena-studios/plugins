@@ -14,12 +14,15 @@ val xena = extensions.create<XenaPluginExtension>("xena").apply {
     modrinthId.convention(project.name)
 }
 
+val libs = the<VersionCatalogsExtension>().named("libs")
+
 // "1.21.11-R0.1-SNAPSHOT" -> "1.21.11"
-val minecraftVersion = the<VersionCatalogsExtension>().named("libs")
-    .findVersion("paper").get().requiredVersion.substringBefore("-R0.1")
+val minecraftVersion = libs.findVersion("paper").get().requiredVersion.substringBefore("-R0.1")
 
 dependencies {
     implementation(project(":core"))
+    testImplementation(testFixtures(project(":core")))
+    testImplementation(libs.findLibrary("mockbukkit").get())
 }
 
 paperPluginYaml {

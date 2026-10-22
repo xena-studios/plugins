@@ -4,22 +4,31 @@
 # output never appeared, or the server didn't start and stop cleanly.
 #
 #   scripts/boot-test.sh [--project paper|folia] [--version 1.21.11] \
-#     [--run "console command"]... [--expect "log text"]... plugin.jar...
+#     [--checks file]... [--run "console command"]... [--expect "log text"]... plugin.jar...
+#
+# Steps run in order. Each --expect waits for text logged after the --run before
+# it. A checks file holds the same steps, one per line: "run: <command>" or
+# "expect: <text>"; blank lines and lines starting with # are skipped. A step
+# that starts with "paper " or "folia " runs only on that server.
 #
 # Server jars, Mojang's jar and libraries are cached in .cache/servers/.
 set -euo pipefail
 
 project=paper
 version=1.21.11
-commands=()
-expects=()
+steps=()
 jars=()
 while (($#)); do
   case "$1" in
     --project) project=$2; shift 2 ;;
     --version) version=$2; shift 2 ;;
-    --run) commands+=("$2"); shift 2 ;;
-    --expect) expects+=("$2"); shift 2 ;;
+    --run) steps+=("run: $2"); shift 2 ;;
+    --expect) steps+=("expect: $2"); shift 2 ;;
+    --checks)
+      while IFS= read -r line || [[ -n $line ]]; do
+        [[ -z ${line//[[:space:]]/} || $line == \#* ]] || steps+=("$line")
+      done <"$2"
+      shift 2 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) jars+=("$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"); shift ;;
   esac
@@ -94,10 +103,10 @@ fail() {
   exit 1
 }
 
-# Waits up to $2 seconds for the fixed string $1 to appear in the log.
+# Waits up to $2 seconds for the fixed string $1 to appear in the log after line $3.
 wait_for() {
   for ((i = 0; i < $2 * 2; i++)); do
-    grep -qF -- "$1" "$log" 2>/dev/null && return 0
+    tail -n "+$((${3:-0} + 1))" "$log" 2>/dev/null | grep -qF -- "$1" && return 0
     kill -0 "$pid" 2>/dev/null || fail "server exited while waiting for \"$1\""
     sleep 0.5
   done
@@ -106,11 +115,20 @@ wait_for() {
 
 wait_for "Done (" 300
 echo "Started $project $version with ${names[*]}"
-for command in "${commands[@]+"${commands[@]}"}"; do
-  echo "$command" >&3
-done
-for expect in "${expects[@]+"${expects[@]}"}"; do
-  wait_for "$expect" 60
+since=0
+for step in "${steps[@]+"${steps[@]}"}"; do
+  case "$step" in
+    paper\ * | folia\ *)
+      [[ ${step%% *} == "$project" ]] || continue
+      step=${step#* } ;;
+  esac
+  case "$step" in
+    "run: "*)
+      since=$(wc -l <"$log")
+      echo "${step#run: }" >&3 ;;
+    "expect: "*) wait_for "${step#expect: }" 60 "$since" ;;
+    *) fail "a step must start with \"run: \" or \"expect: \": $step" ;;
+  esac
 done
 
 echo "stop" >&3

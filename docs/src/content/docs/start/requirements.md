@@ -9,9 +9,11 @@ Every plugin runs on **Paper** and its forks (Purpur, Pufferfish), with a **Java
 
 | Plugin | Paper | Folia | Java |
 | --- | --- | --- | --- |
-| [xUtilities](/xutilities/) | 1.20.6 or newer | Yes | 21 |
+| [xUtilities](/xutilities/) | 1.21.11 or newer | Yes | 21 |
 | [zChat](/zchat/) | 1.20.6 or newer | Yes | 21 |
 | [xLimbo](/xlimbo/) | 1.18.2 or newer | No | 21 |
+
+Each plugin's next major version needs Paper 1.21.11 or newer, the same for all three: xUtilities 2 already does.
 
 Spigot and CraftBukkit aren't supported: the plugins rely on APIs only Paper has.
 

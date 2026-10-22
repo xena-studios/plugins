@@ -16,3 +16,4 @@ rootProject.name = "xena-plugins"
 include("core")
 // A plugin that is never released: it boots the core on a real server in CI.
 include("sandbox")
+include("xutilities")

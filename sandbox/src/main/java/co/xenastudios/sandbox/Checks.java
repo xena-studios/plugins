@@ -1,5 +1,9 @@
 package co.xenastudios.sandbox;
 
+import co.xenastudios.core.ErrorMessages;
+import co.xenastudios.core.command.CommandRegistry;
+import co.xenastudios.core.command.CommandSpec;
+import co.xenastudios.core.task.Tasks;
 import co.xenastudios.sandbox.SandboxPlugin.Check;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
@@ -20,7 +24,32 @@ final class Checks {
         return List.of(
             check("command registered at runtime runs, by name, alias and namespace", Checks::runtimeRegister),
             check("command unregistered at runtime is gone from the client tree", Checks::runtimeUnregister),
-            check("command re-registered with new aliases drops the old ones", Checks::runtimeRealias));
+            check("command re-registered with new aliases drops the old ones", Checks::runtimeRealias),
+            check("core registry replaces a vanilla command and gives it back", () -> replacesVanilla(plugin)));
+    }
+
+    // ---- The core's CommandRegistry against a real server ----
+
+    private static void replacesVanilla(SandboxPlugin plugin) throws Exception {
+        AtomicInteger hits = new AtomicInteger();
+        CommandRegistry registry = new CommandRegistry(plugin, () -> ErrorMessages.DEFAULTS, new Tasks(plugin));
+        Command vanilla = Bukkit.getCommandMap().getKnownCommands().get("seed");
+        require(vanilla != null, "no vanilla /seed to replace");
+        CommandSpec seed = CommandSpec.named("seed").executes(invocation -> hits.incrementAndGet());
+        List<String> warnings = registry.sync(List.of(seed));
+        try {
+            require(warnings.isEmpty(), "warnings: " + warnings);
+            dispatch("seed");
+            require(hits.get() == 1, "ours didn't run");
+            require(node("seed") != null, "no client tree node");
+        } finally {
+            registry.clear();
+        }
+        // Paper wraps vanilla commands afresh on every lookup, so compare by type.
+        Command back = Bukkit.getCommandMap().getKnownCommands().get("seed");
+        require(back != null && back.getClass() == vanilla.getClass(), "vanilla /seed wasn't given back: " + back);
+        dispatch("seed");
+        require(hits.get() == 1, "ours still ran after clear()");
     }
 
     // ---- Spike: live command (re)registration through the Bukkit CommandMap ----
@@ -100,7 +129,7 @@ final class Checks {
     private static void unregister(Command command) {
         CommandMap map = Bukkit.getCommandMap();
         Map<String, Command> known = map.getKnownCommands();
-        known.values().removeIf(c -> c == command);
+        known.entrySet().stream().filter(e -> e.getValue() == command).map(Map.Entry::getKey).toList().forEach(known::remove);
         command.unregister(map);
     }
 

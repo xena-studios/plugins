@@ -1,0 +1,3 @@
+# Live-server checks for the core. CI runs every plugin's boot-checks.txt.
+run: sandbox selftest
+expect: SELFTEST PASS

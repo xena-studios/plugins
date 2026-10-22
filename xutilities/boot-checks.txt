@@ -1,0 +1,24 @@
+# xUtilities on a real server, from the console.
+run: xutilities info
+expect: xUtilities 2.0.0 on
+
+# Ours replaces vanilla /clear and /gamemode (vanilla says "No player was found").
+run: clear Nobody
+expect: That player could not be found.
+run: gamemode creative Nobody
+expect: That player could not be found.
+run: discord
+expect: Join our Discord: discord.gg/example
+
+# Reloading re-registers commands while the server runs.
+run: xutilities reload
+expect: Reloaded xUtilities in
+run: clear Nobody
+expect: That player could not be found.
+
+# A datapack reload rebuilds the server's command tree; ours must survive it.
+# It's done when it logs "Loaded N advancements". Folia has no /reload.
+paper run: minecraft:reload
+paper expect: advancements
+paper run: clear Nobody
+paper expect: That player could not be found.

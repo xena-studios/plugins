@@ -13,15 +13,18 @@ sidebar:
 
 ## Reload or restart?
 
-Most settings apply live on reload: every message and most behaviour. A few are read only when the server starts, because Paper registers commands at startup:
+**xUtilities 2 applies everything on reload**, including turning commands on or off, aliases, permissions and link commands.
+
+zChat 2.0.0 and xLimbo 1.0.1 apply most settings on reload, every message included. A few are read only when the server starts:
 
 - turning a command on or off;
 - a command's aliases and permission;
-- for xUtilities, adding, removing or renaming a [link command](/xutilities/link-commands/);
 - for xLimbo, the world's name, floor height and floor block.
 
-Change one of those and restart the server.
+Change one of those and restart the server. Their next major versions apply these on reload too.
 
 ## A bad value never breaks the plugin
 
 If a config value is invalid, the plugin logs a warning in the console and uses the default for that one value. It never disables itself or stops the server over config.
+
+If the whole file can't be read, such as a YAML syntax error, xUtilities 2 says where in the console and leaves the file alone. On a reload it keeps running with the settings it had; at startup it runs on the defaults until you fix the file and reload.

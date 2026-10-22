@@ -16,6 +16,7 @@ A rewrite. Replace the jar and restart: your 1.x config is carried forward, and 
 
 - `/stonecutter` and `/cartography` (alias `/cartographytable`) workstation menus.
 - An update checker: the console, and players with `xutilities.admin` when they join, hear when a new version is on Modrinth. It sends only the plugin version, platform and Minecraft version, and `update-checker.enabled: false` turns it off. See [Privacy](https://docs.xenastudios.co/start/privacy/).
+- [bStats](https://bstats.org/plugin/bukkit/XenaUtilities/34866) anonymous usage statistics. Turn them off for every plugin in `plugins/bStats/config.yml`. See [Privacy](https://docs.xenastudios.co/start/privacy/).
 - `messages.error.usage`, shown when a command is typed wrong, and `messages.error.failed`, shown if a command hits an error.
 
 ### Changed

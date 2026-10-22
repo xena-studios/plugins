@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -40,6 +41,7 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
     private PermissionRegistry permissions;
     private ModuleSet modules;
     private UpdateChecker updates;
+    private Metrics metrics;
 
     /** The plugin's config: its settings and their defaults. */
     protected abstract ConfigSpec<C> configSpec();
@@ -50,6 +52,14 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
     /** Extra names for {@code /<plugin>}, such as {@code zc} for {@code /zchat}. */
     protected List<String> adminAliases() {
         return List.of();
+    }
+
+    /**
+     * The plugin's bStats ID, or 0 for none. Owners turn bStats off for every plugin
+     * at once in {@code plugins/bStats/config.yml}.
+     */
+    protected int bStatsId() {
+        return 0;
     }
 
     /** The plugin's lowercase name: its command namespace, Modrinth slug and permission prefix. */
@@ -98,10 +108,18 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
             configWarnings = 1;
         }
         apply();
+
+        // Tests run with -Dxena.offline=true so they never report.
+        if (bStatsId() > 0 && !Boolean.getBoolean("xena.offline")) {
+            metrics = new Metrics(this, bStatsId());
+        }
     }
 
     @Override
     public final void onDisable() {
+        if (metrics != null) {
+            metrics.shutdown();
+        }
         if (updates != null) {
             updates.sync(false);
         }

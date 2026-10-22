@@ -41,6 +41,9 @@ tasks.shadowJar {
     // Each plugin carries its own copy of the core, so two plugins built on
     // different core versions never see each other's classes.
     relocate("co.xenastudios.core", "co.xenastudios.${project.name}.core")
+    // bStats insists on being relocated, and into the plugin's own package so
+    // each plugin reports on its own.
+    relocate("org.bstats", "co.xenastudios.${project.name}.bstats")
     // Drop core classes the plugin never uses.
     minimize()
 }

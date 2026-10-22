@@ -18,6 +18,11 @@ public class XUtilities extends XenaPlugin<XConfig> {
     }
 
     @Override
+    protected int bStatsId() {
+        return 34866;
+    }
+
+    @Override
     protected void setup(Setup setup, XConfig config) {
         // One tracker for the plugin's life, so /back survives reloads.
         if (backTracker == null) {

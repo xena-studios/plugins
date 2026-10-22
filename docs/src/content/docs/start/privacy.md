@@ -20,6 +20,6 @@ User-Agent: xena-studios/xutilities/2.0.0 (contact@xenastudios.co)
 
 That's the plugin and its version, the platform (`paper`, or `folia` on Folia) and the Minecraft version. Like any web request, it comes from your server's IP address; Modrinth's [privacy policy](https://modrinth.com/legal/privacy) covers what Modrinth does with it. Nothing about your players is sent. zChat and xLimbo get the same checker in their next major versions.
 
-## Coming: bStats
+## bStats
 
-The next major versions will add **[bStats](https://bstats.org)**, anonymous usage statistics shared by thousands of plugins, on by default: a random server ID, player count, server software and version, Minecraft, Java and plugin versions, operating system, CPU cores, online mode, and country (worked out by bStats from the IP address, which bStats doesn't store). Turn it off for every plugin at once in `plugins/bStats/config.yml`. xUtilities 2.0.0 doesn't include it yet; this page will say when a version does.
+xUtilities 2.0.0 and newer send **[bStats](https://bstats.org)**, anonymous usage statistics shared by thousands of plugins, on by default: a random server ID, player count, server software and version, Minecraft, Java and plugin versions, operating system, CPU cores, online mode, and country (worked out by bStats from the IP address, which bStats doesn't store). Turn it off for every plugin at once in `plugins/bStats/config.yml`. zChat and xLimbo add it in their next major versions. The numbers are public: [xUtilities on bStats](https://bstats.org/plugin/bukkit/XenaUtilities/34866).

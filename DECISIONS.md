@@ -40,13 +40,13 @@ Built with xUtilities 2. A plugin extends `XenaPlugin`, declares its config as r
 - **Server commands are replaced and given back.** Paper wraps vanilla commands in a new object on every lookup, so they're recognised as "not a plugin's" rather than by identity. Another plugin's command is never replaced: that clash is a console warning, and ours stays reachable namespaced.
 - **The default config is written by the core's own emitter**, not Bukkit's: quoted strings, inline lists, comments, blank lines between sections. Carrying an old file forward still goes through Bukkit, which keeps the owner's values and comments.
 - **A file that isn't valid YAML is never overwritten.** On reload the running config stays; at startup the defaults run until it's fixed.
-- **Tests never reach the network**: they run with `-Dxena.offline=true`, which keeps the update checker off.
+- **Tests never reach the network**: they run with `-Dxena.offline=true`, which keeps the update checker and bStats off.
 
 ## Jar budgets are per plugin, and honest (2026-10-21)
 
-xUtilities 2 is about 119 KiB against 1.x's 100.5: roughly 55 KiB of core (reload for everything, config migration, the update checker) and 50 KiB of commands, plus zip overhead. Compiling without local variable tables (keeping line numbers, for stack traces) saved 13 KiB. Its budget is 130 KiB, so anything that grows it is a decision, not drift.
+xUtilities 2 is about 132 KiB against 1.x's 100.5: roughly 55 KiB of core (reload for everything, config migration, the update checker), 15 KiB of bStats and 50 KiB of commands, plus zip overhead. Compiling without local variable tables (keeping line numbers, for stack traces) saved 13 KiB. Its budget is 140 KiB, so anything that grows it is a decision, not drift.
 
-bStats (13 KiB) waits until each plugin has a bStats ID: without one it would ship and send nothing. Adding it back is the dependency, a relocation of `org.bstats` in the convention, and `new Metrics(this, id)` in `XenaPlugin`. Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every parse done at load.
+bStats lives in the core, relocated into each plugin's package; a plugin opts in by overriding `bStatsId()`. The IDs: xUtilities 34866, zChat 21533 (registered for zChat 2, so its history carries on), xLimbo 34867. bStats' Bukkit class submits from its own thread on Folia, so it needs no scheduler of ours. Tests never start it (`xena.offline`). Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every parse done at load.
 
 ## MockBukkit for command logic, real servers for the rest (2026-10-21)
 

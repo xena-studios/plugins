@@ -32,6 +32,7 @@ src/main/java/co/xenastudios/xlimbo/
   config/          the config records; XLConfig carries a 1.x config forward
 boot-checks.txt    console commands CI runs on real Paper servers, and what each must log
 CHANGELOG.md       one section per release; the release workflow publishes it
+modrinth.md        the Modrinth project page, published when it changes on main
 ```
 
 xLimbo only ever deletes or rebuilds a world folder carrying its `xlimbo.dat` marker; keep it that way ([DECISIONS.md](../DECISIONS.md) explains why). The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).

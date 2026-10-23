@@ -32,6 +32,7 @@ src/main/java/co/xenastudios/zchat/
   config/          the config records; ZConfig carries a zChat 2 config forward
 boot-checks.txt    console commands CI runs on real Paper and Folia servers, and what each must log
 CHANGELOG.md       one section per release; the release workflow publishes it
+modrinth.md        the Modrinth project page, published when it changes on main
 ```
 
 Anything on the chat path runs for every message, so keep it allocation-light and do the work when the config loads instead. The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).

@@ -46,7 +46,8 @@ jobs:
           } >>"$GITHUB_ENV"
       - run: ./gradlew ":${{ steps.tag.outputs.module }}:build"
       - name: Publish to Modrinth
-        run: ./gradlew ":${{ steps.tag.outputs.module }}:modrinth"
+        # The version, then the project page from <module>/modrinth.md.
+        run: ./gradlew ":${{ steps.tag.outputs.module }}:modrinth" ":${{ steps.tag.outputs.module }}:modrinthSyncBody"
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
       - name: Publish to GitHub

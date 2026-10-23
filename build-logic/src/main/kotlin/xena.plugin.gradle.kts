@@ -88,4 +88,8 @@ modrinth {
     gameVersions.addAll(providers.gradleProperty("xena.gameVersions").map { it.split(",") })
     loaders.addAll(xena.folia.map { if (it) listOf("paper", "purpur", "folia") else listOf("paper", "purpur") })
     changelog = providers.environmentVariable("CHANGELOG")
+    // The project page. modrinthSyncBody publishes <plugin>/modrinth.md; the release
+    // workflow runs it, and so does modrinth.yml when the file changes on main.
+    syncBodyFrom = providers.fileContents(layout.projectDirectory.file("modrinth.md")).asText
+    debugMode = providers.gradleProperty("xena.modrinthDryRun").map { it.toBoolean() }.orElse(false)
 }

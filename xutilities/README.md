@@ -29,6 +29,7 @@ src/main/java/co/xenastudios/xutilities/
   config/           the config records; XConfig carries a 1.x config forward
 boot-checks.txt     console commands CI runs on real Paper and Folia servers, and what each must log
 CHANGELOG.md        one section per release; the release workflow publishes it
+modrinth.md         the Modrinth project page, published when it changes on main
 ```
 
 The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).

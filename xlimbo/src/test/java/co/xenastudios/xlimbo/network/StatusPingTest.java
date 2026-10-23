@@ -39,6 +39,7 @@ class StatusPingTest {
     }
 
     @Test
+    @SuppressWarnings("try") // the silent server holds its socket open without reading it
     void aServerThatIsDownOrSilentIsNot() throws Exception {
         int port;
         try (ServerSocket closed = new ServerSocket(0)) {

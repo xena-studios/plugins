@@ -17,7 +17,7 @@ zChat handles the chat basics almost every server wants: a chat format per rank,
 - **Works with any permissions plugin**, because ranks are picked by permission. PlaceholderAPI is optional.
 - **Paper and Folia**, from the same jar.
 
-Current version: **3.0.0**, for Paper 1.21.11 or newer and Java 21. [Download on Modrinth](https://modrinth.com/plugin/zchat).
+Current version: **3.0.0**, for Paper 1.21.11 or newer and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/zchat).
 
 :::note[Coming from zChat 2?]
 Replace the jar and restart. Your config is carried forward to zChat 3's format, and the old file is kept beside it as `config.yml.bak-v1`. zChat 3 needs Paper 1.21.11 or newer. One change to check: the `zchat.group.*` permissions no longer default to operators, so give your ranks their group permission (see [Chat formats](/zchat/formats/#which-format-a-player-gets)).

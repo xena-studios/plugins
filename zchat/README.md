@@ -13,7 +13,7 @@ zChat handles the chat basics almost every server wants: a chat format per rank,
 
 **[Download on Modrinth](https://modrinth.com/plugin/zchat)** · [Docs](https://docs.xenastudios.co/zchat/) · [Commands and permissions](https://docs.xenastudios.co/zchat/commands/) · [Changelog](CHANGELOG.md)
 
-Needs Paper 1.21.11 or newer (Purpur and Folia too) and Java 21.
+Needs Paper 1.21.11 or newer (Purpur and Folia too) and Java 21 or newer.
 
 ## Developing
 

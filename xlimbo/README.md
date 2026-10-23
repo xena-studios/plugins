@@ -12,7 +12,7 @@ xLimbo turns a small Paper server into your network's fallback. When your main s
 
 **[Download on Modrinth](https://modrinth.com/plugin/xlimbo)** · [Docs](https://docs.xenastudios.co/xlimbo/) · [Network setup](https://docs.xenastudios.co/xlimbo/network-setup/) · [Changelog](CHANGELOG.md)
 
-Needs Paper 1.21.11 or newer (or Purpur) and Java 21. Not for Folia: Folia can't create worlds, and a limbo has nothing for Folia to spread across threads.
+Needs Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. Not for Folia: Folia can't create worlds, and a limbo has nothing for Folia to spread across threads.
 
 ## Developing
 

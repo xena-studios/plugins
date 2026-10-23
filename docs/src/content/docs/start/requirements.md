@@ -5,13 +5,13 @@ sidebar:
   order: 1
 ---
 
-Every plugin runs on **Paper** and its forks (Purpur, Pufferfish), with a **Java 21** runtime. None of them needs another plugin.
+Every plugin runs on **Paper** and forks of it such as **Purpur**, with **Java 21 or newer**. Paper 26.x itself needs Java 25, so that's what a 26.x server runs on. None of the plugins needs another plugin.
 
 | Plugin | Paper | Folia | Java |
 | --- | --- | --- | --- |
-| [xUtilities](/xutilities/) | 1.21.11 or newer | Yes | 21 |
-| [zChat](/zchat/) | 1.21.11 or newer | Yes | 21 |
-| [xLimbo](/xlimbo/) | 1.21.11 or newer | No | 21 |
+| [xUtilities](/xutilities/) | 1.21.11 or newer | Yes | 21 or newer |
+| [zChat](/zchat/) | 1.21.11 or newer | Yes | 21 or newer |
+| [xLimbo](/xlimbo/) | 1.21.11 or newer | No | 21 or newer |
 
 Spigot and CraftBukkit aren't supported: the plugins rely on APIs only Paper has.
 

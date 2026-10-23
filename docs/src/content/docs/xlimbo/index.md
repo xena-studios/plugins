@@ -16,7 +16,7 @@ xLimbo turns a small Paper server into your network's fallback. When your main s
 - **Nobody can break it.** The floor can't be broken, players who fall are caught, and portals, liquids, fire, explosions, redstone, mobs and dropped items are all blocked. Each protection can be turned off, and one that's off costs nothing.
 - **Every change applies on reload**, even the world's name and floor.
 
-Current version: **2.0.0**, for Paper 1.21.11 or newer (or Purpur) and Java 21. It doesn't run on Folia: Folia can't create worlds, and a limbo has nothing for Folia to spread across threads. [Download on Modrinth](https://modrinth.com/plugin/xlimbo).
+Current version: **2.0.0**, for Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. It doesn't run on Folia: Folia can't create worlds, and a limbo has nothing for Folia to spread across threads. [Download on Modrinth](https://modrinth.com/plugin/xlimbo).
 
 :::note[Coming from xLimbo 1.x?]
 Replace the jar and restart. Your config is carried forward to 2.0's format, and the old file is kept beside it as `config.yml.bak-v1`. xLimbo 2 needs Paper 1.21.11 or newer.

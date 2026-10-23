@@ -15,7 +15,7 @@ xUtilities gives every server the small commands it needs, whatever kind of serv
 - **Next to nothing to run.** No repeating tasks. The only event listener is `/back`'s, and it exists only while `/back` is on.
 - **Paper and Folia**, from the same jar.
 
-Current version: **2.0.0**, for Paper 1.21.11 or newer and Java 21. [Download on Modrinth](https://modrinth.com/plugin/xutilities).
+Current version: **2.0.0**, for Paper 1.21.11 or newer and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xutilities).
 
 :::note[Coming from xUtilities 1.x?]
 Replace the jar and restart. Your config is carried forward to 2.0's format, and the old file is kept beside it as `config.yml.bak-v1`. xUtilities 2 needs Paper 1.21.11 or newer.

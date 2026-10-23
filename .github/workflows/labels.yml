@@ -1,0 +1,43 @@
+name: Labels
+
+# Labels pull requests by the plugin folders they change, and issues by the
+# Plugin picked in the issue form.
+on:
+  # The labeler never checks out the pull request's code, so _target is safe here,
+  # and it lets pull requests from forks be labelled too.
+  pull_request_target:
+  issues:
+    types: [opened, edited]
+
+permissions: {}
+
+jobs:
+  pull-request:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/labeler@v7
+
+  issue:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-26.04
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ github.event.issue.body }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          # The form puts the answer on the first non-empty line under "### Plugin".
+          plugin=$(tr -d '\r' <<<"$BODY" | awk '/^### Plugin$/ { found = 1; next } found && NF { print; exit }')
+          case $plugin in
+            xUtilities) label=xutilities ;;
+            zChat) label=zchat ;;
+            xLimbo) label=xlimbo ;;
+            *) exit 0 ;;
+          esac
+          gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$label"

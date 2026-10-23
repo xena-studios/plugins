@@ -65,7 +65,7 @@ These are what make the plugins fast and dependable on a busy server. A change t
 3. Add a line for it to the plugin's `CHANGELOG.md` under `## Unreleased` (add the heading if it isn't there). Write it for server owners: what changed for them, not how.
 4. Run `./gradlew build` and open the PR. The template asks for the rest.
 
-CI builds, tests, boot-tests on Paper and Folia, and compiles against the newest Paper. It has to pass before a PR is merged.
+CI builds, tests, boot-tests on Paper and Folia, and compiles against the newest Paper; CodeQL scans the change for security problems. `main` only takes changes through pull requests, and its two required checks, `plugins-ok` and `docs-ok`, have to pass. Each workflow skips what a change doesn't touch, so a docs-only PR doesn't wait for the boot tests. PRs and issues are labelled by plugin on their own.
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org), with the plugin as the scope: `fix(zchat): keep the reply target through a reload`, `feat(xlimbo): ...`, `docs: ...`, `build: ...`. Use `core` for the shared code.
 

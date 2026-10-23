@@ -1,0 +1,16 @@
+# Labels for pull requests, by the files they change (actions/labeler, in labels.yml).
+xutilities:
+  - changed-files:
+      - any-glob-to-any-file: xutilities/**
+zchat:
+  - changed-files:
+      - any-glob-to-any-file: zchat/**
+xlimbo:
+  - changed-files:
+      - any-glob-to-any-file: xlimbo/**
+core:
+  - changed-files:
+      - any-glob-to-any-file: [core/**, build-logic/**]
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: [docs/**, "**/*.md"]

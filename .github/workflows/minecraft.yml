@@ -44,5 +44,7 @@ jobs:
             --body "Paper has a stable build of Minecraft ${VERSIONS//,/, }. This lists the plugins for it on Modrinth (from their next release), and moves the boot tests and the newest-API compile onto $NEWEST.
 
           Merge if the checks pass. If they fail, the plugins need a fix for $NEWEST first."
-          # PRs opened with this workflow's token don't start other workflows, so start CI here.
+          # PRs opened with this workflow's token don't start other workflows, so start
+          # CI here: both workflows, since main requires a check from each.
           gh workflow run plugins.yml --ref "$branch"
+          gh workflow run docs.yml --ref "$branch"

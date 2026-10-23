@@ -39,4 +39,4 @@ xLimbo only ever deletes or rebuilds a world folder carrying its `xlimbo.dat` ma
 
 ## Licence
 
-GPL-3.0, like the rest of the repo. See [LICENSE](../LICENSE).
+GPL-3.0-only, like the rest of the repo. See [LICENSE](../LICENSE).

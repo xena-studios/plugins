@@ -36,4 +36,4 @@ The shared core (reloading, config migration, the theme, the update checker, bSt
 
 ## Licence
 
-GPL-3.0, like the rest of the repo. See [LICENSE](../LICENSE).
+GPL-3.0-only, like the rest of the repo. See [LICENSE](../LICENSE).

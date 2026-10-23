@@ -62,7 +62,7 @@ Every feature and command can be turned off, renamed, given its own permission a
 
 Full setup, every setting and every permission: **[docs.xenastudios.co/zchat](https://docs.xenastudios.co/zchat/)**
 
-**Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21. PlaceholderAPI is optional.
+**Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. PlaceholderAPI is optional.
 
 **Coming from zChat 2?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`. The `zchat.group.*` permissions no longer go to operators by default, so give your ranks theirs. A zChat 1.x config can't be carried forward; zChat keeps it as `config.yml.old` and writes a fresh one.
 

@@ -47,7 +47,7 @@ Every message is yours to rewrite, with full MiniMessage colours and formatting.
 
 Velocity, BungeeCord, and keeping `/join` secure: **[docs.xenastudios.co/xlimbo](https://docs.xenastudios.co/xlimbo/)**
 
-**Requires** Paper 1.21.11 or newer (or Purpur), Java 21, and a proxy (Velocity or BungeeCord). Not for Folia.
+**Requires** Paper 1.21.11 or newer (or Purpur), Java 21 or newer, and a proxy (Velocity or BungeeCord). Not for Folia.
 
 **Coming from xLimbo 1.x?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`.
 

@@ -53,7 +53,7 @@ Drop it on your lobby, your survival server and your minigames alike. It costs n
 
 Full setup, every setting and every permission: **[docs.xenastudios.co/xutilities](https://docs.xenastudios.co/xutilities/)**
 
-**Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21.
+**Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 
 **Coming from xUtilities 1.x?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`.
 

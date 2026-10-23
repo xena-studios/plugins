@@ -48,7 +48,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       # Compiles, runs the tests, and fails any jar over its size budget.
       - run: ./gradlew build
       - uses: actions/upload-artifact@v7
@@ -75,7 +75,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       # Keep in step with the newest Paper release, as in the boot matrix below.
       - run: ./gradlew compileJava -Pxena.newestPaper=26.3.build.211-stable
 

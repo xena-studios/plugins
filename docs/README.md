@@ -28,6 +28,8 @@ public/
   accents/           each plugin's accent colour, applied to its own pages
   _headers           security headers; the build fills in the CSP's script hashes
   og.png             the link preview
+  robots.txt         lets every crawler in, and points to the sitemap
+  .well-known/security.txt   where to report security problems (RFC 9116); renew its Expires by 2027-10-22
 scripts/
   sync-brand.mjs     npm run brand:sync
   headers.mjs        runs after astro build

@@ -69,7 +69,7 @@ CI builds, tests, boot-tests on Paper and Folia, and compiles against the newest
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org), with the plugin as the scope: `fix(zchat): keep the reply target through a reload`, `feat(xlimbo): ...`, `docs: ...`, `build: ...`. Use `core` for the shared code.
 
-By contributing, you agree your contribution is licensed under the repo's licence, [GPL-3.0](LICENSE).
+By contributing, you agree your contribution is licensed under the repo's licence, [GPL-3.0-only](LICENSE).
 
 ## Adding a plugin
 

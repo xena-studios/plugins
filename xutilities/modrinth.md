@@ -64,4 +64,4 @@ Full setup, every setting and every permission: **[docs.xenastudios.co/xutilitie
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 
-Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0 · [Source](https://github.com/xena-studios/plugins/tree/main/xutilities)
+Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xutilities)

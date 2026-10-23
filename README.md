@@ -48,4 +48,4 @@ Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## Licence
 
-GPL-3.0. See [LICENSE](LICENSE).
+GPL-3.0-only: the GNU General Public License, version 3 only, not later versions. See [LICENSE](LICENSE).

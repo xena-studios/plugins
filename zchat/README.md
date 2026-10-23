@@ -39,4 +39,4 @@ Anything on the chat path runs for every message, so keep it allocation-light an
 
 ## Licence
 
-GPL-3.0, like the rest of the repo. See [LICENSE](../LICENSE).
+GPL-3.0-only, like the rest of the repo. See [LICENSE](../LICENSE).

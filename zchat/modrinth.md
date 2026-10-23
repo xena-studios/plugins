@@ -73,4 +73,4 @@ Full setup, every setting and every permission: **[docs.xenastudios.co/zchat](ht
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 
-Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0 · [Source](https://github.com/xena-studios/plugins/tree/main/zchat)
+Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/zchat)

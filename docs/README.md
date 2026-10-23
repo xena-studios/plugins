@@ -45,4 +45,4 @@ The docs wear the plugin family's brand, as Raptor's docs wear Raptor's: deepsla
 
 ## Deploying
 
-Pushes to `main` that touch `docs/` deploy to Cloudflare once the repo has a `CLOUDFLARE_API_TOKEN` secret and a `CLOUDFLARE_ACCOUNT_ID` variable ([`docs.yml`](../.github/workflows/docs.yml)). Pull requests only build.
+Pushes to `main` that touch `docs/` build, then deploy to Cloudflare from the `docs` environment, which only `main` can use: its `CLOUDFLARE_API_TOKEN` secret goes to the deploy step alone, with the repo's `CLOUDFLARE_ACCOUNT_ID` variable ([`docs.yml`](../.github/workflows/docs.yml)). Pull requests only build.

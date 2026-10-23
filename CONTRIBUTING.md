@@ -77,7 +77,7 @@ A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin
 
 ## Releasing
 
-For maintainers. Bump the plugin's `version` in its `build.gradle.kts`, rename `## Unreleased` in its `CHANGELOG.md` to `## <version>`, merge, then push a tag such as `xutilities-v2.1.0`. The release workflow checks the two match, then publishes to Modrinth and GitHub with that changelog section as the notes. Publishing to Modrinth needs the repo's `MODRINTH_TOKEN` secret.
+For maintainers. Bump the plugin's `version` in its `build.gradle.kts`, rename `## Unreleased` in its `CHANGELOG.md` to `## <version>`, merge, then push a tag such as `xutilities-v2.1.0`. The release workflow checks the two match, then publishes to Modrinth and GitHub with that changelog section as the notes. Publishing to Modrinth needs the `MODRINTH_TOKEN` secret in the `release` environment, which only `main` and release tags can use.
 
 Each plugin's Modrinth page is its `modrinth.md`. When one changes on `main`, [`modrinth.yml`](.github/workflows/modrinth.yml) publishes it, and every release publishes it again; edit the file, never the page on Modrinth, or the next sync overwrites the edit. Anything between `<!-- modrinth_exclude.start -->` and `<!-- modrinth_exclude.end -->` is left out. To check what would be sent without sending it: `MODRINTH_TOKEN=x ./gradlew :<plugin>:modrinthSyncBody -Pxena.modrinthDryRun=true --info`.
 

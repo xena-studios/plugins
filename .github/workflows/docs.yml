@@ -40,10 +40,6 @@ jobs:
     defaults:
       run:
         working-directory: docs
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      # Not sensitive (it's in every dashboard URL), so a variable, not a secret.
-      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -54,17 +50,41 @@ jobs:
       - run: npm ci
       # Fails on any broken internal link (starlight-links-validator).
       - run: npm run build
-      - run: npx wrangler@4 deploy --dry-run
-      # Main deploys (on push or by hand); pull requests only check the build.
+      - run: npx wrangler deploy --dry-run
+
+  # Main only (on push or by hand), once the build passes. The Cloudflare token
+  # lives in the docs environment, which GitHub opens to main alone, and only the
+  # deploy step sees it: never npm ci or the build.
+  deploy:
+    needs: docs
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'xena-studios/plugins' }}
+    runs-on: ubuntu-26.04
+    environment:
+      name: docs
+      url: https://docs.xenastudios.co
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+      - run: npm ci
+      - run: npm run build
       - name: Deploy to Cloudflare
-        # Skipped until the repo has Cloudflare secrets, and on forks.
-        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && env.CLOUDFLARE_API_TOKEN != '' }}
-        run: npx wrangler@4 deploy
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Not sensitive (it's in every dashboard URL), so a variable, not a secret.
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
 
   # The one check main requires: passes when the build passed or was skipped
   # because the docs didn't change.
   docs-ok:
-    needs: [changes, docs]
+    needs: [changes, docs, deploy]
     if: always()
     runs-on: ubuntu-26.04
     steps:

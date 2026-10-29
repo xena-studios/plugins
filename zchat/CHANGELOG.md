@@ -1,5 +1,11 @@
 # zChat changelog
 
+## Unreleased
+
+### Fixed
+
+- Clicking the link in the update notice now opens the new version's Modrinth page. Before, it opened nothing.
+
 ## 3.0.0
 
 A rewrite. Replace the jar and restart: your zChat 2 config is carried forward, and the old file is kept as `config.yml.bak-v1`. A zChat 1.x config can't be carried forward: it's kept as `config.yml.old`, and a fresh config is written.

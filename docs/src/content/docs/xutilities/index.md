@@ -12,7 +12,7 @@ xUtilities gives every server the small commands it needs, whatever kind of serv
 
 - **Every command can be turned off**, renamed with aliases, given its own permission, and reworded. A command that's off isn't registered at all, so it doesn't show up in tab completion and another plugin can have its name.
 - **Every change applies on reload**, even turning commands on or off and adding link commands. No restarts.
-- **Next to nothing to run.** No repeating tasks. The only event listener is `/back`'s, and it exists only while `/back` is on.
+- **Next to nothing to run.** Nothing runs on a timer but the daily update check and bStats, and you can turn both off. `/back`'s listener exists only while `/back` is on.
 - **Paper and Folia**, from the same jar.
 
 Current version: **2.0.0**, for Paper 1.21.11 or newer and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xutilities).

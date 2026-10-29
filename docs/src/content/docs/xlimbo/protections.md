@@ -21,5 +21,5 @@ Players in xLimbo are in creative, so xLimbo blocks everything that could lag, b
 | `redstone` | on | Redstone activity, pistons and dispensers. |
 | `item-drops` | on | Dropped items, so building doesn't leave litter. |
 | `entities.block-entity-items` | on | Armour stands, boats, minecarts, item frames, paintings, End crystals and spawn eggs. |
-| `entities.cleanup-interval-seconds` | `300` | Removes stray entities this often: dropped items, mobs, vehicles, projectiles. Players, armour stands, item frames, paintings, display and marker entities, and anything tagged `xlimbo.keep` are left alone. `0` turns the sweep off. |
+| `entities.cleanup-interval-seconds` | `300` | Removes stray entities this often: dropped items, mobs, vehicles, projectiles. Players, armour stands, item frames, paintings, display, marker and interaction entities, and anything tagged `xlimbo.keep` are left alone. `0` turns the sweep off. |
 | `build-guard.enabled` | **off** | Lag machines: limits each player to `max-places-per-second` blocks (default `30`). |

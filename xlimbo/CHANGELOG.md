@@ -1,5 +1,11 @@
 # xLimbo changelog
 
+## Unreleased
+
+### Fixed
+
+- Clicking the link in the update notice now opens the new version's Modrinth page. Before, it opened nothing.
+
 ## 2.0.0
 
 A rewrite. Replace the jar and restart: your 1.x config is carried forward, and the old file is kept as `config.yml.bak-v1`. xLimbo 2 takes over the world 1.x made, builds and all if you kept it saved.

@@ -64,6 +64,8 @@ export default defineConfig({
       plugins: [starlightLinksValidator()],
       // Each plugin's pages load that plugin's accent (public/accents/).
       routeMiddleware: "./src/routeData.ts",
+      // src/pages/404.astro instead, with noindex.
+      disable404Route: true,
       sidebar: [
         { label: "Start here", items: [{ autogenerate: { directory: "start" } }] },
         { label: "xUtilities", items: [{ autogenerate: { directory: "xutilities" } }] },

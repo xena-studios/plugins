@@ -13,6 +13,12 @@ on:
 permissions:
   contents: read
 
+# One run per branch at a time, so two quick merges can't deploy out of order; a
+# new push to a pull request cancels the run it replaces.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   changes:
     runs-on: ubuntu-26.04
@@ -27,10 +33,12 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           if [[ $GITHUB_EVENT_NAME != pull_request ]]; then echo "docs=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          # Read first, so a failed call fails the step instead of skipping the build.
+          files=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only)
           docs=false
           while read -r file; do
             case $file in docs/* | .github/workflows/docs.yml) docs=true ;; esac
-          done < <(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only)
+          done <<< "$files"
           echo "docs=$docs" >> "$GITHUB_OUTPUT"
 
   docs:

@@ -14,7 +14,7 @@ Drop it on your lobby, your survival server and your minigames alike. It costs n
 
 - **Only what you want.** Every command can be turned off, renamed, given its own permission and reworded. A disabled command disappears completely, even from tab completion, and another plugin can have its name.
 - **Every change applies on reload.** Turning commands on or off, aliases, permissions, new link commands: `/xutilities reload` applies all of it. No restarts.
-- **No lag.** No timers or background tasks. Nothing runs until someone types a command.
+- **No lag.** Nothing runs in the background but a daily update check and bStats, and you can turn both off.
 - **Never breaks.** A typo in the config falls back to the default with a warning in the console. xUtilities never disables itself or crashes your server.
 - **Your words, your colours.** Every message uses MiniMessage, and one `theme` at the top of the config restyles them all at once.
 - **Paper and Folia.** One jar runs on Paper, Purpur and Folia, with nothing to set up.

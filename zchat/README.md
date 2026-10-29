@@ -4,7 +4,7 @@
 
 zChat handles the chat basics almost every server wants: a chat format per rank, a filter that's hard to dodge, a cooldown and anti-spam, mentions, private messages, a global chat mute, clearing chat, and letting players hide chat for themselves. Every piece can be turned off.
 
-- **Built for the hot path.** zChat runs on every chat message, so that path is kept cheap: formats and the filter are compiled when the config loads, the cheapest checks run first, and each message is drawn once, not once per player who sees it. No repeating tasks.
+- **Built for the hot path.** zChat runs on every chat message, so that path is kept cheap: formats and the filter are compiled when the config loads, the cheapest checks run first, and each message is drawn once, not once per player who sees it. Nothing runs on a timer but the daily update check and bStats, and you can turn both off.
 - **A filter that's hard to dodge.** It catches `s p a c e d` words, `b4dw0rd`, `baaadword` and `bädword`, but leaves innocent words like *class* alone.
 - **Players can't inject formatting.** What a player types goes into the format as plain text, unless you give them the colour permission (and even then, only colours and styles).
 - **Every change applies on reload**, even turning commands on or off. No restarts.

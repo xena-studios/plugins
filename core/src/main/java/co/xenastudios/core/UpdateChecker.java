@@ -14,6 +14,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.Tag;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -156,7 +158,17 @@ final class UpdateChecker {
             Placeholders.text("plugin", plugin.getName()),
             Placeholders.text("current", current),
             Placeholders.text("latest", version),
-            Placeholders.text("url", "https://modrinth.com/plugin/" + project + "/version/" + version));
+            url(project, version));
+    }
+
+    /**
+     * The version's Modrinth page as {@code <url>}. Pre-processed, so it also works
+     * inside {@code <click:open_url:'<url>'>}, which takes an inserted placeholder
+     * literally; encoded, so a version number can't add tags of its own.
+     */
+    static TagResolver url(String project, String version) {
+        return TagResolver.resolver("url", Tag.preProcessParsed(
+            "https://modrinth.com/plugin/" + encode(project) + "/version/" + encode(version)));
     }
 
     private static String encode(String value) {

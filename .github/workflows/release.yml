@@ -39,10 +39,13 @@ jobs:
       - name: Read the changelog
         run: |
           scripts/changelog.sh "${{ steps.tag.outputs.module }}/CHANGELOG.md" "${{ steps.tag.outputs.version }}" >"$RUNNER_TEMP/changelog.md"
+          # For the Modrinth version's changelog. A random delimiter, so no line of the
+          # changelog can end the value early and set other variables.
+          delimiter="CHANGELOG_$(openssl rand -hex 16)"
           {
-            echo "CHANGELOG<<__CHANGELOG__"
+            echo "CHANGELOG<<$delimiter"
             cat "$RUNNER_TEMP/changelog.md"
-            echo "__CHANGELOG__"
+            echo "$delimiter"
           } >>"$GITHUB_ENV"
       - run: ./gradlew ":${{ steps.tag.outputs.module }}:build"
       - name: Publish to Modrinth

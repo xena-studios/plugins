@@ -101,10 +101,11 @@ final class PlayerCommands {
                 .usage("/setrotation <yaw> <pitch> [player]")
                 .completes((sender, args) -> args.length == 3 ? Completions.players(sender, args[2], rotation.permissionOthers()) : List.of())
                 .executes(invocation -> {
-                    float yaw = (float) invocation.decimal(0, -360, 360);
-                    float pitch = (float) invocation.decimal(1, -90, 90);
+                    // Shown as typed: a float widened back to a double would say 12.300000190734863.
+                    double yaw = invocation.decimal(0, -360, 360);
+                    double pitch = invocation.decimal(1, -90, 90);
                     Player target = invocation.target(2, rotation.permissionOthers());
-                    Specs.change(tasks, invocation, target, player -> player.setRotation(yaw, pitch),
+                    Specs.change(tasks, invocation, target, player -> player.setRotation((float) yaw, (float) pitch),
                         rotation.messageSelf(), rotation.messageOthers(),
                         Placeholders.text("yaw", Specs.number(yaw)), Placeholders.text("pitch", Specs.number(pitch)));
                 }));

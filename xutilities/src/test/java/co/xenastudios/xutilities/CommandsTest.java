@@ -114,6 +114,14 @@ class CommandsTest {
     }
 
     @Test
+    void setrotationSaysTheAnglesAsTyped() {
+        admin.performCommand("setrotation 12.3 -4.5");
+        assertEquals(12.3f, admin.getLocation().getYaw(), 0.0001);
+        assertEquals(-4.5f, admin.getLocation().getPitch(), 0.0001);
+        assertEquals("» Now facing yaw 12.3, pitch -4.5.", next(admin));
+    }
+
+    @Test
     void gamemodeTakesNamesNumbersAndAliases() {
         admin.performCommand("gamemode c");
         assertEquals(GameMode.CREATIVE, admin.getGameMode());

@@ -5,6 +5,7 @@
 ### Fixed
 
 - Clicking the link in the update notice now opens the new version's Modrinth page. Before, it opened nothing.
+- `/setrotation` says the angles as you typed them: `12.3`, not `12.300000190734863`.
 
 ## 2.0.0
 

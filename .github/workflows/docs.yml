@@ -42,19 +42,24 @@ jobs:
         working-directory: docs
     steps:
       - uses: actions/checkout@v7
+      # The version comes from packageManager in docs/package.json.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          package_json_file: docs/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: docs/package-lock.json
-      - run: npm ci
-      # Fails on any broken internal link (starlight-links-validator).
-      - run: npm run build
-      - run: npx wrangler deploy --dry-run
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      # Fails on a type error (astro check) or any broken internal link
+      # (starlight-links-validator).
+      - run: pnpm build
+      - run: pnpm exec wrangler deploy --dry-run
 
   # Main only (on push or by hand), once the build passes. The Cloudflare token
   # lives in the docs environment, which GitHub opens to main alone, and only the
-  # deploy step sees it: never npm ci or the build.
+  # deploy step sees it: never pnpm install or the build.
   deploy:
     needs: docs
     if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'xena-studios/plugins' }}
@@ -67,15 +72,19 @@ jobs:
         working-directory: docs
     steps:
       - uses: actions/checkout@v7
+      # The version comes from packageManager in docs/package.json.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          package_json_file: docs/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: docs/package-lock.json
-      - run: npm ci
-      - run: npm run build
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
       - name: Deploy to Cloudflare
-        run: npx wrangler deploy
+        run: pnpm exec wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           # Not sensitive (it's in every dashboard URL), so a variable, not a secret.

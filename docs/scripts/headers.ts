@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const dist = fileURLToPath(new URL("../dist", import.meta.url));
-const hashes = new Set();
+const hashes = new Set<string>();
 for (const f of await readdir(dist, { recursive: true })) {
   if (!f.endsWith(".html")) continue;
   const html = await readFile(join(dist, f), "utf8");

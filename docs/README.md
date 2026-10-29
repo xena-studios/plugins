@@ -25,6 +25,7 @@ src/
   content/docs/      the pages, in Markdown: start/ for what the plugins share, one folder per plugin
   generated/         each plugin's default config.yml, written by the plugin's tests (don't edit)
   components/        overrides of Starlight's page title, theme and the horizon
+  pages/404.astro    the not-found page, kept out of search engines
   styles/theme.css   the plugin family's look
   assets/            logos, plugin icons and the horizon, synced from the brand repo
 public/

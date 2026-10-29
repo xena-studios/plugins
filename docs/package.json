@@ -2,11 +2,13 @@
   "name": "xena-plugin-docs",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.16.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/headers.mjs",
+    "check": "astro check",
+    "build": "astro check && astro build && node scripts/headers.ts",
     "preview": "astro preview",
-    "brand:sync": "node scripts/sync-brand.mjs"
+    "brand:sync": "node scripts/sync-brand.ts"
   },
   "engines": {
     "node": ">=24"
@@ -19,7 +21,10 @@
     "sharp": "^0.35.5"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@types/node": "^24.19.2",
     "starlight-links-validator": "^0.27.0",
+    "typescript": "^6.0.3",
     "wrangler": "^4.152.0"
   }
 }

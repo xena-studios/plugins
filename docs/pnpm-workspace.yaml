@@ -1,0 +1,5 @@
+# Dependencies allowed to run install scripts (pnpm runs none by default):
+# esbuild and workerd fetch their platform binaries for Astro and Wrangler.
+allowBuilds:
+  esbuild: true
+  workerd: true

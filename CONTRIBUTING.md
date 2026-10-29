@@ -73,7 +73,7 @@ By contributing, you agree your contribution is licensed under the repo's licenc
 
 ## Adding a plugin
 
-A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 150 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth. Give it a `README.md`, a `CHANGELOG.md`, a `modrinth.md` (its Modrinth page) and a `boot-checks.txt` (CI picks that up on its own), a banner (add it to `docs/scripts/sync-brand.mjs`), and a folder in the docs. xUtilities is the example to copy.
+A new plugin is a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`; add it to `settings.gradle.kts`. The convention shades in the core, generates `paper-plugin.yml`, sets a 150 KiB jar budget (`xena { jarBudgetKb = ... }`) and wires up Modrinth. Give it a `README.md`, a `CHANGELOG.md`, a `modrinth.md` (its Modrinth page) and a `boot-checks.txt` (CI picks that up on its own), a banner (add it to `docs/scripts/sync-brand.ts`), and a folder in the docs. xUtilities is the example to copy.
 
 ## Releasing
 

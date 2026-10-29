@@ -2,8 +2,8 @@
 // single source of truth for logos, icons, the horizon and colours. The copies are
 // committed, so builds never fetch the brand repo.
 //
-//   npm run brand:sync                 # expects ../../brand (next to this repo)
-//   BRAND_DIR=/path/to/brand npm run brand:sync
+//   pnpm brand:sync                    # expects ../../brand (next to this repo)
+//   BRAND_DIR=/path/to/brand pnpm brand:sync
 import fs from "node:fs";
 import path from "node:path";
 

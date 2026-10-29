@@ -1,6 +1,6 @@
 # Response headers for docs.xenastudios.co (Cloudflare Workers reads this file
 # from the build output). The build fills in the inline-script placeholder with
-# the hashes of Starlight's few inline scripts (scripts/headers.mjs), so nothing
+# the hashes of Starlight's few inline scripts (scripts/headers.ts), so nothing
 # else inline can run. Search (Pagefind) runs as WebAssembly, hence
 # 'wasm-unsafe-eval'. The site loads nothing from anywhere else.
 /*

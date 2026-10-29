@@ -6,14 +6,17 @@ The source of **[docs.xenastudios.co](https://docs.xenastudios.co)**: a static [
 
 ## Develop
 
-Needs Node 24.
+Needs Node 24 and pnpm.
 
 ```sh
-npm install
-npm run dev          # http://localhost:4321, with hot reload
-npm run build        # static site in dist/, with every internal link checked
-npm run brand:sync   # copy the brand assets in from a checkout of xena-studios/brand
+pnpm install
+pnpm dev          # http://localhost:4321, with hot reload
+pnpm check        # type-check the pages, components and scripts
+pnpm build        # check, then build the static site in dist/, with every internal link checked
+pnpm brand:sync   # copy the brand assets in from a checkout of xena-studios/brand
 ```
+
+The config and scripts are TypeScript, checked by `astro check`. The scripts run on Node directly, which strips their types.
 
 ## Layout
 
@@ -31,8 +34,8 @@ public/
   robots.txt         lets every crawler in, and points to the sitemap
   .well-known/security.txt   where to report security problems (RFC 9116); renew its Expires by 2027-10-22
 scripts/
-  sync-brand.mjs     npm run brand:sync
-  headers.mjs        runs after astro build
+  sync-brand.ts      pnpm brand:sync
+  headers.ts         runs after astro build
 ```
 
 ## Writing pages
@@ -43,7 +46,7 @@ scripts/
 
 ## Look
 
-The docs wear the plugin family's brand, as Raptor's docs wear Raptor's: deepslate, Space Grotesk, dark only, and each plugin's pages in its own accent with its icon beside the title. Logos, icons, the horizon, the favicon and the link preview are copied from [xena-studios/brand](https://github.com/xena-studios/brand) by `npm run brand:sync`, never redrawn here. The script expects the brand repo next to this one (`../../brand`), or at `BRAND_DIR`. It also refreshes the README banners in `.github/assets/`.
+The docs wear the plugin family's brand, as Raptor's docs wear Raptor's: deepslate, Space Grotesk, dark only, and each plugin's pages in its own accent with its icon beside the title. Logos, icons, the horizon, the favicon and the link preview are copied from [xena-studios/brand](https://github.com/xena-studios/brand) by `pnpm brand:sync`, never redrawn here. The script expects the brand repo next to this one (`../../brand`), or at `BRAND_DIR`. It also refreshes the README banners in `.github/assets/`.
 
 ## Deploying
 

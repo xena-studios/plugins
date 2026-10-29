@@ -1,4 +1,4 @@
-/* xlimbo's accent (xena-studios/brand, scripts/plugin-brand.mjs), loaded on its pages.
+/* xlimbo's accent (xena-studios/brand, scripts/plugin-brand.ts), loaded on its pages.
    Starlight puts route head entries before the bundled theme, so the doubled
    :root outranks theme.css instead of relying on order. */
 :root:root {

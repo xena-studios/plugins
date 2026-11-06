@@ -14,6 +14,9 @@ permissions:
   pull-requests: write
   actions: write
 
+# One at a time, so the Monday run and one by hand can't both open the PR.
+concurrency: minecraft
+
 jobs:
   check:
     runs-on: ubuntu-26.04

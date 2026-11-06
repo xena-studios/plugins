@@ -1,0 +1,21 @@
+---
+// The 404 page, in the docs' own frame and kept out of search engines. It
+// replaces Starlight's (disable404Route in astro.config.ts).
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Page not found",
+    description: "There's nothing at this address.",
+    template: "splash",
+    editUrl: false,
+    lastUpdated: false,
+    pagefind: false,
+    head: [{ tag: "meta", attrs: { name: "robots", content: "noindex" } }],
+    hero: {
+      tagline: "This page doesn't exist, or it moved. Search the docs from the bar at the top, or start again from the home page.",
+      actions: [{ text: "Back to the docs", link: "/", icon: "right-arrow" }],
+    },
+  }}
+/>

@@ -1,6 +1,24 @@
 # Decisions
 
-Why the plugins are built the way they are. Newest last.
+Why the plugins are built the way they are, oldest first.
+
+| Decision | Date |
+|---|---|
+| [One minimum version: Paper 1.21.11, Java 21](#one-minimum-version-paper-12111-java-21-2026-10-21) | 2026-10-21 |
+| [The rewrite ships as new majors, one plugin at a time](#the-rewrite-ships-as-new-majors-one-plugin-at-a-time-2026-10-21) | 2026-10-21 |
+| [The core is shaded into each plugin, never installed on its own](#the-core-is-shaded-into-each-plugin-never-installed-on-its-own-2026-10-21) | 2026-10-21 |
+| [Commands are registered at runtime, so command changes apply on reload](#commands-are-registered-at-runtime-so-command-changes-apply-on-reload-2026-10-21) | 2026-10-21 |
+| [Configs are generated from a schema in code](#configs-are-generated-from-a-schema-in-code-2026-10-21) | 2026-10-21 |
+| [Boot tests on real servers](#boot-tests-on-real-servers-2026-10-21) | 2026-10-21 |
+| [The core: what every plugin gets](#the-core-what-every-plugin-gets-2026-10-21) | 2026-10-21 |
+| [Jar budgets are per plugin, and honest](#jar-budgets-are-per-plugin-and-honest-2026-10-21) | 2026-10-21 |
+| [Messages share a theme](#messages-share-a-theme-2026-10-21) | 2026-10-21 |
+| [MockBukkit for command logic, real servers for the rest](#mockbukkit-for-command-logic-real-servers-for-the-rest-2026-10-21) | 2026-10-21 |
+| [Jar budgets are a tripwire, not a target](#jar-budgets-are-a-tripwire-not-a-target-2026-10-22) | 2026-10-22 |
+| [Renovate for dependencies, a workflow for Minecraft](#renovate-for-dependencies-a-workflow-for-minecraft-2026-10-22) | 2026-10-22 |
+| [zChat's chat path](#zchats-chat-path-2026-10-22) | 2026-10-22 |
+| [xLimbo is Paper only](#xlimbo-is-paper-only-2026-10-22) | 2026-10-22 |
+| [Main is protected, and checked by CodeQL](#main-is-protected-and-checked-by-codeql-2026-10-23) | 2026-10-23 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -48,6 +66,16 @@ xUtilities 2 is about 146 KiB against 1.x's 100.5: roughly 60 KiB of core (reloa
 
 bStats lives in the core, relocated into each plugin's package; a plugin opts in by overriding `bStatsId()`. The IDs: xUtilities 34866, zChat 21533 (from zChat 1.0, which still reports to it, so zChat 3 carries its history on), xLimbo 34867. bStats' Bukkit class submits from its own thread on Folia, so it needs no scheduler of ours. Tests never start it (`xena.offline`). Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every message parsed once, not per send.
 
+## Messages share a theme (2026-10-21)
+
+Every plugin's config starts with a `theme`: a prefix, a base colour, and `<highlight>`, `<success>` and `<error>` styles that messages use as MiniMessage tags. Default messages are written only in those, so an owner restyles a whole plugin in five lines, and every plugin in the family looks alike out of the box. The base colour wraps each chat message rather than being a tag, so messages don't need to open and close it. A message is parsed the first time it's sent and again only if the theme changes (on reload); messages with placeholders parse per send, as before.
+
+When a default message changes, its old text goes in the spec with `formerDefault`. Carrying an old file forward gives any setting still on an old default the new one, in place, so owners who never touched their messages get the new look and owners who did keep theirs.
+
+## MockBukkit for command logic, real servers for the rest (2026-10-21)
+
+MockBukkit runs the commands' logic in milliseconds, but it can't `teleportAsync`, cancel Folia-style tasks, or tell harmful potion effects apart, and plugin classes it loads can't be `final`. Those paths are covered by `boot-checks.txt` on real servers, or by reading the code. CI also compiles against the newest Paper with removal warnings as errors (`-Pxena.newestPaper`), which is how `PotionEffectType#getCategory` (marked for removal in 26.3) was caught before release.
+
 ## Jar budgets are a tripwire, not a target (2026-10-22)
 
 "Lightweight" means what a plugin costs while it runs: no repeating tasks, listeners only while their feature is on, messages parsed once. Jar size barely affects that, since a 160 KiB jar loads as fast as a 100 KiB one. Budgets that sat within 5 KiB of each jar failed on every reasonable feature, so each is now about 50 KiB above its jar (xUtilities 200, zChat 210, xLimbo 220) and a new plugin starts at 150 (the core and bStats alone are about 75). They still catch what they're for: a library shaded in by mistake, or code copied instead of shared, which add hundreds of KiB. A plugin within 10 KiB of its budget should get it raised on purpose, with the reason beside it.
@@ -57,18 +85,6 @@ bStats lives in the core, relocated into each plugin's package; a plugin opts in
 Renovate, not Dependabot: it groups every minor and patch update into one weekly PR, merges it once CI passes, and shares one config across the org's repos (`xena-studios/.github`'s `renovate-config.json`). Automerge is per repo: here and in NeoSkript, where CI covers what a merge changes and nothing goes live; not in Raptor, the website (a merge deploys it) or brand (no CI). The minimum Paper is excluded, because raising it is a breaking change for owners.
 
 New Minecraft versions aren't a dependency bump. They append to `xena.gameVersions` (Modrinth's list) and move two CI pins together, which Renovate can't express, and "released" means Paper has a stable build, not just a Maven artifact. `scripts/new-minecraft.sh` reads that from Paper's download API; `minecraft.yml` runs it on Mondays, with Renovate's batch, and opens the PR; it can also be run by hand when a version comes out. A PR opened with the workflow's token doesn't trigger other workflows, so it starts `plugins.yml` itself.
-
-## Main is protected, and checked by CodeQL (2026-10-23)
-
-`main` takes changes only through pull requests, never force-pushed or deleted, and requires two checks: `plugins-ok` and `docs-ok`. A required check has to report on every PR, but each workflow only has work for some of them, so each runs on every PR, skips what the change doesn't touch (its `changes` job), and ends in one job that passes when everything else passed or was skipped. A PR that the New Minecraft workflow opens has to start both workflows itself.
-
-Code scanning is CodeQL, GitHub's own: the deepest free dataflow analysis for Java (a player's chat line followed into a command, for example), with results on the PR. Java is traced through a real Gradle build rather than CodeQL's build-less mode, for accuracy; the workflows and the docs' scripts are scanned too. `security-extended` queries, weekly as well as on every change. Dependencies are left to Renovate, which opens a fix PR as soon as one has a known vulnerability (`osvVulnerabilityAlerts`, in the org's shared settings): Dependabot alerts and its fix PRs would duplicate it.
-
-## Messages share a theme (2026-10-21)
-
-Every plugin's config starts with a `theme`: a prefix, a base colour, and `<highlight>`, `<success>` and `<error>` styles that messages use as MiniMessage tags. Default messages are written only in those, so an owner restyles a whole plugin in five lines, and every plugin in the family looks alike out of the box. The base colour wraps each chat message rather than being a tag, so messages don't need to open and close it. A message is parsed the first time it's sent and again only if the theme changes (on reload); messages with placeholders parse per send, as before.
-
-When a default message changes, its old text goes in the spec with `formerDefault`. Carrying an old file forward gives any setting still on an old default the new one, in place, so owners who never touched their messages get the new look and owners who did keep theirs.
 
 ## zChat's chat path (2026-10-22)
 
@@ -93,6 +109,8 @@ Folia can't create worlds at runtime, and creating its void world is xLimbo's co
 - **The jar is about 165 KiB**: the shared core and bStats are about 75 KiB, and the world safety, return queue, status ping and protections the rest.
 - **Rebuilding on reload** moves players to the server's main world, unloads the limbo, deletes it if it's temporary, makes it again and puts them back. The main world itself can't be rebuilt, so in single-world mode floor changes say "restart".
 
-## MockBukkit for command logic, real servers for the rest (2026-10-21)
+## Main is protected, and checked by CodeQL (2026-10-23)
 
-MockBukkit runs the commands' logic in milliseconds, but it can't `teleportAsync`, cancel Folia-style tasks, or tell harmful potion effects apart, and plugin classes it loads can't be `final`. Those paths are covered by `boot-checks.txt` on real servers, or by reading the code. CI also compiles against the newest Paper with removal warnings as errors (`-Pxena.newestPaper`), which is how `PotionEffectType#getCategory` (marked for removal in 26.3) was caught before release.
+`main` takes changes only through pull requests, never force-pushed or deleted, and requires two checks: `plugins-ok` and `docs-ok`. A required check has to report on every PR, but each workflow only has work for some of them, so each runs on every PR, skips what the change doesn't touch (its `changes` job), and ends in one job that passes when everything else passed or was skipped. A PR that the New Minecraft workflow opens has to start both workflows itself.
+
+Code scanning is CodeQL, GitHub's own: the deepest free dataflow analysis for Java (a player's chat line followed into a command, for example), with results on the PR. Java is traced through a real Gradle build rather than CodeQL's build-less mode, for accuracy; the workflows and the docs' scripts are scanned too. `security-extended` queries, weekly as well as on every change. Dependencies are left to Renovate, which opens a fix PR as soon as one has a known vulnerability (`osvVulnerabilityAlerts`, in the org's shared settings): Dependabot alerts and its fix PRs would duplicate it.

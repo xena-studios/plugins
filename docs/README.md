@@ -2,7 +2,7 @@
 
 **Setup, commands and config for xUtilities, zChat and xLimbo.**
 
-The source of **[docs.xenastudios.co](https://docs.xenastudios.co)**: a static [Starlight](https://starlight.astro.build) site served by Cloudflare. The docs describe the current releases; a change to a plugin and the pages that describe it go in the same pull request.
+The source of **[docs.xenastudios.co](https://docs.xenastudios.co)**, a static [Starlight](https://starlight.astro.build) site served by Cloudflare. The docs describe the current releases, so a plugin change and its docs go in the same pull request.
 
 ## Develop
 
@@ -33,7 +33,7 @@ public/
   _headers           security headers; the build fills in the CSP's script hashes
   og.png             the link preview
   robots.txt         lets every crawler in, and points to the sitemap
-  .well-known/security.txt   where to report security problems (RFC 9116); renew its Expires by 2027-10-22
+  .well-known/security.txt   where to report security problems (RFC 9116)
 scripts/
   sync-brand.ts      pnpm brand:sync
   headers.ts         runs after astro build
@@ -47,8 +47,13 @@ scripts/
 
 ## Look
 
-The docs wear the plugin family's brand, as Raptor's docs wear Raptor's: deepslate, Space Grotesk, dark only, and each plugin's pages in its own accent with its icon beside the title. Logos, icons, the horizon, the favicon and the link preview are copied from [xena-studios/brand](https://github.com/xena-studios/brand) by `pnpm brand:sync`, never redrawn here. The script expects the brand repo next to this one (`../../brand`), or at `BRAND_DIR`. It also refreshes the README banners in `.github/assets/`.
+The docs use the plugin family's brand: deepslate, Space Grotesk, dark only, and each plugin's pages in its own accent with its icon beside the title.
+
+Logos, icons, the horizon, the favicon and the link preview come from [xena-studios/brand](https://github.com/xena-studios/brand). Don't redraw them here; run `pnpm brand:sync`. It expects the brand repo at `../../brand` (or set `BRAND_DIR`), and also refreshes the README banners in `.github/assets/`.
 
 ## Deploying
 
-Pushes to `main` that touch `docs/` build, then deploy to Cloudflare from the `docs` environment, which only `main` can use: its `CLOUDFLARE_API_TOKEN` secret goes to the deploy step alone, with the repo's `CLOUDFLARE_ACCOUNT_ID` variable ([`docs.yml`](../.github/workflows/docs.yml)). Pull requests only build.
+Pushes to `main` that touch `docs/` build and deploy to Cloudflare ([`docs.yml`](../.github/workflows/docs.yml)). Pull requests only build.
+
+- The `CLOUDFLARE_API_TOKEN` secret lives in the `docs` environment, which only `main` can use, and only the deploy step gets it.
+- **`public/.well-known/security.txt` expires on 2027-10-22.** Move the date a year out before then.

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping with xUtilities, zChat and xLimbo. Everyone follows the [code of conduct](CODE_OF_CONDUCT.md). Security problems go to [SECURITY.md](SECURITY.md), never a public issue.
+Thanks for helping with xUtilities, zChat and xLimbo. Everyone follows the [code of conduct](https://github.com/xena-studios/.github/blob/main/CODE_OF_CONDUCT.md). Security problems go to [SECURITY.md](SECURITY.md), never a public issue.
 
 ## Issues
 

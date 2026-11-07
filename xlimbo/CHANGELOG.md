@@ -43,6 +43,6 @@ A rewrite. Replace the jar and restart: your 1.x config is carried forward, and 
 - With server-check on, players go back as soon as the main server is up, and `auto-join` isn't used.
 - xLimbo marks the worlds it makes, and only ever deletes or rebuilds one it marked. A world of the same name it didn't make is left alone.
 - The floor must be a solid block that doesn't fall. It can't be blown up, even with explosions allowed, and it doesn't melt or decay.
-- The stray-entity sweep leaves armour stands, item frames, paintings, display and marker entities, and anything tagged `xlimbo.keep`.
+- The stray-entity sweep leaves armour stands, item frames, paintings, display, marker and interaction entities, and anything tagged `xlimbo.keep`.
 - `/join` can be turned off.
 - Protections that are off no longer listen for events at all.

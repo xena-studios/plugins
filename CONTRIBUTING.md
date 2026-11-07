@@ -1,10 +1,10 @@
 # Contributing
 
-Thanks for helping with xUtilities, zChat and xLimbo. Everyone follows the [code of conduct](CODE_OF_CONDUCT.md). Security problems go to [SECURITY.md](SECURITY.md), never a public issue.
+Thanks for helping with xUtilities, zChat and xLimbo. Everyone follows the [code of conduct](https://github.com/xena-studios/.github/blob/main/CODE_OF_CONDUCT.md). Security problems go to [SECURITY.md](SECURITY.md), never a public issue.
 
 ## Issues
 
-[Open an issue](https://github.com/xena-studios/plugins/issues/new/choose) and pick a form. For a bug, include the version from `/<plugin> info`, your server software and version, and the console error. For questions, email [contact@xenastudios.co](mailto:contact@xenastudios.co).
+[Open an issue](https://github.com/xena-studios/plugins/issues/new/choose) and pick a form; it asks for what we need. For questions, see [SUPPORT.md](SUPPORT.md).
 
 Spotted a mistake in the docs? Every page at [docs.xenastudios.co](https://docs.xenastudios.co) has an **Edit page** link.
 
@@ -18,7 +18,7 @@ Needs JDK 21 or newer, plus JDK 25 to boot-test on 26.x servers. The docs need N
 ./gradlew test -PupdateGolden     # rewrite docs/src/generated/ after changing a default config
 ./gradlew compileJava -Pxena.newestPaper=<paper-api version>   # build against the newest Paper
 scripts/boot-test.sh --project paper --version 1.21.11 \
-  --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/*.jar
+  --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/sandbox-0.0.0.jar
 ```
 
 ## How it fits together

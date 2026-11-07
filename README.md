@@ -12,17 +12,6 @@ By [Xena Studios](https://xenastudios.co). Each does one job, costs next to noth
 
 All three need Paper 1.21.11+ and Java 21+. xUtilities and zChat also run on Folia. Get them on [Modrinth](https://modrinth.com/organization/xena-studios); the [docs](https://docs.xenastudios.co) cover setup, commands, permissions and config.
 
-## What's here
-
-| Folder | What it is |
-|---|---|
-| [`xutilities/`](xutilities), [`zchat/`](zchat), [`xlimbo/`](xlimbo) | The plugins, each with its own README and changelog |
-| `core/` | Code every plugin shares, shaded into each jar |
-| `build-logic/` | The Gradle convention every plugin applies |
-| `sandbox/` | A never-released plugin that tests the core on real servers in CI |
-| [`docs/`](docs) | docs.xenastudios.co |
-| `scripts/` | Boot tests, changelogs and the new-Minecraft check |
-
 ## Building
 
 Needs JDK 21 or newer.
@@ -32,16 +21,11 @@ Needs JDK 21 or newer.
 ./gradlew :<plugin>:runServer    # a Paper server with that plugin
 ```
 
-- [CONTRIBUTING.md](CONTRIBUTING.md): tests, the rules a change keeps, pull requests and releases
-- [DECISIONS.md](DECISIONS.md): why the plugins are built the way they are
+## Contributing
 
-## Help
+Bugs and ideas go in an [issue](https://github.com/xena-studios/plugins/issues/new/choose). Security problems go privately, as [SECURITY.md](SECURITY.md) describes. For anything else, see [SUPPORT.md](SUPPORT.md).
 
-- **Bugs and ideas:** [open an issue](https://github.com/xena-studios/plugins/issues/new/choose)
-- **Security:** privately, as [SECURITY.md](SECURITY.md) describes
-- **Anything else:** [contact@xenastudios.co](mailto:contact@xenastudios.co)
-
-Everyone follows the [code of conduct](CODE_OF_CONDUCT.md).
+[CONTRIBUTING.md](CONTRIBUTING.md) covers how the repo fits together, tests, the rules a change keeps, pull requests and releases. [DECISIONS.md](DECISIONS.md) explains why the plugins are built the way they are.
 
 ## Licence
 

@@ -44,7 +44,7 @@ Gotcha: a command dispatched while another command is running is queued until th
 
 ## Configs are generated from a schema in code (2026-10-21)
 
-Spike (`core/src/test/.../ConfigEmissionSpikeTest`): Paper's `YamlConfiguration` writes a commented config and reads it back with no server running. Each plugin declares its settings once (default, validation, comment); the same declaration writes the default `config.yml`, reads and checks the live one, and can generate the docs' "full default config" at build time, so the docs can't drift from the code.
+A spike showed that Paper's `YamlConfiguration` writes a commented config and reads it back with no server running. (That test is gone; the core's `ConfigLoaderTest` now covers writing and reading configs.) Each plugin declares its settings once (default, validation, comment); the same declaration writes the default `config.yml`, reads and checks the live one, and generates the docs' "full default config" in each plugin's `DefaultConfigTest`, so the docs can't drift from the code.
 
 ## Boot tests on real servers (2026-10-21)
 
@@ -62,7 +62,7 @@ Built with xUtilities 2. A plugin extends `XenaPlugin`, declares its config as r
 
 ## Jar budgets are per plugin, and honest (2026-10-21)
 
-xUtilities 2 is about 146 KiB against 1.x's 100.5: roughly 60 KiB of core (reload for everything, config migration, the theme, the update checker), 15 KiB of bStats, 50 KiB of commands, and 4 KiB of 1.x's default messages (so an upgrader who never changed one gets 2.0's look), plus zip overhead. Compiling without local variable tables (keeping line numbers, for stack traces) saved 13 KiB. Its budget is 150 KiB, so anything that grows it is a decision, not drift.
+xUtilities 2 is about 146 KiB against 1.x's 100.5: roughly 60 KiB of core (reload for everything, config migration, the theme, the update checker), 15 KiB of bStats, 50 KiB of commands, and 4 KiB of 1.x's default messages (so an upgrader who never changed one gets 2.0's look), plus zip overhead. Compiling without local variable tables (keeping line numbers, for stack traces) saved 13 KiB. Its budget is 150 KiB, so anything that grows it is a decision, not drift. (Budgets were raised the next day: see [Jar budgets are a tripwire, not a target](#jar-budgets-are-a-tripwire-not-a-target-2026-10-22).)
 
 bStats lives in the core, relocated into each plugin's package; a plugin opts in by overriding `bStatsId()`. The IDs: xUtilities 34866, zChat 21533 (from zChat 1.0, which still reports to it, so zChat 3 carries its history on), xLimbo 34867. bStats' Bukkit class submits from its own thread on Folia, so it needs no scheduler of ours. Tests never start it (`xena.offline`). Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every message parsed once, not per send.
 

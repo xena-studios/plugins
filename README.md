@@ -41,7 +41,7 @@ Needs JDK 21 or newer.
 - **Security:** privately, as [SECURITY.md](SECURITY.md) describes
 - **Anything else:** [contact@xenastudios.co](mailto:contact@xenastudios.co)
 
-Everyone follows the [code of conduct](CODE_OF_CONDUCT.md).
+Everyone follows the [code of conduct](https://github.com/xena-studios/.github/blob/main/CODE_OF_CONDUCT.md).
 
 ## Licence
 

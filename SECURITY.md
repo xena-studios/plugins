@@ -7,7 +7,7 @@ The plugins run inside other people's servers, so we take security reports serio
 **Don't open a public issue for a security problem.**
 
 - Use GitHub's [private vulnerability reporting](https://github.com/xena-studios/plugins/security/advisories/new) on this repository, or
-- email **[contact@xenastudios.co](mailto:contact@xenastudios.co)** with "Security" in the subject.
+- email **[security@xenastudios.co](mailto:security@xenastudios.co)**.
 
 Include the plugin and its version (`/<plugin> info`), your server software and version, steps to reproduce, and the impact you believe it has.
 

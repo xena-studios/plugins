@@ -115,7 +115,9 @@ public class XLimbo extends XenaPlugin<XLConfig> {
         if (current == null) {
             // Asked before enabling: read the floor from the file, or use the defaults.
             try {
-                current = ConfigLoader.load(XLConfig.SPEC, getDataFolder().toPath().resolve("config.yml")).config();
+                // Read only: carrying it forward and saving it is the real load's job, which
+                // also needs to see that it was carried, to take over 1.x's world.
+                current = ConfigLoader.read(XLConfig.SPEC, getDataFolder().toPath().resolve("config.yml")).config();
             } catch (Exception e) {
                 current = XLConfig.DEFAULTS;
             }

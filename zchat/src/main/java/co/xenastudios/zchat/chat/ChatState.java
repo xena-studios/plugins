@@ -72,8 +72,13 @@ public final class ChatState {
         return recent.get(player);
     }
 
-    void recent(UUID player, Recent value) {
-        recent.put(player, value);
+    void recent(Player player, Recent value) {
+        recent.put(player.getUniqueId(), value);
+        // Chat runs off the main thread: a message finishing as its sender quits would
+        // otherwise outlive the quit's cleanup. Only this entry goes, never a newer session's.
+        if (!player.isOnline()) {
+            recent.remove(player.getUniqueId(), value);
+        }
     }
 
     public Partner partner(UUID player) {
@@ -82,6 +87,14 @@ public final class ChatState {
 
     public void partner(UUID player, Partner partner) {
         partners.put(player, partner);
+    }
+
+    /** As {@link #partner(UUID, Partner)}, for a player who may have just quit (Folia runs commands off the main thread). */
+    public void partner(Player player, Partner partner) {
+        partners.put(player.getUniqueId(), partner);
+        if (!player.isOnline()) {
+            partners.remove(player.getUniqueId(), partner);
+        }
     }
 
     /** The online player with this name, ignoring case, or null. */

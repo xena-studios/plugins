@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- `/back` no longer keeps a spot for a player another plugin teleported or killed as they left (spawn-on-quit and combat-log plugins), which was never cleared.
+- A Minecraft command that two of xUtilities' commands both took over (through aliases) is given back once both are off. Before, it could stay gone until a restart.
+- A config file that can't be saved back (a read-only folder, or a mounted volume that can't replace files in one step) no longer loses your settings: they're used as written, with a warning, and backups don't pile up on every start.
 - Clicking the link in the update notice now opens the new version's Modrinth page. Before, it opened nothing.
 - `/setrotation` says the angles as you typed them: `12.3`, not `12.300000190734863`.
 

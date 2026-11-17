@@ -43,17 +43,23 @@ public final class BackTracker extends ListenerModule {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     void onTeleport(PlayerTeleportEvent event) {
-        if (CAUSES.contains(event.getCause())) {
+        // isOnline: a plugin teleporting someone as they quit (spawn on quit, combat
+        // log) mustn't leave an entry behind that nothing removes.
+        if (CAUSES.contains(event.getCause()) && event.getPlayer().isOnline()) {
             previous.put(event.getPlayer().getUniqueId(), event.getFrom());
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     void onDeath(PlayerDeathEvent event) {
-        previous.put(event.getPlayer().getUniqueId(), event.getPlayer().getLocation());
+        // Combat-log plugins kill players as they quit; that death isn't one to go back to.
+        if (event.getPlayer().isOnline()) {
+            previous.put(event.getPlayer().getUniqueId(), event.getPlayer().getLocation());
+        }
     }
 
-    @EventHandler
+    // Last, after any other plugin's quit handling.
+    @EventHandler(priority = EventPriority.MONITOR)
     void onQuit(PlayerQuitEvent event) {
         previous.remove(event.getPlayer().getUniqueId());
     }

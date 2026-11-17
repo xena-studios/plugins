@@ -57,6 +57,11 @@ public class ZChat extends XenaPlugin<ZConfig> {
                 tasks().entity(player, () -> ChatListener.restore(this, player));
             }
         }
+        if (!config.mutechat().enabled() && state.muted()) {
+            // Turning /mutechat off would otherwise leave chat muted with no command to undo it.
+            state.muted(false);
+            getLogger().info("mutechat is off, so chat is unmuted.");
+        }
         List<String> warnings = new ArrayList<>();
         compiled = new Compiled(Formats.compile(config.formatting()), ChatFilter.compile(config.filter(), warnings));
         warnings.forEach(warning -> getLogger().warning("config.yml: " + warning));

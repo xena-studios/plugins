@@ -44,6 +44,9 @@ public final class LimboWorld {
     /** Chunks kept loaded around spawn reach at most this far, in chunks. */
     private static final int MAX_READY_RADIUS = 8;
 
+    /** Bumped whenever the spawn area changes, so stale chunk loads add no tickets. Main thread only. */
+    private int readyGeneration;
+
     /**
      * Where arrivals go, published whole so a player logging in during a rebuild never
      * sees half of it.
@@ -163,7 +166,14 @@ public final class LimboWorld {
             player.teleport(staging.getSpawnLocation());
         }
         spot = null;
-        unload(old, false);
+        if (!unload(old, false)) {
+            // Still loaded, so it can't be remade: keep it as it is, floor and marker
+            // included, rather than record a floor it doesn't have.
+            logger.warning("Restart to apply floor-block and floor-y.");
+            publish(old, settings, current.owned(), current.shape());
+            moveIn(moving);
+            return;
+        }
         World made = create(settings);
         if (made == null) {
             return;
@@ -286,6 +296,8 @@ public final class LimboWorld {
     // never waits for generation. Capped, since a huge radius would be millions.
     private void keepSpawnReady(World target, int radius) {
         target.removePluginChunkTickets(plugin);
+        // Loads still in flight from an earlier call must not add tickets after this.
+        int generation = ++readyGeneration;
         int chunks = Math.min(MAX_READY_RADIUS, (radius >> 4) + 1);
         int total = (2 * chunks + 1) * (2 * chunks + 1);
         AtomicInteger left = new AtomicInteger(total);
@@ -293,6 +305,9 @@ public final class LimboWorld {
         for (int x = -chunks; x <= chunks; x++) {
             for (int z = -chunks; z <= chunks; z++) {
                 target.getChunkAtAsync(x, z).thenAccept(chunk -> {
+                    if (generation != readyGeneration) {
+                        return;
+                    }
                     chunk.addPluginChunkTicket(plugin);
                     if (left.decrementAndGet() == 0) {
                         logger.info("World " + target.getName() + " is ready: " + total + " chunks around spawn loaded in "
@@ -303,11 +318,13 @@ public final class LimboWorld {
         }
     }
 
-    private void unload(World target, boolean save) {
+    private boolean unload(World target, boolean save) {
         target.removePluginChunkTickets(plugin);
         if (!Bukkit.unloadWorld(target, save)) {
             logger.warning("couldn't unload world " + target.getName() + "; it stays loaded until a restart.");
+            return false;
         }
+        return true;
     }
 
     /**

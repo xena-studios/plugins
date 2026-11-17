@@ -135,6 +135,14 @@ public final class MessageCommands {
         return player;
     }
 
+    private static void remember(ChatState state, CommandSender who, UUID id, ChatState.Partner partner) {
+        if (who instanceof Player player) {
+            state.partner(player, partner);
+        } else {
+            state.partner(id, partner);
+        }
+    }
+
     /** Who can be replied to: a player, the console, or null for command blocks and the like. */
     private static UUID id(CommandSender sender) {
         if (sender instanceof Player player) {
@@ -171,8 +179,8 @@ public final class MessageCommands {
         UUID fromId = id(from);
         UUID toId = id(to);
         if (fromId != null && toId != null) {
-            state.partner(fromId, new ChatState.Partner(toId, to.getName()));
-            state.partner(toId, new ChatState.Partner(fromId, from.getName()));
+            remember(state, from, fromId, new ChatState.Partner(toId, to.getName()));
+            remember(state, to, toId, new ChatState.Partner(fromId, from.getName()));
         }
 
         Settings.SocialSpy spy = settings.socialspy();

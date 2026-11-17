@@ -72,6 +72,7 @@ export default defineConfig({
         { label: "xUtilities", items: [{ autogenerate: { directory: "xutilities" } }] },
         { label: "zChat", items: [{ autogenerate: { directory: "zchat" } }] },
         { label: "xLimbo", items: [{ autogenerate: { directory: "xlimbo" } }] },
+        { label: "xRewind", items: [{ autogenerate: { directory: "xrewind" } }] },
         {
           label: "More from Xena Studios",
           items: [

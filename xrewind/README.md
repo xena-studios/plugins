@@ -1,3 +1,5 @@
+![xRewind by Xena Studios. A teal pixel rewind icon and the xRewind name over a stepped horizon in teal, with the headline "Every change, logged. Any of it, undone."](../.github/assets/xrewind-banner.png)
+
 **Every change, logged. Any of it, undone.**
 
 xRewind is a block logger with rollback for Paper and Folia: who placed, broke or took what, where and when, and a way to undo it. **It's being built and isn't released yet;** the plan is [#20](https://github.com/xena-studios/plugins/issues/20).

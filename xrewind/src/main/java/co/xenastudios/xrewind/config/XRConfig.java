@@ -13,7 +13,7 @@ public record XRConfig(
     @Comment({
         "The look xRewind's messages share. The default messages use these as tags, so changing",
         "a colour here restyles them all. Write a style as MiniMessage tags: <gray>,",
-        "<#7FB8FF>, or <gold><bold>."})
+        "<#3DD6C6>, or <gold><bold>."})
     Theme theme,
     @Comment("Messages the commands share.") Messages messages,
     @Comment({

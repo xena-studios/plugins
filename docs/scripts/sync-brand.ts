@@ -26,12 +26,14 @@ const files = [
   ["plugins/xutilities/icon.svg", "src/assets/plugins/xutilities.svg"],
   ["plugins/zchat/icon.svg", "src/assets/plugins/zchat.svg"],
   ["plugins/xlimbo/icon.svg", "src/assets/plugins/xlimbo.svg"],
+  ["plugins/xrewind/icon.svg", "src/assets/plugins/xrewind.svg"],
   // The READMEs' banners, for the repo, the docs and each plugin.
   ["github/plugins-banner.png", "../.github/assets/banner.png"],
   ["github/plugin-docs-banner.png", "../.github/assets/docs-banner.png"],
   ["plugins/xutilities/banner.png", "../.github/assets/xutilities-banner.png"],
   ["plugins/zchat/banner.png", "../.github/assets/zchat-banner.png"],
   ["plugins/xlimbo/banner.png", "../.github/assets/xlimbo-banner.png"],
+  ["plugins/xrewind/banner.png", "../.github/assets/xrewind-banner.png"],
 ];
 
 for (const [from, to] of files) {

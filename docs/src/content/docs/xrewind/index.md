@@ -1,21 +1,14 @@
 ---
 title: xRewind
-description: Every change, logged. Any of it, undone. A block logger with rollback for Paper and Folia, being built.
+description: Every change, logged. Any of it, undone. A block logger with rollback for Paper and Folia.
 sidebar:
   label: Overview
   order: 1
-  badge:
-    text: Soon
-    variant: note
 ---
 
 **Every change, logged. Any of it, undone.**
 
 xRewind is a block logger with rollback for Paper and Folia: who placed, broke or took what, where and when, and a way to undo it.
-
-:::note[Being built]
-xRewind isn't released yet. This page describes what 1.0 will do; follow along in [the plan](https://github.com/xena-studios/plugins/issues/20).
-:::
 
 - **Every feature free.** No early-access builds and nothing behind a Patreon, automatic purges included (30 days by default).
 - **New Minecraft versions the same week.** It uses only Paper's API, never the server's internals, so an update rarely breaks it.
@@ -39,4 +32,4 @@ A rollback brings back what a broken block held: a chest's items, a sign's text.
 
 SQLite out of the box, in one file in the plugin's folder, or MySQL/MariaDB for networks. No driver is bundled: Paper and Folia already ship them. See [Configuration](/xrewind/configuration/).
 
-Needs Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer.
+Current version: **1.0.0**, for Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xrewind).

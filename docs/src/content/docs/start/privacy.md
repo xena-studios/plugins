@@ -22,7 +22,9 @@ That's the plugin and its version, the platform (`paper`, or `folia` on Folia) a
 
 ## bStats
 
-xUtilities 2, zChat 3 and xLimbo 2 send **[bStats](https://bstats.org)**, anonymous usage statistics shared by thousands of plugins, on by default: a random server ID, player count, server software and version, Minecraft, Java and plugin versions, operating system, CPU cores, online mode, and country (worked out by bStats from the IP address, which bStats doesn't store). Turn it off for every plugin at once in `plugins/bStats/config.yml`. (zChat 1.x sent bStats too; zChat 2 and xLimbo 1 didn't.) The numbers are public: [xUtilities](https://bstats.org/plugin/bukkit/XenaUtilities/34866), [zChat](https://bstats.org/plugin/bukkit/zChat/21533) and [xLimbo](https://bstats.org/plugin/bukkit/xLimbo/34867) on bStats.
+xUtilities 2, zChat 3, xLimbo 2 and xRewind send **[bStats](https://bstats.org)**, anonymous usage statistics shared by thousands of plugins, on by default: a random server ID, player count, server software and version, Minecraft, Java and plugin versions, operating system, CPU cores, online mode, and country (worked out by bStats from the IP address, which bStats doesn't store). Turn it off for every plugin at once in `plugins/bStats/config.yml`. (zChat 1.x sent bStats too; zChat 2 and xLimbo 1 didn't.) The numbers are public: [xUtilities](https://bstats.org/plugin/bukkit/XenaUtilities/34866), [zChat](https://bstats.org/plugin/bukkit/zChat/21533), [xLimbo](https://bstats.org/plugin/bukkit/xLimbo/34867) and [xRewind](https://bstats.org/plugin/bukkit/xRewind/35410) on bStats.
+
+xRewind keeps what it logs (who changed which blocks, and when, where they joined and quit) in your own database, and nothing of it leaves your server. Chat and command logging are off unless you turn them on, and history older than 30 days is deleted unless you keep it longer (`purge.keep-days`).
 
 ## Inside your network
 

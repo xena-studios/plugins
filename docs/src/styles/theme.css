@@ -282,6 +282,7 @@ starlight-toc a[aria-current="true"] {
 .plugin-list a[href="/xutilities/"]:hover { color: #F5B83D; }
 .plugin-list a[href="/zchat/"]:hover { color: #5EE08A; }
 .plugin-list a[href="/xlimbo/"]:hover { color: #B48CFF; }
+.plugin-list a[href="/xrewind/"]:hover { color: #3DD6C6; }
 
 .more-label {
   margin-top: 3rem !important;

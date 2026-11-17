@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in xUtilities, zChat or xLimbo doesn't work as the docs say it should.
+description: Something in xUtilities, zChat, xLimbo or xRewind doesn't work as the docs say it should.
 labels: [bug]
 body:
   - type: markdown
@@ -14,6 +14,7 @@ body:
         - xUtilities
         - zChat
         - xLimbo
+        - xRewind
         - More than one, or not sure
     validations:
       required: true
@@ -21,7 +22,7 @@ body:
     id: version
     attributes:
       label: Plugin version
-      description: From `/xutilities info`, `/zchat info` or `/xlimbo info`.
+      description: From `/xutilities info`, `/zchat info`, `/xlimbo info` or `/xrewind info`.
       placeholder: "2.0.0"
     validations:
       required: true

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping with xUtilities, zChat and xLimbo. Everyone follows the [code of conduct](https://github.com/xena-studios/.github/blob/main/CODE_OF_CONDUCT.md). Security problems go to [SECURITY.md](SECURITY.md), never a public issue.
+Thanks for helping with xUtilities, zChat, xLimbo and xRewind. Everyone follows the [code of conduct](https://github.com/xena-studios/.github/blob/main/CODE_OF_CONDUCT.md). Security problems go to [SECURITY.md](SECURITY.md), never a public issue.
 
 ## Issues
 
@@ -28,8 +28,7 @@ scripts/boot-test.sh --project paper --version 1.21.11 \
 | `core/` | Code every plugin shares, shaded into each jar |
 | `build-logic/` | The `xena.plugin` Gradle convention every plugin applies |
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
-| `xutilities/`, `zchat/`, `xlimbo/` | The plugins, each with its own README |
-| `xrewind/` | A block logger with rollback, being built ([#20](https://github.com/xena-studios/plugins/issues/20)) |
+| `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/` | The plugins, each with its own README |
 | `scripts/` | `boot-test.sh`, `changelog.sh`, `new-minecraft.sh` |
 | `docs/` | docs.xenastudios.co |
 

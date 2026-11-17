@@ -4,9 +4,7 @@
 
 Someone griefed spawn. Someone emptied the shared chest. Someone says they didn't. **xRewind shows you who placed, broke or took what, where and when, and puts it back.**
 
-> **Being built.** xRewind isn't released yet. Follow it on [GitHub](https://github.com/xena-studios/plugins/issues/20) and the first release will land here.
-
-**[Read the docs](https://docs.xenastudios.co/xrewind/)** · **[The plan](https://github.com/xena-studios/plugins/issues/20)** · **[Source code](https://github.com/xena-studios/plugins)**
+**[Read the docs](https://docs.xenastudios.co/xrewind/)** · **[Switching from CoreProtect](https://docs.xenastudios.co/xrewind/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -26,7 +24,11 @@ Blocks placed and broken, and what falls off with them · explosions, traced to 
 
 ## Commands
 
-`/xr inspect` · `/xr lookup` · `/xr rollback` · `/xr restore` · `/xr undo` · `/xr purge`, with CoreProtect's parameters: `u:` `t:` `r:` `a:` `i:` `e:` and `#preview`.
+`/xr inspect` · `/xr lookup` · `/xr rollback` · `/xr restore` · `/xr undo` · `/xr purge` · `/xr import coreprotect`, with CoreProtect's parameters: `u:` `t:` `r:` `a:` `i:` `e:` and `#preview`.
+
+## Coming from CoreProtect?
+
+Install xRewind next to it, run `/xr import coreprotect`, and your history comes across: blocks, kills, containers, sessions, signs, chat and commands. Then remove CoreProtect. The commands are the ones you know, as `/xr`.
 
 ---
 

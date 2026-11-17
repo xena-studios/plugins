@@ -17,6 +17,11 @@ public class XRewind extends XenaPlugin<XRConfig> {
     }
 
     @Override
+    protected int bStatsId() {
+        return 35410;
+    }
+
+    @Override
     protected void setup(Setup setup, XRConfig config) {
         storage().sync(config.storage());
     }

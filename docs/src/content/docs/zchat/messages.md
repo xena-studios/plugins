@@ -36,8 +36,8 @@ Players aren't pinged by their own name, by someone who can't see them (so vanis
 ```yaml
 private-messages:
   msg:
-    format-sent: "<highlight>You → <player></highlight><dark_gray>:</dark_gray> <white><message>"
-    format-received: "<highlight><player> → You</highlight><dark_gray>:</dark_gray> <white><message>"
+    format-sent: "<highlight>You → <player></highlight><gray>:</gray> <white><message>"
+    format-received: "<highlight><player> → You</highlight><gray>:</gray> <white><message>"
     sound: "entity.experience_orb.pickup 0.5 1.2"
 ```
 

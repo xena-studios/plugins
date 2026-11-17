@@ -122,7 +122,7 @@ queue:
   per-second: 5
   # Shown on the action bar while a player waits their turn. <position> and <total>
   # are filled in. Blank shows the normal action bar instead.
-  action-bar: "<gray>Sending you back: <highlight>#<position></highlight> of <total> in line"
+  action-bar: "<white>Sending you back: <highlight><bold>#<position></bold></highlight> of <total> in line"
 
 # /join: sends you to main-server. Everyone has it by default.
 join-command:
@@ -141,7 +141,7 @@ action-bar:
   enabled: true
   # Ticks between updates (20 is one second).
   interval-ticks: 40
-  message: "<gray>Type <highlight>/join</highlight> to go back to the server"
+  message: "<white>Type <highlight><bold>/join</bold></highlight> to go back to the server"
 
 # Players here are in creative, so these stop them breaking, lagging or escaping the
 # server. Each can be turned off; one that's off costs nothing.
@@ -166,14 +166,16 @@ protections:
   explosions: true
   # Mobs spawning.
   mob-spawns: true
-  # Redstone and pistons.
+  # Redstone, pistons and dispensers.
   redstone: true
   # Dropped items.
   item-drops: true
   entities:
     # Armour stands, boats, minecarts, item frames, paintings, End crystals and spawn eggs.
     block-entity-items: true
-    # Removes stray entities other than players this often. 0 turns it off.
+    # Removes stray entities this often: everything but players and what builds are made of
+    # (armour stands, item frames, paintings, displays, interactions, markers), and anything
+    # tagged xlimbo.keep. 0 turns it off.
     cleanup-interval-seconds: 300
   build-guard:
     # Limits how fast each player can place blocks, against lag machines.

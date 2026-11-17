@@ -4,6 +4,7 @@
 
 ### Changed
 
+- The colon in private messages is easier to see: the default formats use `<gray>` for it instead of `<dark_gray>`, which barely showed against chat's background. New configs get it; to update yours, change `<dark_gray>:</dark_gray>` to `<gray>:</gray>` in `private-messages.msg.format-sent` and `format-received`.
 - Chat formats with PlaceholderAPI placeholders do a little less work on every message, and notice PlaceholderAPI being enabled or disabled after zChat.
 
 ### Fixed

@@ -72,7 +72,7 @@ Sending a whole network back in the same second can flatten a server that's just
 ```yaml
 queue:
   per-second: 5
-  action-bar: "<gray>Sending you back: <highlight>#<position></highlight> of <total> in line"
+  action-bar: "<white>Sending you back: <highlight><bold>#<position></bold></highlight> of <total> in line"
 ```
 
 `per-second: 0` sends everyone at once.

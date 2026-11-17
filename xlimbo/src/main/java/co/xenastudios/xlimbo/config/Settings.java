@@ -105,7 +105,7 @@ public final class Settings {
         @Comment("Fire spreading, burning and being lit.") boolean fire,
         @Comment("Every explosion.") boolean explosions,
         @Comment("Mobs spawning.") boolean mobSpawns,
-        @Comment("Redstone and pistons.") boolean redstone,
+        @Comment("Redstone, pistons and dispensers.") boolean redstone,
         @Comment("Dropped items.") boolean itemDrops,
         Entities entities,
         BuildGuard buildGuard) {}
@@ -117,7 +117,9 @@ public final class Settings {
 
     public record Entities(
         @Comment("Armour stands, boats, minecarts, item frames, paintings, End crystals and spawn eggs.") boolean blockEntityItems,
-        @Comment("Removes stray entities other than players this often. 0 turns it off.") @Range(min = 0, max = 86_400) int cleanupIntervalSeconds) {}
+        @Comment({"Removes stray entities this often: everything but players and what builds are made of",
+            "(armour stands, item frames, paintings, displays, interactions, markers), and anything",
+            "tagged xlimbo.keep. 0 turns it off."}) @Range(min = 0, max = 86_400) int cleanupIntervalSeconds) {}
 
     public record BuildGuard(
         @Comment("Limits how fast each player can place blocks, against lag machines.") boolean enabled,

@@ -96,11 +96,11 @@ public record XLConfig(
         "main",
         new AutoJoin(false, 30, Message.of("<prefix>Sending you back to the server...")),
         new ServerCheck(false, "127.0.0.1:25566", 5, Message.of("<prefix><success>The server is back up!</success> Sending everyone back...")),
-        new Queue(5, Message.of("<gray>Sending you back: <highlight>#<position></highlight> of <total> in line")),
+        new Queue(5, Message.of("<white>Sending you back: <highlight><bold>#<position></bold></highlight> of <total> in line")),
         new JoinCommand(true, List.of("server", "lobby"), "xlimbo.join", 3,
             Message.of("<prefix>Connecting you to <highlight><server></highlight>..."),
             Message.of("<prefix><error>Wait <highlight><seconds>s</highlight> before trying again.")),
-        new ActionBar(true, 40, Message.of("<gray>Type <highlight>/join</highlight> to go back to the server")),
+        new ActionBar(true, 40, Message.of("<white>Type <highlight><bold>/join</bold></highlight> to go back to the server")),
         new Protections(true, new Void(true, 0, true), true, true, true, true, true, true, true, true,
             new Entities(true, 300), new BuildGuard(false, 30)),
         UpdateCheckerSettings.DEFAULTS);

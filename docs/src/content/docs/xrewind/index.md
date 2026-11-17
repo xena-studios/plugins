@@ -17,11 +17,11 @@ xRewind is a block logger with rollback for Paper and Folia: who placed, broke o
 xRewind isn't released yet. This page describes what 1.0 will do; follow along in [the plan](https://github.com/xena-studios/plugins/issues/20).
 :::
 
-- **Every feature free.** No early-access builds and nothing behind a Patreon, automatic purges included.
+- **Every feature free.** No early-access builds and nothing behind a Patreon, automatic purges included (30 days by default).
 - **New Minecraft versions the same week.** It uses only Paper's API, never the server's internals, so an update rarely breaks it.
-- **You won't feel it running.** Nothing touches the database on a game thread: each change is queued as a few numbers and written in batches by one background thread. Logging you turn off isn't listened for at all.
+- **You won't feel it running.** Nothing touches the database on a game thread: each change is queued in about 40 nanoseconds and written in batches by one background thread. Logging you turn off isn't listened for at all. See [Performance](/xrewind/performance/).
 - **Rollback that doesn't freeze the server.** A rollback works out each block's final state once, then applies it a few milliseconds per tick, or region by region on Folia. Preview it first, and undo it after.
-- **Easy to switch to.** CoreProtect's command syntax, so habits and guides carry over, and your CoreProtect history imported.
+- **Easy to switch to.** CoreProtect's command syntax, so habits and guides carry over, and your CoreProtect history imported with one command: see [Switching from CoreProtect](/xrewind/switching/).
 
 ## What it logs
 

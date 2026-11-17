@@ -160,6 +160,8 @@ public final class Lookup {
         Sql sql = new Sql(Row.Table.KILL, "SELECT b.id, b.time, u.name, w.name, b.x, b.y, b.z, b.action, t.data, NULL,"
             + " b.rolled_back, 0, NULL", from);
         common(sql, query, center);
+        // i: and e: name blocks and items, never mobs: a lookup for oak logs shows no kills.
+        names(sql, "t.data", query);
         return sql;
     }
 

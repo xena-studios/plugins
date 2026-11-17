@@ -21,6 +21,11 @@ public final class Clock {
         return Math.toIntExact(Math.floorDiv(unixMillis, 1000) - EPOCH);
     }
 
+    /** Unix seconds, as stored. */
+    public static int fromUnixSeconds(long seconds) {
+        return Math.toIntExact(seconds - EPOCH);
+    }
+
     public static long toMillis(int stored) {
         return (stored + EPOCH) * 1000;
     }

@@ -145,9 +145,9 @@ public final class Writer implements Runnable {
             Dictionaries names = new Dictionaries();
             names.load(opened, current);
             opened.setAutoCommit(false);
-            blocks = opened.prepareStatement(current.sql("INSERT INTO {p}block (time, user, world, x, y, z, action, old_state, new_state, extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+            blocks = opened.prepareStatement(current.sql("INSERT INTO {p}block (time, user, world, x, y, z, action, old_state, new_state, extra, rolled_back) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
             sessions = opened.prepareStatement(current.sql("INSERT INTO {p}session (time, user, world, x, y, z, action) VALUES (?, ?, ?, ?, ?, ?, ?)"));
-            containers = opened.prepareStatement(current.sql("INSERT INTO {p}container (time, user, world, x, y, z, action, material, item, amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+            containers = opened.prepareStatement(current.sql("INSERT INTO {p}container (time, user, world, x, y, z, action, material, item, amount, rolled_back) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
             kills = opened.prepareStatement(current.sql("INSERT INTO {p}entity (time, user, world, x, y, z, action, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
             texts = opened.prepareStatement(current.sql("INSERT INTO {p}text (time, user, world, x, y, z, kind, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
             connection = opened;
@@ -186,7 +186,36 @@ public final class Writer implements Runnable {
                         } else {
                             blocks.setInt(10, dictionaries.bytes(Contents.write(change.contents())));
                         }
+                        blocks.setInt(11, 0);
                         blocks.addBatch();
+                    }
+                    case Entry.ImportedBlock change -> {
+                        blocks.setInt(1, change.time());
+                        blocks.setInt(2, dictionaries.user(change.actor()));
+                        blocks.setInt(3, dictionaries.world(change.world()));
+                        blocks.setInt(4, change.x());
+                        blocks.setInt(5, change.y());
+                        blocks.setInt(6, change.z());
+                        blocks.setByte(7, change.action());
+                        blocks.setInt(8, dictionaries.name(change.before()));
+                        blocks.setInt(9, dictionaries.name(change.after()));
+                        blocks.setNull(10, java.sql.Types.INTEGER);
+                        blocks.setInt(11, change.rolledBack() ? 1 : 0);
+                        blocks.addBatch();
+                    }
+                    case Entry.ImportedContainer change -> {
+                        containers.setInt(1, change.time());
+                        containers.setInt(2, dictionaries.user(change.actor()));
+                        containers.setInt(3, dictionaries.world(change.world()));
+                        containers.setInt(4, change.x());
+                        containers.setInt(5, change.y());
+                        containers.setInt(6, change.z());
+                        containers.setByte(7, change.action());
+                        containers.setInt(8, dictionaries.name(change.material()));
+                        containers.setInt(9, dictionaries.bytes(change.item()));
+                        containers.setInt(10, change.amount());
+                        containers.setInt(11, change.rolledBack() ? 1 : 0);
+                        containers.addBatch();
                     }
                     case Entry.MarkRolledBack mark -> marks.add(mark);
                     case Entry.ContainerChange change -> {
@@ -201,6 +230,7 @@ public final class Writer implements Runnable {
                         containers.setInt(8, dictionaries.name(one.getType().getKey().toString()));
                         containers.setInt(9, dictionaries.bytes(one.serializeAsBytes()));
                         containers.setInt(10, change.amount());
+                        containers.setInt(11, 0);
                         containers.addBatch();
                     }
                     case Entry.Kill kill -> {

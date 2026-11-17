@@ -20,4 +20,6 @@ xena {
 
 dependencies {
     testRuntimeOnly(libs.sqlite.jdbc)
+    // For MySqlTest, against a real MySQL or MariaDB when XR_MYSQL is set.
+    testRuntimeOnly(libs.mysql.connector)
 }

@@ -18,6 +18,8 @@ Every command is `/xrewind <subcommand>`, or `/xr` for short. Each has its own p
 | `/xr apply`, `/xr cancel` | Apply or drop your preview. | `xrewind.rollback` |
 | `/xr undo` | Reverts your last rollback or restore. | `xrewind.rollback` |
 | `/xr lookup a:chat`, `a:command` | Chat and commands, where they're logged. | `xrewind.lookup.chat` |
+| `/xr purge t:<time>` | Deletes history older than the time, at least a day. | `xrewind.purge` |
+| `/xr import coreprotect` | Imports CoreProtect's history: see [Switching from CoreProtect](/xrewind/switching/). | `xrewind.admin` |
 | `/xr status` | Where the history is kept, how much has been saved and is waiting, and any problem. | `xrewind.status` |
 | `/xr reload`, `/xr info` | Reload the config, or show the version and settings. | `xrewind.admin` |
 

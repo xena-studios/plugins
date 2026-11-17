@@ -26,7 +26,7 @@ Fixes go into the newest release of each plugin. Older majors (xUtilities 1.x, z
 
 In scope:
 
-- xUtilities, zChat and xLimbo, and the shared core in this repository
+- xUtilities, zChat, xLimbo and xRewind, and the shared core in this repository
 - Ways for a player to get past a permission, a filter or a protection: running a command they shouldn't, injecting formatting or click actions into chat, breaking xLimbo's floor or leaving its world
 - Anything that lets a player crash or lag a server out of proportion to what they did
 - The update checker's connection to Modrinth

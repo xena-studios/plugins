@@ -9,10 +9,8 @@ on:
     - cron: "0 9 * * 1"
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
-  actions: write
+# Nothing by default; the job asks for what it needs.
+permissions: {}
 
 # One at a time, so the Monday run and one by hand can't both open the PR.
 concurrency: minecraft
@@ -20,6 +18,10 @@ concurrency: minecraft
 jobs:
   check:
     runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
     steps:
       - uses: actions/checkout@v7
       - id: new

@@ -1,6 +1,8 @@
 # zChat changelog
 
-## Unreleased
+## 3.1.0
+
+Replace the jar and restart. Your config is kept, with the new `filter.command` settings added.
 
 ### Added
 

@@ -103,7 +103,7 @@ class CommandsTest {
     @Test
     void adminCommandAnswersToXu() {
         admin.performCommand("xu info");
-        assertTrue(next(admin).startsWith("» xUtilities 2.0.0 on "));
+        assertTrue(next(admin).startsWith("» xUtilities 2.0.1 on "));
     }
 
     @Test

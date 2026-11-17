@@ -1,7 +1,7 @@
 # xLimbo on a real server, from the console. Paper only: xLimbo doesn't run on Folia.
 paper logged: World xlimbo is ready
 paper run: xlimbo info
-paper expect: xLimbo 2.0.0 on
+paper expect: xLimbo 2.0.1 on
 
 # The void world exists, with its purple glass floor at y 64 and nothing below it.
 paper run: execute in minecraft:xlimbo if block 7 64 -9 minecraft:purple_stained_glass run say FLOOR OK

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- `/filter` manages the chat filter in game: `/filter add <word>`, `/filter remove <word>`, `/filter list`, and `/filter test <message>` to see what the filter would do. Changes are saved to `config.yml`, comments kept, and apply at once. Staff only (`zchat.command.filter`).
+
 ### Changed
 
 - Chat formats with PlaceholderAPI placeholders do a little less work on every message, and notice PlaceholderAPI being enabled or disabled after zChat.

@@ -78,12 +78,36 @@ filter:
   # baaadword, bädword. false matches words only as typed.
   smart: true
   # Words to catch, matched as whole words. Put * at either end to also catch longer
-  # words: "bad*" catches badly.
+  # words: "bad*" catches badly and bads, where "bad" alone misses plurals.
+  # /filter add and /filter remove change this list in game.
   words: ["badword1", "badword2"]
   # Java regular expressions, matched anywhere in the message as typed, ignoring case.
   # For anything words can't express. Not smart.
   patterns: []
   message-blocked: "<prefix><error>Your message was blocked by the chat filter."
+
+  # /filter: add, remove and list words, and test a message, in game.
+  command:
+    enabled: true
+    aliases: ["chatfilter"]
+    permission: "zchat.command.filter"
+    # <word> is the word.
+    message-added: "<prefix>Added <highlight><word></highlight> to the filter."
+    # Sent after adding a word without *, as a reminder that plurals and longer words
+    # aren't caught. Blank for none.
+    message-added-tip: "<prefix>It catches <highlight><word></highlight> as a whole word. Add <highlight><word>*</highlight> to catch plurals and longer words too."
+    message-removed: "<prefix>Removed <highlight><word></highlight> from the filter."
+    message-already: "<prefix><error><highlight><word></highlight> is already in the filter."
+    message-not-found: "<prefix><error><highlight><word></highlight> isn't in the filter."
+    # For a word with spaces, or * anywhere but its ends.
+    message-invalid: "<prefix><error>A filter word is one word, with <highlight>*</highlight> only at its start or end. For anything else, use filter.patterns in config.yml."
+    # <count> is how many words, <words> the words.
+    message-list: "<prefix>Filtered words (<highlight><count></highlight>): <words>"
+    message-list-empty: "<prefix>No words are filtered yet."
+    # /filter test <message>: what the filter would do. <message> is how it would show.
+    message-test-passes: "<prefix><success>That passes the filter."
+    message-test-censored: "<prefix>That would show as: <white><message>"
+    message-test-blocked: "<prefix>That would be <error>blocked</error>."
 
 # The shortest gap between one player's messages. zchat.bypass.cooldown skips it.
 cooldown:

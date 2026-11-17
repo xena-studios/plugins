@@ -19,6 +19,16 @@ expect: Chat has been unmuted by
 run: clearchat
 expect: Chat was cleared by
 
+# /filter saves to config.yml and applies at once (the edit runs on the next tick).
+run: filter add bootcheck*
+expect: Added bootcheck* to the filter.
+run: filter test say bootchecks now
+expect: That would show as: say ********** now
+run: filter remove bootcheck*
+expect: Removed bootcheck* from the filter.
+run: filter test say bootchecks now
+expect: That passes the filter.
+
 # Reloading re-registers commands while the server runs.
 run: zc reload
 expect: Reloaded zChat in

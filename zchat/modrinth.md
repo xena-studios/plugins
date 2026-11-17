@@ -34,7 +34,7 @@ Give every rank its own chat style, stop the words you don't want, and keep spam
 Full MiniMessage, so you can use colours, gradients, hover text and links. Use `<player>`, `<displayname>`, `<message>` and any PlaceholderAPI placeholder.
 
 **A chat filter**
-Block or censor the words you list, however they're spelled, and any regex patterns you add. Staff can bypass it.
+Block or censor the words you list, however they're spelled, and any regex patterns you add. Staff can add a new word in game with `/filter add`, and it applies at once, and can bypass the filter themselves.
 
 **Anti-spam**
 A cooldown between messages, three seconds by default, and anti-repeat, which stops the same message being sent again and again.

@@ -12,6 +12,7 @@ import co.xenastudios.zchat.config.Settings.AntiRepeat;
 import co.xenastudios.zchat.config.Settings.ClearChat;
 import co.xenastudios.zchat.config.Settings.Cooldown;
 import co.xenastudios.zchat.config.Settings.Filter;
+import co.xenastudios.zchat.config.Settings.FilterCommand;
 import co.xenastudios.zchat.config.Settings.FilterMode;
 import co.xenastudios.zchat.config.Settings.Formatting;
 import co.xenastudios.zchat.config.Settings.Group;
@@ -81,7 +82,19 @@ public record ZConfig(
         new Messages(ErrorMessages.DEFAULTS),
         new Formatting(true, "zchat.chat.color", Message.of("<gray><player>:</gray> <white><message></white>"), groups()),
         new Filter(true, FilterMode.CENSOR, "*", true, List.of("badword1", "badword2"), List.of(),
-            Message.of("<prefix><error>Your message was blocked by the chat filter.")),
+            Message.of("<prefix><error>Your message was blocked by the chat filter."),
+            new FilterCommand(true, List.of("chatfilter"), "zchat.command.filter",
+                Message.of("<prefix>Added <highlight><word></highlight> to the filter."),
+                Message.of("<prefix>It catches <highlight><word></highlight> as a whole word. Add <highlight><word>*</highlight> to catch plurals and longer words too."),
+                Message.of("<prefix>Removed <highlight><word></highlight> from the filter."),
+                Message.of("<prefix><error><highlight><word></highlight> is already in the filter."),
+                Message.of("<prefix><error><highlight><word></highlight> isn't in the filter."),
+                Message.of("<prefix><error>A filter word is one word, with <highlight>*</highlight> only at its start or end. For anything else, use filter.patterns in config.yml."),
+                Message.of("<prefix>Filtered words (<highlight><count></highlight>): <words>"),
+                Message.of("<prefix>No words are filtered yet."),
+                Message.of("<prefix><success>That passes the filter."),
+                Message.of("<prefix>That would show as: <white><message>"),
+                Message.of("<prefix>That would be <error>blocked</error>."))),
         new Cooldown(true, 3, Message.of("<prefix><error>Wait <highlight><seconds>s</highlight> before chatting again.")),
         new AntiRepeat(true, 30, 90, Message.of("<prefix><error>You just said that.")),
         new Mentions(true, Message.of("<highlight>@<name></highlight>"), SoundEffect.parse(PING), "zchat.mention.everyone"),

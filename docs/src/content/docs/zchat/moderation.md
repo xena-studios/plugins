@@ -27,7 +27,7 @@ filter:
 
 ### Words
 
-`words` are matched as **whole words**, ignoring case, so `ass` catches *ass* but leaves *class* and *assassin* alone. Put `*` at either end to also catch longer words: `bad*` catches *badly*.
+`words` are matched as **whole words**, ignoring case, so `ass` catches *ass* but leaves *class* and *assassin* alone. Put `*` at either end to also catch longer words: `bad*` catches *badly* and *bads*. Without it, plurals aren't caught: `bad` alone misses *bads*.
 
 With **`smart: true`** (the default), the filter also sees through the usual tricks:
 
@@ -43,6 +43,21 @@ With **`smart: true`** (the default), the filter also sees through the usual tri
 It censors exactly what the player typed, so `b a d w o r d` becomes `* * * * * * *`. Spaced-out digits alone, like `4 5 5`, are left as numbers. Turn `smart` off to match words only as typed.
 
 Players with the [colour permission](/zchat/formats/#letting-players-use-colours) are filtered on their words with the tags taken out, so `bad<reset>word` is still caught. A censored message loses its colours.
+
+### Changing words in game: `/filter`
+
+When someone finds a new word to dodge with, staff can add it without opening the config:
+
+| Command | What it does |
+| --- | --- |
+| `/filter add <word>` | Adds the word. It applies at once. |
+| `/filter remove <word>` | Removes it. |
+| `/filter list` | Shows the words, to you only. |
+| `/filter test <message>` | Shows what the filter would do to a message, without sending it. Handy to check a new word catches what you meant. |
+
+The words are saved to `filter.words` in `config.yml`, the same list you'd edit by hand, with your comments kept. A word is one word, lowercased, with `*` only at its start or end; anything else belongs in `patterns`. Adding a word without `*` reminds you that it won't catch plurals (turn that off by blanking `command.message-added-tip`). If `config.yml` isn't valid YAML, `/filter` changes nothing and says so in the console.
+
+`/filter` needs `zchat.command.filter` (`op` by default). Its aliases (`chatfilter`), permission and messages are under `filter.command`.
 
 ### Patterns
 

@@ -43,20 +43,45 @@ public final class Settings {
         boolean smart,
         @Comment({
             "Words to catch, matched as whole words. Put * at either end to also catch longer",
-            "words: \"bad*\" catches badly."})
+            "words: \"bad*\" catches badly and bads, where \"bad\" alone misses plurals.",
+            "/filter add and /filter remove change this list in game."})
         List<String> words,
         @Comment({
             "Java regular expressions, matched anywhere in the message as typed, ignoring case.",
             "For anything words can't express. Not smart."})
         List<String> patterns,
-        Message messageBlocked) {
+        Message messageBlocked,
+        @Comment("/filter: add, remove and list words, and test a message, in game.") FilterCommand command) {
 
         public Filter {
             if (censorChar.codePointCount(0, censorChar.length()) != 1) {
                 throw new IllegalArgumentException("censor-char must be one character");
             }
         }
+
+        /** With the default /filter command. */
+        public Filter(boolean enabled, FilterMode mode, String censorChar, boolean smart, List<String> words,
+                      List<String> patterns, Message messageBlocked) {
+            this(enabled, mode, censorChar, smart, words, patterns, messageBlocked, ZConfig.DEFAULTS.filter().command());
+        }
     }
+
+    public record FilterCommand(
+        boolean enabled, List<String> aliases, String permission,
+        @Comment("<word> is the word.") Message messageAdded,
+        @Comment({
+            "Sent after adding a word without *, as a reminder that plurals and longer words",
+            "aren't caught. Blank for none."})
+        Message messageAddedTip,
+        Message messageRemoved,
+        Message messageAlready,
+        Message messageNotFound,
+        @Comment("For a word with spaces, or * anywhere but its ends.") Message messageInvalid,
+        @Comment("<count> is how many words, <words> the words.") Message messageList,
+        Message messageListEmpty,
+        @Comment("/filter test <message>: what the filter would do. <message> is how it would show.") Message messageTestPasses,
+        Message messageTestCensored,
+        Message messageTestBlocked) implements Toggle {}
 
     public record Cooldown(
         boolean enabled,

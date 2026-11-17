@@ -195,6 +195,35 @@ public final class ConfigLoader {
         }
     }
 
+    /**
+     * Changes the file in place, as a command editing a setting would: the owner's other
+     * values and comments are kept, and the file is swapped in whole. Reload afterwards to
+     * apply it. Call from one thread at a time (the global thread).
+     *
+     * @param change makes the change, returning false if there was nothing to change
+     * @return whether the file was written
+     * @throws ConfigException if the file isn't valid YAML or can't be written; it's left untouched
+     */
+    public static boolean edit(Path file, java.util.function.Predicate<YamlConfiguration> change) throws ConfigException {
+        try {
+            YamlConfiguration yaml = new YamlConfiguration();
+            if (Files.exists(file)) {
+                try {
+                    yaml.loadFromString(Files.readString(file, StandardCharsets.UTF_8));
+                } catch (InvalidConfigurationException e) {
+                    throw new ConfigException(file.getFileName() + " isn't valid YAML: " + firstLine(e), e);
+                }
+            }
+            if (!change.test(yaml)) {
+                return false;
+            }
+            write(file, BLANK_WITH_SPACES.matcher(yaml.saveToString()).replaceAll(""));
+            return true;
+        } catch (IOException e) {
+            throw new ConfigException("couldn't write " + file + ": " + e.getMessage(), e);
+        }
+    }
+
     // config.yml -> config.yml.bak-v1, or config.yml.bak-v1-2 if that exists.
     private static Path backup(Path file, int version) throws IOException {
         Path backup = file.resolveSibling(file.getFileName() + ".bak-v" + version);

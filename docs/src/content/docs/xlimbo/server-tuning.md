@@ -34,4 +34,4 @@ You don't need to tune these yourself:
 
 - The limbo world has its own view and simulation distance (`world.view-distance`, `world.simulation-distance`).
 - Arrivals land on land kept loaded around spawn, placed before they're in the world, so a mass arrival never generates chunks or teleports anyone.
-- There's no weather, nothing saves to disk, no mobs can spawn in the void biome, and stray entities are swept up every five minutes.
+- There's no weather, nothing saves to disk (with the default `auto-save: false`), no mobs can spawn in the void biome, and stray entities are swept up every five minutes.

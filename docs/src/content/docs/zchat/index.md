@@ -12,7 +12,7 @@ zChat handles the chat basics almost every server wants: a chat format per rank,
 
 - **Built for the hot path.** zChat runs on every chat message, so that path is kept cheap: formats and the filter are compiled when the config loads, the cheapest checks run first, and each message is drawn once, not once per player who sees it. Nothing runs on a timer but the daily update check and bStats, and you can turn both off.
 - **A filter that's hard to dodge.** It catches `s p a c e d` words, `b4dw0rd`, `baaadword` and `bädword`, but leaves innocent words like *class* alone.
-- **Players can't inject formatting.** What a player types goes into the format as plain text, so they can't add colours, links or hover text, unless you give them the colour permission (and even then, only colours and styles). PlaceholderAPI values can't add them either.
+- **Players can't inject formatting.** What a player types goes into the format as plain text, so they can't add colours, links or hover text, unless you give them the colour permission (and even then, only colours and styles). PlaceholderAPI values keep their colours and styles, but can't add links or hover text.
 - **Every change applies on reload**, even turning commands on or off. No restarts.
 - **Works with any permissions plugin**, because ranks are picked by permission. PlaceholderAPI is optional.
 - **Paper and Folia**, from the same jar.

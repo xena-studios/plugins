@@ -34,7 +34,7 @@ Give every rank its own chat style, stop the words you don't want, and keep spam
 Full MiniMessage, so you can use colours, gradients, hover text and links. Use `<player>`, `<displayname>`, `<message>` and any PlaceholderAPI placeholder.
 
 **A chat filter**
-Block or censor the words and patterns you list, however they're spelled. Staff can bypass it.
+Block or censor the words you list, however they're spelled, and any regex patterns you add. Staff can bypass it.
 
 **Anti-spam**
 A cooldown between messages, three seconds by default, and anti-repeat, which stops the same message being sent again and again.
@@ -50,7 +50,7 @@ Write a player's name in chat, with or without `@`, and it's highlighted and the
 - `/clearchat` (or `/cc`): wipe chat from every player's screen.
 - `/togglechat` (or `/tc`): lets any player hide chat for themselves.
 
-Every feature and command can be turned off, renamed, given its own permission and reworded.
+Every feature can be turned off and reworded, and every command renamed and given its own permission.
 
 ---
 

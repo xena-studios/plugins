@@ -188,6 +188,77 @@ class ConfigLoaderTest {
     }
 
     @Test
+    void aFolderThatCantBeWrittenStillGivesTheOwnersSettings() throws Exception {
+        ConfigSpec<Settings> v2 = spec()
+            .version(2)
+            .migrate(1, root -> {
+                root.set("ratio", root.getDouble("old-ratio"));
+                root.set("old-ratio", null);
+            })
+            .build();
+        String old = "config-version: 1\nold-ratio: 0.25\nenabled: false\n";
+        Files.writeString(file(), old);
+        // Read-only, as some hosts mount plugin folders. (Skipped where permissions aren't enforced.)
+        org.junit.jupiter.api.Assumptions.assumeTrue(dir.toFile().setWritable(false) && !Files.isWritable(dir));
+        try {
+            ConfigLoader.Result<Settings> result = ConfigLoader.load(v2, file());
+            assertEquals(0.25, result.config().ratio());
+            assertFalse(result.config().enabled());
+            assertEquals(old, Files.readString(file()));
+            assertTrue(result.warnings().stream().anyMatch(w -> w.contains("couldn't back up")), result.warnings().toString());
+            // Run again: still no backups piling up.
+            ConfigLoader.load(v2, file());
+            try (var files = Files.list(dir)) {
+                assertEquals(List.of(file()), files.toList());
+            }
+        } finally {
+            dir.toFile().setWritable(true);
+        }
+    }
+
+    @Test
+    void readCarriesForwardInMemoryAndTouchesNothing() throws Exception {
+        ConfigSpec<Settings> v2 = spec()
+            .version(2)
+            .migrate(1, root -> {
+                root.set("ratio", root.getDouble("old-ratio"));
+                root.set("old-ratio", null);
+            })
+            .build();
+        String old = "config-version: 1\nold-ratio: 0.25\n";
+        Files.writeString(file(), old);
+        ConfigLoader.Result<Settings> peek = ConfigLoader.read(v2, file());
+        assertEquals(0.25, peek.config().ratio());
+        assertEquals(old, Files.readString(file()));
+        try (var files = Files.list(dir)) {
+            assertEquals(List.of(file()), files.toList());
+        }
+        // The real load still sees the file as old, and carries it forward once.
+        assertEquals(1, ConfigLoader.load(v2, file()).carriedFrom());
+        assertTrue(Files.exists(dir.resolve("config.yml.bak-v1")));
+
+        Files.delete(file());
+        assertEquals(DEFAULTS, ConfigLoader.read(v2, file()).config());
+        assertFalse(Files.exists(file()), "read never writes the defaults");
+    }
+
+    @Test
+    void aFileThatCantBeReplacedStillGivesTheOwnersSettings() throws Exception {
+        // Missing settings to add, but the file is read-only: the values in it are still used.
+        Files.writeString(file(), "enabled: false\n");
+        org.junit.jupiter.api.Assumptions.assumeTrue(dir.toFile().setWritable(false) && !Files.isWritable(dir));
+        try {
+            ConfigLoader.Result<Settings> result = ConfigLoader.load(spec().build(), file());
+            assertFalse(result.config().enabled());
+            assertEquals(DEFAULTS.speed(), result.config().speed());
+            assertTrue(result.warnings().stream().anyMatch(w -> w.contains("couldn't save")), result.warnings().toString());
+            assertEquals("enabled: false\n", Files.readString(file()));
+        } finally {
+            dir.toFile().setWritable(true);
+        }
+    }
+
+    @Test
     void aConfigFromANewerVersionIsReadButNeverWritten() throws Exception {
         String text = "config-version: 7\nenabled: false\n";
         ConfigLoader.Result<Settings> result = load(spec().build(), text);

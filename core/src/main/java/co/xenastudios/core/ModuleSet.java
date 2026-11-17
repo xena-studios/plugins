@@ -24,13 +24,19 @@ final class ModuleSet {
         }
         wanted.forEach((key, factory) -> {
             if (!active.containsKey(key)) {
+                Module module = null;
                 try {
-                    Module module = factory.get();
+                    module = factory.get();
                     module.enable();
                     active.put(key, module);
                 } catch (RuntimeException | LinkageError e) {
                     // A feature that can't start is skipped; the rest of the plugin runs.
                     logger.log(Level.SEVERE, "Couldn't turn on " + key + "; it stays off", e);
+                    if (module != null) {
+                        // Whatever it set up before failing (listeners, tasks) goes too, or each
+                        // reload would leave another copy running.
+                        disable(key, module);
+                    }
                 }
             }
         });

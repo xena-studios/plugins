@@ -139,9 +139,12 @@ public final class CommandRegistry {
         command.unregister(map);
         active.remove(command.getName());
         for (String label : labels(command)) {
-            Command server = displaced.remove(label);
+            // Give a displaced server command back only once nothing holds its label. If
+            // another of our commands still does, keep it for when that one goes.
+            Command server = displaced.get(label);
             if (server != null && !known.containsKey(label)) {
                 known.put(label, server);
+                displaced.remove(label);
             }
         }
     }

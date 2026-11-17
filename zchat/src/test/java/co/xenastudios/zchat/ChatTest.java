@@ -179,6 +179,17 @@ class ChatTest {
     }
 
     @Test
+    void turningMutechatOffUnmutesChat() throws Exception {
+        steve.setOp(true);
+        steve.performCommand("mutechat");
+        assertTrue(chat(alex, "hello?").isCancelled());
+        Path config = plugin.getDataFolder().toPath().resolve("config.yml");
+        Files.writeString(config, Files.readString(config).replaceFirst("(?s)(mutechat:\n  enabled: )true", "$1false"));
+        plugin.reload();
+        assertFalse(chat(alex, "back?").isCancelled(), "no /mutechat left to unmute with");
+    }
+
+    @Test
     void mentionsHighlightAndPing() {
         chatty(steve);
         AsyncChatEvent event = chat(steve, "hey alex, look");

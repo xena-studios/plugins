@@ -112,7 +112,8 @@ final class Reader {
             Range range = component == null ? null : component.getAnnotation(Range.class);
             if (range != null && value instanceof Number number) {
                 double d = number.doubleValue();
-                if (d < range.min() || d > range.max()) {
+                // NaN compares false with everything, so it has to be caught by name.
+                if (Double.isNaN(d) || d < range.min() || d > range.max()) {
                     throw new IllegalArgumentException("must be " + bounds(range));
                 }
             }

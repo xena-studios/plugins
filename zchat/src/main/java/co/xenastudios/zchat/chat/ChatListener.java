@@ -56,7 +56,7 @@ public final class ChatListener extends ListenerModule {
         ChatState state = zchat.state();
         long now = System.nanoTime();
 
-        if (state.muted() && !player.hasPermission(BYPASS_MUTE)) {
+        if (state.muted() && config.mutechat().enabled() && !player.hasPermission(BYPASS_MUTE)) {
             refuse(event, config.mutechat().messageBlocked());
             return;
         }
@@ -124,7 +124,7 @@ public final class ChatListener extends ListenerModule {
             return;
         }
         Player sender = event.getPlayer();
-        zchat.state().recent(sender.getUniqueId(), done.recent());
+        zchat.state().recent(sender, done.recent());
         Mentions.Applied mentions = done.mentions();
         Settings.Mentions settings = zchat.config().mentions();
         if (mentions == null || settings.sound().isNone() || (!mentions.everyone() && mentions.pinged().isEmpty())) {

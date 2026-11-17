@@ -8,6 +8,10 @@
 
 ### Fixed
 
+- If the limbo world can't be unloaded to apply a new floor, it's kept as it is and the console says to restart. Before, xLimbo could record a floor the world didn't have, so later startups never rebuilt it.
+- Changing the world or spawn radius soon after startup no longer leaves the old spawn area loaded.
+- Upgrading from 1.x when the server asks for xLimbo's generator early no longer skips taking over the 1.x world.
+- A config file that can't be saved back (a read-only folder, or a mounted volume that can't replace files in one step) no longer loses your settings: they're used as written, with a warning, and backups don't pile up on every start.
 - Clicking the link in the update notice now opens the new version's Modrinth page. Before, it opened nothing.
 
 ## 2.0.0

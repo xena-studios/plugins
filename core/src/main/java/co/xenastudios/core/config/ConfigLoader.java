@@ -2,6 +2,7 @@ package co.xenastudios.core.config;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -46,8 +47,26 @@ public final class ConfigLoader {
      * @throws ConfigException if the file isn't valid YAML; it's left untouched
      */
     public static <C extends Record> Result<C> load(ConfigSpec<C> spec, Path file) throws ConfigException {
+        return load(spec, file, true);
+    }
+
+    /**
+     * Reads the settings the file holds, carried forward in memory if it's old, without
+     * writing, moving or backing up anything: for a peek before the plugin's own load,
+     * which then does those once.
+     *
+     * @throws ConfigException if the file isn't valid YAML
+     */
+    public static <C extends Record> Result<C> read(ConfigSpec<C> spec, Path file) throws ConfigException {
+        return load(spec, file, false);
+    }
+
+    private static <C extends Record> Result<C> load(ConfigSpec<C> spec, Path file, boolean mayWrite) throws ConfigException {
         List<String> notices = new ArrayList<>();
         try {
+            if (Files.notExists(file) && !mayWrite) {
+                return new Result<>(spec.defaults, List.of(), notices, 0);
+            }
             if (Files.notExists(file)) {
                 write(file, Emitter.render(spec));
                 notices.add("Wrote the default " + file.getFileName() + ".");
@@ -62,6 +81,9 @@ public final class ConfigLoader {
                 throw new ConfigException(file.getFileName() + " isn't valid YAML: " + firstLine(e), e);
             }
 
+            if (spec.foreign != null && spec.foreign.test(yaml) && !mayWrite) {
+                return new Result<>(spec.defaults, List.of(), notices, 0);
+            }
             if (spec.foreign != null && spec.foreign.test(yaml)) {
                 Path aside = file.resolveSibling(file.getFileName() + ".old");
                 for (int n = 2; Files.exists(aside); n++) {
@@ -84,12 +106,25 @@ public final class ConfigLoader {
 
             boolean changed = false;
             int carriedFrom = 0;
+            Path backup = null;
             boolean newer = version > spec.version;
+            // A newer plugin's file, or one that can't be backed up, is read but never rewritten.
+            boolean leaveFile = newer || !mayWrite;
             if (newer) {
                 warnings.add("%s is from a newer version of the plugin (config version %d; this one reads %d). Settings it doesn't know are ignored, and the file is left as it is."
                     .formatted(file.getFileName(), version, spec.version));
             } else if (version < spec.version) {
-                Path backup = backup(file, version);
+                try {
+                    if (mayWrite) {
+                        backup = backup(file, version);
+                    }
+                } catch (IOException e) {
+                    // Can't keep a copy (a read-only folder, say): carry it forward in memory only,
+                    // and leave the file alone below so nothing is lost.
+                    warnings.add("couldn't back up %s (%s), so it's carried forward for this run only and left unchanged on disk."
+                        .formatted(file.getFileName(), e.getMessage()));
+                    leaveFile = true;
+                }
                 carriedFrom = version;
                 for (Map.Entry<Integer, Migration> step : spec.migrations.tailMap(Math.max(version, 1)).entrySet()) {
                     step.getValue().apply(yaml);
@@ -101,8 +136,10 @@ public final class ConfigLoader {
                         .formatted(refreshed, refreshed == 1 ? "" : "s", refreshed == 1 ? "" : "s"));
                 }
                 Writer.recomment(spec, yaml);
-                notices.add("Carried %s forward from config version %d to %d. The old file is %s."
-                    .formatted(file.getFileName(), version, spec.version, backup.getFileName()));
+                if (backup != null) {
+                    notices.add("Carried %s forward from config version %d to %d. The old file is %s."
+                        .formatted(file.getFileName(), version, spec.version, backup.getFileName()));
+                }
                 changed = true;
             }
 
@@ -110,7 +147,7 @@ public final class ConfigLoader {
             C config = reader.readRoot(spec.type, yaml, spec.defaults);
             warnings.addAll(reader.warnings);
 
-            if (!newer) {
+            if (!leaveFile) {
                 if (!yaml.contains(Writer.VERSION_KEY)) {
                     yaml.set(Writer.VERSION_KEY, spec.version);
                     changed = true;
@@ -136,8 +173,20 @@ public final class ConfigLoader {
                     notices.add("Added " + added.size() + " new settings with their defaults: " + String.join(", ", added) + ".");
                 }
                 if (changed) {
-                    // Bukkit indents the blank lines it writes; trim them.
-                    write(file, BLANK_WITH_SPACES.matcher(yaml.saveToString()).replaceAll(""));
+                    try {
+                        // Bukkit indents the blank lines it writes; trim them.
+                        write(file, BLANK_WITH_SPACES.matcher(yaml.saveToString()).replaceAll(""));
+                    } catch (IOException e) {
+                        // A file that can't be written back (a read-only folder, say) still says
+                        // what the owner wants: run with it, and say the file wasn't updated.
+                        if (backup != null) {
+                            // Its backup would only pile up, one more on every start.
+                            Files.deleteIfExists(backup);
+                            notices.removeIf(notice -> notice.startsWith("Carried "));
+                        }
+                        warnings.add("couldn't save the updated %s (%s), so it's unchanged on disk; these settings are in use anyway."
+                            .formatted(file.getFileName(), e.getMessage()));
+                    }
                 }
             }
             return new Result<>(config, List.copyOf(warnings), List.copyOf(notices), carriedFrom);
@@ -160,8 +209,18 @@ public final class ConfigLoader {
     private static void write(Path file, String text) throws IOException {
         Files.createDirectories(file.toAbsolutePath().getParent());
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");
-        Files.writeString(temp, text, StandardCharsets.UTF_8);
-        Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        try {
+            Files.writeString(temp, text, StandardCharsets.UTF_8);
+            try {
+                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                // Some mounted filesystems (network shares, some container volumes) can't swap
+                // atomically; a plain replace is the best they offer.
+                Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
     }
 
     private static String firstLine(Exception e) {

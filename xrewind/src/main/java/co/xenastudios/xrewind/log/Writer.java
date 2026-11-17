@@ -160,6 +160,7 @@ public final class Writer implements Runnable {
 
     private boolean write() {
         long start = System.nanoTime();
+        List<Entry.MarkRolledBack> marks = new ArrayList<>();
         try {
             for (Entry entry : batch) {
                 switch (entry) {
@@ -175,6 +176,7 @@ public final class Writer implements Runnable {
                         blocks.setInt(9, dictionaries.state(change.after()));
                         blocks.addBatch();
                     }
+                    case Entry.MarkRolledBack mark -> marks.add(mark);
                     case Entry.Session session -> {
                         sessions.setInt(1, session.time());
                         sessions.setInt(2, dictionaries.user(session.actor()));
@@ -191,6 +193,10 @@ public final class Writer implements Runnable {
             dictionaries.write(connection, database);
             blocks.executeBatch();
             sessions.executeBatch();
+            // After the inserts: a mark can be for rows in this same batch.
+            for (Entry.MarkRolledBack mark : marks) {
+                mark(mark);
+            }
             connection.commit();
             dictionaries.committed();
             written += batch.size();
@@ -211,6 +217,25 @@ public final class Writer implements Runnable {
             }
             fail("couldn't save " + batch.size() + " logged changes: " + e.getMessage() + " Trying again.", e);
             return false;
+        }
+    }
+
+    // UPDATE ... WHERE id IN (...), 500 ids at a time.
+    private void mark(Entry.MarkRolledBack mark) throws SQLException {
+        long[] ids = mark.ids();
+        for (int from = 0; from < ids.length; from += 500) {
+            int to = Math.min(ids.length, from + 500);
+            StringBuilder sql = new StringBuilder(database.sql("UPDATE {p}block SET rolled_back = ? WHERE id IN ("));
+            for (int i = from; i < to; i++) {
+                sql.append(i == from ? "?" : ", ?");
+            }
+            try (PreparedStatement update = connection.prepareStatement(sql.append(")").toString())) {
+                update.setInt(1, mark.rolledBack() ? 1 : 0);
+                for (int i = from; i < to; i++) {
+                    update.setLong(i - from + 2, ids[i]);
+                }
+                update.executeUpdate();
+            }
         }
     }
 

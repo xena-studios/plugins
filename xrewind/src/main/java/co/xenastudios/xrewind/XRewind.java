@@ -4,6 +4,7 @@ import co.xenastudios.core.Setup;
 import co.xenastudios.core.XenaPlugin;
 import co.xenastudios.core.config.ConfigSpec;
 import co.xenastudios.xrewind.command.LookupCommands;
+import co.xenastudios.xrewind.command.RollbackCommands;
 import co.xenastudios.xrewind.command.StatusCommand;
 import co.xenastudios.xrewind.config.XRConfig;
 import co.xenastudios.xrewind.listen.BlockBreaks;
@@ -13,8 +14,10 @@ import co.xenastudios.xrewind.log.LogQueue;
 import co.xenastudios.xrewind.log.Writer;
 import co.xenastudios.xrewind.query.Inspector;
 import co.xenastudios.xrewind.query.Lookups;
+import co.xenastudios.xrewind.rollback.Rollbacks;
 import co.xenastudios.xrewind.storage.Storage;
 import java.util.List;
+import org.bukkit.permissions.PermissionDefault;
 import java.util.concurrent.TimeUnit;
 
 /** xRewind: every change, logged. Any of it, undone. Not final: MockBukkit subclasses it in tests. */
@@ -25,6 +28,7 @@ public class XRewind extends XenaPlugin<XRConfig> {
     private Writer writer;
     private Lookups lookups;
     private Inspector inspector;
+    private Rollbacks rollbacks;
 
     @Override
     protected ConfigSpec<XRConfig> configSpec() {
@@ -59,8 +63,11 @@ public class XRewind extends XenaPlugin<XRConfig> {
         if (lookups == null) {
             lookups = new Lookups(this);
             inspector = new Inspector(this, lookups);
+            rollbacks = new Rollbacks(this);
         }
         LookupCommands.specs(this, lookups, inspector).forEach(setup::subcommand);
+        RollbackCommands.specs(this, rollbacks).forEach(setup::subcommand);
+        setup.permission(Rollbacks.GLOBAL_PERMISSION, PermissionDefault.OP);
         setup.subcommand(StatusCommand.spec(this));
     }
 

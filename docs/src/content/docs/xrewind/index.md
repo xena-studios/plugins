@@ -29,7 +29,7 @@ Blocks placed and broken (and the torches, signs and rails that fall off with th
 
 ## Commands
 
-`/xr inspect` to click blocks for their history, `/xr lookup` to search it with CoreProtect's parameters (`u:` `t:` `r:` `a:` `i:` `e:`), and `/xr status` to see that logging is keeping up. Rollback, restore and purge are next. See [Commands](/xrewind/commands/).
+`/xr inspect` to click blocks for their history, `/xr lookup` to search it with CoreProtect's parameters (`u:` `t:` `r:` `a:` `i:` `e:`), `/xr rollback` and `/xr restore` with the same parameters (and `#preview`), `/xr undo`, and `/xr status` to see that logging is keeping up. See [Commands](/xrewind/commands/).
 
 ## Storage
 

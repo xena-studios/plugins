@@ -71,6 +71,31 @@ messages:
       joined: "joined"
       quit: "quit"
 
+  # Rollbacks, restores, previews and undo.
+  rollback:
+    # A rollback or restore without t:.
+    need-time: "<prefix><error>Add a time, such as <highlight>t:1h</highlight>, so it can't reach further back than you meant."
+    # Past max-radius without permission. <max> is the limit.
+    too-far: "<prefix><error>That's past the <highlight><max></highlight>-block limit. r:#world, r:#global and bigger radii need <highlight>xrewind.rollback.global</highlight>."
+    # Another one is already running.
+    busy: "<prefix><error>Another rollback is running. Wait for it to finish."
+    nothing: "<prefix>Nothing to change."
+    # A #preview is showing. <count> is how many blocks.
+    preview: "<prefix>Previewing <highlight><count></highlight> blocks, for you only. <click:run_command:'/xrewind apply'><hover:show_text:'/xrewind apply'><success>[Apply]</success></hover></click> <click:run_command:'/xrewind cancel'><hover:show_text:'/xrewind cancel'><error>[Cancel]</error></hover></click>"
+    no-preview: "<prefix><error>You have no preview. Add #preview to a rollback or restore."
+    cancelled: "<prefix>Preview cancelled. Nothing changed."
+    # On the action bar while it works. <verb>, <done>, <total>.
+    progress: "<highlight><verb></highlight>: <done> of <total> blocks"
+    # When it's finished. <verb>, <count>, <seconds>.
+    done: "<prefix><success><verb></success> <highlight><count></highlight> blocks in <seconds>s."
+    # Stored blocks this server couldn't read. <count>.
+    skipped: "<prefix><error><count> blocks were stored by a Minecraft version this one can't read, and were left as they are."
+    no-undo: "<prefix><error>Nothing to undo. Undo works on your last rollback or restore since the server started."
+    verbs:
+      rollback: "Rolled back"
+      restore: "Restored"
+      undo: "Undid"
+
 # Where the history is kept. Changing it on /xrewind reload switches to the new one;
 # history isn't copied across.
 storage:
@@ -99,6 +124,17 @@ log:
   block-place: true
   # Players joining and quitting, and where.
   sessions: true
+
+# Rollbacks and restores. Blocks are set a few milliseconds per tick, chunk by chunk, so
+# even a big one doesn't freeze the server, and without physics, so nothing cascades.
+rollback:
+  # How long a rollback may work each tick, in milliseconds. A tick is 50.
+  ms-per-tick: 10
+  # The radius, in blocks, when a rollback doesn't give one with r:.
+  default-radius: 10
+  # The largest r: without the xrewind.rollback.global permission, which r:#world and
+  # r:#global also need.
+  max-radius: 100
 
 # Tells you when a new version is out.
 update-checker:

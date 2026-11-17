@@ -39,6 +39,9 @@ class LoggingTest {
     void start() throws Exception {
         server = MockBukkit.mock();
         world = server.addSimpleWorld("world");
+        // The mock server can't load chunks in the background, as rollbacks ask for them.
+        world.loadChunk(0, 0);
+        world.loadChunk(0, 1);
         plugin = MockBukkit.load(XRewind.class);
         await(() -> plugin.storage().database() != null);
         steve = server.addPlayer("Steve");
@@ -143,6 +146,64 @@ class LoggingTest {
         assertTrue(awaitMessage(steve).contains("broke dirt"));
         steve.performCommand("xr l t:soon");
         assertTrue(plain(steve.nextMessage()).contains("isn't a time"));
+    }
+
+    @Test
+    void rollbackRestoreAndUndo() throws Exception {
+        steve.setOp(true);
+        for (int x = 0; x < 3; x++) {
+            Block block = world.getBlockAt(x, 70, 10);
+            block.setType(Material.OAK_PLANKS);
+            server.getPluginManager().callEvent(new BlockBreakEvent(block, steve));
+            block.setType(Material.AIR);
+        }
+        steve.setLocation(world.getBlockAt(0, 70, 10).getLocation());
+
+        steve.performCommand("xr rb u:Steve");
+        assertTrue(plain(steve.nextMessage()).contains("Add a time"), "a time is required");
+
+        steve.performCommand("xr rb u:Steve t:1h");
+        assertTrue(awaitMessage(steve).contains("Rolled back 3 blocks"));
+        for (int x = 0; x < 3; x++) {
+            assertEquals(Material.OAK_PLANKS, world.getBlockAt(x, 70, 10).getType());
+        }
+        await(() -> rolledBack() == 3);
+
+        steve.performCommand("xr undo");
+        assertTrue(awaitMessage(steve).contains("Undid 3 blocks"));
+        assertEquals(Material.AIR, world.getBlockAt(1, 70, 10).getType());
+        await(() -> rolledBack() == 0);
+
+        steve.performCommand("xr rb u:Steve t:1h");
+        awaitMessage(steve);
+        steve.performCommand("xr rs u:Steve t:1h");
+        assertTrue(awaitMessage(steve).contains("Restored 3 blocks"));
+        assertEquals(Material.AIR, world.getBlockAt(2, 70, 10).getType());
+    }
+
+    @Test
+    void aPreviewChangesNothingUntilApplied() throws Exception {
+        steve.setOp(true);
+        Block block = world.getBlockAt(0, 70, 20);
+        block.setType(Material.GOLD_BLOCK);
+        server.getPluginManager().callEvent(new BlockBreakEvent(block, steve));
+        block.setType(Material.AIR);
+        steve.setLocation(block.getLocation());
+
+        steve.performCommand("xr rb u:Steve t:1h #preview");
+        assertTrue(awaitMessage(steve).contains("Previewing 1 blocks"));
+        assertEquals(Material.AIR, block.getType(), "only shown, not changed");
+        steve.performCommand("xr apply");
+        assertTrue(awaitMessage(steve).contains("Rolled back 1 blocks"));
+        assertEquals(Material.GOLD_BLOCK, block.getType());
+    }
+
+    private long rolledBack() {
+        try (Connection connection = plugin.storage().database().connect(); Statement sql = connection.createStatement()) {
+            return count(sql, "SELECT COUNT(*) FROM xrewind_block WHERE rolled_back = 1");
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private String awaitMessage(PlayerMock player) throws InterruptedException {

@@ -109,8 +109,8 @@ public record ZConfig(
             Message.of("<prefix>Chat is now <error>hidden</error>. Run it again to show it.")),
         new PrivateMessages(
             new Msg(true, List.of("tell", "w", "whisper", "m", "pm"), "zchat.command.msg",
-                Message.of("<highlight>You → <player></highlight><dark_gray>:</dark_gray> <white><message>"),
-                Message.of("<highlight><player> → You</highlight><dark_gray>:</dark_gray> <white><message>"),
+                Message.of("<highlight>You → <player></highlight><gray>:</gray> <white><message>"),
+                Message.of("<highlight><player> → You</highlight><gray>:</gray> <white><message>"),
                 SoundEffect.parse(PING)),
             new Reply(true, List.of("r"), "zchat.command.reply", Message.of("<prefix><error>You have nobody to reply to.")),
             new SocialSpy(true, List.of("spy"), "zchat.command.socialspy", true, true,

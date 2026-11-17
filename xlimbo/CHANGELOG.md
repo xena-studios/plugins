@@ -4,6 +4,7 @@
 
 ### Changed
 
+- The action bar is easier to read on the purple floor: the default hint and queue line are white with a bold highlight, instead of gray. New configs get it; to update yours, change `action-bar.message` and `queue.action-bar` as in the [default config](https://docs.xenastudios.co/xlimbo/configuration/).
 - Lighter when parts are off: with `server-check` off, nothing checks the main server every second any more, and the void rescue's movement listener only runs while `void.enabled` is on (cancelling void damage alone no longer needs it). `server-check.interval-seconds` changes now apply on reload.
 
 ### Fixed

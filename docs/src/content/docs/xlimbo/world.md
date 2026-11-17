@@ -69,7 +69,7 @@ death:
 action-bar:
   enabled: true
   interval-ticks: 40
-  message: "<gray>Type <highlight>/join</highlight> to go back to the server"
+  message: "<white>Type <highlight><bold>/join</bold></highlight> to go back to the server"
 ```
 
 - Players are put in **creative** with **flight**, which stays on so nobody falls.

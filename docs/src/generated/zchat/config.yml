@@ -184,8 +184,8 @@ private-messages:
     enabled: true
     aliases: ["tell", "w", "whisper", "m", "pm"]
     permission: "zchat.command.msg"
-    format-sent: "<highlight>You → <player></highlight><dark_gray>:</dark_gray> <white><message>"
-    format-received: "<highlight><player> → You</highlight><dark_gray>:</dark_gray> <white><message>"
+    format-sent: "<highlight>You → <player></highlight><gray>:</gray> <white><message>"
+    format-received: "<highlight><player> → You</highlight><gray>:</gray> <white><message>"
     # Played to whoever receives a message. Blank for none.
     sound: "entity.experience_orb.pickup 0.5 1.2"
 

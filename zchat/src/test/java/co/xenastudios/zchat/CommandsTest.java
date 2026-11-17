@@ -45,6 +45,15 @@ class CommandsTest {
     }
 
     @Test
+    void selectorsNeedMinecraftsSelectorPermission() {
+        steve.performCommand("msg @a hello everyone");
+        assertEquals("» No player named @a is online.", next(steve));
+        assertNull(next(alex));
+        assertNull(next(mod));
+        // MockBukkit can't parse selectors, so the allowed path is a boot check on real servers.
+    }
+
+    @Test
     void privateMessagesReachBothSidesAndSpies() {
         mod.performCommand("socialspy");
         assertEquals("» Social spy on.", next(mod));

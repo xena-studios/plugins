@@ -8,6 +8,10 @@ expect: No player named Nobody is online.
 run: tell Nobody hi
 expect: No player named Nobody is online.
 
+# The console may use selectors (Paper only); with nobody online, none match.
+paper run: msg @a hi
+paper expect: No player named @a is online.
+
 run: mutechat
 expect: Chat has been muted by
 run: mutechat

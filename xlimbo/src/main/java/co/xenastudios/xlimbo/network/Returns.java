@@ -62,7 +62,15 @@ public final class Returns extends ListenerModule {
             arrived.put(player.getUniqueId(), now);
         }
         tick = Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, task -> tick(), 20, 20);
-        ping = Bukkit.getAsyncScheduler().runAtFixedRate(plugin, task -> ping(), 0, 1, TimeUnit.SECONDS);
+        Settings.ServerCheck check = xlimbo.config().serverCheck();
+        if (check.enabled()) {
+            // Only while server-check is on, at its own interval: the module is keyed by it,
+            // so changing either on reload starts this again.
+            ping = Bukkit.getAsyncScheduler().runAtFixedRate(plugin, task -> ping(), 0, check.intervalSeconds(), TimeUnit.SECONDS);
+        } else {
+            // Auto-join only: nothing to ask, so the main server counts as up.
+            up = Boolean.TRUE;
+        }
         xlimbo.returns(this);
     }
 
@@ -70,7 +78,9 @@ public final class Returns extends ListenerModule {
     public void disable() {
         super.disable();
         tick.cancel();
-        ping.cancel();
+        if (ping != null) {
+            ping.cancel();
+        }
         xlimbo.returns(null);
     }
 
@@ -86,20 +96,9 @@ public final class Returns extends ListenerModule {
         publishPositions();
     }
 
-    private long lastPing;
-
-    // Off the main thread: asks the main server for its status every interval.
+    // Off the main thread: asks the main server for its status, every interval-seconds.
     private void ping() {
         Settings.ServerCheck check = xlimbo.config().serverCheck();
-        if (!check.enabled()) {
-            up = Boolean.TRUE;
-            return;
-        }
-        long now = System.currentTimeMillis();
-        if (now - lastPing < check.intervalSeconds() * 1000L - 500) {
-            return;
-        }
-        lastPing = now;
         InetSocketAddress address;
         try {
             address = StatusPing.parse(check.address());

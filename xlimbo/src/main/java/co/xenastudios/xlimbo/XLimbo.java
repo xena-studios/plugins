@@ -52,7 +52,9 @@ public class XLimbo extends XenaPlugin<XLConfig> {
             setup.module("hide-others", () -> new HideOthers(this));
         }
         if (config.autoJoin().enabled() || config.serverCheck().enabled()) {
-            setup.module("returns", () -> new Returns(this));
+            // Keyed by server-check's interval, so changing it on reload restarts the ping.
+            String key = config.serverCheck().enabled() ? "returns.check." + config.serverCheck().intervalSeconds() : "returns.auto";
+            setup.module(key, () -> new Returns(this));
         }
         boolean queueBar = !config.queue().actionBar().isEmpty() && (config.autoJoin().enabled() || config.serverCheck().enabled());
         if (config.actionBar().enabled() || queueBar) {

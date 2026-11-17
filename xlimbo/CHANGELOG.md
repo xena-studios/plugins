@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Lighter when parts are off: with `server-check` off, nothing checks the main server every second any more, and the void rescue's movement listener only runs while `void.enabled` is on (cancelling void damage alone no longer needs it). `server-check.interval-seconds` changes now apply on reload.
+
 ### Fixed
 
 - Clicking the link in the update notice now opens the new version's Modrinth page. Before, it opened nothing.

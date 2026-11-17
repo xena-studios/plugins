@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Chat formats with PlaceholderAPI placeholders do a little less work on every message, and notice PlaceholderAPI being enabled or disabled after zChat.
+
 ### Fixed
 
 - Clicking the link in the update notice now opens the new version's Modrinth page. Before, it opened nothing.

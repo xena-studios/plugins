@@ -2,16 +2,18 @@
 
 **Every change, logged. Any of it, undone.**
 
-xRewind is a block logger with rollback for Paper and Folia: who placed, broke or took what, where and when, and a way to undo it.
+xRewind is a block logger with rollback for Paper and Folia. When someone griefs spawn or empties the shared chest, it shows you who placed, broke or took what, where and when, and puts it back.
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No early-access builds, nothing behind a Patreon, automatic purges included.
 - **New Minecraft versions the same week.** Paper's API only, no server internals, so an update rarely breaks it.
 - **You won't feel it running.** Nothing touches the database on a game thread: changes are queued as a few numbers and written in batches.
+- **Rollback that doesn't freeze the server.** Blocks are set a few milliseconds per tick, region by region on Folia. Preview it first, and undo it after.
 - **Easy to switch to.** CoreProtect's command syntax, and its history imported with `/xr import coreprotect`.
+- **Every change applies on reload**, even what's logged and where it's stored. No restarts.
 
 **[Download on Modrinth](https://modrinth.com/plugin/xrewind)** · [Docs](https://docs.xenastudios.co/xrewind/) · [Commands](https://docs.xenastudios.co/xrewind/commands/) · [Switching from CoreProtect](https://docs.xenastudios.co/xrewind/switching/) · [Changelog](CHANGELOG.md)
 
-Needs Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB.
+Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB.
 
 ## Developing
 
@@ -32,4 +34,13 @@ src/main/java/co/xenastudios/xrewind/
   rollback/        working out a rollback, and applying it a few milliseconds per tick
   maintain/        purges, and the CoreProtect import
   command/         /xrewind's subcommands
+boot-checks.txt    console commands CI runs on real Paper and Folia servers, and what each must log
+CHANGELOG.md       one section per release; the release workflow publishes it
+modrinth.md        the Modrinth project page, published when it changes on main
 ```
+
+The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
+
+## Licence
+
+[GPL-3.0-only](../LICENSE), like the rest of the repo.

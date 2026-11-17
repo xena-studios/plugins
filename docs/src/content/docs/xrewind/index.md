@@ -8,13 +8,16 @@ sidebar:
 
 **Every change, logged. Any of it, undone.**
 
-xRewind is a block logger with rollback for Paper and Folia: who placed, broke or took what, where and when, and a way to undo it.
+xRewind is a block logger with rollback for Paper and Folia. When someone griefs spawn or empties the shared chest, it shows you who placed, broke or took what, where and when, and puts it back.
 
 - **Every feature free.** No early-access builds and nothing behind a Patreon, automatic purges included (30 days by default).
 - **New Minecraft versions the same week.** It uses only Paper's API, never the server's internals, so an update rarely breaks it.
 - **You won't feel it running.** Nothing touches the database on a game thread: each change is queued in about 40 nanoseconds and written in batches by one background thread. Logging you turn off isn't listened for at all. See [Performance](/xrewind/performance/).
 - **Rollback that doesn't freeze the server.** A rollback works out each block's final state once, then applies it a few milliseconds per tick, or region by region on Folia. Preview it first, and undo it after.
 - **Easy to switch to.** CoreProtect's command syntax, so habits and guides carry over, and your CoreProtect history imported with one command: see [Switching from CoreProtect](/xrewind/switching/).
+- **Every change applies on reload**, even what's logged and where it's stored. No restarts.
+
+Current version: **1.0.0**, for Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xrewind).
 
 ## What it logs
 
@@ -32,4 +35,9 @@ A rollback brings back what a broken block held: a chest's items, a sign's text.
 
 SQLite out of the box, in one file in the plugin's folder, or MySQL/MariaDB for networks. No driver is bundled: Paper and Folia already ship them. See [Configuration](/xrewind/configuration/).
 
-Current version: **1.0.0**, for Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xrewind).
+## Start here
+
+1. [Install it](/start/installing/). It logs to SQLite with nothing to set up.
+2. Choose what's logged, and where it's stored: [Configuration](/xrewind/configuration/).
+3. Learn the lookup parameters, how a rollback works, and which permission each command needs: [Commands](/xrewind/commands/).
+4. Coming from CoreProtect? Bring your history: [Switching from CoreProtect](/xrewind/switching/).

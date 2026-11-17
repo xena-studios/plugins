@@ -9,6 +9,7 @@ import co.xenastudios.zchat.chat.ChatState;
 import co.xenastudios.zchat.chat.Formats;
 import co.xenastudios.zchat.chat.PapiWatch;
 import co.xenastudios.zchat.command.ChatCommands;
+import co.xenastudios.zchat.command.FilterCommands;
 import co.xenastudios.zchat.command.MessageCommands;
 import co.xenastudios.zchat.config.Settings;
 import co.xenastudios.zchat.config.ZConfig;
@@ -78,6 +79,7 @@ public class ZChat extends XenaPlugin<ZConfig> {
         declarePermissions(setup, config);
         ChatCommands.register(setup, this, config);
         MessageCommands.register(setup, this, config);
+        FilterCommands.register(setup, this, config);
     }
 
     private static void declarePermissions(Setup setup, ZConfig config) {

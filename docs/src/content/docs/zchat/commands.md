@@ -17,6 +17,7 @@ Every permission defaults to `op` unless it says otherwise. Change a command's p
 | `/msg <player> <message>` | `tell`, `w`, `whisper`, `m`, `pm` | `zchat.command.msg` (**everyone**) | Sends a private message. Replaces Minecraft's. |
 | `/reply <message>` | `r` | `zchat.command.reply` (**everyone**) | Answers your last private message. |
 | `/socialspy` | `spy` | `zchat.command.socialspy` | Shows you every private message. |
+| `/filter <add\|remove\|list\|test>` | `chatfilter` | `zchat.command.filter` | Adds, removes and lists [filter words](/zchat/moderation/#changing-words-in-game-filter), or tests a message. |
 | `/zchat reload` | `zc` | `zchat.admin` | Re-reads the config and applies all of it, commands included. |
 | `/zchat info` | `zc` | `zchat.admin` | Shows the version, which commands are on, whether an update is out, and any config problems. |
 

@@ -177,6 +177,38 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
         return done;
     }
 
+    /**
+     * Changes config.yml and applies it, for commands that edit a setting in game. Runs on
+     * the next tick on the global thread, outside the command (a reload re-registers
+     * commands), then calls {@code done} there: with null once it's applied (or when
+     * {@code change} found nothing to change), or with the reason it couldn't be (the file
+     * isn't valid YAML, or couldn't be written), in which case nothing changed.
+     */
+    public final void editConfig(java.util.function.Predicate<org.bukkit.configuration.file.YamlConfiguration> change,
+                                 java.util.function.Consumer<String> done) {
+        Bukkit.getGlobalRegionScheduler().run(this, task -> {
+            try {
+                if (!ConfigLoader.edit(configFile(), change)) {
+                    done.accept(null);
+                    return;
+                }
+            } catch (ConfigException e) {
+                getLogger().severe(e.getMessage());
+                done.accept(e.getMessage());
+                return;
+            }
+            try {
+                accept(ConfigLoader.load(spec, configFile()));
+            } catch (ConfigException e) {
+                getLogger().severe(e.getMessage());
+                done.accept(e.getMessage());
+                return;
+            }
+            apply();
+            done.accept(null);
+        });
+    }
+
     private Path configFile() {
         return getDataFolder().toPath().resolve(CONFIG_FILE);
     }

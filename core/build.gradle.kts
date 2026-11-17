@@ -7,6 +7,7 @@ description = "Code every plugin shares, shaded into each one."
 
 dependencies {
     implementation(libs.bstats.bukkit)
+    testRuntimeOnly(libs.sqlite.jdbc)
     testFixturesImplementation(libs.paper.api)
     testFixturesImplementation(platform(libs.junit.bom))
     testFixturesImplementation(libs.junit.jupiter)

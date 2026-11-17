@@ -1,6 +1,6 @@
 # xUtilities on a real server, from the console.
 run: xutilities info
-expect: xUtilities 2.0.0 on
+expect: xUtilities 2.0.1 on
 
 # Ours replaces vanilla /clear and /gamemode (vanilla says "No player was found").
 run: clear Nobody

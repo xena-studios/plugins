@@ -1,6 +1,8 @@
 # xLimbo changelog
 
-## Unreleased
+## 2.0.1
+
+Replace the jar and restart. Your config is kept as it is.
 
 ### Changed
 

@@ -6,6 +6,9 @@ import co.xenastudios.core.config.ConfigSpec;
 import co.xenastudios.xrewind.command.LookupCommands;
 import co.xenastudios.xrewind.command.RollbackCommands;
 import co.xenastudios.xrewind.command.StatusCommand;
+import co.xenastudios.xrewind.command.UpkeepCommands;
+import co.xenastudios.xrewind.maintain.AutoPurge;
+import co.xenastudios.xrewind.maintain.Upkeep;
 import co.xenastudios.xrewind.config.XRConfig;
 import co.xenastudios.xrewind.listen.BlockBreaks;
 import co.xenastudios.xrewind.listen.BlockPlaces;
@@ -40,6 +43,7 @@ public class XRewind extends XenaPlugin<XRConfig> {
     private Lookups lookups;
     private Inspector inspector;
     private Rollbacks rollbacks;
+    private Upkeep upkeep;
     private final RecentBreaks recent = new RecentBreaks();
 
     @Override
@@ -84,7 +88,12 @@ public class XRewind extends XenaPlugin<XRConfig> {
             lookups = new Lookups(this);
             inspector = new Inspector(this, lookups);
             rollbacks = new Rollbacks(this);
+            upkeep = new Upkeep(this);
         }
+        if (config.purge().keepDays() > 0) {
+            setup.module("purge", () -> new AutoPurge(this));
+        }
+        UpkeepCommands.specs(this, upkeep).forEach(setup::subcommand);
         LookupCommands.specs(this, lookups, inspector).forEach(setup::subcommand);
         RollbackCommands.specs(this, rollbacks).forEach(setup::subcommand);
         setup.permission(Rollbacks.GLOBAL_PERMISSION, PermissionDefault.OP);

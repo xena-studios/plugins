@@ -56,3 +56,11 @@ run: xr undo
 expect: Undid
 paper run: execute if block 102 72 102 minecraft:air run say UNDONE
 paper expect: UNDONE
+
+# Purge and import on a real database.
+run: xr purge t:1h
+expect: Purge history at least a day old
+run: xr purge t:30d
+expect: Purged
+run: xr import coreprotect
+expect: there's no plugins/CoreProtect/config.yml.

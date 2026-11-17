@@ -30,6 +30,7 @@ public record XRConfig(
         "Rollbacks and restores. Blocks are set a few milliseconds per tick, chunk by chunk, so",
         "even a big one doesn't freeze the server, and without physics, so nothing cascades."})
     Rollback rollback,
+    @Comment("Deleting old history, so the database doesn't grow forever.") Purge purge,
     @Comment("Tells you when a new version is out.") UpdateCheckerSettings updateChecker) implements XenaConfig {
 
     @Override
@@ -40,7 +41,18 @@ public record XRConfig(
     public record Messages(
         ErrorMessages error,
         @Comment("Lookups and the inspector.") LookupMessages lookup,
-        @Comment("Rollbacks, restores, previews and undo.") RollbackMessages rollback) {}
+        @Comment("Rollbacks, restores, previews and undo.") RollbackMessages rollback,
+        @Comment("/xrewind purge and /xrewind import.") UpkeepMessages upkeep) {}
+
+    public record UpkeepMessages(
+        @Comment("A purge of less than a day.") Message purgeTooRecent,
+        Message purging,
+        @Comment("<count> changes deleted; <time> how old.") Message purged,
+        @Comment("<source> is where CoreProtect's history is read from.") Message importing,
+        @Comment("<count> changes imported in <seconds>s.") Message imported,
+        @Comment("It was imported before. <date>.") Message importedBefore,
+        @Comment("CoreProtect's database couldn't be read. <reason>.") Message importFailed,
+        Message importRunning) {}
 
     public record RollbackMessages(
         @Comment("A rollback or restore without t:.") Message needTime,
@@ -89,6 +101,12 @@ public record XRConfig(
             "r:#global also need."})
         @co.xenastudios.core.config.Range(min = 0, max = 100_000) int maxRadius) {}
 
+    public record Purge(
+        @Comment({
+            "Delete history older than this many days, once a day. 0 keeps everything. A",
+            "rollback can't reach further back than what's kept."})
+        @co.xenastudios.core.config.Range(min = 0, max = 36_500) int keepDays) {}
+
     public record Logging(
         @Comment("Blocks players break, with what they held, and blocks that fall off with them.") boolean blockBreak,
         @Comment("Blocks players place, and what they replaced.") boolean blockPlace,
@@ -136,10 +154,20 @@ public record XRConfig(
                 Message.of("<prefix><success><verb></success> <highlight><count></highlight> blocks in <seconds>s."),
                 Message.of("<prefix><error><count> blocks were stored by a Minecraft version this one can't read, and were left as they are."),
                 Message.of("<prefix><error>Nothing to undo. Undo works on your last rollback or restore since the server started."),
-                new Verbs("Rolled back", "Restored", "Undid"))),
+                new Verbs("Rolled back", "Restored", "Undid")),
+            new UpkeepMessages(
+                Message.of("<prefix><error>Purge history at least a day old: <highlight>t:1d</highlight> or more."),
+                Message.of("<prefix><gray>Purging..."),
+                Message.of("<prefix><success>Purged</success> <highlight><count></highlight> changes older than <time>."),
+                Message.of("<prefix>Importing CoreProtect's history from <highlight><source></highlight>. Logging carries on meanwhile; the console shows progress."),
+                Message.of("<prefix><success>Imported</success> <highlight><count></highlight> changes from CoreProtect in <seconds>s."),
+                Message.of("<prefix><error>CoreProtect's history was already imported, on <date>. Add <highlight>#again</highlight> to import it a second time."),
+                Message.of("<prefix><error>Couldn't read CoreProtect's history: <reason>"),
+                Message.of("<prefix><error>An import is already running."))),
         StorageSettings.defaults("xrewind_"),
         new Logging(true, true, true, true, true, true, true, true, true, false, true, false, false, true, false, false, List.of()),
         new Rollback(10, 10, 100),
+        new Purge(30),
         UpdateCheckerSettings.DEFAULTS);
 
     public static final ConfigSpec<XRConfig> SPEC = ConfigSpec.builder(XRConfig.class, DEFAULTS)

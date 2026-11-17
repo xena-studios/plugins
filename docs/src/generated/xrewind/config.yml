@@ -103,6 +103,23 @@ messages:
       restore: "Restored"
       undo: "Undid"
 
+  # /xrewind purge and /xrewind import.
+  upkeep:
+    # A purge of less than a day.
+    purge-too-recent: "<prefix><error>Purge history at least a day old: <highlight>t:1d</highlight> or more."
+    purging: "<prefix><gray>Purging..."
+    # <count> changes deleted; <time> how old.
+    purged: "<prefix><success>Purged</success> <highlight><count></highlight> changes older than <time>."
+    # <source> is where CoreProtect's history is read from.
+    importing: "<prefix>Importing CoreProtect's history from <highlight><source></highlight>. Logging carries on meanwhile; the console shows progress."
+    # <count> changes imported in <seconds>s.
+    imported: "<prefix><success>Imported</success> <highlight><count></highlight> changes from CoreProtect in <seconds>s."
+    # It was imported before. <date>.
+    imported-before: "<prefix><error>CoreProtect's history was already imported, on <date>. Add <highlight>#again</highlight> to import it a second time."
+    # CoreProtect's database couldn't be read. <reason>.
+    import-failed: "<prefix><error>Couldn't read CoreProtect's history: <reason>"
+    import-running: "<prefix><error>An import is already running."
+
 # Where the history is kept. Changing it on /xrewind reload switches to the new one;
 # history isn't copied across.
 storage:
@@ -170,6 +187,12 @@ rollback:
   # The largest r: without the xrewind.rollback.global permission, which r:#world and
   # r:#global also need.
   max-radius: 100
+
+# Deleting old history, so the database doesn't grow forever.
+purge:
+  # Delete history older than this many days, once a day. 0 keeps everything. A
+  # rollback can't reach further back than what's kept.
+  keep-days: 30
 
 # Tells you when a new version is out.
 update-checker:

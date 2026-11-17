@@ -29,6 +29,14 @@ public sealed interface Entry {
         }
     }
 
+    /** A block change from another logger's history, its states already as text. */
+    record ImportedBlock(int time, Actor actor, String world, int x, int y, int z, byte action,
+                         String before, String after, boolean rolledBack) implements Entry {}
+
+    /** A container change from another logger's history. {@code item} is a serialized stack of one. */
+    record ImportedContainer(int time, Actor actor, String world, int x, int y, int z, byte action,
+                             String material, byte[] item, int amount, boolean rolledBack) implements Entry {}
+
     /** Items put in ({@link Actions#ADD}) or taken out of a container. {@code item} is a copy. */
     record ContainerChange(int time, Actor actor, String world, int x, int y, int z, byte action,
                            ItemStack item, int amount) implements Entry {}

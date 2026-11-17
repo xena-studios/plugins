@@ -16,8 +16,10 @@ The config is `plugins/xRewind/config.yml`, written on first start. Apply change
 | `messages.error` | Shared errors: players only, no permission, player not found, wrong usage, and a command that hit an error. |
 | `messages.lookup` | What lookups and the inspector say, and the words for each kind of change. |
 | `messages.rollback` | What rollbacks, restores, previews and undo say. |
+| `messages.upkeep` | What `/xr purge` and `/xr import` say. |
 | `storage` | Where the history is kept: SQLite in the plugin's folder (`history.db`), or MySQL/MariaDB. |
 | `rollback` | How fast rollbacks work, and how far they reach without `xrewind.rollback.global`: see [Rolling back](/xrewind/commands/#rolling-back). |
+| `purge` | How many days of history to keep. Older history is deleted once a day. |
 | `log` | What's logged. Something that's off isn't listened for at all, so it costs nothing. |
 | `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
 

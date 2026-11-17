@@ -71,7 +71,8 @@ public final class Rollbacks {
             messages.tooFar().send(sender, Placeholders.text("max", settings.maxRadius()));
             return;
         }
-        if (query.preview() && !(sender instanceof Player)) {
+        Player viewer = Lookups.playerOf(sender);
+        if (query.preview() && viewer == null) {
             plugin.config().errorMessages().playerOnly().send(sender);
             return;
         }
@@ -96,7 +97,7 @@ public final class Rollbacks {
                     reply(sender, () -> messages.nothing().send(sender));
                     release(asked);
                 } else if (asked.preview()) {
-                    preview((Player) sender, plan);
+                    preview(viewer, plan);
                 } else {
                     plugin.tasks().global(() -> execute(sender, plan, asked.silent()));
                 }
@@ -212,7 +213,7 @@ public final class Rollbacks {
                 reply(sender, () -> {
                     messages.done().send(sender, Placeholders.text("verb", verb),
                         Placeholders.text("count", String.format("%,d", result.applied())),
-                        Placeholders.text("seconds", String.format("%.1f", result.nanos() / 1e9)));
+                        Placeholders.text("seconds", seconds(result.nanos() / 1e9)));
                     int unread = plan.skipped() + result.missingWorld();
                     if (unread > 0) {
                         messages.skipped().send(sender, Placeholders.text("count", unread));
@@ -230,6 +231,11 @@ public final class Rollbacks {
             }, null, 20, 20);
         }
         applier.start();
+    }
+
+    /** Seconds for a message: two decimals under a second, so a quick one reads 0.04, not 0.0. */
+    public static String seconds(double seconds) {
+        return String.format(java.util.Locale.ROOT, seconds < 1 ? "%.2f" : "%.1f", seconds);
     }
 
     private void reply(CommandSender sender, Runnable send) {

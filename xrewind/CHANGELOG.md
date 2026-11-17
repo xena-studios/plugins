@@ -1,5 +1,14 @@
 # xRewind changelog
 
+## 1.0.1
+
+Replace the jar and restart. Your config is kept as it is.
+
+### Fixed
+
+- A rollback that takes under a second says how long to the hundredth: "in 0.04s", not "in 0.0s", which read as if nothing happened.
+- `/execute as <player> run xrewind ...`, and command blocks running as a player, now measure `r:` from that player and can `#preview` to them. Before, they were treated as the console.
+
 ## 1.0.0
 
 The first release. Drop the jar in and start the server: it logs to SQLite in its own folder, with nothing to set up. Coming from CoreProtect? Run `/xr import coreprotect` to bring your history.

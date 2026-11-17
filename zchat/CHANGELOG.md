@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Only players allowed Minecraft's selectors (`minecraft.command.selector`, operators by default) can use them in `/msg`. Before, any player could message everyone with `/msg @a`, or run a costly `@e[...]` search.
 - Clicking the link in the update notice now opens the new version's Modrinth page. Before, it opened nothing.
 
 ## 3.0.0

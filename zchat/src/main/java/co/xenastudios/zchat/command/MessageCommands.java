@@ -27,6 +27,9 @@ import org.bukkit.persistence.PersistentDataType;
 /** /msg, /reply and /socialspy. */
 public final class MessageCommands {
 
+    /** Minecraft's own permission for target selectors; operators have it by default. */
+    static final String SELECTOR_PERMISSION = "minecraft.command.selector";
+
     private MessageCommands() {}
 
     public static void register(Setup setup, ZChat zchat, ZConfig config) {
@@ -97,7 +100,10 @@ public final class MessageCommands {
     private static List<Player> targets(ZChat zchat, Invocation invocation) {
         String name = invocation.arg(0);
         // Folia can't safely gather entities from every region, so selectors are Paper only.
-        if (!name.startsWith("@") || zchat.isFolia()) {
+        // Like Minecraft, only senders allowed selectors get them (operators, the console and
+        // command blocks by default): otherwise anyone could message the whole server, or
+        // run an expensive @e[...] search, with one command. For them "@a" is just a name.
+        if (!name.startsWith("@") || zchat.isFolia() || !invocation.sender().hasPermission(SELECTOR_PERMISSION)) {
             return List.of(invocation.target(0, ""));
         }
         List<Player> found = new ArrayList<>();

@@ -43,6 +43,11 @@ public final class Writer implements Runnable {
     private PreparedStatement kills;
     private PreparedStatement texts;
     private long backoffNanos;
+    /** Failures of one batch in a row, on a live connection, before its rows are tried one by one. */
+    static final int ISOLATE_AFTER = 3;
+    private int failures;
+    private boolean isolating;
+    private volatile long dropped;
 
     private volatile long written;
     private volatile long lastBatchNanos;
@@ -109,6 +114,10 @@ public final class Writer implements Runnable {
                 batch.add(entry);
             }
             pending = batch.size();
+            if (isolating && !batch.isEmpty()) {
+                isolate();
+                continue;
+            }
             if (batch.isEmpty()) {
                 if (!running) {
                     break;
@@ -123,9 +132,18 @@ public final class Writer implements Runnable {
                     LockSupport.parkNanos(FLUSH_NANOS);
                 }
             } else {
+                // The same batch failing again and again on a live connection is a row the
+                // database won't take, not the database being down: find it.
+                boolean alive = alive();
                 disconnect();
                 if (!running) {
                     break;
+                }
+                failures = alive ? failures + 1 : 0;
+                if (failures >= ISOLATE_AFTER) {
+                    isolating = true;
+                    failures = 0;
+                    continue;
                 }
                 backoffNanos = Math.min(MAX_BACKOFF_NANOS, Math.max(TimeUnit.SECONDS.toNanos(1), backoffNanos * 2));
                 LockSupport.parkNanos(backoffNanos);
@@ -153,10 +171,7 @@ public final class Writer implements Runnable {
             connection = opened;
             dictionaries = names;
             database = current;
-            if (problem != null) {
-                logger.info("Saving logged changes again.");
-                problem = null;
-            }
+            // Not "working again" yet: only a write that goes through says that.
             return true;
         } catch (SQLException e) {
             fail("couldn't connect to " + current.description() + ": " + e.getMessage(), e);
@@ -299,6 +314,50 @@ public final class Writer implements Runnable {
             fail("couldn't save " + batch.size() + " logged changes: " + e.getMessage() + " Trying again.", e);
             return false;
         }
+    }
+
+    /**
+     * Writes the batch one row at a time, dropping any row the database won't take (and
+     * saying so), so one bad row can't stop all logging. If the connection goes, the rest
+     * waits for it as usual.
+     */
+    private void isolate() {
+        List<Entry> rows = new ArrayList<>(batch);
+        batch.clear();
+        int dropped = 0;
+        for (int i = 0; i < rows.size(); i++) {
+            batch.add(rows.get(i));
+            if (write()) {
+                continue;
+            }
+            batch.clear();
+            if (!alive()) {
+                batch.addAll(rows.subList(i, rows.size()));
+                disconnect();
+                return;
+            }
+            dropped++;
+            logger.warning("Dropped one logged change the database wouldn't take ("
+                + rows.get(i).getClass().getSimpleName() + "): " + problem);
+        }
+        isolating = false;
+        if (dropped > 0) {
+            this.dropped += dropped;
+        }
+        problem = null;
+    }
+
+    private boolean alive() {
+        try {
+            return connection != null && connection.isValid(2);
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    /** Changes dropped because the database wouldn't take them. */
+    public long dropped() {
+        return dropped;
     }
 
     // UPDATE ... WHERE id IN (...), 500 ids at a time.

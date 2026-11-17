@@ -116,10 +116,12 @@ public final class Database {
 
     /**
      * The statement with its placeholders filled in: {@code {p}} the table prefix, and
-     * {@code {rowid}} and {@code {blob}} as {@link Dialect} says.
+     * {@code {rowid}}, {@code {blob}} and {@code {table}} (after a CREATE TABLE's columns) as
+     * {@link Dialect} says.
      */
     public String sql(String statement) {
-        return statement.replace("{p}", prefix).replace("{rowid}", dialect.rowId()).replace("{blob}", dialect.blob());
+        return statement.replace("{p}", prefix).replace("{rowid}", dialect.rowId()).replace("{blob}", dialect.blob())
+            .replace("{table}", dialect.tableOptions());
     }
 
     /** A new connection, which the caller closes. On SQLite, it waits up to 5 seconds for a lock. */
@@ -155,7 +157,7 @@ public final class Database {
         }
         try (Connection connection = connect()) {
             try (Statement statement = connection.createStatement()) {
-                statement.execute(sql("CREATE TABLE IF NOT EXISTS {p}meta (name VARCHAR(64) PRIMARY KEY, value VARCHAR(255) NOT NULL)"));
+                statement.execute(sql("CREATE TABLE IF NOT EXISTS {p}meta (name VARCHAR(64) PRIMARY KEY, value VARCHAR(255) NOT NULL){table}"));
             }
             int current = schemaVersion(connection);
             if (current > latest) {

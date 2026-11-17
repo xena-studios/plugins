@@ -19,17 +19,17 @@ public final class Schema {
 
     public static final List<SchemaStep> STEPS = List.of(SchemaStep.of(1, "the first tables",
         // Players have a uuid; sources like #tnt and #creeper don't.
-        "CREATE TABLE {p}user (id INTEGER PRIMARY KEY, uuid_most BIGINT, uuid_least BIGINT, name VARCHAR(64) NOT NULL)",
-        "CREATE TABLE {p}world (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)",
+        "CREATE TABLE {p}user (id INTEGER PRIMARY KEY, uuid_most BIGINT, uuid_least BIGINT, name VARCHAR(64) NOT NULL){table}",
+        "CREATE TABLE {p}world (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL){table}",
         // A block state as Minecraft writes it: minecraft:oak_door[facing=north,half=lower,...]
-        "CREATE TABLE {p}state (id INTEGER PRIMARY KEY, data TEXT NOT NULL)",
+        "CREATE TABLE {p}state (id INTEGER PRIMARY KEY, data TEXT NOT NULL){table}",
         // An item stack, or a block's contents (a chest's items, a sign's text), as bytes.
         // Paper's item format carries its data version, so items upgrade themselves.
-        "CREATE TABLE {p}item (id INTEGER PRIMARY KEY, hash BIGINT NOT NULL, data {blob} NOT NULL)",
+        "CREATE TABLE {p}item (id INTEGER PRIMARY KEY, hash BIGINT NOT NULL, data {blob} NOT NULL){table}",
 
         "CREATE TABLE {p}block (id {rowid}, time INT NOT NULL, user INT NOT NULL, world SMALLINT NOT NULL,"
             + " x INT NOT NULL, y SMALLINT NOT NULL, z INT NOT NULL, action TINYINT NOT NULL,"
-            + " old_state INT NOT NULL, new_state INT NOT NULL, extra INT, rolled_back TINYINT NOT NULL DEFAULT 0)",
+            + " old_state INT NOT NULL, new_state INT NOT NULL, extra INT, rolled_back TINYINT NOT NULL DEFAULT 0){table}",
         "CREATE INDEX {p}block_place ON {p}block (world, x, z, time)",
         "CREATE INDEX {p}block_user ON {p}block (user, time)",
         "CREATE INDEX {p}block_time ON {p}block (time)",
@@ -38,7 +38,7 @@ public final class Schema {
         // id, for lookups; item is the whole stack, for rollbacks.
         "CREATE TABLE {p}container (id {rowid}, time INT NOT NULL, user INT NOT NULL, world SMALLINT NOT NULL,"
             + " x INT NOT NULL, y SMALLINT NOT NULL, z INT NOT NULL, action TINYINT NOT NULL,"
-            + " material INT NOT NULL, item INT NOT NULL, amount INT NOT NULL, rolled_back TINYINT NOT NULL DEFAULT 0)",
+            + " material INT NOT NULL, item INT NOT NULL, amount INT NOT NULL, rolled_back TINYINT NOT NULL DEFAULT 0){table}",
         "CREATE INDEX {p}container_place ON {p}container (world, x, z, time)",
         "CREATE INDEX {p}container_user ON {p}container (user, time)",
         "CREATE INDEX {p}container_time ON {p}container (time)",
@@ -47,20 +47,20 @@ public final class Schema {
         // state id.
         "CREATE TABLE {p}entity (id {rowid}, time INT NOT NULL, user INT NOT NULL, world SMALLINT NOT NULL,"
             + " x INT NOT NULL, y SMALLINT NOT NULL, z INT NOT NULL, action TINYINT NOT NULL,"
-            + " type INT NOT NULL, extra INT, rolled_back TINYINT NOT NULL DEFAULT 0)",
+            + " type INT NOT NULL, extra INT, rolled_back TINYINT NOT NULL DEFAULT 0){table}",
         "CREATE INDEX {p}entity_place ON {p}entity (world, x, z, time)",
         "CREATE INDEX {p}entity_user ON {p}entity (user, time)",
         "CREATE INDEX {p}entity_time ON {p}entity (time)",
 
         // Sign text, and chat and commands where they're logged.
         "CREATE TABLE {p}text (id {rowid}, time INT NOT NULL, user INT NOT NULL, world SMALLINT NOT NULL,"
-            + " x INT NOT NULL, y SMALLINT NOT NULL, z INT NOT NULL, kind TINYINT NOT NULL, message TEXT NOT NULL)",
+            + " x INT NOT NULL, y SMALLINT NOT NULL, z INT NOT NULL, kind TINYINT NOT NULL, message TEXT NOT NULL){table}",
         "CREATE INDEX {p}text_user ON {p}text (user, time)",
         "CREATE INDEX {p}text_time ON {p}text (time)",
 
         // Joins and quits, with where.
         "CREATE TABLE {p}session (id {rowid}, time INT NOT NULL, user INT NOT NULL, world SMALLINT NOT NULL,"
-            + " x INT NOT NULL, y SMALLINT NOT NULL, z INT NOT NULL, action TINYINT NOT NULL)",
+            + " x INT NOT NULL, y SMALLINT NOT NULL, z INT NOT NULL, action TINYINT NOT NULL){table}",
         "CREATE INDEX {p}session_user ON {p}session (user, time)",
         "CREATE INDEX {p}session_time ON {p}session (time)"));
 }

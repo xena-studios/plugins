@@ -28,7 +28,7 @@ public final class StatusCommand {
                 Database database = plugin.storage().database();
                 LogQueue queue = plugin.queue();
                 Writer writer = plugin.writer();
-                long dropped = queue.dropped();
+                long dropped = queue.dropped() + plugin.writer().dropped();
                 int size = writer.lastBatchSize();
                 invocation.sender().sendMessage(STATUS.chat(
                     Placeholders.text("storage", database == null ? "not ready" : database.description()),

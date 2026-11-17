@@ -94,7 +94,7 @@ public final class Rollbacks {
                     restore);
                 if (plan.changes().isEmpty()) {
                     reply(sender, () -> messages.nothing().send(sender));
-                    running.set(false);
+                    release(asked);
                 } else if (asked.preview()) {
                     preview((Player) sender, plan);
                 } else {
@@ -103,9 +103,16 @@ public final class Rollbacks {
             } catch (SQLException | RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "A rollback for " + sender.getName() + " failed", e);
                 reply(sender, () -> plugin.config().errorMessages().failed().send(sender));
-                running.set(false);
+                release(asked);
             }
         });
+    }
+
+    // Only a request that claimed the lock gives it back: a preview never claims it.
+    private void release(Query asked) {
+        if (!asked.preview()) {
+            running.set(false);
+        }
     }
 
     /** Applies the player's preview. */

@@ -70,7 +70,7 @@ public sealed interface Contents {
     static Contents of(Block block) {
         BlockState state = block.getState(false);
         if (state instanceof Container container) {
-            ItemStack[] items = container.getInventory().getContents();
+            ItemStack[] items = own(container).getContents();
             boolean any = false;
             for (int i = 0; i < items.length; i++) {
                 if (items[i] != null && !items[i].isEmpty()) {
@@ -101,7 +101,9 @@ public sealed interface Contents {
     static void restore(Block block, Contents contents) {
         BlockState state = block.getState(false);
         if (contents instanceof Items items && state instanceof Container container) {
-            container.getInventory().setContents(items.items());
+            org.bukkit.inventory.Inventory inventory = own(container);
+            ItemStack[] fit = java.util.Arrays.copyOf(items.items(), inventory.getSize());
+            inventory.setContents(fit);
         } else if (contents instanceof SignText text && state instanceof Sign) {
             Sign sign = (Sign) block.getState();
             Side[] sides = {Side.FRONT, Side.BACK};
@@ -119,8 +121,16 @@ public sealed interface Contents {
     /** Empties a container, so changing the block doesn't drop what it held. */
     static void clear(Block block) {
         if (block.getState(false) instanceof Container container) {
-            container.getInventory().clear();
+            own(container).clear();
         }
+    }
+
+    /**
+     * The block's own slots. A chest beside another is one 54-slot inventory to players, but
+     * each half is its own block: only this half's 27 slots are kept, put back or emptied.
+     */
+    private static org.bukkit.inventory.Inventory own(Container container) {
+        return container instanceof org.bukkit.block.Chest chest ? chest.getBlockInventory() : container.getInventory();
     }
 
     static byte[] write(Contents contents) {

@@ -69,9 +69,10 @@ class MySqlTest {
         queue.add(new Entry.Kill(now, steve, "world", 0, 64, 0, "minecraft:zombie"));
         queue.add(new Entry.Text(now, steve, "world", 0, 64, 0, Actions.CHAT, "hello ünïcode 🙂"));
         queue.add(new Entry.Session(now, steve, "world", 0, 64, 0, Actions.JOIN));
+        queue.add(new Entry.Text(now, steve, "world", 5, 64, 5, Actions.SIGN, "❤ love | 𝓯𝓪𝓷𝓬𝔂"));
         writer.start();
         writer.stop(30, TimeUnit.SECONDS);
-        assertEquals(2_503, writer.written());
+        assertEquals(2_504, writer.written());
 
         Lookup.Center spawn = new Lookup.Center("world", 0, 64, 0);
         assertEquals(1_250, Lookup.page(database, Params.parse(List.of("t:1d", "i:oak_log")), spawn, 1, 7).total());

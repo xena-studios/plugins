@@ -48,6 +48,7 @@ public final class Applier {
     private final long start = System.nanoTime();
     private int missingWorld;
     private final java.util.concurrent.atomic.AtomicBoolean finished = new java.util.concurrent.atomic.AtomicBoolean();
+    private volatile boolean aborted;
     private final int total;
 
     public Applier(Plugin plugin, boolean folia, int msPerTick, Plan plan, Consumer<Result> done) {
@@ -90,10 +91,14 @@ public final class Applier {
         }
     }
 
-    // Something broke: say so, and finish with what was done, so the next rollback isn't blocked.
+    // Something broke: say so, and stop everything else, so the next rollback isn't blocked
+    // and nothing changes after it's reported finished. Paper finishes at once (one thread);
+    // Folia once every chunk in flight has stopped.
     private void failed(Throwable e) {
-        plugin.getLogger().log(java.util.logging.Level.SEVERE, "A rollback stopped partway after " + applied.get() + " blocks", e);
-        finish();
+        if (!aborted) {
+            aborted = true;
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "A rollback stopped partway after " + applied.get() + " blocks", e);
+        }
     }
 
     private void finish() {
@@ -106,7 +111,7 @@ public final class Applier {
     // Sets blocks from index on until the deadline. Returns where it stopped.
     private int apply(Group group, int index, long deadline) {
         List<Plan.Change> changes = group.changes();
-        while (index < changes.size()) {
+        while (index < changes.size() && !aborted) {
             Plan.Change change = changes.get(index++);
             Block block = group.world().getBlockAt(change.x(), change.y(), change.z());
             if (change.isItems()) {
@@ -166,6 +171,7 @@ public final class Applier {
                 fill();
             } catch (RuntimeException e) {
                 failed(e);
+                finish();
                 return;
             }
             Bukkit.getGlobalRegionScheduler().run(plugin, task -> tick());
@@ -191,6 +197,17 @@ public final class Applier {
                 step();
             } catch (RuntimeException | LinkageError e) {
                 failed(e);
+                release();
+                finish();
+            }
+        }
+
+        // Lets go of every chunk it was keeping loaded.
+        private void release() {
+            for (Map.Entry<Group, CompletableFuture<Chunk>> waiting : loading) {
+                if (ticketed.remove(waiting.getKey()) && waiting.getValue().isDone() && !waiting.getValue().isCompletedExceptionally()) {
+                    waiting.getValue().join().removePluginChunkTicket(plugin);
+                }
             }
         }
 
@@ -202,6 +219,14 @@ public final class Applier {
                     break; // Still loading: next tick.
                 }
                 Group group = head.getKey();
+                if (head.getValue().isCompletedExceptionally()) {
+                    // Couldn't be loaded: leave its blocks and go on.
+                    ticketed.remove(group);
+                    loading.poll();
+                    index = 0;
+                    fill();
+                    continue;
+                }
                 Chunk chunk = head.getValue().join();
                 if (index == 0 && ticketed.contains(group)) {
                     chunk.addPluginChunkTicket(plugin);
@@ -236,7 +261,7 @@ public final class Applier {
         }
 
         private synchronized void launch() {
-            if (!next.hasNext()) {
+            if (aborted || !next.hasNext()) {
                 if (running.get() == 0) {
                     finish();
                 }
@@ -244,27 +269,37 @@ public final class Applier {
             }
             Group group = next.next();
             running.incrementAndGet();
-            group.world().getChunkAtAsync(group.cx(), group.cz()).thenAccept(chunk ->
+            // whenComplete, not thenAccept: a chunk that fails to load still counts as done.
+            group.world().getChunkAtAsync(group.cx(), group.cz()).whenComplete((chunk, error) -> {
+                if (error != null || chunk == null) {
+                    done();
+                    return;
+                }
                 Bukkit.getRegionScheduler().execute(plugin, group.world(), group.cx(), group.cz(), () -> {
                     chunk.addPluginChunkTicket(plugin);
                     work(group, chunk, 0);
-                }));
+                });
+            });
         }
 
         private void work(Group group, Chunk chunk, int from) {
-            int index;
+            int index = from;
             try {
                 index = apply(group, from, System.nanoTime() + budgetNanos);
             } catch (RuntimeException | LinkageError e) {
                 failed(e);
-                return;
             }
-            if (index < group.changes().size()) {
+            if (index < group.changes().size() && !aborted) {
+                int at = index;
                 Bukkit.getRegionScheduler().runDelayed(plugin, group.world(), group.cx(), group.cz(),
-                    task -> work(group, chunk, index), 1);
+                    task -> work(group, chunk, at), 1);
                 return;
             }
             chunk.removePluginChunkTicket(plugin);
+            done();
+        }
+
+        private void done() {
             running.decrementAndGet();
             launch();
         }

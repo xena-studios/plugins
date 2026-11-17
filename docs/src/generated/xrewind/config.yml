@@ -115,7 +115,7 @@ messages:
     # <count> changes imported in <seconds>s.
     imported: "<prefix><success>Imported</success> <highlight><count></highlight> changes from CoreProtect in <seconds>s."
     # It was imported before. <date>.
-    imported-before: "<prefix><error>CoreProtect's history was already imported, on <date>. Add <highlight>#again</highlight> to import it a second time."
+    imported-before: "<prefix><error>CoreProtect's history was already imported (<date>). <highlight>#again</highlight> imports it again, and what came across before shows twice."
     # CoreProtect's database couldn't be read. <reason>.
     import-failed: "<prefix><error>Couldn't read CoreProtect's history: <reason>"
     import-running: "<prefix><error>An import is already running."

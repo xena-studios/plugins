@@ -64,6 +64,14 @@ public final class Purge {
 
     /** {@link Clock} time {@code days} days ago. */
     public static int daysAgo(int days) {
-        return Clock.now() - days * 86_400;
+        return secondsAgo(days * 86_400L);
+    }
+
+    /**
+     * {@link Clock} time {@code seconds} ago, in long arithmetic and held at the earliest time
+     * a row can have, so a huge age deletes nothing rather than wrapping round to now.
+     */
+    public static int secondsAgo(long seconds) {
+        return (int) Math.max(Integer.MIN_VALUE, Clock.now() - seconds);
     }
 }

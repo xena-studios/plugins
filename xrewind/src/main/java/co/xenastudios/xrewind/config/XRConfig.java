@@ -25,6 +25,10 @@ public record XRConfig(
         "What's logged. Something that's off isn't even listened for, so it costs nothing.",
         "Changes apply on /xrewind reload."})
     Logging log,
+    @Comment({
+        "Rollbacks and restores. Blocks are set a few milliseconds per tick, chunk by chunk, so",
+        "even a big one doesn't freeze the server, and without physics, so nothing cascades."})
+    Rollback rollback,
     @Comment("Tells you when a new version is out.") UpdateCheckerSettings updateChecker) implements XenaConfig {
 
     @Override
@@ -34,7 +38,24 @@ public record XRConfig(
 
     public record Messages(
         ErrorMessages error,
-        @Comment("Lookups and the inspector.") LookupMessages lookup) {}
+        @Comment("Lookups and the inspector.") LookupMessages lookup,
+        @Comment("Rollbacks, restores, previews and undo.") RollbackMessages rollback) {}
+
+    public record RollbackMessages(
+        @Comment("A rollback or restore without t:.") Message needTime,
+        @Comment("Past max-radius without permission. <max> is the limit.") Message tooFar,
+        @Comment("Another one is already running.") Message busy,
+        Message nothing,
+        @Comment("A #preview is showing. <count> is how many blocks.") Message preview,
+        Message noPreview,
+        Message cancelled,
+        @Comment("On the action bar while it works. <verb>, <done>, <total>.") Message progress,
+        @Comment("When it's finished. <verb>, <count>, <seconds>.") Message done,
+        @Comment("Stored blocks this server couldn't read. <count>.") Message skipped,
+        Message noUndo,
+        Verbs verbs) {}
+
+    public record Verbs(String rollback, String restore, String undo) {}
 
     public record LookupMessages(
         @Comment("Above a page of results. <count> is how many there are in all.") Message header,
@@ -56,6 +77,16 @@ public record XRConfig(
 
     public record Words(String placed, String broke, String joined, String quit) {}
 
+    public record Rollback(
+        @Comment("How long a rollback may work each tick, in milliseconds. A tick is 50.")
+        @co.xenastudios.core.config.Range(min = 1, max = 40) int msPerTick,
+        @Comment("The radius, in blocks, when a rollback doesn't give one with r:.")
+        @co.xenastudios.core.config.Range(min = 0, max = 1000) int defaultRadius,
+        @Comment({
+            "The largest r: without the xrewind.rollback.global permission, which r:#world and",
+            "r:#global also need."})
+        @co.xenastudios.core.config.Range(min = 0, max = 100_000) int maxRadius) {}
+
     public record Logging(
         @Comment("Blocks players break.") boolean blockBreak,
         @Comment("Blocks players place, and what they replaced.") boolean blockPlace,
@@ -76,9 +107,23 @@ public record XRConfig(
             Message.of("<prefix><error>The database isn't ready yet. /xrewind status says why."),
             Message.of("<prefix>Inspector <success>on</success>. Click a block to see its history; place one to see what was there."),
             Message.of("<prefix>Inspector <highlight>off</highlight>."),
-            new Words("placed", "broke", "joined", "quit"))),
+            new Words("placed", "broke", "joined", "quit")),
+            new RollbackMessages(
+                Message.of("<prefix><error>Add a time, such as <highlight>t:1h</highlight>, so it can't reach further back than you meant."),
+                Message.of("<prefix><error>That's past the <highlight><max></highlight>-block limit. r:#world, r:#global and bigger radii need <highlight>xrewind.rollback.global</highlight>."),
+                Message.of("<prefix><error>Another rollback is running. Wait for it to finish."),
+                Message.of("<prefix>Nothing to change."),
+                Message.of("<prefix>Previewing <highlight><count></highlight> blocks, for you only. <click:run_command:'/xrewind apply'><hover:show_text:'/xrewind apply'><success>[Apply]</success></hover></click> <click:run_command:'/xrewind cancel'><hover:show_text:'/xrewind cancel'><error>[Cancel]</error></hover></click>"),
+                Message.of("<prefix><error>You have no preview. Add #preview to a rollback or restore."),
+                Message.of("<prefix>Preview cancelled. Nothing changed."),
+                Message.of("<highlight><verb></highlight>: <done> of <total> blocks"),
+                Message.of("<prefix><success><verb></success> <highlight><count></highlight> blocks in <seconds>s."),
+                Message.of("<prefix><error><count> blocks were stored by a Minecraft version this one can't read, and were left as they are."),
+                Message.of("<prefix><error>Nothing to undo. Undo works on your last rollback or restore since the server started."),
+                new Verbs("Rolled back", "Restored", "Undid"))),
         StorageSettings.defaults("xrewind_"),
         new Logging(true, true, true),
+        new Rollback(10, 10, 100),
         UpdateCheckerSettings.DEFAULTS);
 
     public static final ConfigSpec<XRConfig> SPEC = ConfigSpec.builder(XRConfig.class, DEFAULTS)

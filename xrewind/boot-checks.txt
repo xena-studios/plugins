@@ -16,3 +16,13 @@ run: xr lookup w:world t:1h
 expect: Nothing found.
 run: xr lookup t:1h
 expect: From the console, add w:<world> or r:#global.
+
+# Rollback's checks, and its SQL on a real database.
+run: xr rollback u:Steve
+expect: Add a time
+run: xr rollback t:1h
+expect: From the console, use r:#world with w:<world>, or r:#global.
+run: xr rollback t:1h r:#global
+expect: Nothing to change.
+run: xr undo
+expect: Nothing to undo.

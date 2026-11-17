@@ -39,8 +39,9 @@ With **`smart: true`** (the default), the filter also sees through the usual tri
 | `bädwörd`, `ｂａｄｗｏｒｄ` | accents, full-width and other look-alike letters |
 | `bad​word` | invisible characters, such as zero-width spaces |
 | `you're a b a d w o r d` | a spaced-out word, even after a one-letter word |
+| `ba dw or d` | a word split into pieces of one or two letters |
 
-It censors exactly what the player typed, so `b a d w o r d` becomes `* * * * * * *`. Spaced-out digits alone, like `4 5 5`, are left as numbers. Turn `smart` off to match words only as typed.
+It censors exactly what the player typed, so `b a d w o r d` becomes `* * * * * * *`. Spaced-out digits alone, like `4 5 5`, are left as numbers. Pieces of two letters are joined only when together they make a whole filter word, so short words in ordinary chat (*is it to an*) are left alone; words with a `*` aren't looked for this way, since `*ass*` would catch *as so*. Turn `smart` off to match words only as typed.
 
 Players with the [colour permission](/zchat/formats/#letting-players-use-colours) are filtered on their words with the tags taken out, so `bad<reset>word` is still caught. A censored message loses its colours.
 

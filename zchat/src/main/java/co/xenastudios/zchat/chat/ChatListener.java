@@ -132,7 +132,15 @@ public final class ChatListener extends ListenerModule {
         }
         for (Audience viewer : event.viewers()) {
             if (viewer instanceof Player player && player != sender && (mentions.everyone() || mentions.pinged().contains(player))) {
-                zchat.tasks().entity(player, () -> settings.sound().play(player, Sound.Source.PLAYER));
+                // Asked again on the player's own thread (the main thread, on Paper), where
+                // reading who the sender can see is safe: the check on the chat thread can
+                // miss a player who vanished that very moment.
+                boolean byName = !mentions.everyone();
+                zchat.tasks().entity(player, () -> {
+                    if (!byName || sender.canSee(player)) {
+                        settings.sound().play(player, Sound.Source.PLAYER);
+                    }
+                });
             }
         }
     }

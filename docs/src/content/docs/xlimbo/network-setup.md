@@ -63,7 +63,7 @@ server-check:
 
 `address` is the main server's own address as the xLimbo server can reach it, **not** the proxy's: with the Velocity example above, `127.0.0.1:25566`. IPv6 addresses go in brackets: `[::1]:25566`. The main server must answer server-list pings (`enable-status=true`, the default). A server only answers once it's fully started, so nobody is sent to one that's still loading. If your backends are firewalled, allow the xLimbo server to reach the main server's port.
 
-Players who arrive while the main server is up (sent here on purpose, say) are sent back after five seconds. A player the main server keeps sending back, such as one who's banned there, is tried at most three times in five minutes, so they aren't bounced forever; `/join` still works for them.
+Players who arrive while the main server is up (sent here on purpose, say) are sent back after five seconds. A player the main server keeps sending back, such as one who's banned there, is tried at most three times in five minutes, so they aren't bounced forever, and a reload doesn't reset that; `/join` still works for them.
 
 ### Pacing
 

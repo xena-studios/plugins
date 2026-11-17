@@ -76,8 +76,8 @@ final class Normal {
         return folded.toString();
     }
 
-    /** The words of the text, with runs of single letters ("b a d") joined into one. */
-    List<Token> tokens() {
+    /** The words of the text as typed, nothing joined. */
+    List<Token> words() {
         List<Token> words = new ArrayList<>();
         int start = 0;
         for (int i = 0; i <= text.length(); i++) {
@@ -88,6 +88,16 @@ final class Normal {
                 start = i + 1;
             }
         }
+        return words;
+    }
+
+    /** The words of the text, with runs of single letters ("b a d") joined into one. */
+    List<Token> tokens() {
+        return tokens(words());
+    }
+
+    /** {@link #tokens()} from words already split by {@link #words()}. */
+    static List<Token> tokens(List<Token> words) {
         List<Token> joined = new ArrayList<>(words.size());
         for (int i = 0; i < words.size(); i++) {
             int j = i;

@@ -10,6 +10,7 @@ import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xlimbo.config.Settings;
 import co.xenastudios.xlimbo.config.XLConfig;
 import co.xenastudios.xlimbo.network.Proxy;
+import co.xenastudios.xlimbo.network.ReturnHistory;
 import co.xenastudios.xlimbo.network.Returns;
 import co.xenastudios.xlimbo.protect.Protections;
 import co.xenastudios.xlimbo.world.ActionBar;
@@ -29,6 +30,7 @@ public class XLimbo extends XenaPlugin<XLConfig> {
 
     private LimboWorld limbo;
     private final Map<UUID, Long> joinCooldowns = new ConcurrentHashMap<>();
+    private final ReturnHistory returnHistory = new ReturnHistory();
     private volatile Returns returns;
     private boolean worldPending;
 
@@ -108,6 +110,16 @@ public class XLimbo extends XenaPlugin<XLConfig> {
             }));
     }
 
+    // Reloaded in place (/reload confirm, a plugin manager): a world made with this
+    // instance's generator would keep it, and its class loader, after the new one starts.
+    // A server stopping saves and unloads its worlds itself.
+    @Override
+    protected void shutdown() {
+        if (limbo != null && !Bukkit.isStopping()) {
+            limbo.letGo();
+        }
+    }
+
     /** The generator for a world named in bukkit.yml with "generator: xLimbo". */
     @Override
     public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
@@ -125,9 +137,15 @@ public class XLimbo extends XenaPlugin<XLConfig> {
         return limbo().generatorFor(current.world());
     }
 
-    /** Forgets a player who left. */
+    /** Forgets a player who left, but not when they were sent back: a refused player comes back. */
     public void forget(UUID player) {
         joinCooldowns.remove(player);
+        returnHistory.left(player);
+    }
+
+    /** When players arrived and were sent back, kept across reloads. Main thread only. */
+    public ReturnHistory returnHistory() {
+        return returnHistory;
     }
 
     public LimboWorld limbo() {

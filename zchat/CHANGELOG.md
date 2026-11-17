@@ -1,5 +1,14 @@
 # zChat changelog
 
+## 3.1.1
+
+Replace the jar and restart. Your config is kept as it is.
+
+### Fixed
+
+- The smart filter catches a word split into pieces of one or two letters, like `ba dw or d`. Before, only pieces of one letter (`b a d w o r d`) were caught. The pieces have to make a whole filter word together, so ordinary short words aren't censored, and words with a `*` aren't looked for this way.
+- A player who vanishes just as someone mentions them is never pinged. The check for whether the sender can see them now happens again on the main thread, right before the ping.
+
 ## 3.1.0
 
 Replace the jar and restart. Your config is kept, with the new `filter.command` settings added.

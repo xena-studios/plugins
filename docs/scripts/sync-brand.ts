@@ -19,6 +19,7 @@ if (!fs.existsSync(path.join(BRAND, "tokens/plugins.json"))) {
 const files = [
   ["logo/xena-studios.svg", "src/assets/xena-studios-dark.svg"],
   ["logo/xena-studios-black.svg", "src/assets/xena-studios-light.svg"],
+  ["logo/xena.svg", "src/assets/xena.svg"],
   ["avatar/favicon.svg", "public/favicon.svg"],
   ["plugins/horizon.svg", "src/assets/horizon.svg"],
   ["social/docs-og.png", "public/og.png"],

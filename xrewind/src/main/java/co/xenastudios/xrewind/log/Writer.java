@@ -11,6 +11,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * The one thread that writes the log: it takes entries off the {@link LogQueue} and
@@ -38,6 +39,9 @@ public final class Writer implements Runnable {
     private Dictionaries dictionaries;
     private PreparedStatement blocks;
     private PreparedStatement sessions;
+    private PreparedStatement containers;
+    private PreparedStatement kills;
+    private PreparedStatement texts;
     private long backoffNanos;
 
     private volatile long written;
@@ -141,8 +145,11 @@ public final class Writer implements Runnable {
             Dictionaries names = new Dictionaries();
             names.load(opened, current);
             opened.setAutoCommit(false);
-            blocks = opened.prepareStatement(current.sql("INSERT INTO {p}block (time, user, world, x, y, z, action, old_state, new_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+            blocks = opened.prepareStatement(current.sql("INSERT INTO {p}block (time, user, world, x, y, z, action, old_state, new_state, extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
             sessions = opened.prepareStatement(current.sql("INSERT INTO {p}session (time, user, world, x, y, z, action) VALUES (?, ?, ?, ?, ?, ?, ?)"));
+            containers = opened.prepareStatement(current.sql("INSERT INTO {p}container (time, user, world, x, y, z, action, material, item, amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+            kills = opened.prepareStatement(current.sql("INSERT INTO {p}entity (time, user, world, x, y, z, action, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
+            texts = opened.prepareStatement(current.sql("INSERT INTO {p}text (time, user, world, x, y, z, kind, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
             connection = opened;
             dictionaries = names;
             database = current;
@@ -174,9 +181,50 @@ public final class Writer implements Runnable {
                         blocks.setByte(7, change.action());
                         blocks.setInt(8, dictionaries.state(change.before()));
                         blocks.setInt(9, dictionaries.state(change.after()));
+                        if (change.contents() == null) {
+                            blocks.setNull(10, java.sql.Types.INTEGER);
+                        } else {
+                            blocks.setInt(10, dictionaries.bytes(Contents.write(change.contents())));
+                        }
                         blocks.addBatch();
                     }
                     case Entry.MarkRolledBack mark -> marks.add(mark);
+                    case Entry.ContainerChange change -> {
+                        ItemStack one = change.item().asOne();
+                        containers.setInt(1, change.time());
+                        containers.setInt(2, dictionaries.user(change.actor()));
+                        containers.setInt(3, dictionaries.world(change.world()));
+                        containers.setInt(4, change.x());
+                        containers.setInt(5, change.y());
+                        containers.setInt(6, change.z());
+                        containers.setByte(7, change.action());
+                        containers.setInt(8, dictionaries.name(one.getType().getKey().toString()));
+                        containers.setInt(9, dictionaries.bytes(one.serializeAsBytes()));
+                        containers.setInt(10, change.amount());
+                        containers.addBatch();
+                    }
+                    case Entry.Kill kill -> {
+                        kills.setInt(1, kill.time());
+                        kills.setInt(2, dictionaries.user(kill.actor()));
+                        kills.setInt(3, dictionaries.world(kill.world()));
+                        kills.setInt(4, kill.x());
+                        kills.setInt(5, kill.y());
+                        kills.setInt(6, kill.z());
+                        kills.setByte(7, Actions.KILL);
+                        kills.setInt(8, dictionaries.name(kill.type()));
+                        kills.addBatch();
+                    }
+                    case Entry.Text text -> {
+                        texts.setInt(1, text.time());
+                        texts.setInt(2, dictionaries.user(text.actor()));
+                        texts.setInt(3, dictionaries.world(text.world()));
+                        texts.setInt(4, text.x());
+                        texts.setInt(5, text.y());
+                        texts.setInt(6, text.z());
+                        texts.setByte(7, text.kind());
+                        texts.setString(8, text.message());
+                        texts.addBatch();
+                    }
                     case Entry.Session session -> {
                         sessions.setInt(1, session.time());
                         sessions.setInt(2, dictionaries.user(session.actor()));
@@ -193,6 +241,9 @@ public final class Writer implements Runnable {
             dictionaries.write(connection, database);
             blocks.executeBatch();
             sessions.executeBatch();
+            containers.executeBatch();
+            kills.executeBatch();
+            texts.executeBatch();
             // After the inserts: a mark can be for rows in this same batch.
             for (Entry.MarkRolledBack mark : marks) {
                 mark(mark);
@@ -225,7 +276,7 @@ public final class Writer implements Runnable {
         long[] ids = mark.ids();
         for (int from = 0; from < ids.length; from += 500) {
             int to = Math.min(ids.length, from + 500);
-            StringBuilder sql = new StringBuilder(database.sql("UPDATE {p}block SET rolled_back = ? WHERE id IN ("));
+            StringBuilder sql = new StringBuilder(database.sql("UPDATE {p}" + mark.table() + " SET rolled_back = ? WHERE id IN ("));
             for (int i = from; i < to; i++) {
                 sql.append(i == from ? "?" : ", ?");
             }
@@ -260,6 +311,9 @@ public final class Writer implements Runnable {
         dictionaries = null;
         blocks = null;
         sessions = null;
+        containers = null;
+        kills = null;
+        texts = null;
     }
 
     /**

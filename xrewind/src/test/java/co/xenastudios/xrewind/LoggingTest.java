@@ -198,6 +198,18 @@ class LoggingTest {
         assertEquals(Material.GOLD_BLOCK, block.getType());
     }
 
+    @Test
+    void killsAreLogged() throws Exception {
+        steve.setOp(true);
+        org.bukkit.entity.Zombie zombie = (org.bukkit.entity.Zombie) world.spawnEntity(steve.getLocation(), org.bukkit.entity.EntityType.ZOMBIE);
+        zombie.setKiller(steve);
+        server.getPluginManager().callEvent(new org.bukkit.event.entity.EntityDeathEvent(zombie,
+            org.bukkit.damage.DamageSource.builder(org.bukkit.damage.DamageType.PLAYER_ATTACK).build(), new java.util.ArrayList<>()));
+        steve.performCommand("xr l a:kill");
+        awaitMessage(steve);
+        assertTrue(awaitMessage(steve).contains("Steve killed zombie"));
+    }
+
     private long rolledBack() {
         try (Connection connection = plugin.storage().database().connect(); Statement sql = connection.createStatement()) {
             return count(sql, "SELECT COUNT(*) FROM xrewind_block WHERE rolled_back = 1");

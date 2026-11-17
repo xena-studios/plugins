@@ -17,6 +17,7 @@ Every command is `/xrewind <subcommand>`, or `/xr` for short. Each has its own p
 | `/xr restore <params>` (`rs`) | Puts back what a rollback undid. | `xrewind.restore` |
 | `/xr apply`, `/xr cancel` | Apply or drop your preview. | `xrewind.rollback` |
 | `/xr undo` | Reverts your last rollback or restore. | `xrewind.rollback` |
+| `/xr lookup a:chat`, `a:command` | Chat and commands, where they're logged. | `xrewind.lookup.chat` |
 | `/xr status` | Where the history is kept, how much has been saved and is waiting, and any problem. | `xrewind.status` |
 | `/xr reload`, `/xr info` | Reload the config, or show the version and settings. | `xrewind.admin` |
 
@@ -29,8 +30,8 @@ The same as CoreProtect's, so what you know already works. Combine as many as yo
 | `u:` | Who: players, or sources like `#tnt` and `#creeper`. Several with commas. | `u:Steve`, `u:Steve,Alex`, `u:#tnt` |
 | `t:` | How far back, in `w` `d` `h` `m` `s`. | `t:30m`, `t:2w3d` |
 | `r:` | How far from you, in blocks; or `#world` for the whole world, `#global` for every world. Without it, your whole world. | `r:20`, `r:#global` |
-| `a:` | What kind of change. | `a:block`, `a:+block` (placed), `a:-block` (broken), `a:session` |
-| `i:` | Only these blocks: what was broken, or what was placed. | `i:diamond_ore,chest` |
+| `a:` | What kind of change. Without it: blocks, containers and kills. | `a:block`, `a:+block` (placed), `a:-block` (broken), `a:container`, `a:+container` (put in), `a:-container` (taken), `a:kill`, `a:click`, `a:sign`, `a:chat`, `a:command`, `a:session` |
+| `i:` | Only these blocks (what was broken, or what was placed) or items. | `i:diamond_ore,chest` |
 | `e:` | Leave out these blocks or players. | `e:dirt,stone`, `e:Steve` |
 | `w:` | Another world than yours. | `w:world_nether` |
 | `#count` | Only how many changes match. | |
@@ -47,6 +48,7 @@ From the console there's no "you" to measure from, so add `w:<world>` or `r:#glo
 
 - **A time is required**, so a rollback never reaches further back than you meant.
 - **Without `r:`, it covers 10 blocks around you** (`rollback.default-radius`). Anything past 100 blocks (`rollback.max-radius`), `r:#world` and `r:#global` need `xrewind.rollback.global`.
+- **What a broken block held comes back with it**: a chest's items, a sign's text. Items taken out of containers are put back, and items put in are taken out (`a:container` alone does just that).
 - **Each block is set once.** A block changed 200 times goes straight back to how it was before the first matching change, and blocks are set without physics, so nothing falls or flows on the way.
 - **It doesn't freeze the server.** Chunks are loaded in the background and blocks are set 10 milliseconds per tick (`rollback.ms-per-tick`), or region by region on Folia. Your action bar shows the progress.
 - **Preview it** with `#preview`: only you see the result, until `/xr apply` or `/xr cancel`.

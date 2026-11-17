@@ -28,13 +28,23 @@ public final class LogQueue {
     private final AtomicLong dropped = new AtomicLong();
     private final Logger logger;
     private volatile Thread writer;
+    private volatile java.util.Set<String> excluded = java.util.Set.of();
 
     public LogQueue(Logger logger) {
         this.logger = logger;
     }
 
+    /** Worlds nothing is logged in. Swapped whole on reload. */
+    public void excludeWorlds(java.util.Set<String> worlds) {
+        this.excluded = worlds;
+    }
+
     /** Hands an entry to the writer. Never blocks. */
     public void add(Entry entry) {
+        java.util.Set<String> skip = excluded;
+        if (!skip.isEmpty() && entry.world() != null && skip.contains(entry.world())) {
+            return;
+        }
         int waiting = size.incrementAndGet();
         if (waiting > LIMIT) {
             size.decrementAndGet();

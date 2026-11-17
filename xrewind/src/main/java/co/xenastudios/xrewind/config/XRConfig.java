@@ -7,6 +7,7 @@ import co.xenastudios.core.config.Comment;
 import co.xenastudios.core.config.ConfigSpec;
 import co.xenastudios.core.db.StorageSettings;
 import co.xenastudios.core.text.Message;
+import java.util.List;
 import co.xenastudios.core.text.Theme;
 
 /** xRewind's config.yml. Its defaults are {@link #DEFAULTS}; the docs show the file they produce. */
@@ -61,8 +62,8 @@ public record XRConfig(
         @Comment("Above a page of results. <count> is how many there are in all.") Message header,
         @Comment("Above the history of one block, from the inspector. <x>, <y>, <z>, <world>.") Message headerAt,
         @Comment({
-            "One change. <ago> is how long ago, <user> who, <action> what they did, <block> the",
-            "block, <x> <y> <z> <world> where."})
+            "One change. <ago> is how long ago, <user> who, <action> what they did, <block> what",
+            "to (a block, items, a mob, or what they wrote), <x> <y> <z> <world> where."})
         Message line,
         @Comment("A change that's been rolled back.") Message lineUndone,
         @Comment("Below a page. <page>, <pages>, and <next>: the command for the next page.") Message footer,
@@ -75,7 +76,8 @@ public record XRConfig(
         Message inspectorOff,
         @Comment("The words for each kind of change, as <action> shows them.") Words words) {}
 
-    public record Words(String placed, String broke, String joined, String quit) {}
+    public record Words(String placed, String broke, String clicked, String added, String took, String killed,
+                        String wrote, String said, String ran, String joined, String quit) {}
 
     public record Rollback(
         @Comment("How long a rollback may work each tick, in milliseconds. A tick is 50.")
@@ -88,9 +90,23 @@ public record XRConfig(
         @co.xenastudios.core.config.Range(min = 0, max = 100_000) int maxRadius) {}
 
     public record Logging(
-        @Comment("Blocks players break.") boolean blockBreak,
+        @Comment("Blocks players break, with what they held, and blocks that fall off with them.") boolean blockBreak,
         @Comment("Blocks players place, and what they replaced.") boolean blockPlace,
-        @Comment("Players joining and quitting, and where.") boolean sessions) {}
+        @Comment("Blocks explosions destroy. TNT is put down to whoever lit it.") boolean explosions,
+        @Comment("Blocks burnt away, and fires players light.") boolean fire,
+        @Comment("Buckets, and flowing water or lava destroying a block. Plain spreading isn't logged.") boolean liquids,
+        @Comment("Blocks pistons move.") boolean pistons,
+        @Comment("Endermen, withers, ravagers, falling sand. Sheep eating grass and villagers farming aren't.") boolean mobs,
+        @Comment("Text written on signs.") boolean signs,
+        @Comment("Items players put into or take out of containers.") boolean containers,
+        @Comment("Items hoppers and droppers move. Busy on farms.") boolean hoppers,
+        @Comment("Mobs and players killed by players.") boolean kills,
+        @Comment("Doors, trapdoors, gates, levers and buttons players use.") boolean clicks,
+        @Comment("Leaves decaying.") boolean leafDecay,
+        @Comment("Players joining and quitting, and where.") boolean sessions,
+        @Comment("Chat messages. Off by default for players' privacy; lookups need xrewind.lookup.chat.") boolean chat,
+        @Comment("Commands players run. Off by default; lookups need xrewind.lookup.chat.") boolean commands,
+        @Comment("Worlds nothing is logged in, by name.") List<String> excludedWorlds) {}
 
     public static final XRConfig DEFAULTS = new XRConfig(
         Theme.DEFAULTS,
@@ -107,7 +123,7 @@ public record XRConfig(
             Message.of("<prefix><error>The database isn't ready yet. /xrewind status says why."),
             Message.of("<prefix>Inspector <success>on</success>. Click a block to see its history; place one to see what was there."),
             Message.of("<prefix>Inspector <highlight>off</highlight>."),
-            new Words("placed", "broke", "joined", "quit")),
+            new Words("placed", "broke", "used", "added", "took", "killed", "wrote", "said", "ran", "joined", "quit")),
             new RollbackMessages(
                 Message.of("<prefix><error>Add a time, such as <highlight>t:1h</highlight>, so it can't reach further back than you meant."),
                 Message.of("<prefix><error>That's past the <highlight><max></highlight>-block limit. r:#world, r:#global and bigger radii need <highlight>xrewind.rollback.global</highlight>."),
@@ -122,7 +138,7 @@ public record XRConfig(
                 Message.of("<prefix><error>Nothing to undo. Undo works on your last rollback or restore since the server started."),
                 new Verbs("Rolled back", "Restored", "Undid"))),
         StorageSettings.defaults("xrewind_"),
-        new Logging(true, true, true),
+        new Logging(true, true, true, true, true, true, true, true, true, false, true, false, false, true, false, false, List.of()),
         new Rollback(10, 10, 100),
         UpdateCheckerSettings.DEFAULTS);
 

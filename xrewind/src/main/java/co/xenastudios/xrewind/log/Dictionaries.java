@@ -27,6 +27,8 @@ final class Dictionaries {
     private final Map<String, Integer> sources = new HashMap<>();
     private final Map<String, Integer> worlds = new HashMap<>();
     private final Map<String, Integer> states = new HashMap<>();
+    private final Map<Long, Integer> items = new HashMap<>();
+    private int nextItem = 1;
     private int nextUser = 1;
     private int nextWorld = 1;
     private int nextState = 1;
@@ -36,6 +38,7 @@ final class Dictionaries {
     private final List<Object[]> renamedUsers = new ArrayList<>();
     private final List<Object[]> newWorlds = new ArrayList<>();
     private final List<Object[]> newStates = new ArrayList<>();
+    private final List<Object[]> newItems = new ArrayList<>();
 
     /** Reads every name the database already has. */
     void load(Connection connection, Database database) throws SQLException {
@@ -58,6 +61,12 @@ final class Dictionaries {
                 while (rows.next()) {
                     worlds.put(rows.getString(2), rows.getInt(1));
                     nextWorld = Math.max(nextWorld, rows.getInt(1) + 1);
+                }
+            }
+            try (ResultSet rows = statement.executeQuery(database.sql("SELECT id, hash FROM {p}item"))) {
+                while (rows.next()) {
+                    items.put(rows.getLong(2), rows.getInt(1));
+                    nextItem = Math.max(nextItem, rows.getInt(1) + 1);
                 }
             }
             try (ResultSet rows = statement.executeQuery(database.sql("SELECT id, data FROM {p}state"))) {
@@ -115,12 +124,46 @@ final class Dictionaries {
         return id;
     }
 
+    /** A state id for any name: an entity or item type, such as {@code minecraft:zombie}. */
+    int name(String key) {
+        Integer id = states.get(key);
+        if (id == null) {
+            id = nextState++;
+            states.put(key, id);
+            newStates.add(new Object[] {id, key});
+        }
+        return id;
+    }
+
+    /** Bytes stored once however often they come up: an item, or a block's contents. */
+    int bytes(byte[] data) {
+        long hash = hash(data);
+        Integer id = items.get(hash);
+        if (id == null) {
+            id = nextItem++;
+            items.put(hash, id);
+            newItems.add(new Object[] {id, hash, data});
+        }
+        return id;
+    }
+
+    // 64-bit FNV-1a: collisions between different items are vanishingly unlikely.
+    private static long hash(byte[] data) {
+        long hash = 0xcbf29ce484222325L;
+        for (byte b : data) {
+            hash ^= b & 0xff;
+            hash *= 0x100000001b3L;
+        }
+        return hash;
+    }
+
     /** Writes the rows not yet committed, as part of the caller's transaction. */
     void write(Connection connection, Database database) throws SQLException {
         insert(connection, database.sql("INSERT INTO {p}user (id, uuid_most, uuid_least, name) VALUES (?, ?, ?, ?)"), newUsers);
         insert(connection, database.sql("UPDATE {p}user SET name = ? WHERE id = ?"), renamedUsers);
         insert(connection, database.sql("INSERT INTO {p}world (id, name) VALUES (?, ?)"), newWorlds);
         insert(connection, database.sql("INSERT INTO {p}state (id, data) VALUES (?, ?)"), newStates);
+        insert(connection, database.sql("INSERT INTO {p}item (id, hash, data) VALUES (?, ?, ?)"), newItems);
     }
 
     /** The transaction committed: those rows are in. */
@@ -129,6 +172,7 @@ final class Dictionaries {
         renamedUsers.clear();
         newWorlds.clear();
         newStates.clear();
+        newItems.clear();
     }
 
     private static void insert(Connection connection, String sql, List<Object[]> rows) throws SQLException {

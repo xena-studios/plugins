@@ -20,9 +20,13 @@ import org.bukkit.entity.Player;
 /** {@code /xrewind inspect}, {@code lookup}, {@code page} and {@code near}. */
 public final class LookupCommands {
 
+    /** Seeing chat and commands, which are more private than blocks. */
+    public static final String CHAT_PERMISSION = "xrewind.lookup.chat";
+
     private static final List<String> KEYS = List.of("u:", "t:", "r:", "a:", "i:", "e:", "w:");
     private static final List<String> FLAGS = List.of("#preview", "#count", "#silent");
-    private static final List<String> ACTIONS = List.of("block", "+block", "-block", "session", "+session", "-session");
+    private static final List<String> ACTIONS = List.of("block", "+block", "-block", "container", "+container", "-container",
+        "kill", "click", "sign", "chat", "command", "session", "+session", "-session");
 
     private LookupCommands() {}
 
@@ -46,6 +50,9 @@ public final class LookupCommands {
                 .completes(params(true))
                 .executes(invocation -> {
                     Query query = parse(plugin, invocation.size() == 0 ? List.of() : Arrays.asList(invocation.rest(0).split(" ")));
+                    if (query.wantsPrivate()) {
+                        invocation.require(CHAT_PERMISSION);
+                    }
                     lookups.run(invocation.sender(), query, Lookups.centerOf(invocation.sender()), 1, false);
                 }),
             CommandSpec.named("page")

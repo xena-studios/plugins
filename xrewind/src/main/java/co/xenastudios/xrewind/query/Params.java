@@ -122,10 +122,19 @@ public final class Params {
             case "block" -> EnumSet.of(Query.Action.BREAK, Query.Action.PLACE);
             case "+block", "place" -> EnumSet.of(Query.Action.PLACE);
             case "-block", "break" -> EnumSet.of(Query.Action.BREAK);
+            case "click", "interact" -> EnumSet.of(Query.Action.CLICK);
+            case "container" -> EnumSet.of(Query.Action.ADD, Query.Action.REMOVE);
+            case "+container", "add" -> EnumSet.of(Query.Action.ADD);
+            case "-container", "remove", "take" -> EnumSet.of(Query.Action.REMOVE);
+            case "kill" -> EnumSet.of(Query.Action.KILL);
+            case "sign" -> EnumSet.of(Query.Action.SIGN);
+            case "chat" -> EnumSet.of(Query.Action.CHAT);
+            case "command" -> EnumSet.of(Query.Action.COMMAND);
             case "session" -> EnumSet.of(Query.Action.JOIN, Query.Action.QUIT);
             case "+session", "login", "join" -> EnumSet.of(Query.Action.JOIN);
             case "-session", "logout", "quit" -> EnumSet.of(Query.Action.QUIT);
-            default -> throw new IllegalArgumentException("a:" + name + " isn't an action. Use block, +block, -block or session.");
+            default -> throw new IllegalArgumentException("a:" + name
+                + " isn't an action. Use block, +block, -block, container, +container, -container, kill, click, sign, chat, command or session.");
         };
     }
 

@@ -12,8 +12,8 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Runs a {@link Query} against the database, newest first. Off the server's threads
- * only: it waits on the database.
+ * Runs a {@link Query} against the database, newest first, across every table it
+ * covers. Off the server's threads only: it waits on the database.
  */
 public final class Lookup {
 
@@ -33,18 +33,28 @@ public final class Lookup {
      */
     public static Result page(Database database, Query query, Center center, int page, int perPage) throws SQLException {
         int skip = (page - 1) * perPage;
+        List<Sql> tables = new ArrayList<>();
+        if (query.wantsBlocks()) {
+            tables.add(blocks(database, query, center, false));
+        }
+        if (query.wantsContainers()) {
+            tables.add(containers(database, query, center, false));
+        }
+        if (query.wantsKills()) {
+            tables.add(kills(database, query, center));
+        }
+        if (query.wantsText()) {
+            tables.add(texts(database, query, center));
+        }
+        if (query.wantsSessions()) {
+            tables.add(sessions(database, query, center));
+        }
         try (Connection connection = database.connect()) {
             List<Row> rows = new ArrayList<>();
             long total = 0;
-            if (query.wantsBlocks()) {
-                Sql sql = blocks(database, query, center);
+            for (Sql sql : tables) {
                 total += count(connection, sql);
-                rows.addAll(rows(connection, sql, skip + perPage, Row.Table.BLOCK));
-            }
-            if (query.wantsSessions()) {
-                Sql sql = sessions(database, query, center);
-                total += count(connection, sql);
-                rows.addAll(rows(connection, sql, skip + perPage, Row.Table.SESSION));
+                rows.addAll(rows(connection, sql, " ORDER BY b.time DESC, b.id DESC LIMIT " + (skip + perPage)));
             }
             rows.sort(Comparator.comparingInt(Row::time).thenComparingLong(Row::id).reversed());
             List<Row> shown = rows.subList(Math.min(skip, rows.size()), Math.min(skip + perPage, rows.size()));
@@ -53,36 +63,39 @@ public final class Lookup {
     }
 
     /**
-     * Every block change matching the query, oldest first, for a rollback or restore.
-     * By time, not id: history imported from CoreProtect has new ids but old times.
+     * Every block change matching the query, oldest first, with contents, for a rollback
+     * or restore. By time, not id: history imported from CoreProtect has new ids but old
+     * times.
      */
     public static List<Row> allBlocks(Database database, Query query, Center center, boolean rolledBack) throws SQLException {
-        Sql sql = blocks(database, query, center);
+        return all(database, blocks(database, query, center, true), rolledBack);
+    }
+
+    /** Every container change matching the query, oldest first, with its item, for a rollback or restore. */
+    public static List<Row> allContainers(Database database, Query query, Center center, boolean rolledBack) throws SQLException {
+        return all(database, containers(database, query, center, true), rolledBack);
+    }
+
+    private static List<Row> all(Database database, Sql sql, boolean rolledBack) throws SQLException {
         sql.where.append(" AND b.rolled_back = ?");
         sql.params.add(rolledBack ? 1 : 0);
-        try (Connection connection = database.connect();
-             PreparedStatement statement = connection.prepareStatement(sql.select + sql.where + " ORDER BY b.time, b.id")) {
-            sql.bind(statement);
-            List<Row> rows = new ArrayList<>();
-            try (ResultSet result = statement.executeQuery()) {
-                while (result.next()) {
-                    rows.add(row(result, Row.Table.BLOCK));
-                }
-            }
-            return rows;
+        try (Connection connection = database.connect()) {
+            return rows(connection, sql, " ORDER BY b.time, b.id");
         }
     }
 
     // A SELECT's columns, its FROM and WHERE, and the values for the WHERE's ?s.
     private static final class Sql {
+        final Row.Table table;
         final String select;
+        final String from;
         final StringBuilder where = new StringBuilder(" WHERE 1 = 1");
         final List<Object> params = new ArrayList<>();
-        final String count;
 
-        Sql(String select, String count) {
+        Sql(Row.Table table, String select, String from) {
+            this.table = table;
             this.select = select;
-            this.count = count;
+            this.from = from;
         }
 
         void bind(PreparedStatement statement) throws SQLException {
@@ -92,18 +105,24 @@ public final class Lookup {
         }
     }
 
-    private static Sql blocks(Database database, Query query, Center center) {
+    // Every SELECT has the same columns: id, time, user, world, x, y, z, action, thing, after,
+    // rolled_back, amount, extra.
+    private static Sql blocks(Database database, Query query, Center center, boolean withContents) {
         String from = database.sql(" FROM {p}block b JOIN {p}user u ON u.id = b.user JOIN {p}world w ON w.id = b.world"
-            + " JOIN {p}state os ON os.id = b.old_state JOIN {p}state ns ON ns.id = b.new_state");
-        Sql sql = new Sql("SELECT b.id, b.time, u.name, w.name, b.x, b.y, b.z, b.action, os.data, ns.data, b.rolled_back" + from,
-            "SELECT COUNT(*)" + from);
-        common(sql, query, center, "b");
+            + " JOIN {p}state os ON os.id = b.old_state JOIN {p}state ns ON ns.id = b.new_state"
+            + (withContents ? " LEFT JOIN {p}item it ON it.id = b.extra" : ""));
+        Sql sql = new Sql(Row.Table.BLOCK, "SELECT b.id, b.time, u.name, w.name, b.x, b.y, b.z, b.action, os.data, ns.data,"
+            + " b.rolled_back, 0, " + (withContents ? "it.data" : "NULL"), from);
+        common(sql, query, center);
         List<Integer> actions = new ArrayList<>();
-        if (query.actions().isEmpty() || query.actions().contains(Query.Action.BREAK)) {
+        if (query.wants(Query.Action.BREAK)) {
             actions.add((int) Actions.BREAK);
         }
-        if (query.actions().isEmpty() || query.actions().contains(Query.Action.PLACE)) {
+        if (query.wants(Query.Action.PLACE)) {
             actions.add((int) Actions.PLACE);
+        }
+        if (query.wants(Query.Action.CLICK)) {
+            actions.add((int) Actions.CLICK);
         }
         in(sql, "b.action", actions, false);
         if (!query.blocks().isEmpty()) {
@@ -117,16 +136,62 @@ public final class Lookup {
         return sql;
     }
 
+    private static Sql containers(Database database, Query query, Center center, boolean withItems) {
+        String from = database.sql(" FROM {p}container b JOIN {p}user u ON u.id = b.user JOIN {p}world w ON w.id = b.world"
+            + " JOIN {p}state m ON m.id = b.material" + (withItems ? " JOIN {p}item it ON it.id = b.item" : ""));
+        Sql sql = new Sql(Row.Table.CONTAINER, "SELECT b.id, b.time, u.name, w.name, b.x, b.y, b.z, b.action, m.data, NULL,"
+            + " b.rolled_back, b.amount, " + (withItems ? "it.data" : "NULL"), from);
+        common(sql, query, center);
+        List<Integer> actions = new ArrayList<>();
+        if (query.wants(Query.Action.ADD)) {
+            actions.add((int) Actions.ADD);
+        }
+        if (query.wants(Query.Action.REMOVE)) {
+            actions.add((int) Actions.REMOVE);
+        }
+        in(sql, "b.action", actions, false);
+        names(sql, "m.data", query);
+        return sql;
+    }
+
+    private static Sql kills(Database database, Query query, Center center) {
+        String from = database.sql(" FROM {p}entity b JOIN {p}user u ON u.id = b.user JOIN {p}world w ON w.id = b.world"
+            + " JOIN {p}state t ON t.id = b.type");
+        Sql sql = new Sql(Row.Table.KILL, "SELECT b.id, b.time, u.name, w.name, b.x, b.y, b.z, b.action, t.data, NULL,"
+            + " b.rolled_back, 0, NULL", from);
+        common(sql, query, center);
+        return sql;
+    }
+
+    private static Sql texts(Database database, Query query, Center center) {
+        String from = database.sql(" FROM {p}text b JOIN {p}user u ON u.id = b.user JOIN {p}world w ON w.id = b.world");
+        Sql sql = new Sql(Row.Table.TEXT, "SELECT b.id, b.time, u.name, w.name, b.x, b.y, b.z, b.kind, b.message, NULL,"
+            + " 0, 0, NULL", from);
+        common(sql, query, center);
+        List<Integer> kinds = new ArrayList<>();
+        if (query.wants(Query.Action.SIGN)) {
+            kinds.add((int) Actions.SIGN);
+        }
+        if (query.wants(Query.Action.CHAT)) {
+            kinds.add((int) Actions.CHAT);
+        }
+        if (query.wants(Query.Action.COMMAND)) {
+            kinds.add((int) Actions.COMMAND);
+        }
+        in(sql, "b.kind", kinds, false);
+        return sql;
+    }
+
     private static Sql sessions(Database database, Query query, Center center) {
         String from = database.sql(" FROM {p}session b JOIN {p}user u ON u.id = b.user JOIN {p}world w ON w.id = b.world");
-        Sql sql = new Sql("SELECT b.id, b.time, u.name, w.name, b.x, b.y, b.z, b.action, NULL, NULL, 0" + from,
-            "SELECT COUNT(*)" + from);
-        common(sql, query, center, "b");
+        Sql sql = new Sql(Row.Table.SESSION, "SELECT b.id, b.time, u.name, w.name, b.x, b.y, b.z, b.action, NULL, NULL,"
+            + " 0, 0, NULL", from);
+        common(sql, query, center);
         List<Integer> actions = new ArrayList<>();
-        if (query.actions().contains(Query.Action.JOIN)) {
+        if (query.wants(Query.Action.JOIN)) {
             actions.add((int) Actions.JOIN);
         }
-        if (query.actions().contains(Query.Action.QUIT)) {
+        if (query.wants(Query.Action.QUIT)) {
             actions.add((int) Actions.QUIT);
         }
         in(sql, "b.action", actions, false);
@@ -134,9 +199,9 @@ public final class Lookup {
     }
 
     // Time, place and who: the same for every table.
-    private static void common(Sql sql, Query query, Center center, String t) {
+    private static void common(Sql sql, Query query, Center center) {
         if (query.seconds() > 0) {
-            sql.where.append(" AND ").append(t).append(".time >= ?");
+            sql.where.append(" AND b.time >= ?");
             sql.params.add((int) Math.max(Integer.MIN_VALUE, Clock.now() - query.seconds()));
         }
         String world = query.world() != null ? query.world() : center == null ? null : center.world();
@@ -146,8 +211,7 @@ public final class Lookup {
         }
         if (query.radius() >= 0 && center != null) {
             int r = query.radius();
-            sql.where.append(" AND ").append(t).append(".x BETWEEN ? AND ? AND ").append(t).append(".z BETWEEN ? AND ? AND ")
-                .append(t).append(".y BETWEEN ? AND ?");
+            sql.where.append(" AND b.x BETWEEN ? AND ? AND b.z BETWEEN ? AND ? AND b.y BETWEEN ? AND ?");
             sql.params.add(center.x() - r);
             sql.params.add(center.x() + r);
             sql.params.add(center.z() - r);
@@ -169,6 +233,18 @@ public final class Lookup {
             sql.params.add(values.get(i));
         }
         sql.where.append(")");
+    }
+
+    // i: and e: on a table whose rows are about one named thing (an item).
+    private static void names(Sql sql, String column, Query query) {
+        if (!query.blocks().isEmpty()) {
+            sql.where.append(" AND ");
+            anyOf(sql, column, query.blocks());
+        }
+        if (!query.excludedBlocks().isEmpty()) {
+            sql.where.append(" AND NOT ");
+            anyOf(sql, column, query.excludedBlocks());
+        }
     }
 
     // The block a change is about: what was broken, or what was placed.
@@ -196,7 +272,7 @@ public final class Lookup {
     }
 
     private static long count(Connection connection, Sql sql) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(sql.count + sql.where)) {
+        try (PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*)" + sql.from + sql.where)) {
             sql.bind(statement);
             try (ResultSet result = statement.executeQuery()) {
                 return result.next() ? result.getLong(1) : 0;
@@ -204,23 +280,18 @@ public final class Lookup {
         }
     }
 
-    private static List<Row> rows(Connection connection, Sql sql, int limit, Row.Table table) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(sql.select + sql.where + " ORDER BY b.time DESC, b.id DESC LIMIT ?")) {
+    private static List<Row> rows(Connection connection, Sql sql, String tail) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql.select + sql.from + sql.where + tail)) {
             sql.bind(statement);
-            statement.setInt(sql.params.size() + 1, limit);
             List<Row> rows = new ArrayList<>();
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
-                    rows.add(row(result, table));
+                    rows.add(new Row(sql.table, result.getLong(1), result.getInt(2), result.getString(3), result.getString(4),
+                        result.getInt(5), result.getInt(6), result.getInt(7), result.getByte(8), result.getString(9),
+                        result.getString(10), result.getInt(11) != 0, result.getInt(12), result.getBytes(13)));
                 }
             }
             return rows;
         }
-    }
-
-    private static Row row(ResultSet result, Row.Table table) throws SQLException {
-        return new Row(table, result.getLong(1), result.getInt(2), result.getString(3), result.getString(4),
-            result.getInt(5), result.getInt(6), result.getInt(7), result.getByte(8), result.getString(9),
-            result.getString(10), result.getInt(11) != 0);
     }
 }

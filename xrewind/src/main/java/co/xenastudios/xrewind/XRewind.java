@@ -9,7 +9,18 @@ import co.xenastudios.xrewind.command.StatusCommand;
 import co.xenastudios.xrewind.config.XRConfig;
 import co.xenastudios.xrewind.listen.BlockBreaks;
 import co.xenastudios.xrewind.listen.BlockPlaces;
+import co.xenastudios.xrewind.listen.Containers;
+import co.xenastudios.xrewind.listen.Explosions;
+import co.xenastudios.xrewind.listen.Fire;
+import co.xenastudios.xrewind.listen.Hoppers;
+import co.xenastudios.xrewind.listen.Kills;
+import co.xenastudios.xrewind.listen.Liquids;
+import co.xenastudios.xrewind.listen.Mobs;
+import co.xenastudios.xrewind.listen.Pistons;
+import co.xenastudios.xrewind.listen.RecentBreaks;
 import co.xenastudios.xrewind.listen.Sessions;
+import co.xenastudios.xrewind.listen.Small;
+import co.xenastudios.xrewind.listen.Words;
 import co.xenastudios.xrewind.log.LogQueue;
 import co.xenastudios.xrewind.log.Writer;
 import co.xenastudios.xrewind.query.Inspector;
@@ -29,6 +40,7 @@ public class XRewind extends XenaPlugin<XRConfig> {
     private Lookups lookups;
     private Inspector inspector;
     private Rollbacks rollbacks;
+    private final RecentBreaks recent = new RecentBreaks();
 
     @Override
     protected ConfigSpec<XRConfig> configSpec() {
@@ -50,16 +62,24 @@ public class XRewind extends XenaPlugin<XRConfig> {
         storage().sync(config.storage());
         writer().start();
         XRConfig.Logging log = config.log();
+        queue.excludeWorlds(java.util.Set.copyOf(log.excludedWorlds()));
         // Each is listened for only while it's on.
-        if (log.blockBreak()) {
-            setup.module("log.block-break", () -> new BlockBreaks(this, queue));
-        }
-        if (log.blockPlace()) {
-            setup.module("log.block-place", () -> new BlockPlaces(this, queue));
-        }
-        if (log.sessions()) {
-            setup.module("log.sessions", () -> new Sessions(this, queue));
-        }
+        module(setup, log.blockBreak(), "block-break", () -> new BlockBreaks(this, queue, recent));
+        module(setup, log.blockPlace(), "block-place", () -> new BlockPlaces(this, queue));
+        module(setup, log.explosions(), "explosions", () -> new Explosions(this, queue, recent));
+        module(setup, log.fire(), "fire", () -> new Fire(this, queue));
+        module(setup, log.liquids(), "liquids", () -> new Liquids(this, queue));
+        module(setup, log.pistons(), "pistons", () -> new Pistons(this, queue));
+        module(setup, log.mobs(), "mobs", () -> new Mobs(this, queue));
+        module(setup, log.signs(), "signs", () -> new Words.Signs(this, queue));
+        module(setup, log.containers(), "containers", () -> new Containers(this, queue));
+        module(setup, log.hoppers(), "hoppers", () -> new Hoppers(this, queue));
+        module(setup, log.kills(), "kills", () -> new Kills(this, queue));
+        module(setup, log.clicks(), "clicks", () -> new Small.Clicks(this, queue));
+        module(setup, log.leafDecay(), "leaf-decay", () -> new Small.LeafDecay(this, queue));
+        module(setup, log.sessions(), "sessions", () -> new Sessions(this, queue));
+        module(setup, log.chat(), "chat", () -> new Words.Chat(this, queue));
+        module(setup, log.commands(), "commands", () -> new Words.Commands(this, queue));
         if (lookups == null) {
             lookups = new Lookups(this);
             inspector = new Inspector(this, lookups);
@@ -68,7 +88,14 @@ public class XRewind extends XenaPlugin<XRConfig> {
         LookupCommands.specs(this, lookups, inspector).forEach(setup::subcommand);
         RollbackCommands.specs(this, rollbacks).forEach(setup::subcommand);
         setup.permission(Rollbacks.GLOBAL_PERMISSION, PermissionDefault.OP);
+        setup.permission(LookupCommands.CHAT_PERMISSION, PermissionDefault.OP);
         setup.subcommand(StatusCommand.spec(this));
+    }
+
+    private static void module(Setup setup, boolean on, String name, java.util.function.Supplier<co.xenastudios.core.Module> factory) {
+        if (on) {
+            setup.module("log." + name, factory);
+        }
     }
 
     // Modules have stopped by now, so nothing new is queued: write what's left.

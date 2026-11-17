@@ -26,3 +26,33 @@ run: xr rollback t:1h r:#global
 expect: Nothing to change.
 run: xr undo
 expect: Nothing to undo.
+
+# The whole loop on a real server: TNT blows up a block of planks, and a rollback
+# puts it back. The reloads let the server tick between steps. Folia's console can't
+# test blocks with execute, so it checks only what xRewind says.
+run: forceload add 96 96 111 111
+expect: Marked
+run: fill 100 70 100 104 74 104 minecraft:oak_planks
+expect: Successfully filled
+run: setblock 102 71 103 minecraft:chest{Items:[{Slot:0b,id:"minecraft:diamond",count:5}]}
+expect: Changed the block
+run: summon minecraft:tnt 102 72 102 {fuse:0}
+expect: Summoned new
+run: xr reload
+expect: Reloaded xRewind
+run: xr reload
+expect: Reloaded xRewind
+paper run: execute if block 102 72 102 minecraft:air run say BLOWN UP
+paper expect: BLOWN UP
+run: xr lookup u:#tnt r:#global #count
+expect: Lookup:
+run: xr rollback u:#tnt t:1h r:#global
+expect: Rolled back
+paper run: execute if block 102 72 102 minecraft:oak_planks run say PUT BACK
+paper expect: PUT BACK
+paper run: execute if items block 102 71 103 container.* minecraft:diamond run say CHEST FULL
+paper expect: CHEST FULL
+run: xr undo
+expect: Undid
+paper run: execute if block 102 72 102 minecraft:air run say UNDONE
+paper expect: UNDONE

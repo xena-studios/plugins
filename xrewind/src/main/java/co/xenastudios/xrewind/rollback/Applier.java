@@ -13,7 +13,10 @@ import java.util.function.Consumer;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
+import co.xenastudios.xrewind.log.Contents;
 import org.bukkit.block.Block;
+import org.bukkit.block.Container;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.plugin.Plugin;
 
@@ -106,17 +109,49 @@ public final class Applier {
         while (index < changes.size()) {
             Plan.Change change = changes.get(index++);
             Block block = group.world().getBlockAt(change.x(), change.y(), change.z());
-            BlockData before = block.getBlockData();
-            if (!before.equals(change.target())) {
-                block.setBlockData(change.target(), false);
+            if (change.isItems()) {
+                items(block, change);
+            } else {
+                BlockData before = block.getBlockData();
+                Contents held = Contents.canHold(before.getMaterial()) ? Contents.of(block) : null;
+                if (!before.equals(change.target())) {
+                    if (held != null) {
+                        // Set without physics, a container would spill what it held: empty it first.
+                        Contents.clear(block);
+                    }
+                    block.setBlockData(change.target(), false);
+                }
+                if (change.contents() != null) {
+                    Contents.restore(block, change.contents());
+                }
+                previous.add(Plan.Change.block(change.world(), change.x(), change.y(), change.z(), before, held));
             }
-            previous.add(new Plan.Change(change.world(), change.x(), change.y(), change.z(), before));
             applied.incrementAndGet();
             if ((index & 63) == 0 && System.nanoTime() > deadline) {
                 break;
             }
         }
         return index;
+    }
+
+    // Adds or takes items; undo does the opposite with what really moved.
+    private void items(Block block, Plan.Change change) {
+        if (!(block.getState(false) instanceof Container container)) {
+            return;
+        }
+        ItemStack stack = change.item().clone();
+        int amount = Math.abs(change.delta());
+        stack.setAmount(amount);
+        Map<Integer, ItemStack> left = change.delta() > 0 ? container.getInventory().addItem(stack) : container.getInventory().removeItem(stack);
+        int missed = 0;
+        for (ItemStack rest : left.values()) {
+            missed += rest.getAmount();
+        }
+        int moved = amount - missed;
+        if (moved > 0) {
+            previous.add(Plan.Change.items(change.world(), change.x(), change.y(), change.z(), change.item(),
+                change.delta() > 0 ? -moved : moved));
+        }
     }
 
     /** Paper: everything is the main thread, so one task per tick works through the chunks. */

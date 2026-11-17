@@ -37,19 +37,51 @@ public record Query(
 
     /** The kinds of change a query can ask for with {@code a:}. */
     public enum Action {
-        BREAK, PLACE, JOIN, QUIT;
+        BREAK, PLACE, CLICK, ADD, REMOVE, KILL, SIGN, CHAT, COMMAND, JOIN, QUIT;
 
-        public boolean isBlock() {
-            return this == BREAK || this == PLACE;
+        /** What a query without {@code a:} covers: blocks and containers, and kills for lookups. */
+        static final Set<Action> DEFAULT = java.util.EnumSet.of(BREAK, PLACE, ADD, REMOVE, KILL);
+    }
+
+    /** The kinds of change it covers: those asked for with {@code a:}, or the default ones. */
+    public Set<Action> covered() {
+        return actions.isEmpty() ? Action.DEFAULT : actions;
+    }
+
+    /** Whether it covers any of these. */
+    public boolean wants(Action... any) {
+        Set<Action> covered = covered();
+        for (Action action : any) {
+            if (covered.contains(action)) {
+                return true;
+            }
         }
+        return false;
     }
 
     /** Whether it asks for any block changes (true when no {@code a:} narrows it). */
     public boolean wantsBlocks() {
-        return actions.isEmpty() || actions.stream().anyMatch(Action::isBlock);
+        return wants(Action.BREAK, Action.PLACE, Action.CLICK);
     }
 
     public boolean wantsSessions() {
-        return actions.contains(Action.JOIN) || actions.contains(Action.QUIT);
+        return wants(Action.JOIN, Action.QUIT);
+    }
+
+    public boolean wantsContainers() {
+        return wants(Action.ADD, Action.REMOVE);
+    }
+
+    public boolean wantsKills() {
+        return wants(Action.KILL);
+    }
+
+    public boolean wantsText() {
+        return wants(Action.SIGN, Action.CHAT, Action.COMMAND);
+    }
+
+    /** Whether it reaches chat or commands, which need their own permission. */
+    public boolean wantsPrivate() {
+        return wants(Action.CHAT, Action.COMMAND);
     }
 }

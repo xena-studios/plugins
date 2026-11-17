@@ -11,11 +11,11 @@ paperPluginYaml {
 }
 
 xena {
-    // The shared core and bStats are about 75 KiB, and logging (the queue, the writer
-    // and its listeners) about 65. No database driver is shaded in: Paper and Folia ship
-    // SQLite's and MySQL's. About 140 KiB with lookups, rollback and the CoreProtect
-    // import still to come, so the budget leaves room for them.
-    jarBudgetKb = 250
+    // The shared core and bStats are about 75 KiB; the rest is xRewind's own code: about
+    // 25 listeners, the writer, lookups across five tables, and rollbacks with contents
+    // and undo. No database driver is shaded in: Paper and Folia ship SQLite's and
+    // MySQL's. About 250 KiB with purges and the CoreProtect import still to come.
+    jarBudgetKb = 350
 }
 
 dependencies {

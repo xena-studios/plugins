@@ -11,3 +11,8 @@ allowBuilds:
 # GHSA-9fm3-97px-rjf6 and GHSA-xjj6-f33q-929c.
 overrides:
   'undici@>=7.0.0 <7.30.1': 7.30.1
+  # @emnapi 2 betas: @astrojs/check's optional peer resolves to 2.0.0-beta.2,
+  # whose native bridge crashes on load, so astro check reports "not installed".
+  # Keep the stable line until @emnapi 2 is released.
+  '@emnapi/core@>=2.0.0-0': ^1.11.3
+  '@emnapi/runtime@>=2.0.0-0': ^1.11.3

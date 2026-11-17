@@ -12,7 +12,7 @@ The config is `plugins/xUtilities/config.yml`, written on first start. Apply cha
 
 ## Make it look like your server
 
-The `theme` section at the top sets the look of every message: a prefix, the text colour, and three styles the messages use as tags. Change a colour there and every message that uses it follows.
+The `theme` section at the top sets the look of every message: a prefix, the text colour, and three styles the messages use as tags. Change a colour there and every message that uses it follows. This example restyles the prefix; the default is `<#B48CFF>»</#B48CFF> `.
 
 ```yaml
 theme:
@@ -64,7 +64,7 @@ Each command's messages are under its own key (`message-self`, `message-others` 
 
 | Placeholder | In |
 | --- | --- |
-| `<player>` | any `-others` message: the other player's name |
+| `<player>` | any `-others` message, and `enderchest.message-too-far`: the other player's name |
 | `<mode>` | gamemode messages |
 | `<state>` | `/fly` messages: the word from `messages.state` (`enabled` / `disabled`) |
 | `<speed>`, `<min>`, `<max>` | `/speed` messages |

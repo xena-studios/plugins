@@ -10,7 +10,7 @@ Players in xLimbo are in creative, so xLimbo blocks everything that could lag, b
 | Setting | Default | What it blocks |
 | --- | --- | --- |
 | `floor` | on | Breaking the floor, pushing it with pistons, building in or under it, blowing holes in it (even with `explosions` off), and it melting or decaying. |
-| `void.enabled` | on | Falling forever: players below `threshold-y` (default `0`) are put straight back on the floor above them. |
+| `void.enabled` | on | Falling forever: players below `threshold-y` (default `0`, and never above the floor) are put straight back on the floor above them. |
 | `void.cancel-void-damage` | on | Void and fall damage, so a rescue never becomes a death loop. |
 | `portals` | on | Nether and End portals, and Eyes of Ender in End portal frames. |
 | `liquids` | on | Placing water and lava, and liquids flowing. |

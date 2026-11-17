@@ -79,7 +79,7 @@ queue:
 
 ## Send players back after a delay
 
-Without server-check, players can be sent back on their own after a delay, paced by the same queue. With server-check on, it takes over: players go back as soon as the main server is up, and `auto-join` isn't used.
+Without server-check, players can be sent back on their own after a delay, paced by the same queue. With server-check on, it takes over: players go back as soon as the main server is up, and only `auto-join.message` is used, as the message each player gets when they're sent.
 
 ```yaml
 auto-join:

@@ -5,7 +5,7 @@ sidebar:
   order: 2
 ---
 
-`[player]` means the command can act on someone else, which needs the `.others` permission. Without a player, it acts on you. Commands that act only on you can't be run from the console; the `[player]` forms can. A player changed by someone else is told, with the same message they'd get doing it themselves.
+`[player]` means the command can act on someone else, which needs the `.others` permission. Without a player, it acts on you. Commands that act only on you can't be run from the console; the `[player]` forms can, except `/enderchest`, which opens a chest for whoever runs it. A player changed by someone else is told, with the same message they'd get doing it themselves.
 
 Players you can't see, such as staff who are vanished, count as offline: you can't target them or tab-complete their names.
 

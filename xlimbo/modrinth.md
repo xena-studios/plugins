@@ -13,7 +13,7 @@ Your main server crashes. Restarts. Goes down for an update. Without a fallback,
 ## Why server owners pick it
 
 - **It stays up when everything else is down.** That's its whole job. Every feature is built so that a failure is logged and skipped, never taking the server down, and a bad config value falls back to its default.
-- **Built for everyone arriving at once.** Players are placed before they're in the world, on land that's already loaded, so a whole network landing at once never waits on world generation. The world is a single floor and nothing else, a world border caps how far it can grow, and nothing is ever saved to disk.
+- **Built for everyone arriving at once.** Players are placed before they're in the world, on land that's already loaded, so a whole network landing at once never waits on world generation. The world is a single floor and nothing else, a world border caps how far it can grow, and by default nothing is saved to disk.
 - **Sends everyone back, without a stampede.** Turn on server-check and xLimbo watches your main server, then sends players back as soon as it's up, a few per second, showing each player their place in line.
 - **Nobody can break it.** The floor can't be broken, players who fall are caught, and portals, liquids, fire, explosions, redstone, mobs and dropped items are all blocked. Turn off any protection you don't want.
 - **Quiet.** No join, quit or death spam when your whole server lands here at once.

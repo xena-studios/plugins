@@ -105,7 +105,7 @@ public record XRConfig(
         @Comment({
             "Delete history older than this many days, once a day. 0 keeps everything. A",
             "rollback can't reach further back than what's kept."})
-        @co.xenastudios.core.config.Range(min = 0, max = 36_500) int keepDays) {}
+        @co.xenastudios.core.config.Range(min = 0, max = 10_000) int keepDays) {}
 
     public record Logging(
         @Comment("Blocks players break, with what they held, and blocks that fall off with them.") boolean blockBreak,
@@ -161,7 +161,7 @@ public record XRConfig(
                 Message.of("<prefix><success>Purged</success> <highlight><count></highlight> changes older than <time>."),
                 Message.of("<prefix>Importing CoreProtect's history from <highlight><source></highlight>. Logging carries on meanwhile; the console shows progress."),
                 Message.of("<prefix><success>Imported</success> <highlight><count></highlight> changes from CoreProtect in <seconds>s."),
-                Message.of("<prefix><error>CoreProtect's history was already imported, on <date>. Add <highlight>#again</highlight> to import it a second time."),
+                Message.of("<prefix><error>CoreProtect's history was already imported (<date>). <highlight>#again</highlight> imports it again, and what came across before shows twice."),
                 Message.of("<prefix><error>Couldn't read CoreProtect's history: <reason>"),
                 Message.of("<prefix><error>An import is already running."))),
         StorageSettings.defaults("xrewind_"),

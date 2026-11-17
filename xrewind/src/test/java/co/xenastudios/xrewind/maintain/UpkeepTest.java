@@ -74,6 +74,17 @@ class UpkeepTest {
     }
 
     @Test
+    void aHugeAgeDeletesNothingInsteadOfWrappingRound() throws Exception {
+        Actor steve = new Actor(UUID.randomUUID(), "Steve");
+        write(new Entry.BlockChange(Clock.now(), steve, "world", 0, 64, 0, Actions.BREAK,
+            Material.STONE.createBlockData(), Material.AIR.createBlockData()));
+        assertEquals(Integer.MIN_VALUE, Purge.daysAgo(30_000), "held at the earliest time, not wrapped to the future");
+        assertEquals(0, Purge.run(database, Purge.daysAgo(10_000)));
+        assertEquals(0, Purge.run(database, Purge.secondsAgo(100L * 365 * 86_400)));
+        assertEquals(1, count("SELECT COUNT(*) FROM xr_block"));
+    }
+
+    @Test
     void coreProtectsHistoryComesAcross() throws Exception {
         Path coreProtect = folder.resolve("CoreProtect");
         Files.createDirectories(coreProtect);

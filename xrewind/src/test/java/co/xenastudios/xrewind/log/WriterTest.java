@@ -118,6 +118,28 @@ class WriterTest {
     }
 
     @Test
+    void oneRowTheDatabaseWontTakeIsDroppedAndTheRestGetIn() throws Exception {
+        LogQueue queue = new LogQueue(logger);
+        Writer writer = new Writer(queue, () -> database, logger);
+        Actor steve = new Actor(UUID.randomUUID(), "Steve");
+        for (int i = 0; i < 50; i++) {
+            queue.add(broke(steve, i));
+        }
+        // An update of a table that isn't there fails every time, as a bad row would.
+        queue.add(new Entry.MarkRolledBack("no_such_table", new long[] {1}, true));
+        for (int i = 50; i < 100; i++) {
+            queue.add(broke(steve, i));
+        }
+        writer.start();
+        await(() -> writer.written() == 100);
+        writer.stop(5, TimeUnit.SECONDS);
+        assertEquals(1, writer.dropped());
+        try (Connection connection = database.connect(); Statement sql = connection.createStatement()) {
+            assertEquals(100, count(sql, "SELECT COUNT(*) FROM xr_block"));
+        }
+    }
+
+    @Test
     void stoppingWritesWhatsLeft() throws Exception {
         LogQueue queue = new LogQueue(logger);
         Writer writer = new Writer(queue, () -> database, logger);

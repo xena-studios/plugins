@@ -30,7 +30,7 @@ xRewind uses CoreProtect's command syntax, so `/co` habits carry over as `/xr`, 
 
 Item drops and pickups, and entity spawns, aren't imported.
 
-Importing twice would duplicate everything, so a second `/xr import coreprotect` refuses, unless you add `#again`.
+Importing twice would duplicate everything, so a second `/xr import coreprotect` refuses, unless you add `#again`. That includes after an import that stopped partway (the server stopped, or CoreProtect's MySQL went away): what came across stays, so `#again` shows it twice. If that matters, `/xr purge` can't pick out imported history, so it's best to let an import finish.
 
 ## Commands, side by side
 

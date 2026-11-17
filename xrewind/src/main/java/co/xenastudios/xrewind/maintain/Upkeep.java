@@ -47,7 +47,7 @@ public final class Upkeep {
         plugin.tasks().async(() -> {
             try {
                 plugin.writer().flush(2_000);
-                long deleted = Purge.run(database, (int) (Clock.now() - seconds));
+                long deleted = Purge.run(database, Purge.secondsAgo(seconds));
                 reply(sender, () -> messages().purged().send(sender, Placeholders.text("count", String.format("%,d", deleted)),
                     Placeholders.text("time", Durations.format(Duration.ofSeconds(seconds)))));
             } catch (SQLException | RuntimeException e) {
@@ -82,13 +82,17 @@ public final class Upkeep {
                     return;
                 }
                 reply(sender, () -> messages().importing().send(sender, Placeholders.text("source", source.description())));
+                // Recorded before anything's read: a second import, even after this one stops
+                // partway, would duplicate what came across, so it needs #again.
+                setMeta(database, IMPORTED, "partway, " + LocalDate.now());
                 long start = System.nanoTime();
                 long count = new CoreProtectImport(source, plugin.queue(), plugin.getLogger()).run();
-                // Done once it's all written, not just queued.
-                while (plugin.queue().size() > 0 && plugin.writer().problem() == null) {
+                // Done once what it queued is written. Live logging keeps the queue busy, so
+                // wait for this import's rows, not for the queue to be empty.
+                long target = plugin.writer().written() + plugin.queue().size();
+                while (plugin.writer().written() < target && plugin.writer().problem() == null) {
                     plugin.writer().flush(5_000);
                 }
-                plugin.writer().flush(5_000);
                 setMeta(database, IMPORTED, LocalDate.now().toString());
                 double seconds = (System.nanoTime() - start) / 1e9;
                 plugin.getLogger().info("Imported " + String.format("%,d", count) + " changes from CoreProtect in "

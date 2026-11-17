@@ -34,7 +34,9 @@ run: forceload add 96 96 111 111
 expect: Marked
 run: fill 100 70 100 104 74 104 minecraft:oak_planks
 expect: Successfully filled
-run: setblock 102 71 103 minecraft:chest{Items:[{Slot:0b,id:"minecraft:diamond",count:5}]}
+run: setblock 102 71 103 minecraft:chest[facing=north,type=left]{Items:[{Slot:0b,id:"minecraft:diamond",count:5}]}
+expect: Changed the block
+run: setblock 101 71 103 minecraft:chest[facing=north,type=right]{Items:[{Slot:0b,id:"minecraft:emerald",count:3}]}
 expect: Changed the block
 run: summon minecraft:tnt 102 72 102 {fuse:0}
 expect: Summoned new
@@ -52,6 +54,9 @@ paper run: execute if block 102 72 102 minecraft:oak_planks run say PUT BACK
 paper expect: PUT BACK
 paper run: execute if items block 102 71 103 container.* minecraft:diamond run say CHEST FULL
 paper expect: CHEST FULL
+# Each half of a double chest comes back with its own items.
+paper run: execute if items block 101 71 103 container.* minecraft:emerald run say OTHER HALF FULL
+paper expect: OTHER HALF FULL
 run: xr undo
 expect: Undid
 paper run: execute if block 102 72 102 minecraft:air run say UNDONE

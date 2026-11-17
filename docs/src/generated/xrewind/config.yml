@@ -38,6 +38,39 @@ messages:
     # The command hit an error. The console has the details.
     failed: "<prefix><error>Something went wrong. The console has the details."
 
+  # Lookups and the inspector.
+  lookup:
+    # Above a page of results. <count> is how many there are in all.
+    header: "<prefix>Lookup: <highlight><count></highlight> changes"
+    # Above the history of one block, from the inspector. <x>, <y>, <z>, <world>.
+    header-at: "<prefix>History of <highlight><x> <y> <z></highlight> in <world>"
+    # One change. <ago> is how long ago, <user> who, <action> what they did, <block> the
+    # block, <x> <y> <z> <world> where.
+    line: "<gray><ago> ago</gray> <highlight><user></highlight> <action> <highlight><block></highlight> <gray>at <x> <y> <z></gray>"
+    # A change that's been rolled back.
+    line-undone: "<strikethrough><gray><ago> ago</gray> <user> <action> <block> <gray>at <x> <y> <z></gray></strikethrough> <gray>(undone)"
+    # Below a page. <page>, <pages>, and <next>: the command for the next page.
+    footer: "<gray>Page <page> of <pages></gray> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next page »"
+    # Nothing matched.
+    none: "<prefix>Nothing found."
+    # Sent while waiting on the database.
+    working: "<prefix><gray>Looking..."
+    # The parameters were wrong. <reason> says how.
+    invalid: "<prefix><error><reason>"
+    # There's no previous lookup for /xrewind page.
+    no-previous: "<prefix><error>Look something up first, then use /xrewind page."
+    # The database isn't ready yet.
+    not-ready: "<prefix><error>The database isn't ready yet. /xrewind status says why."
+    inspector-on: "<prefix>Inspector <success>on</success>. Click a block to see its history; place one to see what was there."
+    inspector-off: "<prefix>Inspector <highlight>off</highlight>."
+
+    # The words for each kind of change, as <action> shows them.
+    words:
+      placed: "placed"
+      broke: "broke"
+      joined: "joined"
+      quit: "quit"
+
 # Where the history is kept. Changing it on /xrewind reload switches to the new one;
 # history isn't copied across.
 storage:

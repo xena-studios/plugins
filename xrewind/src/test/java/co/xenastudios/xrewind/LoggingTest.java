@@ -11,7 +11,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -99,8 +102,63 @@ class LoggingTest {
     void statusSaysWhereTheLogGoes() {
         steve.setOp(true);
         steve.performCommand("xr status");
-        String reply = steve.nextMessage();
+        String reply = plain(steve.nextMessage());
         assertTrue(reply != null && reply.contains("the SQLite database history.db"), reply);
+    }
+
+    @Test
+    void theInspectorShowsABlocksHistoryAndChangesNothing() throws Exception {
+        steve.setOp(true);
+        Block block = world.getBlockAt(2, 70, 2);
+        block.setType(Material.STONE);
+        server.getPluginManager().callEvent(new BlockBreakEvent(block, steve));
+        block.setType(Material.AIR);
+
+        steve.performCommand("xr i");
+        String on = plain(steve.nextMessage());
+        assertTrue(on != null && on.contains("Inspector on"), on);
+        PlayerInteractEvent click = new PlayerInteractEvent(steve, Action.LEFT_CLICK_BLOCK, null, block, BlockFace.UP, EquipmentSlot.HAND);
+        server.getPluginManager().callEvent(click);
+        assertTrue(click.useInteractedBlock() == org.bukkit.event.Event.Result.DENY, "the click is only a question");
+
+        String reply = awaitMessage(steve);
+        assertTrue(reply.contains("History of 2 70 2"), reply);
+        String line = awaitMessage(steve);
+        assertTrue(line.contains("Steve broke stone at 2 70 2"), line);
+
+        steve.performCommand("xr i");
+        assertTrue(plain(steve.nextMessage()).contains("Inspector off"));
+        assertEquals(0, PlayerInteractEvent.getHandlerList().getRegisteredListeners().length, "no listener once nobody inspects");
+    }
+
+    @Test
+    void lookupFindsAndExplainsMistakes() throws Exception {
+        steve.setOp(true);
+        Block block = world.getBlockAt(3, 70, 3);
+        block.setType(Material.DIRT);
+        server.getPluginManager().callEvent(new BlockBreakEvent(block, steve));
+        steve.performCommand("xr l u:Steve t:1h");
+        String header = awaitMessage(steve);
+        assertTrue(header.contains("Lookup: 1 changes"), header);
+        assertTrue(awaitMessage(steve).contains("broke dirt"));
+        steve.performCommand("xr l t:soon");
+        assertTrue(plain(steve.nextMessage()).contains("isn't a time"));
+    }
+
+    private String awaitMessage(PlayerMock player) throws InterruptedException {
+        long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        String message;
+        while ((message = player.nextMessage()) == null) {
+            assertTrue(System.nanoTime() < until, "no reply");
+            server.getScheduler().performOneTick();
+            Thread.sleep(10);
+        }
+        return plain(message);
+    }
+
+    private static String plain(String message) {
+        return message == null ? null : net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+            .serialize(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message));
     }
 
     private static String row(ResultSet rows) throws Exception {

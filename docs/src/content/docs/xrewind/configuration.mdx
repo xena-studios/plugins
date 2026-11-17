@@ -2,7 +2,7 @@
 title: Configuration
 description: Every setting in xRewind's config.yml.
 sidebar:
-  order: 2
+  order: 3
 ---
 
 import { Code } from "@astrojs/starlight/components";
@@ -14,6 +14,7 @@ The config is `plugins/xRewind/config.yml`, written on first start. Apply change
 | --- | --- |
 | `theme` | The prefix and colours xRewind's messages share: see [the theme](/start/formatting/#the-theme). |
 | `messages.error` | Shared errors: players only, no permission, player not found, wrong usage, and a command that hit an error. |
+| `messages.lookup` | What lookups and the inspector say, and the words for each kind of change. |
 | `storage` | Where the history is kept: SQLite in the plugin's folder (`history.db`), or MySQL/MariaDB. |
 | `log` | What's logged. Something that's off isn't listened for at all, so it costs nothing. |
 | `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |

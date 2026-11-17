@@ -24,4 +24,7 @@ From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../C
 src/main/java/co/xenastudios/xrewind/
   XRewind.java     the plugin: declares the config and, in setup, the features it turns on
   storage/         the database: its tables, and opening it off the server's threads
+  listen/          the listeners, one module per kind of change, each on only when it's logged
+  log/             the queue listeners hand changes to, and the one thread that writes them
+  command/         /xrewind's subcommands
 ```

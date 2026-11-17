@@ -11,9 +11,11 @@ paperPluginYaml {
 }
 
 xena {
-    // The shared core and bStats are about 75 KiB. No database driver is shaded in:
-    // Paper and Folia ship SQLite's and MySQL's.
-    jarBudgetKb = 150
+    // The shared core and bStats are about 75 KiB, and logging (the queue, the writer
+    // and its listeners) about 65. No database driver is shaded in: Paper and Folia ship
+    // SQLite's and MySQL's. About 140 KiB with lookups, rollback and the CoreProtect
+    // import still to come, so the budget leaves room for them.
+    jarBudgetKb = 250
 }
 
 dependencies {

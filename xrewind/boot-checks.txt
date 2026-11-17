@@ -6,3 +6,7 @@ expect: xRewind 0.1.0 on
 
 run: xrewind reload
 expect: Reloaded xRewind in
+
+# Subcommands beside reload and info, and the writer ready for the database.
+run: xr status
+expect: Problem: none

@@ -17,12 +17,23 @@ public final class Setup {
     final List<CommandSpec> commands = new ArrayList<>();
     final Map<String, PermissionDefault> permissions = new LinkedHashMap<>();
     final Map<String, Supplier<Module>> modules = new LinkedHashMap<>();
+    final List<CommandSpec> subcommands = new ArrayList<>();
 
     Setup() {}
 
     /** Registers the command and declares its permission. */
     public void command(CommandSpec spec) {
         commands.add(spec);
+        permission(spec.permission(), spec.permissionDefault());
+    }
+
+    /**
+     * Adds a subcommand to the plugin's own command, beside {@code reload} and
+     * {@code info}: {@code /<plugin> <name>}. Its spec's usage should be the whole
+     * command, such as {@code /xrewind status}. Declares its permission.
+     */
+    public void subcommand(CommandSpec spec) {
+        subcommands.add(spec);
         permission(spec.permission(), spec.permissionDefault());
     }
 

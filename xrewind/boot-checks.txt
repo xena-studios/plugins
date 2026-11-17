@@ -1,0 +1,8 @@
+# xRewind on a real server, from the console.
+# The database opens with the SQLite driver Paper and Folia ship, from a paper-plugin.
+logged: Storage ready: the SQLite database history.db, schema 1.
+run: xrewind info
+expect: xRewind 0.1.0 on
+
+run: xrewind reload
+expect: Reloaded xRewind in

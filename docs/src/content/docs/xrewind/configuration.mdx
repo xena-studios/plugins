@@ -1,0 +1,30 @@
+---
+title: Configuration
+description: Every setting in xRewind's config.yml.
+sidebar:
+  order: 2
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/xrewind/config.yml?raw";
+
+The config is `plugins/xRewind/config.yml`, written on first start. Apply changes with `/xrewind reload`. xRewind is being built, so settings will be added before 1.0.
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours xRewind's messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages.error` | Shared errors: players only, no permission, player not found, wrong usage, and a command that hit an error. |
+| `storage` | Where the history is kept: SQLite in the plugin's folder (`history.db`), or MySQL/MariaDB. |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+## Storage
+
+`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) for a network, or a server with a lot of history, and fill in `mysql`. `table-prefix` goes in front of every table's name, so several servers can share one database by giving each its own prefix.
+
+The database is opened in the background, so a slow or unreachable MySQL never holds up startup. If it can't be opened, the console says why; fix the settings and run `/xrewind reload`. Changing `storage` on a reload switches to the new database, and a reload that can't open the new one keeps using the old one. History isn't copied between databases.
+
+A bad value falls back to its default with a warning in the console.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/xRewind/config.yml" />

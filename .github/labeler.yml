@@ -8,6 +8,9 @@ zchat:
 xlimbo:
   - changed-files:
       - any-glob-to-any-file: xlimbo/**
+xrewind:
+  - changed-files:
+      - any-glob-to-any-file: xrewind/**
 core:
   - changed-files:
       - any-glob-to-any-file: [core/**, build-logic/**]

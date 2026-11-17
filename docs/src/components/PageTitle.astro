@@ -5,8 +5,9 @@ import Default from "@astrojs/starlight/components/PageTitle.astro";
 import xutilities from "../assets/plugins/xutilities.svg";
 import zchat from "../assets/plugins/zchat.svg";
 import xlimbo from "../assets/plugins/xlimbo.svg";
+import xrewind from "../assets/plugins/xrewind.svg";
 
-const icons = { xutilities, zchat, xlimbo };
+const icons = { xutilities, zchat, xlimbo, xrewind };
 const id = Astro.locals.starlightRoute.id;
 const plugin = (Object.keys(icons) as (keyof typeof icons)[]).find((p) => id === p || id.startsWith(`${p}/`));
 ---

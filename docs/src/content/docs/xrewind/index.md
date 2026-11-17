@@ -1,0 +1,47 @@
+---
+title: xRewind
+description: Every change, logged. Any of it, undone. A block logger with rollback for Paper and Folia, being built.
+sidebar:
+  label: Overview
+  order: 1
+  badge:
+    text: Soon
+    variant: note
+---
+
+**Every change, logged. Any of it, undone.**
+
+xRewind is a block logger with rollback for Paper and Folia: who placed, broke or took what, where and when, and a way to undo it.
+
+:::note[Being built]
+xRewind isn't released yet. This page describes what 1.0 will do; follow along in [the plan](https://github.com/xena-studios/plugins/issues/20).
+:::
+
+- **Every feature free.** No early-access builds and nothing behind a Patreon, automatic purges included.
+- **New Minecraft versions the same week.** It uses only Paper's API, never the server's internals, so an update rarely breaks it.
+- **You won't feel it running.** Nothing touches the database on a game thread: each change is queued as a few numbers and written in batches by one background thread. Logging you turn off isn't listened for at all.
+- **Rollback that doesn't freeze the server.** A rollback works out each block's final state once, then applies it a few milliseconds per tick, or region by region on Folia. Preview it first, and undo it after.
+- **Easy to switch to.** CoreProtect's command syntax, so habits and guides carry over, and your CoreProtect history imported.
+
+## What 1.0 will log
+
+Blocks placed and broken (and the torches, signs and rails that fall off with them), explosions traced to whoever lit them, fire, liquids that destroy something, pistons, mobs that change blocks, sign text, items put in and taken out of containers, kills, and joins and quits. Noisy things, like hopper transfers, leaf decay and door clicks, are off unless you turn them on. Chat and command logging are off by default.
+
+## Commands, planned
+
+| Command | What it does |
+| --- | --- |
+| `/xr inspect` | Click a block to see its history |
+| `/xr lookup <params>` | Search the history |
+| `/xr rollback <params>` | Undo matching changes, with `#preview` to see the result first |
+| `/xr restore <params>` | Put back what a rollback undid |
+| `/xr undo` | Revert your last rollback or restore |
+| `/xr purge t:<time>` | Delete history older than this |
+
+Parameters are CoreProtect's: `u:` players, `t:` time (`2w3d`), `r:` radius, `a:` action, `i:` and `e:` blocks to include or exclude.
+
+## Storage
+
+SQLite out of the box, in one file in the plugin's folder, or MySQL/MariaDB for networks. No driver is bundled: Paper and Folia already ship them. See [Configuration](/xrewind/configuration/).
+
+Needs Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer.

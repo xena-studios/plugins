@@ -2,19 +2,13 @@ package co.xenastudios.xlimbo.world;
 
 import co.xenastudios.xlimbo.config.Settings;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -36,10 +30,8 @@ import org.bukkit.plugin.Plugin;
 public final class LimboWorld {
 
     /** Marks a world folder xLimbo made, with the floor it was made with. */
-    static final String MARKER = "xlimbo.dat";
+    static final String MARKER = WorldFolders.MARKER;
 
-    /** A world name that's only ever one folder: never "..", never a path. */
-    private static final Pattern PLAIN_NAME = Pattern.compile("(?!\\.+$)[A-Za-z0-9_.-]+");
 
     /** Chunks kept loaded around spawn reach at most this far, in chunks. */
     private static final int MAX_READY_RADIUS = 8;
@@ -222,7 +214,7 @@ public final class LimboWorld {
                 logger.info("Taking over " + settings.name() + ", the world xLimbo 1.x made.");
                 try {
                     // Made with the floor its config, now carried forward, describes.
-                    Files.writeString(folder.resolve(MARKER), shape(settings) + "\n", StandardCharsets.UTF_8);
+                    WorldFolders.mark(folder, shape(settings));
                 } catch (IOException e) {
                     logger.warning("couldn't mark world " + settings.name() + " as xLimbo's: " + e.getMessage());
                 }
@@ -253,7 +245,7 @@ public final class LimboWorld {
             return null;
         }
         try {
-            Files.writeString(made.getWorldFolder().toPath().resolve(MARKER), shape(settings) + "\n", StandardCharsets.UTF_8);
+            WorldFolders.mark(made.getWorldFolder().toPath(), shape(settings));
         } catch (IOException e) {
             logger.warning("couldn't mark world " + settings.name() + " as xLimbo's: " + e.getMessage());
         }
@@ -333,54 +325,32 @@ public final class LimboWorld {
      * one; 26.1 and later keep extra worlds inside it, under dimensions/minecraft/.
      */
     private static Path folder(String name) {
-        if (!PLAIN_NAME.matcher(name).matches()) {
+        if (!WorldFolders.isPlainName(name)) {
             return null;
         }
         World loaded = Bukkit.getWorld(name);
         if (loaded != null) {
             return loaded.getWorldFolder().toPath();
         }
-        Path container = Bukkit.getWorldContainer().toPath();
-        Path dimensions = container.resolve(Bukkit.getWorlds().getFirst().getName()).resolve("dimensions");
-        if (Files.isDirectory(dimensions)) {
-            return dimensions.resolve("minecraft").resolve(name.toLowerCase(Locale.ROOT));
-        }
-        return container.resolve(name);
+        return WorldFolders.folder(name, Bukkit.getWorldContainer().toPath(), Bukkit.getWorlds().getFirst().getName());
     }
 
-    // A folder with anything in it: a world's, in either layout.
     private static boolean hasWorld(Path folder) {
-        if (!Files.isDirectory(folder)) {
-            return false;
-        }
-        try (Stream<Path> files = Files.list(folder)) {
-            return files.findAny().isPresent();
-        } catch (IOException e) {
-            return true;
-        }
+        return WorldFolders.hasWorld(folder);
     }
 
     private static boolean isOurs(Path folder) {
-        return Files.isRegularFile(folder.resolve(MARKER));
+        return WorldFolders.isOurs(folder);
     }
 
     private static String readShape(Path folder) {
-        try {
-            return Files.readString(folder.resolve(MARKER), StandardCharsets.UTF_8).trim();
-        } catch (IOException e) {
-            return "";
-        }
+        return WorldFolders.readShape(folder);
     }
 
     // Deletes a world folder xLimbo made. Never a loaded world's: the server would write it back.
     private void delete(Path folder) {
-        if (!isOurs(folder) || Bukkit.getWorld(folder.getFileName().toString()) != null) {
-            return;
-        }
-        try (Stream<Path> files = Files.walk(folder)) {
-            for (Path file : files.sorted(Comparator.reverseOrder()).toList()) {
-                Files.delete(file);
-            }
+        try {
+            WorldFolders.delete(folder, name -> Bukkit.getWorld(name) != null);
         } catch (IOException e) {
             logger.warning("couldn't delete the old world " + folder.getFileName() + ": " + e.getMessage());
         }

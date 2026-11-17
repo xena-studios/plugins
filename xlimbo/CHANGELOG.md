@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- A temporary limbo world whose folder is a link (to a RAM disk, say) is emptied and remade where the link points, keeping your link. Before, the link itself was deleted.
 - If the limbo world can't be unloaded to apply a new floor, it's kept as it is and the console says to restart. Before, xLimbo could record a floor the world didn't have, so later startups never rebuilt it.
 - Changing the world or spawn radius soon after startup no longer leaves the old spawn area loaded.
 - Upgrading from 1.x when the server asks for xLimbo's generator early no longer skips taking over the 1.x world.

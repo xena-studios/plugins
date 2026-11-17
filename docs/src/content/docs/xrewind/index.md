@@ -27,18 +27,9 @@ xRewind isn't released yet. This page describes what 1.0 will do; follow along i
 
 Blocks placed and broken (and the torches, signs and rails that fall off with them), explosions traced to whoever lit them, fire, liquids that destroy something, pistons, mobs that change blocks, sign text, items put in and taken out of containers, kills, and joins and quits. Noisy things, like hopper transfers, leaf decay and door clicks, are off unless you turn them on. Chat and command logging are off by default.
 
-## Commands, planned
+## Commands
 
-| Command | What it does |
-| --- | --- |
-| `/xr inspect` | Click a block to see its history |
-| `/xr lookup <params>` | Search the history |
-| `/xr rollback <params>` | Undo matching changes, with `#preview` to see the result first |
-| `/xr restore <params>` | Put back what a rollback undid |
-| `/xr undo` | Revert your last rollback or restore |
-| `/xr purge t:<time>` | Delete history older than this |
-
-Parameters are CoreProtect's: `u:` players, `t:` time (`2w3d`), `r:` radius, `a:` action, `i:` and `e:` blocks to include or exclude.
+`/xr inspect` to click blocks for their history, `/xr lookup` to search it with CoreProtect's parameters (`u:` `t:` `r:` `a:` `i:` `e:`), and `/xr status` to see that logging is keeping up. Rollback, restore and purge are next. See [Commands](/xrewind/commands/).
 
 ## Storage
 

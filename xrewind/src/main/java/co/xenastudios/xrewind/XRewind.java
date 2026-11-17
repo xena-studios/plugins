@@ -3,6 +3,7 @@ package co.xenastudios.xrewind;
 import co.xenastudios.core.Setup;
 import co.xenastudios.core.XenaPlugin;
 import co.xenastudios.core.config.ConfigSpec;
+import co.xenastudios.xrewind.command.LookupCommands;
 import co.xenastudios.xrewind.command.StatusCommand;
 import co.xenastudios.xrewind.config.XRConfig;
 import co.xenastudios.xrewind.listen.BlockBreaks;
@@ -10,6 +11,8 @@ import co.xenastudios.xrewind.listen.BlockPlaces;
 import co.xenastudios.xrewind.listen.Sessions;
 import co.xenastudios.xrewind.log.LogQueue;
 import co.xenastudios.xrewind.log.Writer;
+import co.xenastudios.xrewind.query.Inspector;
+import co.xenastudios.xrewind.query.Lookups;
 import co.xenastudios.xrewind.storage.Storage;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +23,8 @@ public class XRewind extends XenaPlugin<XRConfig> {
     private Storage storage;
     private LogQueue queue;
     private Writer writer;
+    private Lookups lookups;
+    private Inspector inspector;
 
     @Override
     protected ConfigSpec<XRConfig> configSpec() {
@@ -51,12 +56,20 @@ public class XRewind extends XenaPlugin<XRConfig> {
         if (log.sessions()) {
             setup.module("log.sessions", () -> new Sessions(this, queue));
         }
+        if (lookups == null) {
+            lookups = new Lookups(this);
+            inspector = new Inspector(this, lookups);
+        }
+        LookupCommands.specs(this, lookups, inspector).forEach(setup::subcommand);
         setup.subcommand(StatusCommand.spec(this));
     }
 
     // Modules have stopped by now, so nothing new is queued: write what's left.
     @Override
     protected void shutdown() {
+        if (inspector != null) {
+            inspector.clear();
+        }
         if (writer != null) {
             writer.stop(10, TimeUnit.SECONDS);
         }

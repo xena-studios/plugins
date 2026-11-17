@@ -44,6 +44,8 @@ public final class Writer implements Runnable {
     private volatile long lastBatchNanos;
     private volatile int lastBatchSize;
     private volatile String problem;
+    // The batch being written, for flush to wait on.
+    private volatile int pending;
 
     public Writer(LogQueue queue, Supplier<Database> databases, Logger logger) {
         this.queue = queue;
@@ -102,6 +104,7 @@ public final class Writer implements Runnable {
             while (batch.size() < MAX_BATCH && (entry = queue.poll()) != null) {
                 batch.add(entry);
             }
+            pending = batch.size();
             if (batch.isEmpty()) {
                 if (!running) {
                     break;
@@ -191,6 +194,7 @@ public final class Writer implements Runnable {
             connection.commit();
             dictionaries.committed();
             written += batch.size();
+            pending = 0;
             lastBatchSize = batch.size();
             lastBatchNanos = System.nanoTime() - start;
             batch.clear();
@@ -231,6 +235,24 @@ public final class Writer implements Runnable {
         dictionaries = null;
         blocks = null;
         sessions = null;
+    }
+
+    /**
+     * Waits until what's queued now is written, so a lookup sees a block placed a moment
+     * ago. Gives up after {@code timeoutMillis}, or at once if writes are failing. Not on
+     * a server thread.
+     */
+    public void flush(long timeoutMillis) {
+        Thread current = thread;
+        if (current == null) {
+            return;
+        }
+        long target = written + queue.size() + pending;
+        LockSupport.unpark(current);
+        long until = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (written < target && problem == null && System.nanoTime() < until) {
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(5));
+        }
     }
 
     /** Entries written since the server started. */

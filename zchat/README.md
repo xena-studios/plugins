@@ -1,4 +1,4 @@
-![zChat by Xena Studios. The chat bubble icon and the zChat name over a stepped horizon in green, with "Format your chat. Keep it clean."](../.github/assets/zchat-banner.png)
+![zChat by Xena Studios. A pixel chat bubble icon and the zChat name over a stepped horizon in green, with the headline "Format your chat. Keep it clean."](../.github/assets/zchat-banner.png)
 
 **Format your chat. Keep it clean.**
 
@@ -13,7 +13,7 @@ zChat handles the chat basics almost every server wants: a chat format per rank,
 
 **[Download on Modrinth](https://modrinth.com/plugin/zchat)** · [Docs](https://docs.xenastudios.co/zchat/) · [Commands and permissions](https://docs.xenastudios.co/zchat/commands/) · [Changelog](CHANGELOG.md)
 
-Needs Paper 1.21.11 or newer (Purpur and Folia too) and Java 21 or newer.
+Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 
 ## Developing
 

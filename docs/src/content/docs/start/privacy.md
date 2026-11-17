@@ -18,7 +18,7 @@ GET https://api.modrinth.com/v2/project/xutilities/version?loaders=["paper"]&gam
 User-Agent: xena-studios/xutilities/2.0.0 (contact@xenastudios.co)
 ```
 
-That's the plugin and its version, the platform (`paper`, or `folia` on Folia) and the Minecraft version. Like any web request, it comes from your server's IP address; Modrinth's [privacy policy](https://modrinth.com/legal/privacy) covers what Modrinth does with it. Nothing about your players is sent. zChat and xLimbo send the same, with their own name in place of `xutilities`.
+That's the plugin and its version, the platform (`paper`, or `folia` on Folia) and the Minecraft version. Like any web request, it comes from your server's IP address; Modrinth's [privacy policy](https://modrinth.com/legal/privacy) covers what Modrinth does with it. Nothing about your players is sent. zChat, xLimbo and xRewind send the same, with their own name in place of `xutilities`.
 
 ## bStats
 

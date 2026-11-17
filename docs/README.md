@@ -1,6 +1,6 @@
-![Xena Studios plugin docs. The xUtilities, zChat and xLimbo icons and the title "Plugin docs" over a stepped horizon in their three accents, with "Setup, commands and config for xUtilities, zChat and xLimbo."](../.github/assets/docs-banner.png)
+![Xena Studios plugin docs. The xUtilities, zChat, xLimbo and xRewind icons and the title "Plugin docs" over a stepped horizon in their four accents, with "Setup, commands and config for xUtilities, zChat, xLimbo and xRewind."](../.github/assets/docs-banner.png)
 
-**Setup, commands and config for xUtilities, zChat and xLimbo.**
+**Setup, commands and config for xUtilities, zChat, xLimbo and xRewind.**
 
 The source of **[docs.xenastudios.co](https://docs.xenastudios.co)**, a static [Starlight](https://starlight.astro.build) site served by Cloudflare. The docs describe the current releases, so a plugin change and its docs go in the same pull request.
 

@@ -1,4 +1,4 @@
-![xUtilities by Xena Studios. The wrench icon and the xUtilities name over a stepped horizon in amber, with "Every command you need. None you don't."](../.github/assets/xutilities-banner.png)
+![xUtilities by Xena Studios. A pixel wrench icon and the xUtilities name over a stepped horizon in amber, with the headline "Every command you need. None you don't."](../.github/assets/xutilities-banner.png)
 
 **Every command you need. None you don't.**
 
@@ -11,7 +11,7 @@ xUtilities gives every server the small commands it needs, whatever kind of serv
 
 **[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://docs.xenastudios.co/xutilities/) · [Commands and permissions](https://docs.xenastudios.co/xutilities/commands/) · [Changelog](CHANGELOG.md)
 
-Needs Paper 1.21.11 or newer (Purpur and Folia too) and Java 21 or newer.
+Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 
 ## Developing
 

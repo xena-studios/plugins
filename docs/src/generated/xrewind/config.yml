@@ -44,8 +44,8 @@ messages:
     header: "<prefix>Lookup: <highlight><count></highlight> changes"
     # Above the history of one block, from the inspector. <x>, <y>, <z>, <world>.
     header-at: "<prefix>History of <highlight><x> <y> <z></highlight> in <world>"
-    # One change. <ago> is how long ago, <user> who, <action> what they did, <block> the
-    # block, <x> <y> <z> <world> where.
+    # One change. <ago> is how long ago, <user> who, <action> what they did, <block> what
+    # to (a block, items, a mob, or what they wrote), <x> <y> <z> <world> where.
     line: "<gray><ago> ago</gray> <highlight><user></highlight> <action> <highlight><block></highlight> <gray>at <x> <y> <z></gray>"
     # A change that's been rolled back.
     line-undone: "<strikethrough><gray><ago> ago</gray> <user> <action> <block> <gray>at <x> <y> <z></gray></strikethrough> <gray>(undone)"
@@ -68,6 +68,13 @@ messages:
     words:
       placed: "placed"
       broke: "broke"
+      clicked: "used"
+      added: "added"
+      took: "took"
+      killed: "killed"
+      wrote: "wrote"
+      said: "said"
+      ran: "ran"
       joined: "joined"
       quit: "quit"
 
@@ -118,12 +125,40 @@ storage:
 # What's logged. Something that's off isn't even listened for, so it costs nothing.
 # Changes apply on /xrewind reload.
 log:
-  # Blocks players break.
+  # Blocks players break, with what they held, and blocks that fall off with them.
   block-break: true
   # Blocks players place, and what they replaced.
   block-place: true
+  # Blocks explosions destroy. TNT is put down to whoever lit it.
+  explosions: true
+  # Blocks burnt away, and fires players light.
+  fire: true
+  # Buckets, and flowing water or lava destroying a block. Plain spreading isn't logged.
+  liquids: true
+  # Blocks pistons move.
+  pistons: true
+  # Endermen, withers, ravagers, falling sand. Sheep eating grass and villagers farming aren't.
+  mobs: true
+  # Text written on signs.
+  signs: true
+  # Items players put into or take out of containers.
+  containers: true
+  # Items hoppers and droppers move. Busy on farms.
+  hoppers: false
+  # Mobs and players killed by players.
+  kills: true
+  # Doors, trapdoors, gates, levers and buttons players use.
+  clicks: false
+  # Leaves decaying.
+  leaf-decay: false
   # Players joining and quitting, and where.
   sessions: true
+  # Chat messages. Off by default for players' privacy; lookups need xrewind.lookup.chat.
+  chat: false
+  # Commands players run. Off by default; lookups need xrewind.lookup.chat.
+  commands: false
+  # Worlds nothing is logged in, by name.
+  excluded-worlds: []
 
 # Rollbacks and restores. Blocks are set a few milliseconds per tick, chunk by chunk, so
 # even a big one doesn't freeze the server, and without physics, so nothing cascades.

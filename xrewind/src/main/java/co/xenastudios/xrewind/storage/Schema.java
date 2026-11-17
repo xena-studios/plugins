@@ -23,7 +23,8 @@ public final class Schema {
         "CREATE TABLE {p}world (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)",
         // A block state as Minecraft writes it: minecraft:oak_door[facing=north,half=lower,...]
         "CREATE TABLE {p}state (id INTEGER PRIMARY KEY, data TEXT NOT NULL)",
-        // An item stack as Paper serialises it, with its data version, so it upgrades itself.
+        // An item stack, or a block's contents (a chest's items, a sign's text), as bytes.
+        // Paper's item format carries its data version, so items upgrade themselves.
         "CREATE TABLE {p}item (id INTEGER PRIMARY KEY, hash BIGINT NOT NULL, data {blob} NOT NULL)",
 
         "CREATE TABLE {p}block (id {rowid}, time INT NOT NULL, user INT NOT NULL, world SMALLINT NOT NULL,"
@@ -33,15 +34,17 @@ public final class Schema {
         "CREATE INDEX {p}block_user ON {p}block (user, time)",
         "CREATE INDEX {p}block_time ON {p}block (time)",
 
-        // Items put in or taken out of a container.
+        // Items put in or taken out of a container. material is the item's type, as a state
+        // id, for lookups; item is the whole stack, for rollbacks.
         "CREATE TABLE {p}container (id {rowid}, time INT NOT NULL, user INT NOT NULL, world SMALLINT NOT NULL,"
             + " x INT NOT NULL, y SMALLINT NOT NULL, z INT NOT NULL, action TINYINT NOT NULL,"
-            + " item INT NOT NULL, amount INT NOT NULL, rolled_back TINYINT NOT NULL DEFAULT 0)",
+            + " material INT NOT NULL, item INT NOT NULL, amount INT NOT NULL, rolled_back TINYINT NOT NULL DEFAULT 0)",
         "CREATE INDEX {p}container_place ON {p}container (world, x, z, time)",
         "CREATE INDEX {p}container_user ON {p}container (user, time)",
         "CREATE INDEX {p}container_time ON {p}container (time)",
 
-        // Kills, and later other things done to entities.
+        // Kills, and later other things done to entities. type is the entity's type, as a
+        // state id.
         "CREATE TABLE {p}entity (id {rowid}, time INT NOT NULL, user INT NOT NULL, world SMALLINT NOT NULL,"
             + " x INT NOT NULL, y SMALLINT NOT NULL, z INT NOT NULL, action TINYINT NOT NULL,"
             + " type INT NOT NULL, extra INT, rolled_back TINYINT NOT NULL DEFAULT 0)",

@@ -13,6 +13,7 @@ import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -87,7 +88,10 @@ public final class Rollbacks {
         plugin.tasks().async(() -> {
             try {
                 plugin.writer().flush(2_000);
-                Plan plan = Planner.plan(Lookup.allBlocks(database, asked, center, restore), restore);
+                Plan plan = Planner.plan(
+                    asked.wantsBlocks() ? Lookup.allBlocks(database, asked, center, restore) : List.of(),
+                    asked.wantsContainers() ? Lookup.allContainers(database, asked, center, restore) : List.of(),
+                    restore);
                 if (plan.changes().isEmpty()) {
                     reply(sender, () -> messages.nothing().send(sender));
                     running.set(false);
@@ -127,7 +131,7 @@ public final class Rollbacks {
         World world = player.getWorld();
         Map<Long, Map<Position, BlockData>> byChunk = new HashMap<>();
         for (Plan.Change change : plan.changes()) {
-            if (change.world().equals(world.getName())) {
+            if (!change.isItems() && change.world().equals(world.getName())) {
                 byChunk.computeIfAbsent(((long) (change.x() >> 4) << 32) ^ (change.z() >> 4 & 0xFFFFFFFFL), key -> new HashMap<>())
                     .put(Position.block(change.x(), change.y(), change.z()), null);
             }
@@ -159,7 +163,7 @@ public final class Rollbacks {
         previews.put(player.getUniqueId(), plan);
         Map<Position, BlockData> fake = new HashMap<>();
         for (Plan.Change change : plan.changes()) {
-            if (change.world().equals(player.getWorld().getName())) {
+            if (!change.isItems() && change.world().equals(player.getWorld().getName())) {
                 fake.put(Position.block(change.x(), change.y(), change.z()), change.target());
             }
         }
@@ -181,11 +185,13 @@ public final class Rollbacks {
         AtomicBoolean finished = new AtomicBoolean();
         Applier applier = new Applier(plugin, plugin.isFolia(), plugin.config().rollback().msPerTick(), plan, result -> {
             finished.set(true);
-            plugin.queue().add(new Entry.MarkRolledBack(plan.ids(), plan.markRolledBack()));
+            plugin.queue().add(new Entry.MarkRolledBack("block", plan.blockIds(), plan.markRolledBack()));
+            plugin.queue().add(new Entry.MarkRolledBack("container", plan.containerIds(), plan.markRolledBack()));
             if (plan.kind() == Plan.Kind.UNDO) {
                 undos.remove(sender);
             } else {
-                undos.put(sender, new Plan(Plan.Kind.UNDO, result.previous(), plan.ids(), !plan.markRolledBack(), 0));
+                undos.put(sender, new Plan(Plan.Kind.UNDO, result.previous(), plan.blockIds(), plan.containerIds(),
+                    !plan.markRolledBack(), 0));
             }
             running.set(false);
             if (progress[0] != null) {

@@ -26,7 +26,7 @@ class PlannerTest {
     }
 
     private static Row row(long id, int x, String before, String after) {
-        return new Row(Row.Table.BLOCK, id, (int) id, "Steve", "world", x, 64, 0, Actions.PLACE, before, after, false);
+        return new Row(Row.Table.BLOCK, id, (int) id, "Steve", "world", x, 64, 0, Actions.PLACE, before, after, false, 0, null);
     }
 
     // At x=0: stone placed, broken, then dirt placed. At x=1: glass placed once.
@@ -38,17 +38,17 @@ class PlannerTest {
 
     @Test
     void aRollbackSetsEachBlockOnceToHowItWasFirst() {
-        Plan plan = Planner.plan(rows, false);
+        Plan plan = Planner.plan(rows, List.of(), false);
         assertEquals(2, plan.changes().size(), "four changes, two blocks");
         assertEquals(Material.AIR, plan.changes().get(0).target().getMaterial());
         assertEquals(Material.AIR, plan.changes().get(1).target().getMaterial());
-        assertArrayEquals(new long[] {1, 2, 3, 4}, plan.ids());
+        assertArrayEquals(new long[] {1, 2, 3, 4}, plan.blockIds());
         assertEquals(true, plan.markRolledBack());
     }
 
     @Test
     void aRestoreSetsEachBlockToHowItWasLast() {
-        Plan plan = Planner.plan(rows, true);
+        Plan plan = Planner.plan(rows, List.of(), true);
         assertEquals(Material.DIRT, plan.changes().get(0).target().getMaterial());
         assertEquals(Material.GLASS, plan.changes().get(1).target().getMaterial());
         assertEquals(false, plan.markRolledBack());
@@ -58,7 +58,7 @@ class PlannerTest {
     void anOldStateFallsBackToItsBlockAndAGoneBlockIsSkipped() {
         assertEquals(Material.STONE, Planner.read("minecraft:stone[made_up=true]").getMaterial());
         assertNull(Planner.read("minecraft:no_such_block"));
-        Plan plan = Planner.plan(List.of(row(1, 0, "minecraft:no_such_block", "minecraft:stone")), false);
+        Plan plan = Planner.plan(List.of(row(1, 0, "minecraft:no_such_block", "minecraft:stone")), List.of(), false);
         assertEquals(0, plan.changes().size());
         assertEquals(1, plan.skipped());
     }

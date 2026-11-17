@@ -23,9 +23,13 @@ xRewind isn't released yet. This page describes what 1.0 will do; follow along i
 - **Rollback that doesn't freeze the server.** A rollback works out each block's final state once, then applies it a few milliseconds per tick, or region by region on Folia. Preview it first, and undo it after.
 - **Easy to switch to.** CoreProtect's command syntax, so habits and guides carry over, and your CoreProtect history imported.
 
-## What 1.0 will log
+## What it logs
 
-Blocks placed and broken (and the torches, signs and rails that fall off with them), explosions traced to whoever lit them, fire, liquids that destroy something, pistons, mobs that change blocks, sign text, items put in and taken out of containers, kills, and joins and quits. Noisy things, like hopper transfers, leaf decay and door clicks, are off unless you turn them on. Chat and command logging are off by default.
+On by default: blocks placed and broken (with what they held, and the torches, signs and rails that fall off with them), explosions (TNT is put down to whoever lit it), fire, buckets and liquids that destroy something, pistons, mobs that change blocks (endermen, withers, falling sand), sign text, items put in and taken out of containers, kills, and joins and quits.
+
+Off unless you turn them on: hopper transfers, door and lever clicks, leaf decay, chat and commands. Each kind is a switch under `log` in the config, and one that's off isn't even listened for.
+
+A rollback brings back what a broken block held: a chest's items, a sign's text.
 
 ## Commands
 

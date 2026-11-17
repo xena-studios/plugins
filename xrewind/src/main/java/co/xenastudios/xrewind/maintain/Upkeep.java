@@ -96,9 +96,9 @@ public final class Upkeep {
                 setMeta(database, IMPORTED, LocalDate.now().toString());
                 double seconds = (System.nanoTime() - start) / 1e9;
                 plugin.getLogger().info("Imported " + String.format("%,d", count) + " changes from CoreProtect in "
-                    + String.format("%.1f", seconds) + "s.");
+                    + co.xenastudios.xrewind.rollback.Rollbacks.seconds(seconds) + "s.");
                 reply(sender, () -> messages().imported().send(sender, Placeholders.text("count", String.format("%,d", count)),
-                    Placeholders.text("seconds", String.format("%.1f", seconds))));
+                    Placeholders.text("seconds", co.xenastudios.xrewind.rollback.Rollbacks.seconds(seconds))));
             } catch (SQLException | RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "The CoreProtect import failed", e);
                 reply(sender, () -> messages().importFailed().send(sender, Placeholders.text("reason", String.valueOf(e.getMessage()))));

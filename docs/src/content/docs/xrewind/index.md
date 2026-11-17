@@ -17,7 +17,7 @@ xRewind is a block logger with rollback for Paper and Folia. When someone griefs
 - **Easy to switch to.** CoreProtect's command syntax, so habits and guides carry over, and your CoreProtect history imported with one command: see [Switching from CoreProtect](/xrewind/switching/).
 - **Every change applies on reload**, even what's logged and where it's stored. No restarts.
 
-Current version: **1.0.0**, for Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xrewind).
+Current version: **1.0.1**, for Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xrewind).
 
 ## What it logs
 

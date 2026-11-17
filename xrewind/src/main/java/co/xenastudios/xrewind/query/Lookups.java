@@ -37,9 +37,21 @@ public final class Lookups {
         this.plugin = plugin;
     }
 
+    /**
+     * The player a command is about: the sender, or the player a command block or
+     * {@code /execute as} ran it as. Null for the console.
+     */
+    public static Player playerOf(CommandSender sender) {
+        if (sender instanceof Player player) {
+            return player;
+        }
+        return sender instanceof org.bukkit.command.ProxiedCommandSender proxied && proxied.getCallee() instanceof Player player
+            ? player : null;
+    }
+
     /** Where a player is, as a lookup's centre; null for the console. */
     public static Lookup.Center centerOf(CommandSender sender) {
-        if (sender instanceof Player player) {
+        if (playerOf(sender) instanceof Player player) {
             Location at = player.getLocation();
             return new Lookup.Center(at.getWorld().getName(), at.getBlockX(), at.getBlockY(), at.getBlockZ());
         }

@@ -6,8 +6,6 @@ import co.xenastudios.xlimbo.config.Settings;
 import co.xenastudios.xlimbo.config.XLConfig;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.net.InetSocketAddress;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -18,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
@@ -28,18 +25,12 @@ import org.bukkit.event.player.PlayerQuitEvent;
  */
 public final class Returns extends ListenerModule {
 
-    /** A player sent back who's still here this long after has been bounced back. */
-    private static final long BOUNCE_MILLIS = 15_000;
     /** Arrivals while the main server is up wait this long, in case they were sent here on purpose. */
     private static final long GRACE_MILLIS = 5_000;
-    /** Automatic tries per player in {@link #TRIES_WINDOW_MILLIS}, so a player the main server keeps refusing isn't bounced forever. */
-    private static final int MAX_TRIES = 3;
-    private static final long TRIES_WINDOW_MILLIS = 300_000;
 
     private final XLimbo xlimbo;
     private final Set<UUID> queue = new LinkedHashSet<>();
-    private final Map<UUID, Long> arrived = new HashMap<>();
-    private final Map<UUID, Deque<Long>> tries = new HashMap<>();
+    private final ReturnHistory history;
     // Null until the first answer, so turning server-check on never sends players to a
     // server nobody has asked about yet, or announces one that never went down.
     private volatile Boolean up;
@@ -52,15 +43,18 @@ public final class Returns extends ListenerModule {
     public Returns(XLimbo xlimbo) {
         super(xlimbo);
         this.xlimbo = xlimbo;
+        this.history = xlimbo.returnHistory();
     }
 
     @Override
     public void enable() {
         super.enable();
         long now = System.currentTimeMillis();
+        // Kept from before a reload restarted the queue; only players nobody saw arrive start now.
         for (Player player : Bukkit.getOnlinePlayers()) {
-            arrived.put(player.getUniqueId(), now);
+            history.arrivedIfUnknown(player.getUniqueId(), now);
         }
+        history.prune(now);
         tick = Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, task -> tick(), 20, 20);
         Settings.ServerCheck check = xlimbo.config().serverCheck();
         if (check.enabled()) {
@@ -92,7 +86,7 @@ public final class Returns extends ListenerModule {
     /** A player sent themselves with /join: out of line, and not sent again while they connect. */
     public void sentByHand(UUID player) {
         queue.remove(player);
-        tries.computeIfAbsent(player, key -> new ArrayDeque<>()).addLast(System.currentTimeMillis());
+        history.tried(player, System.currentTimeMillis());
         publishPositions();
     }
 
@@ -137,10 +131,10 @@ public final class Returns extends ListenerModule {
         }
         for (Player player : Bukkit.getOnlinePlayers()) {
             UUID id = player.getUniqueId();
-            if (queue.contains(id) || !xlimbo.limbo().isLimbo(player.getWorld()) || recentlySent(id, now) || triedTooOften(id, now)) {
+            if (queue.contains(id) || !xlimbo.limbo().isLimbo(player.getWorld()) || history.recentlySent(id, now) || history.triedTooOften(id, now)) {
                 continue;
             }
-            long here = now - arrived.getOrDefault(id, now);
+            long here = history.here(id, now);
             // With server-check, everyone goes back once it's up: at once when it comes
             // back, after a moment for someone who arrives while it's up. Without, after
             // auto-join's delay.
@@ -161,36 +155,12 @@ public final class Returns extends ListenerModule {
                 continue;
             }
             sending--;
-            tries.computeIfAbsent(id, key -> new ArrayDeque<>()).addLast(now);
+            history.tried(id, now);
             config.autoJoin().message().send(player);
             Proxy.connect(plugin, player, config.mainServer());
         }
         publishPositions();
-        tries.values().removeIf(times -> {
-            while (!times.isEmpty() && now - times.peekFirst() > TRIES_WINDOW_MILLIS) {
-                times.pollFirst();
-            }
-            return times.isEmpty();
-        });
-    }
-
-    private boolean recentlySent(UUID id, long now) {
-        Deque<Long> times = tries.get(id);
-        return times != null && !times.isEmpty() && now - times.peekLast() < BOUNCE_MILLIS;
-    }
-
-    private boolean triedTooOften(UUID id, long now) {
-        Deque<Long> times = tries.get(id);
-        if (times == null) {
-            return false;
-        }
-        int recent = 0;
-        for (long time : times) {
-            if (now - time <= TRIES_WINDOW_MILLIS) {
-                recent++;
-            }
-        }
-        return recent >= MAX_TRIES;
+        history.prune(now);
     }
 
     // A snapshot for the action bar, which reads it without touching the queue.
@@ -207,15 +177,9 @@ public final class Returns extends ListenerModule {
         positions = snapshot;
     }
 
-    @EventHandler
-    void onJoin(PlayerJoinEvent event) {
-        arrived.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
-    }
-
+    // Arrivals are recorded by the plugin, whether or not returns are on.
     @EventHandler
     void onQuit(PlayerQuitEvent event) {
-        UUID id = event.getPlayer().getUniqueId();
-        arrived.remove(id);
-        queue.remove(id);
+        queue.remove(event.getPlayer().getUniqueId());
     }
 }

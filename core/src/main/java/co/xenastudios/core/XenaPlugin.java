@@ -150,7 +150,14 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
             commands.clear();
             permissions.clear();
         }
+        shutdown();
     }
+
+    /**
+     * Runs last when the plugin is disabled, after its modules stop: for anything else it
+     * must let go of, so a plugin reloaded in place doesn't leave the old one in use.
+     */
+    protected void shutdown() {}
 
     /**
      * Re-reads the config and applies it. If the file can't be read, nothing changes.

@@ -40,6 +40,9 @@ final class Mentions {
                     return settings.format().render(Placeholders.text("name", "everyone"));
                 }
                 Player target = state.online(name);
+                // canSee reads a plain map the main thread writes, so around the moment
+                // someone vanishes this can be wrong (never a crash). Only the highlight
+                // depends on it: the ping checks again on the main thread.
                 if (target == null || target == sender || !sender.canSee(target)) {
                     return original;
                 }

@@ -26,20 +26,28 @@ public final class ChatFilter {
     private final String censorChar;
     /** Matches a whole folded token that's one of the words, or null if there are none. */
     private final Pattern smartWords;
+    /** Like {@link #smartWords}, but only the words without a *: for words split into short pieces. */
+    private final Pattern smartWhole;
     /** Matches the words in the message as typed, or null if there are none. */
     private final Pattern plainWords;
     private final List<Pattern> patterns;
 
-    private ChatFilter(boolean censor, String censorChar, Pattern smartWords, Pattern plainWords, List<Pattern> patterns) {
+    /** A word split into short pieces ("ba dw or d") is looked for across at most this many of them. */
+    private static final int MAX_PIECES = 16;
+    /** The longest a piece can be and still be joined to the pieces beside it. */
+    private static final int SHORT_PIECE = 2;
+
+    private ChatFilter(boolean censor, String censorChar, Pattern smartWords, Pattern smartWhole, Pattern plainWords, List<Pattern> patterns) {
         this.censor = censor;
         this.censorChar = censorChar;
         this.smartWords = smartWords;
+        this.smartWhole = smartWhole;
         this.plainWords = plainWords;
         this.patterns = patterns;
     }
 
     /** A filter that never matches. */
-    public static final ChatFilter NONE = new ChatFilter(true, "*", null, null, List.of());
+    public static final ChatFilter NONE = new ChatFilter(true, "*", null, null, null, List.of());
 
     /**
      * Compiles the filter's settings. Patterns that aren't valid regular expressions
@@ -50,6 +58,7 @@ public final class ChatFilter {
             return NONE;
         }
         List<String> smart = new ArrayList<>();
+        List<String> whole = new ArrayList<>();
         List<String> plain = new ArrayList<>();
         for (String word : settings.words()) {
             String trimmed = word.trim();
@@ -66,6 +75,9 @@ public final class ChatFilter {
                 warnings.add("filter.words: \"" + word + "\" is mostly symbols, so it's matched only as typed, not smartly.");
             } else if (settings.smart()) {
                 smart.add((before ? WORD_CHAR + "*" : "") + stretchable(folded) + (after ? WORD_CHAR + "*" : ""));
+                if (!before && !after) {
+                    whole.add(stretchable(folded));
+                }
             }
         }
         List<Pattern> patterns = new ArrayList<>();
@@ -80,6 +92,7 @@ public final class ChatFilter {
             settings.mode() == Settings.FilterMode.CENSOR,
             settings.censorChar(),
             smart.isEmpty() ? null : Pattern.compile("(?:" + String.join("|", smart) + ")", FLAGS),
+            whole.isEmpty() ? null : Pattern.compile("(?:" + String.join("|", whole) + ")", FLAGS),
             plain.isEmpty() ? null : Pattern.compile("(?<!" + WORD_CHAR + ")(?:" + String.join("|", plain) + ")(?!" + WORD_CHAR + ")", FLAGS),
             List.copyOf(patterns));
     }
@@ -118,7 +131,8 @@ public final class ChatFilter {
         if (smartWords != null) {
             Normal normal = Normal.of(message);
             Matcher matcher = smartWords.matcher("");
-            for (Normal.Token token : normal.tokens()) {
+            List<Normal.Token> words = normal.words();
+            for (Normal.Token token : Normal.tokens(words)) {
                 matcher.reset(normal.letters(token));
                 if (!token.joined()) {
                     if (matcher.matches()) {
@@ -138,11 +152,46 @@ public final class ChatFilter {
                     }
                 }
             }
+            if (smartWhole != null) {
+                markSplitWords(message, normal, words, hit);
+            }
         }
         if (hit.isEmpty()) {
             return new Result(false, message);
         }
         return new Result(true, censor ? censored(message, hit) : message);
+    }
+
+    /**
+     * A word split into short pieces, "ba dw or d": runs of pieces of one or two letters,
+     * at least one of them two, are joined and must make a whole filter word, never just
+     * contain one, so ordinary short words ("is it to an") are left alone. Words with a *
+     * are left out: "as so" would make "*ass*".
+     */
+    private void markSplitWords(String message, Normal normal, List<Normal.Token> words, BitSet hit) {
+        Matcher matcher = smartWhole.matcher("");
+        StringBuilder joined = new StringBuilder();
+        for (int i = 0; i < words.size(); i++) {
+            if (words.get(i).length() > SHORT_PIECE) {
+                continue;
+            }
+            joined.setLength(0);
+            joined.append(normal.text, words.get(i).start(), words.get(i).end());
+            boolean twoLetters = words.get(i).length() == SHORT_PIECE;
+            for (int j = i + 1; j < words.size() && j - i < MAX_PIECES && words.get(j).length() <= SHORT_PIECE; j++) {
+                Normal.Token piece = words.get(j);
+                joined.append(normal.text, piece.start(), piece.end());
+                twoLetters |= piece.length() == SHORT_PIECE;
+                if (!twoLetters || !matcher.reset(joined).matches()) {
+                    continue;
+                }
+                int start = words.get(i).start();
+                int[] positions = normal.letterPositions(new Normal.Token(start, piece.end(), true));
+                if (!onlyDigits(message, normal, positions)) {
+                    hit.set(normal.origin[start], normal.origin[piece.end() - 1] + 1);
+                }
+            }
+        }
     }
 
     private static boolean onlyDigits(String message, Normal normal, int[] positions) {

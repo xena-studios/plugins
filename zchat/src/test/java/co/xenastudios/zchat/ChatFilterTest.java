@@ -54,6 +54,27 @@ class ChatFilterTest {
     }
 
     @Test
+    void aWordSplitIntoShortPiecesIsCaught() {
+        ChatFilter filter = filter(true, List.of("badword", "ass"), List.of());
+        assertEquals("** ** ** *", censor(filter, "ba dw or d"));
+        assertEquals("so * * ** ** *!", censor(filter, "so b a dw or d!"), "single letters and pairs mixed");
+        assertEquals("* **", censor(filter, "a ss"));
+        assertEquals("** ** ** *", censor(filter, "b4 dw 0r d"), "folded first, then joined");
+    }
+
+    @Test
+    void shortWordsInOrdinaryChatAreLeftAlone() {
+        ChatFilter filter = filter(true, List.of("badword", "ass", "tit", "anal", "hoe"), List.of());
+        for (String message : List.of("is it to an", "go to it", "so is it", "be on at it", "as soon as", "it is as so",
+                "ho ho ho", "oh hoe", "an apple", "u r so ok", "a tit is a bird", "12 34 56")) {
+            boolean expected = message.contains("hoe") || message.contains("tit");
+            assertEquals(expected, filter.apply(message).matched(), message);
+        }
+        assertFalse(filter(true, List.of("bad*"), List.of()).apply("ba dl y").matched(), "a word with * isn't looked for across pieces");
+        assertFalse(filter(true, List.of("*ass*"), List.of()).apply("so as so").matched(), "\"as so\" isn't *ass*");
+    }
+
+    @Test
     void aWordThatIsMostlySymbolsIsOnlyMatchedAsTyped() {
         List<String> warnings = new ArrayList<>();
         ChatFilter filter = ChatFilter.compile(new Settings.Filter(true, Settings.FilterMode.CENSOR, "*", true,

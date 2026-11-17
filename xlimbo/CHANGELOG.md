@@ -1,5 +1,14 @@
 # xLimbo changelog
 
+## 2.0.2
+
+Replace the jar and restart. Your config is kept as it is.
+
+### Fixed
+
+- Changing `server-check` or `auto-join` and running `/xlimbo reload` no longer resets the limit of three automatic tries in five minutes, so a player the main server keeps refusing isn't sent back again because of a reload. Players also keep how long they've been waiting.
+- Reloading xLimbo in place (`/reload confirm` or a plugin manager, which Paper doesn't support) now lets go of the limbo world it made and makes it again, bringing players back in. Before, the world kept the old copy of xLimbo's generator, so xLimbo warned it had no void floor and the old copy stayed in memory. Restarts and `/xlimbo reload` were never affected.
+
 ## 2.0.1
 
 Replace the jar and restart. Your config is kept as it is.

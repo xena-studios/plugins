@@ -4,7 +4,7 @@ plugins {
     id("xena.plugin")
 }
 
-version = "3.1.0"
+version = "3.1.1"
 description = "Format your chat. Keep it clean."
 
 dependencies {

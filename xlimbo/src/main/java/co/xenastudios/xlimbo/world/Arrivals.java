@@ -44,6 +44,7 @@ public final class Arrivals extends ListenerModule {
     void onJoin(PlayerJoinEvent event) {
         XLConfig config = xlimbo.config();
         Player player = event.getPlayer();
+        xlimbo.returnHistory().arrived(player.getUniqueId(), System.currentTimeMillis());
         if (config.join().suppressJoinMessage()) {
             event.joinMessage(null);
         }

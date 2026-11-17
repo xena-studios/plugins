@@ -14,6 +14,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.entity.Player;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -132,7 +133,7 @@ public final class LimboWorld {
             // Already loaded: the main world with xLimbo's generator, or one we made before.
             owned = isOurs(next.getWorldFolder().toPath());
             madeWith = owned ? readShape(next.getWorldFolder().toPath()) : shape;
-            if (!(next.getGenerator() instanceof VoidGenerator)) {
+            if (generatorFloor(next) == null) {
                 warnOnce("world " + settings.name() + " doesn't use xLimbo's generator, so it has no void floor; give it \"generator: xLimbo\" in bukkit.yml, or pick a new name.");
             }
         } else {
@@ -146,7 +147,59 @@ public final class LimboWorld {
         publish(next, settings, owned, madeWith);
         if (current != null) {
             leave(current, next);
+        } else {
+            // Players already online when the world first appears (xLimbo reloaded in
+            // place) come in, as they would on joining.
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!next.equals(player.getWorld())) {
+                    player.teleportAsync(spawn());
+                }
+            }
         }
+    }
+
+    /**
+     * Lets go of a world xLimbo made, for xLimbo being disabled while the server keeps
+     * running: players step out to the main world and it's unloaded, so it doesn't keep
+     * this instance's generator. A world xLimbo didn't make is left loaded.
+     */
+    public void letGo() {
+        Spot current = spot;
+        if (current == null) {
+            return;
+        }
+        spot = null;
+        ++readyGeneration;
+        World old = current.world();
+        old.removePluginChunkTickets(plugin);
+        if (!current.owned() || old.equals(Bukkit.getWorlds().getFirst())) {
+            return;
+        }
+        Location staging = Bukkit.getWorlds().getFirst().getSpawnLocation();
+        for (Player player : new ArrayList<>(old.getPlayers())) {
+            player.teleport(staging);
+        }
+        unload(old, old.isAutoSave());
+    }
+
+    /**
+     * The floor of a world made by xLimbo's generator, or null for any other. A generator
+     * of the same name from another class loader counts: one left by xLimbo before it was
+     * reloaded in place, in a world the server loaded itself and xLimbo can't remake.
+     */
+    static Integer generatorFloor(World target) {
+        ChunkGenerator generator = target.getGenerator();
+        if (generator instanceof VoidGenerator ours) {
+            return ours.floorY();
+        }
+        if (generator != null && generator.getClass().getName().equals(VoidGenerator.class.getName())) {
+            try {
+                return (Integer) generator.getClass().getMethod("floorY").invoke(generator);
+            } catch (ReflectiveOperationException | ClassCastException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     // Same world, new floor: everyone steps out to the main world while it's remade.
@@ -276,7 +329,8 @@ public final class LimboWorld {
         target.setThundering(false);
         target.setClearWeatherDuration(Integer.MAX_VALUE);
         // The floor the world really has: for one the server loaded, the generator's.
-        int floorY = target.getGenerator() instanceof VoidGenerator generator ? generator.floorY() : settings.floorY();
+        Integer generated = generatorFloor(target);
+        int floorY = generated != null ? generated : settings.floorY();
         Spot previous = spot;
         spot = new Spot(target, floorY, radius, owned, shape);
         if (previous == null || previous.world() != target || previous.radius() != radius) {

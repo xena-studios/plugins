@@ -20,6 +20,10 @@ public record XRConfig(
         "Where the history is kept. Changing it on /xrewind reload switches to the new one;",
         "history isn't copied across."})
     StorageSettings storage,
+    @Comment({
+        "What's logged. Something that's off isn't even listened for, so it costs nothing.",
+        "Changes apply on /xrewind reload."})
+    Logging log,
     @Comment("Tells you when a new version is out.") UpdateCheckerSettings updateChecker) implements XenaConfig {
 
     @Override
@@ -29,10 +33,16 @@ public record XRConfig(
 
     public record Messages(ErrorMessages error) {}
 
+    public record Logging(
+        @Comment("Blocks players break.") boolean blockBreak,
+        @Comment("Blocks players place, and what they replaced.") boolean blockPlace,
+        @Comment("Players joining and quitting, and where.") boolean sessions) {}
+
     public static final XRConfig DEFAULTS = new XRConfig(
         Theme.DEFAULTS,
         new Messages(ErrorMessages.DEFAULTS),
         StorageSettings.defaults("xrewind_"),
+        new Logging(true, true, true),
         UpdateCheckerSettings.DEFAULTS);
 
     public static final ConfigSpec<XRConfig> SPEC = ConfigSpec.builder(XRConfig.class, DEFAULTS)

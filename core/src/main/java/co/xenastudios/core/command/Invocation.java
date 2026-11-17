@@ -125,6 +125,11 @@ public final class Invocation {
         throw usage();
     }
 
+    /** The same run with its first argument taken off, as a subcommand sees it. */
+    Invocation shift(String subUsage) {
+        return new Invocation(sender, label, Arrays.copyOfRange(args, Math.min(1, args.length), args.length), subUsage, errors);
+    }
+
     /** The usage error, to throw: {@code throw invocation.usage();}. */
     public CommandFailure usage() {
         return new CommandFailure(errors.usage(), Placeholders.text("usage", usage));

@@ -57,6 +57,16 @@ storage:
     # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
     properties: ""
 
+# What's logged. Something that's off isn't even listened for, so it costs nothing.
+# Changes apply on /xrewind reload.
+log:
+  # Blocks players break.
+  block-break: true
+  # Blocks players place, and what they replaced.
+  block-place: true
+  # Players joining and quitting, and where.
+  sessions: true
+
 # Tells you when a new version is out.
 update-checker:
   # Ask Modrinth for the newest version at startup and every 24 hours. It sends

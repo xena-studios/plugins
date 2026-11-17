@@ -2,7 +2,7 @@ package co.xenastudios.core;
 
 import co.xenastudios.core.command.CommandRegistry;
 import co.xenastudios.core.command.CommandSpec;
-import co.xenastudios.core.command.Completions;
+import co.xenastudios.core.command.Subcommands;
 import co.xenastudios.core.config.ConfigException;
 import co.xenastudios.core.config.ConfigLoader;
 import co.xenastudios.core.config.ConfigSpec;
@@ -234,12 +234,15 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
     private void apply() {
         C current = config;
         Setup setup = new Setup();
-        setup.command(adminCommand());
         try {
             setup(setup, current);
         } catch (RuntimeException | LinkageError e) {
             getLogger().log(Level.SEVERE, "Couldn't set up every feature; the ones before the error are running", e);
         }
+        // First, with the subcommands the plugin added.
+        CommandSpec admin = adminCommand(setup.subcommands);
+        setup.commands.add(0, admin);
+        setup.permission(adminPermission(), admin.permissionDefault());
         updates.sync(current.updateChecker().enabled());
         if (current.updateChecker().enabled()) {
             setup.module("update-notice", updates::joinNotice);
@@ -249,25 +252,31 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
         commands.sync(setup.commands).forEach(getLogger()::warning);
     }
 
-    private CommandSpec adminCommand() {
+    private CommandSpec adminCommand(List<CommandSpec> extra) {
+        List<CommandSpec> subcommands = new java.util.ArrayList<>();
+        subcommands.add(CommandSpec.named("reload")
+            .permission(adminPermission())
+            .usage("/" + id() + " reload")
+            .executes(invocation -> {
+                CommandSender sender = invocation.sender();
+                // On the next tick, outside this command, since reloading re-registers commands.
+                Bukkit.getGlobalRegionScheduler().run(this, task -> sender.sendMessage(reload()));
+            }));
+        subcommands.add(CommandSpec.named("info")
+            .permission(adminPermission())
+            .usage("/" + id() + " info")
+            .executes(invocation -> invocation.sender().sendMessage(info())));
+        subcommands.addAll(extra);
+        List<CommandSpec> all = List.copyOf(subcommands);
         return CommandSpec.named(id())
             .aliases(adminAliases())
-            .permission(adminPermission())
-            .description("Reload " + getName() + " or show its status.")
-            .usage("/" + id() + " <reload|info>")
-            .completes((sender, args) -> args.length == 1 ? Completions.matching(args[0], List.of("reload", "info")) : List.of())
-            .executes(invocation -> {
-                String sub = invocation.arg(0);
-                CommandSender sender = invocation.sender();
-                if ("reload".equalsIgnoreCase(sub)) {
-                    // On the next tick, outside this command, since reloading re-registers commands.
-                    Bukkit.getGlobalRegionScheduler().run(this, task -> sender.sendMessage(reload()));
-                } else if ("info".equalsIgnoreCase(sub)) {
-                    sender.sendMessage(info());
-                } else {
-                    throw invocation.usage();
-                }
-            });
+            // With subcommands of its own, staff who aren't admins may use some of them:
+            // each subcommand checks its own permission.
+            .permission(extra.isEmpty() ? adminPermission() : "")
+            .description(extra.isEmpty() ? "Reload " + getName() + " or show its status." : getName() + "'s commands.")
+            .usage("/" + id() + " " + Subcommands.names(all))
+            .completes(Subcommands.completer(all))
+            .executes(Subcommands.executor(all));
     }
 
     private Component info() {

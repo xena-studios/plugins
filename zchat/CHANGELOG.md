@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Chat formats with PlaceholderAPI placeholders do a little less work on every message, and notice PlaceholderAPI being enabled or disabled after zChat.
+
 ### Fixed
 
 - Only players allowed Minecraft's selectors (`minecraft.command.selector`, operators by default) can use them in `/msg`. Before, any player could message everyone with `/msg @a`, or run a costly `@e[...]` search.

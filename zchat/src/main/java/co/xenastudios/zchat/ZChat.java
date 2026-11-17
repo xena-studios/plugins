@@ -7,6 +7,7 @@ import co.xenastudios.zchat.chat.ChatFilter;
 import co.xenastudios.zchat.chat.ChatListener;
 import co.xenastudios.zchat.chat.ChatState;
 import co.xenastudios.zchat.chat.Formats;
+import co.xenastudios.zchat.chat.PapiWatch;
 import co.xenastudios.zchat.command.ChatCommands;
 import co.xenastudios.zchat.command.MessageCommands;
 import co.xenastudios.zchat.config.Settings;
@@ -59,8 +60,13 @@ public class ZChat extends XenaPlugin<ZConfig> {
         List<String> warnings = new ArrayList<>();
         compiled = new Compiled(Formats.compile(config.formatting()), ChatFilter.compile(config.filter(), warnings));
         warnings.forEach(warning -> getLogger().warning("config.yml: " + warning));
-        if (compiled.formats().enabled() && compiled.formats().usesPlaceholderApi() && !Formats.papiInstalled()) {
-            getLogger().warning("config.yml: a chat format uses %placeholders%, but PlaceholderAPI isn't installed, so they show nothing.");
+        Formats.refreshPapi();
+        if (compiled.formats().enabled() && compiled.formats().usesPlaceholderApi()) {
+            if (!Formats.papiInstalled()) {
+                getLogger().warning("config.yml: a chat format uses %placeholders%, but PlaceholderAPI isn't installed, so they show nothing.");
+            }
+            // Only while a format needs it: notices PlaceholderAPI being enabled or disabled later.
+            setup.module("papi-watch", () -> new PapiWatch(this));
         }
 
         setup.module("chat", () -> new ChatListener(this));

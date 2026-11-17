@@ -84,8 +84,18 @@ public final class Formats {
         return usesPlaceholderApi;
     }
 
+    // Read on every chat line, off the main thread, so it's a flag rather than a lookup in
+    // the plugin manager (which isn't meant to be read from other threads).
+    private static volatile boolean papiInstalled;
+
+    /** Whether PlaceholderAPI is on, as of the last {@link #refreshPapi()}. */
     public static boolean papiInstalled() {
-        return Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI");
+        return papiInstalled;
+    }
+
+    /** Looks again: on every config load, and when PlaceholderAPI is enabled or disabled. Main thread. */
+    public static void refreshPapi() {
+        papiInstalled = Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI");
     }
 
     /** Whether a player may style their own messages. */

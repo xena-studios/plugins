@@ -71,8 +71,12 @@ public final class Protections {
         if (settings.floor()) {
             setup.module("protect.floor", () -> new Floor(xlimbo));
         }
-        if (settings.voidProtection().enabled() || settings.voidProtection().cancelVoidDamage()) {
+        // Two listeners, so a move handler only runs while the rescue is on.
+        if (settings.voidProtection().enabled()) {
             setup.module("protect.void", () -> new Void(xlimbo));
+        }
+        if (settings.voidProtection().cancelVoidDamage()) {
+            setup.module("protect.void-damage", () -> new VoidDamage(xlimbo));
         }
         if (settings.portals()) {
             setup.module("protect.portals", () -> new Portals(xlimbo));
@@ -225,11 +229,19 @@ public final class Protections {
             Location to = event.getTo();
             // Never above the floor, or players standing on it would be caught every step.
             int floorY = xlimbo.limbo().floorY();
-            if (to.getY() < Math.min(settings.thresholdY(), floorY) && settings.enabled() && here(to.getWorld())) {
+            if (to.getY() < Math.min(settings.thresholdY(), floorY) && here(to.getWorld())) {
                 // Straight back up onto the floor: no teleport needed, just a new destination.
                 event.setTo(new Location(to.getWorld(), to.getX(), floorY + 1, to.getZ(), to.getYaw(), to.getPitch()));
                 event.getPlayer().setFallDistance(0);
             }
+        }
+    }
+
+    /** No void or fall damage, so a rescue never becomes a death loop. */
+    static final class VoidDamage extends Protection {
+
+        VoidDamage(XLimbo xlimbo) {
+            super(xlimbo);
         }
 
         @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -237,7 +249,6 @@ public final class Protections {
             EntityDamageEvent.DamageCause cause = event.getCause();
             if ((cause == EntityDamageEvent.DamageCause.VOID || cause == EntityDamageEvent.DamageCause.FALL)
                 && event.getEntity() instanceof Player
-                && xlimbo.config().protections().voidProtection().cancelVoidDamage()
                 && here(event.getEntity())) {
                 event.setCancelled(true);
             }

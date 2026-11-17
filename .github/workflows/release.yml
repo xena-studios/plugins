@@ -7,15 +7,24 @@ on:
   push:
     tags: ["*-v*"]
 
-permissions:
-  contents: write
+# Nothing by default; each job asks for what it needs. The job that builds (and so
+# runs the project's own Gradle scripts) can only read the repo; the job that can
+# write to it runs no project code.
+permissions: {}
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-26.04
     environment: release
+    permissions:
+      contents: read
+    outputs:
+      module: ${{ steps.tag.outputs.module }}
+      version: ${{ steps.tag.outputs.version }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -29,6 +38,8 @@ jobs:
           tag=${GITHUB_REF_NAME}
           module=${tag%-v*}
           version=${tag##*-v}
+          [[ $module =~ ^[a-z0-9-]+$ && $version =~ ^[0-9A-Za-z.+-]+$ ]] \
+            || { echo "::error::$tag isn't <module>-v<version>"; exit 1; }
           [[ -f $module/build.gradle.kts && $module != core && $module != sandbox ]] \
             || { echo "::error::$module isn't a releasable plugin"; exit 1; }
           built=$(./gradlew -q ":$module:properties" --property version | sed -n 's/^version: //p')
@@ -37,29 +48,63 @@ jobs:
           echo "module=$module" >>"$GITHUB_OUTPUT"
           echo "version=$version" >>"$GITHUB_OUTPUT"
       - name: Read the changelog
+        env:
+          MODULE: ${{ steps.tag.outputs.module }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
-          scripts/changelog.sh "${{ steps.tag.outputs.module }}/CHANGELOG.md" "${{ steps.tag.outputs.version }}" >"$RUNNER_TEMP/changelog.md"
+          mkdir -p "$RUNNER_TEMP/release"
+          scripts/changelog.sh "$MODULE/CHANGELOG.md" "$VERSION" >"$RUNNER_TEMP/release/changelog.md"
           # For the Modrinth version's changelog. A random delimiter, so no line of the
           # changelog can end the value early and set other variables.
           delimiter="CHANGELOG_$(openssl rand -hex 16)"
           {
             echo "CHANGELOG<<$delimiter"
-            cat "$RUNNER_TEMP/changelog.md"
+            cat "$RUNNER_TEMP/release/changelog.md"
             echo "$delimiter"
           } >>"$GITHUB_ENV"
-      - run: ./gradlew ":${{ steps.tag.outputs.module }}:build"
+      - name: Build
+        env:
+          MODULE: ${{ steps.tag.outputs.module }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          ./gradlew ":$MODULE:build"
+          jar="$MODULE/build/libs/$MODULE-$VERSION.jar"
+          cp "$jar" "$RUNNER_TEMP/release/"
+          # Titled with the plugin's own name, such as "xUtilities 2.0.0", from its descriptor.
+          echo "$(unzip -p "$jar" paper-plugin.yml | sed -n 's/^name: //p') $VERSION" >"$RUNNER_TEMP/release/title.txt"
       - name: Publish to Modrinth
         # The version, then the project page from <module>/modrinth.md.
-        run: ./gradlew ":${{ steps.tag.outputs.module }}:modrinth" ":${{ steps.tag.outputs.module }}:modrinthSyncBody"
         env:
+          MODULE: ${{ steps.tag.outputs.module }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: ./gradlew ":$MODULE:modrinth" ":$MODULE:modrinthSyncBody"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: ${{ runner.temp }}/release/
+          retention-days: 7
+
+  github:
+    needs: publish
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    steps:
+      # No checkout: this job only uploads what the publish job built.
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: release
       - name: Publish to GitHub
-        # Titled with the plugin's own name, such as "xUtilities 2.0.0", from its descriptor.
-        run: >
-          gh release create "$GITHUB_REF_NAME"
-          --title "$(unzip -p ${{ steps.tag.outputs.module }}/build/libs/${{ steps.tag.outputs.module }}-${{ steps.tag.outputs.version }}.jar paper-plugin.yml | sed -n 's/^name: //p') ${{ steps.tag.outputs.version }}"
-          --notes-file "$RUNNER_TEMP/changelog.md"
-          ${{ contains(steps.tag.outputs.version, '-') && '--prerelease' || '' }}
-          ${{ steps.tag.outputs.module }}/build/libs/${{ steps.tag.outputs.module }}-${{ steps.tag.outputs.version }}.jar
         env:
           GH_TOKEN: ${{ github.token }}
+          MODULE: ${{ needs.publish.outputs.module }}
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          prerelease=()
+          [[ $VERSION == *-* ]] && prerelease=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --title "$(cat release/title.txt)" \
+            --notes-file release/changelog.md \
+            "${prerelease[@]}" \
+            "release/$MODULE-$VERSION.jar"

@@ -24,6 +24,8 @@ import net.milkbowl.vault2.economy.MultiEconomyResponse;
  * plugin's name, which the ledger records. One currency in 1.0, {@code default}; asking for
  * another finds nothing and changes nothing. Worlds are ignored. Shared accounts aren't
  * supported in 1.0, and say so. Every call answers from memory and is safe from any thread.
+ * Amounts and balances keep four decimal places (12.50, 0.995): deposits and sets are rounded
+ * down past them, withdrawals, transfers and {@code has} up.
  */
 @SuppressWarnings("deprecation") // getBalance, which VaultUnlocked deprecated for balance() but still calls.
 final class UnlockedEconomy implements Economy {
@@ -44,7 +46,7 @@ final class UnlockedEconomy implements Economy {
     }
 
     private BigDecimal decimal(long units) {
-        return bridge.bank.decimal(units);
+        return bridge.bank.exact(units);
     }
 
     @Override
@@ -77,7 +79,7 @@ final class UnlockedEconomy implements Economy {
         if (amount == null) {
             return bridge.format(0);
         }
-        long units = bridge.units(amount.abs());
+        long units = bridge.shown(amount.abs());
         if (units < 0) {
             units = Money.MAX_UNITS;
         }
@@ -178,11 +180,8 @@ final class UnlockedEconomy implements Economy {
     @Override
     public boolean renameAccount(UUID id, String name) {
         Account account = bridge.existing(id);
-        if (account == null || name == null || name.isBlank()) {
-            return false;
-        }
-        bridge.bank.ledger().rename(account, name);
-        return true;
+        // Not to a name another account is known by: name-based calls would find the wrong one.
+        return account != null && bridge.bank.ledger().rename(account, name);
     }
 
     @Override
@@ -243,7 +242,7 @@ final class UnlockedEconomy implements Economy {
     @Override
     public EconomyResponse withdraw(String pluginName, UUID id, BigDecimal amount) {
         Account account = bridge.existing(id);
-        long units = bridge.units(amount);
+        long units = bridge.outgoing(amount);
         if (units < 0) {
             return failure(account, "Not a valid amount");
         }
@@ -268,7 +267,7 @@ final class UnlockedEconomy implements Economy {
 
     @Override
     public EconomyResponse deposit(String pluginName, UUID id, BigDecimal amount) {
-        long units = bridge.units(amount);
+        long units = bridge.incoming(amount);
         if (units < 0 || id == null) {
             return failure(bridge.existing(id), "Not a valid amount");
         }
@@ -291,7 +290,7 @@ final class UnlockedEconomy implements Economy {
 
     @Override
     public EconomyResponse set(String pluginName, UUID id, BigDecimal amount) {
-        long units = bridge.units(amount);
+        long units = bridge.incoming(amount);
         if (units < 0 || id == null) {
             return failure(bridge.existing(id), "Not a valid amount");
         }
@@ -312,7 +311,7 @@ final class UnlockedEconomy implements Economy {
     /** One step: both balances change, or neither, unlike Vault's default of a withdrawal then a deposit. */
     @Override
     public MultiEconomyResponse transfer(String pluginName, UUID from, UUID to, BigDecimal amount) {
-        long units = bridge.units(amount);
+        long units = bridge.outgoing(amount);
         Account payer = bridge.existing(from);
         if (units <= 0 || to == null) {
             return new MultiEconomyResponse(BigDecimal.ZERO, ResponseType.FAILURE, "Not a valid amount");
@@ -343,7 +342,7 @@ final class UnlockedEconomy implements Economy {
     @Override
     public EconomyResponse canWithdraw(String pluginName, UUID id, BigDecimal amount) {
         Account account = bridge.existing(id);
-        long units = bridge.units(amount);
+        long units = bridge.outgoing(amount);
         if (units < 0) {
             return failure(account, "Not a valid amount");
         }
@@ -365,7 +364,7 @@ final class UnlockedEconomy implements Economy {
     @Override
     public EconomyResponse canDeposit(String pluginName, UUID id, BigDecimal amount) {
         Account account = bridge.existing(id);
-        long units = bridge.units(amount);
+        long units = bridge.incoming(amount);
         if (units < 0) {
             return failure(account, "Not a valid amount");
         }

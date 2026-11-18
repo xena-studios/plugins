@@ -66,7 +66,7 @@ public final class BalanceChangedEvent extends Event {
     /**
      * How much it changed by: negative when money left it.
      *
-     * @return the change, with the currency's decimals
+     * @return the change, with four decimal places
      * @since 1.0.0
      */
     public BigDecimal change() {

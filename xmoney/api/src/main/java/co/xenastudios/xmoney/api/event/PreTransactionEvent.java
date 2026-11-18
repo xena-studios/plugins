@@ -68,7 +68,7 @@ public final class PreTransactionEvent extends Event implements Cancellable {
      * How much the balance is about to change by: negative when money leaves it. For a
      * staff {@code /eco set}, the difference from the balance now.
      *
-     * @return the change, with the currency's decimals
+     * @return the change, with four decimal places
      * @since 1.0.0
      */
     public BigDecimal change() {

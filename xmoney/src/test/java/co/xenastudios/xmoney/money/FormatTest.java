@@ -51,15 +51,46 @@ class FormatTest {
     }
 
     @Test
-    void outsideAmountsAreRoundedOrRefused() {
+    void typedAmountsAreRoundedToTheDecimalsOrRefused() {
         assertEquals(10_0100L, Money.units(10.005, 2), "half up");
         assertEquals(3000, Money.units(0.1 + 0.2, 2));
         assertEquals(-1, Money.units(Double.NaN, 2));
         assertEquals(-1, Money.units(Double.POSITIVE_INFINITY, 2));
         assertEquals(-1, Money.units(-0.01, 2));
         assertEquals(-1, Money.units(1e300, 2));
-        assertEquals(-1, Money.positive(0.001, 2), "rounds to nothing");
         assertEquals(-1, Money.units((BigDecimal) null, 2));
         assertEquals(Money.MAX_UNITS, Money.units(BigDecimal.valueOf(Money.MAX_WHOLE), 4));
+    }
+
+    @Test
+    void otherPluginsAmountsKeepFourPlacesAndNeverRoundInTheirFavour() {
+        // Whatever the currency's decimals: a split payment costs what it would whole.
+        assertEquals(9950, Money.outgoing(0.995));
+        assertEquals(50, Money.outgoing(0.005));
+        assertEquals(Money.ONE, Money.outgoing(0.995) + Money.outgoing(0.005));
+        assertEquals(4000, Money.outgoing(0.4), "with 0 decimals, 0.4 still takes 0.4");
+        assertEquals(2_5000L, Money.incoming(2.5), "with 0 decimals, 2.5 is still 2.5, not 3");
+        // Past four places: in is rounded down, out up, so rounding never makes money.
+        assertEquals(1, Money.outgoing(new BigDecimal("0.00001")), "a positive withdrawal always takes something");
+        assertEquals(0, Money.incoming(new BigDecimal("0.00009")));
+        assertEquals(1_2346L, Money.outgoing(new BigDecimal("1.23451")));
+        assertEquals(1_2345L, Money.incoming(new BigDecimal("1.23459")));
+        // A double's binary noise isn't a fraction of a unit to round up or down.
+        assertEquals(3000, Money.outgoing(0.1 + 0.2));
+        assertEquals(435 * Money.ONE, Money.incoming(4.35 * 100));
+        assertEquals(3_3000L, Money.outgoing(1.1 * 3));
+        assertEquals(-1, Money.outgoing(Double.NaN));
+        assertEquals(-1, Money.incoming(-0.01));
+        assertEquals(-1, Money.outgoing(1e300));
+        assertEquals(-1, Money.incoming((BigDecimal) null));
+    }
+
+    @Test
+    void exactKeepsEveryPlaceAndAtLeastTheDecimals() {
+        assertEquals(new BigDecimal("12.50"), Money.exact(12_5000L, 2));
+        assertEquals(new BigDecimal("0.995"), Money.exact(9950, 2));
+        assertEquals(new BigDecimal("1000"), Money.exact(1000 * Money.ONE, 0));
+        assertEquals(new BigDecimal("0.00"), Money.exact(0, 2));
+        assertEquals(new BigDecimal("-5.00"), Money.exact(-5 * Money.ONE, 2));
     }
 }

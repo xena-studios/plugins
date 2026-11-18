@@ -7,7 +7,8 @@ package co.xenastudios.xmoney.api;
  * @param singular its name for one, such as "dollar"
  * @param plural its name for more than one, such as "dollars"
  * @param symbol its symbol, such as "$"; may be empty
- * @param decimals how many decimal places amounts have, from 0 to 4
+ * @param decimals how many decimal places amounts are shown with, from 0 to 4; amounts
+ *     themselves keep four
  * @since 1.0.0
  */
 public record Currency(String id, String singular, String plural, String symbol, int decimals) {}

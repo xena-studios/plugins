@@ -64,16 +64,35 @@ final class VaultBridge {
         return player == null ? null : payee(player.getUniqueId());
     }
 
-    /** A name-based account: the player or account by that name, or a non-player account made for it. */
+    /**
+     * A name-based account: the player or account by that name; a player the server knows by
+     * it (from its cache, never the disk or the web) who hasn't joined since xMoney came; or
+     * otherwise a non-player account made for it. Null if more than one account has had the
+     * name, so it can't say which is meant.
+     */
     Account payee(String name) {
-        return name == null || name.isBlank() ? null : bank.ledger().named(name);
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        Account known = bank.accounts().named(name);
+        if (known != null || bank.accounts().ambiguous(name)) {
+            return known;
+        }
+        OfflinePlayer cached = Bukkit.getOfflinePlayerIfCached(name);
+        if (cached != null) {
+            return payee(cached.getUniqueId());
+        }
+        return bank.ledger().named(name);
     }
 
     long balance(Account account) {
         return account == null ? 0 : account.balance();
     }
 
-    /** Whether the account has the amount. NaN or negative amounts: only "has nothing" is true. */
+    /**
+     * Whether the account has the amount, rounded up as a withdrawal would be. NaN or negative
+     * amounts: only "has nothing" is true.
+     */
     boolean has(Account account, double amount) {
         if (Double.isNaN(amount)) {
             return false;
@@ -81,7 +100,7 @@ final class VaultBridge {
         if (amount <= 0) {
             return true;
         }
-        long units = Money.units(amount, bank.decimals());
+        long units = Money.outgoing(amount);
         return units >= 0 && balance(account) >= units;
     }
 
@@ -92,19 +111,38 @@ final class VaultBridge {
         if (amount.signum() <= 0) {
             return true;
         }
-        long units = Money.units(amount, bank.decimals());
+        long units = Money.outgoing(amount);
         return units >= 0 && balance(account) >= units;
     }
 
     /**
-     * An amount to move, in units: -1 if it can't be one (NaN, infinite, negative, or past the
-     * most an account can hold), 0 if it rounds to nothing.
+     * An amount to pay in or set, in units, rounded down past four places: -1 if it can't be
+     * one (NaN, infinite, negative, or past the most an account can hold), 0 if it's less than
+     * a ten-thousandth.
      */
-    long units(double amount) {
+    long incoming(double amount) {
+        return Money.incoming(amount);
+    }
+
+    long incoming(BigDecimal amount) {
+        return Money.incoming(amount);
+    }
+
+    /** An amount to take, in units, rounded up past four places, so a positive amount is never 0; -1 if it can't be one. */
+    long outgoing(double amount) {
+        return Money.outgoing(amount);
+    }
+
+    long outgoing(BigDecimal amount) {
+        return Money.outgoing(amount);
+    }
+
+    /** An amount to show, rounded half up to the currency's decimals; -1 if it can't be one. */
+    long shown(double amount) {
         return Money.units(amount, bank.decimals());
     }
 
-    long units(BigDecimal amount) {
+    long shown(BigDecimal amount) {
         return Money.units(amount, bank.decimals());
     }
 

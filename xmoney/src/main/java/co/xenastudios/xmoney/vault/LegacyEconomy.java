@@ -11,7 +11,9 @@ import org.bukkit.OfflinePlayer;
 
 /**
  * Vault 1's {@code Economy}, the API most plugins use. Every call answers from memory and is
- * safe from any thread. Amounts that aren't numbers, are negative, or are too large to hold
+ * safe from any thread (on a network, a withdrawal waits briefly for the shared database).
+ * Amounts keep four decimal places: deposits are rounded down past them, withdrawals and
+ * {@code has} up. Amounts that aren't numbers, are negative, or are too large to hold
  * are refused; nothing is ever made from them. Worlds are ignored: one balance everywhere.
  * Banks aren't supported in 1.0, and say so.
  */
@@ -51,7 +53,7 @@ final class LegacyEconomy implements Economy {
         if (!Double.isFinite(amount)) {
             return bridge.format(0);
         }
-        long units = bridge.units(Math.abs(amount));
+        long units = bridge.shown(Math.abs(amount));
         if (units < 0) {
             units = Money.MAX_UNITS;
         }
@@ -183,7 +185,7 @@ final class LegacyEconomy implements Economy {
 
     @Override
     public EconomyResponse depositPlayer(String playerName, double amount) {
-        long units = bridge.units(amount);
+        long units = bridge.incoming(amount);
         if (units < 0) {
             return invalid(bridge.existing(playerName));
         }
@@ -192,7 +194,7 @@ final class LegacyEconomy implements Economy {
 
     @Override
     public EconomyResponse depositPlayer(OfflinePlayer player, double amount) {
-        long units = bridge.units(amount);
+        long units = bridge.incoming(amount);
         if (units < 0 || player == null) {
             return invalid(bridge.existing(player));
         }
@@ -210,11 +212,12 @@ final class LegacyEconomy implements Economy {
     }
 
     private EconomyResponse withdraw(Account account, double amount) {
-        long units = bridge.units(amount);
+        long units = bridge.outgoing(amount);
         if (units < 0) {
             return invalid(account);
         }
         if (units == 0) {
+            // Only an amount of exactly 0: a positive one is rounded up to at least one unit.
             return new EconomyResponse(0, Money.toDouble(bridge.balance(account)), EconomyResponse.ResponseType.SUCCESS, "");
         }
         if (account == null) {
@@ -228,6 +231,7 @@ final class LegacyEconomy implements Economy {
             return invalid(null);
         }
         if (units == 0) {
+            // Zero, or less than a ten-thousandth, rounded down: nothing is paid in, and nothing made.
             return new EconomyResponse(0, Money.toDouble(account.balance()), EconomyResponse.ResponseType.SUCCESS, "");
         }
         return response(bridge.deposit(account, units, bridge.cause(null)));

@@ -25,8 +25,12 @@ import org.bukkit.plugin.Plugin;
  * network sharing one database, a withdrawal completes once the database has agreed, off
  * the calling thread. Nothing here ever reads the database on the calling thread.
  *
- * <p>Amounts are rounded to the currency's {@linkplain Currency#decimals() decimals}; the
- * result says what was actually moved.
+ * <p>Amounts keep four decimal places, whatever the currency's
+ * {@linkplain Currency#decimals() decimals} (those are for showing amounts), so a price split
+ * in two costs what it would whole. Past four places, what's paid in is rounded down and what's
+ * taken is rounded up, so rounding never makes money; the result says what was actually
+ * moved. Balances come back with every place they have and at least the currency's decimals:
+ * {@code 12.50}, or {@code 0.995}.
  *
  * @since 1.0.0
  */
@@ -53,7 +57,7 @@ public interface XMoneyApi {
      * <p>Any thread, answers from memory, returns immediately.
      *
      * @param player the player's uuid
-     * @return the balance, with the currency's decimals
+     * @return the balance, with every decimal place it has and at least the currency's
      * @since 1.0.0
      */
     BigDecimal balance(UUID player);
@@ -75,7 +79,7 @@ public interface XMoneyApi {
      * <p>Any thread, answers from memory, returns immediately.
      *
      * @param player the player's uuid
-     * @param amount how much, not negative
+     * @param amount how much, not negative; past four places rounded up, as a withdrawal would be
      * @return whether their balance covers it
      * @since 1.0.0
      */
@@ -91,7 +95,7 @@ public interface XMoneyApi {
      *
      * @param source the plugin paying
      * @param player who's paid; an account is made if they have none
-     * @param amount how much, above zero
+     * @param amount how much, above zero; past four places rounded down
      * @param reason a few words for the ledger, such as "vote reward"; up to 100 characters
      * @return a future completed with the result
      * @since 1.0.0
@@ -104,11 +108,13 @@ public interface XMoneyApi {
      *
      * <p>Any thread. On a single server the future is already complete when it's returned;
      * on a network it completes off the calling thread once the shared database has taken
-     * the money, so two servers can never spend the same money twice.
+     * the money, so two servers can never spend the same money twice. If the database is
+     * failing, or doesn't take it up within five seconds, it completes as
+     * {@link TransactionResult.Status#UNAVAILABLE} and nothing is taken, then or later.
      *
      * @param source the plugin charging
      * @param player who pays
-     * @param amount how much, above zero
+     * @param amount how much, above zero; past four places rounded up
      * @param reason a few words for the ledger, such as "teleport cost"; up to 100 characters
      * @return a future completed with the result: {@link TransactionResult.Status#INSUFFICIENT_FUNDS}
      *     when they haven't enough
@@ -126,7 +132,7 @@ public interface XMoneyApi {
      * @param source the plugin moving it
      * @param from who pays
      * @param to who's paid; an account is made if they have none
-     * @param amount how much, above zero
+     * @param amount how much, above zero; past four places rounded up
      * @param reason a few words for the ledger; up to 100 characters
      * @return a future completed with the result; its balance is the payer's
      * @since 1.0.0

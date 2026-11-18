@@ -105,6 +105,14 @@ public final class VaultConsumer extends JavaPlugin {
         economy.depositPlayer(stranger, 0.2);
         check(near(economy.getBalance(stranger), 70.30), "balance is " + economy.getBalance(stranger) + ", not 70.30");
         check(economy.has(stranger, 70.30) && !economy.has(stranger, 70.31), "has() is off");
+        // A price paid in two parts costs exactly what it would whole: four places, not the currency's two.
+        check(economy.withdrawPlayer(stranger, 0.995).transactionSuccess() && economy.withdrawPlayer(stranger, 0.005).transactionSuccess(),
+            "a split payment failed");
+        check(near(economy.getBalance(stranger), 69.30), "after a split payment of 1.00 the balance is " + economy.getBalance(stranger));
+        // A positive withdrawal never succeeds for nothing: it's rounded up to a ten-thousandth.
+        check(economy.withdrawPlayer(stranger, 0.00001).amount == 0.0001, "a tiny withdrawal didn't take a ten-thousandth");
+        economy.depositPlayer(stranger, 1.0001);
+        check(near(economy.getBalance(stranger), 70.30), "topping up gave " + economy.getBalance(stranger));
 
         // From other threads at once: every change counted, none lost.
         int threads = 8;
@@ -148,8 +156,8 @@ public final class VaultConsumer extends JavaPlugin {
         UUID payer = UUID.randomUUID();
         UUID payee = UUID.randomUUID();
         check(economy.deposit(getName(), payer, new BigDecimal("10.005")).transactionSuccess(), "v2 deposit failed");
-        // Rounded half up to the currency's 2 decimals.
-        check(economy.getBalance(getName(), payer).compareTo(new BigDecimal("10.01")) == 0, "v2 balance is " + economy.getBalance(getName(), payer));
+        // Kept to four places, whatever the currency's 2 decimals.
+        check(economy.getBalance(getName(), payer).compareTo(new BigDecimal("10.005")) == 0, "v2 balance is " + economy.getBalance(getName(), payer));
         check(!economy.withdraw(getName(), payer, new BigDecimal("-1")).transactionSuccess(), "v2 withdrew a negative");
         check(!economy.withdraw(getName(), payer, new BigDecimal("1000")).transactionSuccess(), "v2 overdrew");
         var moved = economy.transfer(getName(), payer, payee, new BigDecimal("4"));

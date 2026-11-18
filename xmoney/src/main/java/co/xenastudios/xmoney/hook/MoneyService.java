@@ -49,7 +49,7 @@ public final class MoneyService implements XMoneyApi {
     @Override
     public BigDecimal balance(UUID player) {
         Account account = bank().accounts().get(player);
-        return bank().decimal(account == null ? 0 : account.balance());
+        return bank().exact(account == null ? 0 : account.balance());
     }
 
     @Override
@@ -60,7 +60,8 @@ public final class MoneyService implements XMoneyApi {
     @Override
     public boolean has(UUID player, BigDecimal amount) {
         Objects.requireNonNull(amount, "amount");
-        long units = Money.units(amount.max(BigDecimal.ZERO), bank().decimals());
+        // Rounded up, as a withdrawal of it would be.
+        long units = Money.outgoing(amount.max(BigDecimal.ZERO));
         Account account = bank().accounts().get(player);
         return units >= 0 && (account == null ? 0 : account.balance()) >= units;
     }
@@ -71,7 +72,7 @@ public final class MoneyService implements XMoneyApi {
 
     private CompletableFuture<TransactionResult> invalid(Account account) {
         return CompletableFuture.completedFuture(new TransactionResult(Status.INVALID_AMOUNT, BigDecimal.ZERO,
-            bank().decimal(account == null ? 0 : account.balance())));
+            bank().exact(account == null ? 0 : account.balance())));
     }
 
     private CompletableFuture<TransactionResult> result(CompletableFuture<Outcome> outcome) {
@@ -81,8 +82,8 @@ public final class MoneyService implements XMoneyApi {
     @Override
     public CompletableFuture<TransactionResult> deposit(Plugin source, UUID player, BigDecimal amount, String reason) {
         Cause cause = cause(source, reason);
-        long units = Money.positive(amount, bank().decimals());
-        if (units < 0) {
+        long units = Money.incoming(amount);
+        if (units <= 0) {
             return invalid(bank().accounts().get(player));
         }
         return result(bank().ledger().deposit(payee(player), units, cause));
@@ -92,12 +93,12 @@ public final class MoneyService implements XMoneyApi {
     public CompletableFuture<TransactionResult> withdraw(Plugin source, UUID player, BigDecimal amount, String reason) {
         Cause cause = cause(source, reason);
         Account account = bank().accounts().get(player);
-        long units = Money.positive(amount, bank().decimals());
-        if (units < 0) {
+        long units = Money.outgoing(amount);
+        if (units <= 0) {
             return invalid(account);
         }
         if (account == null) {
-            return CompletableFuture.completedFuture(new TransactionResult(Status.INSUFFICIENT_FUNDS, BigDecimal.ZERO, bank().decimal(0)));
+            return CompletableFuture.completedFuture(new TransactionResult(Status.INSUFFICIENT_FUNDS, BigDecimal.ZERO, bank().exact(0)));
         }
         return result(bank().ledger().withdraw(account, units, cause));
     }
@@ -106,30 +107,31 @@ public final class MoneyService implements XMoneyApi {
     public CompletableFuture<TransactionResult> transfer(Plugin source, UUID from, UUID to, BigDecimal amount, String reason) {
         Cause cause = cause(source, reason);
         Account payer = bank().accounts().get(from);
-        long units = Money.positive(amount, bank().decimals());
-        if (units < 0) {
+        long units = Money.outgoing(amount);
+        if (units <= 0) {
             return invalid(payer);
         }
         if (from.equals(to)) {
             return CompletableFuture.completedFuture(new TransactionResult(Status.SAME_ACCOUNT, BigDecimal.ZERO,
-                bank().decimal(payer == null ? 0 : payer.balance())));
+                bank().exact(payer == null ? 0 : payer.balance())));
         }
         if (payer == null) {
-            return CompletableFuture.completedFuture(new TransactionResult(Status.INSUFFICIENT_FUNDS, BigDecimal.ZERO, bank().decimal(0)));
+            return CompletableFuture.completedFuture(new TransactionResult(Status.INSUFFICIENT_FUNDS, BigDecimal.ZERO, bank().exact(0)));
         }
         return result(bank().ledger().transfer(payer, payee(to), units, cause));
     }
 
     private Account payee(UUID id) {
         Account account = bank().accounts().get(id);
-        return account != null ? account : bank().ledger().account(id, plugin.players().cachedName(id), true);
+        // Citizens' NPCs have version 2 uuids, and stay out of the top list, as through Vault.
+        return account != null ? account : bank().ledger().account(id, plugin.players().cachedName(id), id.version() != 2);
     }
 
     @Override
     public List<TopEntry> top(int from, int count) {
         List<TopEntry> entries = new ArrayList<>();
         for (Accounts.Ranked ranked : bank().accounts().top(Math.max(1, from), Math.clamp(count, 0, 100))) {
-            entries.add(new TopEntry(ranked.rank(), ranked.account().id(), ranked.account().name(), bank().decimal(ranked.balance())));
+            entries.add(new TopEntry(ranked.rank(), ranked.account().id(), ranked.account().name(), bank().exact(ranked.balance())));
         }
         return entries;
     }
@@ -145,8 +147,8 @@ public final class MoneyService implements XMoneyApi {
                 int number = Math.clamp(page, 1, pages);
                 List<HistoryEntry> entries = new ArrayList<>();
                 for (Store.Row row : store.history(player, ChatPages.offset(number, HISTORY_PAGE), HISTORY_PAGE)) {
-                    entries.add(new HistoryEntry(row.id(), Instant.ofEpochMilli(row.time()), Money.decimal(row.amount(), decimals),
-                        Money.decimal(row.balance(), decimals), row.kind(), row.source(), row.reason(), row.other()));
+                    entries.add(new HistoryEntry(row.id(), Instant.ofEpochMilli(row.time()), Money.exact(row.amount(), decimals),
+                        Money.exact(row.balance(), decimals), row.kind(), row.source(), row.reason(), row.other()));
                 }
                 return new HistoryPage(entries, number, pages, total);
             } catch (SQLException e) {

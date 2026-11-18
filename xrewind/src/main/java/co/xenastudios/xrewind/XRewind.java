@@ -119,6 +119,9 @@ public class XRewind extends XenaPlugin<XRConfig> {
         if (inspector != null) {
             inspector.clear();
         }
+        if (rollbacks != null) {
+            rollbacks.shutdown();
+        }
         if (writer != null) {
             writer.stop(10, TimeUnit.SECONDS);
         }

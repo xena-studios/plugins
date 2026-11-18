@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.CancellationException;
@@ -45,6 +46,8 @@ public final class Rollbacks {
     private final Map<UUID, Plan> previews = new ConcurrentHashMap<>();
     // Weak, so a player who left doesn't keep theirs.
     private final Map<CommandSender, Plan> undos = Collections.synchronizedMap(new WeakHashMap<>());
+    // The API's rollbacks still running, to fail if xRewind stops before they finish.
+    private final Set<CompletableFuture<RollbackResult>> pending = ConcurrentHashMap.newKeySet();
 
     public Rollbacks(XRewind plugin) {
         this.plugin = plugin;
@@ -101,7 +104,11 @@ public final class Rollbacks {
                 } else if (asked.preview()) {
                     preview(viewer, plan);
                 } else {
-                    plugin.tasks().global(() -> execute(sender, plan, asked.silent(), null));
+                    plugin.tasks().global(() -> {
+                        if (allowed(plan, sender, null)) {
+                            execute(sender, plan, asked.silent(), null);
+                        }
+                    });
                 }
             } catch (SQLException | RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "A rollback for " + sender.getName() + " failed", e);
@@ -142,15 +149,40 @@ public final class Rollbacks {
 
     /**
      * For the API: applies a plan on the global thread, under the same one-at-a-time rule
-     * as the commands. Fails at once if another is running.
+     * as the commands. The caller claimed the plan; the claim is given back if it isn't
+     * applied after all. Fails at once if another is running, if a listener cancels it,
+     * and if xRewind stops before it's done.
      */
-    public CompletableFuture<RollbackResult> apply(Plan plan) {
+    public CompletableFuture<RollbackResult> apply(ApiPlan plan) {
         if (!running.compareAndSet(false, true)) {
+            plan.unclaim();
             return CompletableFuture.failedFuture(new IllegalStateException("Another rollback is running; try again when it's done"));
         }
         CompletableFuture<RollbackResult> future = new CompletableFuture<>();
-        plugin.tasks().global(() -> execute(null, plan, true, future));
+        pending.add(future);
+        future.whenComplete((result, error) -> pending.remove(future));
+        try {
+            plugin.tasks().global(() -> {
+                if (allowed(plan.plan(), null, future)) {
+                    execute(null, plan.plan(), true, future);
+                } else {
+                    plan.unclaim();
+                }
+            });
+        } catch (RuntimeException e) {
+            // The scheduler refuses a plugin that's being disabled.
+            running.set(false);
+            plan.unclaim();
+            future.completeExceptionally(new IllegalStateException("xRewind is stopping", e));
+        }
         return future;
+    }
+
+    /** Fails the API's rollbacks still running, as xRewind stops: they'd never finish. */
+    public void shutdown() {
+        for (CompletableFuture<RollbackResult> future : List.copyOf(pending)) {
+            future.completeExceptionally(new IllegalStateException("xRewind was disabled before the rollback finished"));
+        }
     }
 
     // Only a request that claimed the lock gives it back: a preview never claims it.
@@ -162,13 +194,14 @@ public final class Rollbacks {
 
     /** Applies the player's preview. */
     public void apply(Player player) {
-        Plan plan = previews.remove(player.getUniqueId());
+        Plan plan = previews.get(player.getUniqueId());
         if (plan == null) {
             messages().noPreview().send(player);
         } else if (!running.compareAndSet(false, true)) {
-            previews.put(player.getUniqueId(), plan);
             messages().busy().send(player);
-        } else {
+        } else if (allowed(plan, player, null)) {
+            // Taken only once it goes ahead: a cancelled one is still there for /xr cancel.
+            previews.remove(player.getUniqueId(), plan);
             execute(player, plan, false, null);
         }
     }
@@ -200,15 +233,33 @@ public final class Rollbacks {
 
     /** Reverts the sender's last rollback or restore. */
     public void undo(CommandSender sender) {
-        Plan plan = undos.remove(sender);
+        Plan plan = undos.get(sender);
         if (plan == null) {
             messages().noUndo().send(sender);
         } else if (!running.compareAndSet(false, true)) {
-            undos.put(sender, plan);
             messages().busy().send(sender);
-        } else {
+        } else if (allowed(plan, sender, null)) {
+            // Taken only once it goes ahead: a cancelled one can be tried again.
+            undos.remove(sender, plan);
             execute(sender, plan, false, null);
         }
+    }
+
+    /**
+     * Asks other plugins whether it may go ahead, with running claimed; on a no, gives
+     * running back and fails the API's future. The event is built only when something
+     * listens for it.
+     */
+    private boolean allowed(Plan plan, CommandSender sender, CompletableFuture<RollbackResult> future) {
+        if (RollbackEvent.getHandlerList().getRegisteredListeners().length == 0
+            || new RollbackEvent(ApiPlan.spent(plan), sender).callEvent()) {
+            return true;
+        }
+        running.set(false);
+        if (future != null) {
+            future.completeExceptionally(new CancellationException("A RollbackEvent listener cancelled it"));
+        }
+        return false;
     }
 
     private void preview(Player player, Plan plan) {
@@ -228,21 +279,13 @@ public final class Rollbacks {
     }
 
     /**
-     * On the global thread (or the command's), with running already claimed.
+     * On the global thread (or the command's), with running already claimed and
+     * {@link #allowed} asked.
      *
      * @param sender who ran the command, or null for the API
      * @param future completed with what it did, for the API; or null
      */
     private void execute(CommandSender sender, Plan plan, boolean silent, CompletableFuture<RollbackResult> future) {
-        // Another plugin may stop it. Built only when something listens for it.
-        if (RollbackEvent.getHandlerList().getRegisteredListeners().length > 0
-            && !new RollbackEvent(new ApiPlan(plan), sender).callEvent()) {
-            running.set(false);
-            if (future != null) {
-                future.completeExceptionally(new CancellationException("A RollbackEvent listener cancelled it"));
-            }
-            return;
-        }
         XRConfig.RollbackMessages messages = messages();
         String verb = switch (plan.kind()) {
             case ROLLBACK -> messages.verbs().rollback();
@@ -268,10 +311,10 @@ public final class Rollbacks {
             running.set(false);
             if (future != null || RollbackFinishedEvent.getHandlerList().getRegisteredListeners().length > 0) {
                 RollbackResult done = new RollbackResult(result.applied(), plan.skipped() + result.missingWorld(),
-                    Duration.ofNanos(result.nanos()), new ApiPlan(undo));
+                    Duration.ofNanos(result.nanos()), ApiPlan.fresh(undo));
                 plugin.tasks().global(() -> {
                     if (RollbackFinishedEvent.getHandlerList().getRegisteredListeners().length > 0) {
-                        new RollbackFinishedEvent(new ApiPlan(plan), done, sender).callEvent();
+                        new RollbackFinishedEvent(ApiPlan.spent(plan), done, sender).callEvent();
                     }
                     if (future != null) {
                         future.complete(done);

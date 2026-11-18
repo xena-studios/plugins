@@ -14,6 +14,7 @@ import co.xenastudios.xrewind.api.Entry;
 import co.xenastudios.xrewind.api.Plan;
 import co.xenastudios.xrewind.api.Query;
 import co.xenastudios.xrewind.api.RollbackResult;
+import co.xenastudios.xrewind.api.WriterHold;
 import co.xenastudios.xrewind.api.XRewindApi;
 import co.xenastudios.xrewind.api.event.LookupEvent;
 import co.xenastudios.xrewind.api.event.RollbackEvent;
@@ -25,7 +26,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -159,6 +163,11 @@ class ApiTest {
         assertEquals(List.of("alex"), fromCommand.getQuery().users());
         assertEquals(Query.Area.RADIUS, fromCommand.getQuery().area());
         assertEquals(5, fromCommand.getQuery().radius());
+        assertEquals(1, fromCommand.getPage());
+
+        steve.performCommand("xr page 2");
+        await(() -> events.size() == 3);
+        assertEquals(2, ((LookupEvent) events.get(2)).getPage(), "the page that ran");
     }
 
     @Test
@@ -207,21 +216,68 @@ class ApiTest {
         block.setType(Material.GOLD_BLOCK);
         server.getPluginManager().callEvent(new BlockBreakEvent(block, steve));
         block.setType(Material.AIR);
-        Plan plan = done(api.planRollback(Query.builder().users("Steve").time(Duration.ofHours(1)).build()));
+        Query query = Query.builder().users("Steve").time(Duration.ofHours(1)).build();
+        Plan plan = done(api.planRollback(query));
+        Plan other = done(api.planRollback(query));
 
         CompletableFuture<RollbackResult> first = api.apply(plan);
-        CompletableFuture<RollbackResult> second = api.apply(plan);
-        assertInstanceOf(IllegalStateException.class, failure(second), "the first is still running");
+        assertThrows(IllegalStateException.class, () -> api.apply(plan), "a plan is applied once");
+        assertInstanceOf(IllegalStateException.class, failure(api.apply(other)), "the first is still running");
         done(first);
         assertEquals(Material.GOLD_BLOCK, block.getType());
+        assertThrows(IllegalStateException.class, () -> api.apply(plan), "not again once it's done either");
 
         block.setType(Material.AIR);
         cancelRollbacks = true;
-        assertInstanceOf(CancellationException.class, failure(api.apply(plan)));
+        assertInstanceOf(CancellationException.class, failure(api.apply(other)));
         assertEquals(Material.AIR, block.getType(), "a cancelled rollback changes nothing");
+        RollbackEvent cancelled = (RollbackEvent) events.get(events.size() - 1);
+        assertThrows(IllegalStateException.class, () -> api.apply(cancelled.getPlan()), "an event's plan can't be applied");
         cancelRollbacks = false;
-        done(api.apply(plan));
-        assertEquals(Material.GOLD_BLOCK, block.getType(), "and the lock was given back");
+        done(api.apply(other));
+        assertEquals(Material.GOLD_BLOCK, block.getType(), "a plan that wasn't applied still can be, and the lock was given back");
+    }
+
+    @Test
+    void aCancelledPreviewCanStillBeCancelled() throws Exception {
+        steve.setOp(true);
+        Block block = world.getBlockAt(2, 70, 20);
+        block.setType(Material.STONE);
+        server.getPluginManager().callEvent(new BlockBreakEvent(block, steve));
+        block.setType(Material.AIR);
+        steve.setLocation(block.getLocation());
+        steve.performCommand("xr rb u:Steve t:1h #preview");
+        assertTrue(message().contains("Previewing 1 blocks"));
+
+        cancelRollbacks = true;
+        steve.performCommand("xr apply");
+        assertEquals(Material.AIR, block.getType(), "a listener stopped it");
+        steve.performCommand("xr cancel");
+        assertTrue(message().contains("Preview cancelled"), "the preview is still there to cancel");
+
+        // And an undo a listener stopped can be tried again.
+        cancelRollbacks = false;
+        steve.performCommand("xr rb u:Steve t:1h");
+        assertTrue(message().contains("Rolled back 1 blocks"));
+        cancelRollbacks = true;
+        steve.performCommand("xr undo");
+        assertEquals(Material.STONE, block.getType());
+        cancelRollbacks = false;
+        steve.performCommand("xr undo");
+        await(() -> block.getType() == Material.AIR);
+    }
+
+    @Test
+    void disablingFailsARollbackStillRunning() throws Exception {
+        Block block = world.getBlockAt(3, 70, 20);
+        block.setType(Material.STONE);
+        server.getPluginManager().callEvent(new BlockBreakEvent(block, steve));
+        block.setType(Material.AIR);
+        Plan plan = done(api.planRollback(Query.builder().users("Steve").time(Duration.ofHours(1)).build()));
+        CompletableFuture<RollbackResult> running = api.apply(plan);
+        server.getPluginManager().disablePlugin(plugin);
+        assertTrue(running.isDone());
+        assertInstanceOf(IllegalStateException.class, failure(running));
     }
 
     @Test
@@ -239,16 +295,57 @@ class ApiTest {
     }
 
     @Test
-    void pauseHoldsTheWriterUntilResumed() throws Exception {
+    void pauseHoldsTheWriterUntilEveryHoldIsLetGo() throws Exception {
         assertTrue(done(api.flush()));
         long written = plugin.writer().written();
-        done(api.pause());
+        WriterHold first = done(api.pause());
+        CompletableFuture<WriterHold> asked = api.pause();
+        String thread = done(asked.thenApply(hold -> Thread.currentThread().getName()));
+        assertFalse(thread.equals("xRewind writer"), "completed on the background tasks, not the writer's thread");
+        WriterHold second = done(asked);
+        assertTrue(first.isHeld());
         api.logPlacement(PLOTS, at(9, 70, 9), Material.STONE.createBlockData());
         Thread.sleep(1_200);
         assertEquals(written, plugin.writer().written(), "nothing written while held");
         assertEquals(1, plugin.queue().size(), "but kept");
-        api.resume();
+
+        first.release();
+        assertFalse(first.isHeld());
+        Thread.sleep(700);
+        assertEquals(written, plugin.writer().written(), "one plugin letting go doesn't end another's hold");
+        second.close();
         await(() -> plugin.writer().written() == written + 1);
+    }
+
+    @Test
+    void flushIsTrueOnABusyServer() throws Exception {
+        AtomicBoolean logging = new AtomicBoolean(true);
+        Thread busy = new Thread(() -> {
+            int i = 0;
+            while (logging.get()) {
+                api.logPlacement(PLOTS, at(i++ % 50, 80, 5), Material.STONE.createBlockData());
+                LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(200));
+            }
+        });
+        busy.start();
+        try {
+            Thread.sleep(200);
+            assertTrue(done(api.flush()), "what was logged before is written, though more keeps coming");
+        } finally {
+            logging.set(false);
+            busy.join();
+        }
+    }
+
+    /** Steve's next chat message, as plain text. */
+    String message() throws InterruptedException {
+        String[] next = new String[1];
+        await(() -> {
+            var component = steve.nextComponentMessage();
+            next[0] = component == null ? null : PlainTextComponentSerializer.plainText().serialize(component);
+            return next[0] != null;
+        });
+        return next[0];
     }
 
     <T> T done(CompletableFuture<T> future) throws InterruptedException {

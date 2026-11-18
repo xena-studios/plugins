@@ -32,6 +32,19 @@ public final class Lookup {
      * @param page from 1
      */
     public static Result page(Database database, Query query, Center center, int page, int perPage) throws SQLException {
+        return page(database, query, center, page, perPage, true);
+    }
+
+    /**
+     * The newest {@code limit} changes matching the query, without counting them all: for
+     * the API, which has no page count to show.
+     */
+    public static List<Row> newest(Database database, Query query, Center center, int limit) throws SQLException {
+        return page(database, query, center, 1, limit, false).rows();
+    }
+
+    // With count false, the total is 0: counting is a second pass over every matching row.
+    private static Result page(Database database, Query query, Center center, int page, int perPage, boolean count) throws SQLException {
         int skip = (page - 1) * perPage;
         List<Sql> tables = new ArrayList<>();
         if (query.wantsBlocks()) {
@@ -53,7 +66,9 @@ public final class Lookup {
             List<Row> rows = new ArrayList<>();
             long total = 0;
             for (Sql sql : tables) {
-                total += count(connection, sql);
+                if (count) {
+                    total += count(connection, sql);
+                }
                 rows.addAll(rows(connection, sql, " ORDER BY b.time DESC, b.id DESC LIMIT " + (skip + perPage)));
             }
             rows.sort(Comparator.comparingInt(Row::time).thenComparingLong(Row::id).reversed());

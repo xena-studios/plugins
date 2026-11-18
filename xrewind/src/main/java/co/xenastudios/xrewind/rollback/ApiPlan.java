@@ -2,9 +2,46 @@ package co.xenastudios.xrewind.rollback;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-/** One of xRewind's plans as the API shows it. Its lists are copies, made when asked for. */
-public record ApiPlan(Plan plan) implements co.xenastudios.xrewind.api.Plan {
+/**
+ * One of xRewind's plans as the API shows it. Its lists are copies, made when asked for.
+ * Applied once at most: applying it twice would make its changes twice, on top of
+ * whatever was there by then.
+ */
+public final class ApiPlan implements co.xenastudios.xrewind.api.Plan {
+
+    private final Plan plan;
+    private final AtomicBoolean used;
+
+    private ApiPlan(Plan plan, boolean used) {
+        this.plan = plan;
+        this.used = new AtomicBoolean(used);
+    }
+
+    /** A plan a plugin may apply, once. */
+    public static ApiPlan fresh(Plan plan) {
+        return new ApiPlan(plan, false);
+    }
+
+    /** A plan being applied or already applied, for an event: applying it fails. */
+    public static ApiPlan spent(Plan plan) {
+        return new ApiPlan(plan, true);
+    }
+
+    public Plan plan() {
+        return plan;
+    }
+
+    /** Claims the plan for applying; false if it was claimed already. */
+    public boolean claim() {
+        return used.compareAndSet(false, true);
+    }
+
+    /** Gives the claim back: the plan wasn't applied after all (busy, or a listener cancelled it). */
+    public void unclaim() {
+        used.set(false);
+    }
 
     @Override
     public Kind kind() {

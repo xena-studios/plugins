@@ -89,7 +89,7 @@ class MySqlTest {
         marker.stop(30, TimeUnit.SECONDS);
         assertEquals(1_250, count("SELECT COUNT(*) FROM " + database.table("block") + " WHERE rolled_back = 1"));
 
-        assertEquals(1_250, Purge.run(database, Purge.daysAgo(30)));
+        assertEquals(1_250, Purge.run(database, new co.xenastudios.xrewind.log.WriteGate(logger), Purge.daysAgo(30)));
         assertEquals(1_250, count("SELECT COUNT(*) FROM " + database.table("block")));
     }
 

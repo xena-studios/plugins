@@ -60,6 +60,8 @@ XRewindApi xrewind = XRewindApi.get();
 
 **Threads.** Logging can be called from any thread and returns at once. Everything that reads the database returns a `CompletableFuture` that completes off the server's threads. Never call `join()` or `get()` on one from a server thread: that would freeze the server while the database answers. Use `thenAccept`, and hop back to a server thread (an entity, region or global scheduler) before touching the world.
 
+**Errors.** A mistake in the call, such as a null, a rollback query without a time, or a plan applied twice, throws at once. Anything that depends on xRewind's state at the time fails the future instead: the database not ready yet, another rollback running, a listener cancelling it, or xRewind stopping. Handle those with `exceptionally` or `whenComplete`.
+
 ## Log your changes
 
 Changes your plugin makes with `setType` or `setBlockData` aren't events, so xRewind doesn't see them. Log them, and they show in lookups and roll back like any other change.
@@ -111,7 +113,7 @@ xrewind.lookup(query).thenAccept(entries -> {
 });
 ```
 
-Entries come newest first. Anything logged before the call is included. `target()` is the block's state before (with `after()` the state after), a container change's item, a kill's entity type, or a sign, chat message or command's text.
+Entries come newest first. A lookup first waits up to a second for what was logged before it to be written, so a change logged a moment ago is usually in it; if the database is slow or failing, it looks anyway, without what isn't written yet. `target()` is the block's state before (with `after()` the state after), a container change's item, a kill's entity type, or a sign, chat message or command's text.
 
 ## Roll back and restore
 
@@ -133,24 +135,26 @@ xrewind.planRollback(query)
 
 A plan lists its `blocks()` and `items()`, as copies, so you can preview it to a player with `sendBlockChange`. Only one rollback, restore or undo runs at a time, xRewind's commands included: if one is running, `apply` fails with an `IllegalStateException`, and you can try again later. API rollbacks have no radius limit (`rollback.max-radius` is for staff commands), so build the query with care.
 
+A plan is applied once. Applying it again throws an `IllegalStateException`: its changes would be made again, on top of whatever is there by then. To roll back the same thing later, plan again. A plan that wasn't applied, because another rollback was running or a listener cancelled it, can be applied again.
+
 To undo, apply the result's undo plan: `xrewind.apply(result.undo())`.
+
+If xRewind is disabled before a rollback finishes, its future fails with an `IllegalStateException`.
 
 ## Hold the writer for a backup
 
 | Method | What it does |
 | --- | --- |
-| `flush()` | Writes everything logged so far. Completes with true once it's written, or false after 10 seconds or if the database is down. |
-| `pause()` | Holds the writer between batches, so nothing is written until `resume()`. Completes once the batch it was writing is done. Changes keep being logged in memory and are written afterwards. |
-| `resume()` | Lets the writer go on. |
+| `flush()` | Writes everything logged before the call. Completes with true once that's written, even on a busy server where more keeps coming. False after 10 seconds, or if the database is down. |
+| `pause()` | Stops every write to the database (the log and a purge) until you let go. Completes with a `WriterHold` once whatever was writing has finished its transaction. Changes keep being logged in memory and are written afterwards. |
+| `WriterHold.release()` | Lets go. Writing carries on once every plugin's hold is let go. `close()` does the same, for try-with-resources. |
 
-A backup plugin can pause, copy the database, and resume, and never copy it partway through a write. Keep it short: the writer carries on by itself after 60 seconds, with a warning in the console.
+A backup plugin can pause, copy the database, and let go, and never copy it partway through a write. Each `pause()` is its own hold, so two plugins backing up at once don't end each other's. Keep it short: a hold lets go by itself after 60 seconds, with a warning in the console.
 
 ```java
-xrewind.pause().thenRun(() -> {
-    try {
+xrewind.pause().thenAccept(hold -> {
+    try (hold) {
         copyDatabase();
-    } finally {
-        xrewind.resume();
     }
 });
 ```
@@ -163,7 +167,7 @@ They're in `co.xenastudios.xrewind.api.event`.
 | --- | --- | --- |
 | `RollbackEvent` | A rollback, restore or undo is about to start, from a command or a plugin. Cancellable. Has the plan, and the command's sender (null for a plugin). | A server thread |
 | `RollbackFinishedEvent` | It finished. Has the plan, the result and the sender. | The global thread |
-| `LookupEvent` | Someone looked up the history: `/xr lookup`, `near`, `page`, the inspector, or a plugin. Has the sender (null for a plugin) and the query; `getQuery().toString()` writes it as lookup parameters. | Async |
+| `LookupEvent` | Someone looked up the history: `/xr lookup`, `near`, `page`, the inspector, or a plugin. Has the sender (null for a plugin), the query as it ran (with the sender's position for a radius), and `getPage()`, the page of results it shows. `getQuery().toString()` writes it as lookup parameters. | Async |
 
 For an audit log of who looked up what:
 

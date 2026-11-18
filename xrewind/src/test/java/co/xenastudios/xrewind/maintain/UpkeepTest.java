@@ -9,6 +9,7 @@ import co.xenastudios.xrewind.log.Actions;
 import co.xenastudios.xrewind.log.Actor;
 import co.xenastudios.xrewind.log.Entry;
 import co.xenastudios.xrewind.log.LogQueue;
+import co.xenastudios.xrewind.log.WriteGate;
 import co.xenastudios.xrewind.log.Writer;
 import co.xenastudios.xrewind.storage.Clock;
 import co.xenastudios.xrewind.storage.Schema;
@@ -36,6 +37,7 @@ class UpkeepTest {
 
     Database database;
     final Logger logger = Logger.getLogger("test");
+    final WriteGate gate = new WriteGate(logger);
 
     @BeforeEach
     void start() throws Exception {
@@ -68,9 +70,34 @@ class UpkeepTest {
             new Entry.BlockChange(now, steve, "world", 1, 64, 0, Actions.BREAK,
                 Material.STONE.createBlockData(), Material.AIR.createBlockData()),
             new Entry.Session(now - 40 * 86_400, steve, "world", 0, 64, 0, Actions.JOIN));
-        assertEquals(2, Purge.run(database, Purge.daysAgo(30)));
+        assertEquals(2, Purge.run(database, gate, Purge.daysAgo(30)));
         assertEquals(1, count("SELECT COUNT(*) FROM xr_block"));
         assertEquals(0, count("SELECT COUNT(*) FROM xr_session"));
+    }
+
+    @Test
+    void aPurgeWaitsWhileABackupHoldsTheWriter() throws Exception {
+        Actor steve = new Actor(UUID.randomUUID(), "Steve");
+        write(new Entry.BlockChange(Clock.now() - 40 * 86_400, steve, "world", 0, 64, 0, Actions.BREAK,
+            Material.STONE.createBlockData(), Material.AIR.createBlockData()));
+        WriteGate.Hold hold = gate.hold(TimeUnit.SECONDS.toNanos(60));
+        assertTrue(hold.ready().isDone(), "nothing was writing");
+        long[] deleted = {-1};
+        Thread purge = new Thread(() -> {
+            try {
+                deleted[0] = Purge.run(database, gate, Purge.daysAgo(30));
+            } catch (java.sql.SQLException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+        purge.start();
+        purge.join(500);
+        assertTrue(purge.isAlive(), "it waits for the hold");
+        assertEquals(1, count("SELECT COUNT(*) FROM xr_block"), "and has deleted nothing");
+        hold.release();
+        purge.join(10_000);
+        assertEquals(1, deleted[0]);
+        assertEquals(0, count("SELECT COUNT(*) FROM xr_block"));
     }
 
     @Test
@@ -79,8 +106,8 @@ class UpkeepTest {
         write(new Entry.BlockChange(Clock.now(), steve, "world", 0, 64, 0, Actions.BREAK,
             Material.STONE.createBlockData(), Material.AIR.createBlockData()));
         assertEquals(Integer.MIN_VALUE, Purge.daysAgo(30_000), "held at the earliest time, not wrapped to the future");
-        assertEquals(0, Purge.run(database, Purge.daysAgo(10_000)));
-        assertEquals(0, Purge.run(database, Purge.secondsAgo(100L * 365 * 86_400)));
+        assertEquals(0, Purge.run(database, gate, Purge.daysAgo(10_000)));
+        assertEquals(0, Purge.run(database, gate, Purge.secondsAgo(100L * 365 * 86_400)));
         assertEquals(1, count("SELECT COUNT(*) FROM xr_block"));
     }
 

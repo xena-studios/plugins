@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
@@ -56,17 +55,25 @@ public final class Writer implements Runnable {
     private volatile String problem;
     // The batch being written, for flush to wait on.
     private volatile int pending;
-    // A hold between batches, for a backup (the API's pause): until resumed, or this nanoTime.
-    private volatile boolean holding;
-    private volatile long holdUntil;
-    private volatile CompletableFuture<Void> held;
-    // Not the writer's own monitor: stop() holds that while it waits for the thread.
-    private final Object holdLock = new Object();
+    // Each batch is a turn at the gate, so a backup's hold (the API's pause) can stop writes.
+    private final WriteGate gate;
 
     public Writer(LogQueue queue, Supplier<Database> databases, Logger logger) {
         this.queue = queue;
         this.databases = databases;
         this.logger = logger;
+        this.gate = new WriteGate(logger);
+        gate.onRelease(() -> {
+            Thread current = thread;
+            if (current != null) {
+                LockSupport.unpark(current);
+            }
+        });
+    }
+
+    /** What everything that writes to the database takes turns at, and the API's pause holds. */
+    public WriteGate gate() {
+        return gate;
     }
 
     public synchronized void start() {
@@ -105,68 +112,12 @@ public final class Writer implements Runnable {
         thread = null;
     }
 
-    /**
-     * Holds the writer between batches until {@link #resume()}, or for {@code maxNanos} at
-     * most. The future completes on the writer's thread once the batch it was writing is
-     * done and it's held, or at once if it isn't running. Asked again while held, it's
-     * the same hold, with the time limit reset.
-     */
-    public CompletableFuture<Void> hold(long maxNanos) {
-        synchronized (holdLock) {
-            CompletableFuture<Void> waiting = held;
-            if (waiting == null) {
-                waiting = new CompletableFuture<>();
-                held = waiting;
-            }
-            holdUntil = System.nanoTime() + maxNanos;
-            holding = true;
-            Thread current = thread;
-            if (current == null || !running) {
-                waiting.complete(null);
-            } else {
-                LockSupport.unpark(current);
-            }
-            return waiting;
-        }
-    }
-
-    /** Ends a {@link #hold}. Does nothing if there's none. */
-    public void resume() {
-        synchronized (holdLock) {
-            holding = false;
-            held = null;
-        }
-        Thread current = thread;
-        if (current != null) {
-            LockSupport.unpark(current);
-        }
-    }
-
-    // At the top of the loop, so between batches. Stopping always writes what's left.
-    private boolean held() {
-        if (!holding || !running) {
-            return false;
-        }
-        CompletableFuture<Void> waiting = held;
-        if (waiting != null) {
-            waiting.complete(null);
-        }
-        long left = holdUntil - System.nanoTime();
-        if (left <= 0) {
-            logger.warning("A plugin held the writer for a backup and didn't let go, so it carries on writing.");
-            resume();
-            return false;
-        }
-        LockSupport.parkNanos(left);
-        return true;
-    }
+    /** {@link #step()}'s answer when the writer should stop. */
+    private static final long STOP = -1;
 
     @Override
     public void run() {
         while (true) {
-            if (held()) {
-                continue;
-            }
             Database current = databases.get();
             if (current == null || !connected(current)) {
                 if (!running) {
@@ -175,49 +126,70 @@ public final class Writer implements Runnable {
                 LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
                 continue;
             }
-            Entry entry;
-            while (batch.size() < MAX_BATCH && (entry = queue.poll()) != null) {
-                batch.add(entry);
-            }
-            pending = batch.size();
-            if (isolating && !batch.isEmpty()) {
-                isolate();
+            // Between batches: a backup's hold waits here. Stopping always writes what's left.
+            if (!running) {
+                gate.enterAnyway();
+            } else if (!gate.tryEnter()) {
+                LockSupport.parkNanos(gate.heldNanos());
                 continue;
             }
-            if (batch.isEmpty()) {
-                if (!running) {
-                    break;
-                }
-                LockSupport.parkNanos(FLUSH_NANOS);
-                continue;
+            long wait;
+            try {
+                wait = step();
+            } finally {
+                gate.exit();
             }
-            if (write()) {
-                backoffNanos = 0;
-                // "Three times in a row": a write that goes through starts the count again.
-                failures = 0;
-                // A full batch means more is waiting: go again at once.
-                if (batch.isEmpty() && queue.size() < LogQueue.BATCH && running) {
-                    LockSupport.parkNanos(FLUSH_NANOS);
-                }
-            } else {
-                // The same batch failing again and again on a live connection is a row the
-                // database won't take, not the database being down: find it.
-                boolean alive = alive();
-                disconnect();
-                if (!running) {
-                    break;
-                }
-                failures = alive ? failures + 1 : 0;
-                if (failures >= ISOLATE_AFTER) {
-                    isolating = true;
-                    failures = 0;
-                    continue;
-                }
-                backoffNanos = Math.min(MAX_BACKOFF_NANOS, Math.max(TimeUnit.SECONDS.toNanos(1), backoffNanos * 2));
-                LockSupport.parkNanos(backoffNanos);
+            if (wait == STOP) {
+                break;
+            }
+            if (wait > 0) {
+                LockSupport.parkNanos(wait);
             }
         }
         disconnect();
+    }
+
+    /**
+     * Writes one batch, during a turn at the gate. Waiting is left to the caller, after the
+     * turn, so a hold never waits on the writer's sleep.
+     *
+     * @return how long to wait before the next, or {@link #STOP}
+     */
+    private long step() {
+        Entry entry;
+        while (batch.size() < MAX_BATCH && (entry = queue.poll()) != null) {
+            batch.add(entry);
+        }
+        pending = batch.size();
+        if (isolating && !batch.isEmpty()) {
+            isolate();
+            return 0;
+        }
+        if (batch.isEmpty()) {
+            return running ? FLUSH_NANOS : STOP;
+        }
+        if (write()) {
+            backoffNanos = 0;
+            // "Three times in a row": a write that goes through starts the count again.
+            failures = 0;
+            // A full batch means more is waiting: go again at once.
+            return batch.isEmpty() && queue.size() < LogQueue.BATCH && running ? FLUSH_NANOS : 0;
+        }
+        // The same batch failing again and again on a live connection is a row the
+        // database won't take, not the database being down: find it.
+        boolean alive = alive();
+        disconnect();
+        if (!running) {
+            return STOP;
+        }
+        failures = alive ? failures + 1 : 0;
+        if (failures >= ISOLATE_AFTER) {
+            isolating = true;
+            failures = 0;
+            return 0;
+        }
+        backoffNanos = Math.min(MAX_BACKOFF_NANOS, Math.max(TimeUnit.SECONDS.toNanos(1), backoffNanos * 2));
+        return backoffNanos;
     }
 
     // Opens a connection to the database the storage has now, and reads its names.
@@ -478,18 +450,22 @@ public final class Writer implements Runnable {
      * Waits until what's queued now is written, so a lookup sees a block placed a moment
      * ago. Gives up after {@code timeoutMillis}, or at once if writes are failing. Not on
      * a server thread.
+     *
+     * @return true if everything queued before the call is written and writes are going
+     *     through; what's queued after doesn't count, so it's true on a busy server too
      */
-    public void flush(long timeoutMillis) {
+    public boolean flush(long timeoutMillis) {
         Thread current = thread;
-        if (current == null) {
-            return;
-        }
         long target = written + queue.size() + pending;
+        if (current == null) {
+            return written >= target && problem == null;
+        }
         LockSupport.unpark(current);
         long until = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         while (written < target && problem == null && System.nanoTime() < until) {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(5));
         }
+        return written >= target && problem == null;
     }
 
     /** Entries written since the server started. */

@@ -20,6 +20,12 @@ import org.bukkit.inventory.ItemStack;
  * use the same background thread, per-tick budget and one-at-a-time rule as
  * xRewind's commands.
  *
+ * <p>Errors: a mistake in the call (null, a query without a time where one's needed, a
+ * plan applied twice) throws at once. Anything that depends on xRewind's state at the
+ * time (its database not ready yet, another rollback running, a listener cancelling,
+ * xRewind stopping) fails the returned future instead, so it can be handled where the
+ * result is.
+ *
  * @since 1.1.0
  */
 public interface XRewindApi {
@@ -89,8 +95,10 @@ public interface XRewindApi {
 
     /**
      * Looks up the changes matching a query, newest first, up to its
-     * {@link Query#limit() limit}. Anything logged before the call is included. Fires
-     * {@link co.xenastudios.xrewind.api.event.LookupEvent}.
+     * {@link Query#limit() limit}. It first waits up to a second for what was logged
+     * before the call to be written, so a change logged a moment ago is usually included;
+     * if the database is slow or failing it looks anyway, without what isn't written yet.
+     * Fires {@link co.xenastudios.xrewind.api.event.LookupEvent}.
      *
      * @param query what to look for
      * @return the entries; completes off the server's threads, or fails if the database
@@ -104,7 +112,8 @@ public interface XRewindApi {
      * without changing anything: a preview to show, or to {@link #apply(Plan) apply}.
      *
      * @param query what to roll back; it needs a {@link Query.Builder#time time}
-     * @return the plan; completes off the server's threads
+     * @return the plan; completes off the server's threads, or fails if the database
+     *     isn't ready or can't be read
      * @throws IllegalArgumentException if the query has no time
      * @since 1.1.0
      */
@@ -114,7 +123,8 @@ public interface XRewindApi {
      * As {@link #planRollback}, for a restore: making rolled-back changes again.
      *
      * @param query what to restore; it needs a {@link Query.Builder#time time}
-     * @return the plan; completes off the server's threads
+     * @return the plan; completes off the server's threads, or fails as
+     *     {@link #planRollback}'s does
      * @throws IllegalArgumentException if the query has no time
      * @since 1.1.0
      */
@@ -127,43 +137,47 @@ public interface XRewindApi {
      * {@link co.xenastudios.xrewind.api.event.RollbackEvent} first and
      * {@link co.xenastudios.xrewind.api.event.RollbackFinishedEvent} after.
      *
-     * <p>To undo it, apply the result's {@link RollbackResult#undo() undo plan}.
+     * <p>A plan is applied once at most: applying it again would make its changes again,
+     * on top of whatever is there by then. To roll back the same thing later, plan again.
+     * To undo it, apply the result's {@link RollbackResult#undo() undo plan}. A plan that
+     * wasn't applied (another rollback was running, or a listener cancelled it) can be
+     * applied again.
      *
      * @param plan a plan from this API, or a result's undo plan
      * @return what it did; completes once every change is made. Fails with an
-     *     {@link IllegalStateException} if another rollback is running, and with a
-     *     {@link java.util.concurrent.CancellationException} if a listener cancelled it
+     *     {@link IllegalStateException} if another rollback is running or xRewind stops
+     *     before it's done, and with a {@link java.util.concurrent.CancellationException}
+     *     if a listener cancelled it
+     * @throws IllegalArgumentException if the plan isn't one of this API's, such as the
+     *     plan an event shows
+     * @throws IllegalStateException if the plan was applied already, or is being applied
      * @since 1.1.0
      */
     CompletableFuture<RollbackResult> apply(Plan plan);
 
     /**
-     * Writes everything logged so far. Any thread.
+     * Writes everything logged before the call. Any thread. What's logged after doesn't
+     * count, so it completes on a busy server too.
      *
-     * @return completes off the server's threads once it's written (true), or after 10
-     *     seconds or if the database can't be reached (false)
+     * @return completes off the server's threads: true once everything logged before the
+     *     call is written and writes are going through; false after 10 seconds (while
+     *     {@link #pause() paused}, say), or if the database can't be reached
      * @since 1.1.0
      */
     CompletableFuture<Boolean> flush();
 
     /**
-     * Holds xRewind's writer between batches, so nothing is written to the database until
-     * {@link #resume()}: for a backup that mustn't copy the database partway through a
-     * write. Changes keep being logged to memory meanwhile, and are written after. Keep it
-     * short: the writer resumes on its own after 60 seconds. Any thread. Lookups and
-     * rollbacks still read, and a rollback marks what it changed once writing resumes.
+     * Stops xRewind's database writes until the hold is let go: for a backup that mustn't
+     * copy the database partway through a write. The writer and a purge each finish the
+     * transaction they're in, then wait. Changes keep being logged to memory meanwhile,
+     * and are written after. Lookups and rollbacks still read, and a rollback marks what
+     * it changed once writing resumes. Any thread.
      *
-     * @return completes once the writer has finished the batch it was writing and is held:
-     *     on the writer's thread, or at once if it isn't running
+     * <p>Each call is its own hold, so two plugins pausing at once don't end each other's.
+     * Keep it short: a hold lets go by itself after 60 seconds.
+     *
+     * @return the hold, once nothing is writing; completes off the server's threads
      * @since 1.1.0
      */
-    CompletableFuture<Void> pause();
-
-    /**
-     * Lets the writer go on after {@link #pause()}. Does nothing if it isn't held. Any
-     * thread.
-     *
-     * @since 1.1.0
-     */
-    void resume();
+    CompletableFuture<WriterHold> pause();
 }

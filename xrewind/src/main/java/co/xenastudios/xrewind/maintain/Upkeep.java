@@ -5,6 +5,7 @@ import co.xenastudios.core.text.Durations;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xrewind.XRewind;
 import co.xenastudios.xrewind.config.XRConfig;
+import co.xenastudios.xrewind.log.WriteGate;
 import co.xenastudios.xrewind.storage.Clock;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,7 +47,7 @@ public final class Upkeep {
         plugin.tasks().async(() -> {
             try {
                 plugin.writer().flush(2_000);
-                long deleted = Purge.run(database, Purge.secondsAgo(seconds));
+                long deleted = Purge.run(database, plugin.writer().gate(), Purge.secondsAgo(seconds));
                 reply(sender, () -> messages().purged().send(sender, Placeholders.text("count", String.format("%,d", deleted)),
                     Placeholders.text("time", Durations.format(Duration.ofSeconds(seconds)))));
             } catch (SQLException | RuntimeException e) {
@@ -83,7 +84,7 @@ public final class Upkeep {
                 reply(sender, () -> messages().importing().send(sender, Placeholders.text("source", source.description())));
                 // Recorded before anything's read: a second import, even after this one stops
                 // partway, would duplicate what came across, so it needs #again.
-                setMeta(database, IMPORTED, "partway, " + LocalDate.now());
+                setMeta(database, plugin.writer().gate(), IMPORTED, "partway, " + LocalDate.now());
                 long start = System.nanoTime();
                 long count = new CoreProtectImport(source, plugin.queue(), plugin.getLogger()).run();
                 // Done once what it queued is written. Live logging keeps the queue busy, so
@@ -92,7 +93,7 @@ public final class Upkeep {
                 while (plugin.writer().written() < target && plugin.writer().problem() == null) {
                     plugin.writer().flush(5_000);
                 }
-                setMeta(database, IMPORTED, LocalDate.now().toString());
+                setMeta(database, plugin.writer().gate(), IMPORTED, LocalDate.now().toString());
                 double seconds = (System.nanoTime() - start) / 1e9;
                 plugin.getLogger().info("Imported " + String.format("%,d", count) + " changes from CoreProtect in "
                     + co.xenastudios.xrewind.rollback.Rollbacks.seconds(seconds) + "s.");
@@ -127,7 +128,9 @@ public final class Upkeep {
         }
     }
 
-    private static void setMeta(Database database, String name, String value) throws SQLException {
+    // A write, so a turn at the gate: a backup's hold waits for it, and it for the hold.
+    private static void setMeta(Database database, WriteGate gate, String name, String value) throws SQLException, InterruptedException {
+        gate.enter();
         try (Connection connection = database.connect()) {
             try (PreparedStatement update = connection.prepareStatement(database.sql("UPDATE {p}meta SET value = ? WHERE name = ?"))) {
                 update.setString(1, value);
@@ -141,6 +144,8 @@ public final class Upkeep {
                 insert.setString(2, value);
                 insert.executeUpdate();
             }
+        } finally {
+            gate.exit();
         }
     }
 

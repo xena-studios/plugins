@@ -2,6 +2,7 @@ package co.xenastudios.xrewind.maintain;
 
 import co.xenastudios.core.db.Database;
 import co.xenastudios.core.db.Dialect;
+import co.xenastudios.xrewind.log.WriteGate;
 import co.xenastudios.xrewind.storage.Clock;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,7 +14,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Deletes history older than a time, a few thousand rows per transaction with a pause
  * between, so the database is never locked for long and logging carries on alongside.
- * Off the server's threads only.
+ * Each transaction, and the vacuum after, is a turn at the {@link WriteGate}, so a
+ * backup's hold stops a purge between batches too. Off the server's threads only.
  */
 public final class Purge {
 
@@ -23,10 +25,11 @@ public final class Purge {
     private Purge() {}
 
     /**
+     * @param gate waited on before each transaction, so a backup's hold stops it too
      * @param before delete rows from before this {@link Clock} time
-     * @return how many rows were deleted
+     * @return how many rows were deleted; fewer if the thread was interrupted
      */
-    public static long run(Database database, int before) throws SQLException {
+    public static long run(Database database, WriteGate gate, int before) throws SQLException {
         long deleted = 0;
         try (Connection connection = database.connect()) {
             for (String table : TABLES) {
@@ -38,7 +41,17 @@ public final class Purge {
                     delete.setInt(1, before);
                     int count;
                     do {
-                        count = delete.executeUpdate();
+                        try {
+                            gate.enter();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return deleted;
+                        }
+                        try {
+                            count = delete.executeUpdate();
+                        } finally {
+                            gate.exit();
+                        }
                         deleted += count;
                         if (count == BATCH) {
                             // Let the writer in between batches.
@@ -54,8 +67,16 @@ public final class Purge {
             }
             if (database.dialect() == Dialect.SQLITE && deleted > 0) {
                 // Hands the freed pages back to the disk, a little at a time.
+                try {
+                    gate.enter();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return deleted;
+                }
                 try (Statement statement = connection.createStatement()) {
                     statement.execute("PRAGMA incremental_vacuum");
+                } finally {
+                    gate.exit();
                 }
             }
         }

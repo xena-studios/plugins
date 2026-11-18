@@ -527,8 +527,9 @@ public final class Store {
      * @return how many values were added
      */
     public int importRows(List<Imported> players) throws SQLException {
-        int added = 0;
         try (Connection connection = connect()) {
+            // Counted before and after: MySQL's batched inserts don't say how many each one added.
+            long before = totalRows(connection);
             connection.setAutoCommit(false);
             try (PreparedStatement insert = connection.prepareStatement(sql(database.dialect().insertIgnore()
                 + " INTO {p}totals (player, stat, server, value, raw) VALUES (?, ?, ?, ?, ?)"))) {
@@ -542,17 +543,25 @@ public final class Store {
                         insert.setLong(5, Boolean.TRUE.equals(player.counters().get(value.getKey())) ? value.getValue() : -1);
                         insert.addBatch();
                     }
-                    for (int count : insert.executeBatch()) {
-                        added += Math.max(0, count);
-                    }
+                    insert.executeBatch();
                 }
                 connection.commit();
             } catch (SQLException | RuntimeException e) {
                 connection.rollback();
                 throw e;
             }
+            connection.setAutoCommit(true);
+            return (int) (totalRows(connection) - before);
         }
-        return added;
+    }
+
+    private long totalRows(Connection connection) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement(sql("SELECT COUNT(*) FROM {p}totals WHERE server = ?"))) {
+            query.setInt(1, server);
+            try (ResultSet result = query.executeQuery()) {
+                return result.next() ? result.getLong(1) : 0;
+            }
+        }
     }
 
     /** A flag kept in the meta table, such as whether the import has run on this server. */

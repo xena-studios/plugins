@@ -64,9 +64,14 @@ class EngineTest {
             new StatDef.Vanillas(List.of(), List.of()));
     }
 
+    /** Where the tests keep their stats: SQLite in a fresh folder; {@link MySqlTest} uses MySQL or MariaDB. */
+    StorageSettings storage() {
+        return StorageSettings.defaults("xstats_");
+    }
+
     Engine engine(String server, boolean network) throws Exception {
         Engine engine = new Engine(catalog, new Engine.Settings(CALENDAR, true, 5 * MINUTE, 90, network), LOGGER);
-        engine.open(Store.open(StorageSettings.defaults("xstats_"), folder, server), ChangeFeed.off());
+        engine.open(Store.open(storage(), folder, server), ChangeFeed.off());
         return engine;
     }
 
@@ -174,11 +179,11 @@ class EngineTest {
         engine.save(now);
         assertEquals(50, value(engine, steve, jumps, Period.ALL));
         assertEquals(0, value(engine, steve, jumps, Period.DAILY));
-        assertEquals(1, count(engine, "SELECT COUNT(*) FROM xstats_daily"), "one row: kills, today");
+        assertEquals(1, count(engine, "SELECT COUNT(*) FROM {p}daily"), "one row: kills, today");
         // Nothing changed: nothing written.
         engine.queue(sample(steve, "Steve", now + 2 * MINUTE, 0, 2, 50));
         engine.save(now);
-        assertEquals(1, count(engine, "SELECT COUNT(*) FROM xstats_daily"));
+        assertEquals(1, count(engine, "SELECT COUNT(*) FROM {p}daily"));
     }
 
     @Test
@@ -296,14 +301,14 @@ class EngineTest {
         int today = CALENDAR.today(now);
         try (Connection connection = engine.store().connect(); Statement statement = connection.createStatement()) {
             for (int back : new int[] {200, 199, 120, 3}) {
-                statement.executeUpdate("INSERT INTO xstats_daily (player, stat, server, day, delta) VALUES (" + player + ", 1, "
+                statement.executeUpdate(engine.store().database().sql("INSERT INTO {p}daily (player, stat, server, day, delta) VALUES (") + player + ", 1, "
                     + engine.store().server() + ", " + (today - back) + ", 5)");
             }
         }
         assertEquals(3, engine.store().fold(today - 90, 31));
-        assertEquals(1, count(engine, "SELECT COUNT(*) FROM xstats_daily"), "the recent day stays");
-        assertEquals(15, count(engine, "SELECT SUM(delta) FROM xstats_monthly"));
-        assertTrue(count(engine, "SELECT COUNT(*) FROM xstats_monthly") >= 2, "200 and 120 days ago are different months");
+        assertEquals(1, count(engine, "SELECT COUNT(*) FROM {p}daily"), "the recent day stays");
+        assertEquals(15, count(engine, "SELECT SUM(delta) FROM {p}monthly"));
+        assertTrue(count(engine, "SELECT COUNT(*) FROM {p}monthly") >= 2, "200 and 120 days ago are different months");
     }
 
     @Test
@@ -336,7 +341,7 @@ class EngineTest {
 
     private static long count(Engine engine, String sql) throws Exception {
         try (Connection connection = engine.store().connect(); Statement statement = connection.createStatement();
-             ResultSet result = statement.executeQuery(sql)) {
+             ResultSet result = statement.executeQuery(engine.store().database().sql(sql))) {
             return result.next() ? result.getLong(1) : -1;
         }
     }

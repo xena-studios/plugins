@@ -1,5 +1,6 @@
 package co.xenastudios.xbackup.restore;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,6 +68,17 @@ class ServerCheckTest {
             assertTrue(running.contains(ServerCheck.MARKER), running);
         }
         assertNull(ServerCheck.running(server, List.of("world")), "a stopped server leaves the file unlocked");
+    }
+
+    @Test
+    void aServerStartingDuringACommandLineRestoreFindsTheMarkerTaken() throws Exception {
+        Path home = dir.resolve("server/plugins/xBackup");
+        try (ServerCheck.Claim claim = ServerCheck.claim(home)) {
+            assertNotNull(claim);
+            // The bootstrap stops the server on BUSY.
+            assertEquals(ServerCheck.Hold.BUSY, ServerCheck.hold(home));
+            assertNull(ServerCheck.claim(home), "a second restore is refused too");
+        }
     }
 
     @Test

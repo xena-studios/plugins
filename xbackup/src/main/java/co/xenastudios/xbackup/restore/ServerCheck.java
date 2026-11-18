@@ -23,7 +23,9 @@ import java.util.regex.Pattern;
  *
  * <ul>
  * <li>xBackup's own {@value #MARKER}, locked by the operating system from the moment the
- *     server starts (the bootstrap) until xBackup is disabled, wherever the worlds are;
+ *     server starts (the bootstrap) until the process exits, wherever the worlds are. The
+ *     command-line restore holds it too while it works, so a server started meanwhile stops
+ *     in its bootstrap;
  * <li>a world's {@code session.lock}, which Minecraft locks while the world is loaded:
  *     looked for in the folders being restored, a few folders deep in the server folder, and
  *     in {@code bukkit.yml}'s {@code world-container}.
@@ -44,10 +46,24 @@ public final class ServerCheck {
 
     private ServerCheck() {}
 
-    /** Locks the marker for as long as this server runs. Safe to call more than once. */
-    public static synchronized void hold(Path home) {
+    /** What {@link #hold} found. */
+    public enum Hold {
+        /** This process holds the marker. */
+        HELD,
+        /** Another process holds it: a command-line restore, or another server on this folder. */
+        BUSY,
+        /** It couldn't be locked at all (a file system without locks, or no permission). */
+        UNAVAILABLE
+    }
+
+    /**
+     * Locks the marker for as long as this server runs: the operating system lets go when the
+     * process exits, after the worlds are saved, so it's never released on disable. Safe to
+     * call more than once.
+     */
+    public static synchronized Hold hold(Path home) {
         if (held != null && held.isValid()) {
-            return;
+            return Hold.HELD;
         }
         try {
             Files.createDirectories(home);
@@ -57,33 +73,61 @@ public final class ServerCheck {
                 lock = channel.tryLock();
             } catch (OverlappingFileLockException e) {
                 lock = null;
+            } catch (IOException e) {
+                channel.close();
+                return Hold.UNAVAILABLE;
             }
             if (lock == null) {
                 channel.close();
-                return;
+                return Hold.BUSY;
             }
             heldChannel = channel;
             held = lock;
+            return Hold.HELD;
         } catch (IOException e) {
             // Only a hint for the command line; session.lock still says the server is up.
+            return Hold.UNAVAILABLE;
         }
     }
 
-    /** Lets go of the marker, on disable. */
-    public static synchronized void release() {
+    /** The marker, held by the command-line restore while it works; closing lets go. */
+    public interface Claim extends AutoCloseable {
+        @Override
+        void close() throws IOException;
+    }
+
+    /**
+     * Takes the marker for the command-line restore, for as long as it runs, so a server
+     * started meanwhile stops in its bootstrap instead of loading worlds being swapped.
+     *
+     * @return the held marker, or null if a server (or another restore) holds it
+     * @throws IOException if it can't be locked at all, so there's no telling
+     */
+    public static Claim claim(Path home) throws IOException {
+        Files.createDirectories(home);
+        FileChannel channel = FileChannel.open(home.resolve(MARKER), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        FileLock lock;
         try {
-            if (held != null) {
-                held.release();
-            }
-            if (heldChannel != null) {
-                heldChannel.close();
-            }
+            lock = channel.tryLock();
+        } catch (OverlappingFileLockException e) {
+            lock = null;
         } catch (IOException e) {
-            // Closing anyway.
-        } finally {
-            held = null;
-            heldChannel = null;
+            channel.close();
+            throw new IOException("can't lock " + home.resolve(MARKER) + " (" + e.getMessage() + "), so there's no"
+                + " telling whether the server is running. Restore into an empty folder with --to instead.", e);
         }
+        if (lock == null) {
+            channel.close();
+            return null;
+        }
+        FileLock taken = lock;
+        return () -> {
+            try {
+                taken.release();
+            } finally {
+                channel.close();
+            }
+        };
     }
 
     /**
@@ -98,6 +142,19 @@ public final class ServerCheck {
         Path marker = server.resolve("plugins").resolve("xBackup").resolve(MARKER);
         if (Files.isRegularFile(marker) && locked(marker)) {
             return "xBackup holds " + server.relativize(marker);
+        }
+        return worldOpen(server, paths);
+    }
+
+    /**
+     * Which world's {@code session.lock} is locked, or null: the check that needs no marker,
+     * for the command-line restore once it holds the marker itself.
+     *
+     * @param paths the paths about to be restored, relative to the server folder
+     */
+    public static String worldOpen(Path server, List<String> paths) {
+        if (!Files.isDirectory(server)) {
+            return null;
         }
         Set<Path> folders = new LinkedHashSet<>();
         folders.add(server);

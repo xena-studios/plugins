@@ -23,8 +23,17 @@ public final class XBackupBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(BootstrapContext context) {
-        // From now until xBackup is disabled, the command-line restore sees the server running.
-        ServerCheck.hold(context.getDataDirectory().toAbsolutePath());
+        // From now until the process exits, the command-line restore sees the server running.
+        ServerCheck.Hold hold = ServerCheck.hold(context.getDataDirectory().toAbsolutePath());
+        if (hold == ServerCheck.Hold.BUSY) {
+            // The command-line restore holds it while it stages and swaps: loading the worlds
+            // now would load them while their folders are swapped, or run its journal twice.
+            context.getLogger().error("xBackup stopped the server from starting: another process holds "
+                + context.getDataDirectory().resolve(ServerCheck.MARKER) + ". A command-line restore is running on"
+                + " this server folder (or another server is using it). Let it finish, then start the server.");
+            System.err.flush();
+            Runtime.getRuntime().halt(1);
+        }
         Path restore = context.getDataDirectory().toAbsolutePath().resolve("restore");
         if (!Files.exists(restore.resolve(Swap.PENDING))) {
             return;

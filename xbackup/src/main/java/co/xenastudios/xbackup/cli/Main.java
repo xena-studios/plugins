@@ -277,16 +277,25 @@ public final class Main {
                 return 1;
             }
         }
+        // An in-place restore holds running.lock from here to the end, so a server started
+        // meanwhile (while this downloads, waits for "yes", or stages) stops in its bootstrap.
+        ServerCheck.Claim claim = null;
         if (inPlace && !dryRun) {
-            String running = ServerCheck.running(server, paths);
+            claim = ServerCheck.claim(home());
+            String running = claim == null ? "xBackup holds plugins/xBackup/" + ServerCheck.MARKER
+                : ServerCheck.worldOpen(server, paths);
             if (running != null) {
+                if (claim != null) {
+                    claim.close();
+                }
                 out.println("The server is running (" + running + "). Stop it first, or restore with"
                     + " /backup restore in game, or into an empty folder with --to.");
                 return 1;
             }
         }
         Path cache = home().resolve("temp").resolve("remote-" + (remote == null ? "" : remote));
-        try (Repository repository = open(cache); Repository.Lock lock = repository.lock(false)) {
+        try (ServerCheck.Claim held = claim; Repository repository = open(cache);
+             Repository.Lock lock = repository.lock(false)) {
             Snapshot snapshot = find(repository, id);
             Set<String> protect = new HashSet<>();
             protect.add("plugins/xBackup");
@@ -348,6 +357,14 @@ public final class Main {
             List<Swap.Entry> entries = new ArrayList<>();
             for (Restore.Item item : items) {
                 entries.add(new Swap.Entry(item.path(), item.node().kind() == co.xenastudios.xbackup.store.Tree.Kind.SQLITE));
+            }
+            // Checked again right before the swap: staging can take hours.
+            String running = ServerCheck.worldOpen(server, paths);
+            if (running != null) {
+                Swap.deleteTree(staged);
+                out.println("A world was opened while the restore was staged (" + running + "), so nothing was"
+                    + " changed. Stop the server, then restore again.");
+                return 1;
             }
             Swap.schedule(restoreFolder, snapshot.id().hex(), entries);
             Path aside = Swap.apply(restoreFolder, server, line -> out.println("  " + line));

@@ -94,7 +94,8 @@ public class XBackup extends XenaPlugin<XBConfig> {
             Bukkit.getServicesManager().unregister(XBackupApi.class, api);
             engine.stop();
             engine = null;
-            ServerCheck.release();
+            // running.lock stays held: Paper saves the worlds after plugins are disabled, and
+            // the operating system lets go when the process exits.
         }
     }
 

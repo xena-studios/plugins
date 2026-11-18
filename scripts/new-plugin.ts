@@ -93,8 +93,13 @@ const copy = (from: string, to: string) => {
       fs.mkdirSync(target, { recursive: true });
       copy(path.join(from, item.name), target);
     } else {
-      if (fs.existsSync(target)) fail(`${path.relative(ROOT, target)} already exists`);
-      fs.writeFileSync(target, fill(fs.readFileSync(path.join(from, item.name), "utf8")));
+      // "wx" creates the file, or fails if it's there: one step, so nothing is overwritten.
+      try {
+        fs.writeFileSync(target, fill(fs.readFileSync(path.join(from, item.name), "utf8")), { flag: "wx" });
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code === "EEXIST") fail(`${path.relative(ROOT, target)} already exists`);
+        throw e;
+      }
       written.push(path.relative(ROOT, target));
     }
   }

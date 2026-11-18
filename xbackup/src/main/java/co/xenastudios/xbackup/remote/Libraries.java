@@ -19,8 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The SFTP and FTP libraries, fetched the first time a remote needs them, never shaded into
- * the jar. Each is one dependency-free jar from Maven Central (through Paper's mirror first),
- * checked against the SHA-256 written here before it's used, and kept in
+ * the jar. Each is one dependency-free jar from Maven Central (Google's mirror of it first,
+ * then Maven Central itself), checked against the SHA-256 written here before it's used, and
+ * kept in
  * {@code plugins/xBackup/libraries/}. A host that blocks the download gets one clear error
  * naming the remote; nothing else in xBackup is affected.
  *
@@ -28,8 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code /xbackup reload} works without a restart, and so the command-line restore, which
  * runs without a server, can use them too.
  *
- * <p>The code that uses a library ({@code remote.lib}) is loaded by a class loader that sees
- * the library first, so the rest of xBackup never touches its classes.
+ * <p>The code that uses a library ({@code remote.lib}) is loaded by its own class loader,
+ * from xBackup's jar, with the library's classes from the library's jar, so the rest of
+ * xBackup never touches them.
  */
 public final class Libraries {
 
@@ -107,26 +109,38 @@ public final class Libraries {
         } catch (SecurityException | NullPointerException e) {
             throw new IOException("remote " + name + ": can't find xBackup's own jar to load " + library.artifact() + ".", e);
         }
-        ClassLoader loader = new Isolated(new URL[] {jar.toUri().toURL(), own}, Libraries.class.getClassLoader(),
-            library.packageName());
+        ClassLoader loader = isolated(own, jar.toUri().toURL(), library);
         LOADERS.put(library, loader);
         return loader;
     }
 
+    /**
+     * A class loader for the code that uses the library: xBackup's own {@code remote.lib}
+     * classes only ever from xBackup's jar, the library's only from its jar, everything else
+     * from xBackup's loader.
+     */
+    static ClassLoader isolated(URL own, URL library, Library which) {
+        return new Isolated(own, library, Libraries.class.getClassLoader(), which.packageName());
+    }
+
     /** Downloads the library once and checks its hash; a jar already there is checked too. */
     static Path fetch(Library library, Path folder, String remote) throws IOException {
+        return fetch(library, folder, remote, MIRRORS);
+    }
+
+    static Path fetch(Library library, Path folder, String remote, List<String> mirrors) throws IOException {
         Path jar = folder.resolve(library.fileName());
         if (Files.exists(jar) && sha256(jar).equals(library.sha256())) {
             return jar;
         }
         Files.createDirectories(folder);
         IOException last = null;
-        for (String mirror : MIRRORS) {
+        for (String mirror : mirrors) {
             Path part = folder.resolve(library.fileName() + ".part");
             try {
                 HttpRequest request = HttpRequest.newBuilder(URI.create(mirror + library.path()))
                     .timeout(Duration.ofMinutes(2)).GET().build();
-                HttpResponse<Path> response = Http.CLIENT.send(request, HttpResponse.BodyHandlers.ofFile(part));
+                HttpResponse<Path> response = Http.await(request, HttpResponse.BodyHandlers.ofFile(part));
                 if (response.statusCode() != 200) {
                     throw new IOException("HTTP " + response.statusCode() + " from " + URI.create(mirror).getHost());
                 }
@@ -164,33 +178,55 @@ public final class Libraries {
     }
 
     /**
-     * Loads the library's classes and xBackup's code that uses them from its own jars first,
-     * everything else (the store, the config) from xBackup's loader, so both sides agree on
-     * the {@link Backend} interface.
+     * Loads xBackup's code that uses the library from xBackup's own jar, and the library's
+     * classes from the library's jar, never the other way round: a library jar can't stand in
+     * for xBackup's classes. Everything else (the store, the config) comes from xBackup's
+     * loader, so both sides agree on the {@link Backend} interface.
      */
-    private static final class Isolated extends URLClassLoader {
+    private static final class Isolated extends ClassLoader {
+        private final URLClassLoader own;
+        private final URLClassLoader library;
         private final String libraryPackage;
 
-        Isolated(URL[] urls, ClassLoader parent, String libraryPackage) {
-            super(urls, parent);
+        Isolated(URL own, URL library, ClassLoader parent, String libraryPackage) {
+            super(parent);
+            // Each has no parent: they only find what's in their one jar.
+            this.own = new URLClassLoader(new URL[] {own}, null);
+            this.library = new URLClassLoader(new URL[] {library}, null);
             this.libraryPackage = libraryPackage;
         }
 
         @Override
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            if (!name.startsWith(OWN) && !name.startsWith(libraryPackage)) {
+            boolean ours = name.startsWith(OWN);
+            if (!ours && !name.startsWith(libraryPackage)) {
                 return super.loadClass(name, resolve);
             }
             synchronized (getClassLoadingLock(name)) {
                 Class<?> loaded = findLoadedClass(name);
                 if (loaded == null) {
-                    loaded = findClass(name);
+                    String resource = name.replace('.', '/') + ".class";
+                    try (InputStream in = (ours ? own : library).getResourceAsStream(resource)) {
+                        if (in == null) {
+                            throw new ClassNotFoundException(name);
+                        }
+                        byte[] bytes = in.readAllBytes();
+                        loaded = defineClass(name, bytes, 0, bytes.length);
+                    } catch (IOException e) {
+                        throw new ClassNotFoundException(name, e);
+                    }
                 }
                 if (resolve) {
                     resolveClass(loaded);
                 }
                 return loaded;
             }
+        }
+
+        @Override
+        protected URL findResource(String name) {
+            URL found = library.findResource(name);
+            return found != null ? found : own.findResource(name);
         }
     }
 }

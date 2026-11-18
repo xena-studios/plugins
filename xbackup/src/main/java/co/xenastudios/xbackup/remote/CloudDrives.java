@@ -146,6 +146,9 @@ final class CloudDrives {
         private String folderId;
         private Map<String, String> ids;
         private Map<String, Long> sizes;
+        // Drive allows several files with one name (an upload whose old copy wasn't deleted
+        // before a crash). The newest is used; the others are removed with it.
+        private Map<String, List<String>> duplicates;
 
         Drive(String name, RemoteConfig settings, String folder, Remotes.Context context) {
             super(name, "drive", settings, folder, context);
@@ -170,12 +173,14 @@ final class CloudDrives {
             }
             String query = "name = '" + q(folder) + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
             HttpResponse<byte[]> response = send("Finding the folder", () -> request(base() + "/drive/v3/files?q="
-                + Http.encode(query, false) + "&fields=" + Http.encode("files(id)", false) + "&spaces=drive").GET().build());
+                + Http.encode(query, false) + "&fields=" + Http.encode("files(id)", false) + "&spaces=drive&orderBy=createdTime")
+                .GET().build());
             if (response.statusCode() != 200) {
                 throw failed("Finding the folder", response);
             }
             List<?> files = (List<?>) Json.object(Http.utf8(response.body())).get("files");
             if (files != null && !files.isEmpty()) {
+                // More than one folder by that name: always the oldest, the one copies went to first.
                 folderId = Json.string(cast(files.get(0)), "id");
                 return folderId;
             }
@@ -195,11 +200,12 @@ final class CloudDrives {
             }
             Map<String, String> found = new HashMap<>();
             Map<String, Long> foundSizes = new HashMap<>();
+            Map<String, List<String>> extra = new HashMap<>();
             String parent = folderId();
             String token = null;
             do {
                 String query = "'" + parent + "' in parents and trashed = false";
-                String url = base() + "/drive/v3/files?q=" + Http.encode(query, false) + "&pageSize=1000&fields="
+                String url = base() + "/drive/v3/files?q=" + Http.encode(query, false) + "&pageSize=1000&orderBy=createdTime&fields="
                     + Http.encode("nextPageToken,files(id,name,size)", false) + (token == null ? "" : "&pageToken="
                     + Http.encode(token, false));
                 HttpResponse<byte[]> response = send("Listing", () -> request(url).GET().build());
@@ -211,7 +217,10 @@ final class CloudDrives {
                 if (files instanceof List<?> list) {
                     for (Object item : list) {
                         Map<String, Object> file = cast(item);
-                        found.put(Json.string(file, "name"), Json.string(file, "id"));
+                        String older = found.put(Json.string(file, "name"), Json.string(file, "id"));
+                        if (older != null) {
+                            extra.computeIfAbsent(Json.string(file, "name"), key -> new ArrayList<>()).add(older);
+                        }
                         String size = Json.string(file, "size");
                         foundSizes.put(Json.string(file, "name"), size == null ? 0 : Long.parseLong(size));
                     }
@@ -220,6 +229,7 @@ final class CloudDrives {
             } while (token != null);
             ids = found;
             sizes = foundSizes;
+            duplicates = extra;
         }
 
         @Override
@@ -246,13 +256,19 @@ final class CloudDrives {
             String id = Json.string(reply, "id");
             long stored = Long.parseLong(Json.string(reply, "size") == null ? "-1" : Json.string(reply, "size"));
             if (stored >= 0 && stored != size) {
+                deleteId(id);
                 throw new IOException("remote " + name + " holds " + stored + " bytes of " + file + " after uploading "
                     + size + "; it will be sent again next time.");
             }
             String old = ids.put(file, id);
-            sizes.put(file, Files.size(source));
+            sizes.put(file, size);
+            List<String> stale = new ArrayList<>(duplicates.getOrDefault(file, List.of()));
+            duplicates.remove(file);
             if (old != null && !old.equals(id)) {
-                deleteId(old);
+                stale.add(old);
+            }
+            for (String staleId : stale) {
+                deleteId(staleId);
             }
         }
 
@@ -296,8 +312,13 @@ final class CloudDrives {
             index();
             String id = ids.remove(Backend.checkName(file));
             sizes.remove(file);
+            List<String> all = new ArrayList<>(duplicates.getOrDefault(file, List.of()));
+            duplicates.remove(file);
             if (id != null) {
-                deleteId(id);
+                all.add(id);
+            }
+            for (String each : all) {
+                deleteId(each);
             }
         }
 

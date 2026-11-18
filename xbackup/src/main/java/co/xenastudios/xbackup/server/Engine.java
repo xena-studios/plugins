@@ -790,30 +790,43 @@ public final class Engine {
         if (!List.of("drive", "onedrive", "dropbox").contains(type)) {
             throw new IllegalArgumentException(name + " is a " + type + " remote; only drive, onedrive and dropbox are linked.");
         }
+        String shown = text(name);
         plugin.tasks().async(() -> {
             try {
                 if (type.equals("dropbox")) {
                     if (code == null) {
-                        say.accept("Open <click:open_url:'" + co.xenastudios.xbackup.remote.OAuth.dropboxUrl(home, name, remote)
-                            + "'><highlight><underlined>this link</underlined></highlight></click>, allow xBackup, then"
-                            + " run <highlight>/backup link " + name + " <code></highlight> with the code Dropbox shows.");
+                        say.accept("Open " + link(co.xenastudios.xbackup.remote.OAuth.dropboxUrl(home, name, remote), "this link")
+                            + ", allow xBackup, then run <highlight>/backup link " + shown + " \\<code></highlight> with the"
+                            + " code Dropbox shows.");
                         return;
                     }
                     co.xenastudios.xbackup.remote.OAuth.dropboxCode(home, name, remote, code);
                 } else {
                     co.xenastudios.xbackup.remote.OAuth.DeviceCode device =
                         co.xenastudios.xbackup.remote.OAuth.start(name, type, remote);
-                    say.accept("Go to <click:open_url:'" + device.url() + "'><highlight><underlined>" + device.url()
-                        + "</underlined></highlight></click> on any device and enter <highlight>" + device.userCode()
-                        + "</highlight>. Waiting...");
+                    say.accept("Go to " + link(device.url(), device.url()) + " on any device and enter <highlight>"
+                        + text(device.userCode()) + "</highlight>. Waiting...");
                     co.xenastudios.xbackup.remote.OAuth.finish(home, name, type, remote, device, stopping::get);
                 }
-                say.accept("<success>Linked</success> " + name + ". Backups are copied to it from the next one; "
-                    + "<highlight>/backup copy " + name + "</highlight> copies them now.");
+                say.accept("<success>Linked</success> " + shown + ". Backups are copied to it from the next one; "
+                    + "<highlight>/backup copy " + shown + "</highlight> copies them now.");
             } catch (IOException | RuntimeException e) {
-                say.accept("<error>Couldn't link " + name + ": " + describe(e) + "</error>");
+                say.accept("<error>Couldn't link " + shown + ": " + text(describe(e)) + "</error>");
             }
         });
+    }
+
+    // What a provider sent, as plain text in a MiniMessage line: never tags of its own.
+    private static String text(String value) {
+        return net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().escapeTags(value == null ? "" : value);
+    }
+
+    // A clickable link to a provider's https address; anything else is shown as text only.
+    private static String link(String url, String label) {
+        if (url == null || !url.matches("https://[^\\s'\\\\<>]+")) {
+            return text(url);
+        }
+        return "<click:open_url:'" + url + "'><highlight><underlined>" + text(label) + "</underlined></highlight></click>";
     }
 
     public Remotes.Context remotesContext() {

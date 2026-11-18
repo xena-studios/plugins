@@ -13,8 +13,12 @@ import java.util.Map;
  */
 final class Json {
 
+    /** Deeper than any reply xBackup reads; a hostile one can't overflow the stack. */
+    private static final int MAX_DEPTH = 64;
+
     private final String text;
     private int pos;
+    private int depth;
 
     private Json(String text) {
         this.text = text;
@@ -57,15 +61,23 @@ final class Json {
             throw error("unexpected end");
         }
         char c = text.charAt(pos);
+        if ((c == '{' || c == '[') && ++depth > MAX_DEPTH) {
+            throw error("nested more than " + MAX_DEPTH + " deep");
+        }
         return switch (c) {
-            case '{' -> object();
-            case '[' -> array();
+            case '{' -> leave(object());
+            case '[' -> leave(array());
             case '"' -> string();
             case 't' -> literal("true", Boolean.TRUE);
             case 'f' -> literal("false", Boolean.FALSE);
             case 'n' -> literal("null", null);
             default -> number();
         };
+    }
+
+    private Object leave(Object value) {
+        depth--;
+        return value;
     }
 
     private Object literal(String word, Object value) throws IOException {
@@ -162,7 +174,11 @@ final class Json {
                     if (pos + 4 > text.length()) {
                         throw error("short \\u escape");
                     }
-                    out.append((char) Integer.parseInt(text.substring(pos, pos + 4), 16));
+                    String hex = text.substring(pos, pos + 4);
+                    if (!hex.chars().allMatch(h -> Character.digit(h, 16) >= 0)) {
+                        throw error("bad \\u escape " + hex);
+                    }
+                    out.append((char) Integer.parseInt(hex, 16));
                     pos += 4;
                 }
                 default -> out.append(e);

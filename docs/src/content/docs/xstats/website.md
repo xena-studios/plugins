@@ -36,6 +36,7 @@ web:
   bind: "127.0.0.1"
   port: 8804
   trusted-proxies: ["127.0.0.1"]
+  client-ip-header: "X-Forwarded-For"
 ```
 
 Caddy:
@@ -58,19 +59,23 @@ server {
 }
 ```
 
-`trusted-proxies` makes the rate limit count each visitor by the address the proxy passes on (`X-Forwarded-For`), instead of counting every visitor as the proxy. Only list your own proxy's address: a header from anyone else is ignored, so visitors can't pick their own address.
+`trusted-proxies` makes the rate limit count each visitor by the address the proxy passes on, instead of counting every visitor as the proxy. Only list your own proxy's address: a header from anyone else is ignored. xStats reads only the header in `client-ip-header`, `X-Forwarded-For` by default, and takes the nearest address in it that isn't one of your proxies, so a visitor can't pick their own address by sending one: nginx and Caddy pass on whatever headers a visitor sends, and add the real address last. An IPv6 visitor is counted by their /64, which one household or server usually has whole.
 
-**Through a Cloudflare Tunnel.** For hosts with one port and no domain set up, or to keep your server's IP address private. Run `cloudflared` on the same machine, pointed at `http://127.0.0.1:8804`, with `bind: "127.0.0.1"` and `trusted-proxies: ["127.0.0.1"]`. xStats reads the visitor's address from `CF-Connecting-IP`.
+**Through a Cloudflare Tunnel.** For hosts with one port and no domain set up, or to keep your server's IP address private. Run `cloudflared` on the same machine, pointed at `http://127.0.0.1:8804`, with `bind: "127.0.0.1"` and `trusted-proxies: ["127.0.0.1"]`. Cloudflare adds the visitor's address to `X-Forwarded-For`, so the default works. Since only Cloudflare reaches `cloudflared`, `client-ip-header: "CF-Connecting-IP"` is safe here too.
+
+**Behind Cloudflare's proxy, without a tunnel.** List [Cloudflare's address ranges](https://www.cloudflare.com/ips/) in `trusted-proxies` (such as `"173.245.48.0/20"`), and set `client-ip-header: "CF-Connecting-IP"`. Only choose `CF-Connecting-IP` when every request reaching xStats through a trusted proxy came through Cloudflare: anyone can send that header, and only Cloudflare replaces it.
 
 **On a shared host (Pterodactyl and similar).** Ask your host for an extra port (an "allocation") and set `port` to it, keeping `bind: "0.0.0.0"`. The site is then at `http://<your server's address>:<port>/`. For your own domain and HTTPS, put Cloudflare in front, or use [Host it anywhere](#host-it-anywhere) with this server as the API.
 
 ## Limits
 
-- `requests-per-minute` (120): requests one visitor may make each minute. Opening a page is a few, plus one per head when they're proxied. More get `429 Too Many Requests` until the minute is up.
+- `requests-per-minute` (120): requests one visitor may make each minute. Opening a page is a few. More get `429 Too Many Requests` until the minute is up. Heads, when they're proxied, have a limit of their own, five times this, since a leaderboard shows up to a hundred. If more than 10,000 addresses visit in one minute (a flood of made-up ones), addresses not seen yet that minute share one count, so the flood limits only itself.
 - `max-concurrent` (32): requests handled at once. More wait up to two seconds, then get `503`; when far more than that wait, new connections are closed.
 - Pages everyone sees (the server's page, every leaderboard) are made once after each save and sent from memory, compressed, with cache headers, so a busy site costs about as much as a quiet one. A player's page is made when it's asked for, from memory, with their 30-day history read from the database and kept for a minute.
 
-The web server stops cleanly on `/xstats reload` (when a web setting changed), when the plugin is disabled, and when the server stops.
+The web server stops cleanly on `/xstats reload` (when a web setting changed), when the plugin is disabled, and when the server stops. If it couldn't start (the port was taken), the next `/xstats reload` tries again.
+
+**On the open internet, put a reverse proxy or Cloudflare in front.** xStats' server is Java's own, which gives a slow request 15 seconds and a slow reply 60, but can't tell a visitor trickling in a byte at a time from a slow connection; Caddy, nginx and Cloudflare can. Those two times are Java settings (`sun.net.httpserver.maxReqTime` and `maxRspTime`) shared by every plugin's web server on the same Java, so xStats sets them only if nothing else has, and if another plugin started a web server first, its settings apply.
 
 ## Branding
 
@@ -92,11 +97,13 @@ web:
 
 Players' heads come from `web.avatars.url`, with `{uuid}`, `{name}` and `{size}` filled in: [mc-heads.net](https://mc-heads.net) by default, or `https://crafatar.com/avatars/{uuid}?size={size}&overlay`. Each visitor's browser loads them from that service.
 
-With `web.avatars.proxy: true`, xStats fetches heads itself and keeps each for a day, so visitors' browsers never contact a third party. Only heads of players xStats knows are fetched, a few at a time, so the proxy can't be used to fetch anything else.
+With `web.avatars.proxy: true`, xStats fetches heads itself and keeps each for a day (up to 8 MiB of them), so visitors' browsers never contact a third party. Only heads of players xStats knows are fetched, four at a time (others wait up to five seconds for a turn), each at most 64 KiB, following redirects only on the same host, so the proxy can't be used to fetch anything else.
 
 ## Which stats show
 
-Only stats with `website: true` are on the site and in its API. Players who ran `/stats private` aren't on it at all: no page, not in search, not on its leaderboards.
+Only stats with `website: true` are on the site and in its API. Players who ran `/stats private` aren't on it at all: no page, not in search, not on its leaderboards, from the moment they run it. Places on the site are counted among the players it shows, so nobody's place gives away that someone private is above them.
+
+Player pages are linked by uuid, so Bedrock players (through Floodgate, with names such as `.Steve`) have pages too. Searching by name works for both.
 
 ## Host it anywhere
 

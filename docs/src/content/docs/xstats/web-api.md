@@ -10,8 +10,8 @@ When the [website](/xstats/website/) is on, xStats serves a read-only JSON API b
 - **Versioned.** Every path starts with `/api/v1/`. A change that removes or renames a field comes as `/api/v2/`, with v1 kept alongside. New fields can be added to v1 at any time.
 - **Read-only.** `GET` and `HEAD` only. Anything else gets `405`.
 - **CORS** for the sites in `web.cors-origins` (any site by default).
-- **Cached.** Responses carry `ETag` and `Cache-Control` headers and are gzipped when asked. Send `If-None-Match` to get a `304` when nothing changed.
-- **Rate-limited** per visitor: `429` with `Retry-After` past `web.requests-per-minute`.
+- **Cached.** Responses carry `ETag` and `Cache-Control` headers and are gzipped when asked (the gzipped copy has its own `ETag`). Send `If-None-Match` to get a `304` when nothing changed.
+- **Rate-limited** per visitor: `429` with `Retry-After` past `web.requests-per-minute`, five times that for heads.
 - **Errors** are JSON: `{"error": "Not found."}` with the status code.
 
 Values are whole numbers in each stat's unit (`unit`): `count`, `time` in seconds, `distance` in centimetres, `damage` in tenths of a health point. Each comes with `display`, the same value as players read it. Times are milliseconds since 1970 (UTC).
@@ -45,7 +45,7 @@ The server, its stats and their totals. Made at each save, cached for a minute.
 
 ## `GET /api/v1/leaderboard/{stat}/{period}`
 
-One leaderboard: up to `leaderboards.size` places, best first, without players who are hidden or left out. `{period}` is `daily`, `weekly`, `monthly` or `all`; a stat without periods only has `all`. Made at each save.
+One leaderboard: up to `leaderboards.size` places, best first, without players who are hidden or left out. `{period}` is `daily`, `weekly`, `monthly` or `all`; a stat without periods only has `all`. Made at each save, and again straight away when someone runs `/stats private`.
 
 ```json
 {
@@ -58,7 +58,7 @@ One leaderboard: up to `leaderboards.size` places, best first, without players w
 }
 ```
 
-Players with the same value share a place.
+Players with the same value share a place. Places are counted among the players the API shows, so a place never gives away that someone private is above; in game, where private players still show, places can differ.
 
 ## `GET /api/v1/leaderboards/{period}`
 
@@ -66,11 +66,11 @@ The top five of every stat for one period, for an overview page: `{"period": "al
 
 ## `GET /api/v1/search?q={name}`
 
-Players whose names start with `q` (1 to 16 letters, digits or `_`), at most 10: `{"players": [{"uuid": "...", "name": "Notch"}]}`.
+Players whose names start with `q` (1 to 16 letters, digits, `_`, and the `.`, `*`, `+`, `~` or `-` that start Bedrock players' names through Floodgate), at most 10: `{"players": [{"uuid": "...", "name": "Notch"}]}`.
 
 ## `GET /api/v1/player/{name or uuid}`
 
-One player's page. `404` for a player xStats doesn't know, or one who ran `/stats private`.
+One player's page, by uuid or by name. Link to players by uuid: it never changes, and it's how the built-in site and `/stats` link (`#/player/<uuid>`). `404` for a player xStats doesn't know, or one who ran `/stats private`. A `rank` is the place among players the API shows.
 
 ```json
 {

@@ -51,21 +51,25 @@ The rest of a stat's settings:
 - `in-game`: show it on `/stats` and `/leaderboard`. Placeholders work either way.
 - `website`: show it on the website and in its API.
 
-The id (`diamonds`) is what placeholders and `/leaderboard` use. A stat removed from the config keeps its numbers in the database, and comes back with them if you add it again.
+The id (`diamonds`) is what placeholders and `/leaderboard` use, so it can't be one placeholders would read as something else: it can't start with `top_` or `rank_`, or end with `_raw`, `_all`, `_daily`, `_weekly` or `_monthly`. A stat removed from the config keeps its numbers in the database, and comes back with them if you add it again.
+
+`time_since_death` and `time_since_rest` go back to 0 by themselves, so they can't be counted up; xStats refuses them as sources.
+
+If another plugin takes some of a Minecraft stat away, xStats' number goes down with it. If a stat suddenly reads far lower (under 90% of before, as when a player's stats file is deleted), it's taken to have started again from 0, and xStats' all-time number keeps growing from there.
 
 Minecraft counts distances in centimetres, damage in tenths of a health point and times in ticks. xStats keeps distances and damage as they are and times in seconds, and writes them all as players read them. Every Minecraft stat name goes through one table, checked against the server's own names: `/xstats status` says whether it matches.
 
 ## Placeholder stats
 
-A `papi:` stat goes up and down with its placeholder, such as a balance. Only rises count towards today, this week and this month, and the first value xStats sees counts towards all time only. A value that isn't a number (a blank, "none") is skipped. `1,234.56`, `$12.5k` and `2M` all read as numbers.
+A `papi:` stat goes up and down with its placeholder, such as a balance. Only rises count towards today, this week and this month, and the first value xStats ever sees for a player counts towards all time only. A value that isn't a number (a blank, "none") is skipped. `1,234.56`, `$12.5k` and `2M` all read as numbers, colours included (`&#FF0000`, `<#ff0000>`, `§a`). A k, m, b or t right after the number multiplies it; a word after a space doesn't, so `5 blocks` is 5. On a network, a placeholder stat is the highest any server has, not every server's added up, so a shared balance shows once.
 
 ## Days, weeks and months
 
-`periods.timezone` is when days start: blank uses the server's own time zone. Weeks start on `periods.week-starts`, Monday by default. Each day's numbers are kept for `periods.keep-daily-days` (90), then added into their month, so monthly and all-time numbers stay right and the database stays small.
+`periods.timezone` is when days start: blank uses the server's own time zone. Weeks start on `periods.week-starts`, Monday by default. Each day's numbers are kept for `periods.keep-daily-days` (90), then added into their month, so monthly and all-time numbers stay right and the database stays small. Changing the time zone or the first day of the week takes effect on `/xstats reload`: this week's and this month's numbers are worked out again for it.
 
 ## Leaving players out
 
-Players with `xstats.leaderboard.exclude` are left out of every leaderboard, such as staff. Nobody has it unless you give it, operators included. With `leaderboards.exclude-banned` on, players banned with `/ban` are left out too. Their stats are still counted, and show on `/stats`.
+Players with `xstats.leaderboard.exclude` are left out of every leaderboard, such as staff. Nobody has it unless you give it, operators included. With `leaderboards.exclude-banned` on, players banned with `/ban` are left out too, from the next save. Turning it off brings them back on `/xstats reload`. Their stats are still counted, and show on `/stats`.
 
 ## Boards in the world
 
@@ -75,4 +79,4 @@ The title, each line and the text when nobody's on it yet are in `leaderboards.b
 
 ## Privacy
 
-`/stats private` hides a player from the website and its API: their profile, search and its leaderboards. In-game leaderboards and placeholders still show them. Running it again shows them again. See [Privacy](/start/privacy/) for what the website shares.
+`/stats private` hides a player from the website and its API, straight away: their profile, search and its leaderboards. In-game leaderboards and placeholders still show them. Running it again shows them again. See [Privacy](/start/privacy/) for what the website shares.

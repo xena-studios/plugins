@@ -21,7 +21,7 @@ Every `/xstats` command needs `xstats.admin`, which operators have.
 
 | Command | What it does |
 | --- | --- |
-| `/xstats status` | The database, players known, the last save, rows in each table, the website, and whether xStats' table of Minecraft's stats matches this server. |
+| `/xstats status` | The database, players known, the last save, changes waiting for the next one, rows in each table, the website, and whether xStats' table of Minecraft's stats matches this server. |
 | `/xstats save` | Saves now, instead of waiting for the next save. |
 | `/xstats import` | Reads players' history from the world's stats files again. Never overwrites what's counted: see [History](/xstats/setting-up/#history-from-before-xstats). |
 | `/xstats board add <stat> [period] [<world> <x> <y> <z>]` | Places a leaderboard in the world: where you stand, or at the coordinates. |

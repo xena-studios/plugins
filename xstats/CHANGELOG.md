@@ -9,14 +9,14 @@ The first release. Drop the jar in and start the server: stats are kept in SQLit
 - 14 stats out of the box: playtime, sessions, player kills, deaths, mobs killed, blocks mined, distance travelled, fish caught, jumps, damage dealt, animals bred, villager trades, items enchanted and raids won.
 - Any of Minecraft's own stats as a stat, named as `/scoreboard` names them, alone or added up: `mined:diamond_ore + mined:deepslate_diamond_ore`, `killed:*`.
 - Playtime that leaves out time a player didn't move their camera between two saves.
-- Any PlaceholderAPI value as a stat, read every save and when a player leaves: a balance, a jobs level.
+- Any PlaceholderAPI value as a stat, read every save and when a player leaves: a balance, a jobs level. Colour codes are skipped, and `5 blocks` reads as 5.
 - Daily, weekly and monthly numbers for the stats you choose, in your time zone; days older than 90 are added into their month.
 - On first start, every player's history from `world/stats` (or `world/players/stats` on 26.x). `/xstats import` runs it again, never overwriting what's counted.
 
 ### For players
 
 - `/stats [player]`: a player's stats and places, online or not, with a link to their page on the website.
-- `/stats private`: off the website, on again.
+- `/stats private`: off the website straight away, every page of it, and on again.
 - `/leaderboard <stat> [daily|weekly|monthly|all] [page]` (`/lb`), a page at a time.
 
 ### Leaderboards
@@ -28,14 +28,15 @@ The first release. Drop the jar in and start the server: stats are kept in SQLit
 
 ### The website
 
-- A stats website served by xStats itself, off until you turn it on: search, player pages with heads, ranks and the last 30 days, leaderboards per period, and server totals, in your server's name, logo and colours.
+- A stats website served by xStats itself, off until you turn it on: search, player pages with heads, ranks and the last 30 days, leaderboards per period, and server totals, in your server's name, logo and colours. Bedrock players (through Floodgate) have pages too.
 - A read-only, versioned JSON API, with CORS for sites hosted elsewhere, a limit per visitor, and caching.
-- Works behind a reverse proxy or a Cloudflare Tunnel, counting each visitor by the address your proxy passes on.
+- Works behind a reverse proxy, Cloudflare or a Cloudflare Tunnel, counting each visitor by the address your proxy passes on in the one header you choose, so visitors can't pick their own.
 - Heads from mc-heads.net, any service you set, or fetched and kept by xStats so visitors never contact a third party.
 - `/xstats web export` writes the site to host on GitHub Pages, Cloudflare Pages or your own domain. `/xstats web test` checks it on your server first.
 
 ### Also
 
 - Networks: several servers sharing MySQL, with leaderboards and the website counting them all, and each server's numbers on player pages.
+- Stats waiting for a save are kept in order and added up, so a database outage never doubles a counter, and other plugins' increments never pile up in memory.
 - A developer API: read stats, ranks and leaderboards, add stats of your own and sections to player profiles, and listen for saves and new leaders.
 - Paper and Folia, 1.21.11 and 26.x.

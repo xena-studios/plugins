@@ -53,6 +53,11 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended
+          # The default configs the tests write for the docs: sample YAML, whose blank
+          # MySQL password is the setting owners fill in, not a credential.
+          config: |
+            paths-ignore:
+              - docs/src/generated
       # CodeQL reads the code as javac compiles it, so every source file has to
       # really compile here: no build cache, no daemon, every task rerun.
       - if: matrix.build-mode == 'manual'

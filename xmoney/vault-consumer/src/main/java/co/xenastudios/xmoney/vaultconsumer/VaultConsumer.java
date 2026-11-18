@@ -61,6 +61,10 @@ public final class VaultConsumer extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equals("vaultperms")) {
+            permissions(sender);
+            return true;
+        }
         failures.clear();
         try {
             legacy();
@@ -155,6 +159,20 @@ public final class VaultConsumer extends JavaPlugin {
             net.milkbowl.vault2.economy.EconomyResponse.ResponseType.SUCCESS), "v2 transfer overdrew");
         check(economy.getUUIDNameMap().containsKey(payee), "v2 account list is missing an account");
         check(!economy.hasCurrency("gems") && economy.getBalance(getName(), payer, "world", "gems").signum() == 0, "v2 knows gems");
+    }
+
+    // Who answers Vault's other two APIs: a permissions plugin such as LuckPerms, or nobody.
+    private void permissions(CommandSender sender) {
+        RegisteredServiceProvider<net.milkbowl.vault.permission.Permission> permission =
+            Bukkit.getServicesManager().getRegistration(net.milkbowl.vault.permission.Permission.class);
+        RegisteredServiceProvider<net.milkbowl.vault.chat.Chat> chat =
+            Bukkit.getServicesManager().getRegistration(net.milkbowl.vault.chat.Chat.class);
+        String groups = permission == null ? "-" : String.join(",", permission.getProvider().getGroups());
+        getLogger().info("VAULT PERMISSION " + (permission == null ? "none" : permission.getProvider().getName() + " groups=" + groups)
+            + ", CHAT " + (chat == null ? "none" : chat.getProvider().getName()));
+        if (permission != null) {
+            getLogger().info("VAULT PERMISSION console has vaulttest.check: " + permission.getProvider().has(sender, "vaulttest.check"));
+        }
     }
 
     /** An old economy plugin left installed: one player, by name. */

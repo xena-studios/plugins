@@ -9,3 +9,5 @@ depend: [Vault]
 commands:
   vaulttest:
     description: Calls Vault the ways badly behaved plugins do, and checks the answers.
+  vaultperms:
+    description: Says which plugins answer Vault's Permission and Chat APIs.

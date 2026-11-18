@@ -1,0 +1,26 @@
+xMoney bundles VaultUnlockedAPI
+===============================
+
+xMoney is free software under the GNU General Public License, version 3 only
+(GPL-3.0.txt here; source at https://github.com/xena-studios/plugins).
+
+To stand in for Vault, this jar includes the classes of VaultUnlockedAPI 2.20,
+unmodified, in the packages net.milkbowl.vault (Vault's API) and
+net.milkbowl.vault2 (VaultUnlocked's API):
+
+  VaultUnlockedAPI 2.20, by TheNewEconomy (Daniel "creatorfromhell" Vidmar) and
+  contributors, building on VaultAPI by the MilkBowl team.
+  https://github.com/TheNewEconomy/VaultUnlockedAPI
+  https://github.com/MilkBowl/VaultAPI
+
+  "This file is part of Vault. Vault is free software: you can redistribute it
+  and/or modify it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version."
+
+Those classes are under the GNU Lesser General Public License, version 3
+(LGPL-3.0.txt here), which builds on the GNU General Public License, version 3
+(GPL-3.0.txt here). They are kept unrelocated and unmodified, so they can be
+replaced with another version of the same library: swap the classes under
+net/milkbowl/ in this jar, or rebuild xMoney from its source with another
+version. Their source is at the links above.

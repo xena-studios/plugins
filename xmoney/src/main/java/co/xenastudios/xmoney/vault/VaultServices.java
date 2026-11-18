@@ -20,7 +20,8 @@ import org.bukkit.plugin.ServicePriority;
  * (unmodified, LGPL-3.0) and its {@code paper-plugin.yml} says {@code provides: [Vault]}, so
  * plugins that depend on Vault load and find those classes here. This registers the economy
  * under both APIs, at the highest priority, so plugins pick it over any other economy still
- * installed (one an import reads from, say).
+ * installed (one an import reads from, say). It also registers a Permission provider for
+ * servers without a permissions plugin, as real Vault did ({@link BukkitPermissions}).
  *
  * <p>A real Vault or VaultUnlocked jar can't run beside it: Paper loads xMoney first, as the
  * provider of "Vault", and then refuses the real one as a duplicate, with an error of its own
@@ -33,6 +34,7 @@ public final class VaultServices {
     private final XMoney plugin;
     private LegacyEconomy legacy;
     private UnlockedEconomy unlocked;
+    private BukkitPermissions permissions;
 
     public VaultServices(XMoney plugin) {
         this.plugin = plugin;
@@ -44,14 +46,19 @@ public final class VaultServices {
         unlocked = new UnlockedEconomy(bridge);
         Bukkit.getServicesManager().register(net.milkbowl.vault.economy.Economy.class, legacy, plugin, ServicePriority.Highest);
         Bukkit.getServicesManager().register(net.milkbowl.vault2.economy.Economy.class, unlocked, plugin, ServicePriority.Highest);
+        // Real Vault's fallback for servers without a permissions plugin; any that hooks Vault wins.
+        permissions = new BukkitPermissions(plugin);
+        Bukkit.getServicesManager().register(net.milkbowl.vault.permission.Permission.class, permissions, plugin, ServicePriority.Lowest);
     }
 
     public void unregister() {
         if (legacy != null) {
             Bukkit.getServicesManager().unregister(net.milkbowl.vault.economy.Economy.class, legacy);
             Bukkit.getServicesManager().unregister(net.milkbowl.vault2.economy.Economy.class, unlocked);
+            Bukkit.getServicesManager().unregister(net.milkbowl.vault.permission.Permission.class, permissions);
             legacy = null;
             unlocked = null;
+            permissions = null;
         }
     }
 
@@ -64,8 +71,8 @@ public final class VaultServices {
     public void warnAboutVault() {
         for (String jar : vaultJars(plugin.getDataFolder().toPath().getParent())) {
             plugin.getLogger().warning(jar + " is in plugins/. " + XMoney.NAME + " provides the Vault and VaultUnlocked APIs itself,"
-                + " so Paper didn't load it (that's the \"duplicate plugin identifier\" error above); other plugins use "
-                + XMoney.NAME + " instead. Delete " + jar + " to clear the error.");
+                + " so Paper didn't load it: that's the \"Could not load plugin '" + jar + "'\" error above. Other plugins"
+                + " use " + XMoney.NAME + " instead. Delete " + jar + " to clear the error.");
         }
     }
 

@@ -7,6 +7,7 @@ import co.xenastudios.zchat.chat.ChatFilter;
 import co.xenastudios.zchat.chat.ChatListener;
 import co.xenastudios.zchat.chat.ChatState;
 import co.xenastudios.zchat.chat.Formats;
+import co.xenastudios.zchat.chat.MuteProviders;
 import co.xenastudios.zchat.chat.PapiWatch;
 import co.xenastudios.zchat.command.ChatCommands;
 import co.xenastudios.zchat.command.FilterCommands;
@@ -31,6 +32,8 @@ public class ZChat extends XenaPlugin<ZConfig> {
     private volatile Compiled compiled;
     private NamespacedKey hiddenChatKey;
     private NamespacedKey socialSpyKey;
+    private MuteProviders mutes;
+    private Api api;
 
     @Override
     protected ConfigSpec<ZConfig> configSpec() {
@@ -52,12 +55,16 @@ public class ZChat extends XenaPlugin<ZConfig> {
         if (hiddenChatKey == null) {
             hiddenChatKey = new NamespacedKey(this, "chat_hidden");
             socialSpyKey = new NamespacedKey(this, "social_spy");
+            mutes = new MuteProviders(getLogger());
+            api = new Api(this);
             // Anyone already online, such as after the plugin is loaded on a running server.
             for (Player player : Bukkit.getOnlinePlayers()) {
                 state.joined(player);
                 tasks().entity(player, () -> ChatListener.restore(this, player));
             }
         }
+        // The developer API, first so it's there even if a later feature fails to set up.
+        setup.module("api", () -> api);
         if (!config.mutechat().enabled() && state.muted()) {
             // Turning /mutechat off would otherwise leave chat muted with no command to undo it.
             state.muted(false);
@@ -98,6 +105,11 @@ public class ZChat extends XenaPlugin<ZConfig> {
     /** The chat state: the mute, hidden chat, cooldowns and reply targets. */
     public ChatState state() {
         return state;
+    }
+
+    /** Other plugins' mute providers, registered through the API. */
+    public MuteProviders mutes() {
+        return mutes;
     }
 
     public Compiled compiled() {

@@ -7,6 +7,8 @@ import co.xenastudios.core.command.Completions;
 import co.xenastudios.core.command.Invocation;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.zchat.ZChat;
+import co.xenastudios.zchat.api.MessageKind;
+import co.xenastudios.zchat.api.event.PrivateMessageEvent;
 import co.xenastudios.zchat.chat.ChatState;
 import co.xenastudios.zchat.chat.Screen;
 import co.xenastudios.zchat.config.Settings;
@@ -50,7 +52,7 @@ public final class MessageCommands {
                     }
                     String text = invocation.rest(1);
                     for (Player target : targets(zchat, invocation)) {
-                        send(zchat, invocation.sender(), target, text);
+                        send(zchat, invocation.sender(), target, text, false);
                     }
                 }));
         }
@@ -71,7 +73,7 @@ public final class MessageCommands {
                     if (partner == null) {
                         throw new CommandFailure(reply.messageNobody());
                     }
-                    send(zchat, invocation.sender(), recipient(zchat, invocation, partner), text);
+                    send(zchat, invocation.sender(), recipient(zchat, invocation, partner), text, true);
                 }));
         }
 
@@ -153,16 +155,30 @@ public final class MessageCommands {
     }
 
     /** Delivers a private message: filtered, to both sides, to spies, and remembered for /reply. */
-    static void send(ZChat zchat, CommandSender from, CommandSender to, String text) {
+    static void send(ZChat zchat, CommandSender from, CommandSender to, String text, boolean reply) {
         ZConfig config = zchat.config();
         Settings.PrivateMessages settings = config.privateMessages();
         Component message = Component.text(text);
         if (from instanceof Player player) {
-            Screen screen = Screen.of(zchat, player, text);
+            // Other plugins' mutes, through the API.
+            Component muted = zchat.mutes().size() > 0 ? zchat.mutes().reason(player, MessageKind.PRIVATE_MESSAGE) : null;
+            if (muted != null) {
+                player.sendMessage(muted);
+                return;
+            }
+            Screen screen = Screen.of(zchat, player, text, MessageKind.PRIVATE_MESSAGE);
             if (screen.blocked()) {
                 throw new CommandFailure(config.filter().messageBlocked());
             }
             message = screen.message();
+        }
+        // Built only when something listens for it.
+        if (PrivateMessageEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            PrivateMessageEvent event = new PrivateMessageEvent(!Bukkit.isPrimaryThread(), from, to, message, reply);
+            if (!event.callEvent()) {
+                return;
+            }
+            message = event.getMessage();
         }
         var said = Placeholders.component("message", message);
 

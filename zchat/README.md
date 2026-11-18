@@ -11,7 +11,7 @@ zChat handles the chat basics almost every server wants: a chat format per rank,
 - **Works with any permissions plugin**, because ranks are picked by permission. PlaceholderAPI is optional.
 - **Paper and Folia**, from the same jar.
 
-**[Download on Modrinth](https://modrinth.com/plugin/zchat)** · [Docs](https://docs.xenastudios.co/zchat/) · [Commands and permissions](https://docs.xenastudios.co/zchat/commands/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/zchat)** · [Docs](https://docs.xenastudios.co/zchat/) · [Commands and permissions](https://docs.xenastudios.co/zchat/commands/) · [Developer API](https://docs.xenastudios.co/zchat/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 
@@ -25,8 +25,10 @@ From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../C
 ```
 
 ```
+api/               the developer API (co.xenastudios:zchat-api), shipped inside the jar
 src/main/java/co/xenastudios/zchat/
   ZChat.java       the plugin: declares the config and, in setup, the features it turns on
+  Api.java         the developer API's implementation, registered while the plugin is enabled
   chat/            the chat path: the listener, formats, the filter, mentions, anti-repeat
   command/         /mutechat, /clearchat, /togglechat, and private messages (/msg, /reply, social spy)
   config/          the config records; ZConfig carries a zChat 2 config forward
@@ -35,7 +37,7 @@ CHANGELOG.md       one section per release; the release workflow publishes it
 modrinth.md        the Modrinth project page, published when it changes on main
 ```
 
-Anything on the chat path runs for every message, so keep it allocation-light and do the work when the config loads instead. The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
+Anything on the chat path runs for every message, so keep it allocation-light and do the work when the config loads instead. `ChatBenchmarkTest` times a message and fails if it gets much slower. The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
 
 ## Licence
 

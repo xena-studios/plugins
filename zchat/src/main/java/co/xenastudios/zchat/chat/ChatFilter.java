@@ -16,8 +16,27 @@ import java.util.regex.PatternSyntaxException;
  */
 public final class ChatFilter {
 
-    /** What the filter made of a message. */
-    public record Result(boolean matched, String text) {}
+    /**
+     * What the filter made of a message.
+     *
+     * @param hits which characters of the message matched, or null if none did
+     */
+    public record Result(boolean matched, String text, BitSet hits) {
+
+        /** The parts of {@code message} that matched, as typed: for the API's filter event. */
+        public List<String> matches(String message) {
+            List<String> parts = new ArrayList<>();
+            if (hits == null) {
+                return parts;
+            }
+            for (int start = hits.nextSetBit(0); start >= 0; start = hits.nextSetBit(start)) {
+                int end = hits.nextClearBit(start);
+                parts.add(message.substring(start, Math.min(end, message.length())));
+                start = end;
+            }
+            return parts;
+        }
+    }
 
     private static final String WORD_CHAR = "[\\p{L}\\p{N}]";
     private static final int FLAGS = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
@@ -119,7 +138,7 @@ public final class ChatFilter {
     /** Checks a message, censoring what matched when the filter censors. */
     public Result apply(String message) {
         if (isEmpty()) {
-            return new Result(false, message);
+            return new Result(false, message, null);
         }
         BitSet hit = new BitSet(message.length());
         if (plainWords != null) {
@@ -157,9 +176,9 @@ public final class ChatFilter {
             }
         }
         if (hit.isEmpty()) {
-            return new Result(false, message);
+            return new Result(false, message, null);
         }
-        return new Result(true, censor ? censored(message, hit) : message);
+        return new Result(true, censor ? censored(message, hit) : message, hit);
     }
 
     /**

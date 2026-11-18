@@ -193,7 +193,7 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
      */
     public final void editConfig(java.util.function.Predicate<org.bukkit.configuration.file.YamlConfiguration> change,
                                  java.util.function.Consumer<String> done) {
-        Bukkit.getGlobalRegionScheduler().run(this, task -> {
+        tasks().nextTick(() -> {
             try {
                 if (!ConfigLoader.edit(configFile(), change)) {
                     done.accept(null);
@@ -263,7 +263,7 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
             .executes(invocation -> {
                 CommandSender sender = invocation.sender();
                 // On the next tick, outside this command, since reloading re-registers commands.
-                Bukkit.getGlobalRegionScheduler().run(this, task -> sender.sendMessage(reload()));
+                tasks().nextTick(() -> sender.sendMessage(reload()));
             }));
         subcommands.add(CommandSpec.named("info")
             .permission(adminPermission())

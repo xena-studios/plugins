@@ -1,6 +1,6 @@
 # xRewind changelog
 
-## Unreleased
+## 1.1.0
 
 Replace the jar and restart. Your config is kept as it is.
 
@@ -15,6 +15,9 @@ Replace the jar and restart. Your config is kept as it is.
 - Clicking **Next page** below a lookup's results shows the next page. It ran `<next>` instead, which isn't a command.
 - After a purge, the space is handed back to the disk a few thousand pages at a time, so logging never waits on all of it at once.
 - A CoreProtect import can't wait forever for its last rows when one of them is a change the database won't take.
+- `/xrewind reload` works on an empty server. Paper pauses a server that's been empty for a minute, and the reload waited for the next player to join.
+- A rollback or restore typed in the console of an empty server runs straight away, not when the next player joins.
+- On MySQL, a connection whose database stops answering gives up after five minutes, or ten seconds to connect, instead of holding the writer forever.
 
 ## 1.0.2
 

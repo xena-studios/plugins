@@ -1,12 +1,16 @@
 # xLimbo changelog
 
-## Unreleased
+## 2.1.0
 
 Replace the jar and restart. Your config is kept as it is.
 
 ### Added
 
 - A developer API, so other plugins can work with xLimbo: they can see whether the main server is up and who's waiting to go back, send players back (through the queue, so the main server isn't flooded), and hear when players arrive, are about to be sent back, or the main server goes up or down. See [Developer API](https://docs.xenastudios.co/xlimbo/developer-api/). It costs nothing unless a plugin uses it.
+
+### Fixed
+
+- `/xlimbo reload` works on an empty server. Paper pauses a server that's been empty for a minute, and the reload waited for the next player to join.
 
 ## 2.0.3
 

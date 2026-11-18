@@ -188,7 +188,9 @@ public final class Applier {
                 finish();
                 return;
             }
-            Bukkit.getGlobalRegionScheduler().run(plugin, task -> tick());
+            // Bukkit's scheduler, not the global region scheduler: on Paper the latter stops
+            // while an empty server is paused, which would hold a console rollback (#67).
+            Bukkit.getScheduler().runTask(plugin, this::tick);
         }
 
         private void fill() {
@@ -258,7 +260,7 @@ public final class Applier {
             if (loading.isEmpty()) {
                 finish();
             } else {
-                Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> tick(), 1);
+                Bukkit.getScheduler().runTaskLater(plugin, this::tick, 1);
             }
         }
     }

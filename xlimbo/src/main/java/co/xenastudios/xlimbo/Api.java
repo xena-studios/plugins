@@ -92,7 +92,8 @@ final class Api implements XLimboApi, Module {
         if (Bukkit.isPrimaryThread()) {
             action.run();
         } else {
-            Bukkit.getGlobalRegionScheduler().execute(xlimbo, action);
+            // Bukkit's scheduler keeps running while an empty server is paused (#67).
+            Bukkit.getScheduler().runTask(xlimbo, action);
         }
     }
 }

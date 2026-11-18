@@ -13,9 +13,7 @@ The API costs nothing unless a plugin uses it. It adds no listeners and no tasks
 
 The API is `co.xenastudios.zchat:zchat-api`. It's inside the zChat jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
 
-:::note
-The API is published to Maven Central when zChat 3.2.0 is released. Until then, build it from [the source](https://github.com/xena-studios/plugins) with `./gradlew :zchat:api:publishToMavenLocal` and add `mavenLocal()` to your repositories.
-:::
+It's on Maven Central, so `mavenCentral()` is all the repository you need, and its Javadoc is on [javadoc.io](https://javadoc.io/doc/co.xenastudios.zchat/zchat-api).
 
 Gradle (Kotlin):
 

@@ -88,7 +88,8 @@ public class XLimbo extends XenaPlugin<XLConfig> {
         if (Bukkit.getWorlds().isEmpty()) {
             if (!worldPending) {
                 worldPending = true;
-                Bukkit.getGlobalRegionScheduler().run(this, task -> limbo().sync(config().world()));
+                // Bukkit's scheduler keeps running while an empty server is paused (#67).
+                Bukkit.getScheduler().runTask(this, () -> limbo().sync(config().world()));
             }
             return;
         }

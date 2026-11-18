@@ -2,7 +2,7 @@ package co.xenastudios.zchat.chat;
 
 import co.xenastudios.zchat.ZChat;
 import co.xenastudios.zchat.api.MessageKind;
-import co.xenastudios.zchat.api.event.ZChatFilterEvent;
+import co.xenastudios.zchat.api.event.FilterMatchEvent;
 import co.xenastudios.zchat.config.Settings;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -36,8 +36,8 @@ public record Screen(boolean blocked, String plain, Component message) {
             if (result.matched()) {
                 boolean block = zchat.config().filter().mode() == Settings.FilterMode.BLOCK;
                 // Built only when something listens for it.
-                if (ZChatFilterEvent.getHandlerList().getRegisteredListeners().length > 0) {
-                    new ZChatFilterEvent(!Bukkit.isPrimaryThread(), player, kind, plain, result.matches(plain), block).callEvent();
+                if (FilterMatchEvent.getHandlerList().getRegisteredListeners().length > 0) {
+                    new FilterMatchEvent(!Bukkit.isPrimaryThread(), player, kind, plain, result.matches(plain), block).callEvent();
                 }
                 if (block) {
                     return new Screen(true, plain, Component.empty());

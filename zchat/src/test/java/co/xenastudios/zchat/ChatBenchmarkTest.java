@@ -3,7 +3,7 @@ package co.xenastudios.zchat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.xenastudios.zchat.api.ZChatApi;
-import co.xenastudios.zchat.api.event.ZChatMessageEvent;
+import co.xenastudios.zchat.api.event.ChatMessageEvent;
 import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import java.util.HashSet;
@@ -99,14 +99,14 @@ class ChatBenchmarkTest {
         assertTrue(micros < BUDGET_MICROS, "a chat message took " + micros + " µs");
     }
 
-    /** The same with plugins using the API: a mute provider and a ZChatMessageEvent listener adding a placeholder. */
+    /** The same with plugins using the API: a mute provider and a ChatMessageEvent listener adding a placeholder. */
     @Test
     void aMessageStaysCheapWithApiUsers() {
         Plugin other = MockBukkit.createMockPlugin("Other");
         ZChatApi.get().registerMuteProvider(other, (player, kind) -> null);
         server.getPluginManager().registerEvents(new Listener() {
             @EventHandler
-            void on(ZChatMessageEvent event) {
+            void on(ChatMessageEvent event) {
                 event.addPlaceholder("clan", Component.text("[Red]"));
             }
         }, other);

@@ -99,7 +99,7 @@ ZChatApi.get().broadcast(Component.text(voter.getName() + " voted for the server
 | --- | --- |
 | `hasChatHidden(player)` | Whether they hid chat with `/togglechat`. Always false while `/togglechat` is off. |
 | `isChatMuted()` | Whether chat is muted for everyone with `/mutechat`. |
-| `getFormatName(player)` | Which [format](/zchat/formats/) they get: their group's name (`vip`, `staff`...), or `default`. |
+| `getFormatName(player)` | Which [format](/zchat/formats/) they get: their group's name (`vip`, `staff`...), or `default`. While `formatting.enabled` is false it's still the group they'd get, though chat isn't drawn in it. |
 
 ## Events
 
@@ -107,8 +107,9 @@ Each event is only made when something listens for it.
 
 | Event | When | Thread |
 | --- | --- | --- |
-| `ZChatMessageEvent` | A chat message passed the mute, cooldown, filter and anti-repeat, and is about to be drawn. Cancellable. Has the player, the message and the format's name, and you can add placeholders. | The chat thread, usually async |
-| `ZChatFilterEvent` | The filter caught something in a chat or private message, which is already blocked or censored. Has what it matched (`getMatches()`), the kind of message, and whether it was blocked. | The thread the message came from |
+| `ChatMessageEvent` | A chat message passed the mute, cooldown, filter and anti-repeat, and is about to be drawn. Cancellable. Has the player, the message and the format's name, and you can add placeholders. Another plugin can still cancel the message after it, so it may not be sent. | The chat thread, usually async |
+| `ChatMessageSentEvent` | A chat message is going out: no plugin cancelled it. Has the player, the message and who sees it. For logs and chat bridges. Can't be cancelled. | The chat thread, usually async |
+| `FilterMatchEvent` | The filter caught something in a chat or private message, which is already blocked or censored. Has what it matched (`getMatches()`), the kind of message, and whether it was blocked. | The thread the message came from |
 | `PrivateMessageEvent` | A `/msg` or `/reply` passed the checks and is about to be delivered. Cancellable, and `setMessage` changes it. | The command's thread |
 | `MentionEvent` | A player mentioned in chat is about to hear the ping. Cancellable: they're still highlighted, but hear nothing. | The mentioned player's thread |
 
@@ -116,11 +117,11 @@ Each event is only made when something listens for it.
 
 ### Add a placeholder to the format
 
-Listen for `ZChatMessageEvent` and add a value. A server owner can then use the tag in any format, such as `default-format: "<clan><gray><player>:</gray> <message>"`:
+Listen for `ChatMessageEvent` and add a value. A server owner can then use the tag in any format, such as `default-format: "<clan><gray><player>:</gray> <message>"`:
 
 ```java
 @EventHandler
-public void onChat(ZChatMessageEvent event) {
+public void onChat(ChatMessageEvent event) {
     Clan clan = clans.get(event.getPlayer().getUniqueId());   // from memory
     event.addPlaceholder("clan", clan == null ? Component.empty() : Component.text("[" + clan.tag() + "] "));
 }
@@ -132,7 +133,7 @@ Names are lowercase letters, digits, `_` and `-`, and can't be ones zChat's form
 
 ```java
 @EventHandler
-public void onFilter(ZChatFilterEvent event) {
+public void onFilter(FilterMatchEvent event) {
     String line = event.getPlayer().getName() + " said " + String.join(", ", event.getMatches());
     staff.forEach(player -> player.sendMessage(Component.text(line)));
 }

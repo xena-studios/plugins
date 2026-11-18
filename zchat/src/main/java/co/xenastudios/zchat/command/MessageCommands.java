@@ -51,7 +51,12 @@ public final class MessageCommands {
                         throw invocation.usage();
                     }
                     String text = invocation.rest(1);
-                    for (Player target : targets(zchat, invocation)) {
+                    List<Player> targets = targets(zchat, invocation);
+                    // Once, not per target: a selector can name many.
+                    if (muted(zchat, invocation.sender())) {
+                        return;
+                    }
+                    for (Player target : targets) {
                         send(zchat, invocation.sender(), target, text, false);
                     }
                 }));
@@ -73,7 +78,10 @@ public final class MessageCommands {
                     if (partner == null) {
                         throw new CommandFailure(reply.messageNobody());
                     }
-                    send(zchat, invocation.sender(), recipient(zchat, invocation, partner), text, true);
+                    CommandSender to = recipient(zchat, invocation, partner);
+                    if (!muted(zchat, invocation.sender())) {
+                        send(zchat, invocation.sender(), to, text, true);
+                    }
                 }));
         }
 
@@ -154,18 +162,31 @@ public final class MessageCommands {
         return sender instanceof ConsoleCommandSender ? ChatState.CONSOLE : null;
     }
 
-    /** Delivers a private message: filtered, to both sides, to spies, and remembered for /reply. */
+    /**
+     * Whether other plugins' mutes, through the API, stop a player's private messages.
+     * Tells them why. Asked once per command, before {@link #send}.
+     */
+    static boolean muted(ZChat zchat, CommandSender from) {
+        if (!(from instanceof Player player) || zchat.mutes().size() == 0) {
+            return false;
+        }
+        Component reason = zchat.mutes().reason(player, MessageKind.PRIVATE_MESSAGE);
+        if (reason == null) {
+            return false;
+        }
+        player.sendMessage(reason);
+        return true;
+    }
+
+    /**
+     * Delivers a private message: filtered, to both sides, to spies, and remembered for
+     * /reply. The caller has checked {@link #muted} already.
+     */
     static void send(ZChat zchat, CommandSender from, CommandSender to, String text, boolean reply) {
         ZConfig config = zchat.config();
         Settings.PrivateMessages settings = config.privateMessages();
         Component message = Component.text(text);
         if (from instanceof Player player) {
-            // Other plugins' mutes, through the API.
-            Component muted = zchat.mutes().size() > 0 ? zchat.mutes().reason(player, MessageKind.PRIVATE_MESSAGE) : null;
-            if (muted != null) {
-                player.sendMessage(muted);
-                return;
-            }
             Screen screen = Screen.of(zchat, player, text, MessageKind.PRIVATE_MESSAGE);
             if (screen.blocked()) {
                 throw new CommandFailure(config.filter().messageBlocked());

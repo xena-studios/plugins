@@ -6,8 +6,9 @@ import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.zchat.ZChat;
 import co.xenastudios.zchat.api.MessageKind;
 import co.xenastudios.zchat.api.ZChatApi;
+import co.xenastudios.zchat.api.event.ChatMessageEvent;
+import co.xenastudios.zchat.api.event.ChatMessageSentEvent;
 import co.xenastudios.zchat.api.event.MentionEvent;
-import co.xenastudios.zchat.api.event.ZChatMessageEvent;
 import co.xenastudios.zchat.config.Settings;
 import co.xenastudios.zchat.config.ZConfig;
 import io.papermc.paper.chat.ChatRenderer;
@@ -128,8 +129,8 @@ public final class ChatListener extends ListenerModule {
 
         // For other plugins, through the API; built only when something listens for it.
         TagResolver added = null;
-        if (ZChatMessageEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            ZChatMessageEvent api = new ZChatMessageEvent(!Bukkit.isPrimaryThread(), player, message,
+        if (ChatMessageEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            ChatMessageEvent api = new ChatMessageEvent(!Bukkit.isPrimaryThread(), player, message,
                 compiled.formats().formatName(player, ZChatApi.DEFAULT_FORMAT));
             if (!api.callEvent()) {
                 event.setCancelled(true);
@@ -159,6 +160,10 @@ public final class ChatListener extends ListenerModule {
         }
         Player sender = event.getPlayer();
         zchat.state().recent(sender, done.recent());
+        // Built only when something listens for it.
+        if (ChatMessageSentEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            new ChatMessageSentEvent(event.isAsynchronous(), sender, event.message(), event.viewers()).callEvent();
+        }
         Mentions.Applied mentions = done.mentions();
         Settings.Mentions settings = zchat.config().mentions();
         if (mentions == null || settings.sound().isNone() || (!mentions.everyone() && mentions.pinged().isEmpty())) {
@@ -182,7 +187,7 @@ public final class ChatListener extends ListenerModule {
         }
     }
 
-    private static TagResolver placeholders(ZChatMessageEvent api) {
+    private static TagResolver placeholders(ChatMessageEvent api) {
         if (api.getPlaceholders().isEmpty()) {
             return null;
         }

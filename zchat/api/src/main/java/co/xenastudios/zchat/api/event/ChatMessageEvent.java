@@ -17,13 +17,18 @@ import org.jetbrains.annotations.NotNull;
  * is about to be drawn in its format. Cancel it to stop the message, or add placeholder
  * values for the format to use.
  *
+ * <p>This is a pre-event: it fires at zChat's place in Paper's {@code AsyncChatEvent}
+ * ({@code LOW} priority), before other plugins have had their say, so the message may
+ * still not be sent: another plugin can cancel it afterwards. To act only on messages
+ * that really go out, such as to log them, listen for {@link ChatMessageSentEvent}.
+ *
  * <p>Fired on the chat thread the message arrived on, so usually asynchronously (see
  * {@link #isAsynchronous()}); many may fire at once. Only built when something listens
  * for it.
  *
  * @since 3.2.0
  */
-public final class ZChatMessageEvent extends Event implements Cancellable {
+public final class ChatMessageEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
     private static final Pattern TAG_NAME = Pattern.compile("[a-z0-9_-]+");
@@ -46,7 +51,7 @@ public final class ZChatMessageEvent extends Event implements Cancellable {
      * @param formatName the format it'll be drawn in
      * @since 3.2.0
      */
-    public ZChatMessageEvent(boolean async, @NotNull Player player, @NotNull Component message, @NotNull String formatName) {
+    public ChatMessageEvent(boolean async, @NotNull Player player, @NotNull Component message, @NotNull String formatName) {
         super(async);
         this.player = player;
         this.message = message;
@@ -77,7 +82,9 @@ public final class ZChatMessageEvent extends Event implements Cancellable {
 
     /**
      * The format the message will be drawn in: a group's name under
-     * {@code formatting.groups}, or {@code "default"}.
+     * {@code formatting.groups}, or {@code "default"}. While zChat doesn't draw chat
+     * ({@code formatting.enabled: false}), it's still the format the player would get,
+     * from the groups in the config, though the message isn't drawn in it.
      *
      * @return the format's name
      * @since 3.2.0
@@ -118,7 +125,8 @@ public final class ZChatMessageEvent extends Event implements Cancellable {
     }
 
     /**
-     * Whether the message won't be sent.
+     * Whether the message won't be sent. False doesn't promise it will be: another
+     * plugin can still cancel it.
      *
      * @return true if cancelled
      * @since 3.2.0

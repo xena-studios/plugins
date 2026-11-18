@@ -10,10 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.xenastudios.zchat.api.MessageKind;
 import co.xenastudios.zchat.api.MuteProvider;
 import co.xenastudios.zchat.api.ZChatApi;
+import co.xenastudios.zchat.api.event.ChatMessageEvent;
+import co.xenastudios.zchat.api.event.ChatMessageSentEvent;
+import co.xenastudios.zchat.api.event.FilterMatchEvent;
 import co.xenastudios.zchat.api.event.MentionEvent;
 import co.xenastudios.zchat.api.event.PrivateMessageEvent;
-import co.xenastudios.zchat.api.event.ZChatFilterEvent;
-import co.xenastudios.zchat.api.event.ZChatMessageEvent;
 import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import java.nio.file.Files;
@@ -30,6 +31,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.AfterEach;
@@ -130,6 +132,7 @@ class ApiTest {
         assertEquals("You're muted for 5 minutes.", next(steve));
         assertNull(next(alex));
         assertEquals(MessageKind.PRIVATE_MESSAGE, asked.get(asked.size() - 1));
+        assertNull(next(steve), "told once");
 
         api.unregisterMuteProvider(mutes);
         assertFalse(chat(steve, "hello again").isCancelled());
@@ -184,10 +187,10 @@ class ApiTest {
     @Test
     void messageEventCanCancelAndAddPlaceholders() throws Exception {
         setConfig("default-format: \"<gray><player>:</gray>", "default-format: \"<clan><gray><player>:</gray>");
-        List<ZChatMessageEvent> seen = new CopyOnWriteArrayList<>();
+        List<ChatMessageEvent> seen = new CopyOnWriteArrayList<>();
         listen(new Listener() {
             @EventHandler
-            void on(ZChatMessageEvent event) {
+            void on(ChatMessageEvent event) {
                 seen.add(event);
                 if (plain(event.getMessage()).contains("secret")) {
                     event.setCancelled(true);
@@ -205,11 +208,42 @@ class ApiTest {
     }
 
     @Test
-    void filterEventSaysWhatMatched() {
-        List<ZChatFilterEvent> seen = new CopyOnWriteArrayList<>();
+    void sentEventFiresOnlyForMessagesThatGoOut() {
+        List<ChatMessageSentEvent> sent = new CopyOnWriteArrayList<>();
         listen(new Listener() {
             @EventHandler
-            void on(ZChatFilterEvent event) {
+            void on(ChatMessageSentEvent event) {
+                sent.add(event);
+            }
+
+            // Another plugin, after zChat's ChatMessageEvent.
+            @EventHandler(priority = EventPriority.HIGH)
+            void on(AsyncChatEvent event) {
+                if (plain(event.message()).contains("secret")) {
+                    event.setCancelled(true);
+                }
+            }
+        });
+        chat(steve, "hello");
+        assertEquals(1, sent.size());
+        assertSame(steve, sent.get(0).getPlayer());
+        assertEquals("hello", plain(sent.get(0).getMessage()));
+        assertTrue(sent.get(0).getViewers().contains(alex));
+        assertTrue(sent.get(0).isAsynchronous());
+
+        assertTrue(chat(steve, "a secret").isCancelled());
+        steve.setOp(true);
+        steve.performCommand("mutechat");
+        assertTrue(chat(alex, "hi").isCancelled(), "zChat stops it");
+        assertEquals(1, sent.size(), "nothing for a cancelled message");
+    }
+
+    @Test
+    void filterEventSaysWhatMatched() {
+        List<FilterMatchEvent> seen = new CopyOnWriteArrayList<>();
+        listen(new Listener() {
+            @EventHandler
+            void on(FilterMatchEvent event) {
                 seen.add(event);
             }
         });

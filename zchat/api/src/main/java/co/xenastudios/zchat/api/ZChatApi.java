@@ -106,6 +106,10 @@ public interface ZChatApi {
      * {@code formatting.groups} with the highest weight, or {@link #DEFAULT_FORMAT}. Any
      * thread, answers from memory (it checks the player's permissions).
      *
+     * <p>While zChat doesn't draw chat ({@code formatting.enabled: false}), this is still
+     * the format the player would get, from the groups in the config, though chat isn't
+     * drawn in it.
+     *
      * @param player the player
      * @return the group's name, or {@value #DEFAULT_FORMAT}
      * @since 3.2.0

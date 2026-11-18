@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @since 3.2.0
  */
-public final class ZChatFilterEvent extends Event {
+public final class FilterMatchEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
 
@@ -39,7 +39,7 @@ public final class ZChatFilterEvent extends Event {
      * @param blocked true if the message was blocked; false if it was censored
      * @since 3.2.0
      */
-    public ZChatFilterEvent(boolean async, @NotNull Player player, @NotNull MessageKind kind, @NotNull String message,
+    public FilterMatchEvent(boolean async, @NotNull Player player, @NotNull MessageKind kind, @NotNull String message,
                             @NotNull List<String> matches, boolean blocked) {
         super(async);
         this.player = player;

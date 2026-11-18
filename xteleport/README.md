@@ -14,7 +14,7 @@ xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, f
 - **Every change applies on reload**, everything but storage. No restarts.
 - **Easy to switch to.** EssentialsX's command names, and its homes, warps and spawn imported with `/xteleport import essentials`.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xteleport)** · [Docs](https://docs.xenastudios.co/xteleport/) · [Commands](https://docs.xenastudios.co/xteleport/commands/) · [Switching from EssentialsX](https://docs.xenastudios.co/xteleport/switching/) · [Developer API](https://docs.xenastudios.co/xteleport/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xteleport)** · [Docs](https://plugins.xenastudios.co/xteleport/) · [Commands](https://plugins.xenastudios.co/xteleport/commands/) · [Switching from EssentialsX](https://plugins.xenastudios.co/xteleport/switching/) · [Developer API](https://plugins.xenastudios.co/xteleport/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Vault and PlaceholderAPI are optional.
 

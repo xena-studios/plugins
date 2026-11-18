@@ -30,14 +30,14 @@ In scope:
 - Ways for a player to get past a permission, a filter or a protection: running a command they shouldn't, injecting formatting or click actions into chat, breaking xLimbo's floor or leaving its world
 - Anything that lets a player crash or lag a server out of proportion to what they did
 - The update checker's connection to Modrinth
-- The docs site, [docs.xenastudios.co](https://docs.xenastudios.co)
+- The docs site, [plugins.xenastudios.co](https://plugins.xenastudios.co)
 
 Out of scope:
 
 - Problems in Paper, Folia, the proxy, or other plugins, unless one of ours makes them reachable
 - What server owners or their staff can do with permissions they've been given
 - Denial of service through volume alone, such as flooding a server with connections
-- xLimbo's `/join` being spoofed through a proxy that isn't set up to forward securely ([Securing the proxy](https://docs.xenastudios.co/xlimbo/network-setup/#securing-the-proxy) covers this)
+- xLimbo's `/join` being spoofed through a proxy that isn't set up to forward securely ([Securing the proxy](https://plugins.xenastudios.co/xlimbo/network-setup/#securing-the-proxy) covers this)
 
 ## Safe harbour
 

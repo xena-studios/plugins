@@ -1,9 +1,9 @@
 # xBans: bans, mutes and warnings, the LiteBans way.
-# Docs: https://docs.xenastudios.co/xbans/configuration/
+# Docs: https://plugins.xenastudios.co/xbans/configuration/
 #
 # Apply changes with /xbans reload. A bad value falls back to its default with a
 # warning in the console; xBans never stops over config. All text is MiniMessage:
-# https://docs.xenastudios.co/start/formatting/
+# https://plugins.xenastudios.co/start/formatting/
 
 # Managed by the plugin, to carry your settings forward on updates. Don't edit it.
 config-version: 1
@@ -372,7 +372,7 @@ staff-limits:
       mute: "30d"
 
 # IP addresses: for IP bans and mutes, /alts and /iphistory. IP addresses are personal
-# data: see https://docs.xenastudios.co/xbans/privacy/
+# data: see https://plugins.xenastudios.co/xbans/privacy/
 ips:
   # Record players' IPs. Off: no IP bans or mutes, /alts or /iphistory, and nothing is
   # stored.

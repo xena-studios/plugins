@@ -41,10 +41,10 @@ public record {{Class}}Config(
     public static final ConfigSpec<{{Class}}Config> SPEC = ConfigSpec.builder({{Class}}Config.class, DEFAULTS)
         .header(
             "{{display}}: {{taglineLower}}",
-            "Docs: https://docs.xenastudios.co/{{id}}/configuration/",
+            "Docs: https://plugins.xenastudios.co/{{id}}/configuration/",
             "",
             "Apply changes with /{{id}} reload. A bad value falls back to its default with a",
             "warning in the console; {{display}} never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .build();
 }

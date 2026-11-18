@@ -122,12 +122,12 @@ public record ZConfig(
     public static final ConfigSpec<ZConfig> SPEC = ConfigSpec.builder(ZConfig.class, DEFAULTS)
         .header(
             "zChat: format your chat. Keep it clean.",
-            "Docs: https://docs.xenastudios.co/zchat/configuration/",
+            "Docs: https://plugins.xenastudios.co/zchat/configuration/",
             "",
             "Apply changes with /zchat reload (or /zc reload). Everything applies, even turning",
             "commands on or off. A bad value falls back to its default with a warning in the",
             "console; zChat never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .version(2)
         // zChat 2's example patterns were placeholders; zChat 3 puts examples in words.
         .migrate(1, root -> {

@@ -4,7 +4,7 @@
 
 A banned player gets back in while the database is slow. A muted one carries on through `/emsg`, a sign or a book. Staff stop trusting the ban plugin. **xBans checks every ban and mute in force from memory, at every join and every chat message, so nothing gets round it.** Bans, temporary and IP bans, mutes, warnings and kicks, with history, alts, templates and staff limits, and every feature free.
 
-**[Read the docs](https://docs.xenastudios.co/xbans/)** · **[Switching from LiteBans](https://docs.xenastudios.co/xbans/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xbans/)** · **[Switching from LiteBans](https://plugins.xenastudios.co/xbans/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -51,7 +51,7 @@ Each command has its own permission, all op-only until you give them out (except
 
 **Coming from LiteBans?** Run `/xbans import litebans` to see what it finds, then add `confirm`: bans, IP bans, mutes, warnings and kicks come across, with who made and revoked each, and the login history for alts. It reads LiteBans' MySQL or MariaDB database; on H2, LiteBans' default, move to MySQL first, as the switching guide shows. `vanilla` brings the server's ban lists and `essentials` EssentialsX's mutes. Importing twice adds nothing.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/xbans](https://docs.xenastudios.co/xbans/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/xbans](https://plugins.xenastudios.co/xbans/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. SQLite out of the box, or MySQL/MariaDB.
 

@@ -74,7 +74,7 @@ public final class WebServer implements AutoCloseable {
             .value("/api/v1/server").value("/api/v1/leaderboards/{period}").value("/api/v1/leaderboard/{stat}/{period}")
             .value("/api/v1/search?q={name}").value("/api/v1/player/{name or uuid}").value("/api/v1/head/{uuid}")
         .endArray()
-        .field("docs", "https://docs.xenastudios.co/xstats/web-api/")
+        .field("docs", "https://plugins.xenastudios.co/xstats/web-api/")
         .end(), 300);
 
     private final HttpServer server;

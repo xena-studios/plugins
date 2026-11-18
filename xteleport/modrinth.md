@@ -4,7 +4,7 @@
 
 Players expect homes, TPA, warps, spawn and `/rtp`. Usually that means a big all-in-one plugin, or four small ones that each look and work differently. **xTeleport does every teleport in one small plugin for Paper and Folia, with one config, one look, and any command you don't use switched off.**
 
-**[Read the docs](https://docs.xenastudios.co/xteleport/)** · **[Switching from EssentialsX](https://docs.xenastudios.co/xteleport/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xteleport/)** · **[Switching from EssentialsX](https://plugins.xenastudios.co/xteleport/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -53,7 +53,7 @@ Players expect homes, TPA, warps, spawn and `/rtp`. Usually that means a big all
 
 **Coming from EssentialsX?** Install xTeleport next to it and run `/xteleport import essentials` to see what it finds, then `/xteleport import essentials confirm`. Everyone's homes, the warps and the spawn come across. Then remove EssentialsX, or turn off its teleport commands.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/xteleport](https://docs.xenastudios.co/xteleport/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/xteleport](https://plugins.xenastudios.co/xteleport/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. SQLite out of the box, or MySQL/MariaDB. Vault and PlaceholderAPI are optional.
 

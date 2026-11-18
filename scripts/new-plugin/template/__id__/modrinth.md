@@ -4,7 +4,7 @@
 
 TODO: the problem in a server owner's words, one or two sentences. **Then what {{display}} does about it, in bold.**
 
-**[Read the docs](https://docs.xenastudios.co/{{id}}/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/{{id}}/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -36,7 +36,7 @@ TODO: the commands, one line each, and how permissions work.
 2. TODO: the one or two settings most servers change.
 3. TODO: the permissions to give out.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/{{id}}](https://docs.xenastudios.co/{{id}}/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/{{id}}](https://plugins.xenastudios.co/{{id}}/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 

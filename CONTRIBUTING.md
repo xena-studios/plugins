@@ -6,7 +6,7 @@ Thanks for helping with xUtilities, zChat, xLimbo, xRewind, xPlots, xTeleport, x
 
 [Open an issue](https://github.com/xena-studios/plugins/issues/new/choose) and pick a form; it asks for what we need. For questions, see [SUPPORT.md](SUPPORT.md).
 
-Spotted a mistake in the docs? Every page at [docs.xenastudios.co](https://docs.xenastudios.co) has an **Edit page** link.
+Spotted a mistake in the docs? Every page at [plugins.xenastudios.co](https://plugins.xenastudios.co) has an **Edit page** link.
 
 ## Building
 
@@ -31,7 +31,7 @@ scripts/boot-test.sh --project paper --version 1.21.11 \
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
 | `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/`, `xteleport/`, `xvote/`, `xbans/`, `xmoney/`, `xbackup/`, `xstats/` | The plugins, each with its own README |
 | `scripts/` | `affected.sh`, `boot-test.sh`, `changelog.sh`, `new-minecraft.sh` |
-| `docs/` | docs.xenastudios.co |
+| `docs/` | plugins.xenastudios.co |
 
 A plugin extends `XenaPlugin`. It declares its config as records (`ConfigSpec`), and in `setup` says which commands and modules that config turns on. The core does the rest: registering on startup and on every reload, carrying old configs forward, the theme, the update checker and bStats.
 

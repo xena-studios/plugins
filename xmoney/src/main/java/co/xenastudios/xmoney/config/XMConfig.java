@@ -277,11 +277,11 @@ public record XMConfig(
     public static final ConfigSpec<XMConfig> SPEC = ConfigSpec.builder(XMConfig.class, DEFAULTS)
         .header(
             XMoney.NAME + ": the economy, and Vault, in one plugin.",
-            "Docs: https://docs.xenastudios.co/" + XMoney.ID + "/configuration/",
+            "Docs: https://plugins.xenastudios.co/" + XMoney.ID + "/configuration/",
             "",
             "Apply changes with /" + XMoney.ID + " reload. A bad value falls back to its default with a",
             "warning in the console; " + XMoney.NAME + " never stops over config. Messages are MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .version(1)
         .build();
 }

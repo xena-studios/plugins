@@ -4,7 +4,7 @@
 
 Your main server crashes. Restarts. Goes down for an update. Without a fallback, every player on it gets kicked, and some of them don't come back. **With xLimbo, your proxy sends them to a limbo server instead, where they wait until your server is back, and then go back with `/join`, or on their own the moment it's up.**
 
-**[Read the docs](https://docs.xenastudios.co/xlimbo/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xlimbo/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -53,7 +53,7 @@ Every message is yours to rewrite, with full MiniMessage colours and formatting.
 
 **Coming from xLimbo 1.x?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`.
 
-Velocity, BungeeCord, and keeping `/join` secure: **[docs.xenastudios.co/xlimbo](https://docs.xenastudios.co/xlimbo/)**
+Velocity, BungeeCord, and keeping `/join` secure: **[plugins.xenastudios.co/xlimbo](https://plugins.xenastudios.co/xlimbo/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur), Java 21 or newer, and a proxy (Velocity or BungeeCord). Not for Folia.
 

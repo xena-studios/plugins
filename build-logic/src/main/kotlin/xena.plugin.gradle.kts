@@ -28,7 +28,7 @@ dependencies {
 paperPluginYaml {
     apiVersion = minecraftVersion
     authors.add("Xena Studios")
-    website = "https://docs.xenastudios.co/${project.name}/"
+    website = "https://plugins.xenastudios.co/${project.name}/"
     foliaSupported = xena.folia
 }
 

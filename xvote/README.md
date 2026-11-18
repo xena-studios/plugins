@@ -12,7 +12,7 @@ xVote receives votes from server lists and rewards players for them, in one jar 
 - **Every change applies on reload**, all but storage and network settings. No restarts.
 - **Easy to switch to.** NuVotifier's keys and tokens taken over on first start, so no list needs changing, and totals imported from VotingPlugin and SuperbVote.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xvote)** · [Docs](https://docs.xenastudios.co/xvote/) · [Setting up](https://docs.xenastudios.co/xvote/setting-up/) · [Commands](https://docs.xenastudios.co/xvote/commands/) · [Switching](https://docs.xenastudios.co/xvote/switching/) · [Developer API](https://docs.xenastudios.co/xvote/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xvote)** · [Docs](https://plugins.xenastudios.co/xvote/) · [Setting up](https://plugins.xenastudios.co/xvote/setting-up/) · [Commands](https://plugins.xenastudios.co/xvote/commands/) · [Switching](https://plugins.xenastudios.co/xvote/switching/) · [Developer API](https://plugins.xenastudios.co/xvote/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Vault and PlaceholderAPI are optional.
 

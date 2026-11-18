@@ -4,7 +4,7 @@
 
 A shop, jobs or vote plugin that pays money usually needs two plugins: Vault, which is only the go-between, and an economy plugin behind it. **xMoney is both: plugins written for Vault or VaultUnlocked find it, and the money, with no Vault jar installed.** Balances, `/pay` and `/baltop`, with a ledger of every change, on Paper and Folia.
 
-**[Read the docs](https://docs.xenastudios.co/xmoney/)** · **[Switching to xMoney](https://docs.xenastudios.co/xmoney/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xmoney/)** · **[Switching to xMoney](https://plugins.xenastudios.co/xmoney/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -48,7 +48,7 @@ A shop, jobs or vote plugin that pays money usually needs two plugins: Vault, wh
 
 **Coming from EssentialsX or CMI?** Keep it installed for now and run `/xmoney import essentials` (or `cmi`, or `vault` for any other economy plugin). Check the count and the total, then add `confirm`, and remove the old plugin.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/xmoney](https://docs.xenastudios.co/xmoney/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/xmoney](https://plugins.xenastudios.co/xmoney/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Replaces Vault: don't install Vault or VaultUnlocked beside it. PlaceholderAPI is optional. SQLite out of the box, or MySQL/MariaDB.
 

@@ -330,11 +330,11 @@ public record XPConfig(
     public static final ConfigSpec<XPConfig> SPEC = ConfigSpec.builder(XPConfig.class, DEFAULTS)
         .header(
             "xPlots: rentable plots, set up in a minute.",
-            "Docs: https://docs.xenastudios.co/xplots/configuration/",
+            "Docs: https://plugins.xenastudios.co/xplots/configuration/",
             "",
             "Apply changes with /xplots reload. A bad value falls back to its default with a",
             "warning in the console; xPlots never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .codec(Duration.class, DURATION)
         .codec(Material.class, MATERIAL)
         .version(1)

@@ -2,4 +2,4 @@ Contact: mailto:security@xenastudios.co
 Expires: 2027-11-10T00:00:00Z
 Preferred-Languages: en
 Policy: https://github.com/xena-studios/plugins/blob/main/SECURITY.md
-Canonical: https://docs.xenastudios.co/.well-known/security.txt
+Canonical: https://plugins.xenastudios.co/.well-known/security.txt

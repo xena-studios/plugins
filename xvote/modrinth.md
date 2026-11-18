@@ -4,7 +4,7 @@
 
 Vote rewards usually take two plugins: one to receive votes from server lists, and another to reward them. Then a network pays a vote twice, or an offline player's vote is lost. **xVote receives and rewards votes in one jar, and pays every vote exactly once, even across a network.**
 
-**[Read the docs](https://docs.xenastudios.co/xvote/)** · **[Switching from NuVotifier, VotingPlugin or SuperbVote](https://docs.xenastudios.co/xvote/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xvote/)** · **[Switching from NuVotifier, VotingPlugin or SuperbVote](https://plugins.xenastudios.co/xvote/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -47,7 +47,7 @@ Vote rewards usually take two plugins: one to receive votes from server lists, a
 
 **Coming from NuVotifier?** Remove its jar, keep its `plugins/Votifier/` folder, and start the server with xVote: its keys, tokens and port come across, so no list needs changing. **From VotingPlugin or SuperbVote?** `/xvote import votingplugin` or `/xvote import superbvote` brings every player's total across.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/xvote](https://docs.xenastudios.co/xvote/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/xvote](https://plugins.xenastudios.co/xvote/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer, and a second port for the receiver. Vault and an economy plugin for money rewards; PlaceholderAPI is optional. SQLite out of the box, or MySQL/MariaDB.
 

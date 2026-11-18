@@ -179,12 +179,12 @@ public record XRConfig(
     public static final ConfigSpec<XRConfig> SPEC = ConfigSpec.builder(XRConfig.class, DEFAULTS)
         .header(
             "xRewind: every change, logged. Any of it, undone.",
-            "Docs: https://docs.xenastudios.co/xrewind/configuration/",
+            "Docs: https://plugins.xenastudios.co/xrewind/configuration/",
             "",
             "Apply changes with /xrewind reload (or /xr reload). A bad value falls back to its",
             "default with a warning in the console; xRewind never stops over config. All text is",
             "MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .version(1)
         .build();
 }

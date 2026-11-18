@@ -4,7 +4,7 @@
 
 Most backup plugins zip your whole server every time: slow, big, and a long freeze while they save. **xBackup stores only what changed since the last backup, down to single chunks.** Hourly backups take almost no disk, and the server pauses for milliseconds.
 
-**[Read the docs](https://docs.xenastudios.co/xbackup/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xbackup/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -48,7 +48,7 @@ Each subcommand has its own permission, `xbackup.<subcommand>`, all op-only unti
 2. Run `/backup now`, then `/backup status`.
 3. Add a remote in `plugins/xBackup/config.yml`, so a copy lives somewhere else, and run `/xbackup reload`.
 
-Full setup, every setting, every remote and how to restore: **[docs.xenastudios.co/xbackup](https://docs.xenastudios.co/xbackup/)**
+Full setup, every setting, every remote and how to restore: **[plugins.xenastudios.co/xbackup](https://plugins.xenastudios.co/xbackup/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Nothing else.
 

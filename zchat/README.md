@@ -11,7 +11,7 @@ zChat is a light chat plugin for Paper and Folia: a chat format per rank, a filt
 - **Works with any permissions plugin**, because ranks are picked by permission. PlaceholderAPI is optional.
 - **Every change applies on reload**, even turning commands on or off. No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/zchat)** · [Docs](https://docs.xenastudios.co/zchat/) · [Commands](https://docs.xenastudios.co/zchat/commands/) · [Developer API](https://docs.xenastudios.co/zchat/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/zchat)** · [Docs](https://plugins.xenastudios.co/zchat/) · [Commands](https://plugins.xenastudios.co/zchat/commands/) · [Developer API](https://plugins.xenastudios.co/zchat/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 

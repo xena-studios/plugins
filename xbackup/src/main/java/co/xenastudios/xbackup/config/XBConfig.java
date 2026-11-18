@@ -52,7 +52,7 @@ public record XBConfig(
     @Comment({
         "Copies of the repository somewhere else, updated after each backup. Only new files are",
         "sent. Name each one; the docs list every type and its settings:",
-        "https://docs.xenastudios.co/xbackup/remotes/"})
+        "https://plugins.xenastudios.co/xbackup/remotes/"})
     Map<String, Remote> remotes,
     @Comment("Tells you when a new version is out.") UpdateCheckerSettings updateChecker) implements XenaConfig {
 
@@ -184,11 +184,11 @@ public record XBConfig(
     public static final ConfigSpec<XBConfig> SPEC = ConfigSpec.builder(XBConfig.class, DEFAULTS)
         .header(
             "xBackup: incremental backups that cost almost nothing, and a restore you can trust.",
-            "Docs: https://docs.xenastudios.co/xbackup/configuration/",
+            "Docs: https://plugins.xenastudios.co/xbackup/configuration/",
             "",
             "Apply changes with /xbackup reload. A bad value falls back to its default with a",
             "warning in the console; xBackup never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .template(Remote.class, REMOTE_TEMPLATE)
         .version(1)
         .build();

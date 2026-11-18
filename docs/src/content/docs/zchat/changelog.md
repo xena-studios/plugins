@@ -12,7 +12,7 @@ Replace the jar and restart. Your config is kept as it is.
 
 ### Added
 
-- A developer API, so other plugins can work with zChat: a punishment plugin can mute players in chat and private messages and show its own reason, other plugins can send announcements in zChat's style (skipping players who hid chat), add their own placeholders to chat formats, and listen for chat messages (before other plugins have their say, and once they're sent), filter catches, private messages and mentions. See [Developer API](https://docs.xenastudios.co/zchat/developer-api/). It costs nothing unless a plugin uses it: chat takes the same time per message as before.
+- A developer API, so other plugins can work with zChat: a punishment plugin can mute players in chat and private messages and show its own reason, other plugins can send announcements in zChat's style (skipping players who hid chat), add their own placeholders to chat formats, and listen for chat messages (before other plugins have their say, and once they're sent), filter catches, private messages and mentions. See [Developer API](https://plugins.xenastudios.co/zchat/developer-api/). It costs nothing unless a plugin uses it: chat takes the same time per message as before.
 
 ### Fixed
 
@@ -76,7 +76,7 @@ A rewrite. Replace the jar and restart: your zChat 2 config is carried forward, 
 - **Private messages**: `/msg` (replacing Minecraft's `/msg`, `/tell` and `/w`, selectors included on Paper), `/reply` and `/socialspy`. The filter applies to them.
 - `/togglechat` remembers a player's choice when they rejoin (`togglechat.remember`).
 - A `theme` at the top of the config: a prefix and four colours zChat's own messages use. If you never changed a zChat 2 message, it gets the new look; any you changed are kept.
-- An update checker, and [bStats](https://bstats.org/plugin/bukkit/zChat/21533) anonymous usage statistics. See [Privacy](https://docs.xenastudios.co/start/privacy/) for exactly what each sends, and how to turn them off.
+- An update checker, and [bStats](https://bstats.org/plugin/bukkit/zChat/21533) anonymous usage statistics. See [Privacy](https://plugins.xenastudios.co/start/privacy/) for exactly what each sends, and how to turn them off.
 
 ### Changed
 

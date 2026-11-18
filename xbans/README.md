@@ -13,7 +13,7 @@ xBans is a free, open-source punishment plugin for Paper and Folia: bans, tempor
 - **Easy to switch to.** LiteBans' command syntax, so staff habits carry over, and one-command imports from LiteBans, EssentialsX and vanilla.
 - **Every change applies on reload**, even switching to another database. No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xbans)** · [Docs](https://docs.xenastudios.co/xbans/) · [Commands](https://docs.xenastudios.co/xbans/commands/) · [Switching from LiteBans](https://docs.xenastudios.co/xbans/switching/) · [Developer API](https://docs.xenastudios.co/xbans/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xbans)** · [Docs](https://plugins.xenastudios.co/xbans/) · [Commands](https://plugins.xenastudios.co/xbans/commands/) · [Switching from LiteBans](https://plugins.xenastudios.co/xbans/switching/) · [Developer API](https://plugins.xenastudios.co/xbans/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB.
 

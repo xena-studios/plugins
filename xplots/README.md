@@ -12,7 +12,7 @@ xPlots rents small plots to players for in-game money on Paper: select the whole
 - **You won't feel it running.** Finding a block's plot is arithmetic on the grid, the same for ten plots or ten thousand. There's one timer for the next lease to end and a once-a-minute check of signs in loaded chunks. Nothing else repeats.
 - **Every change applies on reload**, everything but storage. No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xplots)** · [Docs](https://docs.xenastudios.co/xplots/) · [Setting up](https://docs.xenastudios.co/xplots/setting-up/) · [Commands](https://docs.xenastudios.co/xplots/commands/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xplots)** · [Docs](https://plugins.xenastudios.co/xplots/) · [Setting up](https://plugins.xenastudios.co/xplots/setting-up/) · [Commands](https://plugins.xenastudios.co/xplots/commands/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Vault, WorldGuard and PlaceholderAPI are optional.
 

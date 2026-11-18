@@ -1,9 +1,9 @@
 # xBackup: incremental backups that cost almost nothing, and a restore you can trust.
-# Docs: https://docs.xenastudios.co/xbackup/configuration/
+# Docs: https://plugins.xenastudios.co/xbackup/configuration/
 #
 # Apply changes with /xbackup reload. A bad value falls back to its default with a
 # warning in the console; xBackup never stops over config. All text is MiniMessage:
-# https://docs.xenastudios.co/start/formatting/
+# https://plugins.xenastudios.co/start/formatting/
 
 # Managed by the plugin, to carry your settings forward on updates. Don't edit it.
 config-version: 1
@@ -118,7 +118,7 @@ verify:
 
 # Copies of the repository somewhere else, updated after each backup. Only new files are
 # sent. Name each one; the docs list every type and its settings:
-# https://docs.xenastudios.co/xbackup/remotes/
+# https://plugins.xenastudios.co/xbackup/remotes/
 remotes: {}
 
 # Tells you when a new version is out.

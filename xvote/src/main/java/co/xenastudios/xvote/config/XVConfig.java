@@ -252,11 +252,11 @@ public record XVConfig(
     public static final ConfigSpec<XVConfig> SPEC = ConfigSpec.builder(XVConfig.class, DEFAULTS)
         .header(
             "xVote: votes in, rewards out.",
-            "Docs: https://docs.xenastudios.co/xvote/configuration/",
+            "Docs: https://plugins.xenastudios.co/xvote/configuration/",
             "",
             "Apply changes with /xvote reload. A bad value falls back to its default with a",
             "warning in the console; xVote never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .version(1)
         .template(Site.class, new Site("", "", "", 24, List.of()))
         .template(Reward.class, new Reward(100, 0, List.of(), List.of(), Message.empty(), Message.empty(), SoundEffect.NONE, List.of()))

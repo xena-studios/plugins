@@ -12,7 +12,7 @@ Replace the jar and restart. Your config is kept as it is.
 
 ### Added
 
-- A developer API, so other plugins can work with xUtilities: they can read, set and clear where `/back` takes a player (a teleport plugin can make `/back` work for its own teleports, a minigame can stop `/back` returning into it), and check which commands are on. See [Developer API](https://docs.xenastudios.co/xutilities/developer-api/). It costs nothing unless a plugin uses it.
+- A developer API, so other plugins can work with xUtilities: they can read, set and clear where `/back` takes a player (a teleport plugin can make `/back` work for its own teleports, a minigame can stop `/back` returning into it), and check which commands are on. See [Developer API](https://plugins.xenastudios.co/xutilities/developer-api/). It costs nothing unless a plugin uses it.
 
 ### Fixed
 
@@ -56,8 +56,8 @@ A rewrite. Replace the jar and restart: your 1.x config is carried forward, and 
 - Workstation menus, `/enderchest` and `/trash` can play a sound as they open. `/enderchest` and `/trash` play their blocks' own sounds by default.
 - `/xu`, short for `/xutilities`.
 - `/stonecutter` and `/cartography` (alias `/cartographytable`) workstation menus.
-- An update checker: the console, and players with `xutilities.admin` when they join, hear when a new version is on Modrinth. It sends only the plugin version, platform and Minecraft version, and `update-checker.enabled: false` turns it off. See [Privacy](https://docs.xenastudios.co/start/privacy/).
-- [bStats](https://bstats.org/plugin/bukkit/XenaUtilities/34866) anonymous usage statistics. Turn them off for every plugin in `plugins/bStats/config.yml`. See [Privacy](https://docs.xenastudios.co/start/privacy/).
+- An update checker: the console, and players with `xutilities.admin` when they join, hear when a new version is on Modrinth. It sends only the plugin version, platform and Minecraft version, and `update-checker.enabled: false` turns it off. See [Privacy](https://plugins.xenastudios.co/start/privacy/).
+- [bStats](https://bstats.org/plugin/bukkit/XenaUtilities/34866) anonymous usage statistics. Turn them off for every plugin in `plugins/bStats/config.yml`. See [Privacy](https://plugins.xenastudios.co/start/privacy/).
 - `messages.error.usage`, shown when a command is typed wrong, and `messages.error.failed`, shown if a command hits an error.
 
 ### Changed

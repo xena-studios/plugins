@@ -12,7 +12,7 @@ Replace the jar and restart. Your config is kept as it is.
 
 ### Added
 
-- A developer API, so other plugins can work with xLimbo: they can see whether the main server is up and who's waiting to go back, send players back (through the queue, so the main server isn't flooded), and hear when players arrive, are about to be sent back, or the main server goes up or down. See [Developer API](https://docs.xenastudios.co/xlimbo/developer-api/). It costs nothing unless a plugin uses it.
+- A developer API, so other plugins can work with xLimbo: they can see whether the main server is up and who's waiting to go back, send players back (through the queue, so the main server isn't flooded), and hear when players arrive, are about to be sent back, or the main server goes up or down. See [Developer API](https://plugins.xenastudios.co/xlimbo/developer-api/). It costs nothing unless a plugin uses it.
 
 ### Fixed
 
@@ -45,7 +45,7 @@ Replace the jar and restart. Your config is kept as it is.
 
 ### Changed
 
-- The action bar is easier to read on the purple floor: the default hint and queue line are white with a bold highlight, instead of gray. New configs get it; to update yours, change `action-bar.message` and `queue.action-bar` as in the [default config](https://docs.xenastudios.co/xlimbo/configuration/).
+- The action bar is easier to read on the purple floor: the default hint and queue line are white with a bold highlight, instead of gray. New configs get it; to update yours, change `action-bar.message` and `queue.action-bar` as in the [default config](https://plugins.xenastudios.co/xlimbo/configuration/).
 - Lighter when parts are off: with `server-check` off, nothing checks the main server every second any more, and the void rescue's movement listener only runs while `void.enabled` is on (cancelling void damage alone no longer needs it). `server-check.interval-seconds` changes now apply on reload.
 
 ### Fixed
@@ -70,7 +70,7 @@ A rewrite. Replace the jar and restart: your 1.x config is carried forward, and 
 - A player the main server keeps refusing, such as one banned there, is sent back automatically at most three times in five minutes, so they aren't bounced forever.
 - The console says when the world is ready, and how long its spawn area took to load.
 - A `theme` at the top of the config: a prefix and four colours xLimbo's messages use. If you never changed a 1.x message, it gets the new look; any you changed are kept.
-- An update checker, and [bStats](https://bstats.org/plugin/bukkit/xLimbo/34867) anonymous usage statistics. See [Privacy](https://docs.xenastudios.co/start/privacy/) for exactly what each sends, and how to turn them off.
+- An update checker, and [bStats](https://bstats.org/plugin/bukkit/xLimbo/34867) anonymous usage statistics. See [Privacy](https://plugins.xenastudios.co/start/privacy/) for exactly what each sends, and how to turn them off.
 
 ### Faster arrivals
 

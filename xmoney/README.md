@@ -13,7 +13,7 @@ xMoney is an economy plugin for Paper and Folia with Vault built in: shops, jobs
 - **Easy to switch to.** Imports from EssentialsX, CMI, or the economy registered with Vault now, with a dry run first.
 - **Every change applies on reload**, except where balances are kept, which takes a restart.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xmoney)** · [Docs](https://docs.xenastudios.co/xmoney/) · [Commands](https://docs.xenastudios.co/xmoney/commands/) · [Switching](https://docs.xenastudios.co/xmoney/switching/) · [Developer API](https://docs.xenastudios.co/xmoney/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xmoney)** · [Docs](https://plugins.xenastudios.co/xmoney/) · [Commands](https://plugins.xenastudios.co/xmoney/commands/) · [Switching](https://plugins.xenastudios.co/xmoney/switching/) · [Developer API](https://plugins.xenastudios.co/xmoney/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Replaces Vault: don't install Vault or VaultUnlocked beside it. PlaceholderAPI is optional.
 

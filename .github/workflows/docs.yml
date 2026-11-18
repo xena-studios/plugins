@@ -5,7 +5,9 @@ name: Docs
 on:
   push:
     branches: [main]
-    paths: ["docs/**", ".github/workflows/docs.yml"]
+    # The docs, and what the plugin catalog reads: each plugin's build file (its version and
+    # Folia support) and api/ folder.
+    paths: ["docs/**", ".github/workflows/docs.yml", "*/build.gradle.kts", "*/api/build.gradle.kts"]
   pull_request:
   # Redeploy main by hand from the Actions tab.
   workflow_dispatch:
@@ -39,7 +41,13 @@ jobs:
             || { echo "docs=true" >> "$GITHUB_OUTPUT"; exit 0; }
           docs=false
           while read -r file; do
-            case $file in docs/* | .github/workflows/docs.yml) docs=true ;; esac
+            # The docs, the files scripts/catalog.ts reads (each plugin's build file and api/),
+            # and the ones it writes outside docs/.
+            case $file in
+              docs/* | .github/workflows/docs.yml) docs=true ;;
+              */build.gradle.kts | */api/build.gradle.kts) docs=true ;;
+              README.md | .github/labeler.yml | .github/workflows/labels.yml | .github/ISSUE_TEMPLATE/bug_report.yml) docs=true ;;
+            esac
           done <<< "$files"
           echo "docs=$docs" >> "$GITHUB_OUTPUT"
 

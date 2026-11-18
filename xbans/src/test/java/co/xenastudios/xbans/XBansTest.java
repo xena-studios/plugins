@@ -100,6 +100,21 @@ class XBansTest {
         MockBukkit.unmock();
     }
 
+    /** What {@code player} is told, once {@code command} (run again every half second) replies with {@code text}. */
+    private List<String> awaitReply(PlayerMock player, String command, String text) {
+        List<String> lines = new ArrayList<>();
+        long[] next = {0};
+        await(() -> {
+            if (System.nanoTime() >= next[0]) {
+                player.performCommand(command);
+                next[0] = System.nanoTime() + 500_000_000L;
+            }
+            lines.addAll(said(player));
+            return anyContains(lines, text);
+        });
+        return lines;
+    }
+
     private void console(String command) {
         server.dispatchCommand(server.getConsoleSender(), command);
     }
@@ -853,13 +868,12 @@ class XBansTest {
         settle();
         steve.setOp(true);
         said(steve);
-        steve.performCommand("history Steve");
-        List<String> lines = awaitSaid(steve, "Steve's history (1)");
+        // warn and kick look the player up before they write, so their writes can come
+        // after settle()'s: each lookup is asked again until it shows them.
+        List<String> lines = awaitReply(steve, "history Steve", "Steve's history (1)");
         assertTrue(anyContains(lines, "first"), String.join("\n", lines));
-        steve.performCommand("staffhistory console kicks");
-        awaitSaid(steve, "second");
-        steve.performCommand("warnings");
-        awaitSaid(steve, "1 active warnings");
+        awaitReply(steve, "staffhistory console kicks", "second");
+        awaitReply(steve, "warnings", "1 active warnings");
     }
 
     @Test

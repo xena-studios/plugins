@@ -8,7 +8,9 @@
     "check": "astro check",
     "build": "astro check && astro build && node scripts/headers.ts",
     "preview": "astro preview",
-    "brand:sync": "node scripts/sync-brand.ts"
+    "brand:sync": "node scripts/sync-brand.ts",
+    "catalog": "node scripts/catalog.ts",
+    "catalog:check": "node scripts/catalog.ts --check"
   },
   "engines": {
     "node": ">=24"

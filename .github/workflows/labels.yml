@@ -35,6 +35,7 @@ jobs:
           # The form puts the answer on the first non-empty line under "### Plugin".
           plugin=$(tr -d '\r' <<<"$BODY" | awk '/^### Plugin$/ { found = 1; next } found && NF { print; exit }')
           case $plugin in
+            # catalog:start: a label per plugin, from the brand catalog (pnpm catalog in docs/).
             xUtilities) label=xutilities ;;
             zChat) label=zchat ;;
             xLimbo) label=xlimbo ;;
@@ -44,8 +45,9 @@ jobs:
             xVote) label=xvote ;;
             xBans) label=xbans ;;
             xMoney) label=xmoney ;;
-            xBackup) label=xbackup ;;
             xStats) label=xstats ;;
+            xBackup) label=xbackup ;;
+            # catalog:end
             "A new plugin") label="new plugin" ;;
             *) exit 0 ;;
           esac

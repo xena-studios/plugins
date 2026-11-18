@@ -10,8 +10,8 @@ import path from "node:path";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const BRAND = path.resolve(process.env.BRAND_DIR ?? path.join(ROOT, "../../brand"));
 
-if (!fs.existsSync(path.join(BRAND, "tokens/plugins.json"))) {
-  console.error(`No brand checkout at ${BRAND}. Clone xena-studios/brand there or set BRAND_DIR.`);
+if (!fs.existsSync(path.join(BRAND, "tokens/plugins-catalog.json"))) {
+  console.error(`No brand checkout with the plugin catalog at ${BRAND}. Clone xena-studios/brand there (or pull it), or set BRAND_DIR.`);
   process.exit(1);
 }
 
@@ -22,37 +22,24 @@ const files = [
   ["logo/xena.svg", "src/assets/xena.svg"],
   ["avatar/favicon.svg", "public/favicon.svg"],
   ["plugins/horizon.svg", "src/assets/horizon.svg"],
+  // Every plugin's name, words and colours: scripts/catalog.ts builds the lists from it.
+  ["tokens/plugins-catalog.json", "src/data/catalog.json"],
   ["social/docs-og.png", "public/og.png"],
-  ["plugins/xutilities/icon.svg", "src/assets/plugins/xutilities.svg"],
-  ["plugins/zchat/icon.svg", "src/assets/plugins/zchat.svg"],
-  ["plugins/xlimbo/icon.svg", "src/assets/plugins/xlimbo.svg"],
-  ["plugins/xrewind/icon.svg", "src/assets/plugins/xrewind.svg"],
-  ["plugins/xplots/icon.svg", "src/assets/plugins/xplots.svg"],
-  ["plugins/xteleport/icon.svg", "src/assets/plugins/xteleport.svg"],
-  ["plugins/xvote/icon.svg", "src/assets/plugins/xvote.svg"],
-  ["plugins/xbans/icon.svg", "src/assets/plugins/xbans.svg"],
-  ["plugins/xmoney/icon.svg", "src/assets/plugins/xmoney.svg"],
-  ["plugins/xbackup/icon.svg", "src/assets/plugins/xbackup.svg"],
-  ["plugins/xstats/icon.svg", "src/assets/plugins/xstats.svg"],
   // The READMEs' banners, for the repo, the docs and each plugin.
   ["github/plugins-banner.png", "../.github/assets/banner.png"],
   ["github/plugin-docs-banner.png", "../.github/assets/docs-banner.png"],
-  ["plugins/xutilities/banner.png", "../.github/assets/xutilities-banner.png"],
-  ["plugins/zchat/banner.png", "../.github/assets/zchat-banner.png"],
-  ["plugins/xlimbo/banner.png", "../.github/assets/xlimbo-banner.png"],
-  ["plugins/xrewind/banner.png", "../.github/assets/xrewind-banner.png"],
-  ["plugins/xplots/banner.png", "../.github/assets/xplots-banner.png"],
-  ["plugins/xteleport/banner.png", "../.github/assets/xteleport-banner.png"],
-  ["plugins/xvote/banner.png", "../.github/assets/xvote-banner.png"],
-  ["plugins/xbans/banner.png", "../.github/assets/xbans-banner.png"],
-  ["plugins/xmoney/banner.png", "../.github/assets/xmoney-banner.png"],
-  ["plugins/xbackup/banner.png", "../.github/assets/xbackup-banner.png"],
-  ["plugins/xstats/banner.png", "../.github/assets/xstats-banner.png"],
 ];
+
+// Each plugin's icon (docs) and banner (its README), for every plugin in the brand catalog.
+const catalog: { plugins: { id: string }[] } = JSON.parse(fs.readFileSync(path.join(BRAND, "tokens/plugins-catalog.json"), "utf8"));
+for (const { id } of catalog.plugins) {
+  files.push([`plugins/${id}/icon.svg`, `src/assets/plugins/${id}.svg`]);
+  files.push([`plugins/${id}/banner.png`, `../.github/assets/${id}-banner.png`]);
+}
 
 for (const [from, to] of files) {
   const dest = path.join(ROOT, to);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.copyFileSync(path.join(BRAND, from), dest);
 }
-console.log(`synced ${files.length} files from ${BRAND}`);
+console.log(`synced ${files.length} files from ${BRAND}; run pnpm catalog to rebuild the lists`);

@@ -1,4 +1,4 @@
-![xVote by Xena Studios. A periwinkle pixel icon of a ticked ballot over its box and the xVote name over a stepped horizon in periwinkle, with the headline "Votes in. Rewards out."](https://raw.githubusercontent.com/xena-studios/brand/main/plugins/xvote/banner.png)
+![xVote by Xena Studios. A cobalt pixel icon of a ticked ballot over its box and the xVote name over a stepped horizon in cobalt, with the headline "Votes in. Rewards out."](https://raw.githubusercontent.com/xena-studios/brand/main/plugins/xvote/banner.png)
 
 ## Votes in. Rewards out.
 

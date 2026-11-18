@@ -2,26 +2,18 @@
 // A plugin's pages carry its icon beside the title, alongside its accent
 // (src/routeData.ts).
 import Default from "@astrojs/starlight/components/PageTitle.astro";
-import xutilities from "../assets/plugins/xutilities.svg";
-import zchat from "../assets/plugins/zchat.svg";
-import xlimbo from "../assets/plugins/xlimbo.svg";
-import xrewind from "../assets/plugins/xrewind.svg";
-import xplots from "../assets/plugins/xplots.svg";
-import xteleport from "../assets/plugins/xteleport.svg";
-import xvote from "../assets/plugins/xvote.svg";
-import xbans from "../assets/plugins/xbans.svg";
-import xmoney from "../assets/plugins/xmoney.svg";
-import xbackup from "../assets/plugins/xbackup.svg";
-import xstats from "../assets/plugins/xstats.svg";
+import catalog from "../data/plugins.json" with { type: "json" };
 
-const icons = { xutilities, zchat, xlimbo, xrewind, xplots, xteleport, xvote, xbans, xmoney, xbackup, xstats };
+// Every plugin's icon, synced from the brand repo (scripts/sync-brand.ts).
+const files = import.meta.glob<{ default: ImageMetadata }>("../assets/plugins/*.svg", { eager: true });
+const icons = Object.fromEntries(catalog.plugins.map((p) => [p.id, files[`../assets/plugins/${p.id}.svg`]?.default]));
 const id = Astro.locals.starlightRoute.id;
-const plugin = (Object.keys(icons) as (keyof typeof icons)[]).find((p) => id === p || id.startsWith(`${p}/`));
+const plugin = catalog.plugins.map((p) => p.id).find((p) => id === p || id.startsWith(`${p}/`));
 ---
 {
-  plugin ? (
+  plugin && icons[plugin] ? (
     <div class="plugin-title">
-      <img src={icons[plugin].src} alt="" width="44" height="44" />
+      <img src={icons[plugin]!.src} alt="" width="44" height="44" />
       <Default />
     </div>
   ) : (

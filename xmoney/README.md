@@ -1,4 +1,4 @@
-![xMoney by Xena Studios. A glacier blue pixel coin icon and the xMoney name over a stepped horizon in glacier blue, with the headline "The economy and Vault, in one plugin."](../.github/assets/xmoney-banner.png)
+![xMoney by Xena Studios. A emerald pixel coin icon and the xMoney name over a stepped horizon in emerald, with the headline "The economy and Vault, in one plugin."](../.github/assets/xmoney-banner.png)
 
 **The economy and Vault, in one plugin.**
 

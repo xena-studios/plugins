@@ -1,0 +1,23 @@
+---
+// The home page's list of plugins, from the brand catalog (src/data/plugins.json, written
+// by scripts/catalog.ts): each one's icon, name, headline and blurb, in catalog order.
+import catalog from "../data/plugins.json" with { type: "json" };
+
+const files = import.meta.glob<{ default: ImageMetadata }>("../assets/plugins/*.svg", { eager: true });
+const icon = (id: string) => files[`../assets/plugins/${id}.svg`]?.default.src;
+// Blurbs are plain text with `code` spans, as in the brand repo.
+const html = (text: string) =>
+  text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+---
+<ul class="plugin-list">
+  {catalog.plugins.map((p) => (
+    <li>
+      <img src={icon(p.id)} alt="" width="48" height="48" />
+      <a href={p.docs}>{p.name}</a>
+      <p set:html={html(`${p.tagline} ${p.blurb}`)} />
+    </li>
+  ))}
+</ul>

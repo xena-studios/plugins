@@ -111,14 +111,17 @@ public class XLimbo extends XenaPlugin<XLConfig> {
                 if (left > 0) {
                     throw new CommandFailure(current.messageCooldown(), Placeholders.text("seconds", (left + 999) / 1000));
                 }
-                joinCooldowns.put(player.getUniqueId(), now);
+                // A plugin keeping them here doesn't use up the cooldown.
                 if (!mayReturn(player, PlayerReturnEvent.Cause.JOIN_COMMAND)) {
                     return;
                 }
+                joinCooldowns.put(player.getUniqueId(), now);
                 Returns waiting = returns;
+                // Commands run on the main thread, as the queue does.
                 if (waiting != null) {
-                    // Commands run on the main thread, as the queue does.
                     waiting.sentByHand(player.getUniqueId());
+                } else {
+                    returnHistory.sent(player.getUniqueId(), now);
                 }
                 current.messageSending().send(player, Placeholders.text("server", config().mainServer()));
                 Proxy.connect(this, player, config().mainServer());

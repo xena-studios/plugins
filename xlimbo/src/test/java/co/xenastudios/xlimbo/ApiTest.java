@@ -173,6 +173,22 @@ class ApiTest {
     }
 
     @Test
+    void withTheQueueOffAPlayerSentStraightBackIsRefused() {
+        PlayerMock steve = join("Steve");
+        api.sendBack(steve);
+        assertEquals(1, returns.size());
+        steve.disconnect();
+        steve.reconnect();
+        assertEquals(PlayerEnterLimboEvent.Reason.REFUSED, arrivals.get(arrivals.size() - 1).getReason());
+
+        PlayerMock alex = join("Alex");
+        alex.performCommand("join");
+        alex.disconnect();
+        alex.reconnect();
+        assertEquals(PlayerEnterLimboEvent.Reason.REFUSED, arrivals.get(arrivals.size() - 1).getReason(), "/join too");
+    }
+
+    @Test
     void joinCommandAsksFirst() {
         PlayerMock steve = join("Steve");
         cancelReturns = true;
@@ -180,5 +196,12 @@ class ApiTest {
         assertEquals(1, returns.size());
         assertEquals(PlayerReturnEvent.Cause.JOIN_COMMAND, returns.get(0).getCause());
         assertNull(steve.nextMessage(), "nothing sent");
+
+        // A cancelled /join doesn't use up the cooldown.
+        cancelReturns = false;
+        steve.performCommand("join");
+        assertEquals(2, returns.size());
+        assertEquals("» Connecting you to main...",
+            PlainTextComponentSerializer.plainText().serialize(steve.nextComponentMessage()));
     }
 }

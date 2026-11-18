@@ -120,17 +120,21 @@ public final class Returns extends ListenerModule {
                 badAddress = check.address();
                 plugin.getLogger().warning("config.yml: server-check.address " + e.getMessage() + "; nobody is sent back until it's fixed.");
             }
-            changed(up, false);
-            up = Boolean.FALSE;
+            answered(false);
             return;
         }
-        boolean answered = StatusPing.isUp(address);
+        answered(StatusPing.isUp(address));
+    }
+
+    /** Keeps a status check's answer, then tells listeners if it changed. Off the main thread. */
+    void answered(boolean answered) {
         Boolean before = up;
         if (answered && Boolean.FALSE.equals(before)) {
             cameUp = true;
         }
-        changed(before, answered);
+        // Kept first, so a listener asking the API sees the new status.
         up = answered;
+        changed(before, answered);
     }
 
     // For the API: a real change only, not the first answer. Built only when listened for.

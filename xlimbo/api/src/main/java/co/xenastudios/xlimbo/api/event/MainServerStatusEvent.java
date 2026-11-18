@@ -10,7 +10,9 @@ import org.jetbrains.annotations.NotNull;
  * (on startup, or when its settings change on reload) isn't one.
  *
  * <p>Fired asynchronously, on the thread that asked the main server, only when something
- * listens for it. Players are sent back afterwards, on the main thread.
+ * listens for it. Players are sent back afterwards, on the main thread. By the time it
+ * fires, {@link co.xenastudios.xlimbo.api.XLimboApi#isMainServerUp()} already answers
+ * the new status.
  *
  * @since 2.1.0
  */

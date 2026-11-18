@@ -96,8 +96,8 @@ Each event is only made when something listens for it. They're in `co.xenastudio
 | Event | When | Thread |
 | --- | --- | --- |
 | `PlayerEnterLimboEvent` | A player arrived. `getReason()` says why, as far as xLimbo can tell (below). | Main |
-| `PlayerReturnEvent` | A player is about to be sent back. Cancellable. `getCause()` is `QUEUE`, `JOIN_COMMAND` or `PLUGIN` (your `sendBack` while the queue is off), and `getServer()` is where they're going. | Main |
-| `MainServerStatusEvent` | The main server went up or down (`isUp()`). Only while server-check is on, and only for a change: the first answer after server-check starts isn't one. | Async |
+| `PlayerReturnEvent` | A player is about to be sent back. Cancellable. `getCause()` is `QUEUE`, `JOIN_COMMAND` or `PLUGIN` (your `sendBack` while the queue is off), and `getServer()` is where they're going. A cancelled `/join` doesn't use up the player's cooldown. | Main |
+| `MainServerStatusEvent` | The main server went up or down (`isUp()`). Only while server-check is on, and only for a change: the first answer after server-check starts isn't one. `isMainServerUp()` already gives the new status. | Async |
 
 ### Why a player arrived
 

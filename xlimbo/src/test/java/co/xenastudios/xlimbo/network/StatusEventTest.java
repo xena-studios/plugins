@@ -3,6 +3,7 @@ package co.xenastudios.xlimbo.network;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.xenastudios.xlimbo.XLimbo;
 import co.xenastudios.xlimbo.api.event.MainServerStatusEvent;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -22,8 +23,15 @@ class StatusEventTest {
     List<MainServerStatusEvent> seen = new CopyOnWriteArrayList<>();
 
     @BeforeEach
+    @SuppressWarnings("unchecked") // ServerMock's own getBanList, inherited by the subclass
     void start() {
-        server = MockBukkit.mock();
+        // MockBukkit doesn't implement isStopping, which disabling xLimbo asks.
+        server = MockBukkit.mock(new ServerMock() {
+            @Override
+            public boolean isStopping() {
+                return false;
+            }
+        });
         server.getPluginManager().registerEvents(new Listener() {
             @EventHandler
             void on(MainServerStatusEvent event) {
@@ -55,5 +63,24 @@ class StatusEventTest {
         assertEquals(2, seen.size());
         assertTrue(!seen.get(0).isUp() && seen.get(1).isUp());
         assertTrue(seen.get(0).isAsynchronous());
+    }
+
+    @Test
+    void theNewStatusIsKeptBeforeTheEventFires() {
+        server.addSimpleWorld("world");
+        Returns returns = new Returns(MockBukkit.load(XLimbo.class));
+        List<Boolean> kept = new CopyOnWriteArrayList<>();
+        server.getPluginManager().registerEvents(new Listener() {
+            @EventHandler
+            void on(MainServerStatusEvent event) {
+                kept.add(returns.up());
+            }
+        }, MockBukkit.createMockPlugin("Another"));
+        CompletableFuture.runAsync(() -> {
+            returns.answered(true);
+            returns.answered(false);
+            returns.answered(true);
+        }).join();
+        assertEquals(List.of(false, true), kept, "a listener sees the status it's told about");
     }
 }

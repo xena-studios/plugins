@@ -30,7 +30,7 @@ public final class PlayerReturnEvent extends PlayerEvent implements Cancellable 
          * {@link co.xenastudios.xlimbo.api.XLimboApi#sendBack} while the queue is on.
          */
         QUEUE,
-        /** The player ran {@code /join}. */
+        /** The player ran {@code /join}. Cancelling it doesn't use up their {@code /join} cooldown. */
         JOIN_COMMAND,
         /** Another plugin's {@link co.xenastudios.xlimbo.api.XLimboApi#sendBack} while the queue is off, so sent at once. */
         PLUGIN

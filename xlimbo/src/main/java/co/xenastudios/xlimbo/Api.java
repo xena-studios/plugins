@@ -82,6 +82,7 @@ final class Api implements XLimboApi, Module {
         if (returns != null) {
             returns.enqueue(player.getUniqueId());
         } else if (xlimbo.mayReturn(player, PlayerReturnEvent.Cause.PLUGIN)) {
+            xlimbo.returnHistory().sent(player.getUniqueId(), System.currentTimeMillis());
             xlimbo.config().autoJoin().message().send(player);
             Proxy.connect(xlimbo, player, xlimbo.config().mainServer());
         }

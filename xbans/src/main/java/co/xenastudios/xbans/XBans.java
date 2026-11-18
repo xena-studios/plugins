@@ -66,11 +66,15 @@ public class XBans extends XenaPlugin<XBConfig> {
         // Enforcement can't be turned off: it's what the plugin is for.
         setup.module("enforce.login", () -> new Gate(this));
         setup.module("enforce.chat", () -> new MuteGuard.Chat(this));
+        setup.module("enforce.legacy-chat", () -> new MuteGuard.LegacyChat(this));
         if (config.mutes().blockSigns()) {
             setup.module("enforce.signs", () -> new MuteGuard.Signs(this));
         }
         if (config.mutes().blockBooks()) {
             setup.module("enforce.books", () -> new MuteGuard.Books(this));
+        }
+        if (config.mutes().blockAnvils()) {
+            setup.module("enforce.anvils", () -> new MuteGuard.Anvils(this));
         }
         setup.module("api", () -> api);
         setup.permission(Gate.NOTIFY_BANNED_JOIN, PermissionDefault.OP);

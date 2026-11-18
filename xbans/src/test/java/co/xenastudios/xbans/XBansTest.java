@@ -13,6 +13,7 @@ import co.xenastudios.xbans.api.PunishRequest;
 import co.xenastudios.xbans.api.XBansApi;
 import co.xenastudios.xbans.model.Entry;
 import co.xenastudios.xbans.storage.Store;
+import io.papermc.paper.connection.PlayerConfigurationConnection;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -91,7 +92,7 @@ class XBansTest {
     private void record(PunishmentType type, UUID target, String reason) {
         Punishment p = new Punishment(0, type, target, "Steve", false, reason, null, "Console", Instant.now(), null, "*",
             false, null, null);
-        plugin.store().insert(new Entry(p, null), null, null, () -> {}).join();
+        plugin.store().insert(new Entry(p, null), List.of(), null).join();
     }
 
     @AfterEach
@@ -334,6 +335,94 @@ class XBansTest {
     }
 
     @Test
+    void aMuteStopsTheOlderChatEventsToo() throws Exception {
+        org.bukkit.plugin.Plugin bridge = MockBukkit.createMockPlugin("DiscordBridge");
+        List<String> relayed = new java.util.concurrent.CopyOnWriteArrayList<>();
+        server.getPluginManager().registerEvents(new org.bukkit.event.Listener() {
+            // A plugin that un-cancels chat, then one that relays what isn't cancelled.
+            @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.HIGH)
+            public void uncancel(org.bukkit.event.player.AsyncPlayerChatEvent event) {
+                event.setCancelled(false);
+            }
+
+            @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+            public void relay(org.bukkit.event.player.AsyncPlayerChatEvent event) {
+                relayed.add(event.getMessage());
+            }
+        }, bridge);
+        server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(
+            org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
+        console("mute Steve spam");
+        await(() -> mute(steve.getUniqueId()) != null);
+
+        org.bukkit.event.player.AsyncPlayerChatEvent chat = new org.bukkit.event.player.AsyncPlayerChatEvent(true, steve,
+            "hello discord", new java.util.HashSet<>(server.getOnlinePlayers()));
+        Thread thread = new Thread(() -> server.getPluginManager().callEvent(chat));
+        thread.start();
+        thread.join(10_000);
+        assertTrue(chat.isCancelled());
+        assertTrue(relayed.isEmpty(), "nothing relayed");
+
+        org.bukkit.event.player.AsyncPlayerChatEvent fine = new org.bukkit.event.player.AsyncPlayerChatEvent(true, alex,
+            "hi", new java.util.HashSet<>(server.getOnlinePlayers()));
+        Thread other = new Thread(() -> server.getPluginManager().callEvent(fine));
+        other.start();
+        other.join(10_000);
+        assertEquals(List.of("hi"), relayed, "others still chat");
+    }
+
+    @Test
+    void theOlderChatEventsArentListenedToUnlessAnotherPluginDoes() {
+        for (org.bukkit.plugin.RegisteredListener listener
+            : org.bukkit.event.player.AsyncPlayerChatEvent.getHandlerList().getRegisteredListeners()) {
+            assertFalse(listener.getPlugin() == plugin, "xBans alone doesn't make Paper fire them");
+        }
+        assertEquals(0, org.bukkit.event.player.PlayerChatEvent.getHandlerList().getRegisteredListeners().length);
+    }
+
+    @Test
+    void aBanMadeWhileThePlayerIsConfiguringCatchesThemThere() throws Exception {
+        UUID id = UUID.randomUUID();
+        console("ban " + id + " connecting");
+        await(() -> ban(id) != null);
+        PlayerConfigurationConnection connection = configuring(id, "203.0.113.70");
+        io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent event =
+            new io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent(connection, null);
+        server.getPluginManager().callEvent(event);
+        assertFalse(event.isAllowed());
+        assertTrue(PlainTextComponentSerializer.plainText().serialize(event.getKickMessage()).contains("connecting"));
+
+        // An IP ban, for an account it doesn't name.
+        console("ipban 203.0.113.71 the address");
+        await(() -> backend().active().ban(UUID.randomUUID(), "203.0.113.71", "server", System.currentTimeMillis()) != null);
+        io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent byIp =
+            new io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent(configuring(UUID.randomUUID(), "203.0.113.71"), null);
+        server.getPluginManager().callEvent(byIp);
+        assertFalse(byIp.isAllowed());
+
+        io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent clean =
+            new io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent(configuring(UUID.randomUUID(), "203.0.113.72"), null);
+        server.getPluginManager().callEvent(clean);
+        assertTrue(clean.isAllowed());
+    }
+
+    // A connection still configuring, as Paper hands it to PlayerConnectionValidateLoginEvent.
+    private PlayerConfigurationConnection configuring(UUID id, String address) throws Exception {
+        com.destroystokyo.paper.profile.PlayerProfile profile = server.createProfile(id, "Joining");
+        InetSocketAddress socket = new InetSocketAddress(InetAddress.getByName(address), 25565);
+        return (PlayerConfigurationConnection) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
+            new Class<?>[] {PlayerConfigurationConnection.class}, (proxy, method, args) -> switch (method.getName()) {
+                case "getProfile" -> profile;
+                case "getAddress", "getClientAddress" -> socket;
+                case "isConnected" -> true;
+                case "hashCode" -> System.identityHashCode(proxy);
+                case "equals" -> proxy == args[0];
+                case "toString" -> "connection";
+                default -> null;
+            });
+    }
+
+    @Test
     void anIpMuteSilencesEveryoneOnIt() throws Exception {
         PlayerMock sharer = join("Sharer", "203.0.113.9");
         console("ipmute Steve shared spam");
@@ -427,15 +516,25 @@ class XBansTest {
     }
 
     @Test
-    void templatesDontGetRoundWeightsOrCaps() {
+    void templatesAreHeldToWeightsAndCaps() {
         steve.addAttachment(plugin, "xbans.ban", true);
         steve.addAttachment(plugin, "xbans.limit.helper", true);
+        // A template needs its own permission, which operators have and a helper isn't given.
+        steve.performCommand("ban Alex hacking");
+        awaitSaid(steve, "can't use the hacking template");
+        steve.addAttachment(plugin, "xbans.template.hacking", true);
         alex.addAttachment(plugin, "xbans.exempt", true);
         steve.performCommand("ban Alex hacking");
         awaitSaid(steve, "can't be punished");
-        assertNull(ban(alex.getUniqueId()));
-        // The template's own 7 days is past a helper's 1d, and allowed; a typed length isn't.
         alex.addAttachment(plugin, "xbans.exempt", false);
+        // The template's 7 days is past a helper's 1d: refused, so repeating it can't climb to permanent.
+        steve.performCommand("ban Alex hacking");
+        awaitSaid(steve, "at most 1d");
+        steve.performCommand("ban Alex 3d hacking");
+        awaitSaid(steve, "at most 1d");
+        assertNull(ban(alex.getUniqueId()));
+        // With the bypass, a template's own lengths go past the cap; a typed one still doesn't.
+        steve.addAttachment(plugin, Power.BYPASS_TEMPLATES, true);
         steve.performCommand("ban Alex 3d hacking");
         awaitSaid(steve, "at most 1d");
         steve.performCommand("ban Alex hacking");
@@ -447,6 +546,127 @@ class XBansTest {
         steve.setOp(true);
         steve.performCommand("ban Alex 7d an operator isn't capped");
         await(() -> ban(alex.getUniqueId()) != null);
+    }
+
+    // ---- IP punishments and staff rules ----
+
+    @Test
+    void anAccountBanDoesntLiftAnIpBan() throws Exception {
+        UUID stranger = UUID.randomUUID();
+        console("ipban Steve alts");
+        await(() -> !steve.isOnline());
+        console("ban Steve the account as well");
+        settle();
+        assertNotNull(backend().active().ban(UUID.randomUUID(), backend().keys().key("203.0.113.9"), "server",
+            System.currentTimeMillis()), "the IP ban is still in force");
+        assertEquals(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, preLogin(stranger, "Stranger", "203.0.113.9").getLoginResult());
+
+        // A temporary IP ban and a permanent account ban: neither covers the other, so both stay.
+        console("tempipban Alex 1d shared");
+        await(() -> !alex.isOnline());
+        console("ban Alex for good");
+        await(() -> backend().active().onScope(PunishmentType.BAN, alex.getUniqueId(), null, "*", System.currentTimeMillis())
+            .stream().anyMatch(entry -> entry.punishment().isPermanent()));
+        assertEquals(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, preLogin(stranger, "Stranger", "203.0.113.20").getLoginResult());
+        assertEquals(2, backend().active().onScope(PunishmentType.BAN, alex.getUniqueId(), null, "*",
+            System.currentTimeMillis()).size(), "both in force");
+
+        // An IP ban reaches the account and the IP, so it replaces an account ban it outlasts.
+        PlayerMock carl = join("Carl", "203.0.113.30");
+        console("tempban Carl 1d first");
+        await(() -> !carl.isOnline());
+        long first = ban(carl.getUniqueId()).id();
+        console("ipban Carl wider");
+        await(() -> ban(carl.getUniqueId()).id() != first);
+        assertTrue(ban(carl.getUniqueId()).punishment().ipBased());
+        assertNotNull(plugin.store().find(first).join().punishment().removal());
+    }
+
+    @Test
+    void anAccountMuteDoesntLiftAnIpMute() throws Exception {
+        console("ipmute Steve shared spam");
+        await(() -> mute(steve.getUniqueId()) != null);
+        long ipMute = mute(steve.getUniqueId()).id();
+        console("mute Steve again");
+        settle();
+        assertNull(plugin.store().find(ipMute).join().punishment().removal(), "the IP mute is still in force");
+        assertTrue(backend().active().mute(UUID.randomUUID(), backend().keys().key("203.0.113.9"), "server",
+            System.currentTimeMillis()) != null);
+    }
+
+    @Test
+    void ipBansAreHeldToEveryAccountsExemptionAndWeight() throws Exception {
+        PlayerMock owner = join("Owner", "203.0.113.40");
+        owner.addAttachment(plugin, Power.EXEMPT, true);
+        steve.addAttachment(plugin, "xbans.ipban", true);
+        steve.addAttachment(plugin, "xbans.weight.10", true);
+        settle();
+        // By the owner's address, typed: they're on it, and exempt.
+        steve.performCommand("ipban 203.0.113.40 locked out");
+        awaitSaid(steve, "Owner can't be punished");
+        assertNull(backend().active().ban(UUID.randomUUID(), backend().keys().key("203.0.113.40"), "server",
+            System.currentTimeMillis()));
+        // An account seen on the IP who's offline now, recorded as exempt.
+        plugin.store().seen(UUID.randomUUID(), "Admin", "203.0.113.20", 0, true);
+        settle();
+        steve.performCommand("ipban Alex shared");
+        awaitSaid(steve, "Admin can't be punished");
+        assertNull(ban(alex.getUniqueId()));
+        // A weight as high as the sender's on the IP.
+        PlayerMock mod = join("Mod", "203.0.113.50");
+        mod.addAttachment(plugin, "xbans.weight.10", true);
+        steve.performCommand("ipban 203.0.113.50");
+        awaitSaid(steve, "Mod outranks you");
+        // The console has no limits.
+        console("ipban 203.0.113.40 the console may");
+        await(() -> !owner.isOnline());
+    }
+
+    @Test
+    void anIpBanShowsNoAddress() throws Exception {
+        said(alex);
+        console("ipban 198.51.100.7 a raw address");
+        List<String> lines = awaitSaid(alex, "IP-banned");
+        assertFalse(anyContains(lines, "198.51.100.7"), String.join("\n", lines));
+        assertTrue(anyContains(lines, "198.51.x.x"), String.join("\n", lines));
+        Entry ban = backend().active().ban(UUID.randomUUID(), "198.51.100.7", "server", System.currentTimeMillis());
+        assertEquals("198.51.x.x", ban.punishment().targetName());
+    }
+
+    @Test
+    void unbansNeedTheWeightOfWhoeverBanned() throws Exception {
+        steve.addAttachment(plugin, "xbans.ban", true);
+        steve.addAttachment(plugin, "xbans.unban", true);
+        steve.addAttachment(plugin, "xbans.weight.10", true);
+        PlayerMock carl = join("Carl", "203.0.113.30");
+        alex.disconnect();
+        carl.disconnect();
+        console("ban Alex by the console");
+        await(() -> ban(alex.getUniqueId()) != null);
+        steve.performCommand("unban Alex");
+        awaitSaid(steve, "outranks you");
+        assertNotNull(ban(alex.getUniqueId()));
+        // Their own, they can always lift.
+        steve.performCommand("ban Carl mine");
+        await(() -> ban(carl.getUniqueId()) != null);
+        steve.performCommand("unban Carl");
+        await(() -> ban(carl.getUniqueId()) == null);
+        // With the override, anyone's.
+        steve.addAttachment(plugin, Punisher.OVERRIDE, true);
+        steve.performCommand("unban Alex");
+        await(() -> ban(alex.getUniqueId()) == null);
+    }
+
+    @Test
+    void anUnbanOnAServerThatMissedTheBanStillLiftsIt() {
+        alex.disconnect();
+        console("ban Alex missed");
+        await(() -> ban(alex.getUniqueId()) != null);
+        long id = ban(alex.getUniqueId()).id();
+        // As if this server never heard of it: memory has drifted from the database.
+        backend().active().remove(id);
+        console("unban Alex");
+        await(() -> plugin.store().find(id).join().punishment().removal() != null);
     }
 
     // ---- History ----

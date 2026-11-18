@@ -1,6 +1,7 @@
 package co.xenastudios.xbans.enforce;
 
 import co.xenastudios.core.ListenerModule;
+import co.xenastudios.core.Module;
 import co.xenastudios.xbans.XBans;
 import co.xenastudios.xbans.config.XBConfig;
 import co.xenastudios.xbans.model.Entry;
@@ -15,16 +16,29 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.inventory.PrepareAnvilEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
+import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.event.server.PluginEnableEvent;
+import org.bukkit.event.server.ServerLoadEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.EventExecutor;
+import org.bukkit.plugin.RegisteredListener;
 
 /**
  * Keeps muted players quiet: chat, the configured commands (by any alias or namespace),
- * and, while they're on, signs and books. Each check is a map lookup for the player and
- * their IP; only a muted player's command is looked up further.
+ * and, while they're on, signs, books and anvil renames. Each check is a map lookup for the
+ * player and their IP; only a muted player's command is looked up further.
  */
 public final class MuteGuard {
 
@@ -58,13 +72,24 @@ public final class MuteGuard {
             this.xbans = xbans;
         }
 
-        // Lowest, so the message is stopped before any chat plugin formats or sends it.
+        // Lowest, so the message is stopped before any chat plugin formats or sends it. Already
+        // cancelled means the older chat events' guard stopped it and told them.
         @EventHandler(priority = EventPriority.LOWEST)
         public void chat(AsyncChatEvent event) {
             Entry mute = muteOf(xbans, event.getPlayer());
             if (mute != null) {
+                if (!event.isCancelled()) {
+                    tell(xbans, event.getPlayer(), mute);
+                }
                 event.setCancelled(true);
-                tell(xbans, event.getPlayer(), mute);
+            }
+        }
+
+        // And again last, so a plugin that un-cancels chat in between can't let it through.
+        @EventHandler(priority = EventPriority.HIGHEST)
+        public void chatAgain(AsyncChatEvent event) {
+            if (!event.isCancelled() && muteOf(xbans, event.getPlayer()) != null) {
+                event.setCancelled(true);
             }
         }
 
@@ -126,6 +151,147 @@ public final class MuteGuard {
         private static String strip(String label) {
             int colon = label.lastIndexOf(':');
             return colon < 0 ? label : label.substring(colon + 1);
+        }
+    }
+
+    /**
+     * Chat on the older events, {@link AsyncPlayerChatEvent} and {@link PlayerChatEvent}.
+     * Paper fires those in full before {@link AsyncChatEvent}, but only while some plugin
+     * listens to them, and a listener on the synchronous one moves every chat message onto
+     * the main thread. So the guard is on an older event only while another plugin listens
+     * to it: checked when plugins are enabled or disabled, and when the server has loaded.
+     * Each guard cancels at the lowest priority and again at the highest.
+     */
+    public static final class LegacyChat implements Module, Listener {
+
+        private final XBans xbans;
+        private final Guard async = new Guard(AsyncPlayerChatEvent.class);
+        private final Guard sync = new Guard(PlayerChatEvent.class);
+
+        public LegacyChat(XBans xbans) {
+            this.xbans = xbans;
+        }
+
+        @Override
+        public void enable() {
+            Bukkit.getPluginManager().registerEvents(this, xbans);
+            refresh();
+        }
+
+        @Override
+        public void disable() {
+            HandlerList.unregisterAll(this);
+            async.off();
+            sync.off();
+        }
+
+        @EventHandler
+        public void loaded(ServerLoadEvent event) {
+            refresh();
+        }
+
+        @EventHandler
+        public void enabled(PluginEnableEvent event) {
+            refresh();
+        }
+
+        @EventHandler
+        public void disabled(PluginDisableEvent event) {
+            // Its listeners may still be registered while this runs.
+            xbans.tasks().global(this::refresh);
+        }
+
+        /** Puts each guard on while another plugin listens to its event, and takes it off once none does. */
+        void refresh() {
+            async.refresh();
+            sync.refresh();
+        }
+
+        boolean guarding(Class<? extends Event> type) {
+            return (type == AsyncPlayerChatEvent.class ? async : sync).on;
+        }
+
+        private final class Guard implements Listener {
+
+            private final Class<? extends PlayerEvent> type;
+            private volatile boolean on;
+
+            Guard(Class<? extends PlayerEvent> type) {
+                this.type = type;
+            }
+
+            synchronized void refresh() {
+                boolean others = false;
+                for (RegisteredListener listener : handlers().getRegisteredListeners()) {
+                    if (listener.getPlugin() != xbans) {
+                        others = true;
+                        break;
+                    }
+                }
+                if (others && !on) {
+                    EventExecutor first = (listener, event) -> stop(event, true);
+                    EventExecutor last = (listener, event) -> stop(event, false);
+                    Bukkit.getPluginManager().registerEvent(type, this, EventPriority.LOWEST, first, xbans, false);
+                    Bukkit.getPluginManager().registerEvent(type, this, EventPriority.HIGHEST, last, xbans, false);
+                    on = true;
+                } else if (!others && on) {
+                    off();
+                }
+            }
+
+            synchronized void off() {
+                if (on) {
+                    handlers().unregister(this);
+                    on = false;
+                }
+            }
+
+            private HandlerList handlers() {
+                return type == AsyncPlayerChatEvent.class ? AsyncPlayerChatEvent.getHandlerList() : PlayerChatEvent.getHandlerList();
+            }
+
+            private void stop(Event event, boolean first) {
+                if (!type.isInstance(event) || !(event instanceof org.bukkit.event.Cancellable cancellable)) {
+                    return;
+                }
+                Player player = ((PlayerEvent) event).getPlayer();
+                if (first || !cancellable.isCancelled()) {
+                    Entry mute = muteOf(xbans, player);
+                    if (mute != null) {
+                        if (first && !cancellable.isCancelled()) {
+                            tell(xbans, player, mute);
+                        }
+                        cancellable.setCancelled(true);
+                    }
+                }
+            }
+        }
+    }
+
+    /** Renaming items on an anvil, while mutes.block-anvils is on: a name is something others read. */
+    public static final class Anvils extends ListenerModule {
+
+        private final XBans xbans;
+
+        public Anvils(XBans xbans) {
+            super(xbans);
+            this.xbans = xbans;
+        }
+
+        @EventHandler(priority = EventPriority.LOWEST)
+        public void rename(PrepareAnvilEvent event) {
+            String text = event.getView().getRenameText();
+            if (text == null || text.isBlank() || !(event.getView().getPlayer() instanceof Player player)) {
+                return;
+            }
+            ItemStack item = event.getInventory().getFirstItem();
+            if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()
+                && text.equals(PlainTextComponentSerializer.plainText().serialize(item.getItemMeta().displayName()))) {
+                return; // Its name as it is: a repair, not a rename.
+            }
+            if (muteOf(xbans, player) != null) {
+                event.setResult(null);
+            }
         }
     }
 

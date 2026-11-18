@@ -66,11 +66,18 @@ class LiteBansSourceTest {
                 s.execute("INSERT INTO litebans_history VALUES (1, 1600000000000, 'OldSteve', '" + STEVE + "', '203.0.113.9')");
                 s.execute("INSERT INTO litebans_history VALUES (2, 1700000000000, 'Steve', '" + STEVE + "', '203.0.113.9')");
                 s.execute("INSERT INTO litebans_history VALUES (3, 1700000000000, 'Alex', '" + ALEX + "', '203.0.113.9')");
+                // A wildcard IP ban, which xBans can't match.
+                s.execute("INSERT INTO litebans_bans VALUES (3, NULL, '192.168.1.*', 'Range', 'CONSOLE', 'Console', NULL,"
+                    + " NULL, NULL, NULL, " + (now - 1000) + ", -1, 0, '*', 'lobby', 0, 1, 1, 1)");
             }
-            Haul haul = LiteBansSource.read(c, "litebans_", "*");
+            // This server's default-scope is local: LiteBans' global bans stay global all the same.
+            Haul haul = LiteBansSource.read(c, "litebans_", "lobby");
             Map<String, Entry> rows = haul.rows.stream()
                 .collect(Collectors.toMap(Haul.Row::key, Haul.Row::entry, (a, b) -> a, java.util.LinkedHashMap::new));
             assertEquals(5, rows.size());
+            assertEquals(1, haul.wildcards(), "the wildcard ban is counted, not imported");
+            assertEquals(Punishment.GLOBAL, rows.get("litebans:bans:1").punishment().scope(), "'*' is global");
+            assertEquals(Punishment.GLOBAL, rows.get("litebans:warnings:1").punishment().scope());
             assertEquals(2, haul.count(PunishmentType.BAN));
             assertEquals(2, haul.players());
 
@@ -99,7 +106,7 @@ class LiteBansSourceTest {
             Entry expired = rows.get("litebans:mutes:1");
             assertNull(expired.punishment().removal(), "it ran out; nobody revoked it");
             assertFalse(expired.active(now));
-            assertEquals("*", expired.punishment().scope());
+            assertEquals(Punishment.GLOBAL, expired.punishment().scope(), "'global' is too");
 
             assertTrue(rows.get("litebans:warnings:1").active(now));
             assertEquals(PunishmentType.KICK, rows.get("litebans:kicks:1").type());
@@ -108,6 +115,37 @@ class LiteBansSourceTest {
             assertEquals("203.0.113.9", seen.get(STEVE).ip());
             assertEquals(1600000000000L, seen.get(STEVE).first());
             assertEquals(1700000000000L, seen.get(STEVE).last());
+        }
+    }
+
+    @Test
+    void aBigLoginHistoryReadsQuickly() throws Exception {
+        int accounts = 40_000;
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("big.db"))) {
+            c.setAutoCommit(false);
+            try (Statement s = c.createStatement()) {
+                s.execute("CREATE TABLE litebans_history (id INTEGER PRIMARY KEY, date BIGINT, name VARCHAR(16),"
+                    + " uuid VARCHAR(36), ip VARCHAR(45))");
+            }
+            try (var insert = c.prepareStatement("INSERT INTO litebans_history (date, name, uuid, ip) VALUES (?, ?, ?, ?)")) {
+                for (int i = 0; i < accounts; i++) {
+                    insert.setLong(1, 1_700_000_000_000L + i);
+                    insert.setString(2, "p" + i);
+                    insert.setString(3, new UUID(7, i).toString());
+                    // Half joined from an address, half from loopback (not kept).
+                    insert.setString(4, i % 2 == 0 ? "203.0." + (i / 256 % 256) + "." + (i % 256) : "127.0.0.1");
+                    insert.addBatch();
+                }
+                insert.executeBatch();
+            }
+            c.commit();
+            long started = System.nanoTime();
+            Haul haul = LiteBansSource.read(c, "litebans_", "*");
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            assertEquals(accounts, haul.players());
+            assertEquals(accounts, haul.seen.size(), "one row each: an IP, or just the name");
+            // Once it compared every name with every IP use: minutes at this size.
+            assertTrue(millis < 5_000, "read in " + millis + " ms");
         }
     }
 

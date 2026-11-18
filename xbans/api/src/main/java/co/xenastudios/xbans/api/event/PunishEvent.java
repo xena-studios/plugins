@@ -10,9 +10,10 @@ import org.jetbrains.annotations.NotNull;
  * A punishment is about to be stored, from a staff command or {@link co.xenastudios.xbans.api.XBansApi#punish}.
  * Cancel it to stop it; the staff member is told it was stopped.
  *
- * <p>Fired asynchronously, on xBans' database thread, after the command's checks and
- * before anything is stored. Only built when something listens for it. Not fired for
- * punishments made on another server of a network.
+ * <p>Fired asynchronously, off the server's threads, after the command's checks and before
+ * anything is stored (never inside a database transaction, so a listener may call the API
+ * and wait for it). Only built when something listens for it. Not fired for punishments
+ * made on another server of a network.
  *
  * @since 1.0.0
  */

@@ -81,7 +81,7 @@ class MySqlTest {
         assertTrue(a.backend().feed().on());
         UUID steve = UUID.randomUUID();
 
-        Entry ban = a.insert(draft(PunishmentType.BAN, steve, "hello ünïcode 🙂"), null, null, () -> {}).get(10, TimeUnit.SECONDS);
+        Entry ban = a.insert(draft(PunishmentType.BAN, steve, "hello ünïcode 🙂"), List.of(), null).get(10, TimeUnit.SECONDS).entry();
         long deadline = System.currentTimeMillis() + 15_000;
         while (heardByB.isEmpty() && System.currentTimeMillis() < deadline) {
             // The mock's async scheduler runs repeating tasks as it ticks.
@@ -104,8 +104,17 @@ class MySqlTest {
         }
         assertEquals(ban.id() + Store.SILENT, heardByA.get(0).payload());
 
+        // Both servers revoking one punishment at the same moment: exactly one does, and neither fails.
+        for (int round = 0; round < 5; round++) {
+            Entry both = a.insert(draft(PunishmentType.MUTE, UUID.randomUUID(), "race"), List.of(), null)
+                .get(10, TimeUnit.SECONDS).entry();
+            var first = a.revoke(both.id(), removal, false);
+            var second = b.revoke(both.id(), removal, false);
+            assertEquals(1, (first.get(10, TimeUnit.SECONDS) ? 1 : 0) + (second.get(10, TimeUnit.SECONDS) ? 1 : 0));
+        }
+
         for (int i = 0; i < 25; i++) {
-            a.insert(draft(PunishmentType.KICK, steve, "kick " + i), null, null, () -> {}).get(10, TimeUnit.SECONDS);
+            a.insert(draft(PunishmentType.KICK, steve, "kick " + i), List.of(), null).get(10, TimeUnit.SECONDS);
         }
         Store.Filter filter = Store.Filter.target(steve, null);
         long total = a.read((c, backend) -> Store.count(c, backend, filter)).get(10, TimeUnit.SECONDS);

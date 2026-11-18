@@ -2,11 +2,16 @@ package co.xenastudios.xbans.model;
 
 import co.xenastudios.xbans.api.PunishmentType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Every ban and mute in force, in memory, so the join check and the chat check never ask
@@ -24,6 +29,9 @@ public final class Active {
     private final Map<String, List<Entry>> ipBans = new ConcurrentHashMap<>();
     private final Map<String, List<Entry>> ipMutes = new ConcurrentHashMap<>();
     private final Map<Long, Entry> byId = new ConcurrentHashMap<>();
+    // While a reload from the database runs: the ids added or removed meanwhile, which it leaves alone.
+    private final AtomicInteger syncing = new AtomicInteger();
+    private final Set<Long> touched = ConcurrentHashMap.newKeySet();
 
     /** Adds a ban or mute that's in force. Anything else is ignored. */
     public void add(Entry entry) {
@@ -34,6 +42,7 @@ public final class Active {
         if (byId.putIfAbsent(entry.id(), entry) != null) {
             return;
         }
+        touch(entry.id());
         boolean ban = type == PunishmentType.BAN;
         UUID target = entry.punishment().target();
         if (target != null) {
@@ -46,6 +55,7 @@ public final class Active {
 
     /** Takes a punishment out, as when it's revoked. Returns what was there, or null. */
     public Entry remove(long id) {
+        touch(id);
         Entry entry = byId.remove(id);
         if (entry == null) {
             return null;
@@ -83,37 +93,126 @@ public final class Active {
         return found != null || ip == null ? found : first(ipMutes, ip, server, now);
     }
 
-    /** The player's ban or mute on exactly this scope, to tell whether a new one replaces it. */
-    public Entry onScope(PunishmentType type, UUID player, String ip, String scope, long now) {
+    /**
+     * The bans or mutes on exactly this scope that touch this player's account or this IP
+     * key, to tell whether a new one replaces them or is covered by them.
+     */
+    public List<Entry> onScope(PunishmentType type, UUID player, String ip, String scope, long now) {
         Map<UUID, List<Entry>> byPlayer = type == PunishmentType.BAN ? bans : mutes;
         Map<String, List<Entry>> byIp = type == PunishmentType.BAN ? ipBans : ipMutes;
+        Set<Entry> found = new LinkedHashSet<>();
         if (player != null) {
             for (Entry entry : byPlayer.getOrDefault(player, List.of())) {
                 if (entry.active(now) && entry.punishment().scope().equalsIgnoreCase(scope)) {
-                    return entry;
+                    found.add(entry);
                 }
             }
         }
         if (ip != null) {
             for (Entry entry : byIp.getOrDefault(ip, List.of())) {
                 if (entry.active(now) && entry.punishment().scope().equalsIgnoreCase(scope)) {
-                    return entry;
+                    found.add(entry);
                 }
             }
         }
-        return null;
+        return List.copyOf(found);
     }
 
-    /** Every ban or mute that applies on {@code server} (null: on any), newest first, for /banlist and /mutelist. */
+    /**
+     * Every ban or mute that applies on {@code server} (null: on any), newest first, for
+     * /banlist and /mutelist. Those that have ended are dropped on the way.
+     */
     public List<Entry> all(PunishmentType type, String server, long now) {
         List<Entry> found = new ArrayList<>();
         for (Entry entry : byId.values()) {
-            if (entry.type() == type && entry.active(now) && (server == null || entry.appliesOn(server))) {
+            if (!entry.active(now)) {
+                remove(entry.id());
+            } else if (entry.type() == type && (server == null || entry.appliesOn(server))) {
                 found.add(entry);
             }
         }
         found.sort(Comparator.comparingLong(Entry::id).reversed());
         return found;
+    }
+
+    /** Up to {@code limit} names of players with a ban or mute in force, for tab completion: no sorting. */
+    public List<String> names(PunishmentType type, long now, int limit) {
+        Map<UUID, List<Entry>> byPlayer = type == PunishmentType.BAN ? bans : mutes;
+        Set<String> names = new LinkedHashSet<>();
+        for (List<Entry> list : byPlayer.values()) {
+            for (Entry entry : list) {
+                if (!entry.active(now)) {
+                    remove(entry.id());
+                } else if (names.size() < limit) {
+                    names.add(entry.punishment().targetName());
+                }
+            }
+            if (names.size() >= limit) {
+                break;
+            }
+        }
+        return List.copyOf(names);
+    }
+
+    // ---- Reloading from the database ----
+
+    /** A reload under way. Begun before the database is read, so changes made meanwhile are noticed. */
+    public final class Sync {
+
+        private boolean done;
+
+        private Sync() {}
+
+        /**
+         * Brings memory in line with what the database holds in force: adds what's missing,
+         * drops what isn't there any more, and leaves alone anything added or removed since
+         * the reload began (memory is newer for those).
+         *
+         * @return the entries that were added
+         */
+        public List<Entry> finish(Collection<Entry> inForce) {
+            try {
+                Set<Long> ids = new HashSet<>();
+                List<Entry> added = new ArrayList<>();
+                for (Entry entry : inForce) {
+                    ids.add(entry.id());
+                    if (!touched.contains(entry.id()) && !byId.containsKey(entry.id())) {
+                        add(entry);
+                        added.add(entry);
+                    }
+                }
+                for (Long id : List.copyOf(byId.keySet())) {
+                    if (!ids.contains(id) && !touched.contains(id)) {
+                        remove(id);
+                    }
+                }
+                return added;
+            } finally {
+                abandon();
+            }
+        }
+
+        /** Ends the reload without changing anything, as when the database couldn't be read. */
+        public void abandon() {
+            if (!done) {
+                done = true;
+                if (syncing.decrementAndGet() == 0) {
+                    touched.clear();
+                }
+            }
+        }
+    }
+
+    /** Starts a reload; call {@link Sync#finish} or {@link Sync#abandon} once the database has been read. */
+    public Sync beginSync() {
+        syncing.incrementAndGet();
+        return new Sync();
+    }
+
+    private void touch(long id) {
+        if (syncing.get() > 0) {
+            touched.add(id);
+        }
     }
 
     /** How many bans and mutes are in memory, expired ones not yet dropped included. */

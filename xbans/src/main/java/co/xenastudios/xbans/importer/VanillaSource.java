@@ -56,7 +56,7 @@ final class VanillaSource implements Source {
             if (ip == null || !IpKeys.punishable(ip)) {
                 continue;
             }
-            add(haul, ban, null, ip, ip, scope, now, "vanilla:ip:" + ip + ":" + text(ban, "created"));
+            add(haul, ban, null, IpKeys.label(ip), ip, scope, now, "vanilla:ip:" + ip + ":" + text(ban, "created"));
         }
         if (index == 0) {
             throw new ImportException("the server's ban lists are empty.");

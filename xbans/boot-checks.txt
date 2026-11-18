@@ -35,12 +35,13 @@ run: unmute Alex
 expect: Console unmuted Alex.
 
 # IP bans by address, and lookups.
+# The broadcast shows half the address at most.
 run: ipban 198.51.100.7 boot test
-expect: Console IP-banned 198.51.100.7 permanently: boot test
+expect: Console IP-banned 198.51.x.x permanently: boot test
 run: ban-ip 127.0.0.1 never loopback
 expect: That isn't an IP address.
 run: unban 198.51.100.7
-expect: Console unbanned 198.51.100.7.
+expect: Console unbanned 198.51.x.x.
 run: staffhistory console bans
 expect: Punishments by Console (2)
 run: alts Steve
@@ -49,6 +50,7 @@ run: prunehistory Steve
 expect: That removes 1 inactive entries from Steve's history
 run: prunehistory Steve confirm
 expect: Removed 1 inactive entries from Steve's history.
+expect: CONSOLE pruned 1 inactive entries from Steve's history
 run: kick Nobody
 expect: No player named Nobody is online.
 

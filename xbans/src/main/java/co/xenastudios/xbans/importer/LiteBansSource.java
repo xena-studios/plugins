@@ -90,6 +90,7 @@ final class LiteBansSource implements Source {
         Map<UUID, String> names = new HashMap<>();
         Map<UUID, Long> newest = new HashMap<>();
         Map<String, long[]> uses = new HashMap<>();
+        Set<UUID> withIp = new HashSet<>();
         try (Statement statement = connection.createStatement();
              ResultSet rows = statement.executeQuery("SELECT * FROM " + prefix + "history")) {
             Set<String> columns = columns(rows);
@@ -106,6 +107,7 @@ final class LiteBansSource implements Source {
                 }
                 String ip = columns.contains("ip") ? rows.getString("ip") : null;
                 if (ip != null && IpKeys.punishable(ip)) {
+                    withIp.add(id);
                     long[] span = uses.computeIfAbsent(id + "|" + ip, key -> new long[] {at, at});
                     span[0] = Math.min(span[0], at);
                     span[1] = Math.max(span[1], at);
@@ -122,7 +124,7 @@ final class LiteBansSource implements Source {
             haul.seen(id, names.get(id), parts[1], use.getValue()[0], use.getValue()[1]);
         }
         for (Map.Entry<UUID, String> name : names.entrySet()) {
-            if (uses.keySet().stream().noneMatch(key -> key.startsWith(name.getKey() + "|"))) {
+            if (!withIp.contains(name.getKey())) {
                 long at = newest.get(name.getKey());
                 haul.seen(name.getKey(), name.getValue(), null, at, at);
             }
@@ -136,6 +138,11 @@ final class LiteBansSource implements Source {
              ResultSet rows = statement.executeQuery("SELECT * FROM " + prefix + table + " ORDER BY id")) {
             Set<String> columns = columns(rows);
             while (rows.next()) {
+                if (flag(rows, columns, "ipban_wildcard")) {
+                    // 192.168.1.*: xBans matches whole addresses only, so it would match nobody.
+                    haul.wildcard();
+                    continue;
+                }
                 haul.add(row(rows, columns, type, names, scope, now), "litebans:" + table + ":" + rows.getLong("id"));
             }
         } catch (SQLException e) {
@@ -147,10 +154,11 @@ final class LiteBansSource implements Source {
 
     static Entry row(ResultSet rows, Set<String> columns, PunishmentType type, Map<UUID, String> names, String defaultScope,
                      long now) throws SQLException {
+        // defaultScope is unused: every LiteBans punishment names its scope.
         UUID target = VanillaSource.uuid(text(rows, columns, "uuid"));
         String ip = text(rows, columns, "ip");
         boolean ipBan = flag(rows, columns, "ipban") && ip != null && IpKeys.punishable(ip);
-        String name = target != null ? names.getOrDefault(target, target.toString()) : ip == null ? "?" : ip;
+        String name = target != null ? names.getOrDefault(target, target.toString()) : IpKeys.label(ip);
         String reason = text(rows, columns, "reason");
         UUID staff = VanillaSource.uuid(text(rows, columns, "banned_by_uuid"));
         String staffName = text(rows, columns, "banned_by_name");
@@ -158,9 +166,10 @@ final class LiteBansSource implements Source {
         long until = columns.contains("until") ? rows.getLong("until") : 0;
         Instant created = Instant.ofEpochMilli(time > 0 ? time : now);
         Instant expires = type == PunishmentType.KICK || until <= 0 ? null : Instant.ofEpochMilli(until);
+        // LiteBans' '*' is every server: global here too, whatever this server's default-scope.
         String scope = text(rows, columns, "server_scope");
         if (scope == null || scope.equals("*") || scope.equalsIgnoreCase("global")) {
-            scope = defaultScope;
+            scope = Punishment.GLOBAL;
         }
         Removal removal = null;
         if (type.lasts()) {

@@ -44,16 +44,27 @@ public final class IpKeys {
         return new IpKeys(true, salt.clone());
     }
 
-    /** Reads the salt from xBans' folder, making a random one the first time. */
-    public static byte[] salt(Path folder) throws IOException {
+    /**
+     * Reads the salt from xBans' folder.
+     *
+     * @param create make a random one if there's none: only for a database whose IPs aren't
+     *     hashed yet. One already hashed needs the salt it was hashed with, and a new one
+     *     would quietly stop every IP ban and alt from matching.
+     * @throws IOException if it can't be read, isn't a salt, or is missing and mustn't be made
+     */
+    public static byte[] salt(Path folder, boolean create) throws IOException {
         Path file = folder.resolve(SALT_FILE);
         if (Files.exists(file)) {
             String text = Files.readString(file, StandardCharsets.US_ASCII).strip();
             if (!HEX.matcher(text).matches()) {
-                throw new IOException(SALT_FILE + " should hold 64 hex digits; delete it to make a new one"
-                    + " (IPs already hashed with the old salt then stop matching).");
+                throw new IOException(SALT_FILE + " should hold 64 hex digits. Put back the one this database's IPs"
+                    + " were hashed with (from another server of the network, or a backup).");
             }
             return HexFormat.of().parseHex(text);
+        }
+        if (!create) {
+            throw new IOException(SALT_FILE + " is missing, but this database's IPs are hashed with it. Copy it into"
+                + " xBans' folder from the server that hashed them (or from a backup); without it no IP ban or alt matches.");
         }
         byte[] salt = new byte[32];
         new SecureRandom().nextBytes(salt);
@@ -95,12 +106,33 @@ public final class IpKeys {
         return hash ? key("0.0.0.0") : "raw";
     }
 
-    /** How a key is shown to staff: the address, or the start of its hash. */
+    /** How a key is shown to staff who may see addresses (/iphistory): the address, or the start of its hash. */
     public static String shown(String key) {
         if (key == null) {
             return "?";
         }
         return looksLikeAddress(key) ? key : key.substring(0, Math.min(8, key.length())) + "…";
+    }
+
+    /**
+     * How a key is named where anyone may read it: the name of an IP punishment with no
+     * account, which broadcasts and ban lists show. An address loses all but its first half
+     * ({@code 203.0.x.x}, {@code 2001:db8:…}); a hash shows its start, as {@link #shown}.
+     */
+    public static String label(String key) {
+        if (key == null) {
+            return "?";
+        }
+        if (!looksLikeAddress(key)) {
+            return shown(key);
+        }
+        String normal = normalise(key);
+        if (IPV4.matcher(normal).matches()) {
+            String[] parts = normal.split("\\.");
+            return parts[0] + "." + parts[1] + ".x.x";
+        }
+        String[] groups = normal.split(":", -1);
+        return groups.length < 2 ? "…" : groups[0] + ":" + groups[1] + ":…";
     }
 
     /** Whether the text is an IP address (v4, or v6 with colons). Doesn't look anything up. */

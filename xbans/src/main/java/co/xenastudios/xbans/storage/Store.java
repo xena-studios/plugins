@@ -51,6 +51,8 @@ public final class Store {
     /** The SQLite file, in xBans' folder. */
     static final String FILE = "punishments.db";
     static final Duration RETRY = Duration.ofSeconds(15);
+    /** How long after a failed write joins aren't recorded. */
+    static final long SKIP_SEEN_MS = 30_000;
     public static final String TOPIC_PUNISH = "punish";
     public static final String TOPIC_REVOKE = "revoke";
     /** The reason on a ban or mute's removal when a longer one replaced it. It still counts toward its template's ladder. */
@@ -86,6 +88,11 @@ public final class Store {
     private Wanted wanted;
     private volatile ScheduledTask retry;
     private volatile boolean closed;
+    // When a write last failed, so joins don't each queue one while the database is down.
+    private volatile long writeFailedAt;
+
+    // Writer thread only: the last reason opening failed, so a retry that fails the same way says nothing.
+    private String lastProblem;
 
     // Writer thread only.
     private Connection connection;
@@ -142,11 +149,16 @@ public final class Store {
             opened = Database.open(settings.storage(), folder.resolve(FILE));
             int schema = opened.migrate(Schema.STEPS);
             IpKeys keys = ipKeys(opened, settings.hash());
-            Active active = load(opened);
+            // The feed first, so it starts from before the load: a change made while the bans
+            // load is in both, and Active ignores the second copy.
+            ChangeFeed feed = ChangeFeed.open(opened, settings.network(), logger);
+            Active active = new Active();
+            try (Connection c = opened.connect()) {
+                inForce(c, opened).forEach(active::add);
+            }
             if (ticket != generation.get()) {
                 return; // A newer reload asked for something else meanwhile.
             }
-            ChangeFeed feed = ChangeFeed.open(opened, settings.network(), logger);
             Backend fresh = new Backend(opened, feed, active, keys);
             subscribe.accept(fresh);
             feed.start(tasks);
@@ -154,6 +166,10 @@ public final class Store {
             backend = fresh;
             if (old != null) {
                 old.feed().close();
+            }
+            if (lastProblem != null) {
+                logger.info("Opened " + opened.description() + " after all.");
+                lastProblem = null;
             }
             logger.info("Loaded " + active.size() + " bans and mutes in force from " + opened.description()
                 + ", schema " + schema + (feed.on() ? ", sharing changes with the network." : "."));
@@ -163,9 +179,15 @@ public final class Store {
                 return;
             }
             String what = opened != null ? opened.description() : "the database";
-            logger.severe("Couldn't open " + what + ": " + e.getMessage());
-            if (!(e instanceof DatabaseException || e instanceof SQLException || e instanceof IOException)) {
-                logger.log(Level.SEVERE, "The error", e);
+            String problem = "Couldn't open " + what + ": " + e.getMessage();
+            // Said once: a retry every 15 seconds that fails the same way adds nothing to the log.
+            boolean repeat = problem.equals(lastProblem);
+            lastProblem = problem;
+            if (!repeat) {
+                logger.severe(problem);
+                if (!(e instanceof DatabaseException || e instanceof SQLException || e instanceof IOException)) {
+                    logger.log(Level.SEVERE, "The error", e);
+                }
             }
             Backend current = backend;
             if (current != null) {
@@ -176,7 +198,9 @@ public final class Store {
                     }
                 });
             } else {
-                logger.severe("Nobody can join until it opens: trying again every " + RETRY.toSeconds() + "s.");
+                if (!repeat) {
+                    logger.severe("Nobody can join until it opens: trying again every " + RETRY.toSeconds() + "s.");
+                }
                 retry = tasks.asyncRepeating(() -> {
                     if (ticket == generation.get() && backend == null && !closed) {
                         stopRetrying();
@@ -226,26 +250,34 @@ public final class Store {
     }
 
     // How IPs are keyed for this database. Hashing, once on, stays on: there's no undoing it.
+    // A hashed database opens only with the salt it was hashed with: with another, or none,
+    // no IP ban would match anyone, so it fails to open (and is retried) rather than letting
+    // IP-banned players in.
     private IpKeys ipKeys(Database database, boolean hash) throws SQLException, IOException {
         try (Connection c = database.connect()) {
             String mode = meta(c, database, "ip-mode");
             String check = meta(c, database, "ip-salt-check");
-            if ("hashed".equals(mode) || hash) {
-                IpKeys keys = IpKeys.hashed(IpKeys.salt(folder));
-                if (!"hashed".equals(mode)) {
-                    int hashed = hashAll(c, database, keys);
-                    setMeta(c, database, "ip-mode", "hashed");
-                    setMeta(c, database, "ip-salt-check", keys.fingerprint());
-                    logger.info("IPs are hashed from now on" + (hashed > 0 ? "; hashed the " + hashed + " already stored." : "."));
-                } else {
-                    if (!hash) {
-                        logger.warning("ips.hash is off, but this database's IPs are already hashed, so they stay hashed.");
-                    }
-                    if (check != null && !check.equals(keys.fingerprint())) {
-                        logger.severe(IpKeys.SALT_FILE + " isn't the one this database's IPs were hashed with, so IP bans"
-                            + " and alts won't match them. Copy it from the server that hashed them.");
-                    }
+            if ("hashed".equals(mode)) {
+                IpKeys keys = IpKeys.hashed(IpKeys.salt(folder, false));
+                if (check != null && !check.equals(keys.fingerprint())) {
+                    throw new IOException(IpKeys.SALT_FILE + " isn't the one this database's IPs were hashed with, so no IP"
+                        + " ban or alt would match. Copy the right one into xBans' folder from the server that hashed"
+                        + " them (or from a backup).");
                 }
+                if (check == null) {
+                    setMeta(c, database, "ip-salt-check", keys.fingerprint());
+                }
+                if (!hash) {
+                    logger.warning("ips.hash is off, but this database's IPs are already hashed, so they stay hashed.");
+                }
+                return keys;
+            }
+            if (hash) {
+                IpKeys keys = IpKeys.hashed(IpKeys.salt(folder, true));
+                int hashed = hashAll(c, database, keys);
+                setMeta(c, database, "ip-mode", "hashed");
+                setMeta(c, database, "ip-salt-check", keys.fingerprint());
+                logger.info("IPs are hashed from now on" + (hashed > 0 ? "; hashed the " + hashed + " already stored." : "."));
                 return keys;
             }
             if (mode == null) {
@@ -277,6 +309,7 @@ public final class Store {
             }
             ips.executeBatch();
             punishments.executeBatch();
+            renameIpPunishments(c, database);
             c.commit();
         } catch (SQLException e) {
             c.rollback();
@@ -285,6 +318,26 @@ public final class Store {
             c.setAutoCommit(true);
         }
         return raw.size();
+    }
+
+    // An IP punishment with no account is named after its IP (masked, or the start of its
+    // hash). Once the IPs are hashed, those names are too, so no part of an address is left.
+    private static void renameIpPunishments(Connection c, Database database) throws SQLException {
+        List<Object[]> rows = new ArrayList<>();
+        try (Statement select = c.createStatement();
+             ResultSet found = select.executeQuery(database.sql("SELECT id, ip FROM {p}punishments WHERE uuid IS NULL"))) {
+            while (found.next()) {
+                rows.add(new Object[] {found.getLong(1), found.getString(2)});
+            }
+        }
+        try (PreparedStatement update = c.prepareStatement(database.sql("UPDATE {p}punishments SET name = ? WHERE id = ?"))) {
+            for (Object[] row : rows) {
+                update.setString(1, IpKeys.label((String) row[1]));
+                update.setLong(2, (Long) row[0]);
+                update.addBatch();
+            }
+            update.executeBatch();
+        }
     }
 
     private static String meta(Connection c, Database database, String name) throws SQLException {
@@ -312,20 +365,37 @@ public final class Store {
     }
 
     // Every ban and mute in force. The index on (type, expires) keeps this to the rows wanted.
-    private static Active load(Database database) throws SQLException {
-        Active active = new Active();
-        long now = System.currentTimeMillis();
-        try (Connection c = database.connect();
-             PreparedStatement select = c.prepareStatement(database.sql(Rows.SELECT
-                 + " WHERE p.type IN (1, 2) AND (p.expires = 0 OR p.expires > ?) AND r.punishment IS NULL"))) {
-            select.setLong(1, now);
+    private static List<Entry> inForce(Connection c, Database database) throws SQLException {
+        List<Entry> found = new ArrayList<>();
+        try (PreparedStatement select = c.prepareStatement(database.sql(Rows.SELECT
+            + " WHERE p.type IN (1, 2) AND (p.expires = 0 OR p.expires > ?) AND r.punishment IS NULL"))) {
+            select.setLong(1, System.currentTimeMillis());
             try (ResultSet rows = select.executeQuery()) {
                 while (rows.next()) {
-                    active.add(Rows.read(rows));
+                    found.add(Rows.read(rows));
                 }
             }
         }
-        return active;
+        return found;
+    }
+
+    /**
+     * Reads every ban and mute in force again and brings memory in line with it: for when
+     * this server may have missed changes (a change it couldn't read, or a network feed that
+     * fell behind). Anything that changed in memory while it was read is left as it is.
+     *
+     * @return the bans and mutes that were missing from memory, to be enforced
+     */
+    public CompletableFuture<List<Entry>> reloadInForce() {
+        return read((c, b) -> {
+            Active.Sync sync = b.active().beginSync();
+            try {
+                return sync.finish(inForce(c, b.database()));
+            } catch (SQLException | RuntimeException e) {
+                sync.abandon();
+                throw e;
+            }
+        });
     }
 
     // ---- Running work ----
@@ -346,6 +416,7 @@ public final class Store {
                     try {
                         T value = work.run(c, current);
                         c.commit();
+                        writeFailedAt = 0;
                         result.complete(value);
                     } catch (SQLException | RuntimeException e) {
                         try {
@@ -362,6 +433,9 @@ public final class Store {
                         }
                     }
                 } catch (SQLException | RuntimeException e) {
+                    if (e instanceof SQLException) {
+                        writeFailedAt = System.currentTimeMillis();
+                    }
                     result.completeExceptionally(e);
                 }
             });
@@ -411,18 +485,31 @@ public final class Store {
 
     // ---- Writes ----
 
+    /** A stored punishment, and (for a warning) how many the player now has in force, counted in the same transaction. */
+    public record Stored(Entry entry, int warnings) {}
+
+    /** A punishment it replaces was revoked meanwhile (by another command, or another server). Nothing was stored. */
+    public static final class Conflict extends RuntimeException {
+        Conflict() {
+            super("A punishment it replaces was revoked meanwhile", null, false, false);
+        }
+    }
+
     /**
-     * Stores a punishment, first revoking the one it replaces (if any), and tells the network.
+     * Stores a punishment, first revoking those it replaces, and tells the network. If one
+     * it replaces turns out to be revoked already, nothing is stored and it fails with
+     * {@link Conflict}: two replacements at once can't leave two in force.
      *
-     * @param before runs on the database thread first; it may throw to stop the punishment
+     * @param replaces bans or mutes the new one covers and outlasts, or an empty list
      * @return the punishment with its id
      */
-    public CompletableFuture<Entry> insert(Entry draft, Entry replaces, Removal replacedBy, Runnable before) {
+    public CompletableFuture<Stored> insert(Entry draft, List<Entry> replaces, Removal replacedBy) {
         String server = origin;
         return write((c, b) -> {
-            before.run();
-            if (replaces != null) {
-                removal(c, b, replaces.id(), replacedBy);
+            for (Entry replaced : replaces) {
+                if (!removal(c, b, replaced.id(), replacedBy)) {
+                    throw new Conflict();
+                }
             }
             long id;
             try (PreparedStatement insert = c.prepareStatement(b.database().sql(Rows.INSERT), Statement.RETURN_GENERATED_KEYS)) {
@@ -435,11 +522,13 @@ public final class Store {
                     id = keys.getLong(1);
                 }
             }
-            if (replaces != null) {
-                b.feed().publish(c, TOPIC_REVOKE, replaces.id() + REPLACED);
+            for (Entry replaced : replaces) {
+                b.feed().publish(c, TOPIC_REVOKE, replaced.id() + REPLACED);
             }
             b.feed().publish(c, TOPIC_PUNISH, Long.toString(id));
-            return draft.withId(id);
+            UUID target = draft.punishment().target();
+            int warnings = draft.type() == PunishmentType.WARN && target != null ? activeWarnings(c, b, target).size() : 0;
+            return new Stored(draft.withId(id), warnings);
         });
     }
 
@@ -458,25 +547,18 @@ public final class Store {
         });
     }
 
+    // One statement, so two servers revoking the same punishment at once can't both get in:
+    // the second's row is ignored (the key is the punishment), and it's told so.
     private static boolean removal(Connection c, Backend b, long id, Removal removal) throws SQLException {
-        try (PreparedStatement exists = c.prepareStatement(b.database().sql("SELECT 1 FROM {p}removals WHERE punishment = ?"))) {
-            exists.setLong(1, id);
-            try (ResultSet row = exists.executeQuery()) {
-                if (row.next()) {
-                    return false;
-                }
-            }
-        }
-        try (PreparedStatement insert = c.prepareStatement(b.database().sql(
-            "INSERT INTO {p}removals (punishment, staff_uuid, staff_name, removed, reason) VALUES (?, ?, ?, ?, ?)"))) {
+        try (PreparedStatement insert = c.prepareStatement(b.database().sql(b.database().dialect().insertIgnore()
+            + " INTO {p}removals (punishment, staff_uuid, staff_name, removed, reason) VALUES (?, ?, ?, ?, ?)"))) {
             insert.setLong(1, id);
             Rows.setUuid(insert, 2, removal.staff());
             insert.setString(3, Rows.clip(removal.staffName(), 64));
             insert.setLong(4, removal.at().toEpochMilli());
             insert.setString(5, Rows.clip(removal.reason(), 1024));
-            insert.executeUpdate();
+            return insert.executeUpdate() > 0;
         }
-        return true;
     }
 
     /**
@@ -527,6 +609,10 @@ public final class Store {
     /** Records a join: the player's name, weight and exemption, and their IP key if there is one. */
     public void seen(UUID id, String name, String ip, int weight, boolean exempt) {
         long now = System.currentTimeMillis();
+        if (now - writeFailedAt < SKIP_SEEN_MS) {
+            // The database is failing: a join doesn't queue a write that will fail too.
+            return;
+        }
         write((c, b) -> {
             try (PreparedStatement update = c.prepareStatement(b.database().sql(
                 "UPDATE {p}players SET name = ?, last_seen = ?, weight = ?, exempt = ? WHERE uuid = ?"))) {
@@ -656,6 +742,63 @@ public final class Store {
             }
         }
         return found;
+    }
+
+    /**
+     * A player's or an IP's bans or mutes in force, read from the database rather than
+     * memory, so a server that missed a change can still revoke what's there: by account,
+     * and IP punishments on the IP key. Newest first.
+     */
+    public CompletableFuture<List<Entry>> inForce(PunishmentType type, UUID target, String ip) {
+        return read((c, b) -> {
+            java.util.Map<Long, Entry> found = new java.util.TreeMap<>(java.util.Comparator.reverseOrder());
+            String where = " WHERE p.type = ? AND r.punishment IS NULL AND (p.expires = 0 OR p.expires > ?) AND ";
+            if (target != null) {
+                inForce(c, b, Rows.SELECT + where + "p.uuid = ?", type, target.toString(), found);
+            }
+            if (ip != null) {
+                inForce(c, b, Rows.SELECT + where + "p.ip = ? AND p.ip_based = 1", type, ip, found);
+            }
+            return List.copyOf(found.values());
+        });
+    }
+
+    private static void inForce(Connection c, Backend b, String sql, PunishmentType type, String value,
+                                java.util.Map<Long, Entry> into) throws SQLException {
+        try (PreparedStatement select = c.prepareStatement(b.database().sql(sql))) {
+            select.setInt(1, Rows.code(type));
+            select.setLong(2, System.currentTimeMillis());
+            select.setString(3, value);
+            try (ResultSet rows = select.executeQuery()) {
+                while (rows.next()) {
+                    Entry entry = Rows.read(rows);
+                    into.put(entry.id(), entry);
+                }
+            }
+        }
+    }
+
+    /** An account that has joined from an IP, with its weight and exemption when last seen. */
+    public record Account(UUID id, String name, int weight, boolean exempt) {}
+
+    /** Every account seen on an IP key, for holding an IP punishment to their weights and exemptions. */
+    public CompletableFuture<List<Account>> accountsOn(String ip) {
+        return read((c, b) -> {
+            List<Account> found = new ArrayList<>();
+            try (PreparedStatement select = c.prepareStatement(b.database().sql("SELECT p.uuid, p.name, p.weight, p.exempt"
+                + " FROM {p}ips i JOIN {p}players p ON p.uuid = i.uuid WHERE i.ip = ?"))) {
+                select.setString(1, ip);
+                try (ResultSet rows = select.executeQuery()) {
+                    while (rows.next()) {
+                        UUID id = Rows.uuid(rows.getString(1));
+                        if (id != null) {
+                            found.add(new Account(id, rows.getString(2), rows.getInt(3), rows.getInt(4) != 0));
+                        }
+                    }
+                }
+            }
+            return found;
+        });
     }
 
     /**

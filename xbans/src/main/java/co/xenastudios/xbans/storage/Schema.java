@@ -20,10 +20,11 @@ public final class Schema {
 
     public static final List<SchemaStep> STEPS = List.of(SchemaStep.of(1, "the first tables",
         // type: 1 ban, 2 mute, 3 warn, 4 kick. imported: where an imported row came from, such as
-        // "litebans:bans:12", so importing twice adds nothing.
+        // "litebans:bans:12", so importing twice adds nothing. staff_weight: the weight of whoever
+        // made it, then (2147483647 for the console and plugins), which decides who may lift it.
         "CREATE TABLE {p}punishments (id {rowid}, type TINYINT NOT NULL, uuid CHAR(36), name VARCHAR(64) NOT NULL,"
             + " ip VARCHAR(64), ip_based TINYINT NOT NULL, reason VARCHAR(1024) NOT NULL, staff_uuid CHAR(36),"
-            + " staff_name VARCHAR(64) NOT NULL, created BIGINT NOT NULL, expires BIGINT NOT NULL,"
+            + " staff_name VARCHAR(64) NOT NULL, staff_weight INT NOT NULL, created BIGINT NOT NULL, expires BIGINT NOT NULL,"
             + " scope VARCHAR(64) NOT NULL, origin VARCHAR(64) NOT NULL, silent TINYINT NOT NULL,"
             + " template VARCHAR(64), imported VARCHAR(96)){table}",
         // History pages, newest first, by key range: as fast for thousands as for ten.

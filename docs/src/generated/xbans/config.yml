@@ -106,6 +106,9 @@ messages:
   exempt: "<prefix><error><highlight><player></highlight> can't be punished."
   # <player>'s weight (xbans.weight.<n>) is as high as the sender's or higher.
   outranks: "<prefix><error><highlight><player></highlight> outranks you."
+  # Revoking a punishment made by someone whose weight was higher than the sender's (the
+  # console's is highest). Staff can always revoke their own; xbans.unban.override revokes any.
+  cant-lift: "<prefix><error>That was given by someone who outranks you.</error> <dark_gray>#<id>"
   # Over the sender's staff-limits. <max> is the longest they may give.
   over-limit: "<prefix><error>You can give at most <highlight><max></highlight>."
   # A template's permission is missing. <template> is its name.
@@ -175,6 +178,8 @@ messages:
     done: "<prefix><success>Imported</success> <highlight><added></highlight> punishments from <source> (<skipped> already there)."
     # <reason> it couldn't.
     failed: "<prefix><error>Couldn't import:</error> <reason>"
+    # A dry run that found LiteBans wildcard IP bans (192.168.1.*), which aren't imported. <count>.
+    wildcards: "<prefix><highlight><count></highlight> wildcard IP bans (such as 192.168.1.*) won't be imported: xBans bans whole addresses only."
     running: "<prefix><error>An import is already running."
     # <sources>: the ones xBans knows.
     unknown-source: "<prefix><error>Import from what?</error> One of: <sources>"
@@ -297,6 +302,8 @@ mutes:
   block-signs: true
   # Muted players can't write or sign books.
   block-books: true
+  # Muted players can't rename items on an anvil.
+  block-anvils: true
 
 warnings:
   # How long a warning lasts when /warn isn't given a duration.
@@ -314,8 +321,9 @@ warnings:
 # player gets the same template, the next step of its ladder applies (the last step
 # repeats). type is ban, mute or warn. A past punishment counts toward the ladder
 # until expire-ladder has passed since it was made, unless it was revoked. ip makes
-# it an IP punishment. A template's permission is needed to use it (blank: the
-# command's own); template durations aren't held to staff-limits.
+# it an IP punishment. A template's permission is needed to use it (blank:
+# xbans.template.<name>); operators have it. Its lengths are held to the sender's
+# staff-limits like typed ones, unless they have xbans.limit.bypass-templates.
 templates:
   hacking:
     type: "ban"
@@ -324,7 +332,7 @@ templates:
     expire-ladder: "180d"
     ip: false
     silent: false
-    permission: ""
+    permission: "xbans.template.hacking"
   spam:
     type: "mute"
     reason: "Spamming"
@@ -332,7 +340,7 @@ templates:
     expire-ladder: "180d"
     ip: false
     silent: false
-    permission: ""
+    permission: "xbans.template.spam"
   language:
     type: "warn"
     reason: "Inappropriate language"
@@ -340,7 +348,7 @@ templates:
     expire-ladder: "180d"
     ip: false
     silent: false
-    permission: ""
+    permission: "xbans.template.language"
 
 # Who can punish whom, and for how long.
 staff-limits:

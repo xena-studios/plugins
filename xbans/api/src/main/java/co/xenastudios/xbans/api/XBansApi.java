@@ -83,9 +83,9 @@ public interface XBansApi {
     /**
      * Punishes a player as a staff command would: checked, stored, broadcast, and the
      * player kicked or told. Fires {@link co.xenastudios.xbans.api.event.PunishEvent}
-     * first, which can cancel it. Staff limits (weights and duration caps) don't apply:
-     * the caller decides who may punish. Returns a future that completes off the server's
-     * threads.
+     * first, which can cancel it. None of the staff rules apply: a player with
+     * {@code xbans.exempt} or a weight can be punished, for any length. The caller decides
+     * who may punish whom. Returns a future that completes off the server's threads.
      *
      * @param request what to do
      * @return the punishment once it's stored; completes exceptionally with
@@ -97,8 +97,8 @@ public interface XBansApi {
 
     /**
      * Revokes the player's active ban, mute or newest warning, as {@code /unban},
-     * {@code /unmute} or {@code /unwarn} would. Returns a future that completes off the
-     * server's threads.
+     * {@code /unmute} or {@code /unwarn} would, whoever made it (weights don't apply).
+     * Returns a future that completes off the server's threads.
      *
      * @param player the player's uuid
      * @param type {@link PunishmentType#BAN}, {@link PunishmentType#MUTE} or {@link PunishmentType#WARN}

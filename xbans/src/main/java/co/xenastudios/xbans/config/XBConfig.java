@@ -50,8 +50,9 @@ public record XBConfig(
         "player gets the same template, the next step of its ladder applies (the last step",
         "repeats). type is ban, mute or warn. A past punishment counts toward the ladder",
         "until expire-ladder has passed since it was made, unless it was revoked. ip makes",
-        "it an IP punishment. A template's permission is needed to use it (blank: the",
-        "command's own); template durations aren't held to staff-limits."})
+        "it an IP punishment. A template's permission is needed to use it (blank:",
+        "xbans.template.<name>); operators have it. Its lengths are held to the sender's",
+        "staff-limits like typed ones, unless they have xbans.limit.bypass-templates."})
     Map<String, Template> templates,
     @Comment("Who can punish whom, and for how long.") StaffLimits staffLimits,
     @Comment({
@@ -135,6 +136,10 @@ public record XBConfig(
         @Comment("<id> isn't a punishment, or isn't one this command can revoke.") Message noSuchId,
         @Comment("<player> has xbans.exempt.") Message exempt,
         @Comment("<player>'s weight (xbans.weight.<n>) is as high as the sender's or higher.") Message outranks,
+        @Comment({
+            "Revoking a punishment made by someone whose weight was higher than the sender's (the",
+            "console's is highest). Staff can always revoke their own; xbans.unban.override revokes any."})
+        Message cantLift,
         @Comment("Over the sender's staff-limits. <max> is the longest they may give.") Message overLimit,
         @Comment("A template's permission is missing. <template> is its name.") Message templateNoPermission,
         @Comment("Choosing a server: needs xbans.scope.") Message scopeNoPermission,
@@ -184,6 +189,8 @@ public record XBConfig(
         Message started,
         @Comment("<source>, <added> new punishments, <skipped> already imported.") Message done,
         @Comment("<reason> it couldn't.") Message failed,
+        @Comment("A dry run that found LiteBans wildcard IP bans (192.168.1.*), which aren't imported. <count>.")
+        Message wildcards,
         Message running,
         @Comment("<sources>: the ones xBans knows.") Message unknownSource) {}
 
@@ -210,7 +217,8 @@ public record XBConfig(
             "blocked too."})
         List<String> blockedCommands,
         @Comment("Muted players can't write on signs.") boolean blockSigns,
-        @Comment("Muted players can't write or sign books.") boolean blockBooks) {}
+        @Comment("Muted players can't write or sign books.") boolean blockBooks,
+        @Comment("Muted players can't rename items on an anvil.") boolean blockAnvils) {}
 
     public record Warnings(
         @Comment("How long a warning lasts when /warn isn't given a duration.") Length defaultDuration,
@@ -228,7 +236,13 @@ public record XBConfig(
         Length expireLadder,
         boolean ip,
         boolean silent,
-        String permission) {}
+        String permission) {
+
+        /** The permission that lets staff use the template called {@code name}. */
+        public String permissionFor(String name) {
+            return permission.isBlank() ? "xbans.template." + name : permission;
+        }
+    }
 
     public record StaffLimits(
         @Comment({
@@ -273,9 +287,9 @@ public record XBConfig(
         return new Cmd(true, List.of(aliases), permission);
     }
 
-    private static Template template(PunishmentType type, String reason, String... ladder) {
+    private static Template template(String name, PunishmentType type, String reason, String... ladder) {
         return new Template(type, reason, java.util.Arrays.stream(ladder).map(Length::parse).toList(),
-            Length.parse("180d"), false, false, "");
+            Length.parse("180d"), false, false, "xbans.template." + name);
     }
 
     private static <V> Map<String, V> ordered(Object... pairs) {
@@ -341,6 +355,7 @@ public record XBConfig(
             Message.of("<prefix><error>There's no punishment <highlight>#<id></highlight> to do that to."),
             Message.of("<prefix><error><highlight><player></highlight> can't be punished."),
             Message.of("<prefix><error><highlight><player></highlight> outranks you."),
+            Message.of("<prefix><error>That was given by someone who outranks you.</error> <dark_gray>#<id>"),
             Message.of("<prefix><error>You can give at most <highlight><max></highlight>."),
             Message.of("<prefix><error>You can't use the <highlight><template></highlight> template."),
             Message.of("<prefix><error>You can't choose the server."),
@@ -384,6 +399,8 @@ public record XBConfig(
                 Message.of("<prefix><success>Imported</success> <highlight><added></highlight> punishments from <source>"
                     + " (<skipped> already there)."),
                 Message.of("<prefix><error>Couldn't import:</error> <reason>"),
+                Message.of("<prefix><highlight><count></highlight> wildcard IP bans (such as 192.168.1.*) won't be imported:"
+                    + " xBans bans whole addresses only."),
                 Message.of("<prefix><error>An import is already running."),
                 Message.of("<prefix><error>Import from what?</error> One of: <sources>"))),
         new Commands(
@@ -397,14 +414,14 @@ public record XBConfig(
             cmd("xbans.alts", "dupeip", "checkalts"), cmd("xbans.iphistory")),
         new Punishing("No reason given", false),
         new Mutes(List.of("msg", "tell", "w", "whisper", "r", "reply", "me", "say", "mail", "m", "t", "pm", "dm",
-            "message", "teammsg", "tm"), true, true),
+            "message", "teammsg", "tm"), true, true, true),
         new Warnings(Length.parse("30d"), ordered(
             "3", new WarnAction(List.of("tempmute <player> 1h -s Reached 3 warnings")),
             "5", new WarnAction(List.of("tempban <player> 1d -s Reached 5 warnings")))),
         ordered(
-            "hacking", template(PunishmentType.BAN, "Hacking", "7d", "30d", "permanent"),
-            "spam", template(PunishmentType.MUTE, "Spamming", "1h", "1d", "7d"),
-            "language", template(PunishmentType.WARN, "Inappropriate language", "30d")),
+            "hacking", template("hacking", PunishmentType.BAN, "Hacking", "7d", "30d", "permanent"),
+            "spam", template("spam", PunishmentType.MUTE, "Spamming", "1h", "1d", "7d"),
+            "language", template("language", PunishmentType.WARN, "Inappropriate language", "30d")),
         new StaffLimits(true, ordered(
             "helper", new Limit("xbans.limit.helper", Length.parse("1d"), Length.parse("1d")),
             "moderator", new Limit("xbans.limit.moderator", Length.parse("30d"), Length.parse("30d")))),

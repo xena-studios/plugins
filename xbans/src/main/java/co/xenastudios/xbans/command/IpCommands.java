@@ -41,7 +41,7 @@ public final class IpCommands {
                     targets.resolve(who, true, false)
                         .thenCompose(target -> xbans.store().alts(target.id(), target.ip()).thenAccept(alts -> {
                             List<Store.IpUse> others = alts.stream().filter(use -> !use.id().equals(target.id())).toList();
-                            altsReply(xbans, sender, target.name(), others, page);
+                            altsReply(xbans, sender, target.name(), who, others, page);
                         }))
                         .whenComplete((done, failure) -> {
                             if (failure != null) {
@@ -90,7 +90,10 @@ public final class IpCommands {
         setup.permission(co.xenastudios.xbans.enforce.Gate.NOTIFY_ALTS, org.bukkit.permissions.PermissionDefault.OP);
     }
 
-    private static void altsReply(XBans xbans, CommandSender sender, String name, List<Store.IpUse> alts, int page) {
+    // typed: what the sender typed, for the next page's command: an IP's name (its masked form,
+    // or the start of its hash) wouldn't find it again.
+    private static void altsReply(XBans xbans, CommandSender sender, String name, String typed, List<Store.IpUse> alts,
+                                  int page) {
         XBConfig.Messages messages = xbans.config().messages();
         Store.Backend backend = xbans.store().backend();
         String server = xbans.config().scopes().serverName();
@@ -117,7 +120,7 @@ public final class IpCommands {
                     net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver("state",
                         net.kyori.adventure.text.minimessage.tag.Tag.selfClosingInserting(
                             net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(state))));
-            }, messages.footer(), "/xbans:alts " + name + " {page}"));
+            }, messages.footer(), "/xbans:alts " + typed + " {page}"));
         }
         xbans.tasks().sender(sender, () -> lines.forEach(sender::sendMessage));
     }

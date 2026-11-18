@@ -59,7 +59,7 @@ final class Targets {
                 return CompletableFuture.failedFuture(new Refusal(messages.badIp()));
             }
             String key = backend.keys().key(token);
-            return CompletableFuture.completedFuture(new Target(null, IpKeys.shown(key), key, null));
+            return CompletableFuture.completedFuture(new Target(null, IpKeys.label(key), key, null));
         }
         UUID id = uuid(token);
         if (id != null) {

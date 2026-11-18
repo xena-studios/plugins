@@ -8,9 +8,7 @@ import co.xenastudios.xbans.Punisher;
 import co.xenastudios.xbans.XBans;
 import co.xenastudios.xbans.api.PunishmentType;
 import co.xenastudios.xbans.config.XBConfig;
-import co.xenastudios.xbans.model.Entry;
 import co.xenastudios.xbans.storage.Store;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.bukkit.command.CommandSender;
@@ -29,6 +27,7 @@ public final class RevokeCommands {
         command(setup, xbans, targets, "unban", PunishmentType.BAN, config.commands().unban());
         command(setup, xbans, targets, "unmute", PunishmentType.MUTE, config.commands().unmute());
         command(setup, xbans, targets, "unwarn", PunishmentType.WARN, config.commands().unwarn());
+        setup.permission(Punisher.OVERRIDE, org.bukkit.permissions.PermissionDefault.OP);
     }
 
     private static void command(Setup setup, XBans xbans, Targets targets, String name, PunishmentType type, XBConfig.Cmd settings) {
@@ -65,10 +64,13 @@ public final class RevokeCommands {
         }
         boolean silent = parsed.silent() || config.punishing().silentByDefault() && !parsed.publicFlag();
         UUID staff = sender instanceof Player player ? player.getUniqueId() : null;
+        co.xenastudios.xbans.Power power = co.xenastudios.xbans.Power.of(sender, config.staffLimits());
+        boolean override = sender.hasPermission(Punisher.OVERRIDE);
         String staffName = sender instanceof Player player ? player.getName() : "Console";
         targets.resolve(parsed.target(), type != PunishmentType.WARN, true)
             .thenCompose(target -> xbans.punisher().revoke(new Punisher.Revoke(type, target.id(), target.name(), target.ip(),
-                target.punishment(), parsed.scope(), parsed.reason(), silent, parsed.extraSilent(), staff, staffName, sender)))
+                target.punishment(), parsed.scope(), parsed.reason(), silent, parsed.extraSilent(), staff, staffName, power,
+                override, sender)))
             .whenComplete((revoked, failure) -> {
                 if (failure != null) {
                     PunishCommands.fail(xbans, sender, failure);
@@ -82,12 +84,6 @@ public final class RevokeCommands {
         if (type == PunishmentType.WARN || backend == null) {
             return Completions.players(sender, typed);
         }
-        List<String> names = new ArrayList<>();
-        for (Entry entry : backend.active().all(type, null, System.currentTimeMillis())) {
-            if (entry.punishment().target() != null && names.size() < 50) {
-                names.add(entry.punishment().targetName());
-            }
-        }
-        return Completions.matching(typed, names.stream().distinct().toList());
+        return Completions.matching(typed, backend.active().names(type, System.currentTimeMillis(), 50));
     }
 }

@@ -69,9 +69,8 @@ public final class PunishCommands {
         for (XBConfig.Limit limit : config.staffLimits().groups().values()) {
             setup.permission(limit.permission(), PermissionDefault.FALSE);
         }
-        for (XBConfig.Template template : config.templates().values()) {
-            setup.permission(template.permission(), PermissionDefault.OP);
-        }
+        setup.permission(Power.BYPASS_TEMPLATES, PermissionDefault.FALSE);
+        config.templates().forEach((name, template) -> setup.permission(template.permissionFor(name), PermissionDefault.OP));
     }
 
     private static String description(Kind kind) {
@@ -124,7 +123,7 @@ public final class PunishCommands {
         }
         if (parsed.template() != null) {
             XBConfig.Template template = config.templates().get(parsed.template());
-            if (!template.permission().isBlank() && !sender.hasPermission(template.permission())) {
+            if (!sender.hasPermission(template.permissionFor(parsed.template()))) {
                 messages.templateNoPermission().send(sender, Placeholders.text("template", parsed.template()));
                 return;
             }
@@ -197,7 +196,7 @@ public final class PunishCommands {
                     options.addAll(kind.temp() ? List.of("1h", "1d", "7d", "30d") : List.of("1h", "1d", "7d", "30d", "perm"));
                 }
                 xbans.config().templates().forEach((name, template) -> {
-                    if (template.type() == kind.type() && (template.permission().isBlank() || sender.hasPermission(template.permission()))) {
+                    if (template.type() == kind.type() && sender.hasPermission(template.permissionFor(name))) {
                         options.add(name);
                     }
                 });

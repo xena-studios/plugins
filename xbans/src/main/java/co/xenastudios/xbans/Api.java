@@ -108,7 +108,7 @@ final class Api implements XBansApi, Module {
             return CompletableFuture.completedFuture(Optional.empty());
         }
         Punisher.Revoke request = new Punisher.Revoke(type, player, player.toString(), null, null, null, reason, false, false,
-            staff, staffName, null);
+            staff, staffName, null, true, null);
         return xbans.punisher().revoke(request).handle((revoked, failure) -> {
             if (failure != null) {
                 if (Refusal.of(failure) != null) {

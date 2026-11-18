@@ -37,10 +37,13 @@ public final class Gate extends ListenerModule {
 
     /** How long a login waits for the bans to load just after a start. */
     static final long WAIT_SECONDS = 10;
+    /** Players online on one IP at which the console is told a proxy may not be forwarding addresses. */
+    static final int SHARED_IP_WARNING = 8;
     public static final String NOTIFY_BANNED_JOIN = "xbans.notify.banned-join";
     public static final String NOTIFY_ALTS = "xbans.notify.alts";
 
     private final XBans xbans;
+    private volatile boolean warnedShared;
 
     public Gate(XBans xbans) {
         super(xbans);
@@ -93,7 +96,13 @@ public final class Gate extends ListenerModule {
         InetSocketAddress socket = player.getAddress();
         InetAddress address = socket == null ? null : socket.getAddress();
         String ip = backend == null || !xbans.config().ips().enabled() ? null : backend.keys().key(address);
-        xbans.sessions().joined(player.getUniqueId(), ip);
+        int sharing = xbans.sessions().joined(player.getUniqueId(), ip);
+        if (sharing >= SHARED_IP_WARNING && !warnedShared) {
+            warnedShared = true;
+            xbans.getLogger().warning(sharing + " players online are on the same IP. If they come through a proxy, it isn't"
+                + " forwarding their real addresses, and an IP ban would shut them all out: turn on the proxy's forwarding"
+                + " (Velocity's player-info-forwarding, or BungeeCord's ip_forward).");
+        }
         Entry ban = backend == null ? null : banned(backend, player.getUniqueId(), address);
         if (backend == null || ban != null) {
             Component screen = ban == null ? xbans.config().screens().notReady().render()

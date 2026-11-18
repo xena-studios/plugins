@@ -22,6 +22,16 @@ public final class Haul {
 
     final List<Row> rows = new ArrayList<>();
     final List<Seen> seen = new ArrayList<>();
+    // LiteBans' wildcard IP bans (192.168.1.*), left out.
+    long wildcards;
+
+    void wildcard() {
+        wildcards++;
+    }
+
+    long wildcards() {
+        return wildcards;
+    }
 
     void add(Entry entry, String key) {
         rows.add(new Row(entry, key));

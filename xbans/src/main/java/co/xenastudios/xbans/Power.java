@@ -10,13 +10,16 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 
 /**
  * What a staff member may do, worked out from their permissions on the thread their command
- * runs on: their weight, and the longest ban and mute their groups allow (null for no limit).
- * The console and plugins have no limits at all.
+ * runs on: their weight, the longest ban and mute their groups allow (null for no limit), and
+ * whether a template's own lengths may go past those. The console and plugins have no limits
+ * at all.
  */
-public record Power(int weight, Length banCap, Length muteCap) {
+public record Power(int weight, Length banCap, Length muteCap, boolean bypassTemplates) {
 
     public static final String WEIGHT_PREFIX = "xbans.weight.";
     public static final String EXEMPT = "xbans.exempt";
+    /** A template's own lengths aren't held to the sender's staff-limits group. */
+    public static final String BYPASS_TEMPLATES = "xbans.limit.bypass-templates";
 
     /** The sender's power, or null for no limits (the console, a command block). */
     public static Power of(CommandSender sender, XBConfig.StaffLimits limits) {
@@ -33,7 +36,7 @@ public record Power(int weight, Length banCap, Length muteCap) {
                 grouped = true;
             }
         }
-        return new Power(weight(player), unlimited(ban), unlimited(mute));
+        return new Power(weight(player), unlimited(ban), unlimited(mute), player.hasPermission(BYPASS_TEMPLATES));
     }
 
     /** The highest {@code xbans.weight.<n>} the player has been given; 0 without one. Operators get none by default. */

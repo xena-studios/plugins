@@ -322,6 +322,12 @@ public final class LookupCommands {
             XBConfig.Messages messages = xbans.config().messages();
             xbans.tasks().sender(sender, () -> (dryRun ? messages.pruneConfirm() : messages.pruned())
                 .send(sender, Placeholders.text("count", count), Placeholders.text("player", target.name())));
+            if (!dryRun) {
+                // A delete can't be undone, so the console keeps a record of each.
+                xbans.getLogger().info(sender.getName() + " pruned " + count + " inactive entries from " + target.name()
+                    + "'s history (" + target.id() + ")" + (from > 0 ? " made since " + java.time.Instant.ofEpochMilli(from) : "")
+                    + ".");
+            }
             if (!dryRun && count > 0) {
                 xbans.cursors().clear();
             }

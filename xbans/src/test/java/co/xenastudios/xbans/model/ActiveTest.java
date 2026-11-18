@@ -9,6 +9,7 @@ import co.xenastudios.xbans.api.Punishment;
 import co.xenastudios.xbans.api.PunishmentType;
 import co.xenastudios.xbans.api.Removal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -78,8 +79,43 @@ class ActiveTest {
         Entry local = entry(2, PunishmentType.BAN, steve, null, null, "survival");
         active.add(global);
         active.add(local);
-        assertSame(global, active.onScope(PunishmentType.BAN, steve, null, "*", NOW));
-        assertSame(local, active.onScope(PunishmentType.BAN, steve, null, "survival", NOW));
-        assertNull(active.onScope(PunishmentType.MUTE, steve, null, "*", NOW));
+        assertEquals(List.of(global), active.onScope(PunishmentType.BAN, steve, null, "*", NOW));
+        assertEquals(List.of(local), active.onScope(PunishmentType.BAN, steve, null, "survival", NOW));
+        assertEquals(List.of(), active.onScope(PunishmentType.MUTE, steve, null, "*", NOW));
+    }
+
+    @Test
+    void aReloadBringsMemoryInLineButKeepsWhatChangedMeanwhile() {
+        Active active = new Active();
+        Entry stale = entry(1, PunishmentType.BAN, steve, null, null, "*");
+        Entry kept = entry(2, PunishmentType.BAN, UUID.randomUUID(), null, null, "*");
+        active.add(stale);
+        active.add(kept);
+        Active.Sync sync = active.beginSync();
+        // While the database is read: a ban arrives, and one is lifted.
+        Entry arrived = entry(5, PunishmentType.BAN, UUID.randomUUID(), null, null, "*");
+        active.add(arrived);
+        Entry liftedMeanwhile = entry(4, PunishmentType.BAN, UUID.randomUUID(), null, null, "*");
+        active.remove(liftedMeanwhile.id());
+        Entry missed = entry(3, PunishmentType.MUTE, steve, null, null, "*");
+        // What the read found: not the stale one (lifted elsewhere), the missed mute, and the
+        // one lifted meanwhile (read before it was).
+        List<Entry> added = sync.finish(List.of(kept, missed, liftedMeanwhile));
+        assertEquals(List.of(missed), added);
+        assertNull(active.ban(steve, null, "lobby", NOW), "dropped: the database doesn't have it");
+        assertSame(missed, active.mute(steve, null, "lobby", NOW));
+        assertNotNull(active.byId(arrived.id()), "added while reading: kept");
+        assertNull(active.byId(liftedMeanwhile.id()), "lifted while reading: stays lifted");
+        assertNotNull(active.byId(kept.id()));
+    }
+
+    @Test
+    void listsDropWhatEnded() {
+        Active active = new Active();
+        active.add(entry(1, PunishmentType.BAN, steve, null, NOW - 1, "*"));
+        active.add(entry(2, PunishmentType.BAN, UUID.randomUUID(), null, null, "*"));
+        assertEquals(1, active.all(PunishmentType.BAN, null, NOW).size());
+        assertEquals(1, active.size(), "the ended one is gone");
+        assertEquals(List.of("Steve"), active.names(PunishmentType.BAN, NOW, 50));
     }
 }

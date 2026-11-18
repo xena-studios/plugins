@@ -19,12 +19,12 @@ final class Rows {
     /** A punishment with its removal, if any: the columns {@link #read} expects, in order. */
     static final String SELECT = "SELECT p.id, p.type, p.uuid, p.name, p.ip, p.ip_based, p.reason, p.staff_uuid,"
         + " p.staff_name, p.created, p.expires, p.scope, p.silent, p.template,"
-        + " r.staff_uuid, r.staff_name, r.removed, r.reason"
+        + " r.staff_uuid, r.staff_name, r.removed, r.reason, p.staff_weight"
         + " FROM {p}punishments p LEFT JOIN {p}removals r ON r.punishment = p.id";
 
     static final String INSERT = "INSERT INTO {p}punishments (type, uuid, name, ip, ip_based, reason, staff_uuid,"
-        + " staff_name, created, expires, scope, origin, silent, template, imported)"
-        + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        + " staff_name, created, expires, scope, origin, silent, template, imported, staff_weight)"
+        + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     static int code(PunishmentType type) {
         return switch (type) {
@@ -66,7 +66,7 @@ final class Rows {
             row.getInt(13) != 0,
             row.getString(14),
             removal);
-        return new Entry(punishment, row.getString(5));
+        return new Entry(punishment, row.getString(5), row.getInt(19));
     }
 
     /** Fills {@link #INSERT}'s parameters. */
@@ -99,6 +99,7 @@ final class Rows {
         } else {
             insert.setString(15, clip(imported, 96));
         }
+        insert.setInt(16, entry.staffWeight());
     }
 
     static void setUuid(PreparedStatement statement, int index, UUID id) throws SQLException {

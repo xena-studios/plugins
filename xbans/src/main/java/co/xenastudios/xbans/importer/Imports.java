@@ -2,7 +2,9 @@ package co.xenastudios.xbans.importer;
 
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xbans.XBans;
+import co.xenastudios.xbans.api.Punishment;
 import co.xenastudios.xbans.api.PunishmentType;
+import co.xenastudios.xbans.ip.IpKeys;
 import co.xenastudios.xbans.config.XBConfig;
 import co.xenastudios.xbans.model.Entry;
 import co.xenastudios.xbans.storage.Store;
@@ -80,12 +82,17 @@ public final class Imports {
             try {
                 Haul haul = source.read(server, plugins, scope);
                 if (!confirm) {
-                    reply(sender, () -> messages.counted().send(sender, Placeholders.text("source", source.name()),
-                        Placeholders.text("bans", haul.count(PunishmentType.BAN)),
-                        Placeholders.text("mutes", haul.count(PunishmentType.MUTE)),
-                        Placeholders.text("warnings", haul.count(PunishmentType.WARN)),
-                        Placeholders.text("kicks", haul.count(PunishmentType.KICK)),
-                        Placeholders.text("players", haul.players())));
+                    reply(sender, () -> {
+                        messages.counted().send(sender, Placeholders.text("source", source.name()),
+                            Placeholders.text("bans", haul.count(PunishmentType.BAN)),
+                            Placeholders.text("mutes", haul.count(PunishmentType.MUTE)),
+                            Placeholders.text("warnings", haul.count(PunishmentType.WARN)),
+                            Placeholders.text("kicks", haul.count(PunishmentType.KICK)),
+                            Placeholders.text("players", haul.players()));
+                        if (haul.wildcards() > 0) {
+                            messages.wildcards().send(sender, Placeholders.text("count", haul.wildcards()));
+                        }
+                    });
                     running.set(false);
                     return;
                 }
@@ -117,9 +124,13 @@ public final class Imports {
         xbans.tasks().sender(sender, work);
     }
 
-    /** Writes a haul in batches, each one transaction. Returns {added, skipped}. */
+    /**
+     * Writes a haul in batches, each one transaction. Returns {added, skipped}. With
+     * ips.enabled off, no IP is stored, and a punishment of an IP alone is skipped.
+     */
     CompletableFuture<long[]> write(Haul haul) {
         long[] counts = new long[2];
+        boolean ips = xbans.config().ips().enabled();
         CompletableFuture<Void> chain = CompletableFuture.completedFuture(null);
         List<Haul.Row> rows = haul.rows;
         for (int from = 0; from < rows.size(); from += BATCH) {
@@ -129,7 +140,11 @@ public final class Imports {
                 long now = System.currentTimeMillis();
                 for (Haul.Row row : batch) {
                     Entry entry = row.entry();
-                    Entry keyed = new Entry(entry.punishment(), entry.ip() == null ? null : b.keys().key(entry.ip()));
+                    if (!ips && entry.punishment().target() == null) {
+                        counts[1]++;
+                        continue;
+                    }
+                    Entry keyed = keyed(entry, b, ips);
                     long id = Store.insertImported(c, b, keyed, row.key());
                     if (id < 0) {
                         counts[1]++;
@@ -147,6 +162,8 @@ public final class Imports {
                 Store.Backend backend = xbans.store().backend();
                 if (backend != null) {
                     active.forEach(backend.active()::add);
+                    // Players already online who are now banned are kicked, without a broadcast.
+                    active.forEach(xbans.punisher()::enforce);
                 }
             }));
         }
@@ -158,7 +175,7 @@ public final class Imports {
                     if (player.name() != null) {
                         Store.importPlayer(c, b, player.id(), player.name(), player.first(), player.last());
                     }
-                    if (player.ip() != null && xbans.config().ips().enabled()) {
+                    if (player.ip() != null && ips) {
                         Store.touchIp(c, b, player.id(), b.keys().key(player.ip()), player.first(), player.last());
                     }
                 }
@@ -166,5 +183,17 @@ public final class Imports {
             }));
         }
         return chain.thenApply(ignored -> counts);
+    }
+
+    // The IP as this database keys it (or none, with IPs off), and an IP punishment of no
+    // account named after it as anyone may see it: masked, or the start of its hash.
+    private static Entry keyed(Entry entry, Store.Backend b, boolean ips) {
+        String key = !ips || entry.ip() == null ? null : b.keys().key(entry.ip());
+        Punishment p = entry.punishment();
+        if (p.target() == null) {
+            p = new Punishment(p.id(), p.type(), null, IpKeys.label(key), p.ipBased(), p.reason(), p.staff(), p.staffName(),
+                p.created(), p.expires(), p.scope(), p.silent(), p.template(), p.removal());
+        }
+        return new Entry(p, key);
     }
 }

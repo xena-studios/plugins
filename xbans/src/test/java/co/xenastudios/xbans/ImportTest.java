@@ -1,12 +1,16 @@
 package co.xenastudios.xbans;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.xenastudios.core.db.NetworkSettings;
 import co.xenastudios.core.db.StorageSettings;
+import co.xenastudios.xbans.api.Punishment;
+import co.xenastudios.xbans.api.PunishmentType;
+import co.xenastudios.xbans.ip.IpKeys;
 import co.xenastudios.xbans.model.Entry;
 import co.xenastudios.xbans.storage.Store;
 import java.nio.charset.StandardCharsets;
@@ -16,6 +20,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
+import org.mockbukkit.mockbukkit.entity.PlayerMock;
 
 /** Imports from the server's own lists and EssentialsX, and hashing IPs already stored. */
 class ImportTest {
@@ -86,13 +92,19 @@ class ImportTest {
         server.getScheduler().performTicks(5);
         assertNull(plugin.store().backend().active().ban(steve, null, "server", System.currentTimeMillis()), "a dry run writes nothing");
 
+        PlayerMock online = new PlayerMock(server, "Steve", steve);
+        online.setAddress(new java.net.InetSocketAddress(java.net.InetAddress.getByName("203.0.113.9"), 25565));
+        server.addPlayer(online);
         server.dispatchCommand(server.getConsoleSender(), "xbans import vanilla confirm");
         await(() -> plugin.store().backend().active().ban(steve, null, "server", System.currentTimeMillis()) != null);
+        await(() -> !online.isOnline());
         Entry ban = plugin.store().backend().active().ban(steve, null, "server", System.currentTimeMillis());
         assertEquals("Griefing", ban.punishment().reason());
         assertEquals("Notch", ban.punishment().staffName());
         assertEquals(1714557600000L, ban.punishment().created().toEpochMilli());
         await(() -> plugin.store().backend().active().ban(UUID.randomUUID(), "198.51.100.7", "server", System.currentTimeMillis()) != null);
+        assertEquals("198.51.x.x", plugin.store().backend().active().ban(UUID.randomUUID(), "198.51.100.7", "server",
+            System.currentTimeMillis()).punishment().targetName(), "named without the whole address");
         assertEquals(2, plugin.store().backend().active().size(), "the ended one and loopback are left out");
 
         // Again: nothing new.
@@ -142,6 +154,8 @@ class ImportTest {
         raw.ready().get(10, TimeUnit.SECONDS);
         UUID steve = UUID.randomUUID();
         raw.seen(steve, "Steve", "203.0.113.9", 0, false);
+        raw.insert(new Entry(new Punishment(0, PunishmentType.BAN, null, IpKeys.label("198.51.100.7"), true, "alts", null,
+            "Console", Instant.now(), null, "*", false, null, null), "198.51.100.7"), List.of(), null).get(10, TimeUnit.SECONDS);
         raw.write((c, b) -> null).get(10, TimeUnit.SECONDS);
         raw.close();
 
@@ -159,6 +173,13 @@ class ImportTest {
             }
         }
         assertEquals(List.of(key), stored, "no address left in the database");
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("punishments.db"));
+             Statement s = c.createStatement(); ResultSet r = s.executeQuery("SELECT name, ip FROM t_punishments")) {
+            assertTrue(r.next());
+            String banKey = hashed.backend().keys().key("198.51.100.7");
+            assertEquals(banKey, r.getString(2));
+            assertEquals(IpKeys.shown(banKey), r.getString(1), "the IP ban's name is the start of its hash, not 198.51.x.x");
+        }
         hashed.close();
 
         // Turned off again: what's hashed stays hashed.
@@ -168,5 +189,64 @@ class ImportTest {
         assertTrue(again.backend().keys().hashing());
         assertNotNull(again.alts(steve, null).get(10, TimeUnit.SECONDS));
         again.close();
+    }
+
+    @Test
+    void aHashedDatabaseWontOpenWithoutItsSalt() throws Exception {
+        List<String> said = new java.util.concurrent.CopyOnWriteArrayList<>();
+        Logger logger = Logger.getLogger("SaltTest");
+        logger.setUseParentHandlers(false);
+        logger.addHandler(new java.util.logging.Handler() {
+            @Override
+            public void publish(java.util.logging.LogRecord record) {
+                said.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {}
+
+            @Override
+            public void close() {}
+        });
+        StorageSettings storage = StorageSettings.defaults("t_");
+        Store first = new Store(plugin.tasks(), logger, folder, backend -> {});
+        first.sync(new Store.Wanted(storage, NetworkSettings.DEFAULTS, true));
+        first.ready().get(10, TimeUnit.SECONDS);
+        first.close();
+        Path salt = folder.resolve(IpKeys.SALT_FILE);
+        String right = Files.readString(salt);
+
+        // Missing: no new salt is made, and it doesn't open, so IP-banned players can't get in.
+        Files.delete(salt);
+        Store missing = new Store(plugin.tasks(), logger, folder, backend -> {});
+        missing.sync(new Store.Wanted(storage, NetworkSettings.DEFAULTS, true));
+        await(() -> said.stream().anyMatch(line -> line.contains("ip-salt.txt is missing")));
+        assertNull(missing.backend());
+        assertFalse(Files.exists(salt), "no new salt");
+        close(missing);
+
+        // Another salt: the same.
+        Files.writeString(salt, "ab".repeat(32) + "\n");
+        Store wrong = new Store(plugin.tasks(), logger, folder, backend -> {});
+        wrong.sync(new Store.Wanted(storage, NetworkSettings.DEFAULTS, false));
+        await(() -> said.stream().anyMatch(line -> line.contains("isn't the one this database's IPs were hashed with")));
+        assertNull(wrong.backend());
+        close(wrong);
+
+        Files.writeString(salt, right);
+        Store back = new Store(plugin.tasks(), logger, folder, backend -> {});
+        back.sync(new Store.Wanted(storage, NetworkSettings.DEFAULTS, true));
+        back.ready().get(10, TimeUnit.SECONDS);
+        assertTrue(back.backend().keys().hashing());
+        back.close();
+    }
+
+    // The mock can't cancel the retry, a repeating task (a real server can).
+    private static void close(Store store) {
+        try {
+            store.close();
+        } catch (RuntimeException ignored) {
+            // MockBukkit's "not implemented".
+        }
     }
 }

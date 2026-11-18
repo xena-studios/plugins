@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.InetAddress;
@@ -37,8 +38,8 @@ class IpKeysTest {
 
     @Test
     void hashesMatchThemselvesNotTheAddress() throws Exception {
-        byte[] salt = IpKeys.salt(folder);
-        assertArrayEquals(salt, IpKeys.salt(folder), "the salt is kept");
+        byte[] salt = IpKeys.salt(folder, true);
+        assertArrayEquals(salt, IpKeys.salt(folder, false), "the salt is kept");
         IpKeys hashed = IpKeys.hashed(salt);
         String key = hashed.key("203.0.113.9");
         assertEquals(32, key.length());
@@ -46,6 +47,20 @@ class IpKeysTest {
         assertNotEquals(key, hashed.key("203.0.113.10"));
         assertNotEquals(key, IpKeys.hashed(new byte[32]).key("203.0.113.9"), "another salt, another hash");
         assertEquals(key.substring(0, 8) + "…", IpKeys.shown(key));
+        assertEquals(key.substring(0, 8) + "…", IpKeys.label(key));
+    }
+
+    @Test
+    void aMissingSaltIsMadeOnlyWhenAsked() {
+        assertThrows(java.io.IOException.class, () -> IpKeys.salt(folder, false));
+        assertFalse(java.nio.file.Files.exists(folder.resolve(IpKeys.SALT_FILE)));
+    }
+
+    @Test
+    void labelsShowHalfAnAddressAtMost() {
+        assertEquals("203.0.x.x", IpKeys.label("203.0.113.9"));
+        assertEquals("2001:db8:…", IpKeys.label("2001:db8::1"));
+        assertEquals("?", IpKeys.label(null));
     }
 
     @Test

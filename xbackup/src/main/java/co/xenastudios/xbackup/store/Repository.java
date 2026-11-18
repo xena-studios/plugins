@@ -126,7 +126,7 @@ public final class Repository implements AutoCloseable {
      *
      * @throws LockedException if another process holds a lock that conflicts
      */
-    public AutoCloseable lock(boolean exclusive) throws IOException {
+    public Lock lock(boolean exclusive) throws IOException {
         if (!(backend instanceof LocalBackend local)) {
             return () -> {};
         }
@@ -155,6 +155,12 @@ public final class Repository implements AutoCloseable {
                 channel.close();
             }
         };
+    }
+
+    /** A held lock; closing it lets go. */
+    public interface Lock extends AutoCloseable {
+        @Override
+        void close() throws IOException;
     }
 
     /** Another process holds the repository. */

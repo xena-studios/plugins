@@ -165,8 +165,14 @@ class ApiTest {
         assertEquals(5, fromCommand.getQuery().radius());
         assertEquals(1, fromCommand.getPage());
 
-        steve.performCommand("xr page 2");
-        await(() -> events.size() == 3);
+        // A sender's second lookup is ignored while their first still runs, and the event
+        // fires as it starts: ask again until it's taken.
+        await(() -> {
+            if (events.size() < 3) {
+                steve.performCommand("xr page 2");
+            }
+            return events.size() >= 3;
+        });
         assertEquals(2, ((LookupEvent) events.get(2)).getPage(), "the page that ran");
     }
 

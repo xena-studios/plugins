@@ -1,0 +1,39 @@
+![{{display}} by Xena Studios. The {{display}} icon and name over a stepped horizon, with the headline "{{tagline}}"](../.github/assets/{{id}}-banner.png)
+
+**{{tagline}}**
+
+TODO: what {{display}} is, in one sentence, for Paper and Folia.
+
+- **Every feature free.** No premium version, no early-access builds.
+- **You won't feel it running.** TODO: what keeps it light.
+- **Every change applies on reload.** No restarts.
+
+**[Download on Modrinth](https://modrinth.com/plugin/{{id}})** · [Docs](https://docs.xenastudios.co/{{id}}/) · [Commands](https://docs.xenastudios.co/{{id}}/commands/) · [Changelog](CHANGELOG.md)
+
+Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
+
+## Developing
+
+From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
+
+```sh
+./gradlew :{{id}}:build       # compile, test, and check the jar's size budget
+./gradlew :{{id}}:runServer   # a Paper server with {{display}}, in {{id}}/run/
+```
+
+```
+api/                 the developer API (co.xenastudios.{{id}}:{{id}}-api), shipped inside the jar
+src/main/java/co/xenastudios/{{id}}/
+  {{Class}}.java     the plugin: declares the config and, in setup, the features it turns on
+  Api.java           the developer API's implementation, registered while the plugin is enabled
+  config/            config.yml: the settings and their defaults
+boot-checks.txt      console commands CI runs on real Paper and Folia servers, and what each must log
+CHANGELOG.md         one section per release; the release workflow publishes it
+modrinth.md          the Modrinth project page, published when it changes on main
+```
+
+The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
+
+## Licence
+
+[GPL-3.0-only](../LICENSE), like the rest of the repo.

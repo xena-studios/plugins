@@ -1,0 +1,66 @@
+name: New plugin
+description: Plan a new plugin for the family. For the maintainers; ideas are welcome as feature requests.
+title: "New plugin: "
+labels: ["new plugin", enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A plan the build follows, milestone by milestone. `node scripts/new-plugin.ts <id> <Name> <category>` does M0 (see CONTRIBUTING.md, "Adding a plugin").
+  - type: input
+    id: name
+    attributes:
+      label: Name and id
+      description: The name as it's shown, and its lowercase id (folder, Modrinth slug, command). Check the slug is free on Modrinth, and reserve it as a draft.
+      placeholder: "xShop, xshop"
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options: [Players, Moderation, Economy, Server]
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it's worth building
+      description: The problem, the plugins servers use for it today, and what they get wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design
+      description: How it works and what it stores, and the choices that keep it light. Name every repeating task and why it's needed.
+    validations:
+      required: true
+  - type: textarea
+    id: milestones
+    attributes:
+      label: Milestones
+      description: Keep the standard ones and add the plugin's own between M1 and M5.
+      value: |
+        - [ ] **M0: Scaffolding.** `node scripts/new-plugin.ts`: the module, config, API, docs pages, brand glyph and accent, a reserved Modrinth slug.
+        - [ ] **M1:** the core feature, with tests.
+        - [ ] **M2:**
+        - [ ] **M3:**
+        - [ ] **M4: Imports**, from the plugins servers switch from, with a dry run.
+        - [ ] **M5: Networks**, if it stores anything: shared MySQL and the core's change feed, tested with two servers.
+        - [ ] **M6: Developer API and family integrations** (#42), each switchable, every plugin still working alone.
+        - [ ] **M7: Docs, brand, release.** Every docs page, its Modrinth page, a bStats id, and a "switching from" page.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Lightweight, fast, reliable
+      description: The checklist every plan is held to (#42).
+      options:
+        - label: No repeating tasks except the ones the plan names and justifies; each one off when its feature is off.
+        - label: Listeners only for features that are on.
+        - label: No database work on a game thread; hot data answered from memory.
+        - label: Folia-safe (entity, region and global schedulers), unless it can't be.
+        - label: Crash-safe writes, tested by killing the server mid-write.
+        - label: Boot tests on real servers at the oldest and newest supported versions.

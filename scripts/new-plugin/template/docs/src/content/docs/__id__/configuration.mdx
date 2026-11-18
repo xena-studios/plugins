@@ -1,0 +1,19 @@
+---
+title: Configuration
+description: Every setting in {{display}}'s config.yml.
+sidebar:
+  order: 3
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/{{id}}/config.yml?raw";
+
+The config is `plugins/{{display}}/config.yml`, written on first start. Apply changes with `/{{id}} reload`.
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours {{display}}'s messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages` | Shared errors, under `messages.error`. |
+| `update-checker` | Whether {{display}} tells you when a new version is out. |
+
+<Code code={config} lang="yaml" title="config.yml" />

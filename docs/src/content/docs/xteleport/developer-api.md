@@ -63,14 +63,14 @@ xteleport.teleport(player, plotHome, TeleportOptions.defaults().cooldown("plotho
     });
 ```
 
-The player gets xTeleport's warmup (moving or damage cancels it, with the countdown), the cooldown and cost you give, and the safe-arrival check, all with xTeleport's messages. The teleport uses the `COMMAND` cause, so `/back` returns from it. The result is one of `TELEPORTED`, `CANCELLED` (moved or hurt), `BLOCKED` (a plugin cancelled `PreTeleportEvent`), `ON_COOLDOWN`, `CANT_AFFORD`, `UNSAFE` or `FAILED` (anything charged was given back).
+The player gets xTeleport's warmup (moving or damage cancels it, with the countdown), the cooldown and cost you give, and the safe-arrival check, all with xTeleport's messages. The teleport uses the `COMMAND` cause, so `/back` returns from it. The future always completes. The result is one of `TELEPORTED`, `CANCELLED` (moved or hurt, or xTeleport stopped first), `BLOCKED` (a plugin cancelled `PreTeleportEvent`), `ON_COOLDOWN`, `CANT_AFFORD`, `UNSAFE` or `FAILED` (anything charged was given back).
 
 | Option | Default | Means |
 | --- | --- | --- |
 | `warmup(seconds)` | -1 | Seconds to stand still. -1 uses xTeleport's own setting, 0 none. |
-| `cooldown(key, seconds)` | none | Checked before, started after arriving. A key xTeleport uses itself, such as `home` or `rtp`, shares that command's cooldown. |
+| `cooldown(key, seconds)` | none | A cooldown still running on the key refuses the teleport; a new one of `seconds` starts once the player arrives. `0` checks the key without starting one. A key xTeleport uses itself, such as `home` or `rtp`, shares that command's cooldown both ways. |
 | `cost(amount)` | 0 | Taken through Vault after the warmup. |
-| `checkSafe(boolean)` | true | Refuse a spot in lava, inside blocks or over the void. |
+| `checkSafe(boolean)` | true | Refuse a spot in lava, inside blocks, over the void, high in the air or outside the world border. |
 
 `cooldown(player, key)` says how long is left on any cooldown.
 
@@ -80,11 +80,13 @@ The player gets xTeleport's warmup (moving or damage cancels it, with the countd
 | --- | --- | --- |
 | `cachedHomes(uuid)` | memory | An online player's homes, or empty if they're offline or still being read. |
 | `homes(uuid)` | future | Any player's homes, online or not. |
-| `setHome(uuid, name, location)` | future | Sets a home. Doesn't check the limit or fire `HomeSetEvent`. |
-| `deleteHome(uuid, name)` | future | Deletes one. |
+| `setHome(uuid, name, location)` | future | Sets a home. Doesn't check the limit or fire `HomeSetEvent`. `false` for a name that isn't allowed or a world that isn't loaded. |
+| `deleteHome(uuid, name)` | future | Deletes one: `true` if there was one. |
 | `homeLimit(player)` | memory | How many homes they may have. |
 | `warps()`, `warp(name)` | memory | The warps. |
 | `setWarp(name, location)`, `deleteWarp(name)` | future | Changes them; `warps()` shows it at once. |
+
+A change that the database couldn't save completes its future exceptionally, and is undone in memory too, so `cachedHomes` and `warps()` never show what isn't saved. Handle it as you would any failure: tell whoever asked to try again.
 | `spawn()` | memory | Where `/spawn` goes. |
 
 `Home` and `Warp` are records with the world's name and the coordinates; `location()` gives a `Location` if the world is loaded.
@@ -102,7 +104,7 @@ The same search `/rtp` uses, with its blocked biomes. It counts towards the limi
 
 | Event | When | Cancel to |
 | --- | --- | --- |
-| `PreTeleportEvent` | After the warmup and the safety check, before paying. Has the destination and the `TeleportType`. | Stop the teleport, as a combat-tag or jail plugin would. |
+| `PreTeleportEvent` | After the warmup and the safety check (unless it's off for that teleport), before paying. Has the destination and the `TeleportType`. | Stop the teleport, as a combat-tag or jail plugin would. |
 | `TeleportEvent` | After the player arrived. | |
 | `HomeSetEvent` | A player runs `/sethome`, within their limit. | Refuse it, as a claims plugin would in someone else's land. |
 | `TpaRequestEvent` | A player sends `/tpa` or `/tpahere`. | Stop the request. |

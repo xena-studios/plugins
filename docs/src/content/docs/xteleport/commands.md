@@ -23,14 +23,14 @@ Names are 1 to 32 letters, digits, `-` or `_`, in any case: `/home Base` and `/h
 
 | Command | What it does | Permission |
 | --- | --- | --- |
-| `/tpa <player>` | Asks to teleport to a player. They get a message with **Accept** and **Deny** to click. | `xteleport.command.tpa` |
+| `/tpa <player>` | Asks to teleport to a player. They get a message with **Accept** and **Deny** to click. Asking again before they answer only reminds you that you asked. | `xteleport.command.tpa` |
 | `/tpahere <player>` | Asks a player to teleport to you. | `xteleport.command.tpahere` |
 | `/tpaccept [player]` (`/tpyes`) | Accepts the newest request, or the one from that player. | `xteleport.command.tpaccept` |
 | `/tpdeny [player]` (`/tpno`) | Denies it. | `xteleport.command.tpdeny` |
 | `/tpacancel [player]` | Takes back the requests you sent, or the one to that player. | `xteleport.command.tpacancel` |
 | `/tptoggle` | Stops or starts requests to you. Kept through restarts. | `xteleport.command.tptoggle` |
 
-Whoever sends the request pays its cost and has its cooldown, whichever of the two moves. The player who moves has the warmup.
+Whoever sends the request pays its cost and has its cooldown, whichever of the two moves. The player who moves has the warmup. A TPA is checked like a home: if the player gone to is over lava, the void or high in the air, the one moving stays put.
 
 ## Warps and spawn
 
@@ -47,7 +47,7 @@ Whoever sends the request pays its cost and has its cooldown, whichever of the t
 
 | Command | What it does | Permission |
 | --- | --- | --- |
-| `/rtp [world]` (`/wild`) | Teleports to a random safe spot, in your world or the one named. Only worlds listed under `rtp.worlds` can be picked. It has a 5-minute cooldown by default. | `xteleport.command.rtp` |
+| `/rtp [world]` (`/wild`) | Teleports to a random safe spot, in your world or the one named. Only worlds listed under `rtp.worlds` can be picked. It has a 5-minute cooldown by default, from arriving, and each search starts a 30-second one, found or not. | `xteleport.command.rtp` |
 
 ## Staff
 
@@ -79,7 +79,7 @@ With [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) installed:
 | Placeholder | What it shows |
 | --- | --- |
 | `%xteleport_homes%` | How many homes the player has. |
-| `%xteleport_homes_limit%` | How many they may have, or ∞. |
+| `%xteleport_homes_limit%` | How many they may have, or ∞. Worked out at most every 30 seconds, so a rank change shows within that. |
 | `%xteleport_warps%` | How many warps there are. |
 | `%xteleport_requests%` | TPA requests waiting for them. |
 | `%xteleport_cooldown_<command>%` | Seconds until they can use it again, 0 when they can: `%xteleport_cooldown_rtp%`. |

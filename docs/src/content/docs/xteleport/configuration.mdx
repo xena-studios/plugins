@@ -15,7 +15,7 @@ The config is `plugins/xTeleport/config.yml`, written on first start. Apply chan
 | `theme` | The prefix and colours xTeleport's messages share: see [the theme](/start/formatting/#the-theme). |
 | `messages` | What players are told, and shared errors under `messages.error`. |
 | `commands` | Each command's switch, aliases and permission, and for commands that teleport, a cooldown and a cost. |
-| `teleports` | The warmup, whether damage cancels it, and the safe-arrival check. |
+| `teleports` | The warmup, whether damage cancels it, and the safe-arrival check with the longest fall it allows. |
 | `homes` | How many homes players may have, the default name, and the bed home. |
 | `tpa` | How long a request lasts. |
 | `warps` | Per-warp permissions. |
@@ -29,6 +29,12 @@ The config is `plugins/xTeleport/config.yml`, written on first start. Apply chan
 `teleports.warmup` is how many seconds a player stands still before any teleport: 3 by default, 0 for none. Moving half a block cancels it, and so does taking damage unless `cancel-on-damage` is false. The seconds count down on the action bar (`messages.teleport.countdown`; blank turns that off).
 
 Each teleporting command has a `cooldown` in seconds, which starts once the player arrives, and a `cost`. A cost needs [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin. It's checked before the warmup, taken after it, and given back if the teleport fails. If the economy is missing, players are told teleports aren't working and the console says what's missing.
+
+A cooldown is kept per player and per command. One that's still running refuses the command, even after you lower it in the config, until it runs out.
+
+## Safe arrival
+
+With `teleports.check-safe` on, a home, warp, spawn or TPA that would land a player in lava or fire, inside blocks, over the void, outside the world border or high in the air is refused with a message, and they stay where they are. `teleports.max-fall` is the longest drop allowed onto the ground below: 3 blocks, which doesn't hurt. Water below is safe from any height, and a ladder, vine or scaffolding counts as ground. The spot's chunk is loaded in the background first, and the check runs on the thread that owns the spot.
 
 ## Home limits
 
@@ -56,6 +62,8 @@ Each world `/rtp` may use is listed under `rtp.worlds` by name. A world that isn
 - **Who:** `permission` limits a world to players who have it.
 - **The End:** spots on the main island are skipped unless `allow-main-island` is true, so players land on the outer islands. Keep `min-radius` above 1000 there.
 - **Biomes:** `rtp.blocked-biomes` are never picked. Oceans are blocked by default.
+
+Each search starts a short cooldown, `rtp.search-cooldown` (30 seconds), whether it finds a spot or not, so nobody can keep the server generating terrain by searching again and again. The longer cooldown under `commands.rtp` (5 minutes) starts once the player arrives.
 
 Each search tries up to `rtp.attempts` spots (10). Each one loads a single chunk in the background, then reads a column of blocks on the thread that owns it. At most `max-searches` run at once across the server (3); anyone over that is told to try again in a few seconds. With `only-generated: true`, `/rtp` never generates terrain: it only picks chunks that already exist, which makes it nearly free on a world pre-generated with a plugin such as Chunky.
 

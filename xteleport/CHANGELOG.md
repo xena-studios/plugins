@@ -13,7 +13,7 @@ The first release. Drop the jar in and start the server: homes and warps are kep
 
 ### TPA
 
-- `/tpa`, `/tpahere`, and `/tpaccept` and `/tpdeny` with buttons to click. Several requests can wait at once: answer the newest, or name a player.
+- `/tpa`, `/tpahere`, and `/tpaccept` and `/tpdeny` with buttons to click. Several requests can wait at once: answer the newest, or name a player. Asking the same player again before they answer doesn't send them another message.
 - `/tpacancel` takes back what you sent; `/tptoggle` stops requests, and is kept through restarts.
 - Players you can't see, such as vanished staff, can't be sent requests.
 
@@ -26,13 +26,15 @@ The first release. Drop the jar in and start the server: homes and warps are kep
 
 - `/rtp [world]`: a random safe spot in a ring around each world's centre, inside the world border, in the worlds you list. No lava, water, leaves, powder snow, void or oceans; under the roof in the Nether, and off the main island in the End.
 - One chunk at a time, loaded in the background; at most 10 tries per search, one search per player, and 3 at once server-wide. `rtp.only-generated` keeps it to chunks that already exist.
+- A 5-minute cooldown from arriving, and a 30-second one (`rtp.search-cooldown`) from each search, found or not, so nobody can keep the server generating terrain.
 - `/xteleport rtpcheck <world> [searches]` tries a world's settings without teleporting anyone.
 
 ### Every teleport
 
 - A 3-second warmup that moving or taking damage cancels, counting down on the action bar.
 - Cooldowns and Vault costs per command. A cost is taken after the warmup and given back if the teleport fails.
-- A home, warp or spawn that's now in lava, inside blocks or over the void is refused with a message.
+- A home, warp, spawn or TPA that would land a player in lava, inside blocks, over the void, outside the world border or more than `teleports.max-fall` blocks (3) above the ground is refused with a message. Water below is safe from any height.
+- A home, warp, spawn or `/tptoggle` the database couldn't save is undone and the player is told to try again, rather than lost on restart.
 - Every teleport uses the command cause, so xUtilities' `/back` returns from it.
 
 ### Also

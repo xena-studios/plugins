@@ -1,0 +1,3 @@
+public interface co.xenastudios.sandbox.api.SandboxApi
+  public static co.xenastudios.sandbox.api.SandboxApi get()
+  public abstract java.lang.String ping()

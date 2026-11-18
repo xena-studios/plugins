@@ -1,0 +1,100 @@
+public interface co.xenastudios.xstats.api.CustomStat
+  public abstract java.lang.String id()
+  public abstract void increment(java.util.UUID, long)
+  public abstract void set(java.util.UUID, long)
+
+public final record co.xenastudios.xstats.api.LeaderboardEntry
+  public LeaderboardEntry(int, java.util.UUID, java.lang.String, long)
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public java.lang.String name()
+  public java.util.UUID player()
+  public int rank()
+  public final java.lang.String toString()
+  public long value()
+
+public enum co.xenastudios.xstats.api.Period signature Ljava/lang/Enum<Lco/xenastudios/xstats/api/Period;>;
+  public static final co.xenastudios.xstats.api.Period ALL
+  public static final co.xenastudios.xstats.api.Period DAILY
+  public static final co.xenastudios.xstats.api.Period MONTHLY
+  public static final co.xenastudios.xstats.api.Period WEEKLY
+  public java.lang.String id()
+  public static java.util.Optional parse(java.lang.String) signature (Ljava/lang/String;)Ljava/util/Optional<Lco/xenastudios/xstats/api/Period;>;
+  public static co.xenastudios.xstats.api.Period valueOf(java.lang.String)
+  public static co.xenastudios.xstats.api.Period[] values()
+
+public final record co.xenastudios.xstats.api.ProfileLine
+  public ProfileLine(java.lang.String, java.lang.String)
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public java.lang.String label()
+  public final java.lang.String toString()
+  public java.lang.String value()
+
+public interface co.xenastudios.xstats.api.ProfileSectionProvider
+  public abstract java.util.List lines(java.util.UUID, boolean) signature (Ljava/util/UUID;Z)Ljava/util/List<Lco/xenastudios/xstats/api/ProfileLine;>;
+
+public final record co.xenastudios.xstats.api.StatInfo
+  public StatInfo(java.lang.String, java.lang.String, co.xenastudios.xstats.api.StatUnit, int, boolean, boolean, java.lang.String)
+  public int decimals()
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public java.lang.String id()
+  public java.lang.String name()
+  public java.lang.String owner()
+  public boolean periods()
+  public boolean shown()
+  public final java.lang.String toString()
+  public co.xenastudios.xstats.api.StatUnit unit()
+
+public enum co.xenastudios.xstats.api.StatUnit signature Ljava/lang/Enum<Lco/xenastudios/xstats/api/StatUnit;>;
+  public static final co.xenastudios.xstats.api.StatUnit COUNT
+  public static final co.xenastudios.xstats.api.StatUnit DAMAGE
+  public static final co.xenastudios.xstats.api.StatUnit DISTANCE
+  public static final co.xenastudios.xstats.api.StatUnit TIME
+  public static co.xenastudios.xstats.api.StatUnit valueOf(java.lang.String)
+  public static co.xenastudios.xstats.api.StatUnit[] values()
+
+public final record co.xenastudios.xstats.api.StatsProfile
+  public StatsProfile(java.util.UUID, java.lang.String, long, long, boolean, java.util.Map) signature (Ljava/util/UUID;Ljava/lang/String;JJZLjava/util/Map<Lco/xenastudios/xstats/api/Period;Ljava/util/Map<Ljava/lang/String;Ljava/lang/Long;>;>;)V
+  public final boolean equals(java.lang.Object)
+  public long firstJoin()
+  public final int hashCode()
+  public boolean hidden()
+  public long lastSeen()
+  public java.lang.String name()
+  public java.util.UUID player()
+  public final java.lang.String toString()
+  public long value(java.lang.String, co.xenastudios.xstats.api.Period)
+  public java.util.Map values() signature ()Ljava/util/Map<Lco/xenastudios/xstats/api/Period;Ljava/util/Map<Ljava/lang/String;Ljava/lang/Long;>;>;
+
+public interface co.xenastudios.xstats.api.XStatsApi
+  public static co.xenastudios.xstats.api.XStatsApi get()
+  public abstract java.util.concurrent.CompletableFuture getProfile(java.util.UUID) signature (Ljava/util/UUID;)Ljava/util/concurrent/CompletableFuture<Ljava/util/Optional<Lco/xenastudios/xstats/api/StatsProfile;>;>;
+  public abstract int getRank(java.util.UUID, java.lang.String, co.xenastudios.xstats.api.Period)
+  public abstract long getStat(java.util.UUID, java.lang.String, co.xenastudios.xstats.api.Period)
+  public abstract java.util.Optional getStatInfo(java.lang.String) signature (Ljava/lang/String;)Ljava/util/Optional<Lco/xenastudios/xstats/api/StatInfo;>;
+  public abstract java.util.List getStats() signature ()Ljava/util/List<Lco/xenastudios/xstats/api/StatInfo;>;
+  public abstract java.util.List getTop(java.lang.String, co.xenastudios.xstats.api.Period, int) signature (Ljava/lang/String;Lco/xenastudios/xstats/api/Period;I)Ljava/util/List<Lco/xenastudios/xstats/api/LeaderboardEntry;>;
+  public abstract boolean isPrivate(java.util.UUID)
+  public abstract void registerProfileSection(org.bukkit.plugin.Plugin, java.lang.String, java.lang.String, co.xenastudios.xstats.api.ProfileSectionProvider)
+  public abstract co.xenastudios.xstats.api.CustomStat registerStat(org.bukkit.plugin.Plugin, java.lang.String, java.lang.String, co.xenastudios.xstats.api.StatUnit)
+  public abstract void unregisterProfileSection(org.bukkit.plugin.Plugin, java.lang.String)
+
+public final class co.xenastudios.xstats.api.event.LeaderboardChangeEvent extends org.bukkit.event.Event
+  public LeaderboardChangeEvent(java.lang.String, co.xenastudios.xstats.api.Period, java.util.UUID, java.util.UUID, java.lang.String, long)
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public java.util.UUID getLeader()
+  public java.lang.String getLeaderName()
+  public co.xenastudios.xstats.api.Period getPeriod()
+  public java.util.UUID getPrevious()
+  public java.lang.String getStat()
+  public long getValue()
+
+public final class co.xenastudios.xstats.api.event.StatsSavedEvent extends org.bukkit.event.Event
+  public StatsSavedEvent(int, long)
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public long getMillis()
+  public int getPlayers()

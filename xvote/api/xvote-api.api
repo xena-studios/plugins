@@ -1,0 +1,100 @@
+public final record co.xenastudios.xvote.api.PartyProgress
+  public PartyProgress(int, int)
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public int left()
+  public int needed()
+  public final java.lang.String toString()
+  public int votes()
+
+public enum co.xenastudios.xvote.api.Period signature Ljava/lang/Enum<Lco/xenastudios/xvote/api/Period;>;
+  public static final co.xenastudios.xvote.api.Period ALL
+  public static final co.xenastudios.xvote.api.Period DAY
+  public static final co.xenastudios.xvote.api.Period MONTH
+  public static final co.xenastudios.xvote.api.Period WEEK
+  public static co.xenastudios.xvote.api.Period valueOf(java.lang.String)
+  public static co.xenastudios.xvote.api.Period[] values()
+
+public interface co.xenastudios.xvote.api.RewardType
+  public abstract void give(org.bukkit.entity.Player, java.lang.String)
+
+public final record co.xenastudios.xvote.api.TopVoter
+  public TopVoter(int, java.util.UUID, java.lang.String, int)
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public java.lang.String name()
+  public java.util.UUID player()
+  public int rank()
+  public final java.lang.String toString()
+  public int votes()
+
+public enum co.xenastudios.xvote.api.VoteResult signature Ljava/lang/Enum<Lco/xenastudios/xvote/api/VoteResult;>;
+  public static final co.xenastudios.xvote.api.VoteResult CANCELLED
+  public static final co.xenastudios.xvote.api.VoteResult COUNTED
+  public static final co.xenastudios.xvote.api.VoteResult DUPLICATE
+  public static final co.xenastudios.xvote.api.VoteResult FAILED
+  public static final co.xenastudios.xvote.api.VoteResult INVALID
+  public static final co.xenastudios.xvote.api.VoteResult WAITING
+  public static co.xenastudios.xvote.api.VoteResult valueOf(java.lang.String)
+  public static co.xenastudios.xvote.api.VoteResult[] values()
+
+public enum co.xenastudios.xvote.api.VoteSource signature Ljava/lang/Enum<Lco/xenastudios/xvote/api/VoteSource;>;
+  public static final co.xenastudios.xvote.api.VoteSource API
+  public static final co.xenastudios.xvote.api.VoteSource TEST
+  public static final co.xenastudios.xvote.api.VoteSource VOTIFIER_V1
+  public static final co.xenastudios.xvote.api.VoteSource VOTIFIER_V2
+  public static co.xenastudios.xvote.api.VoteSource valueOf(java.lang.String)
+  public static co.xenastudios.xvote.api.VoteSource[] values()
+
+public final record co.xenastudios.xvote.api.VoterStats
+  public VoterStats(java.util.UUID, java.lang.String, int, int, int, int, int, int, java.util.Map) signature (Ljava/util/UUID;Ljava/lang/String;IIIIIILjava/util/Map<Ljava/lang/String;Ljava/time/Instant;>;)V
+  public int bestStreak()
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public java.util.Map lastVotes() signature ()Ljava/util/Map<Ljava/lang/String;Ljava/time/Instant;>;
+  public int month()
+  public java.lang.String name()
+  public java.util.UUID player()
+  public int streak()
+  public final java.lang.String toString()
+  public int today()
+  public int total()
+  public int votes(co.xenastudios.xvote.api.Period)
+  public int week()
+
+public interface co.xenastudios.xvote.api.XVoteApi
+  public static co.xenastudios.xvote.api.XVoteApi get()
+  public abstract co.xenastudios.xvote.api.PartyProgress party()
+  public abstract void registerRewardType(org.bukkit.plugin.Plugin, java.lang.String, co.xenastudios.xvote.api.RewardType)
+  public abstract co.xenastudios.xvote.api.VoterStats stats(java.util.UUID)
+  public abstract java.util.concurrent.CompletableFuture submitVote(java.lang.String, java.lang.String, java.lang.String) signature (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture<Lco/xenastudios/xvote/api/VoteResult;>;
+  public abstract java.util.List top(co.xenastudios.xvote.api.Period, int) signature (Lco/xenastudios/xvote/api/Period;I)Ljava/util/List<Lco/xenastudios/xvote/api/TopVoter;>;
+
+public final class co.xenastudios.xvote.api.event.VotePartyEvent extends org.bukkit.event.Event implements org.bukkit.event.Cancellable
+  public VotePartyEvent(java.util.List) signature (Ljava/util/List<Lorg/bukkit/entity/Player;>;)V
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public java.util.List getPlayers() signature ()Ljava/util/List<Lorg/bukkit/entity/Player;>;
+  public boolean isCancelled()
+  public void setCancelled(boolean)
+
+public final class co.xenastudios.xvote.api.event.VoteReceivedEvent extends org.bukkit.event.Event implements org.bukkit.event.Cancellable
+  public VoteReceivedEvent(java.lang.String, java.lang.String, java.lang.String, java.lang.String, co.xenastudios.xvote.api.VoteSource)
+  public java.lang.String getAddress()
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public java.lang.String getSite()
+  public co.xenastudios.xvote.api.VoteSource getSource()
+  public java.lang.String getTimestamp()
+  public java.lang.String getUsername()
+  public boolean isCancelled()
+  public void setCancelled(boolean)
+
+public final class co.xenastudios.xvote.api.event.VoteRewardEvent extends org.bukkit.event.player.PlayerEvent implements org.bukkit.event.Cancellable
+  public VoteRewardEvent(org.bukkit.entity.Player, java.lang.String, java.util.List) signature (Lorg/bukkit/entity/Player;Ljava/lang/String;Ljava/util/List<Ljava/lang/String;>;)V
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public java.util.List getRewards() signature ()Ljava/util/List<Ljava/lang/String;>;
+  public java.lang.String getSite()
+  public boolean isCancelled()
+  public void setCancelled(boolean)

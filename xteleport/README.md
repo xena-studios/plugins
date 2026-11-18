@@ -25,7 +25,7 @@ From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../C
 ```
 
 ```
-api/                   the developer API (co.xenastudios:xteleport-api), shipped inside the jar
+api/                   the developer API (co.xenastudios.xteleport:xteleport-api), shipped inside the jar
 src/main/java/co/xenastudios/xteleport/
   XTeleport.java       the plugin: opens the database, and in setup turns on its listeners and commands
   Api.java             the API, registered with the services manager

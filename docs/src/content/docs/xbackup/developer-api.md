@@ -5,7 +5,7 @@ sidebar:
   order: 7
 ---
 
-xBackup has a public API in `co.xenastudios.xbackup.api`, shipped inside its jar. Depend on xBackup (`depend` or `softdepend` in `plugin.yml`, or a server dependency in `paper-plugin.yml`), compile against `co.xenastudios:xbackup-api`, and get it with `XBackupApi.get()`.
+xBackup has a public API in `co.xenastudios.xbackup.api`, shipped inside its jar. Depend on xBackup (`depend` or `softdepend` in `plugin.yml`, or a server dependency in `paper-plugin.yml`), compile against `co.xenastudios.xbackup:xbackup-api`, and get it with `XBackupApi.get()`.
 
 Every method says which thread it may be called from: reads answer from memory, and anything that does work returns a `CompletableFuture` that completes off the game threads. Nothing blocks the caller.
 

@@ -42,4 +42,4 @@ The first release. Drop the jar in and start the server: homes and warps are kep
 - Every command can be turned off, renamed with aliases or given another permission, and every setting except `storage` applies on `/xteleport reload`.
 - Runs on Folia.
 - PlaceholderAPI: `%xteleport_homes%`, `%xteleport_homes_limit%`, `%xteleport_warps%`, `%xteleport_requests%`, `%xteleport_cooldown_<command>%`.
-- A developer API (`co.xenastudios:xteleport-api`): teleports with xTeleport's warmup, cooldown, cost and safety check; homes, warps and spawn; the RTP search; and events before and after teleports, for homes being set and for requests.
+- A developer API (`co.xenastudios.xteleport:xteleport-api`): teleports with xTeleport's warmup, cooldown, cost and safety check; homes, warps and spawn; the RTP search; and events before and after teleports, for homes being set and for requests.

@@ -25,7 +25,7 @@ From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../C
 ```
 
 ```
-api/                 the developer API (co.xenastudios:xbans-api), shipped inside the jar
+api/                 the developer API (co.xenastudios.xbans:xbans-api), shipped inside the jar
 src/main/java/co/xenastudios/xbans/
   XBans.java         the plugin: opens the database, and in setup turns on enforcement and the commands
   Punisher.java      makes and revokes punishments for commands, the API and the network alike

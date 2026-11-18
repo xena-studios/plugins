@@ -11,7 +11,7 @@ The API costs nothing unless a plugin uses it: it adds no listeners and no tasks
 
 ## Add it to your build
 
-The API is `co.xenastudios:xteleport-api`. It's inside the xTeleport jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
+The API is `co.xenastudios.xteleport:xteleport-api`. It's inside the xTeleport jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
 
 :::note
 The API is published to Maven Central when xTeleport 1.0.0 is released. Until then, build it from [the source](https://github.com/xena-studios/plugins) with `./gradlew :xteleport:api:publishToMavenLocal` and add `mavenLocal()` to your repositories.
@@ -19,13 +19,13 @@ The API is published to Maven Central when xTeleport 1.0.0 is released. Until th
 
 ```kotlin
 dependencies {
-    compileOnly("co.xenastudios:xteleport-api:1.0.0")
+    compileOnly("co.xenastudios.xteleport:xteleport-api:1.0.0")
 }
 ```
 
 ```xml
 <dependency>
-    <groupId>co.xenastudios</groupId>
+    <groupId>co.xenastudios.xteleport</groupId>
     <artifactId>xteleport-api</artifactId>
     <version>1.0.0</version>
     <scope>provided</scope>

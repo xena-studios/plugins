@@ -35,7 +35,7 @@ src/main/java/co/xenastudios/xbackup/
   server/              the worker thread, the schedule, the autosave pause on Paper and Folia
   command/             /backup
   cli/                 java -jar xbackup.jar list|restore|verify
-api/                   the developer API (co.xenastudios:xbackup-api)
+api/                   the developer API (co.xenastudios.xbackup:xbackup-api)
 boot-checks.txt        console commands CI runs on real Paper and Folia servers
 ```
 

@@ -17,6 +17,8 @@ shadow = "9.6.1"
 resource-factory = "1.4.0"
 run-paper = "3.1.0"
 minotaur = "2.10.0"
+# Publishes each plugin's API to Maven Central through the Central Portal, as NeoSkript does.
+maven-publish = "0.37.0"
 # xBackup's SFTP and FTP remotes. Never shaded: xBackup downloads the jar the first time a
 # remote needs it and checks it against the SHA-256 in its Libraries class, which a test
 # compares with these.
@@ -24,6 +26,8 @@ jsch = "2.28.8"
 commons-net = "3.13.0"
 # The copy-paste detector the root build runs across modules.
 pmd = "7.29.0"
+# Reads each API's class files for its signature check (build-logic), as NeoSkript does.
+asm = "9.11.1"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -41,6 +45,7 @@ sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
 jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }
 commons-net = { module = "commons-net:commons-net", version.ref = "commons-net" }
 pmd-cli = { module = "net.sourceforge.pmd:pmd-cli", version.ref = "pmd" }
@@ -51,3 +56,4 @@ shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 resource-factory = { id = "xyz.jpenilla.resource-factory-paper-convention", version.ref = "resource-factory" }
 run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }
 minotaur = { id = "com.modrinth.minotaur", version.ref = "minotaur" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }

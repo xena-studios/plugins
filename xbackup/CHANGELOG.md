@@ -40,4 +40,4 @@ The first release. Drop the jar in and start the server: it backs up every hour 
 
 ### For developers
 
-- A developer API, `co.xenastudios:xbackup-api`: run a backup, read the list and status from memory, add folders to back up, keep a plugin's files still while they're read, add a storage type, and `BackupStartEvent` (cancellable), `BackupFinishedEvent` and `BackupFailedEvent`.
+- A developer API, `co.xenastudios.xbackup:xbackup-api`: run a backup, read the list and status from memory, add folders to back up, keep a plugin's files still while they're read, add a storage type, and `BackupStartEvent` (cancellable), `BackupFinishedEvent` and `BackupFailedEvent`.

@@ -25,7 +25,7 @@ XR_MYSQL=127.0.0.1:3307:xr:root:pw ./gradlew :xstats:test   # the engine's tests
 ```
 
 ```
-api/                     the developer API (co.xenastudios:xstats-api), shipped inside the jar
+api/                     the developer API (co.xenastudios.xstats:xstats-api), shipped inside the jar
 web/                     the website: plain HTML, CSS and JS, copied into the jar and zipped by the build
 src/main/java/co/xenastudios/xstats/
   XStats.java            the plugin: opens the database on xStats' thread, and in setup turns on the rest

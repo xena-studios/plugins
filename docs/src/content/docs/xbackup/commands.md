@@ -19,6 +19,7 @@ Every `/backup` subcommand has its own permission, `xbackup.<subcommand>`, which
 | `/backup pin <id>`, `/backup unpin <id>` | Keeps a backup forever, or lets retention remove it again. |
 | `/backup forget <id> confirm` | Removes one backup now. |
 | `/backup copy <remote>` | Copies the backups to a remote now. |
+| `/backup copy <remote> tidy [confirm]` | Lists the backups only the remote has; with `confirm`, removes them and the data no backup here needs. See [what a copy removes](/xbackup/remotes/#what-a-copy-removes). |
 | `/backup link <remote> [code]` | Links a Google Drive, OneDrive or Dropbox remote: see [Remotes](/xbackup/remotes/#cloud-drives). |
 | `/backup repair` | Rebuilds the index from the stored data, if `verify` says the index is damaged. |
 | `/xbackup reload`, `/xbackup info` | Reload the config, or show the version and settings. Need `xbackup.admin`. |

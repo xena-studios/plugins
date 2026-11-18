@@ -40,11 +40,11 @@ java -jar plugins/xbackup-1.0.0.jar restore latest
 java -jar plugins/xbackup-1.0.0.jar restore 3f9a1c2e world plugins/xRewind
 ```
 
-It shows the same summary as in game and asks before changing anything (`--yes` skips the question). It refuses while the server is running: xBackup keeps `plugins/xBackup/running.lock` locked from the moment the server starts, and each loaded world keeps its `session.lock` locked (looked for in the folders being restored, a few folders deep in the server folder, and in `bukkit.yml`'s `world-container`). `--to <folder>` restores into another folder instead, which must be new or empty, and is safe with the server running, for picking out one file by hand.
+It shows the same summary as in game and asks before changing anything (`--yes` skips the question). It refuses while the server is running: xBackup keeps `plugins/xBackup/running.lock` locked from the moment the server starts until its process exits, and each loaded world keeps its `session.lock` locked (looked for in the folders being restored, a few folders deep in the server folder, and in `bukkit.yml`'s `world-container`). The restore holds `running.lock` itself until it's done, so a server started meanwhile stops straight away, before loading any world, and says why; it checks the worlds again just before it swaps anything. `--to <folder>` restores into another folder instead, which must be new or empty, and is safe with the server running, for picking out one file by hand.
 
-A restore only ever writes inside its folder. A link in the backup that points outside the server folder isn't restored, in case the backup was tampered with; `--allow-links-outside` restores it, for links you made yourself.
+A restore only ever writes inside its folder. A link in the backup that points outside the server folder (directly, or through a link already on the disk) isn't restored, in case the backup was tampered with; `--allow-links-outside` restores it, for links you made yourself. On Windows, a name Windows would read as another file's (a trailing dot or space, a device name such as `NUL` or `COM1`, a short name such as `PROGRA~1`) is refused too.
 
-It needs only Java 21, not the server, and reads where the repository and remotes are from `plugins/xBackup/restore-settings.properties`, which the plugin keeps up to date. `--repo <folder>` points it at a repository anywhere else, such as a copy on another machine.
+It needs only Java 21, not the server, and reads where the repository and remotes are from `plugins/xBackup/restore-settings.properties`, which the plugin keeps up to date, and the remotes' passwords from `secrets.yml`. `--repo <folder>` points it at a repository anywhere else, such as a copy on another machine.
 
 ## From a remote
 

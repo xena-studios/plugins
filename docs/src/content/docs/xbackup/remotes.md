@@ -33,17 +33,21 @@ Settings a type doesn't use are ignored. Give each server its own `path`: two se
 
 Passwords, secret keys and Google Drive's client secret go in `plugins/xBackup/secrets.yml`, by remote name, never in `config.yml`. That way you can share your `config.yml` when asking for help, and it can be backed up and copied with everything else. `secrets.yml` is readable by the server's user only, and is never backed up or copied to a remote. If you put a `password` or `client-secret` in `config.yml` anyway, xBackup moves it to `secrets.yml` the next time the config loads.
 
-Nor are SFTP private key files, cloud drive tokens (`tokens.properties`) and `restore-settings.properties` ever backed up. All of them are readable by the server's user only.
+Nor are SFTP private key files, cloud drive tokens (`tokens.yml`) and `restore-settings.properties` ever backed up. All of them are readable by the server's user only; on Windows, xBackup sets their access list to the server's user alone. `restore-settings.properties` holds no passwords: the command-line restore reads them from `secrets.yml` itself, so write each value there on one line (in quotes if it has spaces or symbols).
+
+If a password was in `config.yml` before xBackup moved it, backups taken until then hold `config.yml` with the password in it, and so do the remotes' copies of them. Change that password if anyone else could read those backups.
 
 ## What a copy removes
 
-Backups that retention or `/backup forget` removed are removed from the remote too. Nothing else is: the remote is the copy you need when the server's own repository is damaged, rolled back with its disk, or restored from an old copy. So a copy removes nothing from the remote when:
+Backups that retention or `/backup forget` removed are removed from the remote too, and so is the data a clean-up gave back here. Nothing else is: the remote is the copy you need when the server's own repository is damaged, rolled back with its disk, or restored from an old copy. A pack of data that went missing here (a bad disk, a careless delete) stays on the remote for good, with the remote's index files, since older backups may need it. And a copy removes nothing from the remote when:
 
 - the server's repository has no backups, or can't read one;
 - its index lists data that's missing from its disk;
 - the remote has backups the server's repository doesn't, and didn't remove on purpose. Those backups, and the data they use, stay on the remote.
 
 The console says when it held back, and why. [Restore from the remote](/xbackup/restoring/#from-a-remote) if the server's repository lost something.
+
+When you know you won't need what only the remote has (the disk was rolled back on purpose, say), `/backup copy <name> tidy` lists the backups the remote has that this server doesn't, and how much removing them frees. `/backup copy <name> tidy confirm` copies first, then removes them, and every pack on the remote that no backup here needs. Packs holding data that backups here need, and this server lost, are kept.
 
 
 ## Second disk or network mount
@@ -102,7 +106,7 @@ Nextcloud, ownCloud, Synology, Koofr, or any WebDAV server.
 
 With TLS, xBackup checks the server's certificate: one Java trusts, for the host name in `host`, or the one whose fingerprint is in `host-key`. A server it can't check is refused, and the error gives the certificate's fingerprint.
 
-Some FTPS servers insist the data connection reuses the control connection's TLS session (vsftpd's `require_ssl_reuse`), which Java can't do; turn that setting off on the server, or use SFTP.
+Every data connection must show the same certificate as the control connection, and goes to the address the control connection reached, never to one the server names. Some FTPS servers insist the data connection reuses the control connection's TLS session (vsftpd's `require_ssl_reuse=YES`, its default), which the FTP library xBackup uses can't do: uploads fail with an error about the TLS session. Set `require_ssl_reuse=NO` in `vsftpd.conf`, or use SFTP. An upload the server stops taking fails after a minute and is sent again on the next copy.
 
 ## Libraries for SFTP and FTP
 
@@ -131,7 +135,7 @@ drive:
 
 **Dropbox.** In the [Dropbox app console](https://www.dropbox.com/developers/apps), create an app with **App folder** access, and under **Permissions** tick `files.content.write` and `files.content.read`. Its app key goes in `client-id`. `/backup link <name>` gives a link: open it, allow the app, then run `/backup link <name> <code>` with the code Dropbox shows.
 
-Unlink a drive by deleting its lines from `tokens.properties`, or revoke xBackup's access in the provider's account settings.
+Unlink a drive by deleting its lines from `tokens.yml`, or revoke xBackup's access in the provider's account settings.
 
 ## From another plugin
 

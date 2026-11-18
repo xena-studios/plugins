@@ -29,6 +29,11 @@ const files = [
   ["plugins/xrewind/icon.svg", "src/assets/plugins/xrewind.svg"],
   ["plugins/xplots/icon.svg", "src/assets/plugins/xplots.svg"],
   ["plugins/xteleport/icon.svg", "src/assets/plugins/xteleport.svg"],
+  ["plugins/xvote/icon.svg", "src/assets/plugins/xvote.svg"],
+  ["plugins/xbans/icon.svg", "src/assets/plugins/xbans.svg"],
+  ["plugins/xmoney/icon.svg", "src/assets/plugins/xmoney.svg"],
+  ["plugins/xbackup/icon.svg", "src/assets/plugins/xbackup.svg"],
+  ["plugins/xstats/icon.svg", "src/assets/plugins/xstats.svg"],
   // The READMEs' banners, for the repo, the docs and each plugin.
   ["github/plugins-banner.png", "../.github/assets/banner.png"],
   ["github/plugin-docs-banner.png", "../.github/assets/docs-banner.png"],
@@ -38,6 +43,11 @@ const files = [
   ["plugins/xrewind/banner.png", "../.github/assets/xrewind-banner.png"],
   ["plugins/xplots/banner.png", "../.github/assets/xplots-banner.png"],
   ["plugins/xteleport/banner.png", "../.github/assets/xteleport-banner.png"],
+  ["plugins/xvote/banner.png", "../.github/assets/xvote-banner.png"],
+  ["plugins/xbans/banner.png", "../.github/assets/xbans-banner.png"],
+  ["plugins/xmoney/banner.png", "../.github/assets/xmoney-banner.png"],
+  ["plugins/xbackup/banner.png", "../.github/assets/xbackup-banner.png"],
+  ["plugins/xstats/banner.png", "../.github/assets/xstats-banner.png"],
 ];
 
 for (const [from, to] of files) {

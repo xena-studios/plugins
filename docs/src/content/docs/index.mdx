@@ -1,6 +1,6 @@
 ---
 title: Xena plugin docs
-description: "Docs for xUtilities (essentials), zChat (chat formatting and filter), xLimbo (limbo and fallback server), xRewind (block logger and rollback), xPlots (rentable plots) and xTeleport (homes, TPA, warps and RTP): small, fast plugins for Paper and Folia servers by Xena Studios."
+description: "Docs for xUtilities (essentials), zChat (chat formatting and filter), xLimbo (limbo and fallback server), xRewind (block logger and rollback), xPlots (rentable plots), xTeleport (homes, TPA, warps and RTP), xVote (vote rewards and Votifier), xBans (bans, mutes and warnings), xMoney (economy and Vault provider), xBackup (incremental backups) and xStats (player stats, leaderboards and a stats website): small, fast plugins for Paper and Folia servers by Xena Studios."
 template: splash
 hero:
   tagline: Small, fast plugins for Paper servers. Each one does one job, costs next to nothing to run, and lets you switch off anything you don't use.
@@ -20,6 +20,11 @@ import xlimbo from "../../assets/plugins/xlimbo.svg";
 import xrewind from "../../assets/plugins/xrewind.svg";
 import xplots from "../../assets/plugins/xplots.svg";
 import xteleport from "../../assets/plugins/xteleport.svg";
+import xvote from "../../assets/plugins/xvote.svg";
+import xbans from "../../assets/plugins/xbans.svg";
+import xmoney from "../../assets/plugins/xmoney.svg";
+import xbackup from "../../assets/plugins/xbackup.svg";
+import xstats from "../../assets/plugins/xstats.svg";
 import Horizon from "../../components/Horizon.astro";
 
 <Horizon />
@@ -54,6 +59,31 @@ import Horizon from "../../components/Horizon.astro";
     <img src={xteleport.src} alt="" width="48" height="48" />
     <a href="/xteleport/">xTeleport</a>
     <p>Every teleport your server needs. Homes, TPA, warps, spawn and random teleport in one plugin, with warmups, cooldowns and costs.</p>
+  </li>
+  <li>
+    <img src={xvote.src} alt="" width="48" height="48" />
+    <a href="/xvote/">xVote</a>
+    <p>Votes in. Rewards out. A built-in Votifier that keeps NuVotifier's keys, rewards per site, streaks and a vote party, paid once even across a network.</p>
+  </li>
+  <li>
+    <img src={xbans.src} alt="" width="48" height="48" />
+    <a href="/xbans/">xBans</a>
+    <p>Bans, mutes and warnings, the LiteBans way. LiteBans' commands and flags, checked from memory, with templates, staff limits, alts and a one-command import.</p>
+  </li>
+  <li>
+    <img src={xmoney.src} alt="" width="48" height="48" />
+    <a href="/xmoney/">xMoney</a>
+    <p>The economy and Vault, in one plugin. Balances, /pay and /baltop, a ledger of every change, and Vault's API built in, so shops work without Vault.jar.</p>
+  </li>
+  <li>
+    <img src={xbackup.src} alt="" width="48" height="48" />
+    <a href="/xbackup/">xBackup</a>
+    <p>Backups that cost nothing, restores you can trust. Only what changed is stored, chunk by chunk, and copied to S3, SFTP, WebDAV or a cloud drive.</p>
+  </li>
+  <li>
+    <img src={xstats.src} alt="" width="48" height="48" />
+    <a href="/xstats/">xStats</a>
+    <p>Every player's stats, on your own website. Playtime that leaves out AFK time, leaderboards by day, week and month, placeholders, and a stats site your server hosts itself.</p>
   </li>
 </ul>
 

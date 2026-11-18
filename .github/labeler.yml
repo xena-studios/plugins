@@ -17,6 +17,21 @@ xplots:
 xteleport:
   - changed-files:
       - any-glob-to-any-file: xteleport/**
+xvote:
+  - changed-files:
+      - any-glob-to-any-file: xvote/**
+xbans:
+  - changed-files:
+      - any-glob-to-any-file: xbans/**
+xmoney:
+  - changed-files:
+      - any-glob-to-any-file: xmoney/**
+xbackup:
+  - changed-files:
+      - any-glob-to-any-file: xbackup/**
+xstats:
+  - changed-files:
+      - any-glob-to-any-file: xstats/**
 core:
   - changed-files:
       - any-glob-to-any-file: [core/**, build-logic/**]

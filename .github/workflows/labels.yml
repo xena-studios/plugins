@@ -41,6 +41,11 @@ jobs:
             xRewind) label=xrewind ;;
             xPlots) label=xplots ;;
             xTeleport) label=xteleport ;;
+            xVote) label=xvote ;;
+            xBans) label=xbans ;;
+            xMoney) label=xmoney ;;
+            xBackup) label=xbackup ;;
+            xStats) label=xstats ;;
             "A new plugin") label="new plugin" ;;
             *) exit 0 ;;
           esac

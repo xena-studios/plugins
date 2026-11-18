@@ -75,6 +75,11 @@ export default defineConfig({
         { label: "xRewind", items: [{ autogenerate: { directory: "xrewind" } }] },
         { label: "xPlots", items: [{ autogenerate: { directory: "xplots" } }] },
         { label: "xTeleport", items: [{ autogenerate: { directory: "xteleport" } }] },
+        { label: "xVote", items: [{ autogenerate: { directory: "xvote" } }] },
+        { label: "xBans", items: [{ autogenerate: { directory: "xbans" } }] },
+        { label: "xMoney", items: [{ autogenerate: { directory: "xmoney" } }] },
+        { label: "xBackup", items: [{ autogenerate: { directory: "xbackup" } }] },
+        { label: "xStats", items: [{ autogenerate: { directory: "xstats" } }] },
         {
           label: "More from Xena Studios",
           items: [

@@ -42,6 +42,14 @@ include("xlimbo")
 include("xrewind")
 include("xplots")
 include("xteleport")
+include("xvote")
+include("xbans")
+include("xmoney")
+// Never released: a plugin.yml plugin using Vault's APIs and a Paper plugin using the core's
+// Vault hook, so CI checks that xMoney stands in for Vault on real servers.
+include("xmoney:vault-consumer", "xmoney:hook-consumer")
+include("xbackup")
+include("xstats")
 // Each plugin's developer API (<plugin>/api, on the xena.api convention), wherever one
 // exists, so a plugin adding an API doesn't need a line here. The sandbox lists its own.
 rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" && file.resolve("api/build.gradle.kts").isFile }

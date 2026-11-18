@@ -427,6 +427,22 @@ class XBansTest {
     }
 
     @Test
+    void templatesDontGetRoundWeightsOrCaps() {
+        steve.addAttachment(plugin, "xbans.ban", true);
+        steve.addAttachment(plugin, "xbans.limit.helper", true);
+        alex.addAttachment(plugin, "xbans.exempt", true);
+        steve.performCommand("ban Alex hacking");
+        awaitSaid(steve, "can't be punished");
+        assertNull(ban(alex.getUniqueId()));
+        // The template's own 7 days is past a helper's 1d, and allowed; a typed length isn't.
+        alex.addAttachment(plugin, "xbans.exempt", false);
+        steve.performCommand("ban Alex 3d hacking");
+        awaitSaid(steve, "at most 1d");
+        steve.performCommand("ban Alex hacking");
+        await(() -> ban(alex.getUniqueId()) != null);
+    }
+
+    @Test
     void operatorsArentHelpers() {
         steve.setOp(true);
         steve.performCommand("ban Alex 7d an operator isn't capped");

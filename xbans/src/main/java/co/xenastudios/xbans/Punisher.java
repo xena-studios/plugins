@@ -51,11 +51,13 @@ public final class Punisher {
      * @param scope null for the config's default
      * @param power the sender's limits, or null for none
      * @param sender who asked, to tell them the outcome, or null for the API
+     * @param templateLength whether the length is a template's own, which isn't held to staff caps
+     *     (weights and exemptions still apply)
      */
     public record Request(
         PunishmentType type, UUID target, String targetName, String ip, boolean ipBased, Length length, String reason,
         String template, String scope, boolean silent, boolean extraSilent, UUID staff, String staffName, Power power,
-        CommandSender sender) {}
+        CommandSender sender, boolean templateLength) {}
 
     /**
      * Revoking: a player's (all their scopes, unless {@code scope} names one), an IP's, or one
@@ -138,8 +140,8 @@ public final class Punisher {
                 return new Request(request.type(), request.target(), request.targetName(), request.ip(),
                     request.ipBased() || template.ip(), length, reason, request.template(), request.scope(),
                     request.silent() || template.silent(), request.extraSilent(), request.staff(), request.staffName(),
-                    // A template's own length isn't held to staff limits; one typed with it is.
-                    request.length() != null ? request.power() : null, request.sender());
+                    // A template's own length isn't held to staff caps; one typed with it is.
+                    request.power(), request.sender(), request.length() == null);
             });
     }
 
@@ -163,7 +165,7 @@ public final class Punisher {
         if (length == null || type == PunishmentType.KICK) {
             length = Length.PERMANENT;
         }
-        if (power != null) {
+        if (power != null && !request.templateLength()) {
             Length cap = power.cap(type);
             if (cap != null && length.compareTo(cap) > 0) {
                 throw new Refusal(messages.overLimit(), Placeholders.text("max", cap.shown()));

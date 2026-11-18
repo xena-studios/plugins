@@ -37,11 +37,18 @@ class NamesTest {
         bench.close();
     }
 
-    // Two stored accounts with the same name: a name that changed hands while one was away.
+    // Two stored accounts with the same name: a name that changed hands while one was away,
+    // on a server that saved them before names were let go, or two servers at once.
     private Bench twoSteves(UUID first, UUID second) throws Exception {
         bench.ledger.open(first, "Steve", 0);
-        bench.ledger.open(second, "Steve", 0);
+        bench.ledger.open(second, "Alex", 0);
         bench.close();
+        try (java.sql.Connection connection = bench.database.connect();
+             java.sql.PreparedStatement rename = connection.prepareStatement(bench.database.sql("UPDATE {p}accounts SET name = ? WHERE uuid = ?"))) {
+            rename.setString(1, "Steve");
+            rename.setString(2, second.toString());
+            rename.executeUpdate();
+        }
         return new Bench(bench.database, false);
     }
 
@@ -57,6 +64,22 @@ class NamesTest {
             Account joined = again.ledger.open(first, "Steve", 0);
             assertSame(joined, again.accounts.named("steve"));
             assertFalse(again.accounts.ambiguous("Steve"));
+        }
+    }
+
+    @Test
+    void aClaimedNameStaysClaimedAfterARestart() throws Exception {
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        try (Bench again = twoSteves(first, second)) {
+            again.ledger.open(first, "Steve", 0);
+            again.flush();
+            assertEquals(second.toString().substring(0, 8), again.accounts.get(second).name(), "the other shows its uuid");
+        }
+        try (Bench restarted = new Bench(bench.database, false)) {
+            assertFalse(restarted.accounts.ambiguous("Steve"), "the other account's stored name was let go");
+            assertEquals(first, restarted.accounts.named("Steve").id());
+            assertEquals("", restarted.accounts.get(second).storedName());
         }
     }
 
@@ -99,5 +122,10 @@ class NamesTest {
         assertSame(alex, bench.accounts.named("Alex"), "the new account didn't take a name Alex has");
         assertEquals(20 * Money.ONE, bench.accounts.get(stranger).balance());
         assertEquals(10 * Money.ONE, steve.balance());
+        bench.flush();
+        try (Bench restarted = new Bench(bench.database, false)) {
+            assertFalse(restarted.accounts.ambiguous("Alex"), "the import didn't store a name Alex has");
+            assertEquals(alex.id(), restarted.accounts.named("Alex").id());
+        }
     }
 }

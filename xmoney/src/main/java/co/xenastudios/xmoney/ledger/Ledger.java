@@ -104,7 +104,9 @@ public final class Ledger {
 
     /**
      * The account for a uuid a plugin asks about, made empty if there's none: a plugin paying a
-     * player who never joined, or an NPC. No starting balance: that's for players joining.
+     * player who never joined, an NPC, or an import. No starting balance: that's for players
+     * joining. A name another account is known by isn't given to it (it gets none until the
+     * player joins), so names keep finding the right account after a restart.
      *
      * @param player false for an account that isn't a player's, which the top list leaves out
      */
@@ -113,9 +115,9 @@ public final class Ledger {
         if (existing != null) {
             return existing;
         }
-        String shown = name == null || name.isBlank() ? id.toString().substring(0, 8) : name;
+        String given = name == null || name.isBlank() || accounts.named(name) != null || accounts.ambiguous(name) ? "" : name;
         return accounts.getOrCreate(id, key -> {
-            Account account = new Account(key, shown, player, 0);
+            Account account = new Account(key, given, player, 0);
             writer.add(new Op.Name(account));
             return account;
         });
@@ -153,10 +155,14 @@ public final class Ledger {
             return;
         }
         synchronized (account) {
-            boolean changed = !name.equals(account.name());
-            accounts.claim(account, name);
+            boolean changed = !name.equals(account.storedName());
+            List<Account> released = accounts.claim(account, name);
             if (changed) {
                 writer.add(new Op.Name(account));
+            }
+            // Saved without their name, so it finds this player after a restart too.
+            for (Account other : released) {
+                writer.add(new Op.Name(other));
             }
         }
     }
@@ -171,7 +177,7 @@ public final class Ledger {
             return false;
         }
         synchronized (account) {
-            if (name.equals(account.name()) && account == accounts.named(name)) {
+            if (name.equals(account.storedName()) && account == accounts.named(name)) {
                 return true;
             }
             if (!accounts.rename(account, name)) {

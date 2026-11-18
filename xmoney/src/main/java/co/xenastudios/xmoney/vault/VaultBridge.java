@@ -43,8 +43,17 @@ final class VaultBridge {
         return id == null ? null : bank.accounts().get(id);
     }
 
+    /** The account by this name, or failing that, the account of the player the server has cached by it. */
     Account existing(String name) {
-        return name == null ? null : bank.accounts().named(name);
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        Account known = bank.accounts().named(name);
+        if (known != null) {
+            return known;
+        }
+        OfflinePlayer cached = Bukkit.getOfflinePlayerIfCached(name);
+        return cached == null ? null : bank.accounts().get(cached.getUniqueId());
     }
 
     /** The account to pay, made empty if there's none. Never asks the disk or the web for a name. */
@@ -66,23 +75,23 @@ final class VaultBridge {
 
     /**
      * A name-based account: the player or account by that name; a player the server knows by
-     * it (from its cache, never the disk or the web) who hasn't joined since xMoney came; or
-     * otherwise a non-player account made for it. Null if more than one account has had the
-     * name, so it can't say which is meant.
+     * it (from its cache, never the disk or the web), which also settles a name two stored
+     * accounts share; or otherwise a non-player account made for it. Null if more than one
+     * account has had the name and the server's cache doesn't say whose it is now.
      */
     Account payee(String name) {
         if (name == null || name.isBlank()) {
             return null;
         }
         Account known = bank.accounts().named(name);
-        if (known != null || bank.accounts().ambiguous(name)) {
+        if (known != null) {
             return known;
         }
         OfflinePlayer cached = Bukkit.getOfflinePlayerIfCached(name);
         if (cached != null) {
             return payee(cached.getUniqueId());
         }
-        return bank.ledger().named(name);
+        return bank.accounts().ambiguous(name) ? null : bank.ledger().named(name);
     }
 
     long balance(Account account) {

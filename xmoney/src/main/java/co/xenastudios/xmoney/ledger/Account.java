@@ -30,9 +30,19 @@ public final class Account {
         return id;
     }
 
-    /** The last name known: a player's, or the name a plugin made a non-player account under. */
+    /**
+     * The last name known, to show: a player's, or the name a plugin made a non-player account
+     * under. An account with none (its name went to another player) shows the start of its uuid.
+     */
     public String name() {
-        return name;
+        String known = name;
+        return known == null || known.isEmpty() ? id.toString().substring(0, 8) : known;
+    }
+
+    /** The name as stored, which finds the account: empty if it has none. */
+    String storedName() {
+        String known = name;
+        return known == null ? "" : known;
     }
 
     void name(String name) {

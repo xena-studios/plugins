@@ -45,7 +45,7 @@ public final class Accounts {
 
     /** The account known by this name, ignoring case, or null if none is (or more than one may be). Any thread. */
     public Account named(String name) {
-        return byName.get(key(name));
+        return name.isEmpty() ? null : byName.get(key(name));
     }
 
     /** Whether more than one account has had this name, so it can't say which is meant. Any thread. */
@@ -95,8 +95,8 @@ public final class Accounts {
     // another has makes the name ambiguous; a new one just isn't found by it.
     private void index(Account account, boolean stored) {
         synchronized (account) {
-            String name = account.name();
-            if (name != null && !name.isEmpty()) {
+            String name = account.storedName();
+            if (!name.isEmpty()) {
                 synchronized (byName) {
                     String key = key(name);
                     if (!ambiguous.contains(key)) {
@@ -137,17 +137,49 @@ public final class Accounts {
 
     /**
      * A player's name, as they join or as Mojang says it is now: it finds this account from
-     * now on, whoever had it before. Only under the account's lock.
+     * now on, whoever had it before. Any other account that had it loses it (its name is
+     * emptied), so once saved, the name can't be ambiguous again after a restart. Only under
+     * the account's lock.
+     *
+     * @return the accounts that lost the name, whose rows need saving
      */
-    void claim(Account account, String name) {
+    List<Account> claim(Account account, String name) {
         synchronized (byName) {
-            String old = account.name();
-            if (old != null && !old.equalsIgnoreCase(name)) {
+            String key = key(name);
+            String old = account.storedName();
+            if (!old.isEmpty() && !old.equalsIgnoreCase(name)) {
                 byName.remove(key(old), account);
             }
+            List<Account> released = new ArrayList<>(1);
+            Account holder = byName.get(key);
+            if (holder != null && holder != account) {
+                released.add(holder);
+            }
+            if (ambiguous.remove(key)) {
+                // Rare (a name that changed hands while both were away), so a look through every account is fine.
+                for (Account other : byId.values()) {
+                    if (other != account && other != holder && name.equalsIgnoreCase(other.storedName())) {
+                        released.add(other);
+                    }
+                }
+            }
+            for (Account other : released) {
+                other.name("");
+            }
             account.name(name);
-            ambiguous.remove(key(name));
-            byName.put(key(name), account);
+            byName.put(key, account);
+            return released;
+        }
+    }
+
+    /** An account's name is gone (another server gave it to a player): it isn't found by it any more. */
+    void forget(Account account) {
+        synchronized (byName) {
+            String old = account.storedName();
+            if (!old.isEmpty()) {
+                byName.remove(key(old), account);
+                account.name("");
+            }
         }
     }
 
@@ -164,8 +196,8 @@ public final class Accounts {
             if (other != null && other != account || ambiguous.contains(key)) {
                 return false;
             }
-            String old = account.name();
-            if (old != null && !old.equalsIgnoreCase(name)) {
+            String old = account.storedName();
+            if (!old.isEmpty() && !old.equalsIgnoreCase(name)) {
                 byName.remove(key(old), account);
             }
             account.name(name);
@@ -180,7 +212,9 @@ public final class Accounts {
      * account's lock.
      */
     void renamedElsewhere(Account account, String name) {
-        if (account.player()) {
+        if (name.isEmpty()) {
+            forget(account);
+        } else if (account.player()) {
             claim(account, name);
         } else {
             rename(account, name);

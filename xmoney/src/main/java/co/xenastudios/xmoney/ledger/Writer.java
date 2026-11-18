@@ -708,7 +708,7 @@ public final class Writer {
             return;
         }
         synchronized (account) {
-            if (name != null && !name.equals(account.name())) {
+            if (name != null && !name.equals(account.storedName())) {
                 // Renamed on another server: a player joining there under it, most likely.
                 accounts.renamedElsewhere(account, name);
             }
@@ -903,7 +903,7 @@ public final class Writer {
 
         /** An account's row, made or renamed in one statement, for the same reason as {@link #add}. */
         void account(Account account) throws SQLException {
-            String name = account.name() == null ? "" : account.name();
+            String name = account.storedName();
             if (name.length() > Schema.NAME_LENGTH) {
                 name = name.substring(0, Schema.NAME_LENGTH);
             }

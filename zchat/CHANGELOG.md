@@ -1,5 +1,13 @@
 # zChat changelog
 
+## 3.1.2
+
+Replace the jar and restart. Your config is kept as it is.
+
+### Fixed
+
+- Chat keeps what another plugin added to a message before zChat, like an `[item]` tag with its hover or a custom emoji. Before, zChat rebuilt the message from its plain text and those were lost. The filter still checks the words; if it censors any, the message is shown as plain text, as before.
+
 ## 3.1.1
 
 Replace the jar and restart. Your config is kept as it is.

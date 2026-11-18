@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.chat.SignedMessage;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
@@ -123,6 +124,27 @@ class ChatTest {
         steve.addAttachment(plugin, "zchat.chat.color", true);
         assertEquals("Steve: ********", line(chat(steve, "bad<reset>word1"), alex));
         assertEquals("Steve: ********", line(chat(steve, "b<b></b>adword1"), alex));
+    }
+
+    static boolean hovers(Component component) {
+        return component.hoverEvent() != null || component.children().stream().anyMatch(ChatTest::hovers);
+    }
+
+    @Test
+    void whatAnotherPluginAddedIsKept() {
+        chatty(steve);
+        HoverEvent<Component> hover = HoverEvent.showText(Component.text("5 diamonds"));
+        server.getPluginManager().registerEvents(new org.bukkit.event.Listener() {
+            @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+            void item(AsyncChatEvent event) {
+                event.message(event.message().replaceText(b -> b.matchLiteral("[item]")
+                    .replacement(Component.text("[Diamond]").hoverEvent(hover))));
+            }
+        }, plugin);
+        Component shown = chat(steve, "look [item]").message();
+        assertEquals("look [Diamond]", plain(shown));
+        assertTrue(hovers(shown), "the item's hover is still there");
+        assertEquals("Steve: ******** [Diamond]", line(chat(steve, "badword1 [item]"), alex), "the filter still runs on it");
     }
 
     @Test

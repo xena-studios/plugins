@@ -54,9 +54,14 @@ public final class AdminCommands {
             sub("set", "/xplots field set <field> <setting> <value or default>", this::fieldSet, (s, a) -> switch (a.length) {
                 case 1 -> completeField(s, a);
                 case 2 -> Completions.matching(a[1], Settings.KEYS);
-                case 3 -> Completions.matching(a[2], List.of("default"));
+                case 3 -> {
+                    List<String> values = new java.util.ArrayList<>(Settings.values(a[1].toLowerCase(Locale.ROOT)));
+                    values.add("default");
+                    yield Completions.matching(a[2], values);
+                }
                 default -> List.of();
             }),
+            sub("signs", "/xplots field signs <field>", this::fieldSigns, this::completeField),
             sub("setwarp", "/xplots field setwarp <field> [remove]", this::fieldWarp, (s, a) -> a.length == 2
                 ? Completions.matching(a[1], List.of("remove")) : completeField(s, a)));
         List<CommandSpec> plot = List.of(
@@ -284,7 +289,9 @@ public final class AdminCommands {
             {"max-slots", Integer.toString(settings.maxSlots())},
             {"slot-price", plugin.wallet().format(settings.slotPrice())},
             {"reset", Boolean.toString(settings.reset())},
-            {"abandon-refund", settings.abandonRefund() + "%"}};
+            {"abandon-refund", settings.abandonRefund() + "%"},
+            {"sign-position", co.xenastudios.xplots.model.SignPlacement.name(field.signPlacement(plugin.config().signs().placement()).position())},
+            {"sign-rotation", co.xenastudios.xplots.model.SignPlacement.name(field.signPlacement(plugin.config().signs().placement()).rotation())}};
         for (String[] row : rows) {
             out.append("<newline> ").append(row[0]).append(": <highlight>").append(safe(row[1])).append("</highlight>")
                 .append(own.containsKey(row[0]) ? " (this field's own)" : "");
@@ -317,8 +324,23 @@ public final class AdminCommands {
                 + safe(field.overrides().get(key)) + "</highlight>.");
         }
         plugin.store().updateField(field);
-        // Prices and periods show on signs.
-        field.plots().forEach(plugin.signs()::update);
+        if (Settings.SIGN_KEYS.contains(key)) {
+            int moved = plugin.builder().placeSigns(field);
+            reply(inv.sender(), "Moved " + moved + (moved == 1 ? " sign." : " signs."));
+        } else {
+            // Prices and periods show on signs.
+            field.plots().forEach(plugin.signs()::update);
+        }
+    }
+
+    private void fieldSigns(Invocation inv) {
+        Field field = field(inv, 0);
+        int moved = plugin.builder().placeSigns(field);
+        var placement = field.signPlacement(plugin.config().signs().placement());
+        reply(inv.sender(), (moved == 0 ? "Every sign in " + field.name() + " is already" : "Moved " + moved
+            + (moved == 1 ? " sign" : " signs") + " in " + field.name() + " to") + " <highlight>"
+            + co.xenastudios.xplots.model.SignPlacement.name(placement.position()) + ", "
+            + co.xenastudios.xplots.model.SignPlacement.name(placement.rotation()) + "</highlight>.");
     }
 
     private void fieldWarp(Invocation inv) {

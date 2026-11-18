@@ -12,7 +12,16 @@ sidebar:
 3. **Check the outline.** Every plot's edge is drawn in particles around you, with a mark where each sign will go, and chat says how many fit: *"6 × 4 = 24 plots of 5×5"*.
 4. **Confirm:** `/xplots confirm`, or `/xplots cancel` to start over. Each plot's blocks are saved, then every sign is placed.
 
-The grid is centred in your selection, and whatever is left over at the edges becomes path. Rows face each other in pairs across a path, and each sign stands on that path in the middle of its plot's edge. A path narrower than 2 blocks has no room for two rows of signs, so then each sign stands just inside its plot.
+The grid is centred in your selection, and whatever is left over at the edges becomes path. Rows face each other in pairs across a path, and each plot's sign stands on that path, at the front edge's left corner as you look at the plot. A path narrower than 2 blocks has no room for two rows of signs, so then each sign stands just inside its plot.
+
+## Where signs go
+
+| Setting | Values |
+| --- | --- |
+| `signs.position` | `left-corner` (the default), `right-corner` or `middle` of the plot's front edge, as seen from the walkway |
+| `signs.rotation` | `straight` faces the walkway; `diagonal` turns a corner sign 45° out from its corner, so it reads from both walkways where they cross |
+
+A field can have its own: `/xplots field set box sign-position middle`, or `sign-rotation diagonal`. Its signs move as soon as you set it. After changing the config's, run `/xplots field signs box` to move a field's signs to match; that also undoes signs moved by hand.
 
 From the console, select by typing the corners: `/xplots select world 0 64 0 40 70 30`.
 
@@ -47,6 +56,8 @@ Every field starts with the settings under `plots` in the [config](/xplots/confi
 | `slot-price` | What one more member slot costs. |
 | `reset` | Whether a plot is put back as it was made when its rent ends. |
 | `abandon-refund` | How much of the unused rent abandoning gives back, in percent. |
+| `sign-position` | `left-corner`, `right-corner` or `middle`: see [Where signs go](#where-signs-go). |
+| `sign-rotation` | `straight` or `diagonal`. |
 
 ## A warp
 
@@ -55,7 +66,8 @@ Stand where players should arrive and run `/xplots field setwarp box`. Players t
 ## Fixing things up
 
 - **Move a sign:** sneak and right click a block with the wand. The nearest plot's sign moves onto that block, facing you.
-- **A plot that doesn't fit the grid:** select it with the wand and run `/xplots plot create box`. It joins the field, with its settings, as the field's next number. Its sign goes outside the middle of its south edge; move it if that's not right.
+- **Turn a sign:** sneak and right click the sign itself with the wand. Each click turns it 45°.
+- **A plot that doesn't fit the grid:** select it with the wand and run `/xplots plot create box`. It joins the field, with its settings, as the field's next number. Its sign goes outside its south edge, placed as the field's signs are; move it if that's not right.
 - **A plot's staff menu:** sneak and left click inside the plot with the wand, for its owner and members, teleport, evict and reset.
 - **Remove a plot or a field:** `/xplots plot delete box-12`, or `/xplots field delete box` (which asks you to confirm). Rentals end with no refund and signs come down; the blocks stay as they are.
 

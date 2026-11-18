@@ -17,7 +17,7 @@ xPlots rents small plots to players for in-game money: the box-server staple. Us
 - **Vault or your own coin.** Rent goes through your economy, or takes an item instead, so a box server's Coin works as it is.
 - **Every feature free.** No early-access builds, nothing behind a Patreon.
 
-Current version: **1.0.0**, for Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xplots).
+Current version: **1.0.1**, for Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xplots).
 
 ## How it works
 

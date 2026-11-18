@@ -38,7 +38,7 @@ class StoreTest {
 
         Layout layout = Layout.of(Box.of(0, 64, 0, 11, 70, 4), 5, 5, 2);
         Field field = new Field(1, "box", "world", layout);
-        for (Layout.Spot spot : layout.spots()) {
+        for (Layout.Spot spot : layout.spots(new co.xenastudios.xplots.model.SignPlacement(co.xenastudios.xplots.model.SignPlacement.Position.MIDDLE, co.xenastudios.xplots.model.SignPlacement.Rotation.STRAIGHT))) {
             field.add(new Plot(field, spot.number(), spot.box(), spot.signX(), spot.signY(), spot.signZ(), spot.facing()));
         }
         field.override("price", "250");

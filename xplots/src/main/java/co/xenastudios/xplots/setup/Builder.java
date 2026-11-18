@@ -5,6 +5,7 @@ import co.xenastudios.xplots.model.Box;
 import co.xenastudios.xplots.model.Field;
 import co.xenastudios.xplots.model.Layout;
 import co.xenastudios.xplots.model.Plot;
+import co.xenastudios.xplots.model.SignPlacement;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
@@ -29,7 +30,7 @@ public final class Builder {
 
     /** Starts outlining a field for the player; pass what it returns to {@link #stopPreview}. */
     public Object preview(org.bukkit.entity.Player player, String world, Layout layout) {
-        return new Preview(plugin, player, world, layout);
+        return new Preview(plugin, player, world, layout, plugin.config().signs().placement());
     }
 
     public void stopPreview(Object preview) {
@@ -79,7 +80,7 @@ public final class Builder {
      */
     public Field createField(String name, World world, Layout layout, Runnable done) {
         Field field = new Field(++lastFieldId, name, world.getName(), layout);
-        for (Layout.Spot spot : layout.spots()) {
+        for (Layout.Spot spot : layout.spots(field.signPlacement(plugin.config().signs().placement()))) {
             field.add(new Plot(field, spot.number(), spot.box(), spot.signX(), spot.signY(), spot.signZ(), spot.facing()));
         }
         plugin.plots().index(field);
@@ -139,10 +140,10 @@ public final class Builder {
         return null;
     }
 
-    /** Makes one plot from a box, with its sign outside the middle of its south edge. */
+    /** Makes one plot from a box, with its sign outside its south edge, placed as the field's signs are. */
     public Plot createPlot(Field field, World world, Box box) {
-        Plot plot = new Plot(field, field.nextNumber(), box, box.minX() + (box.width() - 1) / 2,
-            Math.min(box.minY() + 1, box.maxY()), box.maxZ() + 1, BlockFace.SOUTH);
+        SignPlacement.Spot sign = field.signPlacement(plugin.config().signs().placement()).place(box, BlockFace.SOUTH, true);
+        Plot plot = new Plot(field, field.nextNumber(), box, sign.x(), Math.min(box.minY() + 1, box.maxY()), sign.z(), sign.facing());
         plugin.plots().add(plot);
         plugin.store().savePlot(plot);
         if (!field.layout().area().overlapsColumns(box)) {
@@ -150,6 +151,47 @@ public final class Builder {
         }
         plugin.resets().capture(List.of(plot), () -> plugin.signs().place(plot));
         return plot;
+    }
+
+    /**
+     * Puts every sign in the field where its sign settings say, undoing any moved by hand.
+     * Grid plots face their walkway; plots made by themselves face south.
+     *
+     * @return how many signs moved
+     */
+    public int placeSigns(Field field) {
+        SignPlacement placement = field.signPlacement(plugin.config().signs().placement());
+        java.util.Map<Integer, Layout.Spot> grid = new java.util.HashMap<>();
+        for (Layout.Spot spot : field.layout().spots(placement)) {
+            grid.put(spot.number(), spot);
+        }
+        int moved = 0;
+        for (Plot plot : field.plots()) {
+            Layout.Spot spot = grid.get(plot.number());
+            int x;
+            int z;
+            BlockFace facing;
+            if (spot != null && spot.box().equals(plot.box())) {
+                x = spot.signX();
+                z = spot.signZ();
+                facing = spot.facing();
+            } else {
+                SignPlacement.Spot sign = placement.place(plot.box(), BlockFace.SOUTH, true);
+                x = sign.x();
+                z = sign.z();
+                facing = sign.facing();
+            }
+            int y = Math.min(plot.box().minY() + 1, plot.box().maxY());
+            if (x == plot.signX() && y == plot.signY() && z == plot.signZ() && facing == plot.signFacing()) {
+                continue;
+            }
+            plugin.signs().remove(plot);
+            plugin.plots().moveSign(plot, x, y, z, facing);
+            plugin.store().savePlot(plot);
+            plugin.signs().place(plot);
+            moved++;
+        }
+        return moved;
     }
 
     /** Deletes one plot: its rent ends, its sign comes down, its blocks stay. */

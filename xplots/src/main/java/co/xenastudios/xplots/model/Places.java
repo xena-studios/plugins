@@ -17,13 +17,17 @@ public final class Places {
         BlockFace facing = plot.signFacing();
         int x = plot.signX();
         int z = plot.signZ();
+        int stepX = Integer.signum(facing.getModX());
+        int stepZ = Integer.signum(facing.getModZ());
         if (plot.box().containsColumn(x, z)) {
             // The sign stands inside the plot's edge: stand just outside it.
-            x += facing.getModX();
-            z += facing.getModZ();
+            x += stepX;
+            z += stepZ;
         }
         Location location = new Location(world, x + 0.5, plot.signY(), z + 0.5);
-        location.setDirection(new org.bukkit.util.Vector(-facing.getModX(), 0, -facing.getModZ()));
+        if (stepX != 0 || stepZ != 0) {
+            location.setDirection(new org.bukkit.util.Vector(-facing.getModX(), 0, -facing.getModZ()));
+        }
         return location;
     }
 

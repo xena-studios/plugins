@@ -50,6 +50,8 @@ public final class ChangeFeed implements AutoCloseable {
     static final long GAP_WAIT_MS = 15_000;
     /** Ids skipped at once beyond which they aren't waited for (a big rollback, or another cluster's numbering). */
     static final int MAX_GAP = 1_000;
+    /** Most missing ids waited for at once; the oldest are given up first. */
+    static final int MAX_WAITING = 5_000;
     static final long KEEP_MS = Duration.ofMinutes(10).toMillis();
     static final long PRUNE_EVERY_MS = Duration.ofMinutes(1).toMillis();
 
@@ -255,6 +257,9 @@ public final class ChangeFeed implements AutoCloseable {
                 }
             }
             gaps.values().removeIf(seen -> now - seen > GAP_WAIT_MS);
+            while (gaps.size() > MAX_WAITING) {
+                gaps.pollFirstEntry();
+            }
             if (now - lastPrune >= PRUNE_EVERY_MS) {
                 lastPrune = now;
                 prune(connection, now);

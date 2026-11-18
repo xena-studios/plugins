@@ -236,17 +236,18 @@ final class CloudDrives {
             if (session.statusCode() != 200 || location == null) {
                 throw failed("Starting the upload of " + file, session);
             }
+            long size = Files.size(source);
             HttpResponse<byte[]> uploaded = send("Uploading " + file, () -> request(location)
-                .PUT(Http.file(source, throttle)).build());
+                .timeout(Http.uploadTimeout(size, throttle)).PUT(Http.file(source, throttle)).build());
             if (uploaded.statusCode() != 200 && uploaded.statusCode() != 201) {
                 throw failed("Uploading " + file, uploaded);
             }
             Map<String, Object> reply = Json.object(Http.utf8(uploaded.body()));
             String id = Json.string(reply, "id");
-            long size = Long.parseLong(Json.string(reply, "size") == null ? "-1" : Json.string(reply, "size"));
-            if (size >= 0 && size != Files.size(source)) {
-                throw new IOException("remote " + name + " holds " + size + " bytes of " + file + " after uploading "
-                    + Files.size(source) + "; it will be sent again next time.");
+            long stored = Long.parseLong(Json.string(reply, "size") == null ? "-1" : Json.string(reply, "size"));
+            if (stored >= 0 && stored != size) {
+                throw new IOException("remote " + name + " holds " + stored + " bytes of " + file + " after uploading "
+                    + size + "; it will be sent again next time.");
             }
             String old = ids.put(file, id);
             sizes.put(file, Files.size(source));
@@ -313,6 +314,9 @@ final class CloudDrives {
     /** OneDrive, through Microsoft Graph, in the app's own folder ({@code Apps/<app name>}). */
     static final class OneDrive extends Cloud {
 
+        /** Graph takes files under 4 MiB in a simple PUT; bigger ones need an upload session. */
+        static final long SIMPLE_UPLOAD = 4L << 20;
+
         OneDrive(String name, RemoteConfig settings, String folder, Remotes.Context context) {
             super(name, "onedrive", settings, folder, context);
         }
@@ -330,6 +334,18 @@ final class CloudDrives {
         public void put(String file, Path source) throws IOException {
             Backend.checkName(file);
             long size = Files.size(source);
+            if (size < SIMPLE_UPLOAD) {
+                // Small files, empty ones (pins) included, in one simple PUT: an upload session
+                // can't carry an empty file (its Content-Range would be "bytes 0--1/0").
+                HttpResponse<byte[]> uploaded = send("Uploading " + file, () -> request(item(file)
+                    + "/content?@microsoft.graph.conflictBehavior=replace").header("Content-Type", "application/octet-stream")
+                    .timeout(Http.uploadTimeout(size, throttle)).PUT(Http.file(source, throttle)).build());
+                if (uploaded.statusCode() != 200 && uploaded.statusCode() != 201) {
+                    throw failed("Uploading " + file, uploaded);
+                }
+                checkSize(name, file, Json.number(Json.object(Http.utf8(uploaded.body())), "size", -1), size);
+                return;
+            }
             String body = "{\"item\":{\"@microsoft.graph.conflictBehavior\":\"replace\"}}";
             HttpResponse<byte[]> session = send("Starting the upload of " + file, () -> request(item(file)
                 + "/createUploadSession").header("Content-Type", "application/json")
@@ -340,7 +356,7 @@ final class CloudDrives {
             String url = Json.string(Json.object(Http.utf8(session.body())), "uploadUrl");
             // One request for the whole file: packs are well under the 60 MiB a request may carry.
             HttpResponse<byte[]> uploaded = Http.retry(() -> Http.send(HttpRequest.newBuilder(URI.create(url))
-                .timeout(Duration.ofMinutes(10)).header("Content-Range", "bytes 0-" + (size - 1) + "/" + size)
+                .timeout(Http.uploadTimeout(size, throttle)).header("Content-Range", "bytes 0-" + (size - 1) + "/" + size)
                 .PUT(Http.file(source, throttle)).build()));
             if (uploaded.statusCode() != 200 && uploaded.statusCode() != 201) {
                 throw failed("Uploading " + file, uploaded);
@@ -448,7 +464,7 @@ final class CloudDrives {
             args.put("mute", true);
             HttpResponse<byte[]> response = send("Uploading " + file, () -> request(BASES.get("dropbox-content")
                 + "/2/files/upload").header("Dropbox-API-Arg", arg(args)).header("Content-Type", "application/octet-stream")
-                .POST(Http.file(source, throttle)).build());
+                .timeout(Http.uploadTimeout(size, throttle)).POST(Http.file(source, throttle)).build());
             if (response.statusCode() != 200) {
                 throw failed("Uploading " + file, response);
             }

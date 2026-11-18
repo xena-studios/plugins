@@ -32,9 +32,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * Every network remote against a real server: MinIO for S3, Apache for WebDAV, OpenSSH for
- * SFTP and vsftpd for FTP, run in Docker. Skipped unless XB_REMOTES is set; the servers to
- * start are in the docs' contributing notes (xbackup/README.md).
+ * Every network remote against a real server: MinIO for S3, Apache for WebDAV (and rclone for
+ * WebDAV served below the root, as Nextcloud does), OpenSSH for SFTP, and vsftpd for FTP and
+ * for FTPS with a self-signed certificate, run in Docker. Skipped unless XB_REMOTES is set;
+ * the servers to start are in xbackup/README.md. XB_FTPS_PIN is the FTPS certificate's
+ * SHA-256 fingerprint.
  */
 class RemoteTest {
 
@@ -42,7 +44,7 @@ class RemoteTest {
     Path dir;
 
     static Stream<String> remotes() {
-        return Stream.of("s3", "webdav", "sftp", "ftp");
+        return Stream.of("s3", "webdav", "webdav-below-root", "sftp", "ftp", "ftps");
     }
 
     private Backend open(String type) throws Exception {
@@ -56,10 +58,16 @@ class RemoteTest {
                 "xbackup", "pass", "", 0, "", "", "explicit", "", "");
             case "sftp" -> new RemoteConfig("sftp", true, "upload/" + folder, "", "", "", false, "xbackup", "pass",
                 "127.0.0.1", 12222, "", "", "explicit", "", "");
+            case "webdav-below-root" -> new RemoteConfig("webdav", true, folder,
+                "http://127.0.0.1:18081/remote.php/dav/files/xbackup", "", "", false, "xbackup", "pass", "", 0, "", "",
+                "explicit", "", "");
+            case "ftps" -> new RemoteConfig("ftp", true, folder, "", "", "", false, "xbackup", "pass", "127.0.0.1", 12990,
+                "", System.getenv().getOrDefault("XB_FTPS_PIN", ""), "explicit", "", "");
             default -> new RemoteConfig("ftp", true, folder, "", "", "", false, "xbackup", "pass", "127.0.0.1", 12121,
                 "", "", "none", "", "");
         };
-        Backend backend = Remotes.open(type, settings, context);
+        Backend backend = Remotes.open(type.startsWith("webdav") ? "webdav" : type.startsWith("ftp") ? "ftp" : type,
+            settings, context);
         if (backend instanceof S3Backend s3) {
             s3.createBucket();
         }
@@ -78,9 +86,12 @@ class RemoteTest {
             Files.write(file, data);
             backend.put("index/two", file);
             backend.put("index/two", file);
+            // A pin is an empty file.
+            backend.put("keep/" + "ab".repeat(32), new byte[0]);
             List<Backend.FileInfo> listed = backend.list("");
-            assertEquals(Set.of(new Backend.FileInfo("data/ab/one", 300_000), new Backend.FileInfo("index/two", 300_000)),
-                Set.copyOf(listed));
+            assertEquals(Set.of(new Backend.FileInfo("data/ab/one", 300_000), new Backend.FileInfo("index/two", 300_000),
+                new Backend.FileInfo("keep/" + "ab".repeat(32), 0)), Set.copyOf(listed));
+            backend.delete("keep/" + "ab".repeat(32));
             assertEquals(1, backend.list("data/").size());
             try (InputStream in = backend.get("data/ab/one")) {
                 assertArrayEquals(data, in.readAllBytes());
@@ -128,6 +139,33 @@ class RemoteTest {
         assertEquals(expected.keySet(), actual.keySet());
         for (String path : expected.keySet()) {
             assertArrayEquals(expected.get(path), actual.get(path), path);
+        }
+    }
+
+    @org.junit.jupiter.api.Test
+    void ftpsRefusesACertificateJavaDoesntTrust() throws Exception {
+        assumeTrue(System.getenv("XB_REMOTES") != null, "XB_REMOTES isn't set");
+        Remotes.Context context = new Remotes.Context(dir.resolve("home"), Throttle.NONE, Logger.getLogger("test"), t -> null);
+        Files.createDirectories(context.home());
+        RemoteConfig unpinned = new RemoteConfig("ftp", true, "xb", "", "", "", false, "xbackup", "pass", "127.0.0.1", 12990,
+            "", "", "explicit", "", "");
+        try (Backend backend = Remotes.open("ftps", unpinned, context)) {
+            java.io.IOException refused = assertThrows(java.io.IOException.class, () -> backend.list(""));
+            assertTrue(String.valueOf(refused.getMessage()).contains("couldn't connect"), refused.getMessage());
+            Throwable cause = refused;
+            StringBuilder messages = new StringBuilder();
+            while (cause != null) {
+                messages.append(cause.getMessage()).append(" | ");
+                cause = cause.getCause();
+            }
+            assertTrue(messages.toString().contains("SHA256:"), "says the fingerprint to pin: " + messages);
+        }
+        String pin = System.getenv("XB_FTPS_PIN");
+        assumeTrue(pin != null, "XB_FTPS_PIN isn't set");
+        RemoteConfig wrong = new RemoteConfig("ftp", true, "xb", "", "", "", false, "xbackup", "pass", "127.0.0.1", 12990,
+            "", "SHA256:" + "A".repeat(43), "explicit", "", "");
+        try (Backend backend = Remotes.open("ftps", wrong, context)) {
+            assertThrows(java.io.IOException.class, () -> backend.list(""));
         }
     }
 }

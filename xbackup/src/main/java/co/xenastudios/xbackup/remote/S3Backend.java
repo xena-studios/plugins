@@ -2,7 +2,6 @@ package co.xenastudios.xbackup.remote;
 
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.Throttle;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -189,7 +188,7 @@ final class S3Backend implements Backend {
             "Content-Type", "application/octet-stream");
         Http.retry(() -> {
             HttpResponse<byte[]> response = Http.send(request("PUT", uri(key, Map.of()), headers, payload,
-                Http.file(source, throttle)).build());
+                Http.file(source, throttle)).timeout(Http.uploadTimeout(Files.size(source), throttle)).build());
             check("Uploading " + file, response);
             return null;
         });
@@ -204,7 +203,7 @@ final class S3Backend implements Backend {
         Http.retry(() -> {
             throttle.acquire(data.length);
             HttpResponse<byte[]> response = Http.send(request("PUT", uri(key, Map.of()), headers, payload,
-                HttpRequest.BodyPublishers.ofByteArray(data)).build());
+                HttpRequest.BodyPublishers.ofByteArray(data)).timeout(Http.uploadTimeout(data.length, throttle)).build());
             check("Uploading " + file, response);
             return null;
         });
@@ -214,15 +213,18 @@ final class S3Backend implements Backend {
     public InputStream get(String file) throws IOException {
         String key = key(Backend.checkName(file));
         return Http.retry(() -> {
-            HttpResponse<InputStream> response = Http.stream(request("GET", uri(key, Map.of()), Map.of(), EMPTY_SHA256,
+            Http.Download response = Http.download(request("GET", uri(key, Map.of()), Map.of(), EMPTY_SHA256,
                 HttpRequest.BodyPublishers.noBody()).build());
-            if (response.statusCode() == 404) {
+            if (response.status() == 404) {
                 response.body().close();
                 throw new NoSuchFileException(file);
             }
-            if (response.statusCode() / 100 != 2) {
-                byte[] body = response.body().readAllBytes();
-                throw Http.failure("Downloading " + file, response.statusCode(), errorOf(body));
+            if (response.status() / 100 != 2) {
+                byte[] body;
+                try (InputStream in = response.body()) {
+                    body = in.readNBytes(64 * 1024);
+                }
+                throw Http.failure("Downloading " + file, response.status(), errorOf(body));
             }
             return response.body();
         });
@@ -242,7 +244,7 @@ final class S3Backend implements Backend {
                 throw new NoSuchFileException(file);
             }
             if (response.statusCode() == 416) {
-                throw new EOFException(file + " is shorter than " + (offset + length) + " bytes");
+                throw new Http.ShortFile(file, offset + length);
             }
             check("Reading " + file, response);
             return Http.ranged(response, file, offset, length);

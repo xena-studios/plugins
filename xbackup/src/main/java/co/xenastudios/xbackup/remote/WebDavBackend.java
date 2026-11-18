@@ -2,11 +2,9 @@ package co.xenastudios.xbackup.remote;
 
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.Throttle;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -93,22 +91,32 @@ final class WebDavBackend implements Backend {
         Backend.checkName(file);
         makeFolders(file);
         String temp = file + ".part-" + UUID.randomUUID().toString().substring(0, 8);
-        Http.retry(() -> {
-            HttpResponse<byte[]> response = Http.send(request(uri(temp), "PUT", body.get())
-                .header("Content-Type", "application/octet-stream").build());
-            check("Uploading " + file, response);
-            return null;
-        });
-        Http.retry(() -> {
-            HttpResponse<byte[]> response = Http.send(request(uri(temp), "MOVE", HttpRequest.BodyPublishers.noBody())
-                .header("Destination", uri(file).toString()).header("Overwrite", "T").build());
-            check("Moving " + file + " into place", response);
-            return null;
-        });
-        long stored = size(file);
-        if (stored != size) {
-            throw new IOException("Remote " + name + " holds " + stored + " bytes of " + file + " after uploading " + size
-                + "; it will be sent again next time.");
+        try {
+            Http.retry(() -> {
+                HttpResponse<byte[]> response = Http.send(request(uri(temp), "PUT", body.get())
+                    .timeout(Http.uploadTimeout(size, throttle)).header("Content-Type", "application/octet-stream").build());
+                check("Uploading " + file, response);
+                return null;
+            });
+            // Checked under the temporary name, so a cut-off copy never takes the real one.
+            long stored = size(temp);
+            if (stored != size) {
+                throw new IOException("Remote " + name + " holds " + stored + " bytes of " + file + " after uploading "
+                    + size + "; it will be sent again next time.");
+            }
+            Http.retry(() -> {
+                HttpResponse<byte[]> response = Http.send(request(uri(temp), "MOVE", HttpRequest.BodyPublishers.noBody())
+                    .header("Destination", uri(file).toString()).header("Overwrite", "T").build());
+                check("Moving " + file + " into place", response);
+                return null;
+            });
+        } catch (IOException | RuntimeException e) {
+            try {
+                delete(temp);
+            } catch (IOException | RuntimeException ignored) {
+                // Listings skip .part- files; the next failure-free upload of it replaces nothing.
+            }
+            throw e;
         }
     }
 
@@ -163,15 +171,15 @@ final class WebDavBackend implements Backend {
     @Override
     public InputStream get(String file) throws IOException {
         return Http.retry(() -> {
-            HttpResponse<InputStream> response = Http.stream(request(uri(Backend.checkName(file)), "GET",
+            Http.Download response = Http.download(request(uri(Backend.checkName(file)), "GET",
                 HttpRequest.BodyPublishers.noBody()).build());
-            if (response.statusCode() == 404) {
+            if (response.status() == 404) {
                 response.body().close();
                 throw new NoSuchFileException(file);
             }
-            if (response.statusCode() / 100 != 2) {
+            if (response.status() / 100 != 2) {
                 response.body().close();
-                throw Http.failure("Downloading " + file + " from remote " + name, response.statusCode(), null);
+                throw Http.failure("Downloading " + file + " from remote " + name, response.status(), null);
             }
             return response.body();
         });
@@ -189,7 +197,7 @@ final class WebDavBackend implements Backend {
                 throw new NoSuchFileException(file);
             }
             if (response.statusCode() == 416) {
-                throw new EOFException(file + " is shorter than " + (offset + length) + " bytes");
+                throw new Http.ShortFile(file, offset + length);
             }
             check("Reading " + file, response);
             return Http.ranged(response, file, offset, length);
@@ -203,7 +211,7 @@ final class WebDavBackend implements Backend {
         String start = slash < 0 ? "" : prefix.substring(0, slash + 1);
         Deque<String> folders = new ArrayDeque<>();
         folders.add(start);
-        String basePath = URLDecoder.decode(base.getRawPath(), StandardCharsets.UTF_8);
+        String basePath = Http.decodePath(base.getRawPath());
         while (!folders.isEmpty()) {
             String folder = folders.poll();
             URI uri = folder.isEmpty() ? base : base.resolve(Http.encode(folder, true));
@@ -220,11 +228,15 @@ final class WebDavBackend implements Backend {
                 if (href == null) {
                     continue;
                 }
-                String path = URLDecoder.decode(URI.create(href.strip()).getRawPath(), StandardCharsets.UTF_8);
+                String path = Http.decodePath(URI.create(href.strip()).getRawPath());
                 if (!path.startsWith(basePath)) {
                     continue;
                 }
                 String relative = path.substring(basePath.length());
+                if (relative.isEmpty() || relative.equals("/")) {
+                    // The folder listed itself. Following it as "/" would list the server's root.
+                    continue;
+                }
                 boolean collection = !Http.all(entry, "collection").isEmpty();
                 if (collection) {
                     String child = relative.endsWith("/") ? relative : relative + "/";

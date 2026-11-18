@@ -40,6 +40,7 @@ public final class FtpBackend implements Backend {
     private final String security;
     private final String root;
     private final Remotes.Context context;
+    private final byte[] pin;
     private FTPClient ftp;
 
     public FtpBackend(String name, RemoteConfig settings, String prefix, Remotes.Context context) {
@@ -54,6 +55,130 @@ public final class FtpBackend implements Backend {
         this.password = settings.password();
         this.root = prefix;
         this.context = context;
+        this.pin = settings.hostKey().isBlank() ? null : fingerprint(settings.hostKey(), name);
+        if (pin != null && security.equals("none")) {
+            throw new IllegalArgumentException("host-key is a TLS certificate's fingerprint, but remote " + name
+                + " has security: none.");
+        }
+    }
+
+    /**
+     * A certificate fingerprint as owners copy it: {@code SHA256:} and then base64 (as OpenSSH
+     * prints keys), or hex with or without colons (as {@code openssl x509 -fingerprint
+     * -sha256} prints certificates).
+     */
+    static byte[] fingerprint(String text, String name) {
+        String value = text.strip();
+        if (value.regionMatches(true, 0, "SHA256:", 0, 7)) {
+            value = value.substring(7);
+        }
+        String hex = value.replace(":", "");
+        if (hex.length() == 64 && hex.chars().allMatch(c -> Character.digit(c, 16) >= 0)) {
+            return java.util.HexFormat.of().parseHex(hex.toLowerCase(Locale.ROOT));
+        }
+        try {
+            byte[] bytes = java.util.Base64.getDecoder().decode(value.endsWith("=") ? value : value + "=".repeat((4 - value.length() % 4) % 4));
+            if (bytes.length == 32) {
+                return bytes;
+            }
+        } catch (IllegalArgumentException e) {
+            // Not base64 either.
+        }
+        throw new IllegalArgumentException("host-key for remote " + name + " isn't a SHA-256 fingerprint (SHA256:... or"
+            + " 64 hex digits).");
+    }
+
+    static String fingerprint(java.security.cert.X509Certificate certificate) {
+        try {
+            byte[] hash = java.security.MessageDigest.getInstance("SHA-256").digest(certificate.getEncoded());
+            return "SHA256:" + java.util.Base64.getEncoder().withoutPadding().encodeToString(hash);
+        } catch (java.security.GeneralSecurityException e) {
+            return "unknown";
+        }
+    }
+
+    /**
+     * The certificates this remote trusts. With a pin (host-key), only the certificate with
+     * that fingerprint, which suits a self-signed one. Without, whatever the JVM trusts, for
+     * the host name connected to (checked by {@code setEndpointCheckingEnabled}). Commons Net's
+     * default would accept any certificate that's in date.
+     */
+    static javax.net.ssl.X509TrustManager trust(byte[] pin, String name) throws IOException {
+        if (pin != null) {
+            return new javax.net.ssl.X509TrustManager() {
+                @Override
+                public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType)
+                    throws java.security.cert.CertificateException {
+                    throw new java.security.cert.CertificateException("not a server");
+                }
+
+                @Override
+                public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
+                    throws java.security.cert.CertificateException {
+                    if (chain == null || chain.length == 0) {
+                        throw new java.security.cert.CertificateException("the server sent no certificate");
+                    }
+                    String seen = fingerprint(chain[0]);
+                    try {
+                        byte[] hash = java.security.MessageDigest.getInstance("SHA-256").digest(chain[0].getEncoded());
+                        if (!java.security.MessageDigest.isEqual(hash, pin)) {
+                            throw new java.security.cert.CertificateException("the server's certificate is " + seen
+                                + ", not the host-key set for remote " + name);
+                        }
+                    } catch (java.security.NoSuchAlgorithmException e) {
+                        throw new java.security.cert.CertificateException(e);
+                    }
+                }
+
+                @Override
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                    return new java.security.cert.X509Certificate[0];
+                }
+            };
+        }
+        javax.net.ssl.X509TrustManager system;
+        try {
+            javax.net.ssl.TrustManagerFactory factory = javax.net.ssl.TrustManagerFactory.getInstance(
+                javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm());
+            factory.init((java.security.KeyStore) null);
+            system = null;
+            for (javax.net.ssl.TrustManager manager : factory.getTrustManagers()) {
+                if (manager instanceof javax.net.ssl.X509TrustManager x509) {
+                    system = x509;
+                }
+            }
+        } catch (java.security.GeneralSecurityException e) {
+            throw new IOException("Java's trusted certificates can't be loaded: " + e.getMessage(), e);
+        }
+        if (system == null) {
+            throw new IOException("Java has no trusted certificates to check the server's against.");
+        }
+        javax.net.ssl.X509TrustManager checked = system;
+        return new javax.net.ssl.X509TrustManager() {
+            @Override
+            public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType)
+                throws java.security.cert.CertificateException {
+                checked.checkClientTrusted(chain, authType);
+            }
+
+            @Override
+            public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
+                throws java.security.cert.CertificateException {
+                try {
+                    checked.checkServerTrusted(chain, authType);
+                } catch (java.security.cert.CertificateException e) {
+                    String seen = chain == null || chain.length == 0 ? "" : " Its fingerprint is " + fingerprint(chain[0])
+                        + "; if it's your server's own (self-signed) certificate, set host-key to that.";
+                    throw new java.security.cert.CertificateException("Java doesn't trust the server's certificate ("
+                        + e.getMessage() + ")." + seen, e);
+                }
+            }
+
+            @Override
+            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                return checked.getAcceptedIssuers();
+            }
+        };
     }
 
     private static String require(String value, String what, String name) {
@@ -83,12 +208,25 @@ public final class FtpBackend implements Backend {
             }
         }
         closeQuietly();
-        FTPClient client = security.equals("none") ? new FTPClient() : new FTPSClient("TLS", security.equals("implicit"));
+        FTPClient client;
+        if (security.equals("none")) {
+            client = new FTPClient();
+        } else {
+            FTPSClient secure = new FTPSClient("TLS", security.equals("implicit"));
+            secure.setTrustManager(trust(pin, name));
+            // The host name is checked against the certificate, unless it's pinned by fingerprint.
+            secure.setEndpointCheckingEnabled(pin == null);
+            client = secure;
+        }
         client.setConnectTimeout(20_000);
         client.setDefaultTimeout(60_000);
+        // A transfer that stops moving fails instead of holding the only worker for good.
+        client.setDataTimeout(Duration.ofSeconds(60));
         client.setControlKeepAliveTimeout(Duration.ofSeconds(30));
+        client.setControlKeepAliveReplyTimeout(Duration.ofSeconds(30));
         try {
             client.connect(host, port);
+            client.setSoTimeout(60_000);
             if (!FTPReply.isPositiveCompletion(client.getReplyCode())) {
                 throw new IOException("the server said " + client.getReplyString().strip());
             }
@@ -136,35 +274,74 @@ public final class FtpBackend implements Backend {
     @Override
     public synchronized void put(String file, Path source) throws IOException {
         long size = Files.size(source);
-        try (InputStream in = context.upload().wrap(Files.newInputStream(source))) {
-            upload(file, in, size);
-        }
+        upload(file, () -> context.upload().wrap(Files.newInputStream(source)), size);
     }
 
     @Override
     public synchronized void put(String file, byte[] data) throws IOException {
-        upload(file, new ByteArrayInputStream(data), data.length);
+        upload(file, () -> new ByteArrayInputStream(data), data.length);
     }
 
-    private void upload(String file, InputStream in, long size) throws IOException {
+    private interface Source {
+        InputStream open() throws IOException;
+    }
+
+    private void upload(String file, Source source, long size) throws IOException {
         String target = path(Backend.checkName(file));
         String temp = target + ".part-" + UUID.randomUUID().toString().substring(0, 8);
         FTPClient client = client();
-        makeFolders(client, target);
-        if (!client.storeFile(temp, in)) {
-            throw failed("uploading " + file, client);
-        }
-        if (!client.rename(temp, target)) {
-            client.deleteFile(target);
-            if (!client.rename(temp, target)) {
-                throw failed("moving " + file + " into place", client);
+        try {
+            makeFolders(client, target);
+            try (InputStream in = source.open()) {
+                if (!client.storeFile(temp, in)) {
+                    throw failed("uploading " + file, client);
+                }
             }
+            // Checked under the temporary name, so a cut-off copy never takes the real name.
+            long stored = storedSize(client, temp);
+            if (stored != size) {
+                throw new IOException("remote " + name + " holds " + stored + " bytes of " + file + " after uploading "
+                    + size + "; it will be sent again next time.");
+            }
+            if (!client.rename(temp, target)) {
+                client.deleteFile(target);
+                if (!client.rename(temp, target)) {
+                    throw failed("moving " + file + " into place", client);
+                }
+            }
+        } catch (IOException e) {
+            try {
+                if (ftp != null && ftp.isConnected()) {
+                    ftp.deleteFile(temp);
+                }
+            } catch (IOException ignored) {
+                // Listings skip .part- files.
+            }
+            throw e;
         }
-        long stored = size(client, target);
-        if (stored >= 0 && stored != size) {
-            throw new IOException("remote " + name + " holds " + stored + " bytes of " + file + " after uploading " + size
-                + "; it will be sent again next time.");
+    }
+
+    // A file's size: SIZE if the server has it, else MLST, else a listing of just that file.
+    // Never assumed: an upload that can't be checked isn't put in place.
+    private long storedSize(FTPClient client, String path) throws IOException {
+        long size = size(client, path);
+        if (size >= 0) {
+            return size;
         }
+        try {
+            FTPFile file = client.mlistFile(path);
+            if (file != null && file.getSize() >= 0) {
+                return file.getSize();
+            }
+        } catch (IOException e) {
+            // Try a listing.
+        }
+        FTPFile[] files = client.listFiles(path);
+        if (files != null && files.length == 1 && files[0] != null && files[0].getSize() >= 0) {
+            return files[0].getSize();
+        }
+        throw new IOException("remote " + name + ": the server won't say how big " + path + " is (no SIZE, MLST or LIST),"
+            + " so the upload can't be checked and isn't used.");
     }
 
     private long size(FTPClient client, String path) throws IOException {

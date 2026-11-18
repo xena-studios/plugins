@@ -11,6 +11,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +59,7 @@ final class Http {
             } catch (java.net.http.HttpTimeoutException | java.net.ConnectException e) {
                 last = e;
             } catch (IOException e) {
-                if (e instanceof java.nio.file.NoSuchFileException || e instanceof Permanent) {
+                if (e instanceof java.nio.file.NoSuchFileException || e instanceof Permanent || e instanceof ShortFile) {
                     throw e;
                 }
                 last = e;
@@ -74,6 +75,13 @@ final class Http {
     static final class Transient extends IOException {
         Transient(String message) {
             super(message);
+        }
+    }
+
+    /** The file really is shorter than asked for: trying again won't make it longer. */
+    static final class ShortFile extends java.io.EOFException {
+        ShortFile(String file, long end) {
+            super(file + " is shorter than " + end + " bytes");
         }
     }
 
@@ -96,6 +104,10 @@ final class Http {
     /** A file's bytes as a request body, slowed to the upload limit. */
     static HttpRequest.BodyPublisher file(Path file, Throttle throttle) throws IOException {
         long size = Files.size(file);
+        if (size == 0) {
+            // An empty file, such as a pin: the JDK refuses a stream publisher of length 0.
+            return HttpRequest.BodyPublishers.noBody();
+        }
         return HttpRequest.BodyPublishers.fromPublisher(
             HttpRequest.BodyPublishers.ofInputStream(() -> {
                 try {
@@ -108,19 +120,27 @@ final class Http {
 
     /**
      * The bytes a ranged GET asked for. A 200 means the server ignored the range and sent the
-     * whole file, so the range is cut from it.
+     * whole file, so the range is cut from it; a 206 must say it starts where asked.
      */
-    static byte[] ranged(HttpResponse<byte[]> response, String file, long offset, int length)
-        throws java.io.EOFException {
+    static byte[] ranged(HttpResponse<byte[]> response, String file, long offset, int length) throws IOException {
         byte[] body = response.body();
-        if (response.statusCode() == 200 && body.length != length) {
+        if (response.statusCode() == 200) {
             if (body.length < offset + length) {
-                throw new java.io.EOFException(file + " is shorter than " + (offset + length) + " bytes");
+                throw new ShortFile(file, offset + length);
             }
-            return java.util.Arrays.copyOfRange(body, (int) offset, (int) offset + length);
+            return offset == 0 && body.length == length ? body
+                : java.util.Arrays.copyOfRange(body, (int) offset, (int) offset + length);
+        }
+        String range = response.headers().firstValue("Content-Range").orElse(null);
+        if (range != null) {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("bytes\\s+(\\d+)-(\\d+)/.*").matcher(range.strip());
+            if (!matcher.matches() || Long.parseLong(matcher.group(1)) != offset) {
+                throw new Transient(file + ": the server sent bytes " + range + " when asked for " + offset + "-"
+                    + (offset + length - 1));
+            }
         }
         if (body.length != length) {
-            throw new java.io.EOFException(file + " is shorter than " + (offset + length) + " bytes");
+            throw new ShortFile(file, offset + length);
         }
         return body;
     }
@@ -131,11 +151,107 @@ final class Http {
     }
 
     static HttpResponse<byte[]> send(HttpRequest request) throws IOException, InterruptedException {
-        return CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        return await(request, HttpResponse.BodyHandlers.ofByteArray());
     }
 
-    static HttpResponse<InputStream> stream(HttpRequest request) throws IOException, InterruptedException {
-        return CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream());
+    /** A downloaded file: its status, and its body from a temporary file deleted on close. */
+    record Download(int status, InputStream body) {}
+
+    /** A GET for a whole file, saved to a temporary file first so a stalled body can't hang. */
+    static Download download(HttpRequest request) throws IOException, InterruptedException {
+        Path temp = Files.createTempFile("xbackup-get", ".part");
+        try {
+            HttpResponse<Path> response = await(request, HttpResponse.BodyHandlers.ofFile(temp));
+            return new Download(response.statusCode(), Files.newInputStream(temp, StandardOpenOption.DELETE_ON_CLOSE));
+        } catch (IOException | InterruptedException | RuntimeException e) {
+            Files.deleteIfExists(temp);
+            throw e;
+        }
+    }
+
+    /** How long a server may go quiet in the middle of a reply before it's given up on. Tests shorten it. */
+    static volatile Duration idle = Duration.ofMinutes(2);
+
+    /**
+     * Sends and waits for the whole reply. The request's own timeout covers the wait for the
+     * reply to begin (an upload included); after that, a reply that stops arriving for {@link
+     * #idle} is cancelled, so a dead connection can't hold xBackup's only worker for good.
+     */
+    static <T> HttpResponse<T> await(HttpRequest request, HttpResponse.BodyHandler<T> handler)
+        throws IOException, InterruptedException {
+        java.util.concurrent.atomic.AtomicLong lastData = new java.util.concurrent.atomic.AtomicLong();
+        HttpResponse.BodyHandler<T> watched = info -> {
+            lastData.set(System.nanoTime());
+            return new Watched<>(handler.apply(info), lastData);
+        };
+        java.util.concurrent.CompletableFuture<HttpResponse<T>> reply = CLIENT.sendAsync(request, watched);
+        Duration limit = idle;
+        long poll = Math.max(100, Math.min(5_000, limit.toMillis() / 4));
+        while (true) {
+            try {
+                return reply.get(poll, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (java.util.concurrent.TimeoutException e) {
+                long since = lastData.get();
+                if (since != 0 && System.nanoTime() - since > limit.toNanos()) {
+                    reply.cancel(true);
+                    throw new java.net.http.HttpTimeoutException("the server stopped sending for "
+                        + limit.toSeconds() + " s");
+                }
+            } catch (java.util.concurrent.ExecutionException e) {
+                Throwable cause = e.getCause() == null ? e : e.getCause();
+                if (cause instanceof IOException io) {
+                    throw io;
+                }
+                throw new IOException(cause.getMessage(), cause);
+            } catch (InterruptedException e) {
+                reply.cancel(true);
+                throw e;
+            }
+        }
+    }
+
+    // Notes the time of every piece of a reply's body as it arrives.
+    private record Watched<T>(HttpResponse.BodySubscriber<T> inner, java.util.concurrent.atomic.AtomicLong lastData)
+        implements HttpResponse.BodySubscriber<T> {
+
+        @Override
+        public java.util.concurrent.CompletionStage<T> getBody() {
+            return inner.getBody();
+        }
+
+        @Override
+        public void onSubscribe(java.util.concurrent.Flow.Subscription subscription) {
+            inner.onSubscribe(subscription);
+        }
+
+        @Override
+        public void onNext(List<java.nio.ByteBuffer> item) {
+            lastData.set(System.nanoTime());
+            inner.onNext(item);
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            inner.onError(throwable);
+        }
+
+        @Override
+        public void onComplete() {
+            inner.onComplete();
+        }
+    }
+
+    /**
+     * A timeout for sending this many bytes: two minutes, plus the time it takes at 16 KiB/s
+     * or at the upload limit if that's slower, with room to spare. A fixed one would be too
+     * short for a big pack on a slow uplink.
+     */
+    static Duration uploadTimeout(long bytes, Throttle throttle) {
+        long rate = 16 * 1024;
+        if (throttle.bytesPerSecond() > 0 && throttle.bytesPerSecond() < rate) {
+            rate = throttle.bytesPerSecond();
+        }
+        return Duration.ofSeconds(120 + bytes * 3 / 2 / rate);
     }
 
     static URI uri(String text) {
@@ -182,6 +298,32 @@ final class Http {
     }
 
     // ---------------------------------------------------------------- encoding
+
+    /**
+     * Decodes a URL path's percent escapes as UTF-8. Unlike {@code URLDecoder}, which decodes
+     * forms, a {@code +} stays a {@code +}: in a path it's a plus, not a space.
+     */
+    static String decodePath(String raw) {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(raw.length());
+        int i = 0;
+        while (i < raw.length()) {
+            char c = raw.charAt(i);
+            if (c == '%' && i + 2 < raw.length()) {
+                int high = Character.digit(raw.charAt(i + 1), 16);
+                int low = Character.digit(raw.charAt(i + 2), 16);
+                if (high >= 0 && low >= 0) {
+                    out.write(high << 4 | low);
+                    i += 3;
+                    continue;
+                }
+            }
+            int codePoint = raw.codePointAt(i);
+            byte[] bytes = new String(Character.toChars(codePoint)).getBytes(StandardCharsets.UTF_8);
+            out.write(bytes, 0, bytes.length);
+            i += Character.charCount(codePoint);
+        }
+        return out.toString(StandardCharsets.UTF_8);
+    }
 
     /** RFC 3986 percent-encoding of everything but unreserved characters (and '/' if asked). */
     static String encode(String text, boolean keepSlash) {

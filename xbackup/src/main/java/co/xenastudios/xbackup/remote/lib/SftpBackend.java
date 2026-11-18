@@ -163,36 +163,55 @@ public final class SftpBackend implements Backend {
     @Override
     public void put(String file, Path source) throws IOException {
         long size = Files.size(source);
-        try (InputStream in = context.upload().wrap(Files.newInputStream(source))) {
-            upload(file, in, size);
-        }
+        upload(file, () -> context.upload().wrap(Files.newInputStream(source)), size);
     }
 
     @Override
     public void put(String file, byte[] data) throws IOException {
-        upload(file, new ByteArrayInputStream(data), data.length);
+        upload(file, () -> new ByteArrayInputStream(data), data.length);
     }
 
-    private void upload(String file, InputStream in, long size) throws IOException {
+    private interface Source {
+        InputStream open() throws IOException;
+    }
+
+    // Each attempt reads the file from its start: a retry after a dropped connection never
+    // sends the rest of a stream the first attempt part read. The size is checked under the
+    // temporary name, so a cut-off copy never takes the real one.
+    private void upload(String file, Source source, long size) throws IOException {
         String target = path(Backend.checkName(file));
         String temp = target + ".part-" + UUID.randomUUID().toString().substring(0, 8);
-        run(channel -> {
-            makeFolders(channel, target);
-            channel.put(in, temp, ChannelSftp.OVERWRITE);
+        try {
+            run(channel -> {
+                makeFolders(channel, target);
+                try (InputStream in = source.open()) {
+                    channel.put(in, temp, ChannelSftp.OVERWRITE);
+                }
+                SftpATTRS attributes = channel.stat(temp);
+                if (attributes.getSize() != size) {
+                    throw new IOException("remote " + name + " holds " + attributes.getSize() + " bytes of " + file
+                        + " after uploading " + size + "; it will be sent again next time.");
+                }
+                try {
+                    channel.rename(temp, target);
+                } catch (SftpException e) {
+                    // SFTP v3 can't rename over a file. Content-named files are the same bytes either way.
+                    channel.rm(target);
+                    channel.rename(temp, target);
+                }
+                return null;
+            });
+        } catch (IOException e) {
             try {
-                channel.rename(temp, target);
-            } catch (SftpException e) {
-                // SFTP v3 can't rename over a file. Content-named files are the same bytes either way.
-                channel.rm(target);
-                channel.rename(temp, target);
+                run(channel -> {
+                    channel.rm(temp);
+                    return null;
+                });
+            } catch (IOException ignored) {
+                // Listings skip .part- files.
             }
-            SftpATTRS attributes = channel.stat(target);
-            if (attributes.getSize() != size) {
-                throw new IOException("remote " + name + " holds " + attributes.getSize() + " bytes of " + file
-                    + " after uploading " + size + "; it will be sent again next time.");
-            }
-            return null;
-        });
+            throw e;
+        }
     }
 
     private void makeFolders(ChannelSftp channel, String target) throws SftpException {

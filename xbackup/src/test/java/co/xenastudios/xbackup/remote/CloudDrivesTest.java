@@ -193,6 +193,13 @@ class CloudDrivesTest {
     private void oneDrive(HttpExchange exchange, String method, String path, byte[] body) throws IOException {
         String prefix = "/graph/me/drive/special/approot:/";
         if (path.startsWith("/graph/upload/")) {
+            // Graph wants a valid Content-Range on an upload session: "bytes 0--1/0" for an empty
+            // file is refused, so those must go up with a simple PUT instead.
+            String range = exchange.getRequestHeaders().getFirst("Content-Range");
+            if (range == null || !range.matches("bytes 0-\\d+/\\d+") || body.length == 0) {
+                reply(exchange, 400, "{\"error\":{\"code\":\"invalidRange\"}}");
+                return;
+            }
             files.put(URLDecoder.decode(path.substring(14), StandardCharsets.UTF_8), body);
             reply(exchange, 201, "{\"size\":" + body.length + "}");
             return;
@@ -203,6 +210,13 @@ class CloudDrivesTest {
         String action = rest.substring(colon + 1);
         if (action.equals("/createUploadSession")) {
             reply(exchange, 200, "{\"uploadUrl\":" + Json.quote(base + "/graph/upload/" + Http.encode(item, true)) + "}");
+        } else if (action.equals("/content") && method.equals("PUT")) {
+            if (body.length > 4 << 20) {
+                reply(exchange, 413, "{}");
+                return;
+            }
+            files.put(item, body);
+            reply(exchange, 201, "{\"size\":" + body.length + "}");
         } else if (action.equals("/content")) {
             if (files.containsKey(item)) {
                 content(exchange, files.get(item));
@@ -313,8 +327,17 @@ class CloudDrivesTest {
             backend.put("data/ab/one", data);
             backend.put("index/two", data);
             backend.put("index/two", data);
-            assertEquals(Set.of(new Backend.FileInfo("data/ab/one", 200_000), new Backend.FileInfo("index/two", 200_000)),
+            // A pin is an empty file.
+            backend.put("keep/" + "ab".repeat(32), new byte[0]);
+            byte[] big = new byte[5 << 20];
+            new Random(6).nextBytes(big);
+            backend.put("data/cd/big", big);
+            assertEquals(Set.of(new Backend.FileInfo("data/ab/one", 200_000), new Backend.FileInfo("index/two", 200_000),
+                new Backend.FileInfo("keep/" + "ab".repeat(32), 0), new Backend.FileInfo("data/cd/big", 5 << 20)),
                 Set.copyOf(backend.list("")));
+            assertArrayEquals(big, backend.get("data/cd/big").readAllBytes());
+            backend.delete("keep/" + "ab".repeat(32));
+            backend.delete("data/cd/big");
             assertEquals(1, backend.list("index/").size());
             try (InputStream in = backend.get("data/ab/one")) {
                 assertArrayEquals(data, in.readAllBytes());

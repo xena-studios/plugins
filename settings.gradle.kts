@@ -15,6 +15,10 @@ dependencyResolutionManagement {
         maven("https://jitpack.io") {
             content { includeGroup("com.github.MilkBowl") }
         }
+        // VaultUnlocked's API (Vault's and its own), which xMoney ships.
+        maven("https://repo.codemc.io/repository/creatorfromhell/") {
+            content { includeGroup("net.milkbowl.vault") }
+        }
         maven("https://maven.enginehub.org/repo/") {
             content {
                 includeGroupByRegex("com\\.sk89q.*")
@@ -37,6 +41,10 @@ include("zchat")
 include("xlimbo")
 include("xrewind")
 include("xplots")
+include("xmoney")
+// Never released: a plugin.yml plugin using Vault's APIs and a Paper plugin using the core's
+// Vault hook, so CI checks that xMoney stands in for Vault on real servers.
+include("xmoney:vault-consumer", "xmoney:hook-consumer")
 // Each plugin's developer API (<plugin>/api, on the xena.api convention), wherever one
 // exists, so a plugin adding an API doesn't need a line here. The sandbox lists its own.
 rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" && file.resolve("api/build.gradle.kts").isFile }

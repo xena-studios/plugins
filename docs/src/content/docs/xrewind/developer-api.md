@@ -137,7 +137,9 @@ A plan lists its `blocks()` and `items()`, as copies, so you can preview it to a
 
 A plan is applied once. Applying it again throws an `IllegalStateException`: its changes would be made again, on top of whatever is there by then. To roll back the same thing later, plan again. A plan that wasn't applied, because another rollback was running or a listener cancelled it, can be applied again.
 
-To undo, apply the result's undo plan: `xrewind.apply(result.undo())`.
+To undo, apply the result's undo plan: `xrewind.apply(result.undo())`. A rollback a player ran with a command keeps its undo for their `/xr undo`, so the undo plan a `RollbackFinishedEvent` shows for it can't be applied.
+
+If a `RollbackEvent` listener cancels a rollback, `apply`'s future fails with a `CancellationException`, and the plan can be applied again, even from the code that handles the failure. A staff member whose rollback, apply or undo another plugin cancelled is told so (`messages.rollback.stopped`).
 
 If xRewind is disabled before a rollback finishes, its future fails with an `IllegalStateException`.
 
@@ -145,11 +147,20 @@ If xRewind is disabled before a rollback finishes, its future fails with an `Ill
 
 | Method | What it does |
 | --- | --- |
-| `flush()` | Writes everything logged before the call. Completes with true once that's written, even on a busy server where more keeps coming. False after 10 seconds, or if the database is down. |
+| `flush()` | Writes everything logged before the call. Completes with true once that's written, even on a busy server where more keeps coming. A change the database won't take, which xRewind drops with a warning, counts as dealt with. False after 10 seconds, or if the database is down. |
 | `pause()` | Stops every write to the database (the log and a purge) until you let go. Completes with a `WriterHold` once whatever was writing has finished its transaction. Changes keep being logged in memory and are written afterwards. |
 | `WriterHold.release()` | Lets go. Writing carries on once every plugin's hold is let go. `close()` does the same, for try-with-resources. |
 
-A backup plugin can pause, copy the database, and let go, and never copy it partway through a write. Each `pause()` is its own hold, so two plugins backing up at once don't end each other's. Keep it short: a hold lets go by itself after 60 seconds, with a warning in the console.
+A backup plugin can pause, copy the database, and let go, and never copy it partway through a write. Each `pause()` is its own hold, so two plugins backing up at once don't end each other's. Keep it short: a hold lets go by itself 60 seconds after you get it, with a warning in the console.
+
+Writes are short: the writer and a purge each take a turn per transaction, and a vacuum after a purge hands the space back a few thousand pages a turn. So `pause()` is usually ready at once. It fails:
+
+- with a `TimeoutException` if what's writing doesn't finish within 60 seconds;
+- with an `IllegalStateException` if holds that overlap have kept writes stopped for 60 seconds already. New holds are refused until a batch has been written, so backups taking turns can't stop logging for good.
+
+If you cancel the future, or give up on it with `orTimeout`, the hold is let go for you. While a hold is held and 100,000 changes are waiting, the console says a plugin is holding writes, not that the database is slow.
+
+Holds don't apply while xRewind stops: it writes what's waiting (for up to 10 seconds) even while a hold is held, then lets every hold go.
 
 ```java
 xrewind.pause().thenAccept(hold -> {

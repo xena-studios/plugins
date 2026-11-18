@@ -42,7 +42,8 @@ class PlannerTest {
         assertEquals(2, plan.changes().size(), "four changes, two blocks");
         assertEquals(Material.AIR, plan.changes().get(0).target().getMaterial());
         assertEquals(Material.AIR, plan.changes().get(1).target().getMaterial());
-        assertArrayEquals(new long[] {1, 2, 3, 4}, plan.blockIds());
+        assertArrayEquals(new long[] {1, 3, 4}, plan.changes().get(0).ids(), "x=0's three rows");
+        assertArrayEquals(new long[] {2}, plan.changes().get(1).ids());
         assertEquals(true, plan.markRolledBack());
     }
 

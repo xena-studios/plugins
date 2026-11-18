@@ -182,6 +182,28 @@ class LoggingTest {
     }
 
     @Test
+    void onlyTheChangesARollbackMadeAreMarked() throws Exception {
+        steve.setOp(true);
+        Block block = world.getBlockAt(1, 70, 30);
+        block.setType(Material.STONE);
+        server.getPluginManager().callEvent(new BlockBreakEvent(block, steve));
+        block.setType(Material.AIR);
+        // History from another logger with a block this Minecraft doesn't have.
+        plugin.queue().add(new co.xenastudios.xrewind.log.Entry.ImportedBlock(co.xenastudios.xrewind.storage.Clock.now(),
+            co.xenastudios.xrewind.log.Actor.of(steve), "world", 2, 70, 30, co.xenastudios.xrewind.log.Actions.BREAK,
+            "minecraft:no_such_block", "minecraft:air", false));
+        await(() -> plugin.writer().written() >= 3);
+        steve.setLocation(block.getLocation());
+
+        steve.performCommand("xr rb u:Steve t:1h");
+        String done = awaitMessage(steve);
+        assertTrue(done.contains("Rolled back 1 blocks"), done);
+        await(() -> rolledBack() == 1);
+        Thread.sleep(500);
+        assertEquals(1, rolledBack(), "the unreadable one stays unmarked, for a later rollback");
+    }
+
+    @Test
     void aPreviewChangesNothingUntilApplied() throws Exception {
         steve.setOp(true);
         Block block = world.getBlockAt(0, 70, 20);

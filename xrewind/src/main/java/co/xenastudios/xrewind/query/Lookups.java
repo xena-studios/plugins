@@ -25,6 +25,8 @@ import org.bukkit.entity.Player;
 public final class Lookups {
 
     public static final int PER_PAGE = 7;
+    /** The furthest page: deeper ones would read thousands of rows to show seven. */
+    public static final int MAX_PAGE = 500;
 
     private record Last(Query query, Lookup.Center center, boolean inspect) {}
 

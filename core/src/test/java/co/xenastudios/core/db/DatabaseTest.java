@@ -11,10 +11,26 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Properties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class DatabaseTest {
+
+    @Test
+    void mysqlTimeoutsDefaultUnlessTheOwnerSetsThem() {
+        Properties none = new Properties();
+        Database.defaultTo(none, "", "connectTimeout", "10000");
+        assertEquals("10000", none.getProperty("connectTimeout"));
+
+        Properties owners = new Properties();
+        Database.defaultTo(owners, "useSSL=false&ConnectTimeout=3000", "connectTimeout", "10000");
+        assertEquals(null, owners.getProperty("connectTimeout"));
+
+        Properties similar = new Properties();
+        Database.defaultTo(similar, "connectTimeoutX=1", "connectTimeout", "10000");
+        assertEquals("10000", similar.getProperty("connectTimeout"));
+    }
 
     @TempDir
     Path folder;

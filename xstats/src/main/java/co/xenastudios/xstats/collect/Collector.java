@@ -87,7 +87,8 @@ public final class Collector implements Module {
             player.getScheduler().runDelayed(plugin, scheduled -> engine.queue(reader.read(player, false, true)), null, 1 + i / each);
         }
         if (excludeBanned) {
-            Bukkit.getGlobalRegionScheduler().execute(plugin, () -> engine.bannedPlayers(banned()));
+            // Through the core, which keeps running while an empty Paper server is paused.
+            tasks.global(() -> engine.bannedPlayers(banned()));
         }
         // Every reading is in by then, with room for a slow tick or two; a late one waits for the next save.
         long wait = (2L + (online.size() + each - 1) / each + 10) * 50;

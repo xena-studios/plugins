@@ -167,6 +167,8 @@ public class XStats extends XenaPlugin<XSConfig> {
                 feed = ChangeFeed.open(store.database(), config.network(), getLogger());
                 feed.subscribe("saved", change -> engine.networkChanged());
                 feed.subscribe("player", change -> worker.execute(() -> engine.refreshHidden(UUID.fromString(change.payload()))));
+                // Changes may have been missed (the database was out of reach): read the network's numbers again.
+                feed.onResync(engine::networkChanged);
                 engine.open(store, feed);
             } catch (DatabaseException | SQLException e) {
                 startupProblem = e.getMessage();

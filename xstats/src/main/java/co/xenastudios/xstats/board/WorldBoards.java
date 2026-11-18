@@ -41,6 +41,9 @@ public final class WorldBoards implements Module, Listener {
     /** One board, and the text it shows now. */
     private record Placed(Store.BoardRow row, Component text) {}
 
+    /** Boards with an update waiting for their region: one is enough, as while an empty server is paused. */
+    private final java.util.Set<Integer> waiting = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     private final XStats plugin;
     private final NamespacedKey key;
     private volatile List<Placed> placed = List.of();
@@ -134,8 +137,13 @@ public final class WorldBoards implements Module, Listener {
             Placed updated = new Placed(board.row(), text(board.row()));
             next.add(updated);
             Location location = location(board.row());
-            if (location != null) {
-                Bukkit.getRegionScheduler().execute(plugin, location, () -> show(updated, location));
+            if (location != null && waiting.add(board.row().id())) {
+                Bukkit.getRegionScheduler().execute(plugin, location, () -> {
+                    waiting.remove(board.row().id());
+                    // The newest text by the time the region runs it.
+                    placed.stream().filter(current -> current.row().id() == board.row().id()).findFirst()
+                        .ifPresent(current -> show(current, location));
+                });
             }
         }
         placed = List.copyOf(next);

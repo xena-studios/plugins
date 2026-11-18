@@ -2,7 +2,9 @@ name: Plugins
 
 # Everything but the docs, except the files the plugins' tests generate for them.
 # Pull requests always run, so the `plugins-ok` check main requires always reports;
-# `changes` skips the rest when only the docs or Markdown changed.
+# `changes` narrows the rest to the plugins a pull request touches, and skips it all
+# when only the docs or Markdown changed. scripts/affected.sh has the rules. Pushes to
+# main and runs by hand check everything.
 on:
   push:
     branches: [main]
@@ -10,8 +12,8 @@ on:
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: read
+# Each job asks for what it needs, and none can write.
+permissions: {}
 
 concurrency:
   # A new push to a pull request cancels the run it replaces.
@@ -21,38 +23,40 @@ concurrency:
 jobs:
   changes:
     runs-on: ubuntu-26.04
+    timeout-minutes: 5
     permissions:
+      contents: read
       pull-requests: read
     outputs:
-      plugins: ${{ steps.check.outputs.plugins }}
+      tasks: ${{ steps.check.outputs.tasks }}
+      compile: ${{ steps.check.outputs.compile }}
+      checks: ${{ steps.check.outputs.checks }}
+      xmoney: ${{ steps.check.outputs.xmoney }}
     steps:
+      # The script reads the build files, to find which plugins use which.
+      - uses: actions/checkout@v7
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          if [[ $GITHUB_EVENT_NAME != pull_request ]]; then echo "plugins=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [[ $GITHUB_EVENT_NAME != pull_request ]]; then scripts/affected.sh --all | tee -a "$GITHUB_OUTPUT"; exit 0; fi
           # The changed files, from the files API, paged: `gh pr diff` refuses pull requests
-          # over 300 files. If the call fails, everything is checked, never skipped.
-          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename') \
-            || { echo "plugins=true" >> "$GITHUB_OUTPUT"; exit 0; }
-          plugins=false
-          while read -r file; do
-            case $file in
-              *.md | .github/workflows/docs.yml) ;;
-              docs/src/generated/*) plugins=true ;;
-              docs/*) ;;
-              *) plugins=true ;;
-            esac
-          done <<< "$files"
-          echo "plugins=$plugins" >> "$GITHUB_OUTPUT"
+          # over 300 files. A rename counts at both ends. If the call fails, everything is
+          # checked, never skipped.
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
+            --jq '.[] | .filename, (.previous_filename // empty)') \
+            || { scripts/affected.sh --all | tee -a "$GITHUB_OUTPUT"; exit 0; }
+          scripts/affected.sh <<< "$files" | tee -a "$GITHUB_OUTPUT"
 
   build:
     needs: changes
-    if: needs.changes.outputs.plugins == 'true'
+    if: needs.changes.outputs.tasks != ''
     runs-on: ubuntu-26.04
     # A hung test or server fails the job instead of holding a runner for six hours.
     timeout-minutes: 30
+    permissions:
+      contents: read
     outputs:
       newest: ${{ steps.newest.outputs.minecraft }}
     # A real MariaDB, so xRewind's MySqlTest runs the same SQL its MySQL users do.
@@ -76,9 +80,12 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-      # Compiles, runs the tests, and fails any jar over its size budget.
-      - run: ./gradlew build
+      # Compiles, runs the tests, and fails any jar over its size budget: `build` for
+      # everything, or only the changed plugins' builds, the jars their boot tests need,
+      # and the root's, whose copy-paste check always reads every module.
+      - run: ./gradlew $TASKS
         env:
+          TASKS: ${{ needs.changes.outputs.tasks }}
           XR_MYSQL: 127.0.0.1:3306:xr:root:ci
       - uses: actions/upload-artifact@v7
         with:
@@ -101,10 +108,12 @@ jobs:
   # removal, so a coming break shows up here before it reaches a server.
   newest-api:
     needs: changes
-    if: needs.changes.outputs.plugins == 'true'
+    if: needs.changes.outputs.compile != ''
     runs-on: ubuntu-26.04
     # A hung test or server fails the job instead of holding a runner for six hours.
     timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -112,16 +121,23 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-      # The build scripts/new-minecraft.sh keeps in gradle.properties.
-      - run: ./gradlew compileJava -Pxena.newestPaper="$(sed -n 's/^xena\.ciNewestPaperApi=//p' gradle.properties)"
+      # The build scripts/new-minecraft.sh keeps in gradle.properties, for every module
+      # or only the changed plugins'.
+      - run: ./gradlew $COMPILE -Pxena.newestPaper="$(sed -n 's/^xena\.ciNewestPaperApi=//p' gradle.properties)"
+        env:
+          COMPILE: ${{ needs.changes.outputs.compile }}
 
-  # Boots every plugin on a real server, at the oldest version we support and
-  # the newest, on Paper and Folia.
+  # Boots the plugins on a real server, at the oldest version we support and the
+  # newest, on Paper and Folia: every plugin, or only the changed ones (with any
+  # plugin they use, built for it).
   boot:
-    needs: build
+    needs: [changes, build]
+    if: needs.changes.outputs.checks != '' || needs.changes.outputs.xmoney == 'true'
     runs-on: ubuntu-26.04
     # A hung test or server fails the job instead of holding a runner for six hours.
     timeout-minutes: 20
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -152,17 +168,22 @@ jobs:
           path: .cache/servers
           key: servers-${{ matrix.project }}-${{ matrix.target.version }}-${{ steps.server.outputs.build }}
           restore-keys: servers-${{ matrix.project }}-${{ matrix.target.version }}-
-      # Runs each module's boot-checks.txt against all the jars at once, except xMoney's.
-      # xMoney stands in for Vault, so with it installed every plugin would see Vault, and
-      # the sandbox checks the core's Vault hook on a server without one.
-      - run: |
+      # Runs the changed modules' boot-checks.txt (every module's, for everything) against
+      # all the jars built at once, except xMoney's. xMoney stands in for Vault, so with
+      # it installed every plugin would see Vault, and the sandbox checks the core's
+      # Vault hook on a server without one.
+      - if: needs.changes.outputs.checks != ''
+        env:
+          CHECKS: ${{ needs.changes.outputs.checks }}
+        run: |
           checks=()
-          for file in */boot-checks.txt; do [[ $file == xmoney/* ]] || checks+=(--checks "$file"); done
+          for file in $CHECKS; do checks+=(--checks "$file"); done
           mapfile -t jars < <(find jars -name '*.jar' -not -path 'jars/xmoney/*' | sort)
           scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
             "${checks[@]}" "${jars[@]}"
       # xMoney on its own, with two never-released plugins that use it as Vault.
       - name: boot xMoney
+        if: needs.changes.outputs.xmoney == 'true'
         run: |
           mapfile -t jars < <(find jars/xmoney -name '*.jar' | sort)
           scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
@@ -170,20 +191,22 @@ jobs:
       # And beside a real VaultUnlocked, which Paper refuses: the one run that allows an
       # error, Paper's own about the duplicate (see xmoney/boot-checks-vaultunlocked.txt).
       - name: boot xMoney beside VaultUnlocked
+        if: needs.changes.outputs.xmoney == 'true'
         run: |
           vu="$RUNNER_TEMP/VaultUnlocked-2.20.1.jar"
           curl -fsSL -o "$vu" https://github.com/TheNewEconomy/VaultUnlocked/releases/download/2.20.1/VaultUnlocked-2.20.1.jar
           echo "4ec21910767a68b2defacb121cffee9840ded8b01abcbff03779fb9ab637296a  $vu" | sha256sum -c -
           mapfile -t jars < <(find jars/xmoney -name '*.jar' | sort)
           scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
-            --checks xmoney/boot-checks-vaultunlocked.txt "${jars[@]}" "$vu"
+            --checks xmoney/boot-checks-vaultunlocked.txt "${jars[@]}"
 
   # The one check main requires: passes when every job above passed or was
-  # skipped because nothing they cover changed.
+  # skipped because nothing they cover changed, and fails when any that ran failed.
   plugins-ok:
     needs: [changes, build, newest-api, boot]
     if: always()
     runs-on: ubuntu-26.04
+    timeout-minutes: 5
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1

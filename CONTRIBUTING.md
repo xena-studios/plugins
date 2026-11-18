@@ -30,7 +30,7 @@ scripts/boot-test.sh --project paper --version 1.21.11 \
 | `build-logic/` | The `xena.plugin` Gradle convention every plugin applies |
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
 | `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/`, `xteleport/`, `xvote/`, `xbans/`, `xmoney/`, `xbackup/`, `xstats/` | The plugins, each with its own README |
-| `scripts/` | `boot-test.sh`, `changelog.sh`, `new-minecraft.sh` |
+| `scripts/` | `affected.sh`, `boot-test.sh`, `changelog.sh`, `new-minecraft.sh` |
 | `docs/` | docs.xenastudios.co |
 
 A plugin extends `XenaPlugin`. It declares its config as records (`ConfigSpec`), and in `setup` says which commands and modules that config turns on. The core does the rest: registering on startup and on every reload, carrying old configs forward, the theme, the update checker and bStats.
@@ -65,7 +65,7 @@ These keep the plugins fast and dependable on a busy server. A change that break
 3. Add a line to the plugin's `CHANGELOG.md` under `## Unreleased`. Write it for server owners: what changed for them, not how.
 4. Run `./gradlew build` and open the PR.
 
-CI builds, tests, boot-tests on Paper and Folia, compiles against the newest Paper, and runs CodeQL. `main` requires `plugins-ok` and `docs-ok`. Each workflow skips what a change doesn't touch, so a docs-only PR doesn't wait for boot tests. PRs and issues get labelled by plugin automatically.
+CI builds, tests, boot-tests on Paper and Folia, compiles against the newest Paper, and runs CodeQL. `main` requires `plugins-ok` and `docs-ok`. Each workflow skips what a change doesn't touch, so a docs-only PR doesn't wait for boot tests. On a PR, the plugins workflow builds, tests and boots only the plugins it changes and any that use them (`sandbox` uses xRewind's API, for example); a change to the core, `build-logic/`, `gradle/`, the root build files, `scripts/` or the workflow itself checks everything, as every push to `main` does. To see what a PR would run: `git diff --name-only main | scripts/affected.sh`. PRs and issues get labelled by plugin automatically.
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org) with the plugin as scope, or `core` for shared code: `fix(zchat): keep the reply target through a reload`, `feat(xlimbo): ...`, `docs: ...`, `build: ...`.
 

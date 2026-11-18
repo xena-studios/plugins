@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# Works out what the Plugins workflow builds, tests and boots for a pull request, from
+# the files it changes, read one per line from stdin. With --all, everything.
+#
+#   scripts/affected.sh [--all] < changed-files
+#
+# Prints key=value lines for $GITHUB_OUTPUT:
+#   units    the folders whose plugins are tested, space-separated (for the log)
+#   tasks    Gradle tasks for the build job; empty when nothing needs building
+#   compile  Gradle tasks for the newest-API compile; empty to skip it
+#   checks   boot-checks files the main boot runs; empty to skip it
+#   xmoney   true when xMoney's own boots run
+#
+# The rules:
+# - Anything everything is built on (core/, build-logic/, gradle/, the root build files,
+#   gradle.properties, the wrapper, scripts/, this workflow) means everything.
+# - A file in a plugin's folder means that folder's projects: the plugin, its API and
+#   whatever else is in there (xmoney's two consumers). So does its generated docs
+#   folder, docs/src/generated/<plugin>/, which its golden tests compare against.
+# - Then every folder whose build uses one of those projects, and so on: xRewind's API
+#   brings in the sandbox, whose consumer compiles against it. Those links are read from
+#   the build files' project(":...") lines, so a new plugin needs no edit here. The
+#   conventions' own links (every plugin on :core and its own API) need none: the core
+#   means everything, and a plugin's API is in its folder.
+# - Markdown, the rest of the docs and the other workflows mean nothing.
+# - Anything else, such as a new top-level folder, means everything: unsure is never
+#   skipped.
+#
+# The boot tests need every plugin a booted plugin uses (the sandbox's consumer needs
+# xRewind), so those are built too, with assemble: jars, without their tests.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# The folders holding plugins (and the sandbox): top-level ones with a Gradle build,
+# other than the two everything is built on.
+units=()
+for file in */build.gradle.kts; do
+  unit=${file%%/*}
+  [[ $unit == core || $unit == build-logic ]] || units+=("$unit")
+done
+declare -A known=()
+for unit in "${units[@]}"; do known[$unit]=1; done
+
+# The Gradle projects in a folder: it and each folder under it with a build file.
+projects() {
+  find "$1" -name build.gradle.kts -not -path '*/build/*' -not -path '*/node_modules/*' |
+    sed -e 's|/build.gradle.kts$||' -e 's|/|:|g' -e 's|^|:|' | sort
+}
+
+# uses[folder]: the other folders its builds name in project(":...").
+declare -A uses=()
+for unit in "${units[@]}"; do
+  uses[$unit]=$(find "$unit" -name build.gradle.kts -not -path '*/build/*' -not -path '*/node_modules/*' \
+    -exec grep -ohE 'project\(":[^"]+"\)' {} + |
+    sed -E 's/project\(":([^:"]+).*/\1/' | sort -u | grep -vxE "core|$unit" | tr '\n' ' ' || true)
+done
+
+all=false
+[[ ${1:-} == --all ]] && all=true
+declare -A changed=()
+if [[ $all == false ]]; then
+  while IFS= read -r file; do
+    [[ -n $file ]] || continue
+    top=${file%%/*}
+    case $file in
+      *.md) ;;
+      core/* | build-logic/* | gradle/* | scripts/* | gradle.properties | gradlew | gradlew.bat \
+        | .github/workflows/plugins.yml) all=true ;;
+      docs/src/generated/*)
+        plugin=${file#docs/src/generated/}
+        plugin=${plugin%%/*}
+        if [[ -n ${known[$plugin]:-} ]]; then changed[$plugin]=1; else all=true; fi ;;
+      docs/* | .github/* | LICENSE | renovate.json | .gitignore) ;;
+      # A plugin's folder. Anything else, the root *.gradle.kts files among it, is everything.
+      *)
+        if [[ $file == */* && -n ${known[$top]:-} ]]; then changed[$top]=1; else all=true; fi ;;
+    esac
+  done
+fi
+
+# Everything: what a push to main runs.
+if [[ $all == true ]]; then
+  checks=()
+  for unit in "${units[@]}"; do
+    [[ $unit != xmoney && -f $unit/boot-checks.txt ]] && checks+=("$unit/boot-checks.txt")
+  done
+  echo "units=${units[*]}"
+  echo "tasks=build"
+  echo "compile=compileJava"
+  echo "checks=${checks[*]}"
+  echo "xmoney=true"
+  exit 0
+fi
+
+# The changed folders, and every folder using one, until none is left to add.
+grew=true
+while [[ $grew == true ]]; do
+  grew=false
+  for unit in "${units[@]}"; do
+    [[ -n ${changed[$unit]:-} ]] && continue
+    for used in ${uses[$unit]}; do
+      if [[ -n ${changed[$used]:-} ]]; then changed[$unit]=1; grew=true; break; fi
+    done
+  done
+done
+
+# What those use in turn, for the boot tests: jars only.
+declare -A needed=()
+grew=true
+while [[ $grew == true ]]; do
+  grew=false
+  for unit in "${units[@]}"; do
+    [[ -n ${changed[$unit]:-} || -n ${needed[$unit]:-} ]] || continue
+    for used in ${uses[$unit]}; do
+      if [[ -z ${changed[$used]:-} && -z ${needed[$used]:-} ]]; then needed[$used]=1; grew=true; fi
+    done
+  done
+done
+
+tested=() tasks=() compile=() checks=() xmoney=false
+for unit in "${units[@]}"; do
+  if [[ -n ${changed[$unit]:-} ]]; then
+    tested+=("$unit")
+    for project in $(projects "$unit"); do
+      tasks+=("$project:build")
+      compile+=("$project:compileJava")
+    done
+    if [[ $unit == xmoney ]]; then
+      xmoney=true
+    elif [[ -f $unit/boot-checks.txt ]]; then
+      checks+=("$unit/boot-checks.txt")
+    fi
+  elif [[ -n ${needed[$unit]:-} ]]; then
+    for project in $(projects "$unit"); do tasks+=("$project:assemble"); done
+  fi
+done
+# The root's build: the copy-paste check, which reads every module however few changed.
+((${#tasks[@]})) && tasks=(":build" "${tasks[@]}")
+
+echo "units=${tested[*]}"
+echo "tasks=${tasks[*]}"
+echo "compile=${compile[*]}"
+echo "checks=${checks[*]}"
+echo "xmoney=$xmoney"

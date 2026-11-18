@@ -1,0 +1,21 @@
+---
+title: Developers
+description: "Build on Xena Studios' plugins: every plugin's developer API, its Maven coordinates on Maven Central, and its javadoc."
+---
+
+import ApiList from "../../components/ApiList.astro";
+
+Every plugin has a developer API, so your plugin can use it: read what it knows, change what it keeps, and listen for its events. Each API is on Maven Central, shipped inside its plugin's jar, so depend on it as `compileOnly` (Gradle) or `provided` (Maven) and never shade it.
+
+<ApiList />
+
+## What every API promises
+
+- **It says how each method runs.** Either it answers from memory, from any thread, at once, or it returns a `CompletableFuture` that completes off your thread. No API method reads the database on the thread that calls it.
+- **It costs nothing unless you use it.** An API adds no listeners and no tasks, and its events are only made when something listens for them.
+- **It doesn't break in a minor release.** Each API's public signatures are checked in CI against a committed file, so a change to one is always deliberate, and removing or changing anything waits for a major version.
+- **Get it with `<Plugin>Api.get()`,** which throws if the plugin isn't enabled, or from Bukkit's services manager.
+
+Plugins also work with each other through these APIs where it makes sense, each integration switchable, and every plugin still works alone.
+
+Something missing from an API? [Open a feature request](https://github.com/xena-studios/plugins/issues/new/choose).

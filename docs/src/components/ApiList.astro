@@ -1,0 +1,53 @@
+---
+// Every plugin's developer API, from the brand catalog and the build files: its Maven
+// coordinates, its javadoc on javadoc.io once it's released, and its docs page.
+import catalog from "../data/plugins.json" with { type: "json" };
+
+const files = import.meta.glob<{ default: ImageMetadata }>("../assets/plugins/*.svg", { eager: true });
+const icon = (id: string) => files[`../assets/plugins/${id}.svg`]?.default.src;
+const apis = catalog.plugins.filter((p) => p.maven);
+---
+<table>
+  <thead>
+    <tr>
+      <th>Plugin</th>
+      <th>Maven coordinates</th>
+      <th>Links</th>
+    </tr>
+  </thead>
+  <tbody>
+    {apis.map((p) => (
+      <tr>
+        <td class="plugin">
+          <img src={icon(p.id)} alt="" width="24" height="24" />
+          <a href={`${p.docs}developer-api/`}>{p.name}</a>
+        </td>
+        <td>
+          <code>{p.maven}:{p.version}</code>
+        </td>
+        <td>
+          <a href={`${p.docs}developer-api/`}>Guide</a>
+          {p.released ? (
+            <>
+              {" · "}
+              <a href={`https://javadoc.io/doc/co.xenastudios.${p.id}/${p.id}-api`}>Javadoc</a>
+            </>
+          ) : (
+            " · on Maven Central at its first release"
+          )}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  .plugin {
+    white-space: nowrap;
+  }
+  .plugin img {
+    vertical-align: middle;
+    margin-inline-end: 0.5rem;
+    border-radius: 5px;
+  }
+</style>

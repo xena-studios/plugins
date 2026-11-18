@@ -135,6 +135,54 @@ class MySqlTest {
         close(b);
     }
 
+    @Test
+    void serversTurningHashingOnAtOnceAgreeOnOneSalt(@TempDir Path other) throws Exception {
+        // A database with an address in it, from before hashing.
+        Store raw = new Store(plugin.tasks(), logger, folder, backend -> {});
+        raw.sync(new Store.Wanted(storage, NetworkSettings.DEFAULTS, false));
+        raw.ready().get(30, TimeUnit.SECONDS);
+        UUID steve = UUID.randomUUID();
+        for (int i = 0; i < 200; i++) {
+            raw.seen(UUID.randomUUID(), "P" + i, "203.0." + (i / 250) + "." + (i % 250 + 1), 0, false);
+        }
+        raw.seen(steve, "Steve", "198.51.100.9", 0, false);
+        raw.write((c, b) -> null).get(30, TimeUnit.SECONDS);
+        close(raw);
+
+        // Two servers, each with a salt of its own, started at the same moment with ips.hash on.
+        List<String> said = new CopyOnWriteArrayList<>();
+        Logger loud = Logger.getLogger("race");
+        loud.setUseParentHandlers(false);
+        loud.addHandler(new java.util.logging.Handler() {
+            @Override
+            public void publish(java.util.logging.LogRecord record) {
+                said.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {}
+
+            @Override
+            public void close() {}
+        });
+        Store a = new Store(plugin.tasks(), loud, folder, backend -> {});
+        Store b = new Store(plugin.tasks(), loud, other, backend -> {});
+        a.sync(new Store.Wanted(storage, NetworkSettings.DEFAULTS, true));
+        b.sync(new Store.Wanted(storage, NetworkSettings.DEFAULTS, true));
+        long deadline = System.currentTimeMillis() + 30_000;
+        while ((a.backend() == null) == (b.backend() == null) && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        Thread.sleep(500);
+        assertTrue(a.backend() == null ^ b.backend() == null, "exactly one opened: " + said);
+        Store winner = a.backend() != null ? a : b;
+        assertTrue(said.stream().anyMatch(line -> line.contains("isn't the one this database's IPs were hashed with")), said.toString());
+        assertEquals(List.of(winner.backend().keys().key("198.51.100.9")),
+            winner.ipHistory(steve).get(30, TimeUnit.SECONDS).stream().map(Store.IpUse::ip).toList(), "hashed once, by the winner");
+        close(a);
+        close(b);
+    }
+
     // The mock can't cancel a repeating task (a real server can), which is the feed's last step in closing.
     private static void close(Store store) {
         try {

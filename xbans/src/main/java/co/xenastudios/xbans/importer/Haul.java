@@ -9,11 +9,15 @@ import java.util.UUID;
 /** What a source holds, read whole before anything is written, so a dry run can count it. */
 public final class Haul {
 
+    /** In a {@link Row#key}: the row's IP, as the database keys it (hashed, with hashing on), never the address. */
+    static final String IP = "{ip}";
+
     /**
      * One punishment, as xBans will store it.
      *
      * @param entry its {@link Entry#ip()} is the raw address, keyed (or hashed) as it's written
-     * @param key where it came from, such as {@code "litebans:bans:12"}, so importing twice adds nothing
+     * @param key where it came from, such as {@code "litebans:bans:12"}, so importing twice
+     *     adds nothing. {@link #IP} stands for its IP key.
      */
     public record Row(Entry entry, String key) {}
 

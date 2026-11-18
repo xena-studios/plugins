@@ -14,6 +14,7 @@ import co.xenastudios.xbans.model.Active;
 import co.xenastudios.xbans.model.Entry;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -252,31 +253,20 @@ public final class Store {
     // How IPs are keyed for this database. Hashing, once on, stays on: there's no undoing it.
     // A hashed database opens only with the salt it was hashed with: with another, or none,
     // no IP ban would match anyone, so it fails to open (and is retried) rather than letting
-    // IP-banned players in.
+    // IP-banned players in, unless the owner says the salt is lost for good (IpKeys.RESET_FILE).
     private IpKeys ipKeys(Database database, boolean hash) throws SQLException, IOException {
         try (Connection c = database.connect()) {
             String mode = meta(c, database, "ip-mode");
-            String check = meta(c, database, "ip-salt-check");
             if ("hashed".equals(mode)) {
-                IpKeys keys = IpKeys.hashed(IpKeys.salt(folder, false));
-                if (check != null && !check.equals(keys.fingerprint())) {
-                    throw new IOException(IpKeys.SALT_FILE + " isn't the one this database's IPs were hashed with, so no IP"
-                        + " ban or alt would match. Copy the right one into xBans' folder from the server that hashed"
-                        + " them (or from a backup).");
-                }
-                if (check == null) {
-                    setMeta(c, database, "ip-salt-check", keys.fingerprint());
-                }
-                if (!hash) {
-                    logger.warning("ips.hash is off, but this database's IPs are already hashed, so they stay hashed.");
-                }
-                return keys;
+                return hashedKeys(c, database, hash);
             }
             if (hash) {
                 IpKeys keys = IpKeys.hashed(IpKeys.salt(folder, true));
                 int hashed = hashAll(c, database, keys);
-                setMeta(c, database, "ip-mode", "hashed");
-                setMeta(c, database, "ip-salt-check", keys.fingerprint());
+                if (hashed < 0) {
+                    // Another server of the network turned hashing on first: its salt is the one.
+                    return hashedKeys(c, database, hash);
+                }
                 logger.info("IPs are hashed from now on" + (hashed > 0 ? "; hashed the " + hashed + " already stored." : "."));
                 return keys;
             }
@@ -287,37 +277,129 @@ public final class Store {
         }
     }
 
-    private int hashAll(Connection c, Database database, IpKeys keys) throws SQLException {
-        List<String> raw = new ArrayList<>();
-        try (Statement select = c.createStatement();
-             ResultSet rows = select.executeQuery(database.sql(
-                 "SELECT DISTINCT ip FROM {p}ips UNION SELECT DISTINCT ip FROM {p}punishments WHERE ip IS NOT NULL"))) {
-            while (rows.next()) {
-                raw.add(rows.getString(1));
+    // A database whose IPs are hashed: the salt in xBans' folder must be the one they were hashed with.
+    private IpKeys hashedKeys(Connection c, Database database, boolean hash) throws SQLException, IOException {
+        String check = meta(c, database, "ip-salt-check");
+        Path reset = folder.resolve(IpKeys.RESET_FILE);
+        if (Files.exists(reset)) {
+            // The owner says the salt is lost for good: start over with the one here (or a new one).
+            byte[] salt;
+            try {
+                salt = IpKeys.salt(folder, true);
+            } catch (IOException unreadable) {
+                // Not a salt at all: kept aside, and a new one made.
+                Path file = folder.resolve(IpKeys.SALT_FILE);
+                Files.move(file, folder.resolve(IpKeys.SALT_FILE + ".old"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                salt = IpKeys.salt(folder, true);
             }
+            IpKeys keys = IpKeys.hashed(salt);
+            setMeta(c, database, "ip-salt-check", keys.fingerprint());
+            Files.delete(reset);
+            if (!keys.fingerprint().equals(check)) {
+                logger.warning("Started over with the salt in " + IpKeys.SALT_FILE + ", as " + IpKeys.RESET_FILE
+                    + " asked: IP bans and alts recorded before no longer match anyone. Copy " + IpKeys.SALT_FILE
+                    + " to every other server sharing this database.");
+            }
+            return keys;
         }
+        IpKeys keys = IpKeys.hashed(IpKeys.salt(folder, false));
+        if (check != null && !check.equals(keys.fingerprint())) {
+            throw new IOException(IpKeys.SALT_FILE + " isn't the one this database's IPs were hashed with, so no IP"
+                + " ban or alt would match. Copy the right one into xBans' folder from the server that hashed"
+                + " them (or from a backup). " + IpKeys.LOST);
+        }
+        if (check == null) {
+            setMeta(c, database, "ip-salt-check", keys.fingerprint());
+        }
+        if (!hash) {
+            logger.warning("ips.hash is off, but this database's IPs are already hashed, so they stay hashed.");
+        }
+        return keys;
+    }
+
+    /**
+     * Hashes every IP stored, in one transaction with the switch itself, so a crash leaves
+     * the database as it was rather than half hashed (and hashed twice at the next start).
+     * The switch is claimed first: of several servers turning hashing on at once, one does
+     * it, and the others use its salt.
+     *
+     * @return how many addresses were hashed, or -1 if another server had claimed the switch
+     */
+    private int hashAll(Connection c, Database database, IpKeys keys) throws SQLException {
         c.setAutoCommit(false);
-        try (PreparedStatement ips = c.prepareStatement(database.sql("UPDATE {p}ips SET ip = ? WHERE ip = ?"));
-             PreparedStatement punishments = c.prepareStatement(database.sql("UPDATE {p}punishments SET ip = ? WHERE ip = ?"))) {
-            for (String address : raw) {
-                String key = keys.key(address);
-                for (PreparedStatement update : List.of(ips, punishments)) {
-                    update.setString(1, key);
-                    update.setString(2, address);
-                    update.addBatch();
+        try {
+            try (PreparedStatement claim = c.prepareStatement(database.sql(database.dialect().insertIgnore()
+                + " INTO {p}meta (name, value) VALUES ('ip-salt-check', ?)"))) {
+                claim.setString(1, keys.fingerprint());
+                if (claim.executeUpdate() == 0) {
+                    c.rollback();
+                    return -1;
                 }
             }
-            ips.executeBatch();
-            punishments.executeBatch();
+            List<String> raw = new ArrayList<>();
+            try (Statement select = c.createStatement();
+                 ResultSet rows = select.executeQuery(database.sql(
+                     "SELECT DISTINCT ip FROM {p}ips UNION SELECT DISTINCT ip FROM {p}punishments WHERE ip IS NOT NULL"))) {
+                while (rows.next()) {
+                    raw.add(rows.getString(1));
+                }
+            }
+            rekeyImports(c, database, keys);
+            try (PreparedStatement ips = c.prepareStatement(database.sql("UPDATE {p}ips SET ip = ? WHERE ip = ?"));
+                 PreparedStatement punishments = c.prepareStatement(database.sql("UPDATE {p}punishments SET ip = ? WHERE ip = ?"))) {
+                for (String address : raw) {
+                    String key = keys.key(address);
+                    for (PreparedStatement update : List.of(ips, punishments)) {
+                        update.setString(1, key);
+                        update.setString(2, address);
+                        update.addBatch();
+                    }
+                }
+                ips.executeBatch();
+                punishments.executeBatch();
+            }
             renameIpPunishments(c, database);
+            setMeta(c, database, "ip-mode", "hashed");
             c.commit();
-        } catch (SQLException e) {
+            return raw.size();
+        } catch (SQLException | RuntimeException e) {
             c.rollback();
             throw e;
         } finally {
             c.setAutoCommit(true);
         }
-        return raw.size();
+    }
+
+    /** Where an imported IP ban came from names its IP, keyed as the database keys it: {@code vanilla:ip:<key>:<created>}. */
+    public static final String VANILLA_IP = "vanilla:ip:";
+
+    // An imported vanilla IP ban remembers where it came from by its IP, so the address is
+    // swapped for its hash there too. Before the IPs themselves are: it's matched by the row's ip.
+    private static void rekeyImports(Connection c, Database database, IpKeys keys) throws SQLException {
+        List<Object[]> rows = new ArrayList<>();
+        try (PreparedStatement select = c.prepareStatement(database.sql(
+            "SELECT id, ip, imported FROM {p}punishments WHERE imported LIKE ?"))) {
+            select.setString(1, VANILLA_IP + "%");
+            try (ResultSet found = select.executeQuery()) {
+                while (found.next()) {
+                    rows.add(new Object[] {found.getLong(1), found.getString(2), found.getString(3)});
+                }
+            }
+        }
+        try (PreparedStatement update = c.prepareStatement(database.sql("UPDATE {p}punishments SET imported = ? WHERE id = ?"))) {
+            for (Object[] row : rows) {
+                String ip = (String) row[1];
+                String imported = (String) row[2];
+                String prefix = VANILLA_IP + ip;
+                String key = ip == null ? "?" : keys.key(ip);
+                // Its date after the address; one that doesn't start so (written by hand) keeps no part of it.
+                String rest = ip != null && imported.startsWith(prefix) ? imported.substring(prefix.length()) : ":#" + row[0];
+                update.setString(1, VANILLA_IP + key + rest);
+                update.setLong(2, (Long) row[0]);
+                update.addBatch();
+            }
+            update.executeBatch();
+        }
     }
 
     // An IP punishment with no account is named after its IP (masked, or the start of its

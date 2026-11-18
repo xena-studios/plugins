@@ -4,6 +4,7 @@ import co.xenastudios.xbans.api.Punishment;
 import co.xenastudios.xbans.api.PunishmentType;
 import co.xenastudios.xbans.ip.IpKeys;
 import co.xenastudios.xbans.model.Entry;
+import co.xenastudios.xbans.storage.Store;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -56,7 +57,7 @@ final class VanillaSource implements Source {
             if (ip == null || !IpKeys.punishable(ip)) {
                 continue;
             }
-            add(haul, ban, null, IpKeys.label(ip), ip, scope, now, "vanilla:ip:" + ip + ":" + text(ban, "created"));
+            add(haul, ban, null, IpKeys.label(ip), ip, scope, now, Store.VANILLA_IP + Haul.IP + ":" + text(ban, "created"));
         }
         if (index == 0) {
             throw new ImportException("the server's ban lists are empty.");

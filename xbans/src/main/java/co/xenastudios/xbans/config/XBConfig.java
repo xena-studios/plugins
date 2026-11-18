@@ -267,8 +267,9 @@ public record XBConfig(
         @Comment({
             "Store a salted hash instead of the IP: alts and IP bans still work, but there's no list",
             "of addresses to leak. The salt is in ip-salt.txt in xBans' folder; copy it to every",
-            "server of a network. Once on, it stays on for that database: addresses already stored",
-            "are hashed."})
+            "server of a network, and turn it on with every server stopped. Once on, it stays on",
+            "for that database: addresses already stored are hashed. A lost salt: see the privacy",
+            "page (reset-ip-salt.txt)."})
         boolean hash,
         @Comment("Tell staff when a player joins who shares an IP with a banned account.") boolean altAlerts) {}
 

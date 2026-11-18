@@ -145,7 +145,8 @@ public final class Imports {
                         continue;
                     }
                     Entry keyed = keyed(entry, b, ips);
-                    long id = Store.insertImported(c, b, keyed, row.key());
+                    String key = keyed.ip() == null ? row.key() : row.key().replace(Haul.IP, keyed.ip());
+                    long id = Store.insertImported(c, b, keyed, key);
                     if (id < 0) {
                         counts[1]++;
                         continue;

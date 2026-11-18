@@ -24,6 +24,16 @@ public final class IpKeys {
 
     /** The file the salt is kept in, in xBans' folder. */
     public static final String SALT_FILE = "ip-salt.txt";
+    /**
+     * Put in xBans' folder by the owner when the salt is lost for good: at the next start, a
+     * hashed database takes the salt that's there (or a new one), and the file is deleted.
+     * IP bans and alts recorded before no longer match anyone.
+     */
+    public static final String RESET_FILE = "reset-ip-salt.txt";
+    /** What the console says to do when the salt can't be found again. */
+    public static final String LOST = "If it's lost for good, create an empty file named " + RESET_FILE
+        + " in xBans' folder and start again: xBans starts over with a new salt, and IP bans and alts recorded"
+        + " before no longer match anyone.";
     private static final Pattern IPV4 = Pattern.compile("\\d{1,3}(\\.\\d{1,3}){3}");
     private static final Pattern IPV6 = Pattern.compile("[0-9a-fA-F:.]{2,45}");
     private static final Pattern HEX = Pattern.compile("[0-9a-f]{64}");
@@ -58,13 +68,14 @@ public final class IpKeys {
             String text = Files.readString(file, StandardCharsets.US_ASCII).strip();
             if (!HEX.matcher(text).matches()) {
                 throw new IOException(SALT_FILE + " should hold 64 hex digits. Put back the one this database's IPs"
-                    + " were hashed with (from another server of the network, or a backup).");
+                    + " were hashed with (from another server of the network, or a backup). " + LOST);
             }
             return HexFormat.of().parseHex(text);
         }
         if (!create) {
             throw new IOException(SALT_FILE + " is missing, but this database's IPs are hashed with it. Copy it into"
-                + " xBans' folder from the server that hashed them (or from a backup); without it no IP ban or alt matches.");
+                + " xBans' folder from the server that hashed them (or from a backup); without it no IP ban or alt matches. "
+                + LOST);
         }
         byte[] salt = new byte[32];
         new SecureRandom().nextBytes(salt);

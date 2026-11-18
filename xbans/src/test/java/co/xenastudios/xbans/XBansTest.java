@@ -489,10 +489,11 @@ class XBansTest {
         assertEquals("Reached 3 warnings", mute.punishment().reason());
         assertTrue(mute.punishment().silent());
 
+        // unwarn looks Steve up before it writes, so its write can come after settle()'s.
         console("unwarn Steve");
+        await(() -> plugin.store().activeWarnings(steve.getUniqueId()).join().size() == 2);
         settle();
-        int active = plugin.store().activeWarnings(steve.getUniqueId()).join().size();
-        assertEquals(2, active);
+        assertEquals(2, plugin.store().activeWarnings(steve.getUniqueId()).join().size(), "only the newest is taken off");
     }
 
     @Test

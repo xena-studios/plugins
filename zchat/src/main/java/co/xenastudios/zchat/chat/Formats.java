@@ -35,7 +35,7 @@ public final class Formats {
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
         .character('&').hexColors().useUnusualXRepeatedCharacterHexFormat().build();
 
-    private record GroupFormat(String permission, Message format) {}
+    private record GroupFormat(String name, String permission, Message format) {}
 
     private final boolean enabled;
     private final String colorPermission;
@@ -60,7 +60,7 @@ public final class Formats {
             Settings.Group group = entry.getValue();
             Message format = group.format().isEmpty() ? settings.defaultFormat() : group.format();
             papi |= usesPercent(format);
-            groups.add(new GroupFormat(permission(entry.getKey(), group), withPapiTags(format)));
+            groups.add(new GroupFormat(entry.getKey(), permission(entry.getKey(), group), withPapiTags(format)));
         }
         papi |= settings.defaultFormat().template().contains("<papi:");
         for (GroupFormat group : groups) {
@@ -113,16 +113,40 @@ public final class Formats {
         return styled ? PLAYER_STYLES.deserialize(text) : Component.text(text);
     }
 
-    /** One chat line, as everyone sees it. */
-    public Component render(Player source, Component displayName, Component message) {
-        Message format = defaultFormat;
+    /** The group whose format a player gets, or null for the default format. */
+    private GroupFormat group(Player source) {
         for (GroupFormat group : groups) {
             if (group.permission.isBlank() || source.hasPermission(group.permission)) {
-                format = group.format;
-                break;
+                return group;
             }
         }
-        return format.render(
+        return null;
+    }
+
+    /** The name of the group whose format a player gets, or {@code fallback} for the default format. */
+    public String formatName(Player source, String fallback) {
+        GroupFormat group = group(source);
+        return group == null ? fallback : group.name;
+    }
+
+    /** One chat line, as everyone sees it. */
+    public Component render(Player source, Component displayName, Component message) {
+        GroupFormat group = group(source);
+        return (group == null ? defaultFormat : group.format).render(
+            Placeholders.text("player", source.getName()),
+            Placeholders.component("displayname", inert(displayName)),
+            Placeholders.component("message", message),
+            placeholderApi(source));
+    }
+
+    /**
+     * {@link #render(Player, Component, Component)} with placeholders other plugins added
+     * through the API. Theirs go first, so a name zChat uses stays zChat's.
+     */
+    public Component render(Player source, Component displayName, Component message, TagResolver added) {
+        GroupFormat group = group(source);
+        return (group == null ? defaultFormat : group.format).render(
+            added,
             Placeholders.text("player", source.getName()),
             Placeholders.component("displayname", inert(displayName)),
             Placeholders.component("message", message),

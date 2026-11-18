@@ -97,6 +97,11 @@ public final class ChatState {
         }
     }
 
+    /** Every online player, safe to read from any thread. */
+    public java.util.Collection<Player> online() {
+        return names.values();
+    }
+
     /** The online player with this name, ignoring case, or null. */
     public Player online(String name) {
         return names.get(name.toLowerCase(Locale.ROOT));

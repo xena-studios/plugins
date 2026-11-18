@@ -1,6 +1,6 @@
 # zChat on a real server, from the console.
 run: zchat info
-expect: zChat 3.1.2 on
+expect: zChat 3.2.0 on
 
 # Ours replaces Minecraft's /msg (vanilla says "No player was found").
 run: msg Nobody hi

@@ -4,6 +4,11 @@ import co.xenastudios.core.ListenerModule;
 import co.xenastudios.core.text.Message;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.zchat.ZChat;
+import co.xenastudios.zchat.api.MessageKind;
+import co.xenastudios.zchat.api.ZChatApi;
+import co.xenastudios.zchat.api.event.ChatMessageEvent;
+import co.xenastudios.zchat.api.event.ChatMessageSentEvent;
+import co.xenastudios.zchat.api.event.MentionEvent;
 import co.xenastudios.zchat.config.Settings;
 import co.xenastudios.zchat.config.ZConfig;
 import io.papermc.paper.chat.ChatRenderer;
@@ -15,6 +20,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -60,6 +66,16 @@ public final class ChatListener extends ListenerModule {
             refuse(event, config.mutechat().messageBlocked());
             return;
         }
+        // Other plugins' mutes, through the API: one read when there are none.
+        MuteProviders mutes = zchat.mutes();
+        if (mutes.size() > 0) {
+            Component reason = mutes.reason(player, MessageKind.CHAT);
+            if (reason != null) {
+                event.setCancelled(true);
+                player.sendMessage(reason);
+                return;
+            }
+        }
 
         ChatState.Recent recent = state.recent(player.getUniqueId());
         Settings.Cooldown cooldown = config.cooldown();
@@ -75,7 +91,7 @@ public final class ChatListener extends ListenerModule {
         // it added, unless the filter has to change the words.
         Component given = event.message();
         Component kept = given.equals(event.originalMessage()) ? null : given;
-        Screen screen = Screen.of(zchat, player, PlainTextComponentSerializer.plainText().serialize(given), kept);
+        Screen screen = Screen.of(zchat, player, PlainTextComponentSerializer.plainText().serialize(given), kept, MessageKind.CHAT);
         if (screen.blocked()) {
             refuse(event, config.filter().messageBlocked());
             return;
@@ -111,10 +127,25 @@ public final class ChatListener extends ListenerModule {
             event.viewers().removeIf(viewer -> viewer instanceof Player other && other != player && state.hidesChat(other.getUniqueId()));
         }
 
+        // For other plugins, through the API; built only when something listens for it.
+        TagResolver added = null;
+        if (ChatMessageEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            ChatMessageEvent api = new ChatMessageEvent(!Bukkit.isPrimaryThread(), player, message,
+                compiled.formats().formatName(player, ZChatApi.DEFAULT_FORMAT));
+            if (!api.callEvent()) {
+                event.setCancelled(true);
+                return;
+            }
+            added = placeholders(api);
+        }
+
         if (compiled.formats().enabled()) {
             Formats formats = compiled.formats();
             // Drawn once and the same line sent to every viewer.
-            event.renderer(ChatRenderer.viewerUnaware((source, displayName, said) -> formats.render(source, displayName, said)));
+            TagResolver extra = added;
+            event.renderer(ChatRenderer.viewerUnaware(extra == null
+                ? (source, displayName, said) -> formats.render(source, displayName, said)
+                : (source, displayName, said) -> formats.render(source, displayName, said, extra)));
         }
         pending.put(event, new Pending(sent, mentions));
     }
@@ -129,6 +160,10 @@ public final class ChatListener extends ListenerModule {
         }
         Player sender = event.getPlayer();
         zchat.state().recent(sender, done.recent());
+        // Built only when something listens for it.
+        if (ChatMessageSentEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            new ChatMessageSentEvent(event.isAsynchronous(), sender, event.message(), event.viewers()).callEvent();
+        }
         Mentions.Applied mentions = done.mentions();
         Settings.Mentions settings = zchat.config().mentions();
         if (mentions == null || settings.sound().isNone() || (!mentions.everyone() && mentions.pinged().isEmpty())) {
@@ -141,12 +176,24 @@ public final class ChatListener extends ListenerModule {
                 // miss a player who vanished that very moment.
                 boolean byName = !mentions.everyone();
                 zchat.tasks().entity(player, () -> {
-                    if (!byName || sender.canSee(player)) {
+                    if ((!byName || sender.canSee(player))
+                        // Built only when something listens for it.
+                        && (MentionEvent.getHandlerList().getRegisteredListeners().length == 0
+                            || new MentionEvent(player, sender, !byName).callEvent())) {
                         settings.sound().play(player, Sound.Source.PLAYER);
                     }
                 });
             }
         }
+    }
+
+    private static TagResolver placeholders(ChatMessageEvent api) {
+        if (api.getPlaceholders().isEmpty()) {
+            return null;
+        }
+        TagResolver.Builder builder = TagResolver.builder();
+        api.getPlaceholders().forEach((name, value) -> builder.resolver(Placeholders.component(name, value)));
+        return builder.build();
     }
 
     private static void refuse(AsyncChatEvent event, Message message, TagResolver... placeholders) {

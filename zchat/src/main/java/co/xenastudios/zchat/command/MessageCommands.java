@@ -7,6 +7,8 @@ import co.xenastudios.core.command.Completions;
 import co.xenastudios.core.command.Invocation;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.zchat.ZChat;
+import co.xenastudios.zchat.api.MessageKind;
+import co.xenastudios.zchat.api.event.PrivateMessageEvent;
 import co.xenastudios.zchat.chat.ChatState;
 import co.xenastudios.zchat.chat.Screen;
 import co.xenastudios.zchat.config.Settings;
@@ -49,8 +51,13 @@ public final class MessageCommands {
                         throw invocation.usage();
                     }
                     String text = invocation.rest(1);
-                    for (Player target : targets(zchat, invocation)) {
-                        send(zchat, invocation.sender(), target, text);
+                    List<Player> targets = targets(zchat, invocation);
+                    // Once, not per target: a selector can name many.
+                    if (muted(zchat, invocation.sender())) {
+                        return;
+                    }
+                    for (Player target : targets) {
+                        send(zchat, invocation.sender(), target, text, false);
                     }
                 }));
         }
@@ -71,7 +78,10 @@ public final class MessageCommands {
                     if (partner == null) {
                         throw new CommandFailure(reply.messageNobody());
                     }
-                    send(zchat, invocation.sender(), recipient(zchat, invocation, partner), text);
+                    CommandSender to = recipient(zchat, invocation, partner);
+                    if (!muted(zchat, invocation.sender())) {
+                        send(zchat, invocation.sender(), to, text, true);
+                    }
                 }));
         }
 
@@ -152,17 +162,44 @@ public final class MessageCommands {
         return sender instanceof ConsoleCommandSender ? ChatState.CONSOLE : null;
     }
 
-    /** Delivers a private message: filtered, to both sides, to spies, and remembered for /reply. */
-    static void send(ZChat zchat, CommandSender from, CommandSender to, String text) {
+    /**
+     * Whether other plugins' mutes, through the API, stop a player's private messages.
+     * Tells them why. Asked once per command, before {@link #send}.
+     */
+    static boolean muted(ZChat zchat, CommandSender from) {
+        if (!(from instanceof Player player) || zchat.mutes().size() == 0) {
+            return false;
+        }
+        Component reason = zchat.mutes().reason(player, MessageKind.PRIVATE_MESSAGE);
+        if (reason == null) {
+            return false;
+        }
+        player.sendMessage(reason);
+        return true;
+    }
+
+    /**
+     * Delivers a private message: filtered, to both sides, to spies, and remembered for
+     * /reply. The caller has checked {@link #muted} already.
+     */
+    static void send(ZChat zchat, CommandSender from, CommandSender to, String text, boolean reply) {
         ZConfig config = zchat.config();
         Settings.PrivateMessages settings = config.privateMessages();
         Component message = Component.text(text);
         if (from instanceof Player player) {
-            Screen screen = Screen.of(zchat, player, text);
+            Screen screen = Screen.of(zchat, player, text, MessageKind.PRIVATE_MESSAGE);
             if (screen.blocked()) {
                 throw new CommandFailure(config.filter().messageBlocked());
             }
             message = screen.message();
+        }
+        // Built only when something listens for it.
+        if (PrivateMessageEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            PrivateMessageEvent event = new PrivateMessageEvent(!Bukkit.isPrimaryThread(), from, to, message, reply);
+            if (!event.callEvent()) {
+                return;
+            }
+            message = event.getMessage();
         }
         var said = Placeholders.component("message", message);
 

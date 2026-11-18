@@ -1,5 +1,13 @@
 # zChat changelog
 
+## Unreleased
+
+Replace the jar and restart. Your config is kept as it is.
+
+### Added
+
+- A developer API, so other plugins can work with zChat: a punishment plugin can mute players in chat and private messages and show its own reason, other plugins can send announcements in zChat's style (skipping players who hid chat), add their own placeholders to chat formats, and listen for chat messages (before other plugins have their say, and once they're sent), filter catches, private messages and mentions. See [Developer API](https://docs.xenastudios.co/zchat/developer-api/). It costs nothing unless a plugin uses it: chat takes the same time per message as before.
+
 ## 3.1.2
 
 Replace the jar and restart. Your config is kept as it is.

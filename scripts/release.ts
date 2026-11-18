@@ -211,6 +211,8 @@ function plan(arg: string): Plan | string[] {
   if (!firstRelease && section(changelog, to) !== null) problems.push(`${changelogFile} already has a "## ${to}" section`);
   if (problems.length) return problems;
 
+  // The id and name go into patterns as literal text.
+  const lit = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const edits: Edit[] = [];
   const edit = (file: string, pattern: RegExp, replacement: string) => {
     const text = read(file);
@@ -224,7 +226,7 @@ function plan(arg: string): Plan | string[] {
   edit(buildFile, /^version = "[^"]+"$/m, `version = "${to}"`);
   const bootChecks = `${id}/boot-checks.txt`;
   if (fs.existsSync(path.join(ROOT, bootChecks))) {
-    edit(bootChecks, new RegExp(`^((?:\\w+ )?expect: ${plugin.name} )\\S+( on)$`, "m"), `$1${to}$2`);
+    edit(bootChecks, new RegExp(`^((?:\\w+ )?expect: ${lit(plugin.name)} )\\S+( on)$`, "m"), `$1${to}$2`);
   }
   const docs = path.join(DOCS, id);
   if (fs.existsSync(docs)) {
@@ -233,8 +235,8 @@ function plan(arg: string): Plan | string[] {
       const file = path.relative(ROOT, path.join(docs, page));
       edit(file, /Current version: \*\*[^*]+\*\*/, `Current version: **${to}**`);
       if (plugin.api) {
-        edit(file, new RegExp(`("co\\.xenastudios\\.${id}:${id}-api:)[^"]+(")`), `$1${to}$2`);
-        edit(file, new RegExp(`(<artifactId>${id}-api</artifactId>\\s*<version>)[^<]+(</version>)`), `$1${to}$2`);
+        edit(file, new RegExp(`("co\\.xenastudios\\.${lit(id)}:${lit(id)}-api:)[^"]+(")`), `$1${to}$2`);
+        edit(file, new RegExp(`(<artifactId>${lit(id)}-api</artifactId>\\s*<version>)[^<]+(</version>)`), `$1${to}$2`);
         // From "it's published when X is released" to "it's on Maven Central".
         edit(
           file,

@@ -29,6 +29,7 @@ Why the plugins are built the way they are, oldest first.
 | [Developer APIs ship inside the plugin, and shared code lives in the core](#developer-apis-ship-inside-the-plugin-and-shared-code-lives-in-the-core-2026-11-17) | 2026-11-17 |
 | [Network mode: one change feed in the database](#network-mode-one-change-feed-in-the-database-2026-11-17) | 2026-11-17 |
 | [Chat pages, offline players, warmups and Vault move to the core](#chat-pages-offline-players-warmups-and-vault-move-to-the-core-2026-11-17) | 2026-11-17 |
+| [xVote: a receiver of our own, and votes taken before they're paid](#xvote-a-receiver-of-our-own-and-votes-taken-before-theyre-paid-2026-11-18) | 2026-11-18 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -212,3 +213,16 @@ Each of these has at least two users among the plugins being built (#48's table)
 - **`hook/VaultEconomy`**: from xPlots. The class plugins use never names a Vault type, and the one that does is only loaded once Vault is enabled, so a server without Vault never sees a `NoClassDefFoundError` (the sandbox checks this on servers without Vault). The economy is looked up each time, as before.
 
 xPlots keeps its own `Wallet` (an economy or an item) and its teleport messages and bypass permission; only the general parts moved. Its jar grew about 8 KiB, mostly the warmup's damage and countdown options that xTeleport will use.
+
+## xVote: a receiver of our own, and votes taken before they're paid (2026-11-18)
+
+xVote receives votes itself instead of depending on NuVotifier, which hasn't had a release since 2021 and which nearly every voting plugin needs beside it.
+
+- **NuVotifier's protocols, byte for byte, without Netty.** The greeting, v1's 256-byte RSA block (PKCS#1 v1.5, a 2048-bit key) and v2's signed JSON (HMAC-SHA256 of the payload with the list's token, the greeting's challenge inside, 0x733A and a length in front), and the same error replies. Keys stay in `rsa/` as NuVotifier writes them and tokens in a `tokens.yml` with its `tokens:` section, so a NuVotifier folder is taken over on the first start and lists never change. Tokens are kept out of `config.yml`, which owners paste when asking for help. They're read with a path separator no name has, because Bukkit splits keys on dots and `MinecraftServers.org` would become two sections (NuVotifier itself trips on this). The tests use a key, a v1 block and an HMAC made with openssl, plus votes built exactly as NuVotifier's own client builds them, so the same mistake can't sit on both sides.
+- **One platform thread accepts, each connection gets a virtual thread,** under a hard cap (more are closed at once), with a deadline for the whole conversation rather than per read, so a byte at a time can't hold a slot, and a limit per address per minute checked before anything is read or decrypted. Each kind of error is logged once per source until a reload. JSON is Paper's Gson; nothing is shaded in.
+- **A vote is taken before it's paid.** Every vote is a row; paying one starts with `UPDATE ... SET claim = ? WHERE claim IS NULL` in the database, so two servers sharing it can't both pay a vote, however they race (tested with two servers on one SQLite file, and on MariaDB with the real change feed). A crash between taking and paying loses that reward rather than paying it twice; a player who leaves before the reward reaches their thread gives the vote back. The vote's place in the player's count, streak and first-of-the-day are stored when it's matched to a player, so whichever server pays it pays the same.
+- **Names wait.** Lists send names, not uuids. A name is matched from memory only (online, voted before, or the server's user cache), never by asking Mojang, because a name that never joined may be a typo or a Bedrock player; it waits, and the first player with that name to join gets it. On a network, the change feed's news of a vote lets the server where that name is online match it.
+- **Totals keep their period's key** (the day, week and month they were counted in), so nothing resets them at midnight and no task runs. Leaderboards are sorted again only on the first question after a vote.
+- **The receiver starts off the server's threads,** since it reads key files and may make a key, one change at a time, and never binds after the plugin is disabled.
+- **The jar is about 300 KiB:** the receiver, the ledger and its network claims, rewards, commands and the API. Its budget is 350.
+

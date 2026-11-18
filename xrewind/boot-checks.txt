@@ -32,6 +32,11 @@ expect: Nothing to undo.
 # test blocks with execute, so it checks only what xRewind says.
 run: forceload add 96 96 111 111
 expect: Marked
+# Folia loads the chunks off the console's thread, so give it two ticks first.
+run: xr reload
+expect: Reloaded xRewind
+run: xr reload
+expect: Reloaded xRewind
 run: fill 100 70 100 104 74 104 minecraft:oak_planks
 expect: Successfully filled
 run: setblock 102 71 103 minecraft:chest[facing=north,type=left]{Items:[{Slot:0b,id:"minecraft:diamond",count:5}]}

@@ -1,0 +1,38 @@
+# xVote on a real server, from the console. Paper and Folia.
+# The database opens with the SQLite driver Paper and Folia ship, from a paper-plugin.
+logged: Loaded 0 voters from the SQLite database votes.db.
+# On its first start it makes NuVotifier-format keys and a token, then listens on its
+# own thread.
+logged: Listening for votes on 0.0.0.0:8192 (Votifier v1 and v2).
+run: xvote info
+expect: xVote 1.0.0 on
+run: xvote reload
+expect: Reloaded xVote in
+run: xvote status
+expect: listening on port 8192
+
+# Test votes go through the receiver's socket, signed with the token, end to end. Steve
+# and Alex have never joined, so their votes wait for them.
+run: vote test Steve
+expect: Vote for Steve from test (test): held until Steve first joins.
+run: vote test Alex planetminecraft
+expect: Vote for Alex from PlanetMinecraft.com (test): held until Alex first joins.
+# The same site again, within its cooldown: a repeat, dropped.
+run: vote test Alex planetminecraft
+expect: dropped: a repeat within the site's cooldown.
+run: vote test Not-a-name
+expect: can't be a Minecraft name.
+
+# Votes for names that haven't joined don't count toward the leaderboards yet.
+run: vote top all
+expect: No votes of all time yet.
+run: vote
+expect: Planet Minecraft
+run: xvote key
+expect: The public key for lists that use Votifier v1
+run: xvote token
+expect: Votifier v2 tokens
+run: xvote party
+expect: The vote party is off.
+run: xvote import nuvotifier
+expect: There's no NuVotifier folder

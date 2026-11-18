@@ -88,8 +88,24 @@ public final class Database {
         Properties properties = new Properties();
         properties.setProperty("user", settings.username());
         properties.setProperty("password", settings.password());
+        // Without these, a connection whose packets are dropped (a firewall, a database host
+        // that vanished) waits forever, and so does the plugin's database thread. Ten seconds
+        // to connect; five minutes for one reply, since purges and imports run long queries.
+        // An owner's own value in storage.mysql.properties wins.
+        defaultTo(properties, settings.properties(), "connectTimeout", "10000");
+        defaultTo(properties, settings.properties(), "socketTimeout", "300000");
         return new Database(Dialect.MYSQL, url, properties, prefix,
             "MySQL at " + settings.host() + ":" + settings.port() + "/" + settings.database());
+    }
+
+    /** Sets {@code key} unless the owner's extra connection properties already set it. */
+    static void defaultTo(Properties properties, String ownerProperties, String key, String value) {
+        for (String pair : ownerProperties.split("&")) {
+            if (pair.strip().regionMatches(true, 0, key + "=", 0, key.length() + 1)) {
+                return;
+            }
+        }
+        properties.setProperty(key, value);
     }
 
     private static void load(String driver, String name) throws DatabaseException {

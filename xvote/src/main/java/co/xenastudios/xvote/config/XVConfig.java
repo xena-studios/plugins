@@ -22,7 +22,7 @@ public record XVConfig(
     @Comment({
         "The look xVote's messages share. The default messages use these as tags, so changing",
         "a colour here restyles them all. Write a style as MiniMessage tags: <gray>,",
-        "<#91ACFF>, or <gold><bold>."})
+        "<#4D7BFD>, or <gold><bold>."})
     Theme theme,
     @Comment("What players are told.") Messages messages,
     @Comment({

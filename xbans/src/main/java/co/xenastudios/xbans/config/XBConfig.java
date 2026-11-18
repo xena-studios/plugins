@@ -24,7 +24,7 @@ public record XBConfig(
     @Comment({
         "The look xBans' messages share. The default messages use these as tags, so changing",
         "a colour here restyles them all. Write a style as MiniMessage tags: <gray>,",
-        "<#FF9447>, or <gold><bold>."})
+        "<#F53A51>, or <gold><bold>."})
     Theme theme,
     @Comment({
         "What punished players see. <reason>, <staff>, <id>, <expires> (a date), <time-left>,",
@@ -307,9 +307,9 @@ public record XBConfig(
 
     public static final XBConfig DEFAULTS = new XBConfig(
         new Theme(
-            "<#FF9447>»</#FF9447> ",
+            "<#F53A51>»</#F53A51> ",
             TextStyle.parse("<gray>"),
-            TextStyle.parse("<#FF9447>"),
+            TextStyle.parse("<#F53A51>"),
             TextStyle.parse("<#5EE08A>"),
             TextStyle.parse("<#FF6B6B>")),
         new Screens(
@@ -318,9 +318,9 @@ public record XBConfig(
                 + "\n<gray>Ends in <white><time-left></white> (<expires>)" + SCREEN_END),
             Message.of("<#FF6B6B><bold>Your IP is banned from this server.</bold>\n\n<gray>Reason: <white><reason>"
                 + "\n<gray>Ends: <white><expires>" + SCREEN_END),
-            Message.of("<#FF9447><bold>You were kicked.</bold>\n\n<gray>Reason: <white><reason>"),
+            Message.of("<#F53A51><bold>You were kicked.</bold>\n\n<gray>Reason: <white><reason>"),
             "https://example.com/appeal",
-            Message.of("<#FF9447>The server is still starting.</#FF9447>\n<gray>Try again in a few seconds."),
+            Message.of("<#F53A51>The server is still starting.</#F53A51>\n<gray>Try again in a few seconds."),
             Message.of("<prefix><error>You're muted:</error> <reason>"),
             Message.of("<prefix><error>You're muted</error> for <highlight><time-left></highlight>: <reason>"),
             Message.of("<prefix><error>You were muted</error> by <highlight><staff></highlight> <duration>: <reason>"),

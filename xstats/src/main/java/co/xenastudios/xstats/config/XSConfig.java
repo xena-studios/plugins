@@ -23,7 +23,7 @@ public record XSConfig(
     @Comment({
         "The look xStats' messages share. The default messages use these as tags, so changing",
         "a colour here restyles them all. Write a style as MiniMessage tags: <gray>,",
-        "<#F77FA5>, or <gold><bold>."})
+        "<#3EC407>, or <gold><bold>."})
     Theme theme,
     @Comment("What players are told.") Messages messages,
     @Comment("The commands players use. Blank permission means everyone may.") Commands commands,
@@ -259,9 +259,9 @@ public record XSConfig(
 
     public static final XSConfig DEFAULTS = new XSConfig(
         new Theme(
-            "<#F77FA5>»</#F77FA5> ",
+            "<#3EC407>»</#3EC407> ",
             TextStyle.parse("<gray>"),
-            TextStyle.parse("<#F77FA5>"),
+            TextStyle.parse("<#3EC407>"),
             TextStyle.parse("<#5EE08A>"),
             TextStyle.parse("<#FF6B6B>")),
         new Messages(
@@ -290,13 +290,13 @@ public record XSConfig(
         new Collecting(5, 4, true, true),
         new Leaderboards(100, true, 10,
             new Boards(10,
-                Message.of("<#F77FA5><bold><stat></bold></#F77FA5>\n<gray><period>"),
-                Message.of("<gray><rank>.</gray> <white><player></white> <#F77FA5><value>"),
+                Message.of("<#3EC407><bold><stat></bold></#3EC407>\n<gray><period>"),
+                Message.of("<gray><rank>.</gray> <white><player></white> <#3EC407><value>"),
                 Message.of("<gray>Nobody yet"))),
         new Periods("", DayOfWeek.MONDAY, 90, new PeriodNames("Today", "This week", "This month", "All time")),
         new Web(false, "0.0.0.0", 8804, "", true, List.of("*"), 120, 32, List.of(), "X-Forwarded-For",
             new Avatars("https://mc-heads.net/avatar/{uuid}/{size}", false),
-            new Branding("", "", "", Colour.of("#F77FA5"), Colour.of("#0F1419"), Colour.of("#1A222B"), Colour.of("#E6EDF3"))),
+            new Branding("", "", "", Colour.of("#3EC407"), Colour.of("#0F1419"), Colour.of("#1A222B"), Colour.of("#E6EDF3"))),
         "main",
         StorageSettings.defaults("xstats_"),
         NetworkSettings.DEFAULTS,

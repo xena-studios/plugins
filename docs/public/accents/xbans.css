@@ -1,9 +1,11 @@
 /* xbans's accent (xena-studios/brand, scripts/plugin-brand.ts), loaded on its pages.
    Starlight puts route head entries before the bundled theme, so the doubled
    :root outranks theme.css instead of relying on order. */
+/* The brand's crimson (#D70E3A) is too dark for text here (3.6:1), so the site uses a
+   lighter crimson (5:1), as xBans' messages do. */
 :root:root {
-  --accent: #FF9447;
-  --sl-color-accent-low: #36291F;
-  --sl-color-accent: #FF9447;
-  --sl-color-accent-high: #FEC8A2;
+  --accent: #F53A51;
+  --sl-color-accent-low: #33101C;
+  --sl-color-accent: #F53A51;
+  --sl-color-accent-high: #EB869C;
 }

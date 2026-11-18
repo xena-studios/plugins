@@ -11,15 +11,15 @@ config-version: 1
 
 # The look xTeleport's messages share. The default messages use these as tags, so changing
 # a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#EA87E2>, or <gold><bold>.
+# <#CE41E3>, or <gold><bold>.
 theme:
   # <prefix> starts the default messages. Make it your server's name, such as
   # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
-  prefix: "<#EA87E2>»</#EA87E2> "
+  prefix: "<#CE41E3>»</#CE41E3> "
   # The colour of message text that has no tag of its own.
   base: "<gray>"
   # <highlight>: names and values, such as a player or a speed.
-  highlight: "<#EA87E2>"
+  highlight: "<#CE41E3>"
   # <success>: something turned on or done.
   success: "<#5EE08A>"
   # <error>: something refused or turned off.

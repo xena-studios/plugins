@@ -10,15 +10,15 @@ config-version: 1
 
 # The look xStats' messages share. The default messages use these as tags, so changing
 # a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#F77FA5>, or <gold><bold>.
+# <#3EC407>, or <gold><bold>.
 theme:
   # <prefix> starts the default messages. Make it your server's name, such as
   # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
-  prefix: "<#F77FA5>»</#F77FA5> "
+  prefix: "<#3EC407>»</#3EC407> "
   # The colour of message text that has no tag of its own.
   base: "<gray>"
   # <highlight>: names and values, such as a player or a speed.
-  highlight: "<#F77FA5>"
+  highlight: "<#3EC407>"
   # <success>: something turned on or done.
   success: "<#5EE08A>"
   # <error>: something refused or turned off.
@@ -248,9 +248,9 @@ leaderboards:
     # Places each in-world board shows.
     lines: 10
     # The top line. <stat> and <period> are filled in.
-    title: "<#F77FA5><bold><stat></bold></#F77FA5>\n<gray><period>"
+    title: "<#3EC407><bold><stat></bold></#3EC407>\n<gray><period>"
     # Each place: <rank>, <player>, <value>.
-    line: "<gray><rank>.</gray> <white><player></white> <#F77FA5><value>"
+    line: "<gray><rank>.</gray> <white><player></white> <#3EC407><value>"
     # When nobody is on it yet.
     empty: "<gray>Nobody yet"
 
@@ -325,7 +325,7 @@ web:
     # A logo: a link (https://...), or a PNG, JPEG, SVG or WebP file in plugins/xStats/web/,
     # such as logo.png. Blank for none.
     logo: ""
-    accent: "#f77fa5"
+    accent: "#3ec407"
     background: "#0f1419"
     surface: "#1a222b"
     text: "#e6edf3"

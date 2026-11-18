@@ -26,7 +26,7 @@ public record XTConfig(
     @Comment({
         "The look xTeleport's messages share. The default messages use these as tags, so changing",
         "a colour here restyles them all. Write a style as MiniMessage tags: <gray>,",
-        "<#EA87E2>, or <gold><bold>."})
+        "<#CE41E3>, or <gold><bold>."})
     Theme theme,
     @Comment("What players are told.") Messages messages,
     @Comment({
@@ -248,7 +248,7 @@ public record XTConfig(
         Message alreadySearching,
         @Comment("<world> isn't one /rtp may send the player to.") Message worldNotAllowed) {}
 
-    private static final String ACCENT = "#EA87E2";
+    private static final String ACCENT = "#CE41E3";
 
     public static final XTConfig DEFAULTS = new XTConfig(
         new Theme(

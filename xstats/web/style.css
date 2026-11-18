@@ -1,6 +1,6 @@
 /* xStats' website. Colours come from the server's config (web.branding), set on :root by app.js. */
 :root {
-  --accent: #f77fa5;
+  --accent: #3ec407;
   --background: #0f1419;
   --surface: #1a222b;
   --text: #e6edf3;

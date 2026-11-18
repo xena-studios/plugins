@@ -79,6 +79,12 @@ class FormatTest {
         assertEquals(3000, Money.outgoing(0.1 + 0.2));
         assertEquals(435 * Money.ONE, Money.incoming(4.35 * 100));
         assertEquals(3_3000L, Money.outgoing(1.1 * 3));
+        // From ten billion up, 15 digits are coarser than units: the double's own digits are
+        // rounded the safe way, not half even at 15 digits (which paid in ...012.3460).
+        assertEquals(1_234_567_890_123_456L, Money.incoming(123456789012.34567));
+        assertEquals(1_234_567_890_123_457L, Money.outgoing(123456789012.34567));
+        assertEquals(987_654_321_098_765L, Money.incoming(98765432109.87654));
+        assertEquals(987_654_321_098_766L, Money.outgoing(98765432109.87654));
         assertEquals(-1, Money.outgoing(Double.NaN));
         assertEquals(-1, Money.incoming(-0.01));
         assertEquals(-1, Money.outgoing(1e300));

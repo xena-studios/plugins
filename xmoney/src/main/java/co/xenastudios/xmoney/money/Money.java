@@ -77,10 +77,25 @@ public final class Money {
      * A double as the decimal it stands for: its first 15 significant digits, which a double
      * always holds exactly. What's past them is the noise of binary fractions (0.1 + 0.2 is
      * 0.30000000000000004), which would otherwise round a withdrawal up a unit.
+     *
+     * <p>That's only done where the 15th digit is finer than a unit, so it clears noise of less
+     * than a twentieth of a unit and never rounds an amount by a unit or more. From ten
+     * billion up, 15 digits are coarser than units, and the double's own digits are kept, so
+     * {@link #incoming} rounds them down and {@link #outgoing} up as for any other amount
+     * (rounding there to 15 digits, half even, paid 123456789012.34567 in as
+     * 123456789012.346).
      */
     static BigDecimal of(double amount) {
-        return new BigDecimal(Double.toString(amount)).round(new MathContext(15, RoundingMode.HALF_EVEN));
+        BigDecimal exact = new BigDecimal(Double.toString(amount));
+        int wholeDigits = exact.precision() - exact.scale();
+        if (NOISE_DIGITS - wholeDigits <= SCALE) {
+            return exact;
+        }
+        return exact.round(new MathContext(NOISE_DIGITS, RoundingMode.HALF_EVEN));
     }
+
+    /** Significant digits a double always holds exactly. */
+    private static final int NOISE_DIGITS = 15;
 
     private static long scaled(BigDecimal amount, RoundingMode rounding) {
         if (amount == null || amount.signum() < 0 || amount.compareTo(BigDecimal.valueOf(MAX_WHOLE)) > 0) {

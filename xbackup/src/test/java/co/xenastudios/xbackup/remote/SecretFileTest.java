@@ -25,7 +25,7 @@ class SecretFileTest {
     void whatItWritesReadsBackTheSameHereAndOnTheServer() throws Exception {
         Map<String, Map<String, String>> values = new LinkedHashMap<>();
         Map<String, String> offsite = new LinkedHashMap<>();
-        offsite.put("password", "p\"a:s s#w\\o'rd é\t\u0001 end");
+        offsite.put("password", "p\"a:s s#w\\o'rd é\t\u0001 <&>\u007f\u2028 end");
         offsite.put("client-secret", "");
         values.put("offsite", offsite);
         values.put("odd name", Map.of("password", "- [x] {y}: &z *w !v |u >t"));

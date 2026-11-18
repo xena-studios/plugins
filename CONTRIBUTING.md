@@ -73,11 +73,20 @@ Contributions are licensed under [GPL-3.0-only](LICENSE).
 
 ## Adding a plugin
 
-A plugin's name, words, category and colours live in one place, the brand repo's catalog, and every list of the plugins here is built from it.
+Plan it in a [New plugin issue](https://github.com/xena-studios/plugins/issues/new?template=new_plugin.yml), then, with [xena-studios/brand](https://github.com/xena-studios/brand) checked out beside this repo (and its fonts, see its `docs/building.md`):
 
-1. In xena-studios/brand, `pnpm new-plugin <id> <Name> <category>` adds it with a placeholder glyph and an accent that stays clear of every other. Draw the glyph, write the headline, summary and blurb, and rebuild (see its `docs/plugins.md`).
-2. Here, a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`. Gradle finds it on its own. Then `README.md`, `CHANGELOG.md`, `modrinth.md` (its Modrinth page), `boot-checks.txt` (CI finds it on its own), a folder in the docs, and an `api/` folder for its developer API.
-3. In `docs/`, `pnpm brand:sync` (with the brand repo checked out beside this one) copies its icon, banner and the catalog, and `pnpm catalog` adds it to the README, the docs' sidebar, home page, footer and accents, the labels and the bug form. CI fails if they're out of date.
+```sh
+node scripts/new-plugin.ts xshop Shop Economy    # <id> <Name> <category>
+```
+
+It warns if another project already has the id as its Modrinth slug: the update checker reads that slug's versions, so reserve it as a draft in the xena-studios organization. Then it:
+
+1. Adds the plugin to the brand repo (its `pnpm new-plugin`): a placeholder glyph, an accent that stays clear of every other Xena accent, and its entry in the brand catalog, where a plugin's name, words and colours live.
+2. Writes the module from [`scripts/new-plugin/template/`](scripts/new-plugin/template): the plugin class on `XenaPlugin`, its config with the theme in its accent, the `api/` subproject, a test that keeps the docs' config page in step, `boot-checks.txt`, `CHANGELOG.md`, `README.md`, `modrinth.md`, and the docs pages (Overview, Commands, Configuration, Developer API).
+3. Copies the brand's art and catalog into the docs (`pnpm brand:sync`) and rebuilds every list of the plugins (`pnpm catalog`): the README, the docs' sidebar, home page, footer and accents, the labels and the bug form.
+4. Writes the API's signatures and the docs' default config, and builds the plugin. It boots green as it is.
+
+What's left is marked TODO, and the script lists the files. Gradle finds the new folder on its own. In the brand repo, draw the glyph, write the headline, summary and blurb, rebuild, and open a pull request there; then `pnpm brand:sync` and `pnpm catalog` in `docs/` again. Change the templates when the standard for every plugin changes, so the next one starts from it.
 
 The convention shades in the core, generates `paper-plugin.yml`, sets up Modrinth, and starts the jar budget at 150 KiB (`xena { jarBudgetKb = ... }`).
 

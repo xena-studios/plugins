@@ -9,6 +9,7 @@
 //   .github/labeler.yml              a label per plugin for pull requests
 //   .github/workflows/labels.yml     a label per plugin for bug reports
 //   .github/ISSUE_TEMPLATE/bug_report.yml   the plugin list and the /<plugin> info hint
+//   <plugin>/modrinth.md             "More from Xena Studios": the other released plugins
 //
 // Generated parts of hand-written files sit between "catalog:start" and "catalog:end"
 // markers; everything outside them is left alone.
@@ -162,6 +163,16 @@ between(".github/ISSUE_TEMPLATE/bug_report.yml", plugins.map((p) => `        - $
   const text = outputs.get(file)!;
   const hint = `From ${list(plugins.map((p) => `\`/${p.id} info\``)).replace(/ and (?=`[^`]+`$)/, " or ")}.`;
   write(file, text.replace(/^(\s*description: )From `\/[a-z]+ info`.*$/m, `$1${hint}`));
+}
+
+// --- Modrinth pages: "More from Xena Studios", the other released plugins ---
+// Only pages with the markers (new-plugin's template has them).
+for (const p of plugins) {
+  const file = `${p.id}/modrinth.md`;
+  const full = path.join(ROOT, file);
+  if (!fs.existsSync(full) || !/catalog:start/.test(fs.readFileSync(full, "utf8"))) continue;
+  const others = plugins.filter((o) => o.id !== p.id && o.modrinth);
+  between(file, others.map((o) => `- **[${o.name}](${o.modrinth})**: ${o.tagline} ${o.blurb}`).join("\n") || "- More are on the way.");
 }
 
 // --- Write, or check ---

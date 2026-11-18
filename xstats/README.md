@@ -2,17 +2,19 @@
 
 **Every player's stats, on your own website.**
 
-xStats gives players their stats, everyone leaderboards, and owners placeholders and a stats website the server hosts itself, with no web host, account or sign-in.
+xStats is player stats, leaderboards, placeholders and a stats website the server hosts itself, for Paper and Folia, with no web host, account or sign-in.
 
-- **Minecraft's own stats, for free.** Kills, deaths, blocks mined, distance and any other vanilla stat, read from the counters the server already keeps, with no listeners. Plus AFK-aware playtime, sessions, and any PlaceholderAPI value.
-- **History from day one.** The first start imports every player's `world/stats` files, off the main thread.
+- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Minecraft's own stats.** Kills, deaths, blocks mined, distance and any other vanilla stat, read from the counters the server already keeps, with no listeners. Plus AFK-aware playtime, sessions, and any PlaceholderAPI value.
+- **History from day one.** The first start imports every player's stats files, off the main thread.
 - **Leaderboards per day, week, month and all time,** worked out during the save and answered from memory: `/leaderboard`, `%xstats_top_kills_monthly_1_name%`, Paper text display boards.
 - **A stats website, built in.** Search, profiles, leaderboards and totals in the server's own name, logo and colours, on Java's own HTTP server, with a documented JSON API. Or the same site as static files, hosted anywhere.
-- **One save task,** reading each player on their own thread, a few a tick. Paper and Folia.
+- **You won't feel it running.** One save task, every five minutes, reading each player on their own thread, a few a tick.
+- **Every change applies on reload**, except where stats are stored. No restarts.
 
-Needs Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. PlaceholderAPI is optional.
+**[Download on Modrinth](https://modrinth.com/plugin/xstats)** · [Docs](https://docs.xenastudios.co/xstats/) · [Commands](https://docs.xenastudios.co/xstats/commands/) · [The website](https://docs.xenastudios.co/xstats/website/) · [Developer API](https://docs.xenastudios.co/xstats/developer-api/) · [Changelog](CHANGELOG.md)
 
-**[Download on Modrinth](https://modrinth.com/plugin/xstats)** · [Docs](https://docs.xenastudios.co/xstats/) · [The website](https://docs.xenastudios.co/xstats/website/) · [Commands](https://docs.xenastudios.co/xstats/commands/) · [Changelog](CHANGELOG.md)
+Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. PlaceholderAPI is optional.
 
 ## Developing
 

@@ -1,6 +1,6 @@
 ---
 title: xPlots
-description: "xPlots: rentable plots for Paper box and PvP servers. Select an area and it's split into a grid of plots with signs; players rent with Vault or an item."
+description: "xPlots: rentable plots for Paper box and PvP servers: select an area and it becomes a grid of plots with signs, rented with Vault money or an item."
 sidebar:
   label: Overview
   order: 1
@@ -8,7 +8,7 @@ sidebar:
 
 **Rentable plots, set up in a minute.**
 
-xPlots rents small plots to players for in-game money: the box-server staple. Usually that means a WorldGuard region and a sign for every plot, made by hand. With xPlots you select the whole area, say how big each plot is, and confirm. Every plot and every sign is made for you.
+xPlots rents small plots to players for in-game money, the box-server staple, on Paper and Purpur. Instead of a region and a sign for every plot made by hand, you select the whole area, say how big each plot is, and confirm: every plot and every sign is made for you.
 
 - **Setup in a minute.** One selection becomes a grid of plots with paths between them, outlined in particles before anything changes. See [Setting up](/xplots/setting-up/).
 - **You won't feel it running.** Finding which plot a block is in is a bit of arithmetic, the same for ten plots or ten thousand, and a block outside every field stops at the first check. There's one timer, set for the next rent to run out, and signs are checked once a minute, only in loaded chunks. Nothing else repeats, and protection isn't listened for until you make a field.
@@ -16,6 +16,7 @@ xPlots rents small plots to players for in-game money: the box-server staple. Us
 - **No region per plot.** xPlots protects its own plots. With WorldGuard installed, it makes one region per field, so a world-wide `build deny` doesn't block them.
 - **Vault or your own coin.** Rent goes through your economy, or takes an item instead, so a box server's Coin works as it is.
 - **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every change applies on reload.** Prices, rent periods, signs and menus, with `/xplots reload`. Only a change of storage waits for a restart.
 
 Current version: **1.0.1**, for Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xplots).
 
@@ -33,7 +34,7 @@ When the **rent runs out**, the owner is warned a day and an hour before (or whe
 
 Plots are kept in SQLite out of the box, in `plugins/xPlots/plots.db`, or in MySQL/MariaDB. Everything is held in memory while the server runs and saved in the background, so a click never waits on the disk. See [Configuration](/xplots/configuration/).
 
-## Start here
+## Getting started
 
 1. [Install it](/start/installing/), and if rent is paid in money, Vault and an economy plugin.
 2. Make your first field: [Setting up](/xplots/setting-up/).

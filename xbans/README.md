@@ -2,17 +2,20 @@
 
 **Bans, mutes and warnings. Nothing slips through.**
 
-xBans is a free, open-source punishment plugin: bans, temporary and IP bans, mutes, warnings and kicks, with history, alts, templates and staff limits, all checked from memory.
+xBans is a free, open-source punishment plugin for Paper and Folia: bans, temporary and IP bans, mutes, warnings and kicks, with history, alts, templates and staff limits, all checked from memory.
 
+- **Every feature free.** No premium version, no early-access builds.
 - **Bans that hold.** What's in force is in memory before anyone can join, so the join and chat checks never ask the database. Mutes cover chat (on the older chat events too), the listed commands by any alias, signs, books and anvil renames.
+- **You won't feel it running.** Writes go through one background thread, history pages are read by key range, and nothing repeats on a single server.
 - **Nothing is ever deleted.** An unban is a record beside the ban; only `/prunehistory` deletes.
 - **Networks without a proxy plugin.** Servers sharing a MySQL database share bans within seconds.
 - **IPs can be hashed**, so alts and IP bans work with no list of addresses to leak.
 - **Easy to switch to.** LiteBans' command syntax, so staff habits carry over, and one-command imports from LiteBans, EssentialsX and vanilla.
+- **Every change applies on reload**, even switching to another database. No restarts.
+
+**[Download on Modrinth](https://modrinth.com/plugin/xbans)** · [Docs](https://docs.xenastudios.co/xbans/) · [Commands](https://docs.xenastudios.co/xbans/commands/) · [Switching from LiteBans](https://docs.xenastudios.co/xbans/switching/) · [Developer API](https://docs.xenastudios.co/xbans/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB.
-
-**[Download on Modrinth](https://modrinth.com/plugin/xbans)** · [Docs](https://docs.xenastudios.co/xbans/) · [Commands](https://docs.xenastudios.co/xbans/commands/) · [Switching from LiteBans](https://docs.xenastudios.co/xbans/switching/) · [Changelog](CHANGELOG.md)
 
 ## Developing
 

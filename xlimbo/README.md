@@ -2,15 +2,16 @@
 
 **Never drop a player again.**
 
-xLimbo turns a small Paper server into your network's fallback. When your main server crashes, restarts or can't be reached, your proxy sends players to xLimbo instead of disconnecting them. They wait in an empty void world, in creative with flight, on a purple glass floor, then go back with `/join`, or on their own the moment the main server is back.
+xLimbo turns a small Paper server into your network's fallback: when your main server crashes, restarts or can't be reached, your proxy sends players to xLimbo instead of disconnecting them, and they go back with `/join`, or on their own the moment it's up.
 
+- **Every feature free.** No premium version, no early-access builds.
 - **Built for everyone arriving at once.** Players are placed before they're in the world, on land that's already loaded, so a whole network landing at once never waits on world generation. By default, nothing is saved to disk.
 - **Sends everyone back, without a stampede.** With server-check on, xLimbo watches your main server and sends players back as soon as it's up, a few per second, showing each player their place in line.
-- **It stays up.** Every feature is wrapped so a failure is logged and skipped, never taking the server down. A bad config value falls back to its default.
+- **It stays up.** A feature that fails is logged and stays off, never taking the server down. A bad config value falls back to its default.
 - **Nobody can break it.** The floor can't be broken, players who fall are caught, and portals, liquids, fire, explosions, redstone, mobs and dropped items are all blocked. Each protection can be turned off, and one that's off costs nothing.
-- **Every change applies on reload**, even the world's name and floor.
+- **Every change applies on reload**, even the world's name and floor. No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xlimbo)** · [Docs](https://docs.xenastudios.co/xlimbo/) · [Network setup](https://docs.xenastudios.co/xlimbo/network-setup/) · [Developer API](https://docs.xenastudios.co/xlimbo/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xlimbo)** · [Docs](https://docs.xenastudios.co/xlimbo/) · [Commands](https://docs.xenastudios.co/xlimbo/commands/) · [Network setup](https://docs.xenastudios.co/xlimbo/network-setup/) · [Developer API](https://docs.xenastudios.co/xlimbo/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. Not for Folia: Folia can't create worlds, and a limbo has nothing for Folia to spread across threads.
 

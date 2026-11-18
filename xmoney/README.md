@@ -1,19 +1,21 @@
-![xMoney by Xena Studios. A emerald pixel coin icon and the xMoney name over a stepped horizon in emerald, with the headline "The economy and Vault, in one plugin."](../.github/assets/xmoney-banner.png)
+![xMoney by Xena Studios. An emerald pixel coin icon and the xMoney name over a stepped horizon in emerald, with the headline "The economy and Vault, in one plugin."](../.github/assets/xmoney-banner.png)
 
 **The economy and Vault, in one plugin.**
 
-xMoney is an economy plugin with Vault built in. Shops, jobs and vote plugins written for Vault or VaultUnlocked find it, and the money, with no Vault jar installed. ("xMoney" is a working name.)
+xMoney is an economy plugin for Paper and Folia with Vault built in: shops, jobs and vote plugins written for Vault or VaultUnlocked find it, and the money, with no Vault jar installed. ("xMoney" is a working name.)
 
-- **One jar instead of two.** It carries Vault's and VaultUnlocked's APIs and answers both, on Paper and Folia.
+- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **One jar instead of two.** It carries Vault's and VaultUnlocked's APIs and answers both.
 - **A ledger of every change:** who, how much, the balance after, and why. `/eco history` shows it.
-- **Every balance in memory,** so Vault calls never wait on the disk, from any thread. One background thread saves each change with its ledger line, in the same transaction, as it happens.
+- **You won't feel it running.** Every balance is in memory, so Vault calls never wait on the disk, from any thread. One background thread saves each change with its ledger line, in the same transaction, as it happens.
 - **Whole-number amounts,** so nothing drifts, and NaN, negative or huge amounts from other plugins are refused.
-- **Imports** from EssentialsX, CMI, or the economy registered with Vault now, with a dry run first.
 - **Networks** on one MySQL or MariaDB database (experimental in 1.0): balances shared, and never spent twice.
+- **Easy to switch to.** Imports from EssentialsX, CMI, or the economy registered with Vault now, with a dry run first.
+- **Every change applies on reload**, except where balances are kept, which takes a restart.
 
-Needs Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Replaces Vault: don't install Vault or VaultUnlocked beside it. PlaceholderAPI is optional.
+**[Download on Modrinth](https://modrinth.com/plugin/xmoney)** · [Docs](https://docs.xenastudios.co/xmoney/) · [Commands](https://docs.xenastudios.co/xmoney/commands/) · [Switching](https://docs.xenastudios.co/xmoney/switching/) · [Developer API](https://docs.xenastudios.co/xmoney/developer-api/) · [Changelog](CHANGELOG.md)
 
-**[Download on Modrinth](https://modrinth.com/plugin/xmoney)** · [Docs](https://docs.xenastudios.co/xmoney/) · [Switching](https://docs.xenastudios.co/xmoney/switching/) · [Commands](https://docs.xenastudios.co/xmoney/commands/) · [Changelog](CHANGELOG.md)
+Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Replaces Vault: don't install Vault or VaultUnlocked beside it. PlaceholderAPI is optional.
 
 ## Developing
 

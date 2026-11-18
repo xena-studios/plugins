@@ -1,30 +1,36 @@
-![xLimbo by Xena Studios. A pixel cube icon and the xLimbo name over a stepped horizon in purple, with the headline "Never drop a player again."](https://raw.githubusercontent.com/xena-studios/brand/main/plugins/xlimbo/banner.png)
+![xLimbo by Xena Studios. A purple pixel cube icon and the xLimbo name over a stepped horizon in purple, with the headline "Never drop a player again."](https://raw.githubusercontent.com/xena-studios/brand/main/plugins/xlimbo/banner.png)
 
 ## Never drop a player again.
 
-Your main server crashes. Restarts. Goes down for an update. Without a fallback, every player on it gets kicked, and some of them don't come back.
+Your main server crashes. Restarts. Goes down for an update. Without a fallback, every player on it gets kicked, and some of them don't come back. **With xLimbo, your proxy sends them to a limbo server instead, where they wait until your server is back, and then go back with `/join`, or on their own the moment it's up.**
 
-**With xLimbo, they don't get kicked.** Your proxy (Velocity or BungeeCord) sends them to xLimbo, a limbo server, instead: a calm, empty world where they wait in creative with flight on, until your server is back and they go back with `/join`, or automatically the moment it's up.
-
-**[Read the docs](https://docs.xenastudios.co/xlimbo/)** · **[Network setup](https://docs.xenastudios.co/xlimbo/network-setup/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://docs.xenastudios.co/xlimbo/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
 ## Why server owners pick it
 
-- **It stays up when everything else is down.** That's its whole job. Every feature is built so that a failure is logged and skipped, never taking the server down, and a bad config value falls back to its default.
-- **Built for everyone arriving at once.** Players are placed before they're in the world, on land that's already loaded, so a whole network landing at once never waits on world generation. The world is a single floor and nothing else, a world border caps how far it can grow, and by default nothing is saved to disk.
-- **Sends everyone back, without a stampede.** Turn on server-check and xLimbo watches your main server, then sends players back as soon as it's up, a few per second, showing each player their place in line.
+- **Every feature free.** No premium version, no early-access builds.
+- **It stays up when everything else is down.** That's its whole job. Each feature is turned on separately, so one that fails is logged and stays off without taking the server down, and a bad config value falls back to its default.
+- **Built for everyone arriving at once.** Players are placed before they're in the world, on land that's already loaded, so a whole network landing at once never waits on world generation. The world is one floor layer and nothing else, a world border caps how far it can grow, and by default nothing is saved to disk.
+- **You won't feel it running.** Players can't see each other, which takes away the biggest load a limbo has, and a protection that's off costs nothing.
+- **Every change applies on reload**, even the world's name and floor. No restarts.
+- **Paper and Purpur.** It's a real Paper server, so your other plugins, permissions and proxy setup all still work. Not for Folia: Folia can't create worlds.
+
+---
+
+## What it does
+
+- **Catches players when the main server goes down.** Put it after your main server in Velocity's or BungeeCord's fallback list, and players land in xLimbo instead of being kicked.
+- **Sends everyone back, without a stampede.** Turn on server-check and xLimbo watches your main server, then sends players back as soon as it's up, five per second by default, showing each player their place in line.
 - **Nobody can break it.** The floor can't be broken, players who fall are caught, and portals, liquids, fire, explosions, redstone, mobs and dropped items are all blocked. Turn off any protection you don't want.
-- **Quiet.** No join, quit or death spam when your whole server lands here at once.
-- **Every change applies on reload**, even the world's name and floor.
-- **It's a real Paper server**, so your other plugins, permissions and proxy setup all still work.
+- **Quiet.** No join, quit or death messages when your whole server lands here at once.
 
 ---
 
 ## What players see
 
-- A welcome message telling them what happened, and a reminder in the action bar.
+- A message telling them what happened, and a reminder in the action bar.
 - An empty void with a purple glass floor, in creative with flight, so there's something to do while they wait.
 - `/join` (or `/server`, `/lobby`) to go back the moment your server is up. With server-check on, they're sent back on their own, with their place in line on screen.
 
@@ -32,7 +38,7 @@ Every message is yours to rewrite, with full MiniMessage colours and formatting.
 
 ---
 
-## Up and running
+## Up and running in a minute
 
 1. Run a small separate Paper server with xLimbo on it.
 2. Add it to your proxy after your main server. With Velocity:
@@ -45,18 +51,20 @@ Every message is yours to rewrite, with full MiniMessage colours and formatting.
 3. Set `main-server` in `plugins/xLimbo/config.yml` to your main server's name in the proxy, and turn on `server-check` so players go back on their own.
 4. Stop your main server with someone online, and watch them land in xLimbo instead of being kicked.
 
+**Coming from xLimbo 1.x?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`.
+
 Velocity, BungeeCord, and keeping `/join` secure: **[docs.xenastudios.co/xlimbo](https://docs.xenastudios.co/xlimbo/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur), Java 21 or newer, and a proxy (Velocity or BungeeCord). Not for Folia.
-
-**Coming from xLimbo 1.x?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`.
 
 ---
 
 ## More from Xena Studios
 
+<!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+<!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xlimbo)

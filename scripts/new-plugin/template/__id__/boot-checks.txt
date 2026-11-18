@@ -1,0 +1,7 @@
+# {{display}} on a real server, from the console, on Paper and Folia.
+run: {{id}} info
+expect: {{display}} 1.0.0 on
+
+# Reloading keeps everything running.
+run: {{id}} reload
+expect: Reloaded {{display}} in

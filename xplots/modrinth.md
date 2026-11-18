@@ -11,11 +11,13 @@ Small plots, close together, that players rent with in-game money: the box-serve
 ## Why server owners pick it
 
 - **Setup in a minute, not an afternoon.** One selection becomes a grid of plots with paths between them. You see it outlined in particles before anything changes, then the signs go up on their own.
-- **You won't feel it running.** Finding which plot a block is in is a bit of arithmetic, the same for ten plots or ten thousand. There's one timer, set for the next rent to run out, and signs refresh once a minute, only where players are. Nothing else repeats.
 - **Plots come back clean.** Each plot is saved when it's made. When its rent runs out or it's abandoned, it's put back exactly as it was, a few milliseconds per tick.
 - **No region per plot.** xPlots protects its own plots. If WorldGuard is installed, it makes one region per field so a world-wide `build deny` doesn't block your plots, and that's all.
 - **Vault or your own coin.** Rent goes through your economy, or it can take an item instead: match it by material, name and custom model data, so a box server's Coin works as it is.
 - **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **You won't feel it running.** Finding which plot a block is in is a bit of arithmetic, the same for ten plots or ten thousand. There's one timer, set for the next rent to run out, and signs are checked once a minute, only in loaded chunks. Nothing else repeats.
+- **Every change applies on reload.** Prices, rent periods, signs and menus, with `/xplots reload`. Only a change of storage waits for a restart.
+- **Paper and Purpur.** One jar for Paper 1.21.11 and newer, and Purpur.
 
 ---
 
@@ -46,7 +48,7 @@ Small plots, close together, that players rent with in-game money: the box-serve
 2. Run `/xplots wand` and click two opposite corners of the plot area. The height of your selection is how high players can build.
 3. Run `/xplots field create box size:5 path:2`, check the outline, and `/xplots confirm`.
 
-Prices, rent periods, member slots and every message, sign and menu are in `plugins/xPlots/config.yml`, and apply on `/xplots reload`.
+Then set prices, rent periods and member slots in `plugins/xPlots/config.yml`, or per field with `/xplots field set`.
 
 Full setup, every setting and every permission: **[docs.xenastudios.co/xplots](https://docs.xenastudios.co/xplots/)**
 
@@ -56,9 +58,11 @@ Full setup, every setting and every permission: **[docs.xenastudios.co/xplots](h
 
 ## More from Xena Studios
 
+<!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
-- **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, and a free CoreProtect alternative.
+- **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+<!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xplots)

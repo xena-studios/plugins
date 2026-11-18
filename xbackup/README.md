@@ -2,17 +2,19 @@
 
 **Backups that cost nothing. Restores you can trust.**
 
-xBackup backs up a Paper or Folia server incrementally: only what changed since the last backup is stored, down to single chunks, so hourly backups take almost no disk and the server pauses for milliseconds.
+xBackup is incremental backups for Paper and Folia: only what changed since the last backup is stored, down to single chunks, so hourly backups take almost no disk and the server pauses for milliseconds.
 
+- **Every feature free.** No early-access builds, nothing behind a Patreon.
 - **Only what changed.** Region files are kept chunk by chunk, and everything is stored once, named by its SHA-256, however many backups use it.
-- **A pause you can measure.** Autosave off, worlds flushed with `World#save(true)` (per region on Folia), the changes read, autosave back on. About 20 to 80 ms on the server's thread.
+- **You won't feel it running.** Autosave off, worlds flushed with `World#save(true)` (per region on Folia), the changes read, autosave back on: 15 to 45 ms on the server's thread in tests on Paper. Hashing, compressing and uploading happen off it.
 - **A restore you can trust.** Every file comes back checked against its hash. A dry run first, then it's swapped in on the next start before any world loads, or from the command line with the server stopped.
 - **Databases copied safely,** by SQLite itself (`VACUUM INTO`), never as raw bytes.
 - **Copies off the server:** a second disk, S3-compatible storage, WebDAV, SFTP, FTP/FTPS, Google Drive, OneDrive and Dropbox. Only new files are sent.
+- **Every change applies on reload.** No restarts.
 
-Needs Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer. Nothing else.
+**[Download on Modrinth](https://modrinth.com/plugin/xbackup)** · [Docs](https://docs.xenastudios.co/xbackup/) · [Commands](https://docs.xenastudios.co/xbackup/commands/) · [Restoring](https://docs.xenastudios.co/xbackup/restoring/) · [Remotes](https://docs.xenastudios.co/xbackup/remotes/) · [Developer API](https://docs.xenastudios.co/xbackup/developer-api/) · [Changelog](CHANGELOG.md)
 
-**[Download on Modrinth](https://modrinth.com/plugin/xbackup)** · [Docs](https://docs.xenastudios.co/xbackup/) · [Restoring](https://docs.xenastudios.co/xbackup/restoring/) · [Remotes](https://docs.xenastudios.co/xbackup/remotes/) · [Changelog](CHANGELOG.md)
+Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Nothing else.
 
 ## Developing
 

@@ -199,12 +199,49 @@ class XMoneyTest {
         assertEquals("xMoney", v1.getName());
         assertEquals("xMoney", v2.getName());
         assertTrue(v1.depositPlayer(steve, 12.345).transactionSuccess());
-        assertEquals(12.35, v1.getBalance(steve), 1e-9);
-        assertEquals(new BigDecimal("12.35"), v2.getBalance("Test", steve.getUniqueId()));
+        assertEquals(12.345, v1.getBalance(steve), 1e-9, "other plugins' amounts keep four places");
+        assertEquals(new BigDecimal("12.345"), v2.getBalance("Test", steve.getUniqueId()));
         assertFalse(v1.withdrawPlayer(steve, Double.NaN).transactionSuccess());
         assertFalse(v1.depositPlayer(steve, -1).transactionSuccess());
-        assertEquals("$12.35", v1.format(12.345));
-        assertEquals(units("12.35"), account(steve).balance());
+        assertEquals("$12.35", v1.format(12.345), "shown with the currency's decimals");
+        assertEquals(units("12.345"), account(steve).balance());
+    }
+
+    @Test
+    void splitPaymentsCostWhatTheyWouldWhole() {
+        net.milkbowl.vault.economy.Economy v1 = Bukkit.getServicesManager().load(net.milkbowl.vault.economy.Economy.class);
+        net.milkbowl.vault2.economy.Economy v2 = Bukkit.getServicesManager().load(net.milkbowl.vault2.economy.Economy.class);
+        give("Steve", "1");
+        // Rounded to 2 decimals each, these took 1.01 for a 1.00 price.
+        assertTrue(v1.withdrawPlayer(steve, 0.995).transactionSuccess());
+        assertEquals(0.005, v1.getBalance(steve), 1e-9);
+        assertTrue(v1.has(steve, 0.005));
+        assertFalse(v1.has(steve, 0.00501), "has rounds up, as a withdrawal would");
+        assertTrue(v1.withdrawPlayer(steve, 0.005).transactionSuccess());
+        assertEquals(0, account(steve).balance());
+        assertFalse(v1.withdrawPlayer(steve, 0.00001).transactionSuccess(), "a positive withdrawal never succeeds for nothing");
+        // Deposits are rounded down past four places, never up.
+        assertTrue(v2.deposit("Test", steve.getUniqueId(), new BigDecimal("2.50009")).transactionSuccess());
+        assertEquals(new BigDecimal("2.50"), v2.getBalance("Test", steve.getUniqueId()));
+        var paid = v2.withdraw("Test", steve.getUniqueId(), new BigDecimal("0.00001"));
+        assertTrue(paid.transactionSuccess());
+        assertEquals(new BigDecimal("0.0001"), paid.amount, "rounded up to a ten-thousandth, not taken for free");
+        assertEquals(units("2.4999"), account(steve).balance());
+    }
+
+    @Test
+    void withNoDecimalsAmountsAreNotRoundedToWholeCoins() throws Exception {
+        Path config = plugin.getDataFolder().toPath().resolve("config.yml");
+        Files.writeString(config, Files.readString(config).replace("decimals: 2", "decimals: 0"));
+        plugin.reload();
+        net.milkbowl.vault.economy.Economy v1 = Bukkit.getServicesManager().load(net.milkbowl.vault.economy.Economy.class);
+        assertTrue(v1.depositPlayer(steve, 2.5).transactionSuccess());
+        assertEquals(units("2.5"), account(steve).balance(), "2.5 paid in is 2.5, not 3");
+        var taken = v1.withdrawPlayer(steve, 0.4);
+        assertTrue(taken.transactionSuccess());
+        assertEquals(0.4, taken.amount, 1e-9, "0.4 taken is 0.4, not nothing");
+        assertEquals(units("2.1"), account(steve).balance());
+        assertEquals(0, v1.fractionalDigits());
     }
 
     @Test
@@ -222,6 +259,8 @@ class XMoneyTest {
         assertEquals("Steve", api.top(1, 1).getFirst().name());
         assertEquals("$1,234.50", api.format(new BigDecimal("1234.5")));
         assertEquals(2, api.currency().decimals());
+        // History is read from the database: what's queued is saved first.
+        plugin.ledger().flush().join();
         var history = api.history(steve.getUniqueId(), 1);
         await(history::isDone);
         assertEquals(2, history.join().total());
@@ -266,6 +305,24 @@ class XMoneyTest {
         assertEquals("$1,234.50", co.xenastudios.xmoney.hook.PlaceholderValues.resolve(bank, null, "top_1_balance"));
         assertEquals("", co.xenastudios.xmoney.hook.PlaceholderValues.resolve(bank, null, "top_9_name"));
         assertNull(co.xenastudios.xmoney.hook.PlaceholderValues.resolve(bank, null, "nonsense"));
+    }
+
+    @Test
+    void anImportOverAccountsThatChangedHereNeedsOverwrite() throws Exception {
+        Path userdata = Files.createDirectories(plugin.getDataFolder().toPath().getParent().resolve("Essentials/userdata"));
+        Files.writeString(userdata.resolve(steve.getUniqueId() + ".yml"), "money: '500'\nlast-account-name: Steve\n");
+        Files.writeString(userdata.resolve(alex.getUniqueId() + ".yml"), "money: '-3'\nlast-account-name: Alex\n");
+        give("Steve", "5"); // a change made here since: the import would undo it
+        server.dispatchCommand(console, "xmoney import essentials");
+        assertTrue(heard(console, "has 2 balances").contains("$500.00"));
+        assertTrue(heard(console, "changed here since").contains("1 of these"));
+        server.dispatchCommand(console, "xmoney import essentials confirm");
+        heard(console, "changed here since");
+        assertEquals(units("5"), account(steve).balance(), "not imported without overwrite");
+        server.dispatchCommand(console, "xmoney import essentials confirm overwrite");
+        heard(console, "Imported");
+        assertEquals(units("500"), account(steve).balance());
+        assertEquals(0, account(alex).balance(), "a negative balance comes in as 0");
     }
 
     @Test

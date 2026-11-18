@@ -5,7 +5,6 @@ import co.xenastudios.xmoney.api.TransactionKind;
 import co.xenastudios.xmoney.ledger.Account;
 import co.xenastudios.xmoney.ledger.Cause;
 import co.xenastudios.xmoney.ledger.Ledger;
-import co.xenastudios.xmoney.ledger.Outcome;
 import co.xenastudios.xmoney.money.Money;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -18,9 +17,11 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Turns another plugin's balances into a plan, and the plan into balances here. A plan is
  * what a dry run shows: how many balances, their total, and how many can't be imported
- * (not a number, negative, or past max-balance). Applying it sets each of those accounts'
- * balance to the other plugin's, as an {@code IMPORT} in the ledger, so the previous balance
- * is still in the history.
+ * (not a number, or past max-balance). A negative balance is imported as 0, so it isn't left
+ * with a starting balance it never had. Applying it sets each of those accounts' balance to
+ * the other plugin's, as an {@code IMPORT} in the ledger, so the previous balance is still in
+ * the history. It never renames an account xMoney has, or gives a new one a name another
+ * account is known by, so names keep finding the right player.
  */
 public final class Importer {
 
@@ -32,7 +33,7 @@ public final class Importer {
 
     private Importer() {}
 
-    public static Plan plan(String source, List<Found> found, int decimals, long max) {
+    public static Plan plan(String source, List<Found> found, long max) {
         List<Line> lines = new ArrayList<>();
         Set<UUID> seen = new HashSet<>();
         int skipped = 0;
@@ -40,7 +41,9 @@ public final class Importer {
         for (Found one : found) {
             long units;
             try {
-                units = Money.units(new BigDecimal(one.balance().strip()), decimals);
+                BigDecimal balance = new BigDecimal(one.balance().strip());
+                // Kept to four places, rounded down, like any amount paid in.
+                units = Money.incoming(balance.max(BigDecimal.ZERO));
             } catch (NumberFormatException | ArithmeticException e) {
                 units = -1;
             }
@@ -54,28 +57,35 @@ public final class Importer {
         return new Plan(source, lines, skipped, total);
     }
 
-    /** Sets every balance in the plan. On a network, the future completes once the last is saved. */
+    /**
+     * Sets every balance in the plan. On a network, a chunk at a time with payments between,
+     * and the future completes once the last is saved; nothing is dropped while the database
+     * is away.
+     *
+     * @return how many were set
+     */
     public static CompletableFuture<Integer> apply(Bank bank, Plan plan) {
         Ledger ledger = bank.ledger();
         Cause cause = new Cause(TransactionKind.IMPORT, plan.source(), "");
-        List<CompletableFuture<Outcome>> all = new ArrayList<>(plan.lines().size());
+        List<Ledger.Target> targets = new ArrayList<>(plan.lines().size());
         for (Line line : plan.lines()) {
             Account account = bank.accounts().get(line.id());
             if (account == null) {
                 account = ledger.account(line.id(), line.name(), line.player());
-            } else if (line.name() != null) {
-                ledger.rename(account, line.name());
             }
-            all.add(ledger.set(account, line.units(), cause));
+            targets.add(new Ledger.Target(account, line.units()));
         }
-        return CompletableFuture.allOf(all.toArray(CompletableFuture[]::new)).thenApply(ignored -> {
-            int set = 0;
-            for (CompletableFuture<Outcome> one : all) {
-                if (one.join().success()) {
-                    set++;
-                }
+        return ledger.setAll(targets, cause);
+    }
+
+    /** How many of the plan's accounts are in {@code changed}: changed here since, so an import would set them back. */
+    public static int overwrites(Plan plan, Set<UUID> changed) {
+        int count = 0;
+        for (Line line : plan.lines()) {
+            if (changed.contains(line.id())) {
+                count++;
             }
-            return set;
-        });
+        }
+        return count;
     }
 }

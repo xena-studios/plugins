@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Comparator;
 import java.util.List;
@@ -53,14 +54,22 @@ class ImportTest {
         UUID alex = UUID.randomUUID();
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + file); Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, player_uuid TEXT, username TEXT, nickname TEXT, Balance DOUBLE)");
-            statement.execute("INSERT INTO users (player_uuid, username, Balance) VALUES ('" + alex + "', 'Alex', 10000000.5)");
-            statement.execute("INSERT INTO users (player_uuid, username, Balance) VALUES ('broken', 'Nope', 1)");
+            try (PreparedStatement insert = connection.prepareStatement("INSERT INTO users (player_uuid, username, Balance) VALUES (?, ?, ?)")) {
+                insert.setString(1, alex.toString());
+                insert.setString(2, "Alex");
+                insert.setDouble(3, 10000000.5);
+                insert.executeUpdate();
+                insert.setString(1, "broken");
+                insert.setString(2, "Nope");
+                insert.setDouble(3, 1);
+                insert.executeUpdate();
+            }
         }
         List<Found> found = new CmiBalances(plugins, Runnable::run).readNow();
         assertEquals(1, found.size());
         assertEquals(alex, found.getFirst().id());
         assertEquals("Alex", found.getFirst().name());
-        Importer.Plan plan = Importer.plan("CMI", found, 2, 1_000_000_000 * Money.ONE);
+        Importer.Plan plan = Importer.plan("CMI", found, 1_000_000_000 * Money.ONE);
         assertEquals(10_000_000_5000L, plan.total());
     }
 
@@ -82,7 +91,7 @@ class ImportTest {
     }
 
     @Test
-    void aPlanSkipsWhatCantBeImported() {
+    void aPlanSkipsWhatCantBeImportedAndKeepsFourPlaces() {
         UUID once = UUID.randomUUID();
         List<Found> found = List.of(
             new Found(once, "A", true, "10.004"),
@@ -91,9 +100,12 @@ class ImportTest {
             new Found(UUID.randomUUID(), "C", true, "NaN"),
             new Found(UUID.randomUUID(), "D", true, "1e20"),
             new Found(UUID.randomUUID(), "E", true, " 2.5 "));
-        Importer.Plan plan = Importer.plan("Test", found, 2, 1_000_000 * Money.ONE);
-        assertEquals(2, plan.lines().size());
-        assertEquals(4, plan.skipped());
-        assertEquals(10_0000L + 2_5000L, plan.total(), "10.004 rounds to 10.00");
+        Importer.Plan plan = Importer.plan("Test", found, 1_000_000 * Money.ONE);
+        assertEquals(3, plan.lines().size());
+        assertEquals(3, plan.skipped(), "a second line for one account, NaN, and past max-balance");
+        assertEquals(10_0040L + 2_5000L, plan.total(), "10.004 stays 10.004, whatever the decimals");
+        // A negative balance comes in as 0, not left with a starting balance it never had.
+        assertEquals(0, plan.lines().get(1).units());
+        assertEquals("B", plan.lines().get(1).name());
     }
 }

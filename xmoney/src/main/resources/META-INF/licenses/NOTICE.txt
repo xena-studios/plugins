@@ -23,4 +23,7 @@ Those classes are under the GNU Lesser General Public License, version 3
 (GPL-3.0.txt here). They are kept unrelocated and unmodified, so they can be
 replaced with another version of the same library: swap the classes under
 net/milkbowl/ in this jar, or rebuild xMoney from its source with another
-version. Their source is at the links above.
+version. Their source is at the links above, and the source of exactly the
+version bundled here is its sources jar:
+
+  https://repo.codemc.io/repository/creatorfromhell/net/milkbowl/vault/VaultUnlockedAPI/2.20/VaultUnlockedAPI-2.20-sources.jar

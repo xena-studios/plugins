@@ -11,15 +11,19 @@ import co.xenastudios.xmoney.imports.Importer;
 import co.xenastudios.xmoney.imports.Source;
 import co.xenastudios.xmoney.imports.VaultBalances;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.bukkit.command.CommandSender;
 
 /**
- * {@code /xmoney import <essentials|cmi|vault> [confirm]}: without {@code confirm}, a dry run
- * that changes nothing and says what would be imported; with it, the import. One at a time.
+ * {@code /xmoney import <essentials|cmi|vault> [confirm [overwrite]]}: without {@code confirm},
+ * a dry run that changes nothing and says what would be imported; with it, the import. If
+ * some of the accounts have changed in xMoney since (players paid each other here, say), the
+ * import would set them back, so it also needs {@code overwrite}. One at a time.
  */
 public final class ImportCommand {
 
@@ -32,10 +36,11 @@ public final class ImportCommand {
         return CommandSpec.named("import")
             .permission(XMoney.ID + ".import")
             .description("Import balances from another economy plugin.")
-            .usage("/" + XMoney.ID + " import <essentials|cmi|vault> [confirm]")
+            .usage("/" + XMoney.ID + " import <essentials|cmi|vault> [confirm [overwrite]]")
             .completes((sender, args) -> switch (args.length) {
                 case 1 -> Completions.matching(args[0], SOURCES);
                 case 2 -> Completions.matching(args[1], List.of("confirm"));
+                case 3 -> Completions.matching(args[2], List.of("overwrite"));
                 default -> List.of();
             })
             .executes(invocation -> {
@@ -44,11 +49,14 @@ public final class ImportCommand {
                     throw invocation.usage();
                 }
                 boolean confirm = "confirm".equalsIgnoreCase(invocation.arg(1));
-                run(plugin, invocation.sender(), which.toLowerCase(Locale.ROOT), confirm);
+                boolean overwrite = confirm && "overwrite".equalsIgnoreCase(invocation.arg(2));
+                run(plugin, invocation.sender(), which.toLowerCase(Locale.ROOT), confirm, overwrite);
             });
     }
 
-    private static void run(XMoney plugin, CommandSender sender, String which, boolean confirm) {
+    private record Checked(Importer.Plan plan, int overwrites) {}
+
+    private static void run(XMoney plugin, CommandSender sender, String which, boolean confirm, boolean overwrite) {
         XMConfig.ImportMessages messages = plugin.config().messages().imports();
         if (!RUNNING.compareAndSet(false, true)) {
             messages.running().send(sender);
@@ -63,26 +71,47 @@ public final class ImportCommand {
         messages.reading().send(sender, Replies.text("source", source.name()));
         var bank = plugin.bank();
         source.read()
-            .thenApply(found -> Importer.plan(source.name(), found, bank.decimals(), bank.max()))
-            .thenCompose(plan -> {
+            .thenApplyAsync(found -> {
+                Importer.Plan plan = Importer.plan(source.name(), found, bank.max());
                 if (plan.lines().isEmpty()) {
                     throw new ImportException("it has no balances that can be imported (" + plan.skipped() + " skipped).", true);
                 }
+                try {
+                    return new Checked(plan, Importer.overwrites(plan, plugin.store().changedHere()));
+                } catch (SQLException e) {
+                    throw new CompletionException(e);
+                }
+            }, plugin.tasks()::async)
+            .thenCompose(checked -> {
+                Importer.Plan plan = checked.plan();
+                String command = "/" + XMoney.ID + " import " + which + " confirm";
+                if (checked.overwrites() > 0 && (!confirm || !overwrite)) {
+                    plugin.tasks().sender(sender, () -> {
+                        if (!confirm) {
+                            dryRun(messages, sender, bank, plan, command);
+                        }
+                        messages.overwrite().send(sender, Replies.text("source", plan.source()),
+                            Replies.text("count", String.format("%,d", checked.overwrites())),
+                            Replies.text("command", command + " overwrite"));
+                    });
+                    return CompletableFuture.completedFuture(null);
+                }
                 if (!confirm) {
-                    plugin.tasks().sender(sender, () -> messages.dryRun().send(sender,
-                        Replies.text("source", plan.source()),
-                        Replies.text("count", String.format("%,d", plan.lines().size())),
-                        Replies.text("total", bank.format(plan.total())),
-                        Replies.text("skipped", String.format("%,d", plan.skipped())),
-                        Replies.text("command", "/" + XMoney.ID + " import " + which + " confirm")));
-                    return java.util.concurrent.CompletableFuture.completedFuture(null);
+                    plugin.tasks().sender(sender, () -> dryRun(messages, sender, bank, plan, command));
+                    return CompletableFuture.completedFuture(null);
                 }
                 return Importer.apply(bank, plan).thenAccept(set -> {
-                    plugin.getLogger().info("Imported " + set + " balances from " + plan.source() + ", " + plan.skipped() + " skipped.");
+                    int failed = plan.lines().size() - set;
+                    if (failed > 0) {
+                        plugin.getLogger().warning(failed + " balances from " + plan.source() + " couldn't be set; "
+                            + "/eco history shows what each account has.");
+                    }
+                    int skipped = plan.skipped() + failed;
+                    plugin.getLogger().info("Imported " + set + " balances from " + plan.source() + ", " + skipped + " skipped.");
                     plugin.tasks().sender(sender, () -> messages.done().send(sender,
                         Replies.text("source", plan.source()),
                         Replies.text("count", String.format("%,d", set)),
-                        Replies.text("skipped", String.format("%,d", plan.skipped()))));
+                        Replies.text("skipped", String.format("%,d", skipped))));
                 });
             })
             .whenComplete((ignored, error) -> {
@@ -101,5 +130,15 @@ public final class ImportCommand {
                     }
                 });
             });
+    }
+
+    private static void dryRun(XMConfig.ImportMessages messages, CommandSender sender, co.xenastudios.xmoney.Bank bank,
+                               Importer.Plan plan, String command) {
+        messages.dryRun().send(sender,
+            Replies.text("source", plan.source()),
+            Replies.text("count", String.format("%,d", plan.lines().size())),
+            Replies.text("total", bank.format(plan.total())),
+            Replies.text("skipped", String.format("%,d", plan.skipped())),
+            Replies.text("command", command));
     }
 }

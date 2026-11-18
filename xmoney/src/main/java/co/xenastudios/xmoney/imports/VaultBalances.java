@@ -19,13 +19,14 @@ import org.bukkit.plugin.RegisteredServiceProvider;
  *
  * <p>Vault can't list accounts, so a VaultUnlocked economy is asked for its own list, and
  * otherwise every player who has played here is asked about. Economy plugins expect to be
- * called on the main thread, so balances are read there, 500 a tick, so even a big server
- * doesn't stall.
+ * called on the main thread, so balances are read there, a few milliseconds' worth a tick
+ * ({@link #BUDGET_NANOS}), so even a big server, or a slow economy, doesn't stall.
  */
 @SuppressWarnings("deprecation") // Vault 1's Economy, which most economy plugins still register.
 public final class VaultBalances implements Source {
 
-    static final int PER_TICK = 500;
+    /** How long each tick reads balances for: a tenth of a tick. */
+    static final long BUDGET_NANOS = 5_000_000;
 
     private final XMoney plugin;
     private String provider = "the economy registered with Vault";
@@ -62,9 +63,13 @@ public final class VaultBalances implements Source {
         List<Found> found = new ArrayList<>();
         if (unlocked != null) {
             provider = unlocked.getName();
-            Iterator<Map.Entry<UUID, String>> accounts = Map.copyOf(unlocked.getUUIDNameMap()).entrySet().iterator();
+            // Copied, since it may change while it's read; a provider may leave names out (null).
+            Iterator<Map.Entry<UUID, String>> accounts = new ArrayList<>(new java.util.HashMap<>(unlocked.getUUIDNameMap()).entrySet()).iterator();
             step(done, found, () -> {
                 Map.Entry<UUID, String> account = accounts.next();
+                if (account.getKey() == null) {
+                    return;
+                }
                 BigDecimal balance = unlocked.getBalance(XMoney.NAME, account.getKey());
                 found.add(new Found(account.getKey(), account.getValue(), true, balance == null ? "0" : balance.toPlainString()));
             }, accounts);
@@ -83,7 +88,8 @@ public final class VaultBalances implements Source {
     // A slice now, the rest on later ticks.
     private void step(CompletableFuture<List<Found>> done, List<Found> found, Runnable one, Iterator<?> left) {
         try {
-            for (int i = 0; i < PER_TICK && left.hasNext(); i++) {
+            long until = System.nanoTime() + BUDGET_NANOS;
+            while (left.hasNext() && System.nanoTime() < until) {
                 one.run();
             }
         } catch (RuntimeException e) {

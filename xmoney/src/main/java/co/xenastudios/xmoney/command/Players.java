@@ -48,7 +48,8 @@ public final class Players {
     private Optional<Account> account(Profiles.Profile profile) {
         Account account = plugin.bank().accounts().get(profile.id());
         if (account != null) {
-            plugin.ledger().rename(account, profile.name());
+            // Mojang's word for whose the name is now.
+            plugin.ledger().claim(account, profile.name());
             return Optional.of(account);
         }
         OfflinePlayer player = Bukkit.getOfflinePlayer(profile.id());

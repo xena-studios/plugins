@@ -55,6 +55,8 @@ public final class CmiBalances implements Source {
         }
         Properties properties = new Properties();
         properties.setProperty("open_mode", "1"); // Read-only: CMI's file is never changed.
+        // CMI may be writing to it right now: wait for its lock a while rather than fail at once.
+        properties.setProperty("busy_timeout", "5000");
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + file.toAbsolutePath(), properties);
              Statement statement = connection.createStatement()) {
             Map<String, String> columns = new LinkedHashMap<>();

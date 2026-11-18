@@ -33,8 +33,10 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           if [[ $GITHUB_EVENT_NAME != pull_request ]]; then echo "docs=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          # Read first, so a failed call fails the step instead of skipping the build.
-          files=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only)
+          # The changed files, from the files API, paged: `gh pr diff` refuses pull requests
+          # over 300 files. If the call fails, everything is checked, never skipped.
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename') \
+            || { echo "docs=true" >> "$GITHUB_OUTPUT"; exit 0; }
           docs=false
           while read -r file; do
             case $file in docs/* | .github/workflows/docs.yml) docs=true ;; esac

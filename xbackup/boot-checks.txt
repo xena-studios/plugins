@@ -1,0 +1,49 @@
+# xBackup on a real server, from the console: a backup with the pause and flush on Paper
+# and Folia (World#save(true) per region there), then a check, a staged restore and a clean-up.
+logged: Repository:
+run: xbackup info
+expect: xBackup 1.0.0 on
+
+run: backup now boot test
+expect: Backed up
+run: backup list
+expect: backups,
+run: backup status
+expect: Problem: none
+
+# The flush really writes a changed chunk before the backup reads it: on Folia that means
+# World#save(true) on each region's own thread (from the global thread it saves nothing on
+# 26.x). The changed chunk must be read.
+run: forceload add 400 400 415 415
+expect: Marked
+run: xbackup reload
+expect: Reloaded xBackup
+run: backup now baseline
+expect: Backed up
+run: setblock 405 70 405 minecraft:gold_block
+expect: Changed the block
+run: backup now after a change
+expect: changed chunk
+run: backup verify full
+expect: All good.
+
+# Remote passwords live in secrets.yml, which is never backed up; config.yml is.
+run: backup restore latest plugins/xBackup/secrets.yml
+expect: has no plugins/xBackup/secrets.yml
+run: backup restore latest plugins/xBackup/config.yml
+expect: would change
+
+# A restore is planned first, staged on confirm, and can be called off.
+run: backup restore latest server.properties
+expect: would change
+run: backup restore latest server.properties confirm
+expect: Staged
+run: backup status
+expect: Restore waiting
+run: backup restore cancel
+expect: Cancelled
+
+run: backup prune
+expect: Removed
+run: xbackup reload
+expect: Reloaded xBackup

@@ -1,0 +1,246 @@
+# xVote: votes in, rewards out.
+# Docs: https://docs.xenastudios.co/xvote/configuration/
+#
+# Apply changes with /xvote reload. A bad value falls back to its default with a
+# warning in the console; xVote never stops over config. All text is MiniMessage:
+# https://docs.xenastudios.co/start/formatting/
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# The look xVote's messages share. The default messages use these as tags, so changing
+# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
+# <#91ACFF>, or <gold><bold>.
+theme:
+  # <prefix> starts the default messages. Make it your server's name, such as
+  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+  prefix: "<#B48CFF>»</#B48CFF> "
+  # The colour of message text that has no tag of its own.
+  base: "<gray>"
+  # <highlight>: names and values, such as a player or a speed.
+  highlight: "<#B48CFF>"
+  # <success>: something turned on or done.
+  success: "<#5EE08A>"
+  # <error>: something refused or turned off.
+  error: "<#FF6B6B>"
+
+# What players are told.
+messages:
+  error:
+    # The console or a command block ran a command only players can use.
+    player-only: "<prefix><error>Only players can use this command."
+    # The sender lacks the command's permission.
+    no-permission: "<prefix><error>You don't have permission to do that."
+    # No online player has that name. <player> is the name typed.
+    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
+    # The command was typed wrong. <usage> is how to type it.
+    usage: "<prefix><error>Usage:</error> <usage>"
+    # The command hit an error. The console has the details.
+    failed: "<prefix><error>Something went wrong. The console has the details."
+
+  # /vote: a header, a line per site, and a footer. <site> is the site's name,
+  # <link> its link, <time> how long until it can be voted on again; <available> and
+  # <sites> count them; <total> and <streak> are the player's.
+  list:
+    header: "<prefix>Vote for the server and get rewards. <highlight><available></highlight> of <sites> sites are open:"
+    available: " <click:open_url:'<link>'><hover:show_text:'<gray>Open <link>'><success>●</success> <highlight><site></highlight> <gray>click to vote</gray></hover></click>"
+    cooldown: " <click:open_url:'<link>'><hover:show_text:'<gray>Open <link>'><gray>✓ <site>, again in <time></gray></hover></click>"
+    footer: "<gray>You have <highlight><total></highlight> votes and a <highlight><streak></highlight>-day streak."
+    # Under the footer when the vote party is on. <votes>, <needed>, <left>.
+    party: "<gray>Vote party: <highlight><votes></highlight> of <needed>, <left> to go."
+    none: "<prefix>There's nowhere to vote yet."
+
+  # /vote top. <rank>, <player>, <votes>; <period> is one of periods below.
+  top:
+    header: "<prefix>Top voters <period>:"
+    line: " <gray>#<rank></gray> <highlight><player></highlight> <gray><votes> votes"
+    footer: "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>"
+    empty: "<prefix>No votes <period> yet."
+    periods:
+      day: "today"
+      week: "this week"
+      month: "this month"
+      all: "of all time"
+
+  # Reward items that didn't fit, and /vote claim. <count> is how many.
+  claim:
+    # A reward's items didn't all fit.
+    held: "<prefix><highlight><count></highlight> reward items didn't fit. Make room, then <click:run_command:'/vote claim'><highlight>/vote claim</highlight></click>."
+    none: "<prefix>You have no reward items waiting."
+    claimed: "<prefix><success>Here are your <count> reward items."
+    # Some still didn't fit.
+    still-full: "<prefix><error><count> items still don't fit.</error> Make room, then /vote claim again."
+
+# The Votifier receiver: where server lists send votes. It speaks Votifier v1 and v2,
+# like NuVotifier, and uses the keys in rsa/ and the tokens in tokens.yml. Don't run
+# NuVotifier as well: both would want the same port. Changes apply on /xvote reload.
+receiver:
+  # Off stops listening; votes from /vote test and other plugins still count.
+  enabled: true
+  # The address to listen on. 0.0.0.0 is every address the machine has.
+  host: "0.0.0.0"
+  # The port lists send votes to. It must be open to the internet, and isn't the
+  # server's own port. On a host that gives you one port, see the docs.
+  port: 8192
+  # Accept Votifier v1 votes. Most lists still send v1; turn it off only if all yours send v2.
+  v1: true
+  # Most votes handled at once. More are turned away until one finishes.
+  max-connections: 256
+  # Most connections open at once from one address, so a few can't take every slot.
+  # 0 is no limit. Behind a tunnel (playit.gg, TCPShield) every list arrives from the
+  # tunnel's address: raise this and per-ip-per-minute, or set both to 0.
+  per-ip-connections: 4
+  # Seconds a list has to send its vote before the connection is closed.
+  timeout-seconds: 10
+  # Most connections one address may make a minute. A list makes one per vote. 0 is no limit.
+  per-ip-per-minute: 60
+
+# The sites players vote on, shown by /vote. Each is matched to votes by its service:
+# the name the list sends, which /xvote status shows for the last votes. name is
+# what players see. A vote sooner than cooldown-hours after the last one from the same
+# site is a repeat and is dropped; set it to how often the site lets players vote.
+# rewards are given for this site only, on top of every-vote's. Votes from a site
+# that isn't listed still count, with counting.unlisted-cooldown-hours as cooldown.
+sites:
+  planetminecraft:
+    name: "Planet Minecraft"
+    service: "PlanetMinecraft.com"
+    link: "https://www.planetminecraft.com/server/your-server/vote/"
+    cooldown-hours: 24
+    rewards: []
+  minecraft-mp:
+    name: "Minecraft-MP"
+    service: "Minecraft-MP.com"
+    link: "https://minecraft-mp.com/server/00000/vote/"
+    cooldown-hours: 24
+    rewards: []
+
+# Rewards, by name, to use in triggers, sites and the party. Each can give money
+# (through Vault), items, console commands, a message, a broadcast and a sound, with
+# a chance in percent. Items are written like /give: diamond 3, or
+# diamond_sword[enchantments={sharpness:3}] 1. Items that don't fit wait for /vote
+# claim. Commands, messages and broadcasts can use <player>, <uuid>, <site>, <total>
+# and <streak>; in commands, <site> of a site that isn't listed keeps only letters,
+# digits, . _ and -. custom lists reward types other plugins add, as
+# "<type> <argument>".
+rewards:
+  vote:
+    chance: 100
+    money: 0
+    items: ["diamond 1"]
+    commands: []
+    message: "<prefix><success>Thanks for voting</success> on <highlight><site></highlight>! Here's a diamond."
+    broadcast: "<prefix><highlight><player></highlight> voted on <site>. <click:run_command:'/vote'><highlight>/vote</highlight></click> to vote too."
+    sound: "entity.player.levelup"
+    custom: []
+  streak:
+    chance: 100
+    money: 0
+    items: ["diamond 5"]
+    commands: []
+    message: "<prefix>A <highlight><streak>-day</highlight> voting streak! Here are 5 more diamonds."
+    broadcast: ""
+    sound: ""
+    custom: []
+  party:
+    chance: 100
+    money: 0
+    items: ["golden_apple 1"]
+    commands: []
+    message: "<prefix><success>Vote party!</success> Here's a golden apple."
+    broadcast: ""
+    sound: "entity.firework_rocket.blast"
+    custom: []
+
+# Which rewards each vote gives, besides its site's. every-vote: on every vote.
+# first-vote-of-day: a player's first vote each day. every: on every Nth vote, by N.
+# streak: on reaching that many days in a row. total: once, on reaching that many votes.
+triggers:
+  every-vote: ["vote"]
+  first-vote-of-day: []
+  every: {}
+  streak:
+    7:
+      rewards: ["streak"]
+  total: {}
+
+# Every so many votes from anyone, a reward for everyone online (who: online), or for
+# everyone online who voted since the last party (who: voted).
+party:
+  enabled: false
+  # Votes from anyone a party needs.
+  votes: 50
+  # online or voted.
+  who: "online"
+  rewards: ["party"]
+  # Broadcast when a party starts.
+  started: "<prefix><highlight>Vote party!</highlight> <votes> votes, so everyone gets a reward."
+  # Broadcast every this many votes on the way, with <left>. 0 is never.
+  progress-every: 10
+  progress: "<prefix><highlight><left></highlight> more votes until the vote party. <click:run_command:'/vote'><highlight>/vote</highlight></click>"
+
+# Telling players they can vote.
+reminders:
+  # Remind players who can vote when they join.
+  on-join: true
+  # Seconds after joining.
+  join-delay-seconds: 5
+  # Also remind everyone online who can vote, every this many minutes. 0 is off, and
+  # then nothing repeats.
+  every-minutes: 0
+  message: "<prefix>You can vote on <highlight><available></highlight> sites for rewards. <click:run_command:'/vote'><highlight>/vote</highlight></click>"
+
+# How votes are counted.
+counting:
+  # Days, weeks and months start at midnight here: an id like Europe/London or
+  # America/New_York, or server for the server's own.
+  time-zone: "server"
+  # The day weeks start on.
+  week-starts: "monday"
+  # Floodgate's prefix for Bedrock players' names. A vote for a name nobody has is
+  # tried with it, so Bedrock players who leave it off are still paid.
+  bedrock-prefix: "."
+  # Days to keep votes for names that have never joined. They're paid if that name
+  # joins in time. 0 keeps them forever.
+  unknown-name-days: 30
+  # The cooldown for sites that aren't in sites: a second vote from one sooner is a
+  # repeat and is dropped, as a listed site's are. 0 drops only exact replays.
+  unlisted-cooldown-hours: 24
+
+# Where votes are kept. sqlite needs nothing set up; mysql (or MariaDB) is for networks.
+# A change here applies on restart: votes aren't copied across.
+storage:
+  # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
+  # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  type: "sqlite"
+  # Put in front of every table's name, so plugins and servers can share one database.
+  table-prefix: "xvote_"
+
+  # Only for type: mysql.
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "minecraft"
+    username: "minecraft"
+    password: ""
+    # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
+    properties: ""
+
+# For networks: servers sharing one MySQL database, so a vote that arrives on one
+# server pays the player on whichever server they're on. Applies on restart.
+network:
+  # On when several servers share this plugin's MySQL or MariaDB database, so a change
+  # made on one (a ban, a payment) reaches the others within a few seconds.
+  # Leave it off for a single server: it does nothing on SQLite.
+  enabled: false
+  # Seconds between checks for the other servers' changes.
+  check-every: 3
+
+# Tells you when a new version is out.
+update-checker:
+  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
+  # only the plugin version, the platform and the Minecraft version.
+  enabled: true
+  # Logged, and shown to admins when they join, when a newer version is out.
+  # <plugin>, <current>, <latest> and <url> are filled in.
+  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"

@@ -12,6 +12,11 @@
 # during startup; blank lines and lines starting with # are skipped. A step
 # that starts with "paper " or "folia " runs only on that server.
 #
+# "allow: <text>" (or --allow) is for the rare run that must log an error or
+# warning, such as Paper refusing a second plugin that provides the same name:
+# error and warning lines containing the text don't fail the run, and the text
+# must appear, so the run also checks the error happened. Only that run gets it.
+#
 # Server jars, Mojang's jar and libraries are cached in .cache/servers/.
 set -euo pipefail
 
@@ -25,6 +30,7 @@ while (($#)); do
     --version) version=$2; shift 2 ;;
     --run) steps+=("run: $2"); shift 2 ;;
     --expect) steps+=("expect: $2"); shift 2 ;;
+    --allow) steps+=("allow: $2"); shift 2 ;;
     --checks)
       while IFS= read -r line || [[ -n $line ]]; do
         [[ -z ${line//[[:space:]]/} || $line == \#* ]] || steps+=("$line")
@@ -117,6 +123,7 @@ wait_for() {
 wait_for "Done (" 300
 echo "Started $project $version with ${names[*]}"
 since=0
+allowed=()
 for step in "${steps[@]+"${steps[@]}"}"; do
   case "$step" in
     paper\ * | folia\ *)
@@ -129,7 +136,8 @@ for step in "${steps[@]+"${steps[@]}"}"; do
       echo "${step#run: }" >&3 ;;
     "expect: "*) wait_for "${step#expect: }" 60 "$since" ;;
     "logged: "*) wait_for "${step#logged: }" 60 0 ;;
-    *) fail "a step must start with \"run: \", \"expect: \" or \"logged: \": $step" ;;
+    "allow: "*) allowed+=("${step#allow: }") ;;
+    *) fail "a step must start with \"run: \", \"expect: \", \"logged: \" or \"allow: \": $step" ;;
   esac
 done
 
@@ -143,11 +151,20 @@ wait "$pid" || fail "server exited with status $?"
 exec 3>&-
 
 # ---- judge the log ----
-if errors=$(grep -E '^\[[0-9:]+ ERROR\]' "$log"); then
-  fail "the log has errors:"$'\n'"$errors"
-fi
-if warnings=$(grep -E "^\[[0-9:]+ WARN\]: \[($ours)\]" "$log"); then
-  fail "our plugins logged warnings:"$'\n'"$warnings"
-fi
+# Drops lines an "allow:" step expects; each of those must have been logged.
+unexpected() {
+  local lines=$1
+  for text in "${allowed[@]+"${allowed[@]}"}"; do
+    lines=$(grep -vF -- "$text" <<<"$lines" || true)
+  done
+  printf '%s' "$lines"
+}
+for text in "${allowed[@]+"${allowed[@]}"}"; do
+  grep -qF -- "$text" "$log" || fail "an allowed error or warning never appeared: \"$text\""
+done
+errors=$(unexpected "$(grep -E '^\[[0-9:]+ ERROR\]' "$log" || true)")
+[[ -z $errors ]] || fail "the log has errors:"$'\n'"$errors"
+warnings=$(unexpected "$(grep -E "^\[[0-9:]+ WARN\]: \[($ours)\]" "$log" || true)")
+[[ -z $warnings ]] || fail "our plugins logged warnings:"$'\n'"$warnings"
 grep -E "^\[[0-9:]+ INFO\]: \[($ours)\]" "$log" || true
 echo "PASS: $project $version"

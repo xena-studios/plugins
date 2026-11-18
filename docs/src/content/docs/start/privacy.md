@@ -26,6 +26,14 @@ xUtilities 2, zChat 3, xLimbo 2 and xRewind send **[bStats](https://bstats.org)*
 
 xRewind keeps what it logs (who changed which blocks, and when, where they joined and quit) in your own database, and nothing of it leaves your server. Chat and command logging are off unless you turn them on, and history older than 30 days is deleted unless you keep it longer (`purge.keep-days`).
 
+xBans keeps punishments, players' names and the IP addresses they joined from in your own database, and nothing of it leaves your server. IPs can be stored as salted hashes, or not at all: see [xBans' privacy page](/xbans/privacy/).
+
+## xStats' website
+
+xStats' website is off until you turn it on. Once it is, anyone who can reach its port sees what you chose to show: the stats with `website: true`, players' names, when they first joined and were last seen, and their places on leaderboards. Players who run `/stats private` are left off it entirely. xStats never stores an IP address: the rate limit counts each visitor's requests in memory for a minute, and nothing about visitors is written anywhere.
+
+Players' heads on the site come from [mc-heads.net](https://mc-heads.net) (or the service you set in `web.avatars.url`), loaded by each visitor's browser, so that service sees the visitor's IP address and which player's head they're looking at. Set `web.avatars.proxy: true` and xStats fetches heads itself instead, from your server, and keeps them for a day; then visitors' browsers only ever talk to your server.
+
 ## Inside your network
 
 xLimbo's `/join` and automatic returns ask your proxy to move a player, which never leaves your network. With [server-check](/xlimbo/network-setup/#send-everyone-back-when-its-up) on, xLimbo also asks your main server for its status, at the address you give it.

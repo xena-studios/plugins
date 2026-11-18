@@ -8,7 +8,7 @@ sidebar:
 Every command has a permission, and every permission has a safe default:
 
 - **Staff and state-changing commands default to `op`.** Out of the box, only operators can use them.
-- **Harmless commands default to everyone**: xUtilities' `/ping` and link commands, zChat's `/togglechat`, `/msg` and `/reply`, and xLimbo's `/join`.
+- **Harmless commands default to everyone**: xUtilities' `/ping` and link commands, zChat's `/togglechat`, `/msg` and `/reply`, xLimbo's `/join`, xTeleport's player commands such as `/home`, `/tpa`, `/warp`, `/spawn` and `/rtp`, and xBans' `/warnings` (for your own).
 - **Acting on another player needs a separate `.others` permission**, also `op` by default. Giving a rank `/heal` doesn't let it heal other players.
 
 Grant them to your ranks with a permissions plugin such as [LuckPerms](https://luckperms.net):
@@ -25,4 +25,4 @@ Each command's permission is set in its plugin's config, so you can rename it to
 - **Blank (`""`) means no restriction**: anyone can use the command.
 - A renamed permission keeps the default the command had: rename `/ping`'s and the new one is still everyone's.
 
-The full lists: [xUtilities](/xutilities/commands/), [zChat](/zchat/commands/), [xLimbo](/xlimbo/commands/), [xRewind](/xrewind/commands/), [xPlots](/xplots/commands/).
+The full lists: [xUtilities](/xutilities/commands/), [zChat](/zchat/commands/), [xLimbo](/xlimbo/commands/), [xRewind](/xrewind/commands/), [xPlots](/xplots/commands/), [xTeleport](/xteleport/commands/), [xVote](/xvote/commands/), [xBans](/xbans/commands/), [xMoney](/xmoney/commands/), [xBackup](/xbackup/commands/), [xStats](/xstats/commands/).

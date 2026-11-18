@@ -6,6 +6,8 @@ mockbukkit = "4.116.3"
 bstats = "3.2.1"
 placeholderapi = "2.12.3"
 vault-api = "1.7.1"
+# xMoney ships this inside its jar: the Vault 1 and VaultUnlocked 2 API classes.
+vaultunlocked-api = "2.20"
 worldguard = "7.0.14"
 worldedit = "7.3.9"
 # Tests only: Paper ships its own SQLite and MySQL drivers, which the plugins use.
@@ -15,6 +17,11 @@ shadow = "9.6.1"
 resource-factory = "1.4.0"
 run-paper = "3.1.0"
 minotaur = "2.10.0"
+# xBackup's SFTP and FTP remotes. Never shaded: xBackup downloads the jar the first time a
+# remote needs it and checks it against the SHA-256 in its Libraries class, which a test
+# compares with these.
+jsch = "2.28.8"
+commons-net = "3.13.0"
 # The copy-paste detector the root build runs across modules.
 pmd = "7.29.0"
 
@@ -23,6 +30,7 @@ paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
 mockbukkit = { module = "org.mockbukkit.mockbukkit:mockbukkit-v1.21", version.ref = "mockbukkit" }
 placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
 vault-api = { module = "com.github.MilkBowl:VaultAPI", version.ref = "vault-api" }
+vaultunlocked-api = { module = "net.milkbowl.vault:VaultUnlockedAPI", version.ref = "vaultunlocked-api" }
 worldguard-bukkit = { module = "com.sk89q.worldguard:worldguard-bukkit", version.ref = "worldguard" }
 worldguard-core = { module = "com.sk89q.worldguard:worldguard-core", version.ref = "worldguard" }
 worldedit-bukkit = { module = "com.sk89q.worldedit:worldedit-bukkit", version.ref = "worldedit" }
@@ -33,6 +41,8 @@ sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }
+commons-net = { module = "commons-net:commons-net", version.ref = "commons-net" }
 pmd-cli = { module = "net.sourceforge.pmd:pmd-cli", version.ref = "pmd" }
 pmd-java = { module = "net.sourceforge.pmd:pmd-java", version.ref = "pmd" }
 

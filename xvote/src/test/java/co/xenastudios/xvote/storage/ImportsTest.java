@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.time.DayOfWeek;
 import java.time.ZoneOffset;
@@ -62,8 +63,15 @@ class ImportsTest {
         try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("Users.db"));
              Statement statement = c.createStatement()) {
             statement.execute("CREATE TABLE Users (uuid VARCHAR(37) PRIMARY KEY, PlayerName TEXT, AllTimeTotal TEXT, MonthTotal TEXT, Points TEXT)");
-            statement.execute("INSERT INTO Users VALUES ('" + STEVE + "', 'Steve', '40', '3', '100')");
-            statement.execute("INSERT INTO Users VALUES ('" + ALEX + "', 'Alex', '', '0', '0')");
+        }
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("Users.db"));
+             PreparedStatement insert = c.prepareStatement("INSERT INTO Users VALUES (?, ?, ?, ?, ?)")) {
+            for (String[] row : new String[][] {{STEVE.toString(), "Steve", "40", "3", "100"}, {ALEX.toString(), "Alex", "", "0", "0"}}) {
+                for (int i = 0; i < row.length; i++) {
+                    insert.setString(i + 1, row[i]);
+                }
+                insert.executeUpdate();
+            }
         }
         Imports.Found found = Imports.votingPlugin(plugins);
         assertEquals(List.of(new Imports.Imported(STEVE, "Steve", 40, 0)), found.players());

@@ -93,7 +93,7 @@ class ReceiverTest {
     @Test
     void v1ThroughTheSocket() throws Exception {
         start(true, 8, 5, 100);
-        VoteClient.sendV1("127.0.0.1", receiver.port(), keys.getPublic(), new VoteClient.Vote("List", "Alex", "5.6.7.8", "12"), 2000);
+        sendV1("VOTE\nList\nAlex\n5.6.7.8\n12\n");
         IncomingVote vote = votes.poll(2, TimeUnit.SECONDS);
         assertEquals("Alex", vote.username());
         assertEquals(VoteSource.VOTIFIER_V1, vote.source());
@@ -102,7 +102,7 @@ class ReceiverTest {
     @Test
     void v1CanBeTurnedOff() throws Exception {
         start(false, 8, 5, 100);
-        VoteClient.sendV1("127.0.0.1", receiver.port(), keys.getPublic(), new VoteClient.Vote("List", "Alex", "", "1"), 2000);
+        sendV1("VOTE\nList\nAlex\n\n1\n");
         assertNull(votes.poll(500, TimeUnit.MILLISECONDS));
     }
 
@@ -217,6 +217,16 @@ class ReceiverTest {
         Thread.sleep(200);
         synchronized (logged) {
             assertTrue(logged.isEmpty(), logged.toString());
+        }
+    }
+
+    /** A v1 vote as a list sends it: the greeting read, then one block encrypted as NuVotifier does. */
+    void sendV1(String text) throws Exception {
+        try (Socket socket = new Socket("127.0.0.1", receiver.port())) {
+            socket.setSoTimeout(2000);
+            readLine(socket.getInputStream());
+            socket.getOutputStream().write(ProtocolTest.nuVotifierV1(keys, text));
+            socket.getOutputStream().flush();
         }
     }
 

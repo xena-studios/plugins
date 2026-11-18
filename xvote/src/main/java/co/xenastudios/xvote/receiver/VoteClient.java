@@ -9,15 +9,12 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.PublicKey;
 import java.util.Base64;
-import javax.crypto.Cipher;
 
 /**
- * Sends a vote the way a server list does, as NuVotifier's own forwarding client builds
- * it. {@code /vote test} uses it to send a vote to this server's receiver, so a test
- * goes through the same socket, protocol and token as a real one.
+ * Sends a v2 vote the way a server list does, as NuVotifier's own forwarding client
+ * builds it. {@code /vote test} uses it to send a vote to this server's receiver, so a
+ * test goes through the same socket, protocol and token as a real one.
  */
 public final class VoteClient {
 
@@ -60,27 +57,6 @@ public final class VoteClient {
             return reply.has("error") ? reply.get("error").getAsString() : "error";
         } catch (RuntimeException e) {
             throw new IOException("The server didn't answer like Votifier: " + e.getMessage(), e);
-        }
-    }
-
-    /** Sends a v1 vote encrypted with the public key. v1 has no reply. */
-    public static void sendV1(String host, int port, PublicKey key, Vote vote, int timeoutMs) throws IOException {
-        try (Socket socket = connect(host, port, timeoutMs)) {
-            readLine(socket.getInputStream(), 256);
-            socket.getOutputStream().write(encryptV1(key, vote));
-            socket.getOutputStream().flush();
-        }
-    }
-
-    /** A v1 block, as lists make it. */
-    public static byte[] encryptV1(PublicKey key, Vote vote) throws IOException {
-        String text = "VOTE\n" + vote.service() + "\n" + vote.username() + "\n" + vote.address() + "\n" + vote.timestamp() + "\n";
-        try {
-            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-            return cipher.doFinal(text.getBytes(StandardCharsets.US_ASCII));
-        } catch (GeneralSecurityException e) {
-            throw new IOException("Couldn't encrypt the vote: " + e.getMessage(), e);
         }
     }
 

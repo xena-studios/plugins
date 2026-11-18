@@ -226,8 +226,8 @@ public final class Swap {
     /**
      * Puts the staged restore in place, all or nothing.
      *
-     * <p>Everything is checked first: if a staged copy is missing, nothing is touched. If a
-     * step fails part way (a file the system keeps locked, a disk that fills), what was put
+     * <p>Everything is checked first: if a staged copy is missing, nothing is touched (or, if
+     * an earlier run was cut off part way, what it did is undone). If a step fails part way (a file the system keeps locked, a disk that fills), what was put
      * in place is moved back to the staging folder and what was set aside is moved back, so
      * the server folder is as it was; the journal is then kept as {@value #FAILED}, the
      * staged copy deleted, and {@link FailedException} thrown. If even that can't be done,
@@ -249,18 +249,31 @@ public final class Swap {
         for (Entry entry : journal.entries()) {
             places.add(places(entry, root, staged, aside, journal.created()));
         }
-        // Check before moving anything: every entry not started has its staged copy.
+        // Every entry an earlier run (cut off by a crash) started: journaled as set aside or
+        // done, or with its old files already moved aside a moment before the journal said so.
+        // If this run fails, they're undone along with what it started itself.
+        List<Integer> touched = new ArrayList<>();
         for (int i = 0; i < places.size(); i++) {
-            Places at = places.get(i);
-            if (journal.state()[i] == NONE && !exists(at.from())) {
-                throw new IOException("The staged copy of " + display(journal.entries().get(i)) + " is missing from "
-                    + staged + ", so the restore can't be put in place. Nothing was changed. Stage it again, or delete "
-                    + file + " to cancel it.");
+            if (journal.state()[i] != NONE || exists(places.get(i).old())) {
+                touched.add(i);
             }
         }
-        List<Integer> touched = new ArrayList<>();
+        // Check before moving anything: every entry not done has its staged copy.
+        String missing = null;
+        for (int i = 0; i < places.size() && missing == null; i++) {
+            if (journal.state()[i] == NONE && !exists(places.get(i).from())) {
+                missing = display(journal.entries().get(i));
+            }
+        }
+        if (missing != null && touched.isEmpty()) {
+            throw new IOException("The staged copy of " + missing + " is missing from " + staged + ", so the restore"
+                + " can't be put in place. Nothing was changed. Stage it again, or delete " + file + " to cancel it.");
+        }
         int current = -1;
         try {
+            if (missing != null) {
+                throw new IOException("the staged copy of " + missing + " is missing from " + staged);
+            }
             for (int i = 0; i < places.size(); i++) {
                 if (journal.done(i)) {
                     continue;
@@ -268,7 +281,9 @@ public final class Swap {
                 current = i;
                 Entry entry = journal.entries().get(i);
                 Places at = places.get(i);
-                touched.add(i);
+                if (!touched.contains(i)) {
+                    touched.add(i);
+                }
                 deleteTree(sibling(at.target(), MOVED));
                 if (journal.state()[i] == ASIDE) {
                     // Started before a crash: set aside, and maybe put in place too.
@@ -322,9 +337,11 @@ public final class Swap {
         return aside;
     }
 
-    // Moves every entry this run touched back: the restored copy to the staging folder, then
-    // what was set aside back into place. Newest first, each step journaled.
+    // Moves every entry started back, by this run or one a crash cut off: the restored copy
+    // to the staging folder, then what was set aside back into place. Newest first, each step
+    // journaled.
     private static void undo(Journal journal, List<Places> places, List<Integer> touched, Path file) throws IOException {
+        touched.sort(null);
         for (int t = touched.size() - 1; t >= 0; t--) {
             int i = touched.get(t);
             Entry entry = journal.entries().get(i);

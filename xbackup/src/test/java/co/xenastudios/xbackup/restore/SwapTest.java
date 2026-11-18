@@ -182,6 +182,105 @@ class SwapTest {
         }
     }
 
+    // The review's probe: run 1 restores world and dies; run 2 fails on world_nether. Both
+    // runs' work is undone, so the server never starts on a restored world beside an old one.
+    @Test
+    void aCrashThenAFailureUndoesBothRuns() throws IOException {
+        Path base = dir.resolve("probe");
+        root = base.resolve("server");
+        restore = root.resolve("plugins/xBackup/restore");
+        Random random = new Random(1);
+        Fixtures.bytes(root.resolve("world/level.dat"), random, 2000);
+        Fixtures.bytes(root.resolve("world_nether/level.dat"), random, 1000);
+        Fixtures.bytes(restore.resolve("staged/world/level.dat"), random, 2100);
+        Fixtures.bytes(restore.resolve("staged/world_nether/level.dat"), random, 900);
+        Swap.schedule(restore, "ab".repeat(32), List.of(new Swap.Entry("world", false),
+            new Swap.Entry("world_nether", false)));
+        Map<String, byte[]> before = server();
+        // Run 1 dies once world is done (move aside, "aside 0", move in, "done 0", crash).
+        AtomicInteger n = new AtomicInteger();
+        Swap.beforeStep = step -> {
+            if (n.getAndIncrement() == 4) {
+                throw new Crash();
+            }
+        };
+        assertThrows(Crash.class, () -> Swap.apply(restore, root, line -> {}));
+        // Run 2: world_nether is in use.
+        AtomicInteger m = new AtomicInteger();
+        Swap.beforeStep = step -> {
+            if (m.getAndIncrement() == 0) {
+                throw new UncheckedIOException(new IOException("in use"));
+            }
+        };
+        Swap.FailedException e = assertThrows(Swap.FailedException.class, () -> Swap.apply(restore, root, line -> {}));
+        Swap.beforeStep = null;
+        assertTrue(e.getMessage().contains("as it was before"), e.getMessage());
+        assertSameFiles(before, server(), "after a crash and then a failure");
+    }
+
+    @Test
+    void aCrashThenAFailureAtAnyStepIsUndone() throws IOException {
+        int steps = steps();
+        for (int k = 0; k < steps - 1; k++) {
+            for (int f = 0; ; f++) {
+                setUp(1000 + k * 100 + f);
+                Map<String, byte[]> before = server();
+                int crashAt = k;
+                AtomicInteger count = new AtomicInteger();
+                Swap.beforeStep = step -> {
+                    if (count.getAndIncrement() == crashAt) {
+                        throw new Crash();
+                    }
+                };
+                assertThrows(Crash.class, () -> Swap.apply(restore, root, line -> {}));
+                int failAt = f;
+                AtomicInteger second = new AtomicInteger();
+                Swap.beforeStep = step -> {
+                    if (second.getAndIncrement() == failAt) {
+                        throw new UncheckedIOException(new IOException("the file is in use"));
+                    }
+                };
+                boolean failed;
+                try {
+                    Swap.apply(restore, root, line -> {});
+                    failed = false;
+                } catch (Swap.FailedException e) {
+                    failed = true;
+                }
+                Swap.beforeStep = null;
+                if (!failed) {
+                    // Run 2 had fewer steps left than f: it finished.
+                    break;
+                }
+                assertSameFiles(before, server(), "crash at step " + k + ", then a failure at step " + f);
+                assertFalse(Files.exists(restore.resolve(Swap.PENDING)));
+            }
+        }
+    }
+
+    @Test
+    void aCrashThenAMissingStagedCopyIsUndone() throws IOException {
+        for (int k = 1; k < 4; k++) {
+            setUp(2000 + k);
+            Map<String, byte[]> before = server();
+            int crashAt = k;
+            AtomicInteger count = new AtomicInteger();
+            Swap.beforeStep = step -> {
+                if (count.getAndIncrement() == crashAt) {
+                    throw new Crash();
+                }
+            };
+            assertThrows(Crash.class, () -> Swap.apply(restore, root, line -> {}));
+            Swap.beforeStep = null;
+            // world is set aside (or in place); world_nether's staged copy then goes missing.
+            Swap.deleteTree(restore.resolve(Swap.STAGED).resolve("world_nether"));
+            IOException e = assertThrows(Swap.FailedException.class, () -> Swap.apply(restore, root, line -> {}),
+                "crash at step " + k);
+            assertFalse(e.getMessage().contains("Nothing was changed"), e.getMessage());
+            assertSameFiles(before, server(), "crash at step " + k + ", then a missing staged copy");
+        }
+    }
+
     @Test
     void aMissingStagedCopyChangesNothing() throws IOException {
         setUp(99);

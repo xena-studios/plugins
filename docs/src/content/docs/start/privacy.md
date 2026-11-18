@@ -26,6 +26,8 @@ xUtilities 2, zChat 3, xLimbo 2 and xRewind send **[bStats](https://bstats.org)*
 
 xRewind keeps what it logs (who changed which blocks, and when, where they joined and quit) in your own database, and nothing of it leaves your server. Chat and command logging are off unless you turn them on, and history older than 30 days is deleted unless you keep it longer (`purge.keep-days`).
 
+xBans keeps punishments, players' names and the IP addresses they joined from in your own database, and nothing of it leaves your server. IPs can be stored as salted hashes, or not at all: see [xBans' privacy page](/xbans/privacy/).
+
 ## Inside your network
 
 xLimbo's `/join` and automatic returns ask your proxy to move a player, which never leaves your network. With [server-check](/xlimbo/network-setup/#send-everyone-back-when-its-up) on, xLimbo also asks your main server for its status, at the address you give it.

@@ -40,6 +40,7 @@ jobs:
             xLimbo) label=xlimbo ;;
             xRewind) label=xrewind ;;
             xPlots) label=xplots ;;
+            xBackup) label=xbackup ;;
             "A new plugin") label="new plugin" ;;
             *) exit 0 ;;
           esac

@@ -1,21 +1,42 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>xena-studios/.github:renovate-config"],
+  "extends": [
+    "local>xena-studios/.github:renovate-config"
+  ],
   "packageRules": [
     {
       "description": "The oldest Paper the plugins support. Raising it drops every server still on it, so it's changed by hand. The newest Paper is tracked by .github/workflows/minecraft.yml.",
-      "matchPackageNames": ["io.papermc.paper:paper-api"],
+      "matchPackageNames": [
+        "io.papermc.paper:paper-api"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "The test-only database drivers stay at the versions Paper ships, so tests run the drivers servers have. Bumped by hand with Paper's.",
+      "matchPackageNames": [
+        "org.xerial:sqlite-jdbc",
+        "com.mysql:mysql-connector-j"
+      ],
       "enabled": false
     },
     {
       "description": "Third-party actions run with the repo's secrets, so they're pinned to a commit (CodeQL flags tags, which can be moved); Renovate keeps the pins current. GitHub's own actions stay on tags.",
-      "matchManagers": ["github-actions"],
-      "matchPackageNames": ["!actions/**", "!github/**"],
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "!actions/**",
+        "!github/**"
+      ],
       "pinDigests": true
     },
     {
       "description": "CI builds, tests and boots every plugin, and merging releases nothing, so small updates merge themselves once it passes. Majors wait for a review.",
-      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
       "automerge": true
     }
   ]

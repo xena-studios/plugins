@@ -3,6 +3,10 @@ dist/
 .astro/
 .wrangler/
 .DS_Store
+# Editors
+.idea/
+*.iml
+.vscode/
 
 # Gradle
 .gradle/

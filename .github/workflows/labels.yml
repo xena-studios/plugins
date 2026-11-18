@@ -39,6 +39,7 @@ jobs:
             zChat) label=zchat ;;
             xLimbo) label=xlimbo ;;
             xRewind) label=xrewind ;;
+            "A new plugin") label="new plugin" ;;
             *) exit 0 ;;
           esac
           gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$label"

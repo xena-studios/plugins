@@ -1,6 +1,7 @@
 package co.xenastudios.xvote.receiver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,11 +18,13 @@ import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import javax.net.ServerSocketFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +40,11 @@ class ReceiverTest {
     KeyPair keys;
 
     Receiver start(boolean v1, int maxConnections, int timeoutSeconds, int perMinute) throws Exception {
+        return start(v1, maxConnections, 0, timeoutSeconds, perMinute, ServerSocketFactory.getDefault());
+    }
+
+    Receiver start(boolean v1, int maxConnections, int perIp, int timeoutSeconds, int perMinute, ServerSocketFactory sockets)
+            throws Exception {
         keys = Keys.load(ProtocolTest.FIXTURES.resolve("rsa"));
         logger.setUseParentHandlers(false);
         logger.addHandler(new Handler() {
@@ -53,8 +61,8 @@ class ReceiverTest {
             @Override
             public void close() {}
         });
-        receiver = new Receiver(new Receiver.Settings("127.0.0.1", 0, v1, maxConnections, timeoutSeconds, perMinute),
-            new Receiver.Credentials(keys, Tokens.of(Map.of("default", TOKEN))), votes::add, logger);
+        receiver = new Receiver(new Receiver.Settings("127.0.0.1", 0, v1, maxConnections, perIp, timeoutSeconds, perMinute),
+            new Receiver.Credentials(keys, Tokens.of(Map.of("default", TOKEN))), votes::add, logger, sockets);
         receiver.start();
         return receiver;
     }
@@ -85,7 +93,7 @@ class ReceiverTest {
         VoteClient.sendV2("127.0.0.1", receiver.port(), "wrong", new VoteClient.Vote("List", "Steve", "", "2"), 2000);
         VoteClient.sendV2("127.0.0.1", receiver.port(), "wrong", new VoteClient.Vote("List", "Steve", "", "3"), 2000);
         synchronized (logged) {
-            assertEquals(1, logged.stream().filter(line -> line.contains("Signature")).count(), logged.toString());
+            assertEquals(1, logged.stream().filter(line -> line.contains("different token")).count(), logged.toString());
         }
         assertTrue(votes.isEmpty());
     }
@@ -217,6 +225,135 @@ class ReceiverTest {
         Thread.sleep(200);
         synchronized (logged) {
             assertTrue(logged.isEmpty(), logged.toString());
+        }
+    }
+
+    @Test
+    void aFailedAcceptDoesntStopTheReceiver() throws Exception {
+        // The first two accepts fail as running out of file handles would; the third and later work.
+        AtomicInteger accepts = new AtomicInteger();
+        ServerSocketFactory failing = new ServerSocketFactory() {
+            @Override
+            public ServerSocket createServerSocket() throws IOException {
+                return new ServerSocket() {
+                    @Override
+                    public Socket accept() throws IOException {
+                        if (accepts.incrementAndGet() <= 2) {
+                            throw new IOException("Too many open files");
+                        }
+                        return super.accept();
+                    }
+                };
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int port) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int port, int backlog) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int port, int backlog, java.net.InetAddress address) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        start(true, 8, 0, 5, 100, failing);
+        assertNull(VoteClient.sendV2("127.0.0.1", receiver.port(), TOKEN, new VoteClient.Vote("List", "Steve", "", "1"), 3000));
+        assertEquals("Steve", votes.poll(2, TimeUnit.SECONDS).username());
+        assertTrue(receiver.listening(), "still listening");
+        assertTrue(accepts.get() >= 3);
+        synchronized (logged) {
+            assertEquals(1, logged.stream().filter(line -> line.contains("couldn't accept")).count(), logged.toString());
+        }
+        receiver.close();
+        assertFalse(receiver.listening(), "closing is what stops it");
+    }
+
+    @Test
+    void oneAddressCantHoldEverySlot() throws Exception {
+        start(true, 50, 2, 5, 100, ServerSocketFactory.getDefault());
+        List<Socket> held = new ArrayList<>();
+        try {
+            for (int i = 0; i < 2; i++) {
+                Socket socket = new Socket("127.0.0.1", receiver.port());
+                readLine(socket.getInputStream());
+                held.add(socket);
+            }
+            try (Socket third = new Socket("127.0.0.1", receiver.port())) {
+                third.setSoTimeout(2000);
+                assertEquals(-1, third.getInputStream().read(), "turned away: two are already open from here");
+            }
+        } finally {
+            for (Socket socket : held) {
+                socket.close();
+            }
+        }
+        Thread.sleep(200);
+        assertNull(VoteClient.sendV2("127.0.0.1", receiver.port(), TOKEN, new VoteClient.Vote("L", "Steve", "", "1"), 2000));
+        synchronized (logged) {
+            assertTrue(logged.stream().anyMatch(line -> line.contains("per-ip-connections")), logged.toString());
+            assertTrue(logged.stream().noneMatch(line -> line.contains("127.0.0.1")), "noise doesn't name the address: " + logged);
+        }
+    }
+
+    @Test
+    void aConnectionThatSaysNothingIsLetGoSoon() throws Exception {
+        // The whole conversation may take 30 seconds, but the first bytes must come within 3.
+        start(true, 8, 30, 100);
+        try (Socket socket = new Socket("127.0.0.1", receiver.port())) {
+            socket.setSoTimeout(10_000);
+            InputStream in = socket.getInputStream();
+            readLine(in);
+            long started = System.nanoTime();
+            assertEquals(-1, in.read(), "closed");
+            long took = System.nanoTime() - started;
+            assertTrue(took < TimeUnit.SECONDS.toNanos(6), took + " ns");
+        }
+        synchronized (logged) {
+            assertTrue(logged.isEmpty(), "a silent connection isn't worth a line: " + logged);
+        }
+    }
+
+    @Test
+    void theRateLimitCanBeTurnedOff() throws Exception {
+        start(true, 8, 5, 0);
+        for (int i = 0; i < 20; i++) {
+            assertNull(VoteClient.sendV2("127.0.0.1", receiver.port(), TOKEN, new VoteClient.Vote("L", "Steve", "", "t" + i), 2000));
+        }
+        assertEquals(20, votes.size());
+    }
+
+    @Test
+    void scannersCantSilenceAListsMistakes() throws Exception {
+        start(true, 8, 5, 1000);
+        // Garbage of every kind, many times over: one line per kind.
+        for (int i = 0; i < 30; i++) {
+            try (Socket socket = new Socket("127.0.0.1", receiver.port())) {
+                socket.setSoTimeout(2000);
+                readLine(socket.getInputStream());
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                out.writeShort(Protocol.V2_MAGIC);
+                byte[] junk = ("{\"payload\":\"" + i + "\"}").getBytes(StandardCharsets.UTF_8);
+                out.writeShort(junk.length);
+                out.write(junk);
+                out.flush();
+                readLine(socket.getInputStream());
+            }
+        }
+        // A list with the wrong token, whose service name tries to fake a log line.
+        String error = VoteClient.sendV2("127.0.0.1", receiver.port(), "wrong",
+            new VoteClient.Vote("Evil\n[Server] Done", "Steve", "", "1"), 2000);
+        assertEquals("Signature is not valid (invalid token?)", error);
+        synchronized (logged) {
+            assertEquals(1, logged.stream().filter(line -> line.contains("well-formed")).count(), logged.toString());
+            List<String> signature = logged.stream().filter(line -> line.contains("different token")).toList();
+            assertEquals(1, signature.size(), logged.toString());
+            assertTrue(signature.get(0).contains("Evil[Server] Done"), signature.get(0));
+            assertTrue(logged.stream().noneMatch(line -> line.contains("\n")), logged.toString());
         }
     }
 

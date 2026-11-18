@@ -85,10 +85,14 @@ receiver:
   # Accept Votifier v1 votes. Most lists still send v1; turn it off only if all yours send v2.
   v1: true
   # Most votes handled at once. More are turned away until one finishes.
-  max-connections: 32
+  max-connections: 256
+  # Most connections open at once from one address, so a few can't take every slot.
+  # 0 is no limit. Behind a tunnel (playit.gg, TCPShield) every list arrives from the
+  # tunnel's address: raise this and per-ip-per-minute, or set both to 0.
+  per-ip-connections: 4
   # Seconds a list has to send its vote before the connection is closed.
   timeout-seconds: 10
-  # Most connections one address may make a minute. A list makes one per vote.
+  # Most connections one address may make a minute. A list makes one per vote. 0 is no limit.
   per-ip-per-minute: 60
 
 # The sites players vote on, shown by /vote. Each is matched to votes by its service:
@@ -96,7 +100,7 @@ receiver:
 # what players see. A vote sooner than cooldown-hours after the last one from the same
 # site is a repeat and is dropped; set it to how often the site lets players vote.
 # rewards are given for this site only, on top of every-vote's. Votes from a site
-# that isn't listed still count.
+# that isn't listed still count, with counting.unlisted-cooldown-hours as cooldown.
 sites:
   planetminecraft:
     name: "Planet Minecraft"
@@ -116,7 +120,9 @@ sites:
 # a chance in percent. Items are written like /give: diamond 3, or
 # diamond_sword[enchantments={sharpness:3}] 1. Items that don't fit wait for /vote
 # claim. Commands, messages and broadcasts can use <player>, <uuid>, <site>, <total>
-# and <streak>. custom lists reward types other plugins add, as "<type> <argument>".
+# and <streak>; in commands, <site> of a site that isn't listed keeps only letters,
+# digits, . _ and -. custom lists reward types other plugins add, as
+# "<type> <argument>".
 rewards:
   vote:
     chance: 100
@@ -197,6 +203,9 @@ counting:
   # Days to keep votes for names that have never joined. They're paid if that name
   # joins in time. 0 keeps them forever.
   unknown-name-days: 30
+  # The cooldown for sites that aren't in sites: a second vote from one sooner is a
+  # repeat and is dropped, as a listed site's are. 0 drops only exact replays.
+  unlisted-cooldown-hours: 24
 
 # Where votes are kept. sqlite needs nothing set up; mysql (or MariaDB) is for networks.
 # A change here applies on restart: votes aren't copied across.

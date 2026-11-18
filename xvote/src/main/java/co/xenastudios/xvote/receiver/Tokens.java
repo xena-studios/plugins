@@ -100,7 +100,7 @@ public final class Tokens {
     /** What {@link #loadOrCreate} found. */
     public record Loaded(Tokens tokens, boolean created) {}
 
-    /** Writes {@code tokens.yml}. */
+    /** Writes {@code tokens.yml}, readable by the server's user only where the file system allows. */
     public void save(Path folder) throws IOException {
         Files.createDirectories(folder);
         YamlConfiguration yaml = yaml();
@@ -108,7 +108,8 @@ public final class Tokens {
         tokens.forEach((name, token) -> yaml.set("tokens" + SEPARATOR + name, token));
         Path file = folder.resolve(FILE);
         Path temporary = folder.resolve(FILE + ".tmp");
-        Files.writeString(temporary, yaml.saveToString());
+        // Owner-only, like rsa/private.key: anyone with a token can send votes as that list.
+        Secrets.write(temporary, yaml.saveToString());
         try {
             Files.move(temporary, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
         } catch (java.nio.file.AtomicMoveNotSupportedException e) {

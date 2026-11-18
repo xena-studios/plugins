@@ -64,8 +64,23 @@ class RewardsTest {
         assertEquals("Planet Minecraft", rewards.siteName("PLANETMINECRAFT.COM"));
         assertEquals("Some List", rewards.siteName("Some List"));
         assertEquals(24 * 3_600_000L, rewards.cooldown("PlanetMinecraft.com"));
-        assertEquals(0, rewards.cooldown("Some List"));
+        // Unlisted sites get counting.unlisted-cooldown-hours, 24 by default.
+        assertEquals(24 * 3_600_000L, rewards.cooldown("Some List"));
+        assertEquals(24 * 3_600_000L, rewards.longestCooldown());
         assertEquals("PlanetMinecraft.com", rewards.siteByKey("PMC").service());
+    }
+
+    @Test
+    void commandsNeverGetTheNetworksTextAsItCame() {
+        Rewards rewards = rewards(new ArrayList<>());
+        // A listed site: its name from the config.
+        assertEquals("Planet Minecraft", rewards.commandSite("planetminecraft.com"));
+        // An unlisted one: only letters, digits, dots, dashes and underscores survive.
+        assertEquals("Some_List", rewards.commandSite("Some List"));
+        assertEquals("x__op_Steve", rewards.commandSite("x; op Steve"));
+        assertEquals("a_b_c", rewards.commandSite("a&b|c"));
+        assertEquals("MinecraftServers.org", rewards.commandSite("MinecraftServers.org"));
+        assertEquals("_", rewards.commandSite(""));
     }
 
     @Test

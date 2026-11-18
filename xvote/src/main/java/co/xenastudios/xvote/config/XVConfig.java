@@ -36,7 +36,7 @@ public record XVConfig(
         "what players see. A vote sooner than cooldown-hours after the last one from the same",
         "site is a repeat and is dropped; set it to how often the site lets players vote.",
         "rewards are given for this site only, on top of every-vote's. Votes from a site",
-        "that isn't listed still count."})
+        "that isn't listed still count, with counting.unlisted-cooldown-hours as cooldown."})
     Map<String, Site> sites,
     @Comment({
         "Rewards, by name, to use in triggers, sites and the party. Each can give money",
@@ -44,7 +44,9 @@ public record XVConfig(
         "a chance in percent. Items are written like /give: diamond 3, or",
         "diamond_sword[enchantments={sharpness:3}] 1. Items that don't fit wait for /vote",
         "claim. Commands, messages and broadcasts can use <player>, <uuid>, <site>, <total>",
-        "and <streak>. custom lists reward types other plugins add, as \"<type> <argument>\"."})
+        "and <streak>; in commands, <site> of a site that isn't listed keeps only letters,",
+        "digits, . _ and -. custom lists reward types other plugins add, as",
+        "\"<type> <argument>\"."})
     Map<String, Reward> rewards,
     @Comment({
         "Which rewards each vote gives, besides its site's. every-vote: on every vote.",
@@ -82,11 +84,16 @@ public record XVConfig(
         @Comment("Accept Votifier v1 votes. Most lists still send v1; turn it off only if all yours send v2.")
         boolean v1,
         @Comment("Most votes handled at once. More are turned away until one finishes.")
-        @Range(min = 1, max = 1000) int maxConnections,
+        @Range(min = 1, max = 10_000) int maxConnections,
+        @Comment({
+            "Most connections open at once from one address, so a few can't take every slot.",
+            "0 is no limit. Behind a tunnel (playit.gg, TCPShield) every list arrives from the",
+            "tunnel's address: raise this and per-ip-per-minute, or set both to 0."})
+        @Range(min = 0, max = 10_000) int perIpConnections,
         @Comment("Seconds a list has to send its vote before the connection is closed.")
         @Range(min = 1, max = 60) int timeoutSeconds,
-        @Comment("Most connections one address may make a minute. A list makes one per vote.")
-        @Range(min = 1, max = 100_000) int perIpPerMinute) {}
+        @Comment("Most connections one address may make a minute. A list makes one per vote. 0 is no limit.")
+        @Range(min = 0, max = 100_000) int perIpPerMinute) {}
 
     public record Site(
         String name,
@@ -149,7 +156,11 @@ public record XVConfig(
         @Comment({
             "Days to keep votes for names that have never joined. They're paid if that name",
             "joins in time. 0 keeps them forever."})
-        @Range(min = 0, max = 3650) int unknownNameDays) {}
+        @Range(min = 0, max = 3650) int unknownNameDays,
+        @Comment({
+            "The cooldown for sites that aren't in sites: a second vote from one sooner is a",
+            "repeat and is dropped, as a listed site's are. 0 drops only exact replays."})
+        @Range(min = 0, max = 720) int unlistedCooldownHours) {}
 
     public record Messages(
         ErrorMessages error,
@@ -199,7 +210,7 @@ public record XVConfig(
                 Message.of("<prefix>You have no reward items waiting."),
                 Message.of("<prefix><success>Here are your <count> reward items."),
                 Message.of("<prefix><error><count> items still don't fit.</error> Make room, then /vote claim again."))),
-        new Receiver(true, "0.0.0.0", 8192, true, 32, 10, 60),
+        new Receiver(true, "0.0.0.0", 8192, true, 256, 4, 10, 60),
         defaultSites(),
         defaultRewards(),
         new Triggers(List.of("vote"), List.of(), Map.of(), Map.of("7", new Milestone(List.of("streak"))), Map.of()),
@@ -209,7 +220,7 @@ public record XVConfig(
             Message.of("<prefix><highlight><left></highlight> more votes until the vote party. <click:run_command:'/vote'><highlight>/vote</highlight></click>")),
         new Reminders(true, 5, 0,
             Message.of("<prefix>You can vote on <highlight><available></highlight> sites for rewards. <click:run_command:'/vote'><highlight>/vote</highlight></click>")),
-        new Counting("server", DayOfWeek.MONDAY, ".", 30),
+        new Counting("server", DayOfWeek.MONDAY, ".", 30, 24),
         StorageSettings.defaults("xvote_"),
         NetworkSettings.DEFAULTS,
         UpdateCheckerSettings.DEFAULTS);

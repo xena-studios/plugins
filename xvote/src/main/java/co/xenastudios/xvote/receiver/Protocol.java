@@ -81,7 +81,7 @@ public final class Protocol {
     /** Reads a v1 block. */
     static IncomingVote decodeV1(byte[] block, PrivateKey key, String from, long now) throws ProtocolException {
         if (block.length != V1_BLOCK) {
-            throw new ProtocolException("QuietException", "A v1 vote is " + V1_BLOCK + " bytes; got " + block.length + ".", "v1-size:" + from);
+            throw ProtocolException.noise("QuietException", "A v1 vote is " + V1_BLOCK + " bytes; got " + block.length + ".", "v1-size");
         }
         byte[] plain;
         try {
@@ -89,17 +89,16 @@ public final class Protocol {
             cipher.init(Cipher.DECRYPT_MODE, key);
             plain = cipher.doFinal(block);
         } catch (GeneralSecurityException e) {
-            throw new ProtocolException("QuietException", "Couldn't decrypt a v1 vote from " + from
-                + ". Check the list has this server's public key (/xvote key).", "v1-decrypt:" + from);
+            String why = "Couldn't decrypt a v1 vote from " + from + ". Check the list has this server's public key (/xvote key).";
+            throw ProtocolException.vote("QuietException", why, "v1-decrypt:" + from, why);
         }
         String[] fields = new String(plain, StandardCharsets.US_ASCII).split("\n");
         if (fields.length < 5) {
-            throw new ProtocolException("QuietException", "A v1 vote from " + from + " had " + fields.length
-                + " fields instead of 5; the list sent it wrong.", "v1-fields:" + from);
+            throw ProtocolException.noise("QuietException", "A v1 vote had " + fields.length
+                + " fields instead of 5; the list sent it wrong.", "v1-fields");
         }
         if (!fields[0].equals("VOTE")) {
-            throw new ProtocolException("QuietException", "A v1 vote from " + from + " didn't start with VOTE; the list sent it wrong.",
-                "v1-opcode:" + from);
+            throw ProtocolException.noise("QuietException", "A v1 vote didn't start with VOTE; the list sent it wrong.", "v1-opcode");
         }
         return new IncomingVote(fields[1], fields[2], fields[3], fields[4], VoteSource.VOTIFIER_V1, now);
     }
@@ -115,39 +114,48 @@ public final class Protocol {
             String payload = string(outer, "payload");
             JsonObject vote = JsonParser.parseString(payload).getAsJsonObject();
             if (!challenge.equals(string(vote, "challenge"))) {
-                throw new ProtocolException("CorruptedFrameException", "Challenge is not valid", "v2-challenge");
+                throw ProtocolException.noise("CorruptedFrameException", "Challenge is not valid", "v2-challenge");
             }
             String service = string(vote, "serviceName");
+            // As it may be logged: no line breaks or other control characters a sender could fake log lines with.
+            String shown = IncomingVote.clean(service);
             String token = tokenFor.apply(service);
             if (token == null) {
                 token = tokenFor.apply("default");
             }
             if (token == null) {
-                throw new ProtocolException("RuntimeException", "Unknown service '" + service + "'", "v2-service:" + service);
+                throw ProtocolException.vote("RuntimeException", "Unknown service '" + shown + "'", "v2-service:" + shown,
+                    "A v2 vote came from \"" + shown + "\", which has no token and there's no default one. Add one with /xvote token.");
             }
             byte[] signature;
             try {
                 signature = Base64.getDecoder().decode(string(outer, "signature"));
             } catch (IllegalArgumentException e) {
-                throw new ProtocolException("CorruptedFrameException", "Signature is not valid (invalid token?)", "v2-signature:" + service);
+                throw badSignature(shown);
             }
             if (!MessageDigest.isEqual(hmac(token, payload), signature)) {
-                throw new ProtocolException("CorruptedFrameException", "Signature is not valid (invalid token?)", "v2-signature:" + service);
+                throw badSignature(shown);
             }
             if (vote.has("uuid")) {
                 UUID.fromString(vote.get("uuid").getAsString());
             }
             String username = string(vote, "username");
             if (username.length() > MAX_USERNAME) {
-                throw new ProtocolException("CorruptedFrameException", "Username too long", "v2-username:" + service);
+                throw ProtocolException.noise("CorruptedFrameException", "Username too long", "v2-username");
             }
             return new IncomingVote(service, username, string(vote, "address"), timestamp(vote.get("timestamp")),
                 VoteSource.VOTIFIER_V2, now);
         } catch (JsonParseException | IllegalStateException | UnsupportedOperationException | IllegalArgumentException
                  | NullPointerException e) {
             // Missing fields, a field of the wrong kind, a malformed uuid or not JSON at all.
-            throw new ProtocolException(e.getClass().getSimpleName(), "Not a well-formed vote: " + e.getMessage(), "v2-malformed");
+            throw ProtocolException.noise(e.getClass().getSimpleName(), "Not a well-formed vote: " + IncomingVote.clean(e.getMessage()),
+                "v2-malformed");
         }
+    }
+
+    private static ProtocolException badSignature(String service) {
+        return ProtocolException.vote("CorruptedFrameException", "Signature is not valid (invalid token?)", "v2-signature:" + service,
+            "A v2 vote from \"" + service + "\" was signed with a different token. Give the list its token again (/xvote token).");
     }
 
     /** The HMAC-SHA256 of the payload's UTF-8 bytes, keyed with the token's UTF-8 bytes. */

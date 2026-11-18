@@ -100,9 +100,10 @@ public class XVote extends XenaPlugin<XVConfig> {
             voters.periods(next);
         }
         payout.reloaded();
+        votes.forgetUnknown(System.currentTimeMillis());
         XVConfig.Receiver settings = config.receiver();
         Receiver.Settings wanted = settings.enabled() ? new Receiver.Settings(settings.host().strip(), settings.port(), settings.v1(),
-            settings.maxConnections(), settings.timeoutSeconds(), settings.perIpPerMinute()) : null;
+            settings.maxConnections(), settings.perIpConnections(), settings.timeoutSeconds(), settings.perIpPerMinute()) : null;
         tasks().async(() -> receiver.apply(wanted));
 
         setup.module("players", () -> players = new Players(this));
@@ -143,7 +144,6 @@ public class XVote extends XenaPlugin<XVConfig> {
         }
         votes.network(feed);
         feed.start(tasks());
-        votes.forgetUnknown(System.currentTimeMillis());
         getLogger().info("Loaded " + voters.size() + " voters from " + store.description()
             + (feed.on() ? ", sharing votes with the network." : "."));
         takeOverNuVotifier(folder);
@@ -211,6 +211,10 @@ public class XVote extends XenaPlugin<XVConfig> {
             receiver.close();
         }
         feed.close();
+        if (votes != null && store != null) {
+            // Votes taken to pay but not yet paid go back, so the next start pays them.
+            votes.shutdown();
+        }
         if (store != null) {
             store.stop(10, TimeUnit.SECONDS);
         }
@@ -353,7 +357,7 @@ public class XVote extends XenaPlugin<XVConfig> {
     private final class ServerEffects implements Votes.Effects {
 
         @Override
-        public void pay(UUID id, List<Facts> paid, Runnable left) {
+        public void pay(UUID id, java.util.function.Supplier<List<Facts>> take, Runnable left) {
             Players current = players;
             Player player = current == null ? null : current.get(id);
             if (player == null) {
@@ -361,7 +365,7 @@ public class XVote extends XenaPlugin<XVConfig> {
                 return;
             }
             ScheduledTask task = player.getScheduler().run(XVote.this, scheduled -> {
-                for (Facts facts : paid) {
+                for (Facts facts : take.get()) {
                     payout.vote(player, facts);
                 }
             }, left);
@@ -396,7 +400,7 @@ public class XVote extends XenaPlugin<XVConfig> {
                 long now = System.currentTimeMillis();
                 for (Player player : List.copyOf(chosen)) {
                     Voter voter = voters.get(player.getUniqueId());
-                    Payout.Context context = new Payout.Context("party", voter == null ? 0 : voter.total(),
+                    Payout.Context context = new Payout.Context("party", "party", voter == null ? 0 : voter.total(),
                         voter == null ? 0 : voter.streakNow(periods, now));
                     tasks().entity(player, () -> payout.give(player, current, current.party(), context));
                 }

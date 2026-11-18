@@ -48,7 +48,7 @@ public final class ReceiverHost {
             stop();
             return;
         }
-        if (receiver != null && receiver.settings().equals(settings)) {
+        if (receiver != null && receiver.settings().equals(settings) && receiver.listening()) {
             receiver.credentials(credentials);
             return;
         }

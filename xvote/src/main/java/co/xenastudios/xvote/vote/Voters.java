@@ -49,13 +49,25 @@ public final class Voters {
         voters.values().forEach(this::put);
     }
 
+    /**
+     * A voter as just read. One that's unchanged (a join with no new votes, read again)
+     * leaves the leaderboards as they are, so they aren't sorted again for nothing.
+     */
     public void put(Voter voter) {
         Voter before = byId.put(voter.id(), voter);
+        if (voter.equals(before)) {
+            return;
+        }
         if (before != null && !before.name().equalsIgnoreCase(voter.name())) {
             byName.remove(before.name().toLowerCase(Locale.ROOT), voter.id());
         }
         byName.put(voter.name().toLowerCase(Locale.ROOT), voter.id());
         version.incrementAndGet();
+    }
+
+    /** Bumped whenever a leaderboard needs sorting again, for tests. */
+    long version() {
+        return version.get();
     }
 
     public Voter get(UUID id) {

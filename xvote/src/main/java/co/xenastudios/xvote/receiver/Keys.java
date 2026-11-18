@@ -78,13 +78,8 @@ public final class Keys {
     public static void save(Path folder, KeyPair pair) throws IOException {
         Files.createDirectories(folder);
         Files.writeString(folder.resolve(PUBLIC), encode(pair.getPublic().getEncoded()), StandardCharsets.US_ASCII);
-        Path privateFile = folder.resolve(PRIVATE);
-        Files.writeString(privateFile, encode(pair.getPrivate().getEncoded()), StandardCharsets.US_ASCII);
-        try {
-            Files.setPosixFilePermissions(privateFile, java.nio.file.attribute.PosixFilePermissions.fromString("rw-------"));
-        } catch (UnsupportedOperationException | IOException ignored) {
-            // Windows, or a mount that doesn't keep permissions: the folder's own permissions apply.
-        }
+        // Base64 is ASCII, so the UTF-8 Secrets writes is the same bytes.
+        Secrets.write(folder.resolve(PRIVATE), encode(pair.getPrivate().getEncoded()));
     }
 
     /** The public key as lists ask for it: Base64 of its X.509 form, on one line. */

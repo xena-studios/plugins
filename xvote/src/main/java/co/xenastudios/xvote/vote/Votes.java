@@ -11,6 +11,8 @@ import co.xenastudios.xvote.storage.Store;
 import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -51,10 +53,11 @@ public final class Votes {
     /** What a vote needs done outside the database: paying, parties, threads. */
     public interface Effects {
         /**
-         * Pays these votes on the player's thread, in order, or calls {@code left} if the
-         * player is gone first.
+         * Pays votes on the player's thread, in order, or calls {@code left} if the player
+         * is gone first. On the player's thread, {@code take} gives the votes to pay: the
+         * ones still this server's (none once xVote has given them back as it stops).
          */
-        void pay(UUID player, List<Facts> votes, Runnable left);
+        void pay(UUID player, Supplier<List<Facts>> take, Runnable left);
 
         /** A vote party starts on this server; {@code since} is when its round began. */
         void party(long since);
@@ -84,6 +87,9 @@ public final class Votes {
     private final String origin = newOrigin();
     private final AtomicLong claims = new AtomicLong();
     private final Map<String, CompletableFuture<VoteResult>> tests = new ConcurrentHashMap<>();
+    // Votes this run has taken to pay and not paid yet, by id, with their claim.
+    private final Map<Long, String> unpaid = new ConcurrentHashMap<>();
+    private volatile boolean stopping;
     private volatile ChangeFeed feed = ChangeFeed.off();
     private volatile Ledger.PartyState party = new Ledger.PartyState(0, 0);
 
@@ -239,7 +245,9 @@ public final class Votes {
                           long partyFrom, long left) {}
 
     private Stored record(Connection c, IncomingVote vote, Resolved player, String name) throws SQLException {
-        long cooldown = rewards.get().cooldown(vote.site());
+        Rewards current = rewards.get();
+        // A test from a site that isn't listed (/vote test without a site) can be sent again and again.
+        long cooldown = vote.source() == VoteSource.TEST && current.site(vote.site()) == null ? 0 : current.cooldown(vote.site());
         cooldown = cooldown > 0 ? Math.max(0, cooldown - GRACE_MS) : 0;
         UUID id = player == null ? null : player.id();
         String shown = player == null ? name : player.name();
@@ -315,12 +323,76 @@ public final class Votes {
     }
 
     private void pay(UUID player, List<Facts> votes, String claim) {
-        effects.pay(player, votes, () -> store.submit(c -> {
+        for (Facts facts : votes) {
+            unpaid.put(facts.id(), claim);
+        }
+        if (stopping) {
+            return; // Given back by shutdown().
+        }
+        effects.pay(player, () -> {
+            List<Facts> mine = new ArrayList<>(votes.size());
             for (Facts facts : votes) {
-                ledger.unclaim(c, facts.id(), claim);
+                if (unpaid.remove(facts.id(), claim)) {
+                    mine.add(facts);
+                }
+            }
+            return mine;
+        }, () -> {
+            List<Long> back = new ArrayList<>(votes.size());
+            for (Facts facts : votes) {
+                if (unpaid.remove(facts.id(), claim)) {
+                    back.add(facts.id());
+                }
+            }
+            giveBack(back, claim);
+        });
+    }
+
+    // Claimed votes go back unpaid, for the next server the player is on.
+    private void giveBack(List<Long> ids, String claim) {
+        if (ids.isEmpty()) {
+            return;
+        }
+        store.submit(c -> {
+            for (long id : ids) {
+                ledger.unclaim(c, id, claim);
             }
             return null;
-        }));
+        });
+    }
+
+    /**
+     * xVote is stopping: votes taken to pay that haven't been paid yet go back, so the
+     * next start (or another server) pays them. Each vote is either paid or given back,
+     * never both. Call before the store stops.
+     */
+    public void shutdown() {
+        stopping = true;
+        // Lets the jobs already queued finish, so the votes they take are in unpaid too.
+        try {
+            store.submit(c -> null).get(5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            // The database is busy or gone; give back what's known.
+        }
+        Map<String, List<Long>> byClaim = new HashMap<>();
+        for (Long id : List.copyOf(unpaid.keySet())) {
+            String claim = unpaid.remove(id);
+            if (claim != null) {
+                byClaim.computeIfAbsent(claim, unused -> new ArrayList<>()).add(id);
+            }
+        }
+        int count = byClaim.values().stream().mapToInt(List::size).sum();
+        if (count > 0) {
+            byClaim.forEach((claim, ids) -> giveBack(ids, claim));
+            logger.info("Gave back " + count + " votes that weren't paid yet; they're paid when their player is next online.");
+        }
+    }
+
+    /** Votes taken to pay and not paid yet, for tests. */
+    int unpaid() {
+        return unpaid.size();
     }
 
     // ---- players joining ----

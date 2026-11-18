@@ -24,12 +24,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Totals from VotingPlugin and SuperbVote, in the formats their source writes: SuperbVote's
- * JsonVoteStorage and VotingPlugin's SQLite Users table (AdvancedCore keeps numbers as text).
+ * JsonVoteStorage and MysqlVoteStorage, and VotingPlugin's SQLite Users table (AdvancedCore
+ * keeps numbers and lists as text).
  */
 class ImportsTest {
 
@@ -60,13 +63,19 @@ class ImportsTest {
     @Test
     void votingPluginsSqlite() throws Exception {
         Path folder = Files.createDirectories(plugins.resolve("VotingPlugin"));
+        // As AdvancedCore's SqliteUserBackend makes it: a column per key, numbers and lists as text,
+        // LastVotes as site//millis entries joined with %line% (VotingPluginUser.setLastVotes).
         try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("Users.db"));
              Statement statement = c.createStatement()) {
-            statement.execute("CREATE TABLE Users (uuid VARCHAR(37) PRIMARY KEY, PlayerName TEXT, AllTimeTotal TEXT, MonthTotal TEXT, Points TEXT)");
+            statement.execute("CREATE TABLE IF NOT EXISTS \"Users\" (\"uuid\" VARCHAR(37), \"PlayerName\" TEXT, \"AllTimeTotal\" TEXT,"
+                + " \"LastVotes\" TEXT, \"MonthTotal\" TEXT, \"Points\" TEXT, PRIMARY KEY (\"uuid\"))");
         }
         try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("Users.db"));
-             PreparedStatement insert = c.prepareStatement("INSERT INTO Users VALUES (?, ?, ?, ?, ?)")) {
-            for (String[] row : new String[][] {{STEVE.toString(), "Steve", "40", "3", "100"}, {ALEX.toString(), "Alex", "", "0", "0"}}) {
+             PreparedStatement insert = c.prepareStatement("INSERT INTO \"Users\" VALUES (?, ?, ?, ?, ?, ?)")) {
+            for (String[] row : new String[][] {
+                {STEVE.toString(), "Steve", "40", "PlanetMinecraft//1763294400000%line%MinecraftMP//1763300000000%line%Broken//x", "3", "100"},
+                {ALEX.toString(), "Alex", "", "", "0", "0"},
+                {UUID.randomUUID().toString(), null, "2", null, "0", "0"}}) {
                 for (int i = 0; i < row.length; i++) {
                     insert.setString(i + 1, row[i]);
                 }
@@ -74,8 +83,64 @@ class ImportsTest {
             }
         }
         Imports.Found found = Imports.votingPlugin(plugins);
-        assertEquals(List.of(new Imports.Imported(STEVE, "Steve", 40, 0)), found.players());
+        assertEquals(2, found.players().size());
+        assertEquals(new Imports.Imported(STEVE, "Steve", 40, 1763300000000L), found.players().get(0));
+        assertEquals(0, found.players().get(1).lastVote(), "no LastVotes yet");
         assertTrue(found.from().endsWith("Users.db"));
+    }
+
+    @Test
+    void votingPluginsLastVotes() {
+        assertEquals(0, Imports.lastVote(null));
+        assertEquals(0, Imports.lastVote(""));
+        assertEquals(5, Imports.lastVote("A//5"));
+        assertEquals(9, Imports.lastVote("A//5%line%B//9%line%C//7"));
+        assertEquals(5, Imports.lastVote("A//5%line%nothing%line%B//later"));
+    }
+
+    @Test
+    void superbVotesMysqlSettingsAreReadAsItReadsThem() throws Exception {
+        // SuperbVoteConfiguration's defaults: localhost:3306, database and table both superbvote.
+        Imports.MysqlSource defaults = Imports.superbVoteMysqlSource(new YamlConfiguration());
+        assertEquals("jdbc:mysql://localhost:3306/superbvote", defaults.url());
+        assertEquals("superbvote", defaults.table());
+        assertEquals("root", defaults.login().getProperty("user"));
+        YamlConfiguration set = new YamlConfiguration();
+        set.loadFromString("storage:\n  mysql:\n    host: db.example\n    port: 3307\n    database: votes\n    table: sv\n");
+        Imports.MysqlSource source = Imports.superbVoteMysqlSource(set);
+        assertEquals("jdbc:mysql://db.example:3307/votes", source.url());
+        assertEquals("sv", source.table());
+        set.set("storage.mysql.table", "sv; DROP TABLE x");
+        assertThrows(IOException.class, () -> Imports.superbVoteMysqlSource(set));
+    }
+
+    /** SuperbVote's MySQL table as MysqlVoteStorage makes it, read back. Needs XR_MYSQL, as MySqlTest. */
+    @Test
+    @EnabledIfEnvironmentVariable(named = "XR_MYSQL", matches = ".+")
+    void superbVotesMysqlTable() throws Exception {
+        String[] parts = System.getenv("XR_MYSQL").split(":");
+        String table = "sv" + Long.toHexString(System.nanoTime());
+        Path folder = Files.createDirectories(plugins.resolve("SuperbVote"));
+        Files.writeString(folder.resolve("config.yml"), "storage:\n  database: mysql\n  mysql:\n    host: " + parts[0]
+            + "\n    port: " + parts[1] + "\n    database: " + parts[2] + "\n    username: " + parts[3]
+            + "\n    password: '" + parts[4] + "'\n    table: " + table + "\n");
+        String url = "jdbc:mysql://" + parts[0] + ":" + parts[1] + "/" + parts[2];
+        try (Connection c = DriverManager.getConnection(url, parts[3], parts[4]); Statement statement = c.createStatement()) {
+            statement.executeUpdate("CREATE TABLE " + table + " (uuid VARCHAR(36) PRIMARY KEY NOT NULL, last_name VARCHAR(16),"
+                + " votes INT NOT NULL, last_vote TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+            try {
+                statement.executeUpdate("INSERT INTO " + table + " VALUES ('" + STEVE + "', 'Steve', 12, '2026-11-16 12:00:00'),"
+                    + " ('" + ALEX + "', NULL, 0, CURRENT_TIMESTAMP)");
+                Imports.Found found = Imports.superbVote(plugins);
+                assertEquals(1, found.players().size());
+                assertEquals(STEVE, found.players().get(0).id());
+                assertEquals(12, found.players().get(0).total());
+                assertTrue(found.players().get(0).lastVote() > 0);
+                assertTrue(found.from().contains(parts[1]), found.from());
+            } finally {
+                statement.executeUpdate("DROP TABLE " + table);
+            }
+        }
     }
 
     @Test

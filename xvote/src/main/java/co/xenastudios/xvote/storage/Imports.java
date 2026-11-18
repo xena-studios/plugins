@@ -94,16 +94,37 @@ public final class Imports {
         return players;
     }
 
-    private static Found superbVoteMysql(YamlConfiguration config) throws IOException {
-        String host = config.getString("storage.mysql.host", "127.0.0.1");
-        String table = config.getString("storage.mysql.table", "votes");
+    /** Where SuperbVote's MySQL table is, as its config says. */
+    record MysqlSource(String url, String host, int port, String table, Properties login) {}
+
+    /** Reads SuperbVote's MySQL settings as SuperbVoteConfiguration reads them, with its defaults. */
+    static MysqlSource superbVoteMysqlSource(YamlConfiguration config) throws IOException {
+        String host = config.getString("storage.mysql.host", "localhost");
+        int port = config.getInt("storage.mysql.port", 3306);
+        String table = config.getString("storage.mysql.table", "superbvote");
         if (!table.matches("\\w+")) {
             throw new IOException("SuperbVote's storage.mysql.table isn't a plain table name.");
         }
-        String url = "jdbc:mysql://" + (host.contains(":") ? host : host + ":3306") + "/" + config.getString("storage.mysql.database", "superbvote");
+        String url = "jdbc:mysql://" + host + ":" + port + "/" + config.getString("storage.mysql.database", "superbvote");
         Properties login = new Properties();
         login.setProperty("user", config.getString("storage.mysql.username", "root"));
         login.setProperty("password", config.getString("storage.mysql.password", ""));
+        // A server that doesn't answer fails the import, not hangs it.
+        login.setProperty("connectTimeout", "10000");
+        login.setProperty("socketTimeout", "60000");
+        return new MysqlSource(url, host, port, table, login);
+    }
+
+    private static Found superbVoteMysql(YamlConfiguration config) throws IOException {
+        MysqlSource source = superbVoteMysqlSource(config);
+        String url = source.url();
+        String table = source.table();
+        Properties login = source.login();
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver"); // Paper and Folia include it; registered if nothing has yet.
+        } catch (ClassNotFoundException e) {
+            throw new IOException("this server has no MySQL driver to read SuperbVote's table with.", e);
+        }
         try (Connection connection = DriverManager.getConnection(url, login)) {
             List<Imported> players = new ArrayList<>();
             try (Statement statement = connection.createStatement();
@@ -117,7 +138,7 @@ public final class Imports {
                     }
                 }
             }
-            return new Found("SuperbVote", "MySQL at " + host + ", table " + table, players);
+            return new Found("SuperbVote", "MySQL at " + source.host() + ":" + source.port() + ", table " + table, players);
         } catch (SQLException e) {
             throw new IOException("couldn't read SuperbVote's MySQL table: " + e.getMessage(), e);
         }
@@ -162,7 +183,7 @@ public final class Imports {
                         case "uuid" -> uuid = i;
                         case "playername" -> name = i;
                         case "alltimetotal" -> total = i;
-                        case "lastvotetime", "time" -> last = i;
+                        case "lastvotes" -> last = i;
                         default -> {
                             // Not needed.
                         }
@@ -176,7 +197,7 @@ public final class Imports {
                     int votes = number(row.getString(total));
                     if (id != null && votes > 0) {
                         players.add(new Imported(id, name == 0 || row.getString(name) == null ? "" : row.getString(name), votes,
-                            last == 0 ? 0 : number(row.getString(last))));
+                            last == 0 ? 0 : lastVote(row.getString(last))));
                     }
                 }
             }
@@ -184,6 +205,30 @@ public final class Imports {
         } catch (SQLException e) {
             throw new IOException("couldn't read VotingPlugin's " + file.getFileName() + ": " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * The latest time in VotingPlugin's {@code LastVotes}: a list of {@code site//millis},
+     * one per site, kept as text joined with {@code %line%} (VotingPluginUser.setLastVotes,
+     * AdvancedCore's UserData). 0 if there's none.
+     */
+    static long lastVote(String lastVotes) {
+        if (lastVotes == null || lastVotes.isBlank()) {
+            return 0;
+        }
+        long latest = 0;
+        for (String entry : lastVotes.split("%line%")) {
+            int split = entry.lastIndexOf("//");
+            if (split < 0) {
+                continue;
+            }
+            try {
+                latest = Math.max(latest, Long.parseLong(entry.substring(split + 2).strip()));
+            } catch (NumberFormatException e) {
+                // A damaged entry: the others still count.
+            }
+        }
+        return latest;
     }
 
     // VotingPlugin keeps numbers as text.

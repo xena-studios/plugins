@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,6 +70,9 @@ class VotesTest {
         final List<Facts> paid = Collections.synchronizedList(new ArrayList<>());
         final List<Long> parties = Collections.synchronizedList(new ArrayList<>());
         volatile boolean playerLeaves;
+        // Payments waiting for the player's thread, as on a busy server.
+        volatile boolean holdPayments;
+        final List<Supplier<List<Facts>>> held = Collections.synchronizedList(new ArrayList<>());
 
         Server() throws Exception {
             store = Store.open(StorageSettings.defaults("xvote_"), folder, logger);
@@ -82,11 +86,13 @@ class VotesTest {
         }
 
         @Override
-        public void pay(UUID player, List<Facts> facts, Runnable left) {
+        public void pay(UUID player, Supplier<List<Facts>> take, Runnable left) {
             if (playerLeaves) {
                 left.run();
+            } else if (holdPayments) {
+                held.add(take);
             } else {
-                paid.addAll(facts);
+                paid.addAll(take.get());
             }
         }
 
@@ -218,14 +224,47 @@ class VotesTest {
         assertEquals(VoteResult.COUNTED, a.vote("Steve", "PlanetMinecraft.com", NOON));
         assertEquals(VoteResult.DUPLICATE, a.vote("Steve", "planetminecraft.com", NOON + 3_600_000L));
         assertEquals(VoteResult.COUNTED, a.vote("Steve", "PlanetMinecraft.com", NOON + DAY - 60_000L), "within the grace");
-        // An unlisted site: only a replayed timestamp is a repeat.
-        IncomingVote once = new IncomingVote("List", "Steve", "", "same", VoteSource.VOTIFIER_V1, NOON);
-        assertEquals(VoteResult.COUNTED, a.votes.accept(once).get());
-        IncomingVote replay = new IncomingVote("List", "Steve", "", "same", VoteSource.VOTIFIER_V1, NOON + 60_000L);
-        assertEquals(VoteResult.DUPLICATE, a.votes.accept(replay).get());
-        assertEquals(VoteResult.COUNTED, a.vote("Steve", "List", NOON + 120_000L));
         assertEquals(VoteResult.INVALID, a.vote("not a name!", "List", NOON));
-        assertEquals(4, a.paid.size());
+        assertEquals(2, a.paid.size());
+    }
+
+    @Test
+    void repeatsFromAnUnlistedSiteAreDroppedToo() throws Exception {
+        a.join(STEVE, "Steve");
+        // Not in sites: counting.unlisted-cooldown-hours (24) applies, so a replayed or resent vote isn't paid twice.
+        assertEquals(VoteResult.COUNTED, a.vote("Steve", "Some List", NOON));
+        assertEquals(VoteResult.DUPLICATE, a.vote("Steve", "Some List", NOON + 60_000L));
+        assertEquals(VoteResult.DUPLICATE, a.vote("Steve", "SOME LIST", NOON + 12 * 3_600_000L), "the name ignoring case");
+        IncomingVote replay = new IncomingVote("Some List", "Steve", "", Long.toString(NOON), VoteSource.VOTIFIER_V1, NOON + 3_600_000L);
+        assertEquals(VoteResult.DUPLICATE, a.votes.accept(replay).get());
+        assertEquals(VoteResult.COUNTED, a.vote("Steve", "Some List", NOON + DAY), "a day later");
+        // Another unlisted site has its own cooldown.
+        assertEquals(VoteResult.COUNTED, a.vote("Steve", "Another List", NOON + 60_000L));
+        // /vote test without a site can be sent again and again.
+        IncomingVote test = new IncomingVote("test", "Steve", "", "1", VoteSource.TEST, NOON + 1);
+        IncomingVote again = new IncomingVote("test", "Steve", "", "2", VoteSource.TEST, NOON + 2);
+        assertEquals(VoteResult.COUNTED, a.votes.accept(test).get());
+        assertEquals(VoteResult.COUNTED, a.votes.accept(again).get());
+        assertEquals(5, a.paid.size());
+    }
+
+    @Test
+    void withNoUnlistedCooldownOnlyAReplayIsARepeat() throws Exception {
+        XVConfig d = config;
+        config = new XVConfig(d.theme(), d.messages(), d.receiver(), d.sites(), d.rewards(), d.triggers(), d.party(), d.reminders(),
+            new XVConfig.Counting("UTC", DayOfWeek.MONDAY, ".", 30, 0), d.storage(), d.network(), d.updateChecker());
+        Server c = new Server();
+        try {
+            c.join(STEVE, "Steve");
+            IncomingVote once = new IncomingVote("List", "Steve", "", "same", VoteSource.VOTIFIER_V1, NOON);
+            assertEquals(VoteResult.COUNTED, c.votes.accept(once).get());
+            IncomingVote replay = new IncomingVote("List", "Steve", "", "same", VoteSource.VOTIFIER_V1, NOON + 60_000L);
+            assertEquals(VoteResult.DUPLICATE, c.votes.accept(replay).get());
+            assertEquals(VoteResult.COUNTED, c.vote("Steve", "List", NOON + 120_000L));
+            assertEquals(2, c.paid.size());
+        } finally {
+            c.store.stop(5, TimeUnit.SECONDS);
+        }
     }
 
     @Test
@@ -243,11 +282,64 @@ class VotesTest {
     }
 
     @Test
+    void votesTakenButNotYetPaidAreGivenBackOnStop() throws Exception {
+        a.join(STEVE, "Steve");
+        a.holdPayments = true;
+        assertEquals(VoteResult.COUNTED, a.vote("Steve", "List", NOON));
+        assertEquals(VoteResult.COUNTED, a.vote("Steve", "Other", NOON + 1));
+        assertEquals(2, a.votes.unpaid());
+        // A normal stop, before the player's thread got to them.
+        a.votes.shutdown();
+        a.settle();
+        assertEquals(0, a.votes.unpaid());
+        // The payment that was waiting finds nothing left to pay...
+        for (Supplier<List<Facts>> payment : a.held) {
+            assertEquals(List.of(), payment.get());
+        }
+        assertEquals(0, a.paid.size());
+        // ...and the next server Steve is on pays both, once.
+        b.join(STEVE, "Steve");
+        assertEquals(2, b.paid.size());
+        b.join(STEVE, "Steve");
+        assertEquals(2, b.paid.size());
+    }
+
+    @Test
+    void aPaymentTakenBeforeTheStopIsntGivenBack() throws Exception {
+        a.join(STEVE, "Steve");
+        a.holdPayments = true;
+        assertEquals(VoteResult.COUNTED, a.vote("Steve", "List", NOON));
+        // The player's thread gets to it first: paid here, so the stop has nothing to give back.
+        a.paid.addAll(a.held.get(0).get());
+        a.votes.shutdown();
+        a.settle();
+        assertEquals(1, a.paid.size());
+        b.join(STEVE, "Steve");
+        assertEquals(0, b.paid.size(), "never paid twice");
+    }
+
+    @Test
+    void aJoinWithNothingNewLeavesTheLeaderboardsSorted() throws Exception {
+        a.join(STEVE, "Steve");
+        a.vote("Steve", "List", NOON);
+        // A join reads Steve as of the clock, not NOON as the test's vote did: that one is a change.
+        a.join(STEVE, "Steve");
+        a.votes.voters().top(Period.ALL, NOON);
+        long version = a.votes.voters().version();
+        a.join(STEVE, "Steve");
+        a.join(STEVE, "Steve");
+        assertEquals(version, a.votes.voters().version(), "unchanged, so not sorted again");
+        a.vote("Steve", "Other", NOON + 1);
+        assertTrue(a.votes.voters().version() > version);
+    }
+
+    @Test
     void streaksAndFirstVotesOfTheDay() throws Exception {
         a.join(STEVE, "Steve");
         long[] times = {NOON, NOON + 3_600_000L, NOON + DAY, NOON + 2 * DAY, NOON + 4 * DAY};
         for (int i = 0; i < times.length; i++) {
-            a.vote("Steve", "List", times[i]);
+            // The second vote that day is from another site: a site's cooldown would drop it.
+            assertEquals(VoteResult.COUNTED, a.vote("Steve", i == 1 ? "Other" : "List", times[i]), "vote " + i);
         }
         int[] streaks = {1, 1, 2, 3, 1};
         boolean[] first = {true, false, true, true, true};

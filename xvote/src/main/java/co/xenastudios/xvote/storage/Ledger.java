@@ -125,17 +125,17 @@ public final class Ledger {
             }
         }
         int day = periods.day(at);
-        long dayStart = periods.dayStart(at);
+        // From the row just locked, not a count of votes: on MySQL a plain SELECT reads the
+        // transaction's snapshot, taken before the lock, so it could miss a vote another
+        // server counted a moment ago, and both would pay the first vote of the day.
         boolean firstToday;
-        try (PreparedStatement query = c.prepareStatement(sql(
-            "SELECT COUNT(*) FROM {p}votes WHERE uuid = ? AND at >= ? AND at < ? AND number IS NOT NULL AND id <> ?"))) {
-            query.setString(1, player.toString());
-            query.setLong(2, dayStart);
-            query.setLong(3, periods.dayEnd(at));
-            query.setLong(4, id);
-            try (ResultSet row = query.executeQuery()) {
-                firstToday = !row.next() || row.getLong(1) == 0;
-            }
+        if (!known || day > lastDay) {
+            firstToday = true;
+        } else if (day == lastDay) {
+            firstToday = false;
+        } else {
+            // An older vote counted late (matched when its name first joined): its own day decides.
+            firstToday = !countedOn(c, player, id, periods.dayStart(at), periods.dayEnd(at));
         }
         int number = total + 1;
         int nextStreak = known ? Periods.nextStreak(lastDay, streak, day) : 1;
@@ -175,6 +175,20 @@ public final class Ledger {
             update.executeUpdate();
         }
         return new Facts(id, player, name, site, number, nextStreak, firstToday, at);
+    }
+
+    // Whether the player has another counted vote in [from, to).
+    private boolean countedOn(Connection c, UUID player, long id, long from, long to) throws SQLException {
+        try (PreparedStatement query = c.prepareStatement(sql(
+            "SELECT COUNT(*) FROM {p}votes WHERE uuid = ? AND at >= ? AND at < ? AND number IS NOT NULL AND id <> ?"))) {
+            query.setString(1, player.toString());
+            query.setLong(2, from);
+            query.setLong(3, to);
+            query.setLong(4, id);
+            try (ResultSet row = query.executeQuery()) {
+                return row.next() && row.getLong(1) > 0;
+            }
+        }
     }
 
     /**

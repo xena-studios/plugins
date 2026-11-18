@@ -15,6 +15,9 @@ expect: listening on port 8192
 # and Alex have never joined, so their votes wait for them.
 run: vote test Steve
 expect: Vote for Steve from test (test): held until Steve first joins.
+# A test without a site has no cooldown, so it can be sent again.
+run: vote test Steve
+expect: Vote for Steve from test (test): held until Steve first joins.
 run: vote test Alex planetminecraft
 expect: Vote for Alex from PlanetMinecraft.com (test): held until Alex first joins.
 # The same site again, within its cooldown: a repeat, dropped.

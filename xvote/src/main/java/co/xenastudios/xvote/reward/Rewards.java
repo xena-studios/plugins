@@ -39,9 +39,10 @@ public final class Rewards {
     private final Map<Integer, List<String>> total;
     private final List<String> party;
     private final long longestCooldown;
+    private final long unlistedCooldown;
 
     private Rewards(List<Site> sites, Map<String, Reward> rewards, XVConfig.Triggers triggers, List<String> party,
-                    Consumer<String> warn) {
+                    long unlistedCooldown, Consumer<String> warn) {
         this.sites = List.copyOf(sites);
         Map<String, Site> services = new LinkedHashMap<>();
         Map<String, Site> keys = new LinkedHashMap<>();
@@ -55,7 +56,8 @@ public final class Rewards {
         }
         this.byService = services;
         this.byKey = keys;
-        this.longestCooldown = longest;
+        this.unlistedCooldown = unlistedCooldown;
+        this.longestCooldown = Math.max(longest, unlistedCooldown);
         this.rewards = rewards;
         this.everyVote = known(triggers.everyVote(), "triggers.every-vote", warn);
         this.firstOfDay = known(triggers.firstVoteOfDay(), "triggers.first-vote-of-day", warn);
@@ -100,7 +102,8 @@ public final class Rewards {
             rewards.put(name, new Reward(name, reward.chance(), reward.money(), List.copyOf(stacks), reward.commands(),
                 reward.message(), reward.broadcast(), reward.sound(), reward.custom()));
         });
-        return new Rewards(sites, rewards, config.triggers(), config.party().rewards(), warn);
+        return new Rewards(sites, rewards, config.triggers(), config.party().rewards(),
+            config.counting().unlistedCooldownHours() * 3_600_000L, warn);
     }
 
     private List<String> known(List<String> names, String path, Consumer<String> warn) {
@@ -154,10 +157,27 @@ public final class Rewards {
         return site == null ? service : site.name();
     }
 
-    /** The cooldown for votes from a site; 0 for unlisted ones. */
+    /**
+     * The name a console command or custom reward gets as {@code <site>}: a listed site's
+     * name from the config, or for an unlisted one the service name the list sent with
+     * everything but letters, digits, {@code .}, {@code _} and {@code -} made {@code _}, so
+     * nothing from the network can add arguments or another command.
+     */
+    public String commandSite(String service) {
+        Site site = site(service);
+        return site != null ? site.name() : safe(service);
+    }
+
+    /** A service name from the network made safe to put in a command. */
+    static String safe(String service) {
+        String safe = service.replaceAll("[^A-Za-z0-9._-]", "_");
+        return safe.isEmpty() ? "_" : safe;
+    }
+
+    /** The cooldown for votes from a site: its own, or counting.unlisted-cooldown-hours for unlisted ones. */
     public long cooldown(String service) {
         Site site = site(service);
-        return site == null ? 0 : site.cooldownMs();
+        return site == null ? unlistedCooldown : site.cooldownMs();
     }
 
     /** The longest cooldown of any site: how far back each player's last vote per site is kept. */

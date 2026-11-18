@@ -30,8 +30,13 @@ import org.bukkit.inventory.ItemStack;
  */
 public final class Payout {
 
-    /** What a reward's text can mention. */
-    public record Context(String site, int total, int streak) {}
+    /**
+     * What a reward's text can mention.
+     *
+     * @param site the site as players see it, for messages
+     * @param commandSite the site as console commands and custom rewards get it: never text from the network as it came
+     */
+    public record Context(String site, String commandSite, int total, int streak) {}
 
     private final Supplier<Rewards> rewards;
     private final RewardTypes types;
@@ -73,7 +78,8 @@ public final class Payout {
             }
             names = event.getRewards();
         }
-        give(player, current, names, new Context(current.siteName(facts.site()), facts.number(), facts.streak()));
+        give(player, current, names, new Context(current.siteName(facts.site()), current.commandSite(facts.site()), facts.number(),
+            facts.streak()));
     }
 
     /** Gives named rewards, as for the vote party. On the player's thread. */
@@ -174,7 +180,7 @@ public final class Payout {
         String name = player.getName();
         UUID id = player.getUniqueId();
         return text.replace("<player>", name).replace("%player%", name)
-            .replace("<uuid>", id.toString()).replace("<site>", context.site())
+            .replace("<uuid>", id.toString()).replace("<site>", context.commandSite())
             .replace("<total>", Integer.toString(context.total())).replace("<streak>", Integer.toString(context.streak()));
     }
 

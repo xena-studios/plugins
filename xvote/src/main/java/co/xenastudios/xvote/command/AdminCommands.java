@@ -8,6 +8,7 @@ import co.xenastudios.xvote.receiver.Keys;
 import co.xenastudios.xvote.receiver.NuVotifierImport;
 import co.xenastudios.xvote.receiver.Protocol;
 import co.xenastudios.xvote.receiver.Receiver;
+import co.xenastudios.xvote.receiver.Secrets;
 import co.xenastudios.xvote.receiver.Tokens;
 import co.xenastudios.xvote.storage.Imports;
 import co.xenastudios.xvote.storage.Ledger;
@@ -58,7 +59,9 @@ public final class AdminCommands {
         CommandSender sender = inv.sender();
         Receiver receiver = plugin.receiver().receiver();
         var settings = plugin.config().receiver();
-        String listening = receiver != null
+        String listening = receiver != null && !receiver.listening()
+            ? "<error>stopped</error> on port " + receiver.port() + ": the console says why; /xvote reload starts it again"
+            : receiver != null
             ? "<success>listening</success> on port <highlight>" + receiver.port() + "</highlight>, Votifier "
                 + (receiver.settings().v1() ? "v1 and v2" : "v2 only")
             : settings.enabled() ? "<error>not listening</error>: the console says why" : "off";
@@ -244,15 +247,20 @@ public final class AdminCommands {
             try {
                 NuVotifierImport.Found read = NuVotifierImport.read(found);
                 String stamp = Long.toString(System.currentTimeMillis());
-                backUp(folder.resolve("rsa"), folder.resolve("rsa.before-import-" + stamp));
-                backUp(folder.resolve(Tokens.FILE), folder.resolve(Tokens.FILE + ".before-import-" + stamp));
+                // Only what NuVotifier has is replaced, so only that is moved aside.
+                if (read.keys() != null) {
+                    backUp(folder.resolve("rsa"), folder.resolve("rsa.before-import-" + stamp));
+                }
+                if (read.tokens() != null) {
+                    backUp(folder.resolve(Tokens.FILE), folder.resolve(Tokens.FILE + ".before-import-" + stamp));
+                }
                 NuVotifierImport.write(read, folder);
                 plugin.useNuVotifierPort(read);
                 // Reads the keys and tokens again, and moves to NuVotifier's port if it differs.
                 plugin.tasks().global(() -> sender.sendMessage(plugin.reload()));
                 reply(sender, "<success>Took over NuVotifier's setup</success> from plugins/" + found.getFileName() + ": "
                     + (read.keys() != null ? "its keys" : "no keys") + ", " + (read.tokens() != null ? read.tokens().all().size() + " tokens" : "no tokens")
-                    + (read.port() > 0 ? ", port " + read.port() : "") + ". xVote's own were kept as .before-import files."
+                    + (read.port() > 0 ? ", port " + read.port() : "") + ". xVote's own " + (read.keys() != null && read.tokens() != null ? "were" : "was") + " kept as .before-import files."
                     + " Remove NuVotifier before the next restart.");
             } catch (IOException e) {
                 reply(sender, "<error>Couldn't take over NuVotifier's setup:</error> " + VoteCommand.escape(e.getMessage()));
@@ -260,9 +268,15 @@ public final class AdminCommands {
         });
     }
 
+    // Moved aside, and kept owner-only: they hold the private key or the tokens.
     private static void backUp(Path from, Path to) throws IOException {
         if (Files.exists(from)) {
             Files.move(from, to, StandardCopyOption.REPLACE_EXISTING);
+            if (Files.isDirectory(to)) {
+                Secrets.ownerOnly(to.resolve("private.key"));
+            } else {
+                Secrets.ownerOnly(to);
+            }
         }
     }
 

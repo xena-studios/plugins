@@ -1,5 +1,6 @@
 package co.xenastudios.xbackup.backup;
 
+import co.xenastudios.xbackup.store.CorruptException;
 import co.xenastudios.xbackup.store.Hash;
 import co.xenastudios.xbackup.store.RegionLayout;
 import co.xenastudios.xbackup.store.Repository;
@@ -17,7 +18,7 @@ interface Reference {
     /** The earlier entry at a path, with when it was read; null if there's none. */
     Previous find(String path) throws IOException;
 
-    /** A region layout an entry points to. */
+    /** A region layout an entry points to; null if it can't be read (a lost pack). */
     RegionLayout region(Hash id) throws IOException;
 
     /**
@@ -59,12 +60,12 @@ interface Reference {
                 }
                 Tree tree;
                 if (path.isEmpty()) {
-                    tree = repository.tree(root);
+                    tree = read(root);
                 } else {
                     int slash = path.lastIndexOf('/');
                     Tree parent = folder(slash < 0 ? "" : path.substring(0, slash));
                     Tree.Node node = parent == null ? null : parent.get(path.substring(slash + 1));
-                    tree = node != null && node.kind() == Tree.Kind.DIR ? repository.tree(node.ref()) : null;
+                    tree = node != null && node.kind() == Tree.Kind.DIR ? read(node.ref()) : null;
                 }
                 // Folders are visited in order, so only the path being walked needs keeping.
                 if (folders.size() > 256) {
@@ -74,9 +75,22 @@ interface Reference {
                 return tree;
             }
 
+            // A folder whose listing went with a lost pack is read again, not reused.
+            private Tree read(Hash id) throws IOException {
+                try {
+                    return repository.tree(id);
+                } catch (CorruptException e) {
+                    return null;
+                }
+            }
+
             @Override
             public RegionLayout region(Hash id) throws IOException {
-                return repository.region(id);
+                try {
+                    return repository.region(id);
+                } catch (CorruptException e) {
+                    return null;
+                }
             }
         };
     }

@@ -165,8 +165,9 @@ public final class Maintenance {
     /**
      * Garbage collection: marks every blob a snapshot uses, deletes packs with none, and
      * moves the live blobs out of packs that are mostly unused. Also deletes packs no index
-     * lists, which only a crashed backup leaves, and drops index entries for packs that are
-     * missing, so the next backup stores those blobs again instead of pointing at nothing.
+     * lists that hold nothing a snapshot needs, which only a crashed backup leaves, and drops
+     * index entries for packs that are missing, so the next backup stores those blobs again
+     * instead of pointing at nothing. Every pack it deletes is noted as collected first.
      *
      * <p>Two steps, so it still frees space on a full disk. First a fresh index without the
      * unused packs is written and those packs deleted: that writes no pack. Only then are
@@ -186,8 +187,19 @@ public final class Maintenance {
         }
         List<Snapshot> newestFirst = new ArrayList<>(snapshots);
         newestFirst.sort(Comparator.comparing(Snapshot::time).reversed());
+        // Packs gone missing first: the index keeps only a blob's first place, so a blob in a
+        // missing pack would look unused in another pack that also holds it.
+        repository.dropMissingPacks();
         Index index = repository.index();
-        PrefixMap used = mark(newestFirst);
+        PrefixMap used;
+        try {
+            used = mark(newestFirst);
+        } catch (CorruptException e) {
+            // What a damaged backup uses can't be told from garbage; deleting it here would
+            // delete it from remotes too, which may still hold that backup whole.
+            throw new CorruptException("Not collecting garbage while a backup's structure can't be read ("
+                + e.getMessage() + "). /backup verify full says which; restore it from a remote, or /backup forget it.", e);
+        }
 
         Map<Hash, Long> sizes = new HashMap<>();
         long before = 0;
@@ -211,18 +223,58 @@ public final class Maintenance {
             }
         });
 
+        // A pack no index lists is normally what a crashed backup left. But "not in the index"
+        // never means "unused": one holding blobs a snapshot needs that the index has nowhere
+        // (a lost index file) is taken back in, and one that can't be read is left alone.
+        boolean adopted = false;
+        Set<Hash> unreadable = new HashSet<>();
+        Set<Hash> indexedPacks = new HashSet<>(index.packs());
+        for (Backend.FileInfo file : repository.backend().list("data/")) {
+            Hash pack = Pack.idOf(file.name());
+            if (pack == null || indexedPacks.contains(pack)) {
+                continue;
+            }
+            checkCancelled();
+            List<PackEntry> entries;
+            try {
+                entries = Pack.readFooter(repository.backend(), file.name(), file.size());
+            } catch (CorruptException e) {
+                unreadable.add(pack);
+                continue;
+            }
+            List<PackEntry> needed = new ArrayList<>();
+            for (PackEntry entry : entries) {
+                if (used.contains(entry.id()) && !index.has(entry.id())) {
+                    needed.add(entry);
+                }
+            }
+            if (!needed.isEmpty()) {
+                live.computeIfAbsent(pack, key -> new ArrayList<>()).addAll(needed);
+                for (PackEntry entry : needed) {
+                    liveBytes.merge(pack, (long) entry.storedLength(), Long::sum);
+                }
+                adopted = true;
+            }
+        }
+
         // 1. Drop the unused packs: a fresh index listing only blobs in use, then delete
-        //    every pack it doesn't list. Writes one index file and no pack.
-        if (live.size() != index.packs().size() || liveCount[0] != index.size()) {
+        //    every pack it doesn't list. Writes one index file and no pack. Each is noted as
+        //    collected before it goes, so copies on remotes go too.
+        if (adopted || live.size() != index.packs().size() || liveCount[0] != index.size()) {
             repository.rewriteIndex(live);
         }
-        int deleted = 0;
+        List<Hash> unusedPacks = new ArrayList<>();
         for (Hash pack : sizes.keySet()) {
-            if (!live.containsKey(pack)) {
-                checkCancelled();
-                repository.backend().delete(Pack.fileName(pack));
-                deleted++;
+            if (!live.containsKey(pack) && !unreadable.contains(pack)) {
+                unusedPacks.add(pack);
             }
+        }
+        repository.noteCollected(unusedPacks);
+        int deleted = 0;
+        for (Hash pack : unusedPacks) {
+            checkCancelled();
+            repository.backend().delete(Pack.fileName(pack));
+            deleted++;
         }
 
         // 2. Repack the packs that are mostly unused, and many small ones.
@@ -276,11 +328,16 @@ public final class Maintenance {
                 Map<Hash, List<PackEntry>> next = new LinkedHashMap<>(keep);
                 next.putAll(fresh);
                 repository.rewriteIndex(next);
+                List<Hash> emptied = new ArrayList<>();
                 for (Hash pack : repack) {
                     if (!next.containsKey(pack)) {
-                        repository.backend().delete(Pack.fileName(pack));
-                        deleted++;
+                        emptied.add(pack);
                     }
+                }
+                repository.noteCollected(emptied);
+                for (Hash pack : emptied) {
+                    repository.backend().delete(Pack.fileName(pack));
+                    deleted++;
                 }
                 repacked = repack.size();
             }
@@ -497,6 +554,21 @@ public final class Maintenance {
             } catch (CorruptException e) {
                 damaged.add(e.getMessage());
             }
+        }
+        // Packs the old index listed that aren't here: noted as lost, so remotes keep theirs.
+        List<Hash> missing = new ArrayList<>();
+        try {
+            for (Hash pack : repository.index().packs()) {
+                if (!packs.containsKey(pack)) {
+                    missing.add(pack);
+                }
+            }
+        } catch (CorruptException e) {
+            // The old index is what's being repaired; remotes keep every pack anyway unless
+            // it's noted as collected.
+        }
+        if (!missing.isEmpty()) {
+            repository.noteLost(missing);
         }
         repository.rewriteIndex(packs);
         return new Rebuilt(packs.size(), blobs, damaged);

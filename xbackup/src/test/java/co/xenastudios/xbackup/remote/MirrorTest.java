@@ -193,6 +193,97 @@ class MirrorTest {
         }
     }
 
+    // The review's probe: a pack lost here is dropped from the index by the next backup, but
+    // the remote's copy, the only good one, stays.
+    @Test
+    void probeDamageThenBackupThenCopy() throws Exception {
+        Fixtures.server(server(), random);
+        try (Repository repository = local()) {
+            backup(repository);
+            backup(repository);
+            Mirror.push(repository, remote(), () -> false, step -> {});
+            String pack = names(repository.backend(), "data/").iterator().next();
+            Files.delete(dir.resolve("repo").resolve(pack));
+            repository.release();
+            backup(repository); // the scheduled backup that always runs before a copy
+            Mirror.Result result = Mirror.push(repository, remote(), () -> false, step -> {});
+            assertTrue(names(remote(), "data/").contains(pack), "the remote's only good copy of " + pack + " was deleted");
+            assertNotNull(result.held());
+            assertTrue(result.held().contains("lost"), result.held());
+        }
+    }
+
+    @Test
+    void aLostPackStaysRestorableFromTheRemoteThroughLaterCleanUps() throws Exception {
+        Fixtures.server(server(), random);
+        try (Repository repository = local()) {
+            backup(repository);
+            backup(repository);
+            Mirror.push(repository, remote(), () -> false, step -> {});
+            // A pack of file contents: the backups' structure is all still here, so clean-ups run.
+            Set<co.xenastudios.xbackup.store.Hash> structure = new java.util.HashSet<>();
+            repository.index().forEach(location -> {
+                if (location.entry().type().isMetadata()) {
+                    structure.add(location.pack());
+                }
+            });
+            String pack = names(repository.backend(), "data/").stream()
+                .filter(name -> !structure.contains(co.xenastudios.xbackup.store.Pack.idOf(name))).findFirst().orElseThrow();
+            Files.delete(dir.resolve("repo").resolve(pack));
+            repository.release();
+            for (int i = 0; i < 3; i++) {
+                backup(repository);
+                prune(repository, 3);
+                Mirror.push(repository, remote(), () -> false, step -> {});
+            }
+            assertTrue(names(remote(), "data/").contains(pack));
+            // Collected packs did leave the remote, while its index files were kept.
+            Set<String> collected = new TreeSet<>();
+            for (co.xenastudios.xbackup.store.Hash id : repository.collected()) {
+                collected.add(co.xenastudios.xbackup.store.Pack.fileName(id));
+            }
+            assertTrue(!collected.isEmpty(), "the clean-ups collected something");
+            for (String name : collected) {
+                assertTrue(!names(remote(), "data/").contains(name), name + " was collected here but kept there");
+            }
+            // A restore from the remote reads past the index entries for packs it no longer has.
+            Path cache = dir.resolve("cache");
+            try (Repository cached = Fetch.metadata(remote(), cache, step -> {})) {
+                List<Snapshot> snapshots = cached.snapshots(new java.util.ArrayList<>());
+                Snapshot latest = snapshots.get(snapshots.size() - 1);
+                List<co.xenastudios.xbackup.restore.Restore.Item> items =
+                    co.xenastudios.xbackup.restore.Restore.expand(cached, latest, List.of("world"), Set.of());
+                Fetch.data(remote(), cached, items, step -> {});
+                Path out = dir.resolve("out");
+                Files.createDirectories(out);
+                co.xenastudios.xbackup.restore.Restore.write(cached, items, out, out, false, Throttle.NONE, () -> false,
+                    step -> {});
+                assertTrue(Files.exists(out.resolve("world/level.dat")));
+            }
+        }
+    }
+
+    @Test
+    void onlyPacksCollectedHereLeaveTheRemote() throws Exception {
+        Fixtures.server(server(), random);
+        try (Repository repository = local()) {
+            backup(repository);
+            backup(repository);
+            Mirror.push(repository, remote(), () -> false, step -> {});
+            // A pack on the remote this repository never had, and never collected.
+            Files.createDirectories(dir.resolve("remote/data/ff"));
+            Files.write(dir.resolve("remote/data/ff").resolve("ff" + "0".repeat(62)), new byte[] {1});
+        }
+        try (Repository repository = local()) {
+            prune(repository, 1);
+            Mirror.push(repository, remote(), () -> false, step -> {});
+            assertTrue(names(remote(), "data/").contains("data/ff/ff" + "0".repeat(62)));
+            Set<String> expected = new TreeSet<>(names(repository.backend(), "data/"));
+            expected.add("data/ff/ff" + "0".repeat(62));
+            assertEquals(expected, names(remote(), "data/"));
+        }
+    }
+
     private static void copy(Path from, Path to) throws IOException {
         Files.walkFileTree(from, new SimpleFileVisitor<>() {
             @Override

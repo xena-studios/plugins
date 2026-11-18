@@ -34,8 +34,10 @@ import java.util.function.Consumer;
  * <ul>
  * <li>a snapshot only if the repository's {@code forgotten} list has it (retention or {@code
  *     /backup forget} removed it), and it's older than the newest local snapshot;
- * <li>packs and index files only if every snapshot left on the remote is also here, and no
- *     local index lists the pack;
+ * <li>packs only if every snapshot left on the remote is also here, and garbage collection
+ *     here deleted the pack on purpose (its {@code collected} list); never one that went
+ *     missing here ({@code lost});
+ * <li>index files only if every pack left on the remote is listed by a local index file;
  * <li>nothing at all if the local repository has no snapshots while the remote has some, or
  *     if a local index lists a pack that's missing here (local damage).
  * </ul>
@@ -185,17 +187,39 @@ public final class Mirror {
                 + (unexplained == 1 ? "" : "s") + " this server's repository doesn't, and didn't remove on purpose"
                 + " (a damaged, rolled-back or restored disk?), so they and their data were left on the remote");
         }
-        for (String name : remoteOnly) {
-            if (name.startsWith("data/")) {
-                Hash pack = Pack.idOf(name);
-                if (pack == null || !indexed.contains(pack)) {
-                    names.add(name);
-                }
-            } else if (name.startsWith("index/")) {
+        // A pack goes only if garbage collection here deleted it on purpose. One that's merely
+        // not here (lost with a bad disk, then dropped from the index by the next backup) may
+        // be the only good copy, which older backups need.
+        Set<Hash> collected = local.collected();
+        Set<Hash> lost = local.lost();
+        boolean keptPacks = false;
+        int lostKept = 0;
+        for (String name : target.keySet()) {
+            if (!name.startsWith("data/") || source.containsKey(name)) {
+                continue;
+            }
+            Hash pack = Pack.idOf(name);
+            if (pack != null && collected.contains(pack) && !indexed.contains(pack) && !lost.contains(pack)) {
                 names.add(name);
+            } else {
+                keptPacks = true;
+                lostKept += pack != null && lost.contains(pack) ? 1 : 0;
             }
         }
-        return new Deletions(names, null);
+        // Index files go only once every pack left on the remote is listed by one of this
+        // repository's (all sent above): otherwise the remote's own index files are what
+        // still list the packs kept there.
+        if (!keptPacks) {
+            for (String name : remoteOnly) {
+                if (name.startsWith("index/")) {
+                    names.add(name);
+                }
+            }
+        }
+        return new Deletions(names, lostKept == 0 ? null : "the remote still has " + lostKept + " pack"
+            + (lostKept == 1 ? "" : "s") + " this server's repository lost, so " + (lostKept == 1 ? "it was" : "they were")
+            + " kept there, with the remote's index files. Backups that need " + (lostKept == 1 ? "it" : "them")
+            + " can be restored from the remote (java -jar xBackup.jar restore <id> --remote <name>).");
     }
 
     /**

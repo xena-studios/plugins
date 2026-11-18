@@ -13,6 +13,7 @@ import java.nio.file.StandardOpenOption;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.HashSet;
@@ -32,6 +33,8 @@ import java.util.Set;
  * snapshots/ab12...      snapshots
  * keep/ab12...           snapshots pinned so retention never removes them
  * forgotten              snapshots removed on purpose, so remotes lose them too (never copied)
+ * collected              packs garbage collection deleted on purpose, ditto (never copied)
+ * lost                   packs the index listed that went missing: never removed from remotes
  * lock                   held while the repository is in use (folders only)
  * </pre>
  *
@@ -250,8 +253,9 @@ public final class Repository implements AutoCloseable {
 
     /**
      * Drops the index's entries for packs missing from the backend, so a backup stores those
-     * blobs again (where the files still have them) instead of pointing at nothing. Hold the
-     * exclusive lock.
+     * blobs again (where the files still have them) instead of pointing at nothing. The packs
+     * are noted as {@value #LOST}, so a copy never removes them from a remote, which may hold
+     * the only good copy. Hold the exclusive lock.
      *
      * @return the missing packs
      */
@@ -263,6 +267,21 @@ public final class Repository implements AutoCloseable {
                 present.add(pack);
             }
         }
+        List<Hash> missing = keepPacks(present);
+        if (!missing.isEmpty()) {
+            noteLost(missing);
+        }
+        return missing;
+    }
+
+    /**
+     * Rewrites the index to list only these packs, from every entry of every index file (not
+     * just each blob's first place: a blob in a pack that's gone may also be in one that's
+     * there).
+     *
+     * @return the packs the index listed that aren't among them
+     */
+    public synchronized List<Hash> keepPacks(Set<Hash> present) throws IOException {
         List<Hash> missing = new ArrayList<>();
         for (Hash pack : index().packs()) {
             if (!present.contains(pack)) {
@@ -272,8 +291,6 @@ public final class Repository implements AutoCloseable {
         if (missing.isEmpty()) {
             return missing;
         }
-        // Every entry of every index file, not just each blob's first place: a blob in a
-        // missing pack may also be in one that's there.
         Map<Hash, List<PackEntry>> kept = new LinkedHashMap<>();
         for (Backend.FileInfo file : backend.list("index/")) {
             String hex = file.name().substring("index/".length());
@@ -395,17 +412,7 @@ public final class Repository implements AutoCloseable {
      * only loses a snapshot this repository chose to forget, never one it merely lacks.
      */
     public void deleteSnapshot(Snapshot snapshot) throws IOException {
-        long now = System.currentTimeMillis();
-        StringBuilder text = new StringBuilder();
-        for (Map.Entry<Hash, long[]> entry : readForgotten().entrySet()) {
-            if (now - entry.getValue()[1] <= FORGOTTEN_KEEP_MILLIS && !entry.getKey().equals(snapshot.id())) {
-                text.append(entry.getKey().hex()).append(' ').append(entry.getValue()[0]).append(' ')
-                    .append(entry.getValue()[1]).append('\n');
-            }
-        }
-        text.append(snapshot.id().hex()).append(' ').append(snapshot.time().toEpochMilli()).append(' ').append(now)
-            .append('\n');
-        backend.put(FORGOTTEN, text.toString().getBytes(StandardCharsets.UTF_8));
+        note(FORGOTTEN, List.of(snapshot.id()), snapshot.time().toEpochMilli(), true);
         backend.delete(Snapshot.fileName(snapshot.id()));
         backend.delete("keep/" + snapshot.id().hex());
     }
@@ -415,20 +422,65 @@ public final class Repository implements AutoCloseable {
      * removal to remotes. Local only, never copied. Entries go after about a year.
      */
     static final String FORGOTTEN = "forgotten";
-    private static final long FORGOTTEN_KEEP_MILLIS = 400L * 24 * 3600 * 1000;
+    /** Packs garbage collection deleted on purpose: the only packs a copy removes from a remote. */
+    static final String COLLECTED = "collected";
+    /** Packs the index listed that went missing. Never removed from a remote; kept for good. */
+    static final String LOST = "lost";
+    private static final long NOTE_KEEP_MILLIS = 400L * 24 * 3600 * 1000;
 
     /** Snapshots this repository removed on purpose, with each one's time. */
     public Map<Hash, Long> forgotten() throws IOException {
         Map<Hash, Long> times = new LinkedHashMap<>();
-        readForgotten().forEach((id, entry) -> times.put(id, entry[0]));
+        readNotes(FORGOTTEN).forEach((id, entry) -> times.put(id, entry[0]));
         return times;
     }
 
-    // "<id> <snapshot time> <when forgotten>" a line, in milliseconds.
-    private Map<Hash, long[]> readForgotten() throws IOException {
+    /**
+     * Notes packs garbage collection is about to delete, before it does, so copies on remotes
+     * are removed too. A remote never loses a pack this repository merely lacks.
+     */
+    void noteCollected(Collection<Hash> packs) throws IOException {
+        if (!packs.isEmpty()) {
+            note(COLLECTED, packs, 0, true);
+        }
+    }
+
+    /** Packs garbage collection deleted on purpose (in about the last year). */
+    public Set<Hash> collected() throws IOException {
+        return readNotes(COLLECTED).keySet();
+    }
+
+    void noteLost(Collection<Hash> packs) throws IOException {
+        note(LOST, packs, 0, false);
+    }
+
+    /** Packs the index listed that went missing from this repository. */
+    public Set<Hash> lost() throws IOException {
+        return readNotes(LOST).keySet();
+    }
+
+    // Adds ids to a list file of "<id> <value> <when noted>" lines, in milliseconds, dropping
+    // entries older than about a year if it expires them.
+    private synchronized void note(String file, Collection<Hash> ids, long value, boolean expires) throws IOException {
+        long now = System.currentTimeMillis();
+        Set<Hash> adding = new HashSet<>(ids);
+        StringBuilder text = new StringBuilder();
+        for (Map.Entry<Hash, long[]> entry : readNotes(file).entrySet()) {
+            if ((!expires || now - entry.getValue()[1] <= NOTE_KEEP_MILLIS) && !adding.contains(entry.getKey())) {
+                text.append(entry.getKey().hex()).append(' ').append(entry.getValue()[0]).append(' ')
+                    .append(entry.getValue()[1]).append('\n');
+            }
+        }
+        for (Hash id : ids) {
+            text.append(id.hex()).append(' ').append(value).append(' ').append(now).append('\n');
+        }
+        backend.put(file, text.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    private Map<Hash, long[]> readNotes(String file) throws IOException {
         Map<Hash, long[]> found = new LinkedHashMap<>();
         byte[] bytes;
-        try (InputStream in = backend.get(FORGOTTEN)) {
+        try (InputStream in = backend.get(file)) {
             bytes = in.readNBytes(64 << 20);
         } catch (NoSuchFileException e) {
             return found;
@@ -439,7 +491,7 @@ public final class Repository implements AutoCloseable {
                 try {
                     found.put(Hash.parse(parts[0]), new long[] {Long.parseLong(parts[1]), Long.parseLong(parts[2])});
                 } catch (NumberFormatException e) {
-                    // A damaged line: that snapshot just stays on remotes.
+                    // A damaged line: that snapshot or pack just stays on remotes.
                 }
             }
         }

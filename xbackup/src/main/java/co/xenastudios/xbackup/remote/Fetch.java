@@ -33,14 +33,22 @@ public final class Fetch {
         Files.createDirectories(cache);
         LocalBackend local = new LocalBackend(cache);
         progress.accept("reading the remote's index");
+        Set<Hash> present = new HashSet<>();
         for (Backend.FileInfo file : remote.list("")) {
             String name = file.name();
+            Hash pack = name.startsWith("data/") ? Pack.idOf(name) : null;
+            if (pack != null) {
+                present.add(pack);
+            }
             if (name.equals("config") || name.startsWith("index/") || name.startsWith("snapshots/")
                 || name.startsWith("keep/")) {
                 copy(remote, local, name, file.size());
             }
         }
         Repository repository = Repository.open(local, cache.resolve("tmp"), false);
+        // The remote can keep index files that list packs it no longer has (kept for packs
+        // this server lost); only the packs it has are used.
+        repository.keepPacks(present);
         Set<Hash> packs = new HashSet<>();
         repository.index().forEach(location -> {
             if (location.entry().type().isMetadata()) {

@@ -402,6 +402,26 @@ class BackupTest {
     }
 
     @Test
+    void aMissingStructurePackIsReadAgainNotStuckOn() throws Exception {
+        Fixtures.server(server(), new Random(29));
+        try (Repository repository = repository()) {
+            backup(repository, Backup.Pause.NONE);
+            // The pack holding the last backup's folder listings goes: the next backup can't
+            // compare against it, so it reads everything again instead of failing.
+            java.util.Set<co.xenastudios.xbackup.store.Hash> structure = new java.util.HashSet<>();
+            repository.index().forEach(location -> {
+                if (location.entry().type().isMetadata()) {
+                    structure.add(location.pack());
+                }
+            });
+            Files.delete(dir.resolve("repo").resolve(co.xenastudios.xbackup.store.Pack.fileName(structure.iterator().next())));
+            repository.release();
+            Snapshot second = backup(repository, Backup.Pause.NONE).snapshot();
+            assertSame(Fixtures.contents(server(), COMPARED), restore(repository, second, "restored"));
+        }
+    }
+
+    @Test
     void anIndexThatInflatesHugelyIsRefused() throws Exception {
         java.io.ByteArrayOutputStream bomb = new java.io.ByteArrayOutputStream();
         try (java.util.zip.DeflaterOutputStream out = new java.util.zip.DeflaterOutputStream(bomb)) {

@@ -74,6 +74,7 @@ export default defineConfig({
         { label: "xLimbo", items: [{ autogenerate: { directory: "xlimbo" } }] },
         { label: "xRewind", items: [{ autogenerate: { directory: "xrewind" } }] },
         { label: "xPlots", items: [{ autogenerate: { directory: "xplots" } }] },
+        { label: "xMoney", items: [{ autogenerate: { directory: "xmoney" } }] },
         {
           label: "More from Xena Studios",
           items: [

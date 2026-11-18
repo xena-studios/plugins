@@ -1,0 +1,51 @@
+---
+title: Configuration
+description: Every setting in xMoney's config.yml, and setting up a network.
+sidebar:
+  order: 4
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/xmoney/config.yml?raw";
+
+The config is `plugins/xMoney/config.yml`, written on first start. Apply changes with `/xmoney reload`; only `storage` and `network` need a restart.
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours xMoney's messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages` | What players and staff are told, and shared errors under `messages.error`. |
+| `currency` | The currency's names, symbol, decimals and how amounts are written. |
+| `starting-balance` | What a player has the first time they join. |
+| `max-balance` | The most one account can hold. |
+| `commands` | Each command's switch, aliases and permission; the least `/pay` sends, when it asks to confirm, and `/baltop`'s page size. |
+| `ledger` | How long ledger lines are kept: a year by default. |
+| `storage` | Where balances are kept: SQLite in the plugin's folder (`money.db`), or MySQL/MariaDB. |
+| `network` | Sharing balances between servers. |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+## Currency
+
+`format` is how every amount is written, by xMoney and by any plugin that asks Vault: `{symbol}{amount}` gives `$1,234.50`, and `{amount} {name}` gives `1,234.50 dollars` (or `1 dollar`). `decimals` is how many decimal places amounts have, from 0 to 4; amounts from other plugins are rounded to it. Lowering it later keeps the parts of balances it no longer shows, so nothing is lost.
+
+## The ledger
+
+Every change to every balance is a line in the ledger, saved together with the balance it changed, so the two always agree, even after a crash. Lines older than `keep-days` are deleted a minute after startup and then once a day, a slice at a time so payments never wait. `0` keeps them all. Balances never depend on old lines.
+
+## Storage
+
+`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) and fill in `mysql` to keep balances on a database server. Every balance is read once when the server starts, before anyone can join or any plugin can ask, so a change here applies on restart. Balances aren't copied between databases.
+
+## Networks
+
+For servers that share balances, such as a lobby and a survival server:
+
+1. Give every server the same `storage` settings, `type: mysql`, the same database and the same `table-prefix`.
+2. Turn `network.enabled` on, on each server, and restart them.
+
+Each server keeps every balance in memory as usual, and reads again whatever another server changed within `check-every` seconds (3 by default). Anything that takes money (a payment, a shop purchase, `/eco take`) is decided by the database itself, so two servers can never spend the same money twice. On a network that costs one trip to the database, a millisecond or two on the same machine or LAN, for each payment. If the database doesn't answer within a few seconds, the payment is refused and nothing is taken.
+
+Deposits are made at once and saved after, as on one server. `max-balance` is checked against what each server knows, so on a network it's a soft limit.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/xMoney/config.yml" />

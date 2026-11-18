@@ -21,7 +21,7 @@ public record XMConfig(
     @Comment({
         "The look xMoney's messages share. The default messages use these as tags, so changing",
         "a colour here restyles them all. Write a style as MiniMessage tags: <gray>,",
-        "<#F0D35A>, or <gold><bold>."})
+        "<#58D0E8>, or <gold><bold>."})
     Theme theme,
     @Comment("What players and staff are told.") Messages messages,
     @Comment({
@@ -184,9 +184,9 @@ public record XMConfig(
 
     public static final XMConfig DEFAULTS = new XMConfig(
         new Theme(
-            "<#F0D35A>»</#F0D35A> ",
+            "<#58D0E8>»</#58D0E8> ",
             TextStyle.parse("<gray>"),
-            TextStyle.parse("<#F0D35A>"),
+            TextStyle.parse("<#58D0E8>"),
             TextStyle.parse("<#5EE08A>"),
             TextStyle.parse("<#FF6B6B>")),
         new Messages(

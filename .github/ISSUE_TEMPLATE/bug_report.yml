@@ -16,6 +16,7 @@ body:
         - xLimbo
         - xRewind
         - xPlots
+        - xMoney
         - More than one, or not sure
     validations:
       required: true
@@ -23,7 +24,7 @@ body:
     id: version
     attributes:
       label: Plugin version
-      description: From `/xutilities info`, `/zchat info`, `/xlimbo info`, `/xrewind info` or `/xplots info`.
+      description: From `/xutilities info`, `/zchat info`, `/xlimbo info`, `/xrewind info`, `/xplots info` or `/xmoney info`.
       placeholder: "2.0.0"
     validations:
       required: true

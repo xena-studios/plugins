@@ -10,15 +10,15 @@ config-version: 1
 
 # The look xMoney's messages share. The default messages use these as tags, so changing
 # a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#F0D35A>, or <gold><bold>.
+# <#58D0E8>, or <gold><bold>.
 theme:
   # <prefix> starts the default messages. Make it your server's name, such as
   # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
-  prefix: "<#F0D35A>»</#F0D35A> "
+  prefix: "<#58D0E8>»</#58D0E8> "
   # The colour of message text that has no tag of its own.
   base: "<gray>"
   # <highlight>: names and values, such as a player or a speed.
-  highlight: "<#F0D35A>"
+  highlight: "<#58D0E8>"
   # <success>: something turned on or done.
   success: "<#5EE08A>"
   # <error>: something refused or turned off.

@@ -1,0 +1,58 @@
+# xStats on a real server, from the console.
+# The database opens with the SQLite driver Paper and Folia ship, from a paper-plugin.
+logged: Stats ready: 0 players in the SQLite database stats.db.
+# A new world has no stats folder yet, so the first-start import has nothing to read.
+logged: so there's no history to import.
+run: xstats info
+expect: xStats 1.0.0 on
+
+run: xstats reload
+expect: Reloaded xStats in
+
+# The stat translation table, checked against this server's own names for its stats.
+run: xstats status
+expect: match this server
+
+# A save with nobody online: readings, the database write and every leaderboard.
+run: xstats save
+expect: Saved 0 players
+
+run: top kills
+expect: Nobody's on this leaderboard yet.
+run: top kills monthly
+expect: Nobody's on this leaderboard yet.
+run: top jumps daily
+expect: is only counted all time.
+run: top nothing
+expect: There's no stat called
+run: stats Steve
+expect: has never played here.
+
+# The web server: a test copy on a free port, fetched over HTTP on this machine.
+run: xstats web test
+expect: Web test passed
+run: xstats web export
+expect: Exported the website
+
+# A board in the world, then gone again.
+run: forceload add 0 0
+expect: Marked
+run: xstats board add kills all world 0.5 80 0.5
+expect: Placed board 1
+# The display is made on the region's thread a tick later. Folia's console can't test
+# entities with execute, so it checks only what xStats says.
+run: xstats save
+expect: Saved 0 players
+paper run: execute positioned 0.5 80 0.5 if entity @e[type=minecraft:text_display,distance=..1] run say BOARD SHOWN
+paper expect: BOARD SHOWN
+run: xstats board list
+expect: kills, all at world 0 80 0
+run: xstats board remove 1
+expect: Removed board 1.
+run: xstats save
+expect: Saved 0 players
+paper run: execute positioned 0.5 80 0.5 unless entity @e[type=minecraft:text_display,distance=..1] run say BOARD GONE
+paper expect: BOARD GONE
+
+run: xstats import
+expect: there's no history to import.

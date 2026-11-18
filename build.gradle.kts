@@ -6,7 +6,9 @@ plugins {
 // Code copied from one module into another belongs in the core instead (issue #48).
 // PMD's copy-paste detector reads every module's main code; a block it finds in two
 // different modules fails the build, and one repeated inside a single module is only
-// reported. The sandbox is scaffolding for CI, so it's left out.
+// reported. So is one found only in plugins' APIs (<plugin>/api): an API can't use the
+// core, by design, so the boilerplate every Bukkit event needs repeats there. The
+// sandbox is scaffolding for CI, so it's left out.
 val cpd: Configuration by configurations.creating
 
 dependencies {
@@ -52,7 +54,11 @@ val cpdCheck = tasks.register("cpdCheck") {
             }
             val modules = places.map { it.substringBefore('/') }.toSet()
             val line = "${duplication.getAttribute("lines")} lines in ${places.joinToString(", ")}"
-            if (modules.size > 1) across += line else logger.lifecycle("Repeated within a module: $line")
+            when {
+                modules.size <= 1 -> logger.lifecycle("Repeated within a module: $line")
+                places.all { "/api/" in it } -> logger.lifecycle("Repeated across APIs, which can't share the core: $line")
+                else -> across += line
+            }
         }
         if (across.isNotEmpty()) {
             throw GradleException("The same code is in more than one module; move it to the core (issue #48):\n  " +

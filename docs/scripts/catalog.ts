@@ -179,7 +179,13 @@ for (const p of plugins) {
 const stale: string[] = [];
 for (const [file, text] of outputs) {
   const full = path.join(ROOT, file);
-  const old = fs.existsSync(full) ? fs.readFileSync(full, "utf8") : null;
+  // Read in one step (no exists-then-read): a missing file is simply new.
+  let old: string | null = null;
+  try {
+    old = fs.readFileSync(full, "utf8");
+  } catch {
+    // Not written yet.
+  }
   if (old === text) continue;
   if (check) stale.push(file);
   else fs.writeFileSync(full, text);

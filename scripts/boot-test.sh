@@ -84,9 +84,12 @@ done
 ((${#names[@]})) || { echo "no plugins to test on $project"; exit 0; }
 ours=$(IFS='|'; echo "${names[*]}")
 echo "eula=true" >"$dir/eula.txt"
+# A port under Linux's ephemeral range (32768 and up), which outgoing connections such
+# as downloads draw from, so the server never finds its port already taken.
+port=$((20000 + RANDOM % 12000))
 cat >"$dir/server.properties" <<EOF
 online-mode=false
-server-port=$((30000 + RANDOM % 20000))
+server-port=$port
 level-type=minecraft\:flat
 generator-settings={"layers"\:[{"block"\:"minecraft\:stone","height"\:1}],"biome"\:"minecraft\:plains"}
 generate-structures=false

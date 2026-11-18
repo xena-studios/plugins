@@ -11,6 +11,7 @@ import co.xenastudios.xbackup.api.event.BackupStartEvent;
 import co.xenastudios.xbackup.backup.Backup;
 import co.xenastudios.xbackup.backup.Databases;
 import co.xenastudios.xbackup.config.XBConfig;
+import co.xenastudios.xbackup.remote.RemoteConfig;
 import co.xenastudios.xbackup.remote.Mirror;
 import co.xenastudios.xbackup.remote.Remotes;
 import co.xenastudios.xbackup.restore.Restore;
@@ -75,7 +76,7 @@ public final class Engine {
     private final ExecutorService worker;
     private final AtomicBoolean stopping = new AtomicBoolean();
     private volatile Settings settings;
-    private volatile Map<String, XBConfig.Remote> remoteSettings = Map.of();
+    private volatile Map<String, RemoteConfig> remoteSettings = Map.of();
 
     // Worker thread only.
     private Repository repository;
@@ -140,12 +141,21 @@ public final class Engine {
 
     // ---------------------------------------------------------------- config
 
-    /** Applies the config: on startup and every reload. Global thread. */
-    public void configure(XBConfig config) {
+    /**
+     * Applies the config: on startup and every reload. Global thread.
+     *
+     * @param secrets each remote's passwords, from {@link Secrets}
+     */
+    public void configure(XBConfig config, Map<String, Secrets.Entry> secrets) {
         Settings next = Settings.of(config, root, warning -> logger.warning("config.yml: " + warning));
         Settings previous = settings;
         settings = next;
-        remoteSettings = Map.copyOf(config.remotes());
+        Map<String, RemoteConfig> remotes = new LinkedHashMap<>();
+        for (Map.Entry<String, XBConfig.Remote> remote : config.remotes().entrySet()) {
+            Secrets.Entry secret = secrets.getOrDefault(remote.getKey(), new Secrets.Entry("", ""));
+            remotes.put(remote.getKey(), RemoteConfig.of(remote.getValue(), secret.password(), secret.clientSecret()));
+        }
+        remoteSettings = Collections.unmodifiableMap(remotes);
         submit(null, () -> {
             if (previous == null) {
                 Files.createDirectories(temp());
@@ -155,7 +165,7 @@ public final class Engine {
             if (repository == null || !next.repository().equals(repositoryPath)) {
                 openRepository(next.repository());
             }
-            CliFile.write(home, next, config.remotes(), logger);
+            CliFile.write(home, next, remotes, logger);
             return null;
         }).whenComplete((ignored, error) -> arm());
     }
@@ -364,8 +374,16 @@ public final class Engine {
         skip.add(restoreFolder());
         skip.add(temp());
         skip.add(home.resolve("libraries"));
+        // Secrets never go into a backup, which is copied to every remote.
         skip.add(home.resolve(CliFile.NAME));
         skip.add(home.resolve(Remotes.TOKENS));
+        skip.add(home.resolve(Secrets.NAME));
+        skip.add(home.resolve(co.xenastudios.xbackup.restore.ServerCheck.MARKER));
+        for (RemoteConfig remote : remoteSettings.values()) {
+            if (!remote.privateKey().isBlank()) {
+                skip.add(home.resolve(remote.privateKey().strip()));
+            }
+        }
         Map<String, Backup.Quiet> quiet = new LinkedHashMap<>();
         for (Map.Entry<Plugin, QuietMoment> entry : quietMoments.entrySet()) {
             if (!entry.getKey().isEnabled()) {
@@ -653,8 +671,8 @@ public final class Engine {
     // ---------------------------------------------------------------- remotes
 
     private void syncRemotes() {
-        Map<String, XBConfig.Remote> remotes = remoteSettings;
-        for (Map.Entry<String, XBConfig.Remote> entry : remotes.entrySet()) {
+        Map<String, RemoteConfig> remotes = remoteSettings;
+        for (Map.Entry<String, RemoteConfig> entry : remotes.entrySet()) {
             if (!entry.getValue().enabled() || stopping.get()) {
                 continue;
             }
@@ -681,7 +699,7 @@ public final class Engine {
     /** Copies the repository to one remote now. */
     public CompletableFuture<Mirror.Result> push(String name) {
         return submit("copying to " + name, () -> {
-            XBConfig.Remote settings = remoteSettings.get(name);
+            RemoteConfig settings = remoteSettings.get(name);
             if (settings == null) {
                 throw new IOException("There's no remote named " + name + " in config.yml.");
             }
@@ -705,7 +723,7 @@ public final class Engine {
      * with the code Dropbox showed, it's swapped for a token.
      */
     public void link(String name, String code, java.util.function.Consumer<String> say) {
-        XBConfig.Remote remote = remoteSettings.get(name);
+        RemoteConfig remote = remoteSettings.get(name);
         if (remote == null) {
             throw new IllegalArgumentException("There's no remote named " + name + " in config.yml.");
         }
@@ -743,7 +761,7 @@ public final class Engine {
         return new Remotes.Context(home, new Throttle(settings.uploadLimit()), logger, backends::get);
     }
 
-    public Map<String, XBConfig.Remote> remotes() {
+    public Map<String, RemoteConfig> remotes() {
         return remoteSettings;
     }
 

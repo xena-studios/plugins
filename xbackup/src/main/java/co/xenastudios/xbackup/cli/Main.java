@@ -1,6 +1,6 @@
 package co.xenastudios.xbackup.cli;
 
-import co.xenastudios.xbackup.config.XBConfig;
+import co.xenastudios.xbackup.remote.RemoteConfig;
 import co.xenastudios.xbackup.remote.Fetch;
 import co.xenastudios.xbackup.remote.Remotes;
 import co.xenastudios.xbackup.remote.RestoreSettings;
@@ -188,7 +188,7 @@ public final class Main {
                 throw new IllegalArgumentException("there's no remote named " + remote + " in "
                     + home().resolve(RestoreSettings.NAME) + ". Start the server once with it in config.yml.");
             }
-            XBConfig.Remote remoteSettings = settings.remotes().get(remote);
+            RemoteConfig remoteSettings = settings.remotes().get(remote);
             Backend backend = Remotes.open(remote, remoteSettings, new Remotes.Context(home(), Throttle.NONE,
                 Logger.getLogger("xBackup"), type -> null));
             out.println("Reading " + backend.describe() + "...");

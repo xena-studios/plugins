@@ -1,6 +1,5 @@
 package co.xenastudios.xbackup.remote;
 
-import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.Throttle;
 import java.io.IOException;
@@ -35,7 +34,7 @@ final class CloudDrives {
         "dropbox-api", "https://api.dropboxapi.com",
         "dropbox-content", "https://content.dropboxapi.com"));
 
-    static Backend open(String name, String type, XBConfig.Remote settings, String prefix, Remotes.Context context) {
+    static Backend open(String name, String type, RemoteConfig settings, String prefix, Remotes.Context context) {
         Remotes.required(settings.clientId(), "client-id (from the app you registered; the docs show how)", name);
         String folder = prefix.isEmpty() ? "xbackup" : prefix;
         return switch (type) {
@@ -57,12 +56,12 @@ final class CloudDrives {
     private abstract static class Cloud implements Backend {
         final String name;
         final String type;
-        final XBConfig.Remote settings;
+        final RemoteConfig settings;
         final String folder;
         final Remotes.Context context;
         final Throttle throttle;
 
-        Cloud(String name, String type, XBConfig.Remote settings, String folder, Remotes.Context context) {
+        Cloud(String name, String type, RemoteConfig settings, String folder, Remotes.Context context) {
             this.name = name;
             this.type = type;
             this.settings = settings;
@@ -148,7 +147,7 @@ final class CloudDrives {
         private Map<String, String> ids;
         private Map<String, Long> sizes;
 
-        Drive(String name, XBConfig.Remote settings, String folder, Remotes.Context context) {
+        Drive(String name, RemoteConfig settings, String folder, Remotes.Context context) {
             super(name, "drive", settings, folder, context);
         }
 
@@ -314,7 +313,7 @@ final class CloudDrives {
     /** OneDrive, through Microsoft Graph, in the app's own folder ({@code Apps/<app name>}). */
     static final class OneDrive extends Cloud {
 
-        OneDrive(String name, XBConfig.Remote settings, String folder, Remotes.Context context) {
+        OneDrive(String name, RemoteConfig settings, String folder, Remotes.Context context) {
             super(name, "onedrive", settings, folder, context);
         }
 
@@ -420,7 +419,7 @@ final class CloudDrives {
     /** Dropbox, API v2, in the app's folder ({@code Apps/<app name>}). */
     static final class Dropbox extends Cloud {
 
-        Dropbox(String name, XBConfig.Remote settings, String folder, Remotes.Context context) {
+        Dropbox(String name, RemoteConfig settings, String folder, Remotes.Context context) {
             super(name, "dropbox", settings, folder, context);
         }
 

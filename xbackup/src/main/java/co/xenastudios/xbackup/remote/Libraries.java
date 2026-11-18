@@ -1,6 +1,5 @@
 package co.xenastudios.xbackup.remote;
 
-import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.Hash;
 import java.io.IOException;
@@ -61,20 +60,20 @@ public final class Libraries {
 
     private Libraries() {}
 
-    static Backend sftp(String name, XBConfig.Remote settings, String prefix, Remotes.Context context) throws IOException {
+    static Backend sftp(String name, RemoteConfig settings, String prefix, Remotes.Context context) throws IOException {
         return create(JSCH, "SftpBackend", name, settings, prefix, context);
     }
 
-    static Backend ftp(String name, XBConfig.Remote settings, String prefix, Remotes.Context context) throws IOException {
+    static Backend ftp(String name, RemoteConfig settings, String prefix, Remotes.Context context) throws IOException {
         return create(COMMONS_NET, "FtpBackend", name, settings, prefix, context);
     }
 
-    private static Backend create(Library library, String type, String name, XBConfig.Remote settings, String prefix,
+    private static Backend create(Library library, String type, String name, RemoteConfig settings, String prefix,
                                   Remotes.Context context) throws IOException {
         ClassLoader loader = loader(library, name, context);
         try {
             Class<?> backend = Class.forName(OWN + type, true, loader);
-            return (Backend) backend.getConstructor(String.class, XBConfig.Remote.class, String.class, Remotes.Context.class)
+            return (Backend) backend.getConstructor(String.class, RemoteConfig.class, String.class, Remotes.Context.class)
                 .newInstance(name, settings, prefix, context);
         } catch (java.lang.reflect.InvocationTargetException e) {
             Throwable cause = e.getCause();

@@ -1,7 +1,6 @@
 package co.xenastudios.xbackup.remote;
 
 import co.xenastudios.xbackup.api.StorageBackend;
-import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.LocalBackend;
 import co.xenastudios.xbackup.store.Throttle;
@@ -50,7 +49,7 @@ public final class Remotes {
      *
      * @throws IOException with a message naming the remote, if it can't be set up
      */
-    public static Backend open(String name, XBConfig.Remote settings, Context context) throws IOException {
+    public static Backend open(String name, RemoteConfig settings, Context context) throws IOException {
         String type = settings.type().strip().toLowerCase(Locale.ROOT);
         String prefix = cleanPrefix(settings.path());
         try {

@@ -1,6 +1,5 @@
 package co.xenastudios.xbackup.remote;
 
-import co.xenastudios.xbackup.config.XBConfig;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -11,8 +10,6 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -70,14 +67,7 @@ public final class OAuth {
         StringWriter writer = new StringWriter();
         properties.store(writer, "Cloud drive tokens from /backup link. Keep this file private; delete a remote's lines"
             + " to unlink it.");
-        Path temp = home.resolve(Remotes.TOKENS + ".part");
-        Files.writeString(temp, writer.toString(), StandardCharsets.UTF_8);
-        try {
-            Files.setPosixFilePermissions(temp, PosixFilePermissions.fromString("rw-------"));
-        } catch (UnsupportedOperationException e) {
-            // Windows: the folder's permissions apply.
-        }
-        Files.move(temp, file(home), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        OwnerOnlyFile.write(file(home), writer.toString());
     }
 
     /** Whether the remote has been linked. */
@@ -91,7 +81,7 @@ public final class OAuth {
      * A current access token for the remote, refreshed with its refresh token when it's
      * about to run out.
      */
-    static String accessToken(Path home, String remote, String type, XBConfig.Remote settings) throws IOException {
+    static String accessToken(Path home, String remote, String type, RemoteConfig settings) throws IOException {
         synchronized (LOCK) {
             Properties tokens = load(home);
             String refresh = tokens.getProperty(remote + ".refresh-token");
@@ -152,7 +142,7 @@ public final class OAuth {
         }
     }
 
-    private static String clientId(String remote, XBConfig.Remote settings) {
+    private static String clientId(String remote, RemoteConfig settings) {
         return Remotes.required(settings.clientId(), "client-id (from the app you registered; the docs show how)", remote);
     }
 
@@ -162,7 +152,7 @@ public final class OAuth {
     public record DeviceCode(String userCode, String url, String deviceCode, int interval, long expiresAt) {}
 
     /** Starts a device-flow link for Google Drive or OneDrive. */
-    public static DeviceCode start(String remote, String type, XBConfig.Remote settings) throws IOException {
+    public static DeviceCode start(String remote, String type, RemoteConfig settings) throws IOException {
         Endpoints endpoints = ENDPOINTS.get(type);
         Map<String, String> form = new LinkedHashMap<>();
         form.put("client_id", clientId(remote, settings));
@@ -182,7 +172,7 @@ public final class OAuth {
     }
 
     /** Waits for the owner to enter the code, then keeps the refresh token. Blocks: run it off the game threads. */
-    public static void finish(Path home, String remote, String type, XBConfig.Remote settings, DeviceCode code,
+    public static void finish(Path home, String remote, String type, RemoteConfig settings, DeviceCode code,
                               BooleanSupplier cancelled) throws IOException {
         Endpoints endpoints = ENDPOINTS.get(type);
         long interval = Math.max(1, code.interval()) * 1000L;
@@ -232,7 +222,7 @@ public final class OAuth {
     // ---------------------------------------------------------------- Dropbox
 
     /** The link the owner opens to approve Dropbox; remembers the PKCE verifier for {@link #dropboxCode}. */
-    public static String dropboxUrl(Path home, String remote, XBConfig.Remote settings) throws IOException {
+    public static String dropboxUrl(Path home, String remote, RemoteConfig settings) throws IOException {
         byte[] random = new byte[48];
         new SecureRandom().nextBytes(random);
         String verifier = Base64.getUrlEncoder().withoutPadding().encodeToString(random);
@@ -253,7 +243,7 @@ public final class OAuth {
     }
 
     /** Swaps the code Dropbox showed for a refresh token. */
-    public static void dropboxCode(Path home, String remote, XBConfig.Remote settings, String code) throws IOException {
+    public static void dropboxCode(Path home, String remote, RemoteConfig settings, String code) throws IOException {
         synchronized (LOCK) {
             Properties tokens = load(home);
             String verifier = tokens.getProperty(remote + ".verifier");

@@ -3,7 +3,6 @@ package co.xenastudios.xbackup.remote;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.store.Throttle;
 import java.net.URI;
 import java.time.ZoneOffset;
@@ -17,7 +16,7 @@ class S3SignatureTest {
     @Test
     void signsAwsDocumentedGetObjectExample() {
         // "Example: GET Object" from AWS's Signature Version 4 docs for S3.
-        XBConfig.Remote settings = new XBConfig.Remote("s3", true, "", "https://s3.amazonaws.com", "us-east-1",
+        RemoteConfig settings = new RemoteConfig("s3", true, "", "https://s3.amazonaws.com", "us-east-1",
             "examplebucket", false, "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", "", 0, "", "",
             "explicit", "", "");
         S3Backend backend = new S3Backend("test", settings, "", Throttle.NONE);

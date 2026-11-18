@@ -10,6 +10,7 @@ import co.xenastudios.core.text.Durations;
 import co.xenastudios.core.text.Message;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xbackup.config.XBConfig;
+import co.xenastudios.xbackup.remote.RemoteConfig;
 import co.xenastudios.xbackup.restore.Restore;
 import co.xenastudios.xbackup.server.Engine;
 import co.xenastudios.xbackup.store.Maintenance;
@@ -201,9 +202,9 @@ public final class BackupCommand {
         String activity = engine.activity();
         lines.add("<highlight>Running</highlight>: " + (activity == null ? "nothing" : escape(activity)));
         lines.add("<highlight>Last check</highlight>: " + escape(engine.lastCheck()));
-        Map<String, XBConfig.Remote> remotes = engine.remotes();
+        Map<String, RemoteConfig> remotes = engine.remotes();
         if (!remotes.isEmpty()) {
-            for (Map.Entry<String, XBConfig.Remote> remote : remotes.entrySet()) {
+            for (Map.Entry<String, RemoteConfig> remote : remotes.entrySet()) {
                 String state = !remote.getValue().enabled() ? "off"
                     : engine.remoteStatus().getOrDefault(remote.getKey(), "not copied since the server started");
                 lines.add("<highlight>Remote " + escape(remote.getKey()) + "</highlight> (" + escape(remote.getValue().type())

@@ -1,6 +1,5 @@
 package co.xenastudios.xbackup.remote;
 
-import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.Throttle;
 import java.io.EOFException;
@@ -43,7 +42,7 @@ final class WebDavBackend implements Backend {
     private final Throttle throttle;
     private final Set<String> madeFolders = new HashSet<>();
 
-    WebDavBackend(String name, XBConfig.Remote settings, Throttle throttle) {
+    WebDavBackend(String name, RemoteConfig settings, Throttle throttle) {
         this.name = name;
         String url = Remotes.required(settings.url(), "url (the folder's WebDAV address)", name);
         if (!url.startsWith("https://") && !url.startsWith("http://")) {
@@ -260,7 +259,7 @@ final class WebDavBackend implements Backend {
         }
         if (status == 401 || status == 403) {
             throw new Http.Permanent(what + " on remote " + name + " was refused (HTTP " + status
-                + "). Check the user name, password (Nextcloud: an app password) and the folder's permissions.");
+                + "). Check the user name, the password in secrets.yml (Nextcloud: an app password) and the folder's permissions.");
         }
         throw Http.failure(what + " on remote " + name, status, null);
     }

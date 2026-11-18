@@ -10,6 +10,7 @@ import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.restore.ServerCheck;
 import co.xenastudios.xbackup.server.Api;
 import co.xenastudios.xbackup.server.Engine;
+import co.xenastudios.xbackup.server.Secrets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -43,7 +44,10 @@ public class XBackup extends XenaPlugin<XBConfig> {
             Bukkit.getServicesManager().register(XBackupApi.class, api, this, ServicePriority.Normal);
             reportRestore();
         }
-        engine.configure(config);
+        Path home = getDataFolder().toPath().toAbsolutePath();
+        Path configFile = home.resolve("config.yml");
+        Secrets.migrate(home, configFile, getLogger());
+        engine.configure(config, Secrets.read(home, configFile, getLogger()));
         if (config.command().enabled()) {
             setup.command(BackupCommand.spec(engine, config.command()));
         }
@@ -59,6 +63,14 @@ public class XBackup extends XenaPlugin<XBConfig> {
                 }
             });
         }
+    }
+
+    // Before the config's first load: passwords left in config.yml by an earlier build move
+    // to secrets.yml, so the copy below never sees them. Each reload checks again.
+    @Override
+    public void onLoad() {
+        Path home = getDataFolder().toPath().toAbsolutePath();
+        Secrets.migrate(home, home.resolve("config.yml"), getLogger());
     }
 
     // The bootstrap swapped a staged restore in on this start: say so, once.

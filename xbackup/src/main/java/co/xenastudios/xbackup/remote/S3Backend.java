@@ -1,6 +1,5 @@
 package co.xenastudios.xbackup.remote;
 
-import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.Throttle;
 import java.io.EOFException;
@@ -55,7 +54,7 @@ final class S3Backend implements Backend {
     private final String prefix;
     private final Throttle throttle;
 
-    S3Backend(String name, XBConfig.Remote settings, String prefix, Throttle throttle) {
+    S3Backend(String name, RemoteConfig settings, String prefix, Throttle throttle) {
         this.name = name;
         String url = Remotes.required(settings.url(), "url (the endpoint, such as https://s3.us-east-1.amazonaws.com)", name);
         this.endpoint = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
@@ -66,7 +65,7 @@ final class S3Backend implements Backend {
         this.bucket = Remotes.required(settings.bucket(), "bucket", name);
         this.pathStyle = settings.pathStyle();
         this.accessKey = Remotes.required(settings.username(), "username (the access key id)", name);
-        this.secretKey = Remotes.required(settings.password(), "password (the secret key)", name);
+        this.secretKey = Remotes.required(settings.password(), "password (the secret key) in secrets.yml", name);
         this.prefix = prefix;
         this.throttle = throttle;
     }

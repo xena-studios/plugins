@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.xenastudios.xbackup.Fixtures;
 import co.xenastudios.xbackup.backup.Backup;
 import co.xenastudios.xbackup.backup.Databases;
-import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.restore.Restore;
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.LocalBackend;
@@ -282,15 +281,15 @@ class CloudDrivesTest {
 
     // ---------------------------------------------------------------- the tests
 
-    private XBConfig.Remote settings(String type) {
-        return new XBConfig.Remote(type, true, "xbackup", "", "", "", false, "", "", "", 0, "", "", "explicit", "client",
+    private RemoteConfig settings(String type) {
+        return new RemoteConfig(type, true, "xbackup", "", "", "", false, "", "", "", 0, "", "", "explicit", "client",
             "secret");
     }
 
     private Backend linked(String type) throws Exception {
         Path home = dir.resolve("home");
         Files.createDirectories(home);
-        XBConfig.Remote settings = settings(type);
+        RemoteConfig settings = settings(type);
         if (type.equals("dropbox")) {
             String url = OAuth.dropboxUrl(home, type, settings);
             assertTrue(url.startsWith(base + "/authorize?client_id=client&response_type=code"), url);

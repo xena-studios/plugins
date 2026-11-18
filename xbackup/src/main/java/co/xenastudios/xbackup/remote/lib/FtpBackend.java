@@ -1,6 +1,6 @@
 package co.xenastudios.xbackup.remote.lib;
 
-import co.xenastudios.xbackup.config.XBConfig;
+import co.xenastudios.xbackup.remote.RemoteConfig;
 import co.xenastudios.xbackup.remote.Remotes;
 import co.xenastudios.xbackup.store.Backend;
 import java.io.ByteArrayInputStream;
@@ -42,7 +42,7 @@ public final class FtpBackend implements Backend {
     private final Remotes.Context context;
     private FTPClient ftp;
 
-    public FtpBackend(String name, XBConfig.Remote settings, String prefix, Remotes.Context context) {
+    public FtpBackend(String name, RemoteConfig settings, String prefix, Remotes.Context context) {
         this.name = name;
         this.host = require(settings.host(), "host", name);
         this.security = settings.security().isBlank() ? "explicit" : settings.security().strip().toLowerCase(Locale.ROOT);
@@ -97,7 +97,7 @@ public final class FtpBackend implements Backend {
                 secure.execPROT("P");
             }
             if (!client.login(user, password)) {
-                throw new IOException("the server refused the login. Check username and password");
+                throw new IOException("the server refused the login. Check username, and password in secrets.yml");
             }
             client.enterLocalPassiveMode();
             client.setFileType(FTP.BINARY_FILE_TYPE);

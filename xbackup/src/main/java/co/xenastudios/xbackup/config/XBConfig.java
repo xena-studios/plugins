@@ -139,21 +139,31 @@ public record XBConfig(
         @Comment("s3: the region, such as us-east-1 (auto for Cloudflare R2).") String region,
         @Comment("s3: the bucket.") String bucket,
         @Comment("s3: true for path-style URLs, which MinIO and some others need.") boolean pathStyle,
-        @Comment("s3: the access key id. sftp, ftp, webdav: the user name.") String username,
-        @Comment("s3: the secret key. sftp, ftp, webdav: the password.") String password,
+        @Comment({
+            "s3: the access key id. sftp, ftp, webdav: the user name. Passwords and secret keys go",
+            "in secrets.yml, beside this file, which only the server's user can read and which is",
+            "never backed up or copied to a remote."})
+        String username,
         @Comment("sftp, ftp: the server's name or address.") String host,
         @Comment("sftp, ftp: the port; 0 for the usual one.") @Range(min = 0, max = 65_535) int port,
-        @Comment("sftp: a private key file, relative to xBackup's folder, instead of a password.") String privateKey,
+        @Comment({
+            "sftp: a private key file, relative to xBackup's folder, instead of a password. It's",
+            "never backed up. A passphrase for it goes in secrets.yml as the password."})
+        String privateKey,
         @Comment({
             "sftp: the server's key fingerprint (SHA256:...), checked on every connection. Blank",
-            "trusts the key seen on the first connection and remembers it."})
+            "trusts the key seen on the first connection and remembers it. ftp with TLS: the",
+            "server's certificate fingerprint (SHA256:...), for a self-signed certificate. Blank",
+            "trusts only certificates Java trusts, for the right host name."})
         String hostKey,
         @Comment("ftp: none, explicit (FTPS, AUTH TLS) or implicit (FTPS on port 990).") String security,
-        @Comment("drive, onedrive, dropbox: your app's client id. The docs show how to get one.") String clientId,
-        @Comment("drive: your app's client secret.") String clientSecret) {}
+        @Comment({
+            "drive, onedrive, dropbox: your app's client id. The docs show how to get one. Google",
+            "Drive's client secret goes in secrets.yml."})
+        String clientId) {}
 
-    static final Remote REMOTE_TEMPLATE = new Remote("", true, "xbackup", "", "", "", false, "", "", "", 0, "", "",
-        "explicit", "", "");
+    static final Remote REMOTE_TEMPLATE = new Remote("", true, "xbackup", "", "", "", false, "", "", 0, "", "",
+        "explicit", "");
 
     public static final XBConfig DEFAULTS = new XBConfig(
         new Theme("<#5AA9FF>»</#5AA9FF> ", TextStyle.parse("<gray>"), TextStyle.parse("<#5AA9FF>"),

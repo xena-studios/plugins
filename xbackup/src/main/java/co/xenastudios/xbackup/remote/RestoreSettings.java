@@ -1,6 +1,5 @@
 package co.xenastudios.xbackup.remote;
 
-import co.xenastudios.xbackup.config.XBConfig;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -16,7 +15,7 @@ import java.util.Properties;
  *
  * @param repository the repository folder, or null if not recorded
  */
-public record RestoreSettings(Path repository, Map<String, XBConfig.Remote> remotes) {
+public record RestoreSettings(Path repository, Map<String, RemoteConfig> remotes) {
 
     public static final String NAME = "restore-settings.properties";
 
@@ -28,12 +27,12 @@ public record RestoreSettings(Path repository, Map<String, XBConfig.Remote> remo
         }
         Properties properties = new Properties();
         properties.load(new StringReader(Files.readString(file, StandardCharsets.UTF_8)));
-        Map<String, XBConfig.Remote> remotes = new LinkedHashMap<>();
+        Map<String, RemoteConfig> remotes = new LinkedHashMap<>();
         for (String key : properties.stringPropertyNames()) {
             if (key.startsWith("remote.") && key.endsWith(".type")) {
                 String name = key.substring(7, key.length() - 5);
                 String p = "remote." + name + ".";
-                remotes.put(name, new XBConfig.Remote(properties.getProperty(p + "type", ""),
+                remotes.put(name, new RemoteConfig(properties.getProperty(p + "type", ""),
                     Boolean.parseBoolean(properties.getProperty(p + "enabled", "true")), properties.getProperty(p + "path", ""),
                     properties.getProperty(p + "url", ""), properties.getProperty(p + "region", ""),
                     properties.getProperty(p + "bucket", ""), Boolean.parseBoolean(properties.getProperty(p + "path-style")),

@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import co.xenastudios.xbackup.Fixtures;
 import co.xenastudios.xbackup.backup.Backup;
 import co.xenastudios.xbackup.backup.Databases;
-import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.restore.Restore;
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.LocalBackend;
@@ -50,14 +49,14 @@ class RemoteTest {
         String folder = "xb-" + UUID.randomUUID().toString().substring(0, 8);
         Remotes.Context context = new Remotes.Context(dir.resolve("home"), Throttle.NONE, Logger.getLogger("test"), t -> null);
         Files.createDirectories(context.home());
-        XBConfig.Remote settings = switch (type) {
-            case "s3" -> new XBConfig.Remote("s3", true, folder, "http://127.0.0.1:19000", "us-east-1", "xbackup-test", true,
+        RemoteConfig settings = switch (type) {
+            case "s3" -> new RemoteConfig("s3", true, folder, "http://127.0.0.1:19000", "us-east-1", "xbackup-test", true,
                 "xbackup", "xbackupsecret", "", 0, "", "", "explicit", "", "");
-            case "webdav" -> new XBConfig.Remote("webdav", true, folder, "http://127.0.0.1:18080/", "", "", false,
+            case "webdav" -> new RemoteConfig("webdav", true, folder, "http://127.0.0.1:18080/", "", "", false,
                 "xbackup", "pass", "", 0, "", "", "explicit", "", "");
-            case "sftp" -> new XBConfig.Remote("sftp", true, "upload/" + folder, "", "", "", false, "xbackup", "pass",
+            case "sftp" -> new RemoteConfig("sftp", true, "upload/" + folder, "", "", "", false, "xbackup", "pass",
                 "127.0.0.1", 12222, "", "", "explicit", "", "");
-            default -> new XBConfig.Remote("ftp", true, folder, "", "", "", false, "xbackup", "pass", "127.0.0.1", 12121,
+            default -> new RemoteConfig("ftp", true, folder, "", "", "", false, "xbackup", "pass", "127.0.0.1", 12121,
                 "", "", "none", "", "");
         };
         Backend backend = Remotes.open(type, settings, context);

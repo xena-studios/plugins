@@ -1,6 +1,6 @@
 package co.xenastudios.xbackup.remote.lib;
 
-import co.xenastudios.xbackup.config.XBConfig;
+import co.xenastudios.xbackup.remote.RemoteConfig;
 import co.xenastudios.xbackup.remote.Remotes;
 import co.xenastudios.xbackup.store.Backend;
 import com.jcraft.jsch.ChannelSftp;
@@ -53,7 +53,7 @@ public final class SftpBackend implements Backend {
     private Session session;
     private ChannelSftp sftp;
 
-    public SftpBackend(String name, XBConfig.Remote settings, String prefix, Remotes.Context context) {
+    public SftpBackend(String name, RemoteConfig settings, String prefix, Remotes.Context context) {
         this.name = name;
         this.host = require(settings.host(), "host", name);
         this.port = settings.port() == 0 ? 22 : settings.port();
@@ -61,7 +61,7 @@ public final class SftpBackend implements Backend {
         this.password = settings.password();
         this.privateKey = settings.privateKey().isBlank() ? null : context.home().resolve(settings.privateKey().strip());
         if (password.isBlank() && privateKey == null) {
-            throw new IllegalArgumentException("set password or private-key for remote " + name + ".");
+            throw new IllegalArgumentException("set a password in secrets.yml, or private-key, for remote " + name + ".");
         }
         this.hostKey = settings.hostKey().strip();
         this.root = prefix;
@@ -118,7 +118,7 @@ public final class SftpBackend implements Backend {
                     + " changed, update host-key (or remove its line from known-hosts.properties).", e);
             }
             if (message.contains("Auth fail") || message.contains("Auth cancel")) {
-                throw new IOException("remote " + name + ": the server refused the login. Check username and password"
+                throw new IOException("remote " + name + ": the server refused the login. Check username, and password in secrets.yml,"
                     + " or private-key.", e);
             }
             throw new IOException("remote " + name + ": couldn't connect to " + host + ":" + port + " (" + message + ")", e);

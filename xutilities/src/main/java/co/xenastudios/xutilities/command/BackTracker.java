@@ -1,6 +1,7 @@
 package co.xenastudios.xutilities.command;
 
 import co.xenastudios.core.ListenerModule;
+import co.xenastudios.xutilities.api.event.BackRecordEvent;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -26,19 +27,59 @@ public final class BackTracker extends ListenerModule {
 
     // Concurrent: on Folia, players on different regions teleport at the same time.
     private final Map<UUID, Location> previous = new ConcurrentHashMap<>();
+    // Read by the API from any thread.
+    private volatile boolean enabled;
 
     public BackTracker(Plugin plugin) {
         super(plugin);
     }
 
-    Location previous(Player player) {
+    /** Whether /back is on, so spots are remembered. */
+    public boolean enabled() {
+        return enabled;
+    }
+
+    /** Where /back takes the player, or null. The stored location: don't change it. */
+    public Location previous(Player player) {
         return previous.get(player.getUniqueId());
+    }
+
+    /**
+     * Sets where /back takes the player, for the API. Does nothing while /back is off or
+     * for a player who isn't online, since only quitting removes a spot.
+     */
+    public boolean remember(Player player, Location location) {
+        if (!enabled || !player.isOnline()) {
+            return false;
+        }
+        previous.put(player.getUniqueId(), location);
+        return true;
+    }
+
+    public void forget(Player player) {
+        previous.remove(player.getUniqueId());
+    }
+
+    @Override
+    public void enable() {
+        super.enable();
+        enabled = true;
     }
 
     @Override
     public void disable() {
+        enabled = false;
         super.disable();
         previous.clear();
+    }
+
+    /** Saves the spot unless a listener of BackRecordEvent cancels it; the event is only built when one listens. */
+    private void record(Player player, Location location, BackRecordEvent.Reason reason) {
+        if (BackRecordEvent.getHandlerList().getRegisteredListeners().length > 0
+            && !new BackRecordEvent(player, location, reason).callEvent()) {
+            return;
+        }
+        previous.put(player.getUniqueId(), location);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -46,7 +87,7 @@ public final class BackTracker extends ListenerModule {
         // isOnline: a plugin teleporting someone as they quit (spawn on quit, combat
         // log) mustn't leave an entry behind that nothing removes.
         if (CAUSES.contains(event.getCause()) && event.getPlayer().isOnline()) {
-            previous.put(event.getPlayer().getUniqueId(), event.getFrom());
+            record(event.getPlayer(), event.getFrom(), BackRecordEvent.Reason.TELEPORT);
         }
     }
 
@@ -54,7 +95,7 @@ public final class BackTracker extends ListenerModule {
     void onDeath(PlayerDeathEvent event) {
         // Combat-log plugins kill players as they quit; that death isn't one to go back to.
         if (event.getPlayer().isOnline()) {
-            previous.put(event.getPlayer().getUniqueId(), event.getPlayer().getLocation());
+            record(event.getPlayer(), event.getPlayer().getLocation(), BackRecordEvent.Reason.DEATH);
         }
     }
 

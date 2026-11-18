@@ -9,7 +9,7 @@ xUtilities gives every server the small commands it needs, whatever kind of serv
 - **Next to nothing to run.** Nothing runs on a timer but the daily update check and bStats, and you can turn both off. `/back`'s listener exists only while `/back` is on.
 - **Paper and Folia**, from the same jar.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://docs.xenastudios.co/xutilities/) · [Commands and permissions](https://docs.xenastudios.co/xutilities/commands/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://docs.xenastudios.co/xutilities/) · [Commands and permissions](https://docs.xenastudios.co/xutilities/commands/) · [Developer API](https://docs.xenastudios.co/xutilities/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 
@@ -23,8 +23,10 @@ From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../C
 ```
 
 ```
+api/                the developer API (co.xenastudios:xutilities-api), shipped inside the jar
 src/main/java/co/xenastudios/xutilities/
   XUtilities.java   the plugin: declares the config and, in setup, the commands it turns on
+  Api.java          the developer API's implementation, registered while the plugin is enabled
   command/          the commands, grouped by kind (gamemodes, travel, menus, links, ...)
   config/           the config records; XConfig carries a 1.x config forward
 boot-checks.txt     console commands CI runs on real Paper and Folia servers, and what each must log

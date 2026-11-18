@@ -15,6 +15,7 @@ import java.util.Map;
 public class XUtilities extends XenaPlugin<XConfig> {
 
     private BackTracker backTracker;
+    private Api api;
 
     @Override
     protected ConfigSpec<XConfig> configSpec() {
@@ -36,8 +37,12 @@ public class XUtilities extends XenaPlugin<XConfig> {
         // One tracker for the plugin's life, so /back survives reloads.
         if (backTracker == null) {
             backTracker = new BackTracker(this);
+            api = new Api(this, backTracker);
         }
+        // First, so the API is there even if a command fails to set up.
+        setup.module("api", () -> api);
         Commands.register(setup, this, config, backTracker);
+        api.commands(setup.commands());
         warnAboutUnknownSounds(config.commands());
     }
 

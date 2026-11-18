@@ -9,7 +9,7 @@ xMoney is an economy plugin with Vault built in. Shops, jobs and vote plugins wr
 - **Every balance in memory,** so Vault calls never wait on the disk, from any thread. One background thread saves each change with its ledger line, in the same transaction, as it happens.
 - **Whole-number amounts,** so nothing drifts, and NaN, negative or huge amounts from other plugins are refused.
 - **Imports** from EssentialsX, CMI, or the economy registered with Vault now, with a dry run first.
-- **Networks** on one MySQL or MariaDB database: balances shared, and never spent twice.
+- **Networks** on one MySQL or MariaDB database (experimental in 1.0): balances shared, and never spent twice.
 
 Needs Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Replaces Vault: don't install Vault or VaultUnlocked beside it. PlaceholderAPI is optional.
 

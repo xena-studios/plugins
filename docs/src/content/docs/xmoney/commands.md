@@ -28,7 +28,7 @@ Amounts can be typed `250`, `1,000`, `12.5`, `1.5k` or `2m`. More decimals than 
 | `/eco set <player> <amount>` | Sets a balance. |
 | `/eco reset <player>` | Sets a balance back to `starting-balance`. |
 | `/eco history <player> [page]` | Every change to a balance, newest first: when, how much, why, and the balance after. |
-| `/xmoney import <essentials\|cmi\|vault> [confirm]` | Imports balances from another plugin. Without `confirm`, says what it would do. See [Switching](/xmoney/switching/). |
+| `/xmoney import <essentials\|cmi\|vault> [confirm [overwrite]]` | Imports balances from another plugin. Without `confirm`, says what it would do. `overwrite` is needed too if some of those accounts changed in xMoney since. See [Switching](/xmoney/switching/). |
 | `/xmoney status` | Where balances are kept, and whether saving is keeping up. |
 | `/xmoney reload`, `/xmoney info` | Reload the config, or show the version and settings. |
 

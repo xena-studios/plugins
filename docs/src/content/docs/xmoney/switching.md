@@ -16,17 +16,23 @@ xMoney is an economy plugin and Vault in one, so switching means removing two th
    /xmoney import essentials
    ```
 
-   It says how many balances it found, their total, and how many it can't import (not a number, below zero, or more than `max-balance`).
+   It says how many balances it found, their total, and how many it can't import (not a number, or more than `max-balance`). A balance below zero comes across as 0. Amounts keep up to four decimal places, whatever your currency's `decimals`.
 3. Import, with the link in that message or:
 
    ```
    /xmoney import essentials confirm
    ```
 
-   Each player's balance in xMoney is set to the one they had. Every change is in the ledger as "imported from EssentialsX", so `/eco history` still shows what they had before.
+   Each player's balance in xMoney is set to the one they had. Every change is in the ledger as "imported from EssentialsX", so `/eco history` still shows what they had before. Names xMoney already knows are kept.
 4. Remove the old economy plugin.
 
-Running an import again sets the balances again, to the old plugin's. Run it before players start spending in xMoney.
+Running an import again sets the balances again, to the old plugin's, undoing anything players did in xMoney since. So if any of the accounts have changed in xMoney since (a payment, `/eco`, a shop), the dry run says how many, and the import needs `overwrite` too:
+
+```
+/xmoney import essentials confirm overwrite
+```
+
+On a network, run the import on one server. It's set a hundred balances at a time with payments between, waits rather than drops anything if the database goes away, and the other servers read every balance again once it's done. Shop purchases on any server may be refused while it runs, so pick a quiet time.
 
 ## Where it reads from
 
@@ -34,7 +40,7 @@ Running an import again sets the balances again, to the old plugin's. Run it bef
 | --- | --- |
 | `/xmoney import essentials` | EssentialsX's `plugins/Essentials/userdata/*.yml`. Accounts EssentialsX made for other plugins (a town's bank) come across as accounts that aren't players'. |
 | `/xmoney import cmi` | CMI's SQLite database, `plugins/CMI/cmi.sqlite.db`, read-only. |
-| `/xmoney import vault` | Whatever other economy plugin is registered with Vault, while it's still installed. This covers every other economy plugin, and CMI or EssentialsX on MySQL. Balances are read on the main thread, 500 a tick. |
+| `/xmoney import vault` | Whatever other economy plugin is registered with Vault, while it's still installed. This covers every other economy plugin, and CMI or EssentialsX on MySQL. Economy plugins expect to be asked on the main thread, so balances are read there, a few milliseconds each tick, so the server doesn't stall. |
 
 Only players who have joined this server are imported from a plain Vault economy, since Vault can't list accounts. An economy on VaultUnlocked's API lists its own.
 

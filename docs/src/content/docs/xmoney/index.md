@@ -15,7 +15,7 @@ A shop, jobs or vote plugin that pays money usually needs two plugins: Vault, wh
 - **You won't feel it running.** Every balance is in memory, so a shop asking about a player, online or not, never waits on the disk. Changes are saved by one background thread as they happen, with no timer. The only listener is for players joining.
 - **Amounts that add up.** Money is counted in whole numbers, not floating point, so 0.1 + 0.2 is exactly 0.30, and badly behaved plugins can't make or lose money with odd amounts.
 - **Bring your balances.** One command imports from EssentialsX, CMI, or whatever economy plugin is registered with Vault now. See [Switching](/xmoney/switching/).
-- **Networks.** Servers sharing one MySQL or MariaDB database share balances, and can never spend the same money twice.
+- **Networks (experimental).** Servers sharing one MySQL or MariaDB database share balances, and can never spend the same money twice. See [Networks](/xmoney/configuration/#networks) for what's experimental.
 
 Current version: **1.0.0**, for Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xmoney).
 

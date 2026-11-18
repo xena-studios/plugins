@@ -28,7 +28,7 @@ A shop, jobs or vote plugin that pays money usually needs two plugins: Vault, wh
 
 - `/eco give`, `take`, `set`, `reset` and `history`: every change to a player's balance, newest first, with why.
 - **Imports** from EssentialsX, CMI, or whatever economy plugin is registered with Vault now, with a dry run that shows the total first.
-- **Networks:** servers sharing one MySQL or MariaDB database share balances, and can never spend the same money twice.
+- **Networks (experimental):** servers sharing one MySQL or MariaDB database share balances, and can never spend the same money twice.
 - **PlaceholderAPI:** `%xmoney_balance%` (formatted, raw or short like `1.2k`) and the top list by rank.
 - Your currency's name, symbol, decimals and format, which other plugins show too.
 

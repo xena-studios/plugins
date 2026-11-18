@@ -41,7 +41,7 @@ XMoneyApi money = XMoneyApi.get();
 
 `XMoneyApi.get()` throws an `IllegalStateException` if xMoney isn't enabled. It's also registered with Bukkit's services manager, so `Bukkit.getServicesManager().load(XMoneyApi.class)` works too (and returns null instead).
 
-Every method says how it runs. Balances, the top list and the format answer from memory, from any thread, at once. Payments return a `CompletableFuture`: on a single server it's already complete when you get it; on a network a withdrawal completes once the shared database has taken the money, off your thread. `history` reads the database and completes off the server's threads. Nothing ever reads the database on your thread.
+Every method says how it runs. Balances, the top list and the format answer from memory, from any thread, at once. Payments return a `CompletableFuture`: on a single server it's already complete when you get it; on a network a withdrawal completes once the shared database has taken the money, off your thread, or as `UNAVAILABLE` within five seconds if it can't. `history` reads the database and completes off the server's threads. Nothing ever reads the database on your thread.
 
 ## Pay and charge
 
@@ -59,7 +59,7 @@ money.withdraw(this, player.getUniqueId(), new BigDecimal("10"), "teleport cost"
 money.transfer(this, buyer, seller, price, "market sale");   // both change, or neither
 ```
 
-The ledger records each one under your plugin's name, with the reason. Amounts are rounded to the currency's decimals; `result.amount()` is what actually moved. A result is never an exception: an invalid amount is `INVALID_AMOUNT`, another plugin refusing is `CANCELLED`, and a network database that didn't answer is `UNAVAILABLE` (nothing moved).
+The ledger records each one under your plugin's name, with the reason. Amounts keep four decimal places whatever the currency's decimals, which are only for showing them: paying 0.995 and then 0.005 takes exactly 1. Past four places, deposits are rounded down and withdrawals and transfers up, so rounding never makes money. `result.amount()` is what actually moved, and balances come back with every place they have (`12.50`, `0.995`). A result is never an exception: an invalid amount is `INVALID_AMOUNT`, another plugin refusing is `CANCELLED`, and a network database that's failing or didn't take it up in time is `UNAVAILABLE`: nothing moved, and nothing will later.
 
 ## Read
 

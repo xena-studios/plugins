@@ -25,7 +25,7 @@ The config is `plugins/xMoney/config.yml`, written on first start. Apply changes
 
 ## Currency
 
-`format` is how every amount is written, by xMoney and by any plugin that asks Vault: `{symbol}{amount}` gives `$1,234.50`, and `{amount} {name}` gives `1,234.50 dollars` (or `1 dollar`). `decimals` is how many decimal places amounts have, from 0 to 4; amounts from other plugins are rounded to it. Lowering it later keeps the parts of balances it no longer shows, so nothing is lost.
+`format` is how every amount is written, by xMoney and by any plugin that asks Vault: `{symbol}{amount}` gives `$1,234.50`, and `{amount} {name}` gives `1,234.50 dollars` (or `1 dollar`). `decimals` is how many decimal places amounts are shown with, from 0 to 4, and how many an amount typed into a command may have. Amounts from other plugins always keep four places, so a shop that charges 0.995 and then 0.005 takes exactly 1.00, and with `decimals: 0` a 0.4 charge still takes 0.4 rather than nothing. Past four places, money paid in is rounded down and money taken is rounded up, so rounding never makes money. Lowering `decimals` later keeps the parts of balances it no longer shows, so nothing is lost.
 
 ## The ledger
 
@@ -37,14 +37,24 @@ Every change to every balance is a line in the ledger, saved together with the b
 
 ## Networks
 
+Network mode is **experimental** in 1.0. It never loses or makes money, but on a busy network with a slow or unreliable database, some shop purchases may be refused; see below. A single server isn't affected by any of this.
+
 For servers that share balances, such as a lobby and a survival server:
 
 1. Give every server the same `storage` settings, `type: mysql`, the same database and the same `table-prefix`.
 2. Turn `network.enabled` on, on each server, and restart them.
 
-Each server keeps every balance in memory as usual, and reads again whatever another server changed within `check-every` seconds (3 by default). Anything that takes money (a payment, a shop purchase, `/eco take`) is decided by the database itself, so two servers can never spend the same money twice. On a network that costs one trip to the database, a millisecond or two on the same machine or LAN, for each payment. If the database doesn't answer within a few seconds, the payment is refused and nothing is taken.
+Each server keeps every balance in memory as usual, and reads again whatever another server changed within `check-every` seconds (3 by default). Anything that takes money (a payment, a shop purchase, `/eco take`) is decided by the database itself, so two servers can never spend the same money twice. On a network that costs one trip to the database, a millisecond or two on the same machine or LAN, for each payment.
 
-Deposits are made at once and saved after, as on one server. `max-balance` is checked against what each server knows, so on a network it's a soft limit.
+Why it's experimental: a shop asks Vault on the server thread and needs an answer on the spot, so the server waits for the database. That wait is kept short:
+
+- A withdrawal made on a server thread waits at most `network-wait-ms` (50 by default, 250 at most) for the database to take it up. If it hasn't, it's refused and nothing is taken, then or later. Commands and xMoney's API don't hold a server thread, so they wait up to 5 seconds.
+- While the database is failing (a save failed and none has worked since), withdrawals are refused at once. Deposits still work and are saved once it's back.
+- Once the database has taken a payment up, the server waits for its answer, a few milliseconds normally and at most a few seconds, since xMoney's connection gives up on any one reply after 3. Only if the database goes away at the very moment it commits does the server wait until xMoney can ask it whether the payment went through.
+
+A later version keeps each online player's balance on the server they're on, so purchases never wait on the database.
+
+Deposits are made at once and saved after, as on one server. `max-balance` is checked against what each server knows, so on a network it's a soft limit. If a server's checks for the others' changes stop working for a while, it reads every balance again once they work. An import on one server is set a hundred balances at a time with payments between, and the other servers read every balance again once it's done.
 
 ## The full default config
 

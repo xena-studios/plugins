@@ -29,6 +29,7 @@ Why the plugins are built the way they are, oldest first.
 | [Developer APIs ship inside the plugin, and shared code lives in the core](#developer-apis-ship-inside-the-plugin-and-shared-code-lives-in-the-core-2026-11-17) | 2026-11-17 |
 | [Network mode: one change feed in the database](#network-mode-one-change-feed-in-the-database-2026-11-17) | 2026-11-17 |
 | [Chat pages, offline players, warmups and Vault move to the core](#chat-pages-offline-players-warmups-and-vault-move-to-the-core-2026-11-17) | 2026-11-17 |
+| [Global work survives an empty server's pause](#global-work-survives-an-empty-servers-pause-2026-11-18) | 2026-11-18 |
 | [xMoney: the economy stands in for Vault, and memory is the truth](#xmoney-the-economy-stands-in-for-vault-and-memory-is-the-truth-2026-11-18) | 2026-11-18 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
@@ -213,6 +214,12 @@ Each of these has at least two users among the plugins being built (#48's table)
 - **`hook/VaultEconomy`**: from xPlots. The class plugins use never names a Vault type, and the one that does is only loaded once Vault is enabled, so a server without Vault never sees a `NoClassDefFoundError` (the sandbox checks this on servers without Vault). The economy is looked up each time, as before.
 
 xPlots keeps its own `Wallet` (an economy or an item) and its teleport messages and bypass permission; only the general parts moved. Its jar grew about 8 KiB, mostly the warmup's damage and countdown options that xTeleport will use.
+
+## Global work survives an empty server's pause (2026-11-18)
+
+Paper pauses a server that has been empty for `pause-when-empty-seconds` (a vanilla setting, 60 by default). While paused it still runs console commands and Bukkit's scheduler, but not the global region scheduler, which Paper ticks with the worlds. So anything a plugin queued there waited for the next player: the core's own `/<plugin> reload` queued the reload itself there (to run after the command), so a reload typed in an empty server's console did nothing until someone joined. Found by xBackup (#61), whose scheduled backups timed out on empty servers, and reproduced with xUtilities 2.0.2 on Paper 1.21.11 and 26.3 with `pause-when-empty-seconds=1`.
+
+`Tasks.global` and the new `Tasks.nextTick` use Bukkit's scheduler on Paper and the global region scheduler on Folia, which never pauses. The core's reload and `editConfig` use `nextTick`. With the fix, the same test logs the reload six seconds after the pause. Plugins that call `Bukkit.getGlobalRegionScheduler()` directly (xLimbo's ticks, xRewind's rollback applier) should move to `Tasks` in their next release.
 
 ## xMoney: the economy stands in for Vault, and memory is the truth (2026-11-18)
 

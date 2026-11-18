@@ -64,6 +64,7 @@ public final class ChangeFeed implements AutoCloseable {
     private final Logger logger;
     private final boolean on;
     private final Map<String, List<Consumer<Change>>> subscribers = new ConcurrentHashMap<>();
+    private final List<Runnable> resyncs = new CopyOnWriteArrayList<>();
     private final AtomicBoolean checking = new AtomicBoolean();
 
     // Owned by whichever thread is checking (one at a time, through `checking`).
@@ -71,6 +72,8 @@ public final class ChangeFeed implements AutoCloseable {
     private final TreeMap<Long, Long> gaps = new TreeMap<>();
     private long lastPrune;
     private boolean failing;
+    private long lastWorked;
+    private boolean behind;
 
     private volatile ScheduledTask task;
     private volatile boolean closed;
@@ -128,6 +131,7 @@ public final class ChangeFeed implements AutoCloseable {
                 high = result.next() ? result.getLong(1) : 0;
             }
             lastPrune = System.currentTimeMillis();
+            lastWorked = lastPrune;
         } catch (SQLException e) {
             throw new DatabaseException("Couldn't set up network mode's changes table in " + database.description()
                 + ": " + e.getMessage(), e);
@@ -164,6 +168,17 @@ public final class ChangeFeed implements AutoCloseable {
      */
     public void subscribe(String topic, Consumer<Change> subscriber) {
         subscribers.computeIfAbsent(topic, key -> new CopyOnWriteArrayList<>()).add(subscriber);
+    }
+
+    /**
+     * Runs {@code resync} whenever this server may have missed changes, so it can read again
+     * from its tables what it keeps in memory: after checks that failed start working again,
+     * after no check worked for half of {@link #KEEP_MS} (rows may have been deleted unseen),
+     * and after a jump in ids too big to wait for. On the feed's own thread, after that
+     * check's changes are delivered. Subscribe before {@link #start}.
+     */
+    public void onResync(Runnable resync) {
+        resyncs.add(resync);
     }
 
     /**
@@ -204,14 +219,24 @@ public final class ChangeFeed implements AutoCloseable {
 
     /** One check, as the repeating task runs it. A failure is logged once, until a check works again. */
     void check() {
+        check(System.currentTimeMillis());
+    }
+
+    void check(long now) {
         if (closed || !checking.compareAndSet(false, true)) {
             return;
         }
         try {
-            poll(System.currentTimeMillis());
+            boolean missed = failing || now - lastWorked > KEEP_MS / 2;
+            poll(now);
+            lastWorked = now;
             if (failing) {
                 failing = false;
                 logger.info("Network mode is reading other servers' changes again.");
+            }
+            if (missed || behind) {
+                behind = false;
+                resync();
             }
         } catch (SQLException | RuntimeException e) {
             if (!failing) {
@@ -247,6 +272,9 @@ public final class ChangeFeed implements AutoCloseable {
                         for (long missing = high + 1; missing < change.id(); missing++) {
                             gaps.put(missing, now);
                         }
+                    } else {
+                        // Too many ids skipped to wait for each: whatever they were, read again.
+                        behind = true;
                     }
                     high = change.id();
                 } else if (gaps.remove(change.id()) == null) {
@@ -277,6 +305,16 @@ public final class ChangeFeed implements AutoCloseable {
                     found.add(new Change(result.getLong(1), result.getString(3), result.getString(4), result.getLong(5)));
                     origins.add(result.getString(2));
                 }
+            }
+        }
+    }
+
+    private void resync() {
+        for (Runnable resync : resyncs) {
+            try {
+                resync.run();
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING, "Reading again after missed network changes failed", e);
             }
         }
     }

@@ -124,6 +124,39 @@ class ChangeFeedTest {
     }
 
     @Test
+    void aServerThatMayHaveMissedChangesIsToldToReadAgain() throws Exception {
+        ChangeFeed b = server("bbbb");
+        int[] resyncs = {0};
+        b.onResync(() -> resyncs[0]++);
+        long now = System.currentTimeMillis();
+
+        b.check(now);
+        assertEquals(0, resyncs[0], "nothing missed on an ordinary check");
+
+        // A jump in ids too big to wait for each one.
+        insert(ChangeFeed.MAX_GAP + 10, "aaaa", "far", now);
+        b.check(now + 1_000);
+        assertEquals(1, resyncs[0]);
+        b.check(now + 2_000);
+        assertEquals(1, resyncs[0], "once, not on every check after");
+
+        // No check worked for longer than half of what the table keeps.
+        b.check(now + 3_000 + ChangeFeed.KEEP_MS / 2 + 1);
+        assertEquals(2, resyncs[0]);
+
+        // Checks failing, then working again.
+        try (Connection connection = database.connect(); var statement = connection.createStatement()) {
+            statement.execute("DROP TABLE t_changes");
+        }
+        long later = now + ChangeFeed.KEEP_MS;
+        b.check(later);
+        assertEquals(2, resyncs[0], "not while it's failing");
+        b.prepare();
+        b.check(later + 1_000);
+        assertEquals(3, resyncs[0]);
+    }
+
+    @Test
     void aHugeJumpIsntWaitedOn() throws Exception {
         ChangeFeed b = server("bbbb");
         insert(ChangeFeed.MAX_GAP + 10, "aaaa", "far", System.currentTimeMillis());

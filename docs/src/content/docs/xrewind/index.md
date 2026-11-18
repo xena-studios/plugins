@@ -1,6 +1,6 @@
 ---
 title: xRewind
-description: Every change, logged. Any of it, undone. A block logger with rollback for Paper and Folia.
+description: "xRewind: a free block logger and rollback plugin for Paper and Folia, and a CoreProtect alternative that imports your CoreProtect history."
 sidebar:
   label: Overview
   order: 1

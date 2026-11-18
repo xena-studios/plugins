@@ -92,7 +92,11 @@ public final class Engine {
     private volatile Instant nextBackup;
     private volatile Backup.Result lastResult;
     private final Map<String, String> remoteStatus = new ConcurrentHashMap<>();
-    private volatile boolean playersSeen;
+    // True at start: what changed before a restart still needs backing up.
+    private volatile boolean playersSeen = true;
+    // The last scheduled run that didn't make a backup (skipped or failed), so the next is
+    // counted from it, not retried every minute.
+    private volatile Instant lastAttempt;
 
     private volatile ScheduledTask timer;
     private volatile WorldPause pause;
@@ -261,6 +265,16 @@ public final class Engine {
     }
 
     private Snapshot runBackup(String reason, boolean scheduled) throws Exception {
+        if (scheduled) {
+            lastAttempt = Instant.now();
+            Settings now = settings;
+            List<Snapshot> list = snapshots;
+            // A backup made by hand since the timer was set moves the next one along.
+            if (now.every() != null && !list.isEmpty()
+                && list.get(list.size() - 1).time().plus(now.every()).isAfter(Instant.now().plus(Duration.ofMinutes(1)))) {
+                throw new Skipped("a backup ran since this one was scheduled");
+            }
+        }
         if (scheduled && settings.skipWhenIdle() && !playersSeen && Bukkit.getOnlinePlayers().isEmpty()
             && !snapshots.isEmpty()) {
             logger.fine("Skipped a scheduled backup: nobody has been online since the last one.");
@@ -466,6 +480,10 @@ public final class Engine {
         }
         List<Snapshot> list = snapshots;
         Instant last = list.isEmpty() ? null : list.get(list.size() - 1).time();
+        Instant attempt = lastAttempt;
+        if (attempt != null && (last == null || attempt.isAfter(last))) {
+            last = attempt;
+        }
         Instant due = last == null ? Instant.now().plus(Duration.ofMinutes(1)) : last.plus(now.every());
         // Never sooner than a minute from now: let the server settle after a start.
         Instant earliest = Instant.now().plus(Duration.ofMinutes(1));

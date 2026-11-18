@@ -31,6 +31,7 @@ public final class Mirror {
 
     public static Result push(Backend from, Backend to, BooleanSupplier cancelled, Consumer<String> progress)
         throws IOException {
+        checkSameRepository(from, to);
         Map<String, Long> source = new HashMap<>();
         for (Backend.FileInfo file : from.list("")) {
             if (rank(file.name()) >= 0) {
@@ -86,6 +87,45 @@ public final class Mirror {
             to.delete(name);
         }
         return new Result(sent, bytes, remove.size());
+    }
+
+    /**
+     * Refuses to copy onto a remote that holds a different repository. Copying deletes what
+     * the source no longer has, so after the local repository was lost and started again,
+     * copying would otherwise wipe the remote's backups: the very copy that's needed.
+     */
+    static void checkSameRepository(Backend from, Backend to) throws IOException {
+        String local = repositoryId(from);
+        String remote;
+        try {
+            remote = repositoryId(to);
+        } catch (java.nio.file.NoSuchFileException e) {
+            // A new, empty remote: fine.
+            if (!to.list("snapshots/").isEmpty() || !to.list("data/").isEmpty()) {
+                throw new IOException(to.describe() + " holds backup data but no repository config, so it isn't"
+                    + " overwritten. Point the remote at an empty folder, or restore from it first.");
+            }
+            return;
+        }
+        if (!remote.equals(local)) {
+            throw new IOException(to.describe() + " holds a different repository (id " + remote + ", this one is " + local
+                + "), so it isn't touched: copying would delete its backups. If this server's repository was lost, restore"
+                + " from the remote (java -jar xBackup.jar restore latest --remote <name>), or point the remote at an"
+                + " empty folder.");
+        }
+    }
+
+    private static String repositoryId(Backend backend) throws IOException {
+        byte[] config;
+        try (InputStream in = backend.get("config")) {
+            config = in.readNBytes(64 * 1024);
+        }
+        for (String line : new String(config, java.nio.charset.StandardCharsets.UTF_8).split("\n")) {
+            if (line.startsWith("id=")) {
+                return line.substring(3).strip();
+            }
+        }
+        throw new IOException(backend.describe() + " has a repository config without an id.");
     }
 
     // Where a file goes in the order, or -1 if it isn't a repository file.

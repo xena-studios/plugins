@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Replace the jar and restart. Your config is kept as it is.
+
+### Added
+
+- A developer API, like CoreProtect's, so other plugins can work with xRewind: they can log the blocks and items they change (so a plot reset shows in lookups and can be undone), look up the history, preview, apply and undo rollbacks and restores, and hold the writer for a moment while a backup copies the database. Plugins' lookups and rollbacks run like yours: in the background, a few milliseconds per tick, one rollback at a time. See [Developer API](https://docs.xenastudios.co/xrewind/developer-api/). It costs nothing unless a plugin uses it.
+- Plugins can listen for rollbacks (and stop one before it starts), and for lookups, to keep an audit log of who looked up what, staff commands included.
+
 ### Fixed
 
 - Clicking **Next page** below a lookup's results shows the next page. It ran `<next>` instead, which isn't a command.

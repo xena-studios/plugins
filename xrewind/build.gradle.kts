@@ -2,7 +2,7 @@ plugins {
     id("xena.plugin")
 }
 
-version = "1.0.2"
+version = "1.1.0"
 description = "Every change, logged. Any of it, undone."
 
 paperPluginYaml {

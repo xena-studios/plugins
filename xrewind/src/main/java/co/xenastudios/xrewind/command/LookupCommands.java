@@ -59,7 +59,8 @@ public final class LookupCommands {
                 .permission("xrewind.lookup")
                 .description("Another page of your last lookup.")
                 .usage("/xrewind page <number>")
-                .executes(invocation -> lookups.page(invocation.sender(), invocation.integer(0, 1, 1_000_000))),
+                // Capped, since each page reads every row before it: narrow the lookup instead.
+                .executes(invocation -> lookups.page(invocation.sender(), invocation.integer(0, 1, Lookups.MAX_PAGE))),
             CommandSpec.named("near")
                 .permission("xrewind.lookup")
                 .description("What changed within 5 blocks in the last 3 days.")

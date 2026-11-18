@@ -17,12 +17,25 @@ public record SchemaStep(int version, String description, Work work) {
         void run(Connection connection, Database database) throws SQLException;
     }
 
+    // MySQL's "table already exists" (1050) and "duplicate key name" (1061).
+    private static boolean alreadyThere(Database database, SQLException e) {
+        return database.dialect() == Dialect.MYSQL && (e.getErrorCode() == 1050 || e.getErrorCode() == 1061);
+    }
+
     /** A step that runs statements in order, with {@link Database#sql}'s placeholders filled in. */
     public static SchemaStep of(int version, String description, String... statements) {
         return new SchemaStep(version, description, (connection, database) -> {
             try (var statement = connection.createStatement()) {
                 for (String sql : statements) {
-                    statement.execute(database.sql(sql));
+                    try {
+                        statement.execute(database.sql(sql));
+                    } catch (SQLException e) {
+                        // MySQL commits each table change as it goes, so a step that failed
+                        // partway leaves some of its tables: running it again skips those.
+                        if (!alreadyThere(database, e)) {
+                            throw e;
+                        }
+                    }
                 }
             }
         });

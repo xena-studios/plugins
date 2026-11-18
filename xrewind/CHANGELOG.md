@@ -1,5 +1,18 @@
 # xRewind changelog
 
+## 1.0.2
+
+Replace the jar and restart. Your config is kept as it is.
+
+### Fixed
+
+- A rollback marks as rolled back only the changes it really made. Before, changes it skipped (a block this Minecraft can't read, a world that isn't loaded, or the rest of a rollback that stopped partway) were marked too, so no later rollback could reach them.
+- A database that can't be reconnected to no longer leaks a connection on every try, which on MySQL could use up its connections.
+- Three write failures hours apart no longer count as "three in a row": only failures back to back make xRewind write a batch row by row.
+- `/xrewind page` goes up to page 500. Much deeper pages read thousands of rows to show seven.
+- On MySQL, starting again after a database update that stopped partway carries on, instead of failing on the tables already made.
+- A huge TNT chain no longer slows down as xRewind tidies its list of recent breaks, and a preview a player left without applying is let go of.
+
 ## 1.0.1
 
 Replace the jar and restart. Your config is kept as it is.

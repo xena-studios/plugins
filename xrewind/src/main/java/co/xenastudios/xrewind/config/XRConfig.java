@@ -175,8 +175,9 @@ public record XRConfig(
             "xRewind: every change, logged. Any of it, undone.",
             "Docs: https://docs.xenastudios.co/xrewind/configuration/",
             "",
-            "Apply changes with /xrewind reload. A bad value falls back to its default with a",
-            "warning in the console; xRewind never stops over config. All text is MiniMessage:",
+            "Apply changes with /xrewind reload (or /xr reload). A bad value falls back to its",
+            "default with a warning in the console; xRewind never stops over config. All text is",
+            "MiniMessage:",
             "https://docs.xenastudios.co/start/formatting/")
         .version(1)
         .build();

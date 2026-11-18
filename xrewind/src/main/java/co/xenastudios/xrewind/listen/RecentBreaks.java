@@ -21,10 +21,14 @@ public final class RecentBreaks {
     private record Break(Actor actor, long at) {}
 
     private final Map<Spot, Break> recent = new ConcurrentHashMap<>();
+    private volatile long lastTidy;
 
     public void broke(Block block, Actor actor) {
         long now = System.nanoTime();
-        if (recent.size() >= TIDY_AT) {
+        // At most once a second: a TNT chain breaking thousands of blocks mustn't scan the
+        // map on every one.
+        if (recent.size() >= TIDY_AT && now - lastTidy > KEEP_NANOS) {
+            lastTidy = now;
             recent.values().removeIf(old -> now - old.at() > KEEP_NANOS);
         }
         recent.put(new Spot(block.getWorld().getName(), block.getX(), block.getY(), block.getZ()), new Break(actor, now));

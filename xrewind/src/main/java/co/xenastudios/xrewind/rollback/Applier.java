@@ -33,8 +33,13 @@ public final class Applier {
     /** Chunks loading ahead (Paper), or worked at once (Folia). */
     private static final int AHEAD = 8;
 
-    /** How it went. */
-    public record Result(int applied, int missingWorld, List<Plan.Change> previous, long nanos) {}
+    /**
+     * How it went.
+     *
+     * @param blockIds the block rows of the changes really applied: only these are marked
+     * @param containerIds the container rows likewise
+     */
+    public record Result(int applied, int missingWorld, List<Plan.Change> previous, long nanos, long[] blockIds, long[] containerIds) {}
 
     private record Group(World world, int cx, int cz, List<Plan.Change> changes) {}
 
@@ -45,6 +50,8 @@ public final class Applier {
     private final List<Group> groups = new ArrayList<>();
     private final AtomicInteger applied = new AtomicInteger();
     private final ConcurrentLinkedQueue<Plan.Change> previous = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<long[]> doneBlocks = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<long[]> doneContainers = new ConcurrentLinkedQueue<>();
     private final long start = System.nanoTime();
     private int missingWorld;
     private final java.util.concurrent.atomic.AtomicBoolean finished = new java.util.concurrent.atomic.AtomicBoolean();
@@ -105,7 +112,12 @@ public final class Applier {
         if (!finished.compareAndSet(false, true)) {
             return;
         }
-        done.accept(new Result(applied.get(), missingWorld, List.copyOf(previous), System.nanoTime() - start));
+        done.accept(new Result(applied.get(), missingWorld, List.copyOf(previous), System.nanoTime() - start,
+            flatten(doneBlocks), flatten(doneContainers)));
+    }
+
+    private static long[] flatten(ConcurrentLinkedQueue<long[]> parts) {
+        return parts.stream().flatMapToLong(java.util.Arrays::stream).toArray();
     }
 
     // Sets blocks from index on until the deadline. Returns where it stopped.
@@ -116,6 +128,7 @@ public final class Applier {
             Block block = group.world().getBlockAt(change.x(), change.y(), change.z());
             if (change.isItems()) {
                 items(block, change);
+                doneContainers.add(change.ids());
             } else {
                 BlockData before = block.getBlockData();
                 Contents held = Contents.canHold(before.getMaterial()) ? Contents.of(block) : null;
@@ -129,7 +142,8 @@ public final class Applier {
                 if (change.contents() != null) {
                     Contents.restore(block, change.contents());
                 }
-                previous.add(Plan.Change.block(change.world(), change.x(), change.y(), change.z(), before, held));
+                previous.add(Plan.Change.block(change.world(), change.x(), change.y(), change.z(), before, held, change.ids()));
+                doneBlocks.add(change.ids());
             }
             applied.incrementAndGet();
             if ((index & 63) == 0 && System.nanoTime() > deadline) {
@@ -141,7 +155,7 @@ public final class Applier {
 
     // Adds or takes items; undo does the opposite with what really moved.
     private void items(Block block, Plan.Change change) {
-        if (!(block.getState(false) instanceof Container container)) {
+        if (change.item() == null || change.delta() == 0 || !(block.getState(false) instanceof Container container)) {
             return;
         }
         ItemStack stack = change.item().clone();
@@ -155,7 +169,7 @@ public final class Applier {
         int moved = amount - missed;
         if (moved > 0) {
             previous.add(Plan.Change.items(change.world(), change.x(), change.y(), change.z(), change.item(),
-                change.delta() > 0 ? -moved : moved));
+                change.delta() > 0 ? -moved : moved, change.ids()));
         }
     }
 

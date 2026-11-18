@@ -127,6 +127,8 @@ public final class Writer implements Runnable {
             }
             if (write()) {
                 backoffNanos = 0;
+                // "Three times in a row": a write that goes through starts the count again.
+                failures = 0;
                 // A full batch means more is waiting: go again at once.
                 if (batch.isEmpty() && queue.size() < LogQueue.BATCH && running) {
                     LockSupport.parkNanos(FLUSH_NANOS);
@@ -160,6 +162,8 @@ public final class Writer implements Runnable {
         disconnect();
         try {
             Connection opened = current.connect();
+            // Held at once, so a failure below closes it (and its statements) in disconnect.
+            connection = opened;
             Dictionaries names = new Dictionaries();
             names.load(opened, current);
             opened.setAutoCommit(false);
@@ -168,7 +172,6 @@ public final class Writer implements Runnable {
             containers = opened.prepareStatement(current.sql("INSERT INTO {p}container (time, user, world, x, y, z, action, material, item, amount, rolled_back) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
             kills = opened.prepareStatement(current.sql("INSERT INTO {p}entity (time, user, world, x, y, z, action, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
             texts = opened.prepareStatement(current.sql("INSERT INTO {p}text (time, user, world, x, y, z, kind, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
-            connection = opened;
             dictionaries = names;
             database = current;
             // Not "working again" yet: only a write that goes through says that.

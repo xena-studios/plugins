@@ -24,7 +24,7 @@ public final class Planner {
 
     private record Spot(String world, int x, int y, int z) {}
 
-    private record Target(String state, byte[] contents) {}
+    private record Target(String state, byte[] contents, List<Long> ids) {}
 
     private record Stack(Spot spot, ByteBuffer item) {}
 
@@ -40,16 +40,16 @@ public final class Planner {
      */
     public static Plan plan(List<Row> blocks, List<Row> containers, boolean restore) {
         Map<Spot, Target> targets = new LinkedHashMap<>();
-        long[] blockIds = new long[blocks.size()];
-        for (int i = 0; i < blocks.size(); i++) {
-            Row row = blocks.get(i);
-            blockIds[i] = row.id();
+        for (Row row : blocks) {
             Spot spot = new Spot(row.world(), row.x(), row.y(), row.z());
+            Target known = targets.get(spot);
+            List<Long> ids = known == null ? new ArrayList<>() : known.ids();
+            ids.add(row.id());
             if (restore) {
-                targets.put(spot, new Target(row.after(), null));
-            } else {
+                targets.put(spot, new Target(row.after(), null, ids));
+            } else if (known == null) {
                 // What a broken block held goes back with it.
-                targets.putIfAbsent(spot, new Target(row.before(), row.action() == Actions.BREAK ? row.extra() : null));
+                targets.put(spot, new Target(row.before(), row.action() == Actions.BREAK ? row.extra() : null, ids));
             }
         }
         Map<String, BlockData> parsed = new HashMap<>();
@@ -62,20 +62,23 @@ public final class Planner {
                 continue;
             }
             Spot spot = entry.getKey();
-            changes.add(Plan.Change.block(spot.world(), spot.x(), spot.y(), spot.z(), data, Contents.read(entry.getValue().contents())));
+            changes.add(Plan.Change.block(spot.world(), spot.x(), spot.y(), spot.z(), data, Contents.read(entry.getValue().contents()),
+                ids(entry.getValue().ids())));
         }
 
         Map<Stack, Integer> deltas = new LinkedHashMap<>();
-        long[] containerIds = new long[containers.size()];
-        for (int i = 0; i < containers.size(); i++) {
-            Row row = containers.get(i);
-            containerIds[i] = row.id();
+        Map<Stack, List<Long>> stackIds = new HashMap<>();
+        for (Row row : containers) {
             int amount = row.action() == Actions.ADD ? row.amount() : -row.amount();
-            deltas.merge(new Stack(new Spot(row.world(), row.x(), row.y(), row.z()), ByteBuffer.wrap(row.extra())),
-                restore ? amount : -amount, Integer::sum);
+            Stack stack = new Stack(new Spot(row.world(), row.x(), row.y(), row.z()), ByteBuffer.wrap(row.extra()));
+            deltas.merge(stack, restore ? amount : -amount, Integer::sum);
+            stackIds.computeIfAbsent(stack, key -> new ArrayList<>()).add(row.id());
         }
         for (Map.Entry<Stack, Integer> entry : deltas.entrySet()) {
             if (entry.getValue() == 0) {
+                // Added and taken in equal measure: nothing to do, but every row is accounted for.
+                changes.add(Plan.Change.items(entry.getKey().spot().world(), entry.getKey().spot().x(), entry.getKey().spot().y(),
+                    entry.getKey().spot().z(), null, 0, ids(stackIds.get(entry.getKey()))));
                 continue;
             }
             ItemStack item;
@@ -86,9 +89,14 @@ public final class Planner {
                 continue;
             }
             Spot spot = entry.getKey().spot();
-            changes.add(Plan.Change.items(spot.world(), spot.x(), spot.y(), spot.z(), item, entry.getValue()));
+            changes.add(Plan.Change.items(spot.world(), spot.x(), spot.y(), spot.z(), item, entry.getValue(),
+                ids(stackIds.get(entry.getKey()))));
         }
-        return new Plan(restore ? Plan.Kind.RESTORE : Plan.Kind.ROLLBACK, changes, blockIds, containerIds, !restore, skipped);
+        return new Plan(restore ? Plan.Kind.RESTORE : Plan.Kind.ROLLBACK, changes, !restore, skipped);
+    }
+
+    private static long[] ids(List<Long> ids) {
+        return ids.stream().mapToLong(Long::longValue).toArray();
     }
 
     /**

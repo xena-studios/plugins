@@ -168,6 +168,8 @@ public final class Rollbacks {
     }
 
     private void preview(Player player, Plan plan) {
+        // Previews of players who left without applying or cancelling go, as a new one comes.
+        previews.keySet().removeIf(id -> Bukkit.getPlayer(id) == null);
         previews.put(player.getUniqueId(), plan);
         Map<Position, BlockData> fake = new HashMap<>();
         for (Plan.Change change : plan.changes()) {
@@ -193,13 +195,14 @@ public final class Rollbacks {
         AtomicBoolean finished = new AtomicBoolean();
         Applier applier = new Applier(plugin, plugin.isFolia(), plugin.config().rollback().msPerTick(), plan, result -> {
             finished.set(true);
-            plugin.queue().add(new Entry.MarkRolledBack("block", plan.blockIds(), plan.markRolledBack()));
-            plugin.queue().add(new Entry.MarkRolledBack("container", plan.containerIds(), plan.markRolledBack()));
+            // Only the rows of changes really made: skipped, unreadable or unreached ones stay
+            // as they were, so a later rollback can still reach them.
+            plugin.queue().add(new Entry.MarkRolledBack("block", result.blockIds(), plan.markRolledBack()));
+            plugin.queue().add(new Entry.MarkRolledBack("container", result.containerIds(), plan.markRolledBack()));
             if (plan.kind() == Plan.Kind.UNDO) {
                 undos.remove(sender);
             } else {
-                undos.put(sender, new Plan(Plan.Kind.UNDO, result.previous(), plan.blockIds(), plan.containerIds(),
-                    !plan.markRolledBack(), 0));
+                undos.put(sender, new Plan(Plan.Kind.UNDO, result.previous(), !plan.markRolledBack(), 0));
             }
             running.set(false);
             if (progress[0] != null) {

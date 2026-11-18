@@ -4,7 +4,9 @@ import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -29,6 +31,18 @@ public final class Tasks {
             work.run();
         } else {
             entity.getScheduler().run(plugin, task -> work.run(), null);
+        }
+    }
+
+    /**
+     * Runs where messages to this sender belong: a player's own thread, or the global
+     * thread for the console and command blocks. For replying from off the server's threads.
+     */
+    public void sender(CommandSender sender, Runnable work) {
+        if (sender instanceof Player player) {
+            entity(player, work);
+        } else {
+            global(work);
         }
     }
 

@@ -1,6 +1,7 @@
 package co.xenastudios.xrewind.query;
 
 import co.xenastudios.core.db.Database;
+import co.xenastudios.core.text.ChatPages;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xrewind.XRewind;
 import co.xenastudios.xrewind.config.XRConfig;
@@ -122,24 +123,12 @@ public final class Lookups {
         if (query.count()) {
             return lines;
         }
-        for (Row row : result.rows()) {
-            lines.add(Formats.line(messages, row));
-        }
-        long pages = (result.total() + PER_PAGE - 1) / PER_PAGE;
-        if (pages > 1) {
-            String next = "/xrewind page " + Math.min(pages, page + 1);
-            lines.add(messages.footer().chat(Placeholders.text("page", page), Placeholders.text("pages", pages),
-                Placeholders.text("next", next)));
-        }
+        lines.addAll(ChatPages.lines(ChatPages.of(result.rows(), result.total(), page, PER_PAGE),
+            row -> Formats.line(messages, row), messages.footer(), "/xrewind page {page}"));
         return lines;
     }
 
     private void reply(CommandSender sender, List<Component> lines) {
-        Runnable send = () -> lines.forEach(sender::sendMessage);
-        if (sender instanceof Player player) {
-            plugin.tasks().entity(player, send);
-        } else {
-            plugin.tasks().global(send);
-        }
+        plugin.tasks().sender(sender, () -> lines.forEach(sender::sendMessage));
     }
 }

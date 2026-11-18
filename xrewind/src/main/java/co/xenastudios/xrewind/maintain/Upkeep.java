@@ -15,7 +15,6 @@ import java.time.LocalDate;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 /** {@code /xrewind purge} and {@code /xrewind import}, run off the server's threads. */
 public final class Upkeep {
@@ -146,10 +145,6 @@ public final class Upkeep {
     }
 
     private void reply(CommandSender sender, Runnable send) {
-        if (sender instanceof Player player) {
-            player.getScheduler().run(plugin, task -> send.run(), null);
-        } else {
-            plugin.tasks().global(send);
-        }
+        plugin.tasks().sender(sender, send);
     }
 }

@@ -7,7 +7,12 @@ package co.xenastudios.xrewind.api;
  * on once every hold is let go.
  *
  * <p>Let go of it as soon as you can, with {@link #release()} or try-with-resources. A
- * hold lets go by itself after 60 seconds, with a warning in the console.
+ * hold lets go by itself 60 seconds after it was handed over, with a warning in the
+ * console.
+ *
+ * <p>Holds don't apply while xRewind stops: it writes what's waiting (for up to 10
+ * seconds) even while a hold is held, and every hold is let go once it has stopped. A
+ * backup running as the server shuts down can see those last writes.
  *
  * <p>Made by xRewind only: other plugins don't implement it.
  *

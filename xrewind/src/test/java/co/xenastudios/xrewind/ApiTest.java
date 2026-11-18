@@ -235,7 +235,18 @@ class ApiTest {
 
         block.setType(Material.AIR);
         cancelRollbacks = true;
-        assertInstanceOf(CancellationException.class, failure(api.apply(other)));
+        // The plan is given back before the future fails, so trying again from there works.
+        CompletableFuture<Throwable> retried = new CompletableFuture<>();
+        CompletableFuture<RollbackResult> cancelledOnce = api.apply(other);
+        cancelledOnce.whenComplete((result, error) -> {
+            try {
+                retried.complete(failure(api.apply(other)));
+            } catch (Throwable e) {
+                retried.complete(e);
+            }
+        });
+        assertInstanceOf(CancellationException.class, failure(cancelledOnce));
+        assertInstanceOf(CancellationException.class, done(retried), "tried again, and cancelled again");
         assertEquals(Material.AIR, block.getType(), "a cancelled rollback changes nothing");
         RollbackEvent cancelled = (RollbackEvent) events.get(events.size() - 1);
         assertThrows(IllegalStateException.class, () -> api.apply(cancelled.getPlan()), "an event's plan can't be applied");
@@ -258,6 +269,7 @@ class ApiTest {
         cancelRollbacks = true;
         steve.performCommand("xr apply");
         assertEquals(Material.AIR, block.getType(), "a listener stopped it");
+        assertTrue(message().contains("Another plugin stopped it"), "and the player is told");
         steve.performCommand("xr cancel");
         assertTrue(message().contains("Preview cancelled"), "the preview is still there to cancel");
 
@@ -268,6 +280,7 @@ class ApiTest {
         cancelRollbacks = true;
         steve.performCommand("xr undo");
         assertEquals(Material.STONE, block.getType());
+        assertTrue(message().contains("Another plugin stopped it"));
         cancelRollbacks = false;
         steve.performCommand("xr undo");
         await(() -> block.getType() == Material.AIR);
@@ -280,10 +293,22 @@ class ApiTest {
         server.getPluginManager().callEvent(new BlockBreakEvent(block, steve));
         block.setType(Material.AIR);
         Plan plan = done(api.planRollback(Query.builder().users("Steve").time(Duration.ofHours(1)).build()));
+        WriterHold hold = done(api.pause());
         CompletableFuture<RollbackResult> running = api.apply(plan);
         server.getPluginManager().disablePlugin(plugin);
         assertTrue(running.isDone());
         assertInstanceOf(IllegalStateException.class, failure(running));
+        assertFalse(hold.isHeld(), "a hold doesn't outlive the writer");
+
+        // The same instance enabled again: writes go through and a rollback can run.
+        server.getPluginManager().enablePlugin(plugin);
+        await(() -> plugin.storage().database() != null);
+        XRewindApi again = XRewindApi.get();
+        long written = plugin.writer().written();
+        again.logPlacement(PLOTS, at(3, 71, 20), Material.STONE.createBlockData());
+        await(() -> plugin.writer().written() == written + 1);
+        Plan fresh = done(again.planRollback(Query.builder().users("Steve").time(Duration.ofHours(1)).build()));
+        assertEquals(1, done(again.apply(fresh)).applied(), "the rollback that was running when it stopped isn't still holding the lock");
     }
 
     @Test
@@ -297,7 +322,10 @@ class ApiTest {
         steve.performCommand("xr rb u:Steve t:1h");
         await(() -> events.size() == 2);
         assertSame(steve, ((RollbackEvent) events.get(0)).getSender());
-        assertSame(steve, ((RollbackFinishedEvent) events.get(1)).getSender());
+        RollbackFinishedEvent finished = (RollbackFinishedEvent) events.get(1);
+        assertSame(steve, finished.getSender());
+        assertThrows(IllegalStateException.class, () -> api.apply(finished.getResult().undo()),
+            "a command's undo is the sender's /xr undo, not a plugin's to apply as well");
     }
 
     @Test
@@ -320,6 +348,23 @@ class ApiTest {
         Thread.sleep(700);
         assertEquals(written, plugin.writer().written(), "one plugin letting go doesn't end another's hold");
         second.close();
+        await(() -> plugin.writer().written() == written + 1);
+    }
+
+    @Test
+    void aPauseGivenUpOnLetsTheHoldGo() throws Exception {
+        // A write running, so the holds wait.
+        plugin.writer().gate().enterAnyway();
+        CompletableFuture<WriterHold> cancelled = api.pause();
+        CompletableFuture<WriterHold> timedOut = api.pause().orTimeout(50, TimeUnit.MILLISECONDS);
+        assertTrue(plugin.writer().gate().closed());
+        cancelled.cancel(false);
+        assertInstanceOf(java.util.concurrent.TimeoutException.class, failure(timedOut));
+        // Nothing would ever let them go, so they went.
+        await(() -> !plugin.writer().gate().closed());
+        plugin.writer().gate().exit();
+        long written = plugin.writer().written();
+        api.logPlacement(PLOTS, at(9, 71, 9), Material.STONE.createBlockData());
         await(() -> plugin.writer().written() == written + 1);
     }
 

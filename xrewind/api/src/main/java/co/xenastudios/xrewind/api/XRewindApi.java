@@ -174,9 +174,15 @@ public interface XRewindApi {
      * it changed once writing resumes. Any thread.
      *
      * <p>Each call is its own hold, so two plugins pausing at once don't end each other's.
-     * Keep it short: a hold lets go by itself after 60 seconds.
+     * Keep it short: a hold lets go by itself 60 seconds after it's handed over. Holds that
+     * overlap can't stop writes for good: once writes have been held for 60 seconds, new
+     * holds are refused until a batch has been written. Cancelling the future, or giving up
+     * on it with {@code orTimeout}, lets the hold go.
      *
-     * @return the hold, once nothing is writing; completes off the server's threads
+     * @return the hold, once nothing is writing; completes off the server's threads. Fails
+     *     with a {@link java.util.concurrent.TimeoutException} if the writes running don't
+     *     finish within 60 seconds, and with an {@link IllegalStateException} if holds have
+     *     kept writes stopped for 60 seconds already
      * @since 1.1.0
      */
     CompletableFuture<WriterHold> pause();

@@ -53,8 +53,6 @@ public final class Writer implements Runnable {
     private volatile long lastBatchNanos;
     private volatile int lastBatchSize;
     private volatile String problem;
-    // The batch being written, for flush to wait on.
-    private volatile int pending;
     // Each batch is a turn at the gate, so a backup's hold (the API's pause) can stop writes.
     private final WriteGate gate;
 
@@ -63,6 +61,7 @@ public final class Writer implements Runnable {
         this.databases = databases;
         this.logger = logger;
         this.gate = new WriteGate(logger);
+        queue.held(gate::closed);
         gate.onRelease(() -> {
             Thread current = thread;
             if (current != null) {
@@ -110,6 +109,8 @@ public final class Writer implements Runnable {
             logger.warning(lost + " logged changes couldn't be saved before stopping" + (problem == null ? "." : ": " + problem));
         }
         thread = null;
+        // A plugin's hold doesn't outlive the writer, so enabled again it starts open.
+        gate.releaseAll();
     }
 
     /** {@link #step()}'s answer when the writer should stop. */
@@ -156,14 +157,14 @@ public final class Writer implements Runnable {
      * @return how long to wait before the next, or {@link #STOP}
      */
     private long step() {
-        Entry entry;
-        while (batch.size() < MAX_BATCH && (entry = queue.poll()) != null) {
-            batch.add(entry);
-        }
-        pending = batch.size();
+        // The rest of a batch being written one row at a time goes first, on its own.
         if (isolating && !batch.isEmpty()) {
             isolate();
             return 0;
+        }
+        Entry entry;
+        while (batch.size() < MAX_BATCH && (entry = queue.poll()) != null) {
+            batch.add(entry);
         }
         if (batch.isEmpty()) {
             return running ? FLUSH_NANOS : STOP;
@@ -337,7 +338,6 @@ public final class Writer implements Runnable {
             connection.commit();
             dictionaries.committed();
             written += batch.size();
-            pending = 0;
             lastBatchSize = batch.size();
             lastBatchNanos = System.nanoTime() - start;
             batch.clear();
@@ -360,13 +360,18 @@ public final class Writer implements Runnable {
     /**
      * Writes the batch one row at a time, dropping any row the database won't take (and
      * saying so), so one bad row can't stop all logging. If the connection goes, the rest
-     * waits for it as usual.
+     * waits for it as usual. Each row is its own commit, so a batch can take a while on a
+     * remote database: if a backup asks to hold writes meanwhile, the rest waits for the
+     * next turn rather than keep it waiting.
      */
     private void isolate() {
         List<Entry> rows = new ArrayList<>(batch);
         batch.clear();
-        int dropped = 0;
         for (int i = 0; i < rows.size(); i++) {
+            if (i > 0 && running && gate.closed()) {
+                batch.addAll(rows.subList(i, rows.size()));
+                return;
+            }
             batch.add(rows.get(i));
             if (write()) {
                 continue;
@@ -377,14 +382,14 @@ public final class Writer implements Runnable {
                 disconnect();
                 return;
             }
+            // Counted at once, so flush sees it's been dealt with.
             dropped++;
             logger.warning("Dropped one logged change the database wouldn't take ("
                 + rows.get(i).getClass().getSimpleName() + "): " + problem);
+            // Dropped, so it isn't stopping writes any more.
+            problem = null;
         }
         isolating = false;
-        if (dropped > 0) {
-            this.dropped += dropped;
-        }
         problem = null;
     }
 
@@ -451,21 +456,49 @@ public final class Writer implements Runnable {
      * ago. Gives up after {@code timeoutMillis}, or at once if writes are failing. Not on
      * a server thread.
      *
-     * @return true if everything queued before the call is written and writes are going
-     *     through; what's queued after doesn't count, so it's true on a busy server too
+     * @return true if everything queued before the call is written (or dropped, as a row
+     *     the database won't take is) and writes are going through; what's queued after
+     *     doesn't count, so it's true on a busy server too
      */
     public boolean flush(long timeoutMillis) {
+        return flushed(target(), timeoutMillis);
+    }
+
+    /**
+     * Everything queued so far, as a count {@link #flushed} can wait for: every entry the
+     * writer has taken, and every one still waiting. Counting what's in the queue first
+     * means one taken meanwhile is counted twice at worst, so it's never short.
+     */
+    public long target() {
+        long waiting = queue.size();
+        return queue.taken() + waiting;
+    }
+
+    /**
+     * Waits until {@code target} entries have been written or dropped, as {@link #flush}
+     * does. Returns at once if the writer isn't running.
+     */
+    public boolean flushed(long target, long timeoutMillis) {
         Thread current = thread;
-        long target = written + queue.size() + pending;
         if (current == null) {
-            return written >= target && problem == null;
+            return done(target) && problem == null;
         }
         LockSupport.unpark(current);
         long until = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        while (written < target && problem == null && System.nanoTime() < until) {
+        while (!done(target) && problem == null && System.nanoTime() < until && !Thread.currentThread().isInterrupted()) {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(5));
         }
-        return written >= target && problem == null;
+        return done(target) && problem == null;
+    }
+
+    // Every entry taken ends up written or dropped; the rest are still on their way.
+    private boolean done(long target) {
+        return written + dropped >= target;
+    }
+
+    /** Whether the writer thread is running: false before start and after stop. */
+    public boolean started() {
+        return thread != null;
     }
 
     /** Entries written since the server started. */

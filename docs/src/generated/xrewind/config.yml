@@ -99,6 +99,8 @@ messages:
     # Stored blocks this server couldn't read. <count>.
     skipped: "<prefix><error><count> blocks were stored by a Minecraft version this one can't read, and were left as they are."
     no-undo: "<prefix><error>Nothing to undo. Undo works on your last rollback or restore since the server started."
+    # Another plugin stopped a rollback, restore or undo before it started.
+    stopped: "<prefix><error>Another plugin stopped it before it started. Nothing changed."
     verbs:
       rollback: "Rolled back"
       restore: "Restored"
@@ -120,6 +122,10 @@ messages:
     # CoreProtect's database couldn't be read. <reason>.
     import-failed: "<prefix><error>Couldn't read CoreProtect's history: <reason>"
     import-running: "<prefix><error>An import is already running."
+    # The server stopped a purge partway. <count> changes were deleted by then.
+    purge-interrupted: "<prefix><error>The purge was stopped partway, after deleting <highlight><count></highlight> changes. Run it again to finish."
+    # The server stopped an import partway.
+    import-interrupted: "<prefix><error>The import was stopped partway. Run it again with <highlight>#again</highlight>; what came across before shows twice."
 
 # Where the history is kept. Changing it on /xrewind reload switches to the new one;
 # history isn't copied across.

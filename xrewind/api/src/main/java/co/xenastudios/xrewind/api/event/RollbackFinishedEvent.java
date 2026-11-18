@@ -49,7 +49,9 @@ public final class RollbackFinishedEvent extends Event {
     }
 
     /**
-     * What it did, and the plan that undoes it.
+     * What it did, and the plan that undoes it. For a rollback a command ran, that undo is
+     * the sender's {@code /xr undo}, so applying it through the API throws, as applying an
+     * event's plan does.
      *
      * @return the result
      * @since 1.1.0

@@ -193,7 +193,15 @@ final class Api implements XRewindApi, Module {
         WriterHold token = new Token(hold);
         // Ready on whichever thread finished the last write: handed over to the background
         // tasks, so a caller's thenRun never runs on the writer's thread.
-        return hold.ready().thenApplyAsync(ignored -> token, this::onBackground);
+        CompletableFuture<WriterHold> result = hold.ready().thenApplyAsync(ignored -> token, this::onBackground);
+        // A future the caller cancelled, or gave up on with orTimeout, never hands the hold
+        // over, so nothing would let it go: it goes now.
+        result.whenComplete((handed, error) -> {
+            if (error != null) {
+                hold.release();
+            }
+        });
+        return result;
     }
 
     // An Executor for completing futures; inline if the scheduler refuses (xRewind stopping).

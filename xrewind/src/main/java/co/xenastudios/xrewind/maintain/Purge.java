@@ -6,6 +6,7 @@ import co.xenastudios.xrewind.log.WriteGate;
 import co.xenastudios.xrewind.storage.Clock;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -21,6 +22,8 @@ public final class Purge {
 
     static final List<String> TABLES = List.of("block", "container", "entity", "text", "session");
     private static final int BATCH = 5_000;
+    /** Free pages handed back to the disk per turn: about 8 MB at SQLite's 4 KB pages. */
+    static final int VACUUM_PAGES = 2_000;
 
     private Purge() {}
 
@@ -66,21 +69,45 @@ public final class Purge {
                 }
             }
             if (database.dialect() == Dialect.SQLITE && deleted > 0) {
-                // Hands the freed pages back to the disk, a little at a time.
+                vacuum(connection, gate);
+            }
+        }
+        return deleted;
+    }
+
+    /**
+     * Hands the freed pages back to the disk a few thousand at a time, each a turn of its
+     * own, so a backup's hold or the writer never waits on all of it at once.
+     */
+    private static void vacuum(Connection connection, WriteGate gate) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            long free = freePages(statement);
+            while (free > 0) {
                 try {
                     gate.enter();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    return deleted;
+                    return;
                 }
-                try (Statement statement = connection.createStatement()) {
-                    statement.execute("PRAGMA incremental_vacuum");
+                try {
+                    statement.execute("PRAGMA incremental_vacuum(" + VACUUM_PAGES + ")");
                 } finally {
                     gate.exit();
                 }
+                long left = freePages(statement);
+                if (left >= free) {
+                    // Not shrinking (a database without auto_vacuum): nothing more to do.
+                    return;
+                }
+                free = left;
             }
         }
-        return deleted;
+    }
+
+    private static long freePages(Statement statement) throws SQLException {
+        try (ResultSet result = statement.executeQuery("PRAGMA freelist_count")) {
+            return result.next() ? result.getLong(1) : 0;
+        }
     }
 
     /** {@link Clock} time {@code days} days ago. */

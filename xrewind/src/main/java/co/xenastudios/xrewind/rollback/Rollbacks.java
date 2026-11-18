@@ -105,7 +105,7 @@ public final class Rollbacks {
                     preview(viewer, plan);
                 } else {
                     plugin.tasks().global(() -> {
-                        if (allowed(plan, sender, null)) {
+                        if (allowed(plan, sender)) {
                             execute(sender, plan, asked.silent(), null);
                         }
                     });
@@ -163,10 +163,12 @@ public final class Rollbacks {
         future.whenComplete((result, error) -> pending.remove(future));
         try {
             plugin.tasks().global(() -> {
-                if (allowed(plan.plan(), null, future)) {
+                if (allowed(plan.plan(), null)) {
                     execute(null, plan.plan(), true, future);
                 } else {
+                    // Given back first, so a caller trying again as the future fails can.
                     plan.unclaim();
+                    future.completeExceptionally(new CancellationException("A RollbackEvent listener cancelled it"));
                 }
             });
         } catch (RuntimeException e) {
@@ -178,11 +180,15 @@ public final class Rollbacks {
         return future;
     }
 
-    /** Fails the API's rollbacks still running, as xRewind stops: they'd never finish. */
+    /**
+     * Fails the API's rollbacks still running, as xRewind stops: they'd never finish. One
+     * that was running is over too, so xRewind enabled again can start another.
+     */
     public void shutdown() {
         for (CompletableFuture<RollbackResult> future : List.copyOf(pending)) {
             future.completeExceptionally(new IllegalStateException("xRewind was disabled before the rollback finished"));
         }
+        running.set(false);
     }
 
     // Only a request that claimed the lock gives it back: a preview never claims it.
@@ -199,7 +205,7 @@ public final class Rollbacks {
             messages().noPreview().send(player);
         } else if (!running.compareAndSet(false, true)) {
             messages().busy().send(player);
-        } else if (allowed(plan, player, null)) {
+        } else if (allowed(plan, player)) {
             // Taken only once it goes ahead: a cancelled one is still there for /xr cancel.
             previews.remove(player.getUniqueId(), plan);
             execute(player, plan, false, null);
@@ -238,7 +244,7 @@ public final class Rollbacks {
             messages().noUndo().send(sender);
         } else if (!running.compareAndSet(false, true)) {
             messages().busy().send(sender);
-        } else if (allowed(plan, sender, null)) {
+        } else if (allowed(plan, sender)) {
             // Taken only once it goes ahead: a cancelled one can be tried again.
             undos.remove(sender, plan);
             execute(sender, plan, false, null);
@@ -247,17 +253,17 @@ public final class Rollbacks {
 
     /**
      * Asks other plugins whether it may go ahead, with running claimed; on a no, gives
-     * running back and fails the API's future. The event is built only when something
+     * running back and tells the command's sender. The event is built only when something
      * listens for it.
      */
-    private boolean allowed(Plan plan, CommandSender sender, CompletableFuture<RollbackResult> future) {
+    private boolean allowed(Plan plan, CommandSender sender) {
         if (RollbackEvent.getHandlerList().getRegisteredListeners().length == 0
             || new RollbackEvent(ApiPlan.spent(plan), sender).callEvent()) {
             return true;
         }
         running.set(false);
-        if (future != null) {
-            future.completeExceptionally(new CancellationException("A RollbackEvent listener cancelled it"));
+        if (sender != null) {
+            reply(sender, () -> messages().stopped().send(sender));
         }
         return false;
     }
@@ -310,8 +316,10 @@ public final class Rollbacks {
             }
             running.set(false);
             if (future != null || RollbackFinishedEvent.getHandlerList().getRegisteredListeners().length > 0) {
+                // A command's undo is the sender's /xr undo: applied through the API as well,
+                // its container changes would be made twice.
                 RollbackResult done = new RollbackResult(result.applied(), plan.skipped() + result.missingWorld(),
-                    Duration.ofNanos(result.nanos()), ApiPlan.fresh(undo));
+                    Duration.ofNanos(result.nanos()), sender == null ? ApiPlan.fresh(undo) : ApiPlan.spent(undo));
                 plugin.tasks().global(() -> {
                     if (RollbackFinishedEvent.getHandlerList().getRegisteredListeners().length > 0) {
                         new RollbackFinishedEvent(ApiPlan.spent(plan), done, sender).callEvent();

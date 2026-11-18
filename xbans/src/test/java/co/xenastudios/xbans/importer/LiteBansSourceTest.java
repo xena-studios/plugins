@@ -33,43 +33,57 @@ class LiteBansSourceTest {
     private static final UUID ALEX = UUID.fromString("853c80ef-3c37-49fd-aa49-938b674adae6");
     private static final UUID MOD = UUID.fromString("61699b2e-d327-4a01-9f1e-0ea8c3f06bc6");
 
+    // LiteBans' punishment tables, as its web interface reads them. Fixed SQL; values go in as parameters.
+    private static final String COLUMNS = "(id INTEGER PRIMARY KEY, uuid VARCHAR(36), ip VARCHAR(45), reason VARCHAR(2048),"
+        + " banned_by_uuid VARCHAR(36), banned_by_name VARCHAR(128), removed_by_uuid VARCHAR(36),"
+        + " removed_by_name VARCHAR(128), removed_by_reason VARCHAR(2048), removed_by_date TIMESTAMP,"
+        + " time BIGINT, until BIGINT, template INT, server_scope VARCHAR(32), server_origin VARCHAR(32),"
+        + " silent BIT, ipban BIT, ipban_wildcard BIT, active BIT";
+    private static final String ROW = "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String WARNING_ROW = "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String HISTORY = "INSERT INTO litebans_history VALUES (?, ?, ?, ?, ?)";
+
+    private static void insert(Connection c, String sql, Object... values) throws java.sql.SQLException {
+        try (java.sql.PreparedStatement insert = c.prepareStatement(sql)) {
+            for (int i = 0; i < values.length; i++) {
+                insert.setObject(i + 1, values[i]);
+            }
+            insert.executeUpdate();
+        }
+    }
+
     @Test
     void readsBansMutesWarningsKicksAndLogins() throws Exception {
         long now = System.currentTimeMillis();
         try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("litebans.db"))) {
             try (Statement s = c.createStatement()) {
-                String columns = "(id INTEGER PRIMARY KEY, uuid VARCHAR(36), ip VARCHAR(45), reason VARCHAR(2048),"
-                    + " banned_by_uuid VARCHAR(36), banned_by_name VARCHAR(128), removed_by_uuid VARCHAR(36),"
-                    + " removed_by_name VARCHAR(128), removed_by_reason VARCHAR(2048), removed_by_date TIMESTAMP,"
-                    + " time BIGINT, until BIGINT, template INT, server_scope VARCHAR(32), server_origin VARCHAR(32),"
-                    + " silent BIT, ipban BIT, ipban_wildcard BIT, active BIT";
-                s.execute("CREATE TABLE litebans_bans " + columns + ")");
-                s.execute("CREATE TABLE litebans_mutes " + columns + ")");
-                s.execute("CREATE TABLE litebans_warnings " + columns + ", warned BIT)");
-                s.execute("CREATE TABLE litebans_kicks " + columns + ")");
+                s.execute("CREATE TABLE litebans_bans " + COLUMNS + ")");
+                s.execute("CREATE TABLE litebans_mutes " + COLUMNS + ")");
+                s.execute("CREATE TABLE litebans_warnings " + COLUMNS + ", warned BIT)");
+                s.execute("CREATE TABLE litebans_kicks " + COLUMNS + ")");
                 s.execute("CREATE TABLE litebans_history (id INTEGER PRIMARY KEY, date TIMESTAMP, name VARCHAR(16),"
                     + " uuid VARCHAR(36), ip VARCHAR(45))");
-                // A permanent ban in force, by a moderator.
-                s.execute("INSERT INTO litebans_bans VALUES (1, '" + STEVE + "', '203.0.113.9', 'Hacking', '" + MOD
-                    + "', 'Mod', NULL, NULL, NULL, NULL, " + (now - 1000) + ", -1, 0, '*', 'lobby', 0, 0, 0, 1)");
-                // A temporary IP ban that was lifted early.
-                s.execute("INSERT INTO litebans_bans VALUES (2, '" + ALEX + "', '198.51.100.7', 'Alts', 'CONSOLE',"
-                    + " 'Console', '" + MOD + "', 'Mod', 'Appealed', 1700000000000, " + (now - 5000) + ", " + (now + 86_400_000L)
-                    + ", 0, 'survival', 'survival', 1, 1, 0, 0)");
-                // A mute that ran out on its own.
-                s.execute("INSERT INTO litebans_mutes VALUES (1, '" + STEVE + "', NULL, 'Spam', 'CONSOLE', 'Console', NULL,"
-                    + " '#expired', NULL, NULL, " + (now - 100_000) + ", " + (now - 50_000) + ", 0, 'global', 'lobby', 0, 0, 0, 0)");
-                s.execute("INSERT INTO litebans_warnings VALUES (1, '" + STEVE + "', NULL, 'Language', 'CONSOLE', 'Console',"
-                    + " NULL, NULL, NULL, NULL, " + (now - 1000) + ", 0, 0, '*', 'lobby', 0, 0, 0, 1, 1)");
-                s.execute("INSERT INTO litebans_kicks VALUES (1, '" + ALEX + "', NULL, 'Calm down', 'CONSOLE', 'Console',"
-                    + " NULL, NULL, NULL, NULL, " + (now - 1000) + ", 0, 0, '*', 'lobby', 0, 0, 0, 0)");
-                s.execute("INSERT INTO litebans_history VALUES (1, 1600000000000, 'OldSteve', '" + STEVE + "', '203.0.113.9')");
-                s.execute("INSERT INTO litebans_history VALUES (2, 1700000000000, 'Steve', '" + STEVE + "', '203.0.113.9')");
-                s.execute("INSERT INTO litebans_history VALUES (3, 1700000000000, 'Alex', '" + ALEX + "', '203.0.113.9')");
-                // A wildcard IP ban, which xBans can't match.
-                s.execute("INSERT INTO litebans_bans VALUES (3, NULL, '192.168.1.*', 'Range', 'CONSOLE', 'Console', NULL,"
-                    + " NULL, NULL, NULL, " + (now - 1000) + ", -1, 0, '*', 'lobby', 0, 1, 1, 1)");
             }
+            // A permanent ban in force, by a moderator.
+            insert(c, "INSERT INTO litebans_bans VALUES " + ROW, 1, STEVE.toString(), "203.0.113.9", "Hacking",
+                MOD.toString(), "Mod", null, null, null, null, now - 1000, -1, 0, "*", "lobby", 0, 0, 0, 1);
+            // A temporary IP ban that was lifted early.
+            insert(c, "INSERT INTO litebans_bans VALUES " + ROW, 2, ALEX.toString(), "198.51.100.7", "Alts", "CONSOLE",
+                "Console", MOD.toString(), "Mod", "Appealed", 1700000000000L, now - 5000, now + 86_400_000L,
+                0, "survival", "survival", 1, 1, 0, 0);
+            // A mute that ran out on its own.
+            insert(c, "INSERT INTO litebans_mutes VALUES " + ROW, 1, STEVE.toString(), null, "Spam", "CONSOLE", "Console", null,
+                "#expired", null, null, now - 100_000, now - 50_000, 0, "global", "lobby", 0, 0, 0, 0);
+            insert(c, "INSERT INTO litebans_warnings VALUES " + WARNING_ROW, 1, STEVE.toString(), null, "Language", "CONSOLE",
+                "Console", null, null, null, null, now - 1000, 0, 0, "*", "lobby", 0, 0, 0, 1, 1);
+            insert(c, "INSERT INTO litebans_kicks VALUES " + ROW, 1, ALEX.toString(), null, "Calm down", "CONSOLE", "Console",
+                null, null, null, null, now - 1000, 0, 0, "*", "lobby", 0, 0, 0, 0);
+            insert(c, HISTORY, 1, 1600000000000L, "OldSteve", STEVE.toString(), "203.0.113.9");
+            insert(c, HISTORY, 2, 1700000000000L, "Steve", STEVE.toString(), "203.0.113.9");
+            insert(c, HISTORY, 3, 1700000000000L, "Alex", ALEX.toString(), "203.0.113.9");
+            // A wildcard IP ban, which xBans can't match.
+            insert(c, "INSERT INTO litebans_bans VALUES " + ROW, 3, null, "192.168.1.*", "Range", "CONSOLE", "Console", null,
+                null, null, null, now - 1000, -1, 0, "*", "lobby", 0, 1, 1, 1);
             // This server's default-scope is local: LiteBans' global bans stay global all the same.
             Haul haul = LiteBansSource.read(c, "litebans_", "lobby");
             Map<String, Entry> rows = haul.rows.stream()

@@ -13,7 +13,10 @@ plugins {
 val pluginProject = checkNotNull(project.parent) { "An API module lives in its plugin's folder, as <plugin>/api." }
 val artifact = "${pluginProject.name}-api"
 
-group = "co.xenastudios"
+// Gradle tells projects apart by group and name, and every API project is named "api",
+// so each gets its own group: otherwise a project using two plugins' APIs (xPlots with
+// xUtilities' and xRewind's) silently gets only one. Published as co.xenastudios.
+group = "co.xenastudios.${pluginProject.name}"
 // The parent is configured first, so its version is already set.
 version = pluginProject.version
 base.archivesName = artifact
@@ -36,6 +39,7 @@ tasks.javadoc {
 publishing {
     publications {
         create<MavenPublication>("api") {
+            groupId = "co.xenastudios"
             artifactId = artifact
             from(components["java"])
             pom {

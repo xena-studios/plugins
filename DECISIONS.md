@@ -30,6 +30,7 @@ Why the plugins are built the way they are, oldest first.
 | [Network mode: one change feed in the database](#network-mode-one-change-feed-in-the-database-2026-11-17) | 2026-11-17 |
 | [Chat pages, offline players, warmups and Vault move to the core](#chat-pages-offline-players-warmups-and-vault-move-to-the-core-2026-11-17) | 2026-11-17 |
 | [xTeleport: one path for every teleport, and RTP that can't lag](#xteleport-one-path-for-every-teleport-and-rtp-that-cant-lag-2026-11-18) | 2026-11-18 |
+| [Global work survives an empty server's pause](#global-work-survives-an-empty-servers-pause-2026-11-18) | 2026-11-18 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -199,6 +200,7 @@ xBans, xVote, xMoney and xStats keep what's hot (active bans, balances) in memor
 - **Late commits aren't lost.** Ids are handed out on insert, not on commit, so a slow transaction can commit after a newer row was already read. An id skipped over is asked for again on each check for 15 seconds (a rolled-back insert leaves a gap forever, so it isn't waited on longer), and a jump of over 1,000 ids isn't waited on at all.
 - **Changes from before a start aren't replayed.** A starting server reads its tables anyway; it starts from the newest row.
 - **Pruned to ten minutes, never empty.** Once a minute each server deletes rows older than ten minutes below the newest it has seen, by key range. The newest row always stays, so an old MySQL that forgets its counter on restart can't hand out an id again.
+- **A server that may have missed changes reads again.** A feed is only as good as the server's memory of what it read, so `onResync` tells a plugin to reload what it keeps in memory from its tables whenever that can't be trusted: when checks start working after failing, when none worked for five minutes (rows it never saw may be pruned), and after a jump in ids too big to wait for. Found reviewing xBans (#63): without it, a server cut off from MySQL for more than ten minutes kept enforcing lifted bans and missed new ones until a restart.
 
 It's tested on SQLite with two feeds sharing a file (`ChangeFeedTest`, including late and never-committed rows and pruning), and against a real MariaDB when `XR_MYSQL` is set (`ChangeFeedMySqlTest`, as xRewind's), which CI runs.
 
@@ -232,4 +234,10 @@ xTeleport (#35) is homes, TPA, warps, spawn and `/rtp`, on Paper and Folia.
 - **Spawn without a teleport.** New (or every) joining players are placed with `AsyncPlayerSpawnLocationEvent`, reading the spawn from memory, so there's no teleport after joining. Respawning at spawn is for deaths only: leaving the End goes where the game sends it.
 - **Tests drive real teleports.** MockBukkit can't `getChunkAtAsync` or `teleportAsync`, so both go through two plugin methods (`loadChunk`, `move`) that the tests' subclass does synchronously, and its store's writes can be made to fail. MockBukkit can't cancel an entity's scheduled task yet, so players who wait out a warmup in the tests have a small scheduler of their own. Everything else is the real code.
 - **Imports: EssentialsX only in 1.0.** Its userdata, warps and spawn files are plain YAML in a known layout. HuskHomes and CMI keep their data in databases whose layout couldn't be checked against a real install here, and a wrong guess would lose homes quietly, so they wait for a version that can be tested against one. An import keeps what's already in xTeleport (insert-or-ignore), so running it twice is safe.
+
+## Global work survives an empty server's pause (2026-11-18)
+
+Paper pauses a server that has been empty for `pause-when-empty-seconds` (a vanilla setting, 60 by default). While paused it still runs console commands and Bukkit's scheduler, but not the global region scheduler, which Paper ticks with the worlds. So anything a plugin queued there waited for the next player: the core's own `/<plugin> reload` queued the reload itself there (to run after the command), so a reload typed in an empty server's console did nothing until someone joined. Found by xBackup (#61), whose scheduled backups timed out on empty servers, and reproduced with xUtilities 2.0.2 on Paper 1.21.11 and 26.3 with `pause-when-empty-seconds=1`.
+
+`Tasks.global` and the new `Tasks.nextTick` use Bukkit's scheduler on Paper and the global region scheduler on Folia, which never pauses. The core's reload and `editConfig` use `nextTick`. With the fix, the same test logs the reload six seconds after the pause. Plugins that call `Bukkit.getGlobalRegionScheduler()` directly (xLimbo's ticks, xRewind's rollback applier) should move to `Tasks` in their next release.
 

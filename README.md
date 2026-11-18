@@ -11,8 +11,9 @@ By [Xena Studios](https://xenastudios.co). Each does one job, costs next to noth
 | <img src="docs/src/assets/plugins/xlimbo.svg" width="40" alt=""> | **[xLimbo](xlimbo)** | Never drop a player again. | [Docs](https://docs.xenastudios.co/xlimbo/) · [Modrinth](https://modrinth.com/plugin/xlimbo) |
 | <img src="docs/src/assets/plugins/xrewind.svg" width="40" alt=""> | **[xRewind](xrewind)** | Every change, logged. Any of it, undone. | [Docs](https://docs.xenastudios.co/xrewind/) · [Modrinth](https://modrinth.com/plugin/xrewind) |
 | <img src="docs/src/assets/plugins/xplots.svg" width="40" alt=""> | **[xPlots](xplots)** | Rentable plots, set up in a minute. | [Docs](https://docs.xenastudios.co/xplots/) · [Modrinth](https://modrinth.com/plugin/xplots) |
+| <img src="docs/src/assets/plugins/xbans.svg" width="40" alt=""> | **[xBans](xbans)** | Bans, mutes and warnings, the LiteBans way. | [Docs](https://docs.xenastudios.co/xbans/) · [Modrinth](https://modrinth.com/plugin/xbans) |
 
-All four need Paper 1.21.11+ and Java 21+. xUtilities, zChat and xRewind also run on Folia. Get them on [Modrinth](https://modrinth.com/organization/xena-studios); the [docs](https://docs.xenastudios.co) cover setup, commands, permissions and config.
+All of them need Paper 1.21.11+ and Java 21+. xUtilities, zChat, xRewind and xBans also run on Folia. Get them on [Modrinth](https://modrinth.com/organization/xena-studios); the [docs](https://docs.xenastudios.co) cover setup, commands, permissions and config.
 
 ## Building
 

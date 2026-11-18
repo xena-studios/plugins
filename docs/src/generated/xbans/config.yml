@@ -10,15 +10,15 @@ config-version: 1
 
 # The look xBans' messages share. The default messages use these as tags, so changing
 # a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#FF8A5B>, or <gold><bold>.
+# <#FF9447>, or <gold><bold>.
 theme:
   # <prefix> starts the default messages. Make it your server's name, such as
   # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
-  prefix: "<#FF8A5B>»</#FF8A5B> "
+  prefix: "<#FF9447>»</#FF9447> "
   # The colour of message text that has no tag of its own.
   base: "<gray>"
   # <highlight>: names and values, such as a player or a speed.
-  highlight: "<#FF8A5B>"
+  highlight: "<#FF9447>"
   # <success>: something turned on or done.
   success: "<#5EE08A>"
   # <error>: something refused or turned off.
@@ -32,12 +32,12 @@ screens:
   temp-ban: "<#FF6B6B><bold>You are banned from this server.</bold>\n\n<gray>Reason: <white><reason>\n<gray>Ends in <white><time-left></white> (<expires>)\n\n<gray>Appeal at <white><appeal></white>\n<dark_gray>ID #<id>"
   # A ban on their IP rather than their account.
   ip-ban: "<#FF6B6B><bold>Your IP is banned from this server.</bold>\n\n<gray>Reason: <white><reason>\n<gray>Ends: <white><expires>\n\n<gray>Appeal at <white><appeal></white>\n<dark_gray>ID #<id>"
-  kick: "<#FF8A5B><bold>You were kicked.</bold>\n\n<gray>Reason: <white><reason>"
+  kick: "<#FF9447><bold>You were kicked.</bold>\n\n<gray>Reason: <white><reason>"
   # <appeal> in the screens.
   appeal-link: "https://example.com/appeal"
   # Shown when they can't join because xBans is still loading its bans (only in the first
   # seconds after a start, or while the database can't be reached at startup).
-  not-ready: "<#FF8A5B>The server is still starting.</#FF8A5B>\n<gray>Try again in a few seconds."
+  not-ready: "<#FF9447>The server is still starting.</#FF9447>\n<gray>Try again in a few seconds."
   # Told to a muted player who tries to chat.
   muted: "<prefix><error>You're muted:</error> <reason>"
   temp-muted: "<prefix><error>You're muted</error> for <highlight><time-left></highlight>: <reason>"

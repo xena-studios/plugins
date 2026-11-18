@@ -29,6 +29,7 @@ Why the plugins are built the way they are, oldest first.
 | [Developer APIs ship inside the plugin, and shared code lives in the core](#developer-apis-ship-inside-the-plugin-and-shared-code-lives-in-the-core-2026-11-17) | 2026-11-17 |
 | [Network mode: one change feed in the database](#network-mode-one-change-feed-in-the-database-2026-11-17) | 2026-11-17 |
 | [Chat pages, offline players, warmups and Vault move to the core](#chat-pages-offline-players-warmups-and-vault-move-to-the-core-2026-11-17) | 2026-11-17 |
+| [xBans: what's in force in memory, history append-only](#xbans-whats-in-force-in-memory-history-append-only-2026-11-18) | 2026-11-18 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -212,3 +213,19 @@ Each of these has at least two users among the plugins being built (#48's table)
 - **`hook/VaultEconomy`**: from xPlots. The class plugins use never names a Vault type, and the one that does is only loaded once Vault is enabled, so a server without Vault never sees a `NoClassDefFoundError` (the sandbox checks this on servers without Vault). The economy is looked up each time, as before.
 
 xPlots keeps its own `Wallet` (an economy or an item) and its teleport messages and bypass permission; only the general parts moved. Its jar grew about 8 KiB, mostly the warmup's damage and countdown options that xTeleport will use.
+
+## xBans: what's in force in memory, history append-only (2026-11-18)
+
+xBans (#41) is LiteBans' commands on the family's core. Staff trust a ban plugin only if nothing gets round it, so most choices are about that.
+
+- **Every ban and mute in force is in memory**, read off the server's threads when the database opens: a small set even on a big server. The join check is a couple of map lookups, with no database query, and keeps working if MySQL drops for a moment. Mutes are checked the same way on every chat message and command. Expiry is checked when read, so nothing runs on a timer.
+- **Fail closed.** A login just after a start waits up to 10 seconds for the bans to load, off the server's threads, then is turned away with a "still starting" screen. A database that can't be opened at startup is tried again every 15 seconds until it opens (the only other repeating task, and only while it's broken); until then nobody joins. Letting everyone in while the database is down would let banned players in too.
+- **Three checks.** At pre-login (the main one), when the connection finishes configuring (`PlayerConnectionValidateLoginEvent`), and at join. A ban is put in memory before anyone is kicked for it, and a player is in the online list before their join event, so a ban made at any moment of someone's connection is caught by one of the checks or by the kick.
+- **Mutes block commands by what they are, not what was typed.** A muted player's command is looked up in the command map, so an alias (`/emsg`) or a namespace (`/essentials:msg`) of a blocked command is blocked too. Only a muted player's commands are looked up.
+- **Append-only.** `punishments` rows are never changed. An unban is a row in `removals`, keyed by the punishment, so two servers can't revoke one twice. A ban replaced by a longer one is revoked with a fixed reason, and still counts toward its template's ladder. The only delete is `/prunehistory`, which staff ask for and confirm.
+- **History pages by key range.** Each viewer's list remembers where each page it showed ended, so the next page is one index range below the last id shown: as quick on page 300 as on page 1, and steady while new punishments arrive. A page jumped to directly finds its start from the index.
+- **IP keys.** An address is stored as written, or with `ips.hash` as an HMAC-SHA256 with a salt kept in `ip-salt.txt` beside the config, never in the database, so a stolen database can't be brute-forced back to addresses (all of IPv4 would take seconds against a known salt). The database records a check of the salt, so a network server with a different one says so. Turning hashing on hashes what's stored; it can't be undone. Loopback addresses are never stored or banned: behind a proxy without forwarding, every player seems to come from one, and an IP ban on it would ban everyone.
+- **Weights from permissions, remembered.** `xbans.weight.<n>` is read from a player's effective permissions (so operators get none unless given), and recorded at each join, so an offline player is held to the weight they had. Limit-group permissions default to false, so an operator isn't held to a helper's cap.
+- **Network mode on the core's change feed.** A punishment publishes its id in the same transaction; other servers read the row and apply it as if made there (memory, kicks, broadcast). Imports publish "quietly", so a thousand imported bans aren't a thousand broadcasts.
+- **LiteBans from MySQL, not H2.** Paper ships no H2 driver, and H2's file format changed between 1.4 and 2.x, so reading LiteBans' default H2 file would mean fetching the right driver at runtime. LiteBans' own import moves H2 to MySQL, so the docs send owners that way first.
+

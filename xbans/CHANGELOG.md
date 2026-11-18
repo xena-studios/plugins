@@ -1,0 +1,34 @@
+# xBans changelog
+
+## 1.0.0
+
+The first release. Drop the jar in and start the server: punishments are kept in SQLite in its own folder, with nothing to set up. Coming from LiteBans, EssentialsX or vanilla bans? `/xbans import <source>`.
+
+### Punishing
+
+- `/ban`, `/tempban`, `/ipban`, `/tempipban`, `/mute`, `/tempmute`, `/ipmute`, `/tempipmute`, `/warn` and `/kick`, and `/unban`, `/unmute` and `/unwarn` by name, uuid, IP or `#id`.
+- LiteBans' flags: `-s` silent, `-S` extra silent, `-p` public, `-g` global, `-I` by IP, `server:<name>`, and `--` before a reason that looks like a flag.
+- LiteBans' durations: `30m`, `1d2h`, `1.5h`, `2mo`, `1y`, `5 days`, `perm`.
+- Templates with escalation ladders (`/ban Steve hacking`: 7 days, then 30, then permanent), and commands the console runs at a number of warnings.
+- Staff limits: weights (`xbans.weight.<n>`), exempt players, and the longest ban and mute per group.
+- A new ban or mute replaces one on the same server only if it lasts at least as long.
+- Replaces vanilla `/ban`, `/pardon`, `/ban-ip`, `/pardon-ip`, `/kick` and `/banlist`.
+
+### Enforcing
+
+- Every ban and mute in force is kept in memory and loaded before anyone can join. Bans are checked at login, again as the connection finishes, and at join, so a ban made while someone connects still catches them.
+- Mutes block chat, the commands in `mutes.blocked-commands` by any alias or namespace, signs and books.
+- A ban screen with the reason, time left and your appeal link.
+
+### Looking up
+
+- `/history`, `/staffhistory`, `/checkban`, `/checkmute`, `/warnings`, `/banlist`, `/mutelist`, `/alts` and `/iphistory`, clickable and paged; `/prunehistory` to delete what's no longer in force.
+- Staff are told when a banned player tries to join, or a player joins who shares an IP with a banned account.
+
+### Storage, networks and privacy
+
+- SQLite or MySQL/MariaDB. Punishments are never changed or deleted: an unban is recorded beside the ban.
+- Network mode: servers sharing a MySQL database share bans within seconds, and kick a banned player from whichever server they're on.
+- IPs can be stored as salted hashes (`ips.hash`), or not at all (`ips.enabled: false`).
+- Imports from LiteBans (MySQL or MariaDB), the server's ban lists and EssentialsX.
+- A developer API: check bans and mutes from memory, punish and revoke, read history, and punishment events.

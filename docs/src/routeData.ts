@@ -1,9 +1,9 @@
 // A plugin's pages wear its accent: amber for xUtilities, green for zChat,
-// violet for xLimbo, teal for xRewind, lime for xPlots (xena-studios/brand, scripts/plugin-brand.ts). The rest
+// violet for xLimbo, teal for xRewind, lime for xPlots, tangerine for xBans (xena-studios/brand, scripts/plugin-brand.ts). The rest
 // of the site keeps the family's neutral accent from theme.css.
 import { defineRouteMiddleware } from "@astrojs/starlight/route-data";
 
-const plugins = ["xutilities", "zchat", "xlimbo", "xrewind", "xplots"];
+const plugins = ["xutilities", "zchat", "xlimbo", "xrewind", "xplots", "xbans"];
 
 export const onRequest = defineRouteMiddleware((context) => {
   const route = context.locals.starlightRoute;

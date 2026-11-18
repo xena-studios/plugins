@@ -190,7 +190,7 @@ public record XBConfig(
         Message started,
         @Comment("<source>, <added> new punishments, <skipped> already imported.") Message done,
         @Comment("<reason> it couldn't.") Message failed,
-        @Comment("A dry run that found LiteBans wildcard IP bans (192.168.1.*), which aren't imported. <count>.")
+        @Comment("A dry run or an import that found LiteBans wildcard IP bans (192.168.1.*), which aren't imported. <count>.")
         Message wildcards,
         Message running,
         @Comment("<sources>: the ones xBans knows.") Message unknownSource) {}
@@ -401,7 +401,7 @@ public record XBConfig(
                 Message.of("<prefix><success>Imported</success> <highlight><added></highlight> punishments from <source>"
                     + " (<skipped> already there)."),
                 Message.of("<prefix><error>Couldn't import:</error> <reason>"),
-                Message.of("<prefix><highlight><count></highlight> wildcard IP bans (such as 192.168.1.*) won't be imported:"
+                Message.of("<prefix><highlight><count></highlight> wildcard IP bans (such as 192.168.1.*) aren't imported:"
                     + " xBans bans whole addresses only."),
                 Message.of("<prefix><error>An import is already running."),
                 Message.of("<prefix><error>Import from what?</error> One of: <sources>"))),

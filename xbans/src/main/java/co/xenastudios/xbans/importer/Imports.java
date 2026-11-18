@@ -105,8 +105,13 @@ public final class Imports {
                     } else {
                         xbans.getLogger().info("Imported " + counts[0] + " punishments from " + source.name()
                             + " (" + counts[1] + " already there).");
-                        reply(sender, () -> messages.done().send(sender, Placeholders.text("source", source.name()),
-                            Placeholders.text("added", counts[0]), Placeholders.text("skipped", counts[1])));
+                        reply(sender, () -> {
+                            messages.done().send(sender, Placeholders.text("source", source.name()),
+                                Placeholders.text("added", counts[0]), Placeholders.text("skipped", counts[1]));
+                            if (haul.wildcards() > 0) {
+                                messages.wildcards().send(sender, Placeholders.text("count", haul.wildcards()));
+                            }
+                        });
                     }
                 });
             } catch (Source.ImportException e) {

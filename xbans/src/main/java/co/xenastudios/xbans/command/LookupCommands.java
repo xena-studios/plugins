@@ -194,7 +194,8 @@ public final class LookupCommands {
             }));
     }
 
-    // In force now: from memory by player or IP; by id from the database, so an ended one shows too.
+    // In force now: from memory by player or IP (their own lists, not a scan of everyone's);
+    // by id from the database, so an ended one shows too.
     private static CompletableFuture<List<Entry>> found(XBans xbans, Targets.Target target, PunishmentType type) {
         if (target.punishment() != null) {
             return xbans.store().find(target.punishment())
@@ -204,13 +205,9 @@ public final class LookupCommands {
         if (backend == null) {
             throw new Refusal(xbans.config().messages().notReady());
         }
-        List<Entry> found = new ArrayList<>();
-        for (Entry entry : backend.active().all(type, null, System.currentTimeMillis())) {
-            UUID id = entry.punishment().target();
-            if (target.id() != null && target.id().equals(id) || target.ip() != null && target.ip().equals(entry.ip())) {
-                found.add(entry);
-            }
-        }
+        List<Entry> found = new ArrayList<>(backend.active().onScope(type, target.id(), target.ip(), null,
+            System.currentTimeMillis()));
+        found.sort(java.util.Comparator.comparingLong(Entry::id).reversed());
         return CompletableFuture.completedFuture(found);
     }
 
@@ -274,17 +271,23 @@ public final class LookupCommands {
                     return;
                 }
                 int page = invocation.arg(0) == null ? 1 : invocation.integer(0, 1, 999_999);
-                long now = System.currentTimeMillis();
-                List<Entry> all = backend.active().all(type, xbans.config().scopes().serverName(), now);
-                if (all.isEmpty()) {
-                    messages.listEmpty().send(sender);
-                    return;
-                }
-                ChatPages.Page<Entry> shown = ChatPages.of(all, page, xbans.config().lists().perPage());
-                (type == PunishmentType.BAN ? messages.banlistHeader() : messages.mutelistHeader())
-                    .send(sender, Placeholders.text("count", all.size()));
-                ChatPages.lines(shown, entry -> messages.historyLine().chat(xbans.texts().of(entry, now)), messages.footer(),
-                    "/xbans:" + name + " {page}").forEach(sender::sendMessage);
+                String server = xbans.config().scopes().serverName();
+                // Everyone banned, sorted: off the server's threads, then the page is sent on the sender's.
+                xbans.tasks().async(() -> {
+                    long now = System.currentTimeMillis();
+                    List<Entry> all = backend.active().all(type, server, now);
+                    List<Component> lines = new ArrayList<>();
+                    if (all.isEmpty()) {
+                        lines.add(messages.listEmpty().chat());
+                    } else {
+                        ChatPages.Page<Entry> shown = ChatPages.of(all, page, xbans.config().lists().perPage());
+                        lines.add((type == PunishmentType.BAN ? messages.banlistHeader() : messages.mutelistHeader())
+                            .chat(Placeholders.text("count", all.size())));
+                        lines.addAll(ChatPages.lines(shown, entry -> messages.historyLine().chat(xbans.texts().of(entry, now)),
+                            messages.footer(), "/xbans:" + name + " {page}"));
+                    }
+                    xbans.tasks().sender(sender, () -> lines.forEach(sender::sendMessage));
+                });
             }));
     }
 

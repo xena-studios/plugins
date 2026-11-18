@@ -97,7 +97,8 @@ public final class Active {
 
     /**
      * The bans or mutes on exactly this scope that touch this player's account or this IP
-     * key, to tell whether a new one replaces them or is covered by them.
+     * key, to tell whether a new one replaces them or is covered by them; with a null scope,
+     * on any (for /checkban). Two map lookups, however many are in force.
      */
     public List<Entry> onScope(PunishmentType type, UUID player, String ip, String scope, long now) {
         Map<UUID, List<Entry>> byPlayer = type == PunishmentType.BAN ? bans : mutes;
@@ -105,14 +106,14 @@ public final class Active {
         Set<Entry> found = new LinkedHashSet<>();
         if (player != null) {
             for (Entry entry : byPlayer.getOrDefault(player, List.of())) {
-                if (entry.active(now) && entry.punishment().scope().equalsIgnoreCase(scope)) {
+                if (entry.active(now) && (scope == null || entry.punishment().scope().equalsIgnoreCase(scope))) {
                     found.add(entry);
                 }
             }
         }
         if (ip != null) {
             for (Entry entry : byIp.getOrDefault(ip, List.of())) {
-                if (entry.active(now) && entry.punishment().scope().equalsIgnoreCase(scope)) {
+                if (entry.active(now) && (scope == null || entry.punishment().scope().equalsIgnoreCase(scope))) {
                     found.add(entry);
                 }
             }

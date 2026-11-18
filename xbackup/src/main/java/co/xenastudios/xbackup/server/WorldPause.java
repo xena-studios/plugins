@@ -45,8 +45,17 @@ public final class WorldPause implements Backup.Pause {
     private final Logger logger;
     private final Duration maxPause;
     private final Runnable onWatchdog;
-    private final Set<World> paused = ConcurrentHashMap.newKeySet();
-    private volatile boolean pausedNow;
+    private final AutosaveGate<World> gate = new AutosaveGate<>(new AutosaveGate.Switch<>() {
+        @Override
+        public boolean isOn(World world) {
+            return world.isAutoSave();
+        }
+
+        @Override
+        public void set(World world, boolean on) {
+            world.setAutoSave(on);
+        }
+    });
     private volatile ScheduledTask watchdog;
     private final AtomicLong longestRegionSave = new AtomicLong();
 
@@ -61,9 +70,9 @@ public final class WorldPause implements Backup.Pause {
 
     @Override
     public long pause() throws Exception {
-        pausedNow = true;
+        gate.open();
         watchdog = Bukkit.getAsyncScheduler().runDelayed(plugin, task -> {
-            if (pausedNow) {
+            if (gate.wanted()) {
                 logger.warning("A backup kept autosave off for longer than performance.max-pause ("
                     + co.xenastudios.core.text.Durations.format(maxPause) + "), so autosave is back on and that backup"
                     + " was abandoned. Nothing was lost.");
@@ -75,49 +84,34 @@ public final class WorldPause implements Backup.Pause {
     }
 
     // One task on the main thread: autosave off, players saved, every paused world flushed.
+    // If the backup gave up waiting before it ran, it does nothing at all.
     private long pausePaper() throws Exception {
-        CompletableFuture<Long> done = new CompletableFuture<>();
-        Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
-            try {
-                long start = System.nanoTime();
-                for (World world : Bukkit.getWorlds()) {
-                    if (world.isAutoSave()) {
-                        world.setAutoSave(false);
-                        paused.add(world);
-                    }
-                }
-                Bukkit.savePlayers();
-                for (World world : paused) {
-                    world.save(true);
-                }
-                done.complete((System.nanoTime() - start) / 1_000_000);
-            } catch (Throwable e) {
-                done.completeExceptionally(e);
+        return MainThread.call(plugin, false, 120, () -> {
+            long start = System.nanoTime();
+            List<World> worlds = gate.turnOff(Bukkit.getWorlds());
+            if (worlds == null) {
+                return 0L;
             }
+            Bukkit.savePlayers();
+            for (World world : worlds) {
+                world.save(true);
+            }
+            return (System.nanoTime() - start) / 1_000_000;
         });
-        return done.get(2, TimeUnit.MINUTES);
     }
 
     private long pauseFolia() throws Exception {
-        for (World world : Bukkit.getWorlds()) {
-            if (world.isAutoSave()) {
-                world.setAutoSave(false);
-                paused.add(world);
-            }
+        List<World> worlds = gate.turnOff(Bukkit.getWorlds());
+        if (worlds == null) {
+            throw new java.util.concurrent.CancellationException("the pause ended before it began");
         }
-        CompletableFuture<Void> players = new CompletableFuture<>();
-        Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
-            try {
-                Bukkit.savePlayers();
-                players.complete(null);
-            } catch (Throwable e) {
-                players.completeExceptionally(e);
-            }
+        MainThread.call(plugin, true, 60, () -> {
+            Bukkit.savePlayers();
+            return null;
         });
-        players.get(1, TimeUnit.MINUTES);
         longestRegionSave.set(0);
         List<CompletableFuture<Void>> saves = new ArrayList<>();
-        for (World world : paused) {
+        for (World world : worlds) {
             saves.addAll(flushRegions(world));
         }
         CompletableFuture.allOf(saves.toArray(CompletableFuture[]::new)).get(5, TimeUnit.MINUTES);
@@ -166,43 +160,26 @@ public final class WorldPause implements Backup.Pause {
         return saves;
     }
 
+    /**
+     * Turns autosave back on for every world this pause turned off. Any thread, any number of
+     * times: also from the watchdog, and on disable (where it acts right away, on the calling
+     * thread, since no task would run any more).
+     */
     @Override
     public void resume() {
-        if (!pausedNow) {
-            return;
-        }
-        pausedNow = false;
         ScheduledTask task = watchdog;
         if (task != null) {
             task.cancel();
         }
-        List<World> worlds = List.copyOf(paused);
-        paused.clear();
-        if (worlds.isEmpty()) {
-            return;
-        }
-        if (folia || !plugin.isEnabled()) {
-            worlds.forEach(world -> world.setAutoSave(true));
-            return;
-        }
-        Bukkit.getGlobalRegionScheduler().execute(plugin, () -> worlds.forEach(world -> world.setAutoSave(true)));
+        gate.close();
     }
 
     /** On disable: turns autosave back on right now, on this thread, if a backup left it off. */
     public void resumeNow() {
-        if (!pausedNow) {
-            return;
-        }
-        pausedNow = false;
-        ScheduledTask task = watchdog;
-        if (task != null) {
-            task.cancel();
-        }
-        paused.forEach(world -> world.setAutoSave(true));
-        paused.clear();
+        resume();
     }
 
     public boolean isPaused() {
-        return pausedNow;
+        return gate.wanted();
     }
 }

@@ -344,14 +344,7 @@ public final class Engine {
     }
 
     private Backup.Plan plan(Settings now, String reason) throws Exception {
-        CompletableFuture<List<Path>> worlds = new CompletableFuture<>();
-        Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
-            try {
-                worlds.complete(Sources.worldFolders());
-            } catch (Throwable e) {
-                worlds.completeExceptionally(e);
-            }
-        });
+        List<Path> worldFolders = MainThread.call(plugin, plugin.isFolia(), 60, Sources::worldFolders);
         List<Path> extra = new ArrayList<>();
         List<String> excludes = new ArrayList<>(now.excludes());
         for (Map.Entry<Plugin, List<ApiSource>> entry : sources.entrySet()) {
@@ -364,7 +357,7 @@ public final class Engine {
                 excludes.addAll(source.excludes());
             }
         }
-        Sources.Resolved resolved = Sources.resolve(root, now.sources(), worlds.get(1, TimeUnit.MINUTES),
+        Sources.Resolved resolved = Sources.resolve(root, now.sources(), worldFolders,
             plugin.getServer().getPluginsFolder().toPath(), extra, logger);
         Set<Path> skip = new HashSet<>();
         skip.add(now.repository());
@@ -851,17 +844,11 @@ public final class Engine {
         if (BackupStartEvent.getHandlerList().getRegisteredListeners().length == 0) {
             return true;
         }
-        CompletableFuture<Boolean> go = new CompletableFuture<>();
-        Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
-            try {
-                BackupStartEvent event = new BackupStartEvent(reason);
-                Bukkit.getPluginManager().callEvent(event);
-                go.complete(!event.isCancelled());
-            } catch (Throwable e) {
-                go.completeExceptionally(e);
-            }
+        return MainThread.call(plugin, plugin.isFolia(), 30, () -> {
+            BackupStartEvent event = new BackupStartEvent(reason);
+            Bukkit.getPluginManager().callEvent(event);
+            return !event.isCancelled();
         });
-        return go.get(30, TimeUnit.SECONDS);
     }
 
     private void fireFinished(Snapshot snapshot) {
@@ -880,7 +867,7 @@ public final class Engine {
         if (message.isEmpty()) {
             return;
         }
-        Bukkit.getGlobalRegionScheduler().execute(plugin, () -> Bukkit.broadcast(time == null ? message.chat()
+        MainThread.run(plugin, plugin.isFolia(), () -> Bukkit.broadcast(time == null ? message.chat()
             : message.chat(co.xenastudios.core.text.Placeholders.text("time", time))));
     }
 

@@ -1,3 +1,7 @@
 # Live-server checks for the core. CI runs every plugin's boot-checks.txt.
 run: sandbox selftest
 expect: SELFTEST PASS
+
+# Other plugins can use a plugin's API (xena.api): a plugin.yml plugin and a Paper plugin.
+logged: API CONSUMER OK
+logged: PAPER API CONSUMER OK

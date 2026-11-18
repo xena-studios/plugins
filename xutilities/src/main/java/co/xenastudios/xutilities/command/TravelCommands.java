@@ -1,6 +1,7 @@
 package co.xenastudios.xutilities.command;
 
 import co.xenastudios.core.Setup;
+import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.task.Tasks;
 import co.xenastudios.xutilities.config.Settings;
 import co.xenastudios.xutilities.config.XConfig;
@@ -42,7 +43,7 @@ final class TravelCommands {
     static void register(Setup setup, Tasks tasks, XConfig.Commands commands, BackTracker tracker) {
         Settings.Top top = commands.top();
         if (top.enabled()) {
-            setup.command(Specs.named("top", top)
+            setup.command(CommandSpec.named("top", top)
                 .description("Teleport to the highest block above you.")
                 .executes(invocation -> {
                     Player player = invocation.player();
@@ -71,7 +72,7 @@ final class TravelCommands {
         Settings.Back back = commands.back();
         if (back.enabled()) {
             setup.module("back", () -> tracker);
-            setup.command(Specs.named("back", back)
+            setup.command(CommandSpec.named("back", back)
                 .description("Go back to where you were before your last teleport, or where you died.")
                 .executes(invocation -> {
                     Player player = invocation.player();

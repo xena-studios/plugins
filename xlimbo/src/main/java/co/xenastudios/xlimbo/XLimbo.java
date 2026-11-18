@@ -92,9 +92,7 @@ public class XLimbo extends XenaPlugin<XLConfig> {
         if (!settings.enabled()) {
             return;
         }
-        setup.command(CommandSpec.named("join")
-            .aliases(settings.aliases())
-            .permission(settings.permission())
+        setup.command(CommandSpec.named("join", settings)
             .permissionDefault(PermissionDefault.TRUE)
             .description("Go back to the main server.")
             .executes(invocation -> {

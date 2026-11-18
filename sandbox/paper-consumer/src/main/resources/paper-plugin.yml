@@ -1,0 +1,12 @@
+# A Paper plugin. It only sees another plugin's classes with join-classpath.
+name: SandboxPaperConsumer
+version: 0.0.0
+main: co.xenastudios.sandbox.paperconsumer.PaperConsumerPlugin
+api-version: "1.21.11"
+folia-supported: true
+dependencies:
+  server:
+    Sandbox:
+      load: BEFORE
+      required: true
+      join-classpath: true

@@ -1,5 +1,6 @@
 package co.xenastudios.zchat.config;
 
+import co.xenastudios.core.command.Toggle;
 import co.xenastudios.core.config.Comment;
 import co.xenastudios.core.config.Range;
 import co.xenastudios.core.text.Message;

@@ -30,6 +30,8 @@ rootProject.name = "xena-plugins"
 include("core")
 // A plugin that is never released: it boots the core on a real server in CI.
 include("sandbox")
+// Its API, and two plugins that use it, so CI checks that other plugins can use an API.
+include("sandbox:api", "sandbox:consumer", "sandbox:paper-consumer")
 include("xutilities")
 include("zchat")
 include("xlimbo")

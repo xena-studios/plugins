@@ -1,6 +1,7 @@
 package co.xenastudios.xutilities.command;
 
 import co.xenastudios.core.Setup;
+import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.command.Completions;
 import co.xenastudios.core.command.Invocation;
 import co.xenastudios.core.task.Tasks;
@@ -32,7 +33,7 @@ final class GamemodeCommands {
         modes.forEach((mode, settings) -> {
             String name = name(mode);
             setup.permission(settings.permissionOthers(), PermissionDefault.OP);
-            setup.command(Specs.named(name, settings)
+            setup.command(CommandSpec.named(name, settings)
                 .description("Switch to " + name + " mode.")
                 .usage("/" + name + " [player]")
                 .completes((sender, args) -> args.length == 1
@@ -45,7 +46,7 @@ final class GamemodeCommands {
             return;
         }
         setup.permission(gamemode.permissionOthers(), PermissionDefault.OP);
-        setup.command(Specs.named("gamemode", gamemode)
+        setup.command(CommandSpec.named("gamemode", gamemode)
             .description("Switch gamemode.")
             .usage("/gamemode <" + String.join("|", modes.keySet().stream().map(GamemodeCommands::name).toList()) + "> [player]")
             .completes((sender, args) -> switch (args.length) {

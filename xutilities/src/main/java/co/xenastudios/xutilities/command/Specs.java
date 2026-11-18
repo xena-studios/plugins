@@ -1,11 +1,9 @@
 package co.xenastudios.xutilities.command;
 
-import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.command.Invocation;
 import co.xenastudios.core.task.Tasks;
 import co.xenastudios.core.text.Message;
 import co.xenastudios.core.text.Placeholders;
-import co.xenastudios.xutilities.config.Toggle;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -16,11 +14,6 @@ import org.bukkit.entity.Player;
 final class Specs {
 
     private Specs() {}
-
-    /** A command with its settings' name, aliases and permission. */
-    static CommandSpec.Builder named(String name, Toggle settings) {
-        return CommandSpec.named(name).aliases(settings.aliases()).permission(settings.permission());
-    }
 
     /**
      * Changes a player on their own thread, then tells them with {@code self}. When

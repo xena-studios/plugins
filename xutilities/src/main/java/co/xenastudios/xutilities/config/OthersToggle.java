@@ -1,5 +1,7 @@
 package co.xenastudios.xutilities.config;
 
+import co.xenastudios.core.command.Toggle;
+
 /** A command with a {@code [player]} form. */
 public interface OthersToggle extends Toggle {
 

@@ -2,6 +2,7 @@ package co.xenastudios.xutilities.command;
 
 import co.xenastudios.core.Setup;
 import co.xenastudios.core.command.CommandFailure;
+import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.command.Completer;
 import co.xenastudios.core.command.Completions;
 import co.xenastudios.core.command.Invocation;
@@ -38,7 +39,7 @@ final class PlayerCommands {
         Settings.Fly fly = commands.fly();
         if (fly.enabled()) {
             declareOthers(setup, fly);
-            setup.command(Specs.named("fly", fly)
+            setup.command(CommandSpec.named("fly", fly)
                 .description("Turn flight on or off.")
                 .usage("/fly [player]")
                 .completes(playerAt(0, fly))
@@ -62,7 +63,7 @@ final class PlayerCommands {
         Settings.Speed speed = commands.speed();
         if (speed.enabled()) {
             declareOthers(setup, speed);
-            setup.command(Specs.named("speed", speed)
+            setup.command(CommandSpec.named("speed", speed)
                 .description("Set your fly or walk speed.")
                 .usage("/speed <" + speed.min() + "-" + speed.max() + "> [player]")
                 .completes((sender, args) -> switch (args.length) {
@@ -96,7 +97,7 @@ final class PlayerCommands {
         Settings.PlayerCommand rotation = commands.setrotation();
         if (rotation.enabled()) {
             declareOthers(setup, rotation);
-            setup.command(Specs.named("setrotation", rotation)
+            setup.command(CommandSpec.named("setrotation", rotation)
                 .description("Set which way a player faces.")
                 .usage("/setrotation <yaw> <pitch> [player]")
                 .completes((sender, args) -> args.length == 3 ? Completions.players(sender, args[2], rotation.permissionOthers()) : List.of())
@@ -114,7 +115,7 @@ final class PlayerCommands {
         Settings.PlayerCommand ping = commands.ping();
         if (ping.enabled()) {
             declareOthers(setup, ping);
-            setup.command(Specs.named("ping", ping)
+            setup.command(CommandSpec.named("ping", ping)
                 .permissionDefault(PermissionDefault.TRUE)
                 .description("Show network latency.")
                 .usage("/ping [player]")
@@ -133,7 +134,7 @@ final class PlayerCommands {
         Settings.Heal heal = commands.heal();
         if (heal.enabled()) {
             declareOthers(setup, heal);
-            setup.command(Specs.named("heal", heal)
+            setup.command(CommandSpec.named("heal", heal)
                 .description("Restore health.")
                 .usage("/heal [player]")
                 .completes(playerAt(0, heal))
@@ -144,7 +145,7 @@ final class PlayerCommands {
         Settings.PlayerCommand feed = commands.feed();
         if (feed.enabled()) {
             declareOthers(setup, feed);
-            setup.command(Specs.named("feed", feed)
+            setup.command(CommandSpec.named("feed", feed)
                 .description("Restore hunger.")
                 .usage("/feed [player]")
                 .completes(playerAt(0, feed))
@@ -155,7 +156,7 @@ final class PlayerCommands {
         Settings.Repair repair = commands.repair();
         if (repair.enabled()) {
             declareOthers(setup, repair);
-            setup.command(Specs.named("repair", repair)
+            setup.command(CommandSpec.named("repair", repair)
                 .description("Repair the held item, or with all, the whole inventory.")
                 .usage("/repair [all] [player]")
                 .completes((sender, args) -> switch (args.length) {
@@ -186,7 +187,7 @@ final class PlayerCommands {
         Settings.Clear clear = commands.clear();
         if (clear.enabled()) {
             declareOthers(setup, clear);
-            setup.command(Specs.named("clear", clear)
+            setup.command(CommandSpec.named("clear", clear)
                 .description("Empty an inventory.")
                 .usage("/clear [player]")
                 .completes(playerAt(0, clear))
@@ -205,7 +206,7 @@ final class PlayerCommands {
         Settings.EnderChest enderChest = commands.enderchest();
         if (enderChest.enabled()) {
             declareOthers(setup, enderChest);
-            setup.command(Specs.named("enderchest", enderChest)
+            setup.command(CommandSpec.named("enderchest", enderChest)
                 .description("Open your Ender Chest, or another player's.")
                 .usage("/enderchest [player]")
                 .completes(playerAt(0, enderChest))

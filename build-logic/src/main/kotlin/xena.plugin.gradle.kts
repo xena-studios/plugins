@@ -32,6 +32,15 @@ paperPluginYaml {
     foliaSupported = xena.folia
 }
 
+// A plugin with a public API (<plugin>/api, on the xena.api convention) ships it in
+// its jar, so other plugins find the API classes in the plugin they depend on.
+val api = findProject("${project.path}:api")
+if (api != null) {
+    dependencies {
+        implementation(api)
+    }
+}
+
 tasks.jar {
     archiveClassifier = "plain"
 }
@@ -44,8 +53,13 @@ tasks.shadowJar {
     // bStats insists on being relocated, and into the plugin's own package so
     // each plugin reports on its own.
     relocate("org.bstats", "co.xenastudios.${project.name}.bstats")
-    // Drop core classes the plugin never uses.
-    minimize()
+    // Drop core classes the plugin never uses. The API stays whole, unrelocated:
+    // other plugins use the parts this one doesn't.
+    minimize {
+        if (api != null) {
+            exclude(project(api.path))
+        }
+    }
 }
 
 tasks.assemble {

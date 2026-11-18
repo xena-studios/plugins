@@ -38,6 +38,11 @@ public record CommandSpec(
         return new Builder(name);
     }
 
+    /** A command with its settings' aliases and permission. */
+    public static Builder named(String name, Toggle settings) {
+        return new Builder(name).aliases(settings.aliases()).permission(settings.permission());
+    }
+
     public static final class Builder {
 
         private final String name;

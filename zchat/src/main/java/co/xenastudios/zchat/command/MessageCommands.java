@@ -2,6 +2,7 @@ package co.xenastudios.zchat.command;
 
 import co.xenastudios.core.Setup;
 import co.xenastudios.core.command.CommandFailure;
+import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.command.Completions;
 import co.xenastudios.core.command.Invocation;
 import co.xenastudios.core.text.Placeholders;
@@ -38,7 +39,7 @@ public final class MessageCommands {
 
         Settings.Msg msg = settings.msg();
         if (msg.enabled()) {
-            setup.command(ChatCommands.named("msg", msg)
+            setup.command(CommandSpec.named("msg", msg)
                 .permissionDefault(PermissionDefault.TRUE)
                 .description("Send a player a private message.")
                 .usage("/msg <player> <message>")
@@ -56,7 +57,7 @@ public final class MessageCommands {
 
         Settings.Reply reply = settings.reply();
         if (reply.enabled()) {
-            setup.command(ChatCommands.named("reply", reply)
+            setup.command(CommandSpec.named("reply", reply)
                 .permissionDefault(PermissionDefault.TRUE)
                 .description("Answer your last private message.")
                 .usage("/reply <message>")
@@ -76,7 +77,7 @@ public final class MessageCommands {
 
         Settings.SocialSpy spy = settings.socialspy();
         if (spy.enabled()) {
-            setup.command(ChatCommands.named("socialspy", spy)
+            setup.command(CommandSpec.named("socialspy", spy)
                 .description("See every private message.")
                 .executes(invocation -> {
                     Player player = invocation.player();

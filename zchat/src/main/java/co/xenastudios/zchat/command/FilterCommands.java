@@ -1,6 +1,7 @@
 package co.xenastudios.zchat.command;
 
 import co.xenastudios.core.Setup;
+import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.command.Completions;
 import co.xenastudios.core.command.Invocation;
 import co.xenastudios.core.text.Message;
@@ -35,7 +36,7 @@ public final class FilterCommands {
         if (!settings.enabled()) {
             return;
         }
-        setup.command(ChatCommands.named("filter", settings)
+        setup.command(CommandSpec.named("filter", settings)
             .description("Add, remove and list chat filter words, or test a message.")
             .usage("/filter <add|remove|list|test> [word or message]")
             .completes((sender, args) -> {

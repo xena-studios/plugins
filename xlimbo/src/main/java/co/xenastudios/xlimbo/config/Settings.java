@@ -1,5 +1,6 @@
 package co.xenastudios.xlimbo.config;
 
+import co.xenastudios.core.command.Toggle;
 import co.xenastudios.core.config.Comment;
 import co.xenastudios.core.config.Key;
 import co.xenastudios.core.config.Range;
@@ -89,7 +90,7 @@ public final class Settings {
         boolean enabled, List<String> aliases, String permission,
         @Comment("Seconds between uses, per player, so nobody can spam your proxy.") @Range(min = 0, max = 3600) int cooldownSeconds,
         @Comment("<server> is main-server.") Message messageSending,
-        @Comment("<seconds> is the whole seconds left.") Message messageCooldown) {}
+        @Comment("<seconds> is the whole seconds left.") Message messageCooldown) implements Toggle {}
 
     public record ActionBar(
         boolean enabled,

@@ -1,0 +1,7 @@
+# An ordinary plugin.yml plugin, as most plugins using a Xena API will be.
+name: SandboxConsumer
+version: 0.0.0
+main: co.xenastudios.sandbox.consumer.ConsumerPlugin
+api-version: "1.21.11"
+folia-supported: true
+depend: [Sandbox]

@@ -1,9 +1,11 @@
 package co.xenastudios.sandbox;
 
+import co.xenastudios.sandbox.api.SandboxApi;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.util.ArrayList;
 import java.util.List;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -14,6 +16,9 @@ public final class SandboxPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // For the consumer plugins, which check that other plugins can use an API.
+        SandboxApi api = () -> "OK";
+        getServer().getServicesManager().register(SandboxApi.class, api, this, ServicePriority.Normal);
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
             event.registrar().register(
                 Commands.literal("sandbox")

@@ -337,7 +337,7 @@ public final class BackupCommand {
         say(sender, "<gray>Copying to " + escape(name) + "...</gray>");
         reply(sender, engine.push(name), result -> say(sender, "<success>Copied</success> to " + escape(name) + ": "
             + result.filesSent() + " files (" + Sizes.format(result.bytesSent()) + ") sent, " + result.filesDeleted()
-            + " removed."));
+            + " removed." + (result.held() == null ? "" : " <error>Kept some files: " + escape(result.held()) + ".</error>")));
     }
 
     private static void link(Engine engine, Invocation invocation) {

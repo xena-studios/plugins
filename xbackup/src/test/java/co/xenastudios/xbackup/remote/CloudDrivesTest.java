@@ -339,8 +339,8 @@ class CloudDrivesTest {
             Snapshot snapshot = Backup.run(repository, new Backup.Plan(server, List.of("world"), List.of("server.properties"),
                 List.of("**/session.lock"), Set.of(), Map.of(), "drive", "test", dir.resolve("temp"), Throttle.NONE,
                 Session.Options.DEFAULTS), Backup.Pause.NONE, Databases.sqlite(), () -> false, step -> {}).snapshot();
-            Mirror.push(repository.backend(), remote, () -> false, step -> {});
-            assertEquals(0, Mirror.push(repository.backend(), remote, () -> false, step -> {}).filesSent());
+            Mirror.push(repository, remote, () -> false, step -> {});
+            assertEquals(0, Mirror.push(repository, remote, () -> false, step -> {}).filesSent());
             try (Repository cached = Fetch.metadata(remote, dir.resolve("cache"), step -> {})) {
                 List<Restore.Item> items = Restore.expand(cached, snapshot, List.of("world"), Set.of());
                 Fetch.data(remote, cached, items, step -> {});

@@ -114,7 +114,7 @@ public final class Maintenance {
             kept.removeAll(removed);
         }
         for (Snapshot snapshot : removed) {
-            repository.deleteSnapshot(snapshot.id());
+            repository.deleteSnapshot(snapshot);
         }
         return new Forgotten(removed, kept.size());
     }

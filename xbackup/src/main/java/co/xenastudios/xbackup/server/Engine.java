@@ -576,7 +576,7 @@ public final class Engine {
         return submit("removing a backup", () -> {
             Repository repo = repository();
             try (Repository.Lock lock = repo.lock(true)) {
-                repo.deleteSnapshot(snapshot.id());
+                repo.deleteSnapshot(snapshot);
                 refresh();
                 return snapshot;
             }
@@ -670,29 +670,42 @@ public final class Engine {
 
     // ---------------------------------------------------------------- remotes
 
+    // After a backup, under the shared lock so a command-line restore or check can run beside
+    // it but nothing deletes from the repository meanwhile.
     private void syncRemotes() {
         Map<String, RemoteConfig> remotes = remoteSettings;
-        for (Map.Entry<String, RemoteConfig> entry : remotes.entrySet()) {
-            if (!entry.getValue().enabled() || stopping.get()) {
-                continue;
-            }
-            String name = entry.getKey();
-            progress("copying", name);
-            long start = System.nanoTime();
-            try (Backend remote = Remotes.open(name, entry.getValue(), remotesContext())) {
-                Mirror.Result result = Mirror.push(repository.backend(), remote, stopping::get,
-                    step -> progress("copying to " + name, step));
-                remoteStatus.put(name, "up to date (" + Sizes.format(result.bytesSent()) + " sent in "
-                    + seconds((System.nanoTime() - start) / 1_000_000) + ", " + java.time.LocalTime.now().withNano(0) + ")");
-                if (result.filesSent() > 0 || result.filesDeleted() > 0) {
-                    logger.info("Copied to " + name + ": " + result.filesSent() + " files (" + Sizes.format(result.bytesSent())
-                        + ") sent, " + result.filesDeleted() + " removed.");
+        if (remotes.values().stream().noneMatch(RemoteConfig::enabled)) {
+            return;
+        }
+        try (Repository.Lock lock = repository.lock(false)) {
+            for (Map.Entry<String, RemoteConfig> entry : remotes.entrySet()) {
+                if (!entry.getValue().enabled() || stopping.get()) {
+                    continue;
                 }
-            } catch (Exception e) {
-                String message = describe(e);
-                remoteStatus.put(name, "failed: " + message);
-                logger.warning("Couldn't copy the backups to " + name + ": " + message);
+                String name = entry.getKey();
+                progress("copying", name);
+                long start = System.nanoTime();
+                try (Backend remote = Remotes.open(name, entry.getValue(), remotesContext())) {
+                    Mirror.Result result = Mirror.push(repository, remote, stopping::get,
+                        step -> progress("copying to " + name, step));
+                    remoteStatus.put(name, "up to date (" + Sizes.format(result.bytesSent()) + " sent in "
+                        + seconds((System.nanoTime() - start) / 1_000_000) + ", " + java.time.LocalTime.now().withNano(0) + ")"
+                        + (result.held() == null ? "" : "; kept some files: see the console"));
+                    if (result.filesSent() > 0 || result.filesDeleted() > 0) {
+                        logger.info("Copied to " + name + ": " + result.filesSent() + " files (" + Sizes.format(result.bytesSent())
+                            + ") sent, " + result.filesDeleted() + " removed.");
+                    }
+                    if (result.held() != null) {
+                        logger.warning("Copying to " + name + ": " + result.held() + ".");
+                    }
+                } catch (Exception e) {
+                    String message = describe(e);
+                    remoteStatus.put(name, "failed: " + message);
+                    logger.warning("Couldn't copy the backups to " + name + ": " + message);
+                }
             }
+        } catch (IOException e) {
+            logger.warning("Couldn't copy the backups to the remotes: " + describe(e));
         }
     }
 
@@ -705,9 +718,12 @@ public final class Engine {
             }
             Repository repo = repository();
             try (Repository.Lock lock = repo.lock(false); Backend remote = Remotes.open(name, settings, remotesContext())) {
-                Mirror.Result result = Mirror.push(repo.backend(), remote, stopping::get,
+                Mirror.Result result = Mirror.push(repo, remote, stopping::get,
                     step -> progress("copying to " + name, step));
                 remoteStatus.put(name, "up to date (" + java.time.LocalTime.now().withNano(0) + ")");
+                if (result.held() != null) {
+                    logger.warning("Copying to " + name + ": " + result.held() + ".");
+                }
                 return result;
             } catch (Exception e) {
                 remoteStatus.put(name, "failed: " + describe(e));

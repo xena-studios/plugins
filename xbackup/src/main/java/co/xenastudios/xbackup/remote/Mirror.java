@@ -1,15 +1,22 @@
 package co.xenastudios.xbackup.remote;
 
 import co.xenastudios.xbackup.store.Backend;
+import co.xenastudios.xbackup.store.Hash;
+import co.xenastudios.xbackup.store.Pack;
+import co.xenastudios.xbackup.store.Repository;
+import co.xenastudios.xbackup.store.Snapshot;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -19,6 +26,19 @@ import java.util.function.Consumer;
  * skipped, so an interrupted copy picks up where it stopped. Packs go first, then index
  * files, then snapshots, so a remote never lists a snapshot whose data isn't there yet; and
  * deletions run the other way round.
+ *
+ * <p>Deleting is where a copy can do harm: the remote is the copy that's needed when the
+ * local repository is damaged, rolled back with its disk, or restored from an old copy. So the
+ * remote only loses what this repository removed on purpose:
+ *
+ * <ul>
+ * <li>a snapshot only if the repository's {@code forgotten} list has it (retention or {@code
+ *     /backup forget} removed it), and it's older than the newest local snapshot;
+ * <li>packs and index files only if every snapshot left on the remote is also here, and no
+ *     local index lists the pack;
+ * <li>nothing at all if the local repository has no snapshots while the remote has some, or
+ *     if a local index lists a pack that's missing here (local damage).
+ * </ul>
  */
 public final class Mirror {
 
@@ -26,11 +46,16 @@ public final class Mirror {
 
     private Mirror() {}
 
-    /** What a copy did. */
-    public record Result(int filesSent, long bytesSent, int filesDeleted) {}
+    /**
+     * What a copy did.
+     *
+     * @param held why some deletions were held back, for the console; null if none were
+     */
+    public record Result(int filesSent, long bytesSent, int filesDeleted, String held) {}
 
-    public static Result push(Backend from, Backend to, BooleanSupplier cancelled, Consumer<String> progress)
+    public static Result push(Repository local, Backend to, BooleanSupplier cancelled, Consumer<String> progress)
         throws IOException {
+        Backend from = local.backend();
         checkSameRepository(from, to);
         Map<String, Long> source = new HashMap<>();
         for (Backend.FileInfo file : from.list("")) {
@@ -58,9 +83,9 @@ public final class Mirror {
                 throw new IOException("stopped");
             }
             progress.accept(sent + " of " + send.size() + " files, " + percent(bytes, total));
-            Path local = from.localFile(name);
-            if (local != null) {
-                to.put(name, local);
+            Path file = from.localFile(name);
+            if (file != null) {
+                to.put(name, file);
             } else {
                 Path temp = Files.createTempFile("xbackup", ".part");
                 try (InputStream in = from.get(name)) {
@@ -73,12 +98,8 @@ public final class Mirror {
             sent++;
             bytes += source.get(name);
         }
-        List<String> remove = new ArrayList<>();
-        for (String name : target.keySet()) {
-            if (rank(name) > 0 && !source.containsKey(name)) {
-                remove.add(name);
-            }
-        }
+        Deletions deletions = deletions(local, source, target);
+        List<String> remove = new ArrayList<>(deletions.names());
         remove.sort(Comparator.comparingInt(Mirror::rank).reversed());
         for (String name : remove) {
             if (cancelled.getAsBoolean()) {
@@ -86,13 +107,101 @@ public final class Mirror {
             }
             to.delete(name);
         }
-        return new Result(sent, bytes, remove.size());
+        return new Result(sent, bytes, remove.size(), deletions.held());
+    }
+
+    /** What a copy may delete from the remote, and why it held back the rest. */
+    record Deletions(List<String> names, String held) {}
+
+    static Deletions deletions(Repository local, Map<String, Long> source, Map<String, Long> target) throws IOException {
+        List<String> remoteOnly = new ArrayList<>();
+        int remoteSnapshots = 0;
+        for (String name : target.keySet()) {
+            if (name.startsWith("snapshots/")) {
+                remoteSnapshots++;
+            }
+            if (rank(name) > 0 && !source.containsKey(name)) {
+                remoteOnly.add(name);
+            }
+        }
+        if (remoteOnly.isEmpty()) {
+            return new Deletions(List.of(), null);
+        }
+        List<String> problems = new ArrayList<>();
+        List<Snapshot> snapshots = local.snapshots(problems);
+        if (snapshots.isEmpty() || !problems.isEmpty()) {
+            return new Deletions(List.of(), remoteSnapshots == 0 ? null : snapshots.isEmpty()
+                ? "this server's repository has no backups and the remote has " + remoteSnapshots
+                    + ", so nothing was removed from the remote"
+                : "a local backup can't be read (" + problems.get(0) + "), so nothing was removed from the remote");
+        }
+        // An index listing a pack that isn't here: the local repository is damaged.
+        Set<Hash> indexed;
+        try {
+            indexed = new HashSet<>(local.index().packs());
+        } catch (IOException e) {
+            return new Deletions(List.of(), "the local index can't be read (" + e.getMessage()
+                + "), so nothing was removed from the remote. /backup verify full, then /backup repair");
+        }
+        for (Hash pack : indexed) {
+            if (!source.containsKey(Pack.fileName(pack))) {
+                return new Deletions(List.of(), "the local repository is missing pack " + pack.shortHex()
+                    + ", which its index lists, so nothing was removed from the remote. /backup verify full, then"
+                    + " /backup repair (or restore from the remote)");
+            }
+        }
+        Instant newest = snapshots.get(snapshots.size() - 1).time();
+        Map<Hash, Long> forgotten = local.forgotten();
+        Set<String> localSnapshots = new HashSet<>();
+        for (Snapshot snapshot : snapshots) {
+            localSnapshots.add(snapshot.id().hex());
+        }
+        List<String> names = new ArrayList<>();
+        Set<String> kept = new HashSet<>();
+        int unexplained = 0;
+        for (String name : remoteOnly) {
+            if (!name.startsWith("snapshots/")) {
+                continue;
+            }
+            String hex = name.substring("snapshots/".length());
+            Long time = Hash.isHex(hex) ? forgotten.get(Hash.parse(hex)) : null;
+            if (time != null && time < newest.toEpochMilli()) {
+                names.add(name);
+            } else {
+                kept.add(hex);
+                if (time == null) {
+                    unexplained++;
+                }
+            }
+        }
+        for (String name : remoteOnly) {
+            if (name.startsWith("keep/") && !kept.contains(name.substring("keep/".length()))) {
+                names.add(name);
+            }
+        }
+        if (!kept.isEmpty()) {
+            // Those snapshots need their packs: leave every pack and index file alone.
+            return new Deletions(names, unexplained == 0 ? null : "the remote has " + unexplained + " backup"
+                + (unexplained == 1 ? "" : "s") + " this server's repository doesn't, and didn't remove on purpose"
+                + " (a damaged, rolled-back or restored disk?), so they and their data were left on the remote");
+        }
+        for (String name : remoteOnly) {
+            if (name.startsWith("data/")) {
+                Hash pack = Pack.idOf(name);
+                if (pack == null || !indexed.contains(pack)) {
+                    names.add(name);
+                }
+            } else if (name.startsWith("index/")) {
+                names.add(name);
+            }
+        }
+        return new Deletions(names, null);
     }
 
     /**
      * Refuses to copy onto a remote that holds a different repository. Copying deletes what
-     * the source no longer has, so after the local repository was lost and started again,
-     * copying would otherwise wipe the remote's backups: the very copy that's needed.
+     * the source removed, so after the local repository was lost and started again, copying
+     * would otherwise wipe the remote's backups: the very copy that's needed.
      */
     static void checkSameRepository(Backend from, Backend to) throws IOException {
         String local = repositoryId(from);
@@ -101,9 +210,11 @@ public final class Mirror {
             remote = repositoryId(to);
         } catch (java.nio.file.NoSuchFileException e) {
             // A new, empty remote: fine.
-            if (!to.list("snapshots/").isEmpty() || !to.list("data/").isEmpty()) {
-                throw new IOException(to.describe() + " holds backup data but no repository config, so it isn't"
-                    + " overwritten. Point the remote at an empty folder, or restore from it first.");
+            for (String prefix : List.of("snapshots/", "data/", "index/", "keep/")) {
+                if (!to.list(prefix).isEmpty()) {
+                    throw new IOException(to.describe() + " holds backup data but no repository config, so it isn't"
+                        + " overwritten. Point the remote at an empty folder, or restore from it first.");
+                }
             }
             return;
         }

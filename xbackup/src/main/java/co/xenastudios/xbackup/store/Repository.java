@@ -31,6 +31,7 @@ import java.util.Set;
  * index/ab12...          index files
  * snapshots/ab12...      snapshots
  * keep/ab12...           snapshots pinned so retention never removes them
+ * forgotten              snapshots removed on purpose, so remotes lose them too (never copied)
  * lock                   held while the repository is in use (folders only)
  * </pre>
  *
@@ -345,10 +346,61 @@ public final class Repository implements AutoCloseable {
         return snapshot.withId(snapshotId);
     }
 
-    /** Removes a snapshot. Its data stays until garbage collection finds nothing else uses it. */
-    public void deleteSnapshot(Hash snapshotId) throws IOException {
-        backend.delete(Snapshot.fileName(snapshotId));
-        backend.delete("keep/" + snapshotId.hex());
+    /**
+     * Removes a snapshot. Its data stays until garbage collection finds nothing else uses it.
+     * It's noted in {@value #FORGOTTEN} first, so copies on remotes are removed too: a remote
+     * only loses a snapshot this repository chose to forget, never one it merely lacks.
+     */
+    public void deleteSnapshot(Snapshot snapshot) throws IOException {
+        long now = System.currentTimeMillis();
+        StringBuilder text = new StringBuilder();
+        for (Map.Entry<Hash, long[]> entry : readForgotten().entrySet()) {
+            if (now - entry.getValue()[1] <= FORGOTTEN_KEEP_MILLIS && !entry.getKey().equals(snapshot.id())) {
+                text.append(entry.getKey().hex()).append(' ').append(entry.getValue()[0]).append(' ')
+                    .append(entry.getValue()[1]).append('\n');
+            }
+        }
+        text.append(snapshot.id().hex()).append(' ').append(snapshot.time().toEpochMilli()).append(' ').append(now)
+            .append('\n');
+        backend.put(FORGOTTEN, text.toString().getBytes(StandardCharsets.UTF_8));
+        backend.delete(Snapshot.fileName(snapshot.id()));
+        backend.delete("keep/" + snapshot.id().hex());
+    }
+
+    /**
+     * Snapshots removed on purpose (retention, {@code /backup forget}), noted for copying the
+     * removal to remotes. Local only, never copied. Entries go after about a year.
+     */
+    static final String FORGOTTEN = "forgotten";
+    private static final long FORGOTTEN_KEEP_MILLIS = 400L * 24 * 3600 * 1000;
+
+    /** Snapshots this repository removed on purpose, with each one's time. */
+    public Map<Hash, Long> forgotten() throws IOException {
+        Map<Hash, Long> times = new LinkedHashMap<>();
+        readForgotten().forEach((id, entry) -> times.put(id, entry[0]));
+        return times;
+    }
+
+    // "<id> <snapshot time> <when forgotten>" a line, in milliseconds.
+    private Map<Hash, long[]> readForgotten() throws IOException {
+        Map<Hash, long[]> found = new LinkedHashMap<>();
+        byte[] bytes;
+        try (InputStream in = backend.get(FORGOTTEN)) {
+            bytes = in.readNBytes(64 << 20);
+        } catch (NoSuchFileException e) {
+            return found;
+        }
+        for (String line : new String(bytes, StandardCharsets.UTF_8).split("\n")) {
+            String[] parts = line.strip().split(" ");
+            if (parts.length == 3 && Hash.isHex(parts[0])) {
+                try {
+                    found.put(Hash.parse(parts[0]), new long[] {Long.parseLong(parts[1]), Long.parseLong(parts[2])});
+                } catch (NumberFormatException e) {
+                    // A damaged line: that snapshot just stays on remotes.
+                }
+            }
+        }
+        return found;
     }
 
     /** Snapshots pinned with {@link #pin}, which retention never removes. */

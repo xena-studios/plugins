@@ -107,10 +107,10 @@ class RemoteTest {
                 dir.resolve("temp"), Throttle.NONE, Session.Options.DEFAULTS), Backup.Pause.NONE, Databases.sqlite(),
                 () -> false, step -> {}).snapshot();
             try (Backend remote = open(type)) {
-                Mirror.Result first = Mirror.push(repository.backend(), remote, () -> false, step -> {});
+                Mirror.Result first = Mirror.push(repository, remote, () -> false, step -> {});
                 assertTrue(first.filesSent() > 3, first.toString());
                 // Nothing new: nothing sent.
-                assertEquals(0, Mirror.push(repository.backend(), remote, () -> false, step -> {}).filesSent());
+                assertEquals(0, Mirror.push(repository, remote, () -> false, step -> {}).filesSent());
 
                 Repository cached = Fetch.metadata(remote, dir.resolve("cache"), step -> {});
                 List<Restore.Item> items = Restore.expand(cached, snapshot, List.of(""), Set.of());

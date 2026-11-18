@@ -238,13 +238,13 @@ class StoreTest {
             other.writeSnapshot(new Snapshot(null, java.time.Instant.now(), java.time.Instant.now(),
                 Hash.sha256(new byte[0]), null, "", 0, 0, 0, 0, 0, "", List.of()));
             IOException refused = assertThrows(IOException.class, () -> co.xenastudios.xbackup.remote.Mirror.push(
-                mine.backend(), other.backend(), () -> false, step -> {}));
+                mine, other.backend(), () -> false, step -> {}));
             assertTrue(refused.getMessage().contains("different repository"), refused.getMessage());
             assertEquals(1, other.backend().list("snapshots/").size());
             // An empty folder is fine, and then it's the same repository.
-            co.xenastudios.xbackup.remote.Mirror.push(mine.backend(), new LocalBackend(dir.resolve("empty")), () -> false,
+            co.xenastudios.xbackup.remote.Mirror.push(mine, new LocalBackend(dir.resolve("empty")), () -> false,
                 step -> {});
-            co.xenastudios.xbackup.remote.Mirror.push(mine.backend(), new LocalBackend(dir.resolve("empty")), () -> false,
+            co.xenastudios.xbackup.remote.Mirror.push(mine, new LocalBackend(dir.resolve("empty")), () -> false,
                 step -> {});
         }
     }

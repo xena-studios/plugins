@@ -22,13 +22,15 @@ public final class Import {
             if (folders.isEmpty()) {
                 plugin.worker().execute(() -> {
                     mark(plugin);
-                    done.accept("There's no stats folder in " + world.getFileName() + " yet, so there's no history to import.");
+                    done.accept("There's no stats folder in " + StatsFiles.levelRoot(world).getFileName() + " yet, so there's no history to import.");
                 });
                 return;
             }
             long started = System.currentTimeMillis();
+            // Names from the server's cache of recent players, else what the player's saved data remembers.
+            java.util.Map<java.util.UUID, String> cached = StatsFiles.userCache(Bukkit.getWorldContainer().toPath().resolve("usercache.json"));
             StatsFiles.Result result = StatsFiles.read(folders, plugin.catalog().snapshot().stats(),
-                id -> Bukkit.getOfflinePlayer(id).getName());
+                id -> cached.containsKey(id) ? cached.get(id) : Bukkit.getOfflinePlayer(id).getName());
             plugin.worker().execute(() -> {
                 Engine engine = plugin.engine();
                 Store store = engine.store();

@@ -317,13 +317,17 @@ class EngineTest {
         long now = System.currentTimeMillis();
         engine.queue(sample(steve, "Steve", now, 0, 10, 0));
         engine.save(now);
+        engine.hide(engine.player(steve), true);
         int added = engine.store().importRows(List.of(
-            new Store.Imported(steve, "Steve", java.util.Map.of("kills", 999L), java.util.Map.of("kills", true)),
-            new Store.Imported(alex, "Alex", java.util.Map.of("kills", 7L, "playtime", 3600L),
+            new Store.Imported(steve, "Steve", 5, java.util.Map.of("kills", 999L), java.util.Map.of("kills", true)),
+            new Store.Imported(alex, "Alex", 7, java.util.Map.of("kills", 7L, "playtime", 3600L),
                 java.util.Map.of("kills", true, "playtime", false))));
         assertEquals(2, added);
         engine.afterImport();
         assertEquals(10, value(engine, steve, kills, Period.ALL));
+        assertTrue(engine.player(steve).hidden(), "a player already counted is left as they are");
+        assertTrue(engine(("main"), false).player(steve).hidden(), "in the database too");
+        assertEquals(7, engine.player(alex).lastSeen());
         assertEquals(7, value(engine, alex, kills, Period.ALL));
         assertEquals(3600, value(engine, alex, playtime, Period.ALL));
         assertEquals(0, value(engine, alex, kills, Period.DAILY), "history isn't today");

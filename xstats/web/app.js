@@ -34,7 +34,7 @@
   }
 
   function show(...nodes) {
-    view.replaceChildren(...nodes);
+    view.replaceChildren(...nodes.filter((node) => node !== null && node !== undefined && node !== false));
   }
 
   function notice(text) {
@@ -196,7 +196,8 @@
     if (!profile) return notice("No player called " + name + " here, or they keep their stats private.");
     const history = (profile.history && profile.history.stats) || {};
     const cards = profile.stats.map((stat) => {
-      const periods = stat.periods ? ["daily", "weekly", "monthly"].map((p) =>
+      // Today, this week and this month, once there's something in them.
+      const periods = stat.periods && stat.periods.monthly.value > 0 ? ["daily", "weekly", "monthly"].map((p) =>
         periodName(p) + ": " + stat.periods[p].display).join(" · ") : null;
       return el("div", { class: "card" },
         el("div", { class: "label", text: statName(stat.id) }),
@@ -224,8 +225,8 @@
           el("h1", { text: profile.name }),
           el("p", { class: "muted" },
             profile.online ? el("span", { class: "dot" }) : null,
-            profile.online ? "Online · " : "Last seen " + ago(profile.lastSeen) + " · ",
-            "Joined " + date(profile.firstJoin)))),
+            [profile.online ? "Online" : profile.lastSeen > 0 ? "Last seen " + ago(profile.lastSeen) : null,
+              profile.firstJoin > 0 ? "Joined " + date(profile.firstJoin) : null].filter(Boolean).join(" · ")))),
       el("h2", { text: "Stats" }),
       el("div", { class: "grid" }, ...cards),
       sections.length ? el("h2", { text: "More" }) : null,

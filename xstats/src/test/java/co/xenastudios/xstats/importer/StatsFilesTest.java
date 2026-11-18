@@ -25,6 +25,24 @@ class StatsFilesTest {
     static final UUID ALEX = UUID.fromString("61699b2e-d327-4a01-9f1e-0ea8c3f06bc6");
 
     @Test
+    void namesComeFromTheUserCache() throws Exception {
+        Path cache = world.resolve("usercache.json");
+        Files.writeString(cache, "[{\"uuid\":\"" + STEVE + "\",\"name\":\"Steve\",\"expiresOn\":\"2099-01-01 00:00:00 +0000\"},"
+            + "{\"uuid\":\"" + ALEX + "\",\"name\":\"<b>bad</b>\"},{\"uuid\":\"nope\",\"name\":\"X\"}]");
+        assertEquals(java.util.Map.of(STEVE, "Steve"), StatsFiles.userCache(cache));
+        assertEquals(java.util.Map.of(), StatsFiles.userCache(world.resolve("missing.json")));
+    }
+
+    @Test
+    void a26WorldIsFoundFromItsDimensionFolder() throws Exception {
+        Path overworld = Files.createDirectories(world.resolve("dimensions/minecraft/overworld"));
+        Files.writeString(world.resolve("level.dat"), "");
+        Path stats = Files.createDirectories(world.resolve("players/stats"));
+        assertEquals(world.toAbsolutePath(), StatsFiles.levelRoot(overworld));
+        assertEquals(List.of(stats.toAbsolutePath()), StatsFiles.folders(overworld));
+    }
+
+    @Test
     void bothFoldersAreReadAndTheNewerFileWins() throws Exception {
         Path old = Files.createDirectories(world.resolve("stats"));
         Path current = Files.createDirectories(world.resolve("players/stats"));
@@ -51,7 +69,7 @@ class StatsFilesTest {
             new StatDef(catalog.index("sessions"), "sessions", "Sessions", StatUnit.COUNT, 0, true, true, true, "xstats",
                 new StatDef.Tracked(StatDef.Tracked.Kind.SESSIONS)));
         List<Path> folders = StatsFiles.folders(world);
-        assertEquals(List.of(current, old), folders);
+        assertEquals(List.of(current.toAbsolutePath(), old.toAbsolutePath()), folders);
         StatsFiles.Result result = StatsFiles.read(folders, stats, id -> id.equals(STEVE) ? "Steve" : "Alex");
         Store.Imported steve = result.players().stream().filter(p -> p.uuid().equals(STEVE)).findFirst().orElseThrow();
         assertEquals(5L, steve.values().get("kills"), "the newer file");

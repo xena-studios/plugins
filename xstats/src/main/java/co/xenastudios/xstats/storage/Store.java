@@ -518,7 +518,7 @@ public final class Store {
     // ---- the import ----
 
     /** One player from a stats file: values by stat id. */
-    public record Imported(UUID uuid, String name, Map<String, Long> values, Map<String, Boolean> counters) {}
+    public record Imported(UUID uuid, String name, long lastSeen, Map<String, Long> values, Map<String, Boolean> counters) {}
 
     /**
      * Adds imported players and their values, never over a row already there: a player
@@ -534,7 +534,7 @@ public final class Store {
             try (PreparedStatement insert = connection.prepareStatement(sql(database.dialect().insertIgnore()
                 + " INTO {p}totals (player, stat, server, value, raw) VALUES (?, ?, ?, ?, ?)"))) {
                 for (Imported player : players) {
-                    int id = insertPlayer(connection, new PlayerRow(player.uuid(), 0, player.name(), 0, 0, false, false));
+                    int id = importPlayer(connection, player);
                     for (Map.Entry<String, Long> value : player.values().entrySet()) {
                         insert.setInt(1, id);
                         insert.setInt(2, statId(connection, value.getKey()));
@@ -553,6 +553,15 @@ public final class Store {
             connection.setAutoCommit(true);
             return (int) (totalRows(connection) - before);
         }
+    }
+
+    /** An imported player's id: a player already stored is left exactly as they are. */
+    private int importPlayer(Connection connection, Imported player) throws SQLException {
+        int existing = playerId(connection, player.uuid());
+        if (existing > 0) {
+            return existing;
+        }
+        return insertPlayer(connection, new PlayerRow(player.uuid(), 0, player.name(), 0, player.lastSeen(), false, false));
     }
 
     private long totalRows(Connection connection) throws SQLException {

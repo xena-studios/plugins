@@ -22,20 +22,20 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
 
-/** /top <stat> [daily|weekly|monthly|all] [page]: a leaderboard from memory, a page at a time. */
+/** /leaderboard <stat> [daily|weekly|monthly|all] [page]: a leaderboard from memory, a page at a time. */
 public final class TopCommand {
 
     private TopCommand() {}
 
     public static void register(Setup setup, XStats plugin, XSConfig config) {
-        XSConfig.Command settings = config.commands().top();
+        XSConfig.Command settings = config.commands().leaderboard();
         if (!settings.enabled()) {
             return;
         }
-        setup.command(CommandSpec.named("top", settings)
+        setup.command(CommandSpec.named("leaderboard", settings)
             .permissionDefault(PermissionDefault.TRUE)
             .description("See a leaderboard.")
-            .usage("/top <stat> [daily|weekly|monthly|all] [page]")
+            .usage("/leaderboard <stat> [daily|weekly|monthly|all] [page]")
             .completes((sender, args) -> switch (args.length) {
                 case 1 -> Completions.matching(args[0], shown(plugin).stream().map(StatDef::id).toList());
                 case 2 -> {
@@ -110,7 +110,7 @@ public final class TopCommand {
                 Placeholders.text("rank", entry.rank()),
                 Placeholders.text("player", entry.name()),
                 Placeholders.text("value", Format.value(stat, entry.value()))),
-            messages.pageFooter(), "/top " + stat.id() + " " + period.id() + " {page}"));
+            messages.pageFooter(), "/leaderboard " + stat.id() + " " + period.id() + " {page}"));
         lines.forEach(sender::sendMessage);
     }
 }

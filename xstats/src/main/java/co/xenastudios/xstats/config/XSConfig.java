@@ -23,7 +23,7 @@ public record XSConfig(
     @Comment({
         "The look xStats' messages share. The default messages use these as tags, so changing",
         "a colour here restyles them all. Write a style as MiniMessage tags: <gray>,",
-        "<#49B6F2>, or <gold><bold>."})
+        "<#F77FA5>, or <gold><bold>."})
     Theme theme,
     @Comment("What players are told.") Messages messages,
     @Comment("The commands players use. Blank permission means everyone may.") Commands commands,
@@ -39,10 +39,10 @@ public record XSConfig(
         "      read every save and when the player leaves.",
         "  unit: auto, count, time, distance or damage. auto works it out from the source.",
         "  decimals: for papi values with decimals, such as 2 for a balance.",
-        "  periods: also count it per day, week and month, for /top daily and the website.",
+        "  periods: also count it per day, week and month, for leaderboards and the website.",
         "    Each day a player's stat changes is one row in the database, so only turn it on",
         "    for stats you want leaderboards of.",
-        "  in-game: show it on /stats and /top. Placeholders always work.",
+        "  in-game: show it on /stats and /leaderboard. Placeholders always work.",
         "  website: show it on the website and in the web API.",
         "An id is 1 to 32 lowercase letters, digits and _. Placeholders use it: %xstats_kills%."})
     Map<String, StatSettings> stats,
@@ -89,7 +89,10 @@ public record XSConfig(
             "/stats [player]: a player's stats. /stats private hides your own from the website",
             "(xstats.private, everyone has it)."})
         Command stats,
-        @Comment("/top <stat> [daily|weekly|monthly|all] [page]: a leaderboard.") Command top) {}
+        @Comment({
+            "/leaderboard <stat> [daily|weekly|monthly|all] [page]: a leaderboard. Without",
+            "xUtilities, whose /top this would clash with, you can add top to its aliases."})
+        Command leaderboard) {}
 
     public record Command(boolean enabled, List<String> aliases, String permission) implements Toggle {}
 
@@ -111,14 +114,14 @@ public record XSConfig(
         boolean importOnFirstStart) {}
 
     public record Leaderboards(
-        @Comment("Places kept on each leaderboard: for /top, placeholders and the website.")
+        @Comment("Places kept on each leaderboard: for /leaderboard, placeholders and the website.")
         @Range(min = 3, max = 1000) int size,
         @Comment({
             "Leave players banned with /ban out of leaderboards. Players with",
             "xstats.leaderboard.exclude are always left out, such as staff; nobody has it unless",
             "given it, operators included."})
         boolean excludeBanned,
-        @Comment("Places on each page of /top.") @Range(min = 1, max = 30) int perPage,
+        @Comment("Places on each page of /leaderboard.") @Range(min = 1, max = 30) int perPage,
         @Comment("Leaderboards in the world: Paper text displays, placed with /xstats board.") Boards boards) {}
 
     public record Boards(
@@ -212,13 +215,13 @@ public record XSConfig(
         @Comment("<player> is the name typed.") Message neverJoined,
         Message privateOn,
         Message privateOff,
-        @Comment("/top. <stat>, <period>.") Message topHeader,
+        @Comment("/leaderboard. <stat>, <period>.") Message topHeader,
         @Comment("<rank>, <player>, <value>.") Message topLine,
         @Comment("The line for the player reading it, when they're on the page.") Message topLineSelf,
         Message topEmpty,
         @Comment("<stat> is what was typed; <stats> the ones there are.") Message unknownStat,
         @Comment("<stat> has no daily, weekly or monthly numbers.") Message noPeriods,
-        @Comment("Under a page of /top. See the docs for <next> and <previous>.") Message pageFooter,
+        @Comment("Under a page of /leaderboard. See the docs for <next> and <previous>.") Message pageFooter,
         @Comment("Before the database is open, just after startup.") Message notReady) {}
 
     private static Map<String, StatSettings> defaultStats() {
@@ -248,9 +251,9 @@ public record XSConfig(
 
     public static final XSConfig DEFAULTS = new XSConfig(
         new Theme(
-            "<#49B6F2>»</#49B6F2> ",
+            "<#F77FA5>»</#F77FA5> ",
             TextStyle.parse("<gray>"),
-            TextStyle.parse("<#49B6F2>"),
+            TextStyle.parse("<#F77FA5>"),
             TextStyle.parse("<#5EE08A>"),
             TextStyle.parse("<#FF6B6B>")),
         new Messages(
@@ -274,18 +277,18 @@ public record XSConfig(
             Message.of("<prefix><error>Stats are still loading. Try again in a moment.")),
         new Commands(
             new Command(true, List.of(), ""),
-            new Command(true, List.of("leaderboard", "lb"), "")),
+            new Command(true, List.of("lb"), "")),
         defaultStats(),
         new Collecting(5, 4, true, true),
         new Leaderboards(100, true, 10,
             new Boards(10,
-                Message.of("<#49B6F2><bold><stat></bold></#49B6F2>\n<gray><period>"),
-                Message.of("<gray><rank>.</gray> <white><player></white> <#49B6F2><value>"),
+                Message.of("<#F77FA5><bold><stat></bold></#F77FA5>\n<gray><period>"),
+                Message.of("<gray><rank>.</gray> <white><player></white> <#F77FA5><value>"),
                 Message.of("<gray>Nobody yet"))),
         new Periods("", DayOfWeek.MONDAY, 90, new PeriodNames("Today", "This week", "This month", "All time")),
         new Web(false, "0.0.0.0", 8804, "", true, List.of("*"), 120, 32, List.of(),
             new Avatars("https://mc-heads.net/avatar/{uuid}/{size}", false),
-            new Branding("", "", "", Colour.of("#49B6F2"), Colour.of("#0F1419"), Colour.of("#1A222B"), Colour.of("#E6EDF3"))),
+            new Branding("", "", "", Colour.of("#F77FA5"), Colour.of("#0F1419"), Colour.of("#1A222B"), Colour.of("#E6EDF3"))),
         "main",
         StorageSettings.defaults("xstats_"),
         NetworkSettings.DEFAULTS,

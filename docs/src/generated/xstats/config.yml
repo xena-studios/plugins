@@ -10,15 +10,15 @@ config-version: 1
 
 # The look xStats' messages share. The default messages use these as tags, so changing
 # a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#49B6F2>, or <gold><bold>.
+# <#F77FA5>, or <gold><bold>.
 theme:
   # <prefix> starts the default messages. Make it your server's name, such as
   # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
-  prefix: "<#49B6F2>»</#49B6F2> "
+  prefix: "<#F77FA5>»</#F77FA5> "
   # The colour of message text that has no tag of its own.
   base: "<gray>"
   # <highlight>: names and values, such as a player or a speed.
-  highlight: "<#49B6F2>"
+  highlight: "<#F77FA5>"
   # <success>: something turned on or done.
   success: "<#5EE08A>"
   # <error>: something refused or turned off.
@@ -54,7 +54,7 @@ messages:
   never-joined: "<prefix><error><highlight><player></highlight> has never played here."
   private-on: "<prefix><success>Your stats are hidden</success> from the website. Leaderboards in game still show you."
   private-off: "<prefix>Your stats are <highlight>on the website</highlight> again."
-  # /top. <stat>, <period>.
+  # /leaderboard. <stat>, <period>.
   top-header: "<prefix><highlight><stat></highlight> <dark_gray>·</dark_gray> <period>"
   # <rank>, <player>, <value>.
   top-line: "  <gray><rank>.</gray> <white><player></white> <dark_gray>-</dark_gray> <highlight><value>"
@@ -65,7 +65,7 @@ messages:
   unknown-stat: "<prefix><error>There's no stat called <highlight><stat></highlight>.</error> Try: <stats>"
   # <stat> has no daily, weekly or monthly numbers.
   no-periods: "<prefix><error><highlight><stat></highlight> is only counted all time."
-  # Under a page of /top. See the docs for <next> and <previous>.
+  # Under a page of /leaderboard. See the docs for <next> and <previous>.
   page-footer: "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>"
   # Before the database is open, just after startup.
   not-ready: "<prefix><error>Stats are still loading. Try again in a moment."
@@ -80,10 +80,11 @@ commands:
     aliases: []
     permission: ""
 
-  # /top <stat> [daily|weekly|monthly|all] [page]: a leaderboard.
-  top:
+  # /leaderboard <stat> [daily|weekly|monthly|all] [page]: a leaderboard. Without
+  # xUtilities, whose /top this would clash with, you can add top to its aliases.
+  leaderboard:
     enabled: true
-    aliases: ["leaderboard", "lb"]
+    aliases: ["lb"]
     permission: ""
 
 # The stats xStats keeps, in the order /stats and the website show them. Each has:
@@ -97,10 +98,10 @@ commands:
 #       read every save and when the player leaves.
 #   unit: auto, count, time, distance or damage. auto works it out from the source.
 #   decimals: for papi values with decimals, such as 2 for a balance.
-#   periods: also count it per day, week and month, for /top daily and the website.
+#   periods: also count it per day, week and month, for leaderboards and the website.
 #     Each day a player's stat changes is one row in the database, so only turn it on
 #     for stats you want leaderboards of.
-#   in-game: show it on /stats and /top. Placeholders always work.
+#   in-game: show it on /stats and /leaderboard. Placeholders always work.
 #   website: show it on the website and in the web API.
 # An id is 1 to 32 lowercase letters, digits and _. Placeholders use it: %xstats_kills%.
 stats:
@@ -233,13 +234,13 @@ collecting:
   import-on-first-start: true
 
 leaderboards:
-  # Places kept on each leaderboard: for /top, placeholders and the website.
+  # Places kept on each leaderboard: for /leaderboard, placeholders and the website.
   size: 100
   # Leave players banned with /ban out of leaderboards. Players with
   # xstats.leaderboard.exclude are always left out, such as staff; nobody has it unless
   # given it, operators included.
   exclude-banned: true
-  # Places on each page of /top.
+  # Places on each page of /leaderboard.
   per-page: 10
 
   # Leaderboards in the world: Paper text displays, placed with /xstats board.
@@ -247,9 +248,9 @@ leaderboards:
     # Places each in-world board shows.
     lines: 10
     # The top line. <stat> and <period> are filled in.
-    title: "<#49B6F2><bold><stat></bold></#49B6F2>\n<gray><period>"
+    title: "<#F77FA5><bold><stat></bold></#F77FA5>\n<gray><period>"
     # Each place: <rank>, <player>, <value>.
-    line: "<gray><rank>.</gray> <white><player></white> <#49B6F2><value>"
+    line: "<gray><rank>.</gray> <white><player></white> <#F77FA5><value>"
     # When nobody is on it yet.
     empty: "<gray>Nobody yet"
 
@@ -317,7 +318,7 @@ web:
     # A logo: a link (https://...), or a PNG, JPEG, SVG or WebP file in plugins/xStats/web/,
     # such as logo.png. Blank for none.
     logo: ""
-    accent: "#49b6f2"
+    accent: "#f77fa5"
     background: "#0f1419"
     surface: "#1a222b"
     text: "#e6edf3"

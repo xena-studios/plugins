@@ -112,7 +112,7 @@ public interface XStatsApi {
 
     /**
      * Adds a stat of your own, kept, saved, ranked and shown like xStats' own: on
-     * {@code /stats}, {@code /top}, placeholders and the website. It's counted per day,
+     * {@code /stats}, {@code /leaderboard}, placeholders and the website. It's counted per day,
      * week and month too. Registering the same id again returns the same stat. Registered
      * stats are forgotten when your plugin is disabled; their saved values stay.
      *

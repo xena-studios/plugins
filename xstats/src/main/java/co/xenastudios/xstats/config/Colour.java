@@ -20,7 +20,7 @@ public final class Colour {
 
     public static Colour of(String hex) {
         if (!HEX.matcher(hex).matches()) {
-            throw new IllegalArgumentException("isn't a colour written as #RRGGBB, such as #5BC0EB");
+            throw new IllegalArgumentException("isn't a colour written as #RRGGBB, such as #F77FA5");
         }
         return new Colour(hex);
     }

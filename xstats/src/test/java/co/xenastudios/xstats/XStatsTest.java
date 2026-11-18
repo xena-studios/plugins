@@ -22,7 +22,7 @@ import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import org.mockbukkit.mockbukkit.plugin.PluginMock;
 
-/** xStats on a mock server: a save with players online, then /stats, /top and the API. */
+/** xStats on a mock server: a save with players online, then /stats, /leaderboard and the API. */
 class XStatsTest {
 
     ServerMock server;
@@ -94,11 +94,11 @@ class XStatsTest {
         assertEquals(1, api.getStat(steve.getUniqueId(), "sessions", Period.ALL));
 
         said(steve);
-        steve.performCommand("top kills");
+        steve.performCommand("leaderboard kills");
         String top = said(steve);
         assertTrue(top.contains("1. Alex - 9"), top);
         assertTrue(top.contains("2. Steve - 6"), top);
-        steve.performCommand("top kills daily");
+        steve.performCommand("lb kills daily");
         assertTrue(said(steve).contains("1. Steve - 2"));
         steve.performCommand("stats Alex");
         await(() -> steve.nextComponentMessage() != null || false);

@@ -34,10 +34,25 @@ public final class StatsFiles {
 
     private StatsFiles() {}
 
+    /**
+     * The folder with the world's level.dat, where players' files are kept. On 26.x the main
+     * world's own folder is {@code <world>/dimensions/minecraft/overworld}, three below it.
+     */
+    public static Path levelRoot(Path world) {
+        Path at = world.toAbsolutePath();
+        for (int up = 0; up <= 3 && at != null; up++, at = at.getParent()) {
+            if (Files.isRegularFile(at.resolve("level.dat"))) {
+                return at;
+            }
+        }
+        return world;
+    }
+
     /** The stats folders a world can have, newest layout first. */
     public static List<Path> folders(Path world) {
         List<Path> folders = new ArrayList<>();
-        for (Path folder : List.of(world.resolve("players").resolve("stats"), world.resolve("stats"))) {
+        Path root = levelRoot(world);
+        for (Path folder : List.of(root.resolve("players").resolve("stats"), root.resolve("stats"))) {
             if (Files.isDirectory(folder)) {
                 folders.add(folder);
             }
@@ -89,7 +104,9 @@ public final class StatsFiles {
                     }
                 }
                 if (!values.isEmpty()) {
-                    players.add(new Store.Imported(entry.getKey(), names.apply(entry.getKey()), values, counters));
+                    // The file is saved as the player leaves: when they were last seen, near enough.
+                    long seen = Files.getLastModifiedTime(entry.getValue()).toMillis();
+                    players.add(new Store.Imported(entry.getKey(), names.apply(entry.getKey()), seen, values, counters));
                 }
             } catch (IOException | RuntimeException e) {
                 skipped++;
@@ -115,13 +132,53 @@ public final class StatsFiles {
         };
     }
 
-    private static UUID uuid(Path file) {
-        String name = file.getFileName().toString();
+    /**
+     * Names by uuid from the server's {@code usercache.json}, which remembers every player
+     * who joined recently: the stats files only have uuids. Empty if it can't be read.
+     */
+    public static Map<UUID, String> userCache(Path file) {
+        Map<UUID, String> names = new HashMap<>();
+        try {
+            if (!Files.isRegularFile(file) || Files.size(file) > 64L * 1024 * 1024) {
+                return names;
+            }
+            JsonElement root;
+            try (Reader reader = Files.newBufferedReader(file)) {
+                root = JsonParser.parseReader(reader);
+            }
+            if (!root.isJsonArray()) {
+                return names;
+            }
+            for (JsonElement entry : root.getAsJsonArray()) {
+                if (!entry.isJsonObject()) {
+                    continue;
+                }
+                JsonObject object = entry.getAsJsonObject();
+                JsonElement uuid = object.get("uuid");
+                JsonElement name = object.get("name");
+                if (uuid != null && name != null && uuid.isJsonPrimitive() && name.isJsonPrimitive()) {
+                    UUID id = uuid(uuid.getAsString() + ".json");
+                    if (id != null && co.xenastudios.core.player.Profiles.validName(name.getAsString())) {
+                        names.put(id, name.getAsString());
+                    }
+                }
+            }
+        } catch (IOException | RuntimeException e) {
+            names.clear();
+        }
+        return names;
+    }
+
+    private static UUID uuid(String name) {
         try {
             return UUID.fromString(name.substring(0, name.length() - ".json".length()));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             return null;
         }
+    }
+
+    private static UUID uuid(Path file) {
+        return uuid(file.getFileName().toString());
     }
 
     /**

@@ -15,7 +15,7 @@ import java.util.function.BiConsumer;
 
 /**
  * Every leaderboard, worked out during a save and swapped in whole, so placeholders,
- * {@code /top} and the website read them from memory and never ask the database.
+ * {@code /leaderboard} and the website read them from memory and never ask the database.
  *
  * <p>Only boards whose stat changed in a save, or whose day, week or month just turned
  * over, are worked out again; the rest are kept as they were.

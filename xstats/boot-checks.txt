@@ -17,13 +17,13 @@ expect: match this server
 run: xstats save
 expect: Saved 0 players
 
-run: top kills
+run: leaderboard kills
 expect: Nobody's on this leaderboard yet.
-run: top kills monthly
+run: lb kills monthly
 expect: Nobody's on this leaderboard yet.
-run: top jumps daily
+run: leaderboard jumps daily
 expect: is only counted all time.
-run: top nothing
+run: leaderboard nothing
 expect: There's no stat called
 run: stats Steve
 expect: has never played here.

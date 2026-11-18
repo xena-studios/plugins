@@ -34,11 +34,24 @@ Lists then use the new port, not 8192.
 
 `rsa/public.key` and `rsa/private.key` are the RSA key pair for **v1**, the original Votifier protocol, which most lists still use. `tokens.yml` holds the tokens for **v2**: one `default` for every list, and any list that wants its own by its service name (`/xvote token PlanetMinecraft.com` makes one). Both are kept exactly as NuVotifier keeps them, so they copy across either way.
 
-Keep `private.key` and the tokens secret: anyone with them can send votes as a list. `tokens.yml` is kept out of `config.yml` so you can share your config when asking for help.
+Keep `private.key` and the tokens secret: anyone with them can send votes as a list. xVote writes both so only the server's own user can read them (on Linux and macOS). `tokens.yml` is kept out of `config.yml` so you can share your config when asking for help.
+
+v1 encrypts votes with RSA the old way (PKCS#1 v1.5), as every list and NuVotifier do. It's safe enough for votes, and v2 is better: once all your lists send v2, set `receiver.v1: false`.
 
 ### Limits
 
-The receiver runs on its own threads and never touches the game. It turns away an address making more than `per-ip-per-minute` connections, closes a connection that hasn't sent its vote within `timeout-seconds`, and handles at most `max-connections` at once. A list's wrong token or key is logged once, not on every vote, until the next reload.
+The receiver runs on its own threads and never touches the game. What it does with connections from the internet:
+
+- It handles at most `max-connections` at once (256), and at most `per-ip-connections` (4) from one address, so a few addresses can't take every slot.
+- It turns away an address making more than `per-ip-per-minute` connections (60).
+- A connection has 3 seconds to start sending, and `timeout-seconds` (10) for its whole vote.
+- IPv6 addresses count by their /64, the block one machine usually gets.
+
+`0` turns `per-ip-connections` or `per-ip-per-minute` off.
+
+**Behind a tunnel or proxy** (playit.gg, TCPShield, and the like), every list's votes arrive from the tunnel's address, so the limits per address count all your lists together. Raise `per-ip-connections` and `per-ip-per-minute`, or set both to `0`, and keep `max-connections` as the cap.
+
+A list's wrong token or key is logged once per list, not on every vote, until the next reload. Anything else that isn't a vote (port scanners send plenty) is logged once per kind, so it can't fill the console or hide a list's mistake. If accepting a connection ever fails, the receiver waits a moment and keeps trying; `/xvote status` says if it has stopped, and `/xvote reload` starts it again.
 
 ## Sites
 
@@ -59,11 +72,11 @@ sites:
 - `cooldown-hours` is how often the list lets players vote. A vote sooner than that, less five minutes for slow clocks, is a repeat and is dropped.
 - `rewards` are given for this site's votes only, on top of the [triggers](/xvote/configuration/#rewards-and-triggers).
 
-Votes from a list that isn't in `sites` still count and earn `every-vote` rewards; they just aren't shown in `/vote`.
+Votes from a list that isn't in `sites` still count and earn `every-vote` rewards; they just aren't shown in `/vote`. Their cooldown is `counting.unlisted-cooldown-hours`, 24 by default, so a list that sends the same vote twice doesn't pay twice. `0` drops only exact replays.
 
 ## Test it
 
-`/vote test <player> [site]` sends a signed vote to the receiver through its own port, as a list would, so it tests the whole path: the port, the token, the ledger and the rewards. Leave out the site for one with no cooldown. It counts like a real vote.
+`/vote test <player> [site]` sends a signed vote to the receiver through its own port, as a list would, so it tests the whole path: the port, the token, the ledger and the rewards. Leave out the site for one with no cooldown, so you can send it again and again. It counts like a real vote.
 
 ## Names
 

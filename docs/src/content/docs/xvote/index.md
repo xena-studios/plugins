@@ -23,7 +23,7 @@ Current version: **1.0.0**, for Paper 1.21.11 or newer (or Purpur, or Folia) and
 
 A server list sends a vote to xVote's **receiver**, on its own port. The vote names a player and the list it came from (its **service**). xVote finds the player, stores the vote, and gives the rewards it earned. If the player is offline, the vote waits and is paid when they join.
 
-A vote from the same site sooner than that site's **cooldown** is a repeat and is dropped. So is a replayed vote with the same timestamp.
+A vote from the same site sooner than that site's **cooldown** is a repeat and is dropped. Sites you haven't listed have one too, `counting.unlisted-cooldown-hours` (24 by default). So is a replayed vote with the same timestamp.
 
 **Totals** are counted per day, week and month, in the time zone you set, plus all time. A **streak** is the days in a row a player has voted.
 

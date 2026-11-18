@@ -8,7 +8,10 @@ The first release. Drop the jar in and start the server: votes are kept in SQLit
 
 - A Votifier receiver on its own port (8192 by default), speaking Votifier v1 and v2 exactly as NuVotifier does.
 - Keys in `rsa/` and tokens in `tokens.yml`, in NuVotifier's own formats. NuVotifier's are taken over on the first start, or with `/xvote import nuvotifier`.
-- Limits on connections per address per minute, connections at once, and time to send a vote. A list's wrong token is logged once, not on every vote.
+- Limits on connections at once (256), connections open from one address (4), connections per address per minute, and time to send a vote. IPv6 addresses count by their /64. Behind a tunnel such as playit.gg or TCPShield, the limits per address can be raised or turned off.
+- A list's wrong token or key is logged once per list, not on every vote; anything else that isn't a vote is logged once per kind, so port scanners can't fill the console or hide a list's mistake. Text from the network loses its control characters before it's logged or stored.
+- A failed accept never stops the receiver: it waits a moment and tries again, and `/xvote status` says if it has stopped.
+- The private key, `tokens.yml` and their backups are readable by the server's own user only.
 - `/vote test <player> [site]` sends a signed vote through the receiver's own port, end to end.
 - `/xvote status` shows the receiver, votes waiting, and the service name each list sends; `/xvote key` and `/xvote token` show what lists ask for.
 
@@ -16,11 +19,12 @@ The first release. Drop the jar in and start the server: votes are kept in SQLit
 
 - Every vote is kept. Totals per day, week and month in your time zone, all-time totals, streaks and leaderboards.
 - Offline players are paid when they join. Votes for a name that has never joined wait until it does, and Bedrock players who leave off Floodgate's prefix are still matched.
-- A vote from the same site within its cooldown, or a replayed one, is dropped.
+- A vote from the same site within its cooldown, or a replayed one, is dropped. Sites that aren't listed have a cooldown too, `counting.unlisted-cooldown-hours` (24 by default).
+- Votes taken to pay when the server stops, before the player got them, are paid the next time instead.
 
 ### Rewards
 
-- Money through Vault, items (held for `/vote claim` when they don't fit), console commands, messages, broadcasts and sounds, each with a chance.
+- Money through Vault, items (held for `/vote claim` when they don't fit), console commands, messages, broadcasts and sounds, each with a chance. In commands, the `<site>` of a site that isn't listed keeps only letters, digits, `.`, `_` and `-`.
 - Given on every vote, per site, on the first vote of the day, every Nth vote, at streak milestones and at vote totals.
 - A vote party every so many votes, for everyone online or everyone who voted.
 - Reminders on join, and every so many minutes if you want them.
@@ -36,7 +40,7 @@ The first release. Drop the jar in and start the server: votes are kept in SQLit
 
 ### Switching
 
-- `/xvote import votingplugin` and `/xvote import superbvote` add every player's all-time total.
+- `/xvote import votingplugin` and `/xvote import superbvote` add every player's all-time total and when they last voted, read from VotingPlugin's SQLite `Users` table and SuperbVote's JSON file or MySQL table.
 
 ### For developers
 

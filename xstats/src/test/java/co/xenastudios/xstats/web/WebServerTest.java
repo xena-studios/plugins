@@ -37,6 +37,8 @@ class WebServerTest {
     final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     final List<WebServer> servers = new ArrayList<>();
     volatile CountDownLatch hold;
+    /** Holds up the head service while set. */
+    volatile CountDownLatch headHold;
     volatile boolean everyoneKnown;
     final List<com.sun.net.httpserver.HttpServer> headServices = new ArrayList<>();
 
@@ -50,7 +52,7 @@ class WebServerTest {
 
         @Override
         public Response search(String query) {
-            return Response.json(200, new Json().object().field("q", query).end().toString(), 30);
+            return Response.json(200, new Json().object().field("q", query).end().toString(), Response.REVALIDATE);
         }
 
         @Override
@@ -127,7 +129,12 @@ class WebServerTest {
         assertTrue(api.headers().firstValue("Content-Type").orElse("").startsWith("application/json"));
         assertEquals("public, max-age=60", api.headers().firstValue("Cache-Control").orElse(""));
         assertEquals("*", api.headers().firstValue("Access-Control-Allow-Origin").orElse(""));
-        assertEquals("{\"q\":\"Ste\"}", text(get(server, "/api/v1/search?q=Ste")));
+        HttpResponse<byte[]> search = get(server, "/api/v1/search?q=Ste");
+        assertEquals("{\"q\":\"Ste\"}", text(search));
+        // Pages that can name a player who just went private: kept, but checked every time.
+        assertEquals("public, no-cache", search.headers().firstValue("Cache-Control").orElse(""));
+        assertEquals(304, get(server, "/api/v1/search?q=Ste", "If-None-Match", search.headers().firstValue("ETag").orElseThrow())
+            .statusCode());
         assertEquals("{\"q\":\"a b\"}", text(get(server, "/api/v1/search?q=a%20b")));
         assertEquals(200, get(server, "/api/v1/player/Steve").statusCode());
         assertEquals(404, get(server, "/api/v1/player/Alex").statusCode());
@@ -244,6 +251,23 @@ class WebServerTest {
     }
 
     @Test
+    void portsAProxyAddsArentPartOfTheAddress() throws Exception {
+        assertEquals("1.2.3.4", WebServer.withoutPort("1.2.3.4:5678"));
+        assertEquals("2001:db8::1", WebServer.withoutPort("[2001:db8::1]:443"));
+        assertEquals("2001:db8::1", WebServer.withoutPort("[2001:db8::1]"));
+        assertEquals("2001:db8::1", WebServer.withoutPort("2001:db8::1"));
+        assertEquals("1.2.3.4", WebServer.withoutPort("1.2.3.4"));
+        WebServer server = start(2, 8, List.of("*"), List.of("127.0.0.1"));
+        // One visitor, though the proxy passed on a different port each time.
+        assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.7:1000").statusCode());
+        assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.7:1001").statusCode());
+        assertEquals(429, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.7:1002").statusCode());
+        assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "[2001:db8::1]:443").statusCode());
+        assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "[2001:db8::1]:444").statusCode());
+        assertEquals(429, get(server, "/api/v1/server", "X-Forwarded-For", "2001:db8::1").statusCode());
+    }
+
+    @Test
     void proxiesAreAddressesAndRangesNeverNames() {
         Proxies proxies = Proxies.of(List.of("10.1.0.0/16", "::1", "2400:cb00::/32", "localhost", "10.0.0.0/33", "1.2.3.4/x"),
             "X-Real-IP", Logger.getLogger("test"));
@@ -270,10 +294,27 @@ class WebServerTest {
         }
         assertTrue(limit.tracked() <= 101, "bounded: " + limit.tracked());
         assertFalse(limit.allow("visitor"), "still limited: the map wasn't cleared");
-        assertFalse(limit.allow("someone-new"), "new addresses share one count while it's full");
         now[0] += 60_000;
         assertTrue(limit.allow("visitor"), "a new minute");
         assertTrue(limit.tracked() <= 2, "earlier minutes forgotten");
+    }
+
+    @Test
+    void aFloodOfNewAddressesLocksOutNoRealVisitor() {
+        long[] now = {0};
+        RateLimit limit = new RateLimit(120, 10_000, () -> now[0]);
+        now[0] += 60_000;
+        for (int i = 0; i < 10_000; i++) {
+            limit.allow("2001:db8:0:" + Integer.toHexString(i) + "::1");
+        }
+        for (int visitor = 0; visitor < 50; visitor++) {
+            assertTrue(limit.allow("203.0.113." + visitor), "real visitor " + visitor + " let through");
+        }
+        assertTrue(limit.tracked() <= 10_000, "still bounded: " + limit.tracked());
+        now[0] += 60_000;
+        for (int visitor = 0; visitor < 50; visitor++) {
+            assertTrue(limit.allow("203.0.113." + visitor), "and in the next minute");
+        }
     }
 
     @Test
@@ -326,6 +367,10 @@ class WebServerTest {
                     return;
                 }
                 byte[] body = new byte[path.startsWith("/big/") ? Heads.MAX_BYTES + 1 : 100];
+                CountDownLatch latch = headHold;
+                if (latch != null) {
+                    latch.await(10, TimeUnit.SECONDS);
+                }
                 Thread.sleep(300);
                 exchange.getResponseHeaders().set("Content-Type", "image/png");
                 exchange.sendResponseHeaders(200, body.length);
@@ -361,6 +406,33 @@ class WebServerTest {
         }
         assertEquals(20, statuses.size());
         assertTrue(statuses.stream().allMatch(status -> status == 200), statuses.toString());
+    }
+
+    @Test
+    void headsWaitingForAFetchDontHoldUpPages() throws Exception {
+        everyoneKnown = true;
+        // One turn for pages; six heads whose fetches are held up, four at a time.
+        WebServer server = start(1000, 1, List.of("*"), List.of(), "X-Forwarded-For", headService() + "/avatar/{uuid}/{size}", true);
+        headHold = new CountDownLatch(1);
+        List<Thread> threads = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            UUID player = new UUID(2, i);
+            threads.add(Thread.ofVirtual().start(() -> {
+                try {
+                    get(server, "/api/v1/head/" + player);
+                } catch (Exception ignored) {
+                    // Only here to keep the head service busy.
+                }
+            }));
+        }
+        Thread.sleep(300);
+        long started = System.nanoTime();
+        assertEquals(200, get(server, "/api/v1/server").statusCode());
+        assertTrue(System.nanoTime() - started < TimeUnit.MILLISECONDS.toNanos(1000), "didn't wait behind the heads");
+        headHold.countDown();
+        for (Thread thread : threads) {
+            thread.join(20_000);
+        }
     }
 
     @Test

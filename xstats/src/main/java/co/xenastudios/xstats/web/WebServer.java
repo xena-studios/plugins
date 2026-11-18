@@ -168,8 +168,10 @@ public final class WebServer implements AutoCloseable {
         try (exchange) {
             boolean turn = false;
             try {
-                turn = turns.tryAcquire(2, TimeUnit.SECONDS);
-                if (!turn) {
+                // Heads have turns of their own (Heads): one waiting for a fetch mustn't hold up pages.
+                boolean needsTurn = heads == null || !exchange.getRequestURI().getRawPath().startsWith(Pages.BASE + "head/");
+                turn = needsTurn && turns.tryAcquire(2, TimeUnit.SECONDS);
+                if (needsTurn && !turn) {
                     send(exchange, Response.error(503, "Busy. Try again in a moment."), false);
                     return;
                 }
@@ -314,7 +316,7 @@ public final class WebServer implements AutoCloseable {
         }
         if (!proxies.header().equals(Proxies.FORWARDED_FOR)) {
             // A header the proxy sets alone, such as CF-Connecting-IP: one address, its last if repeated.
-            byte[] visitor = Proxies.literal(values.getLast().strip());
+            byte[] visitor = Proxies.literal(withoutPort(values.getLast().strip()));
             return key(visitor != null ? visitor : remote);
         }
         // The nearest address that isn't one of our proxies: anything before it, the visitor
@@ -325,7 +327,7 @@ public final class WebServer implements AutoCloseable {
             if (text.isEmpty()) {
                 continue;
             }
-            byte[] hop = Proxies.literal(text);
+            byte[] hop = Proxies.literal(withoutPort(text));
             if (hop == null) {
                 // Not an address: nothing further left can be believed.
                 break;
@@ -335,6 +337,20 @@ public final class WebServer implements AutoCloseable {
             }
         }
         return key(remote);
+    }
+
+    /**
+     * An address a proxy passed on, without the port some add: {@code 1.2.3.4:5678} and
+     * {@code [2001:db8::1]:443} are read as {@code 1.2.3.4} and {@code 2001:db8::1}. A bare
+     * IPv6 address has several colons and is left as it is.
+     */
+    static String withoutPort(String text) {
+        if (text.startsWith("[")) {
+            int close = text.indexOf(']');
+            return close > 0 && (close == text.length() - 1 || text.charAt(close + 1) == ':') ? text.substring(1, close) : text;
+        }
+        int colon = text.indexOf(':');
+        return colon > 0 && colon == text.lastIndexOf(':') ? text.substring(0, colon) : text;
     }
 
     /** The rate limit's key for an address: itself, or for IPv6, its /64, which one visitor usually has whole. */
@@ -396,7 +412,8 @@ public final class WebServer implements AutoCloseable {
         headers.set("Content-Type", response.type());
         headers.set("X-Content-Type-Options", "nosniff");
         headers.set("Referrer-Policy", "no-referrer");
-        headers.set("Cache-Control", response.maxAge() > 0 ? "public, max-age=" + response.maxAge() : "no-store");
+        headers.set("Cache-Control", response.maxAge() > 0 ? "public, max-age=" + response.maxAge()
+            : response.maxAge() == Response.REVALIDATE ? "public, no-cache" : "no-store");
         if (response.type().startsWith("image/svg")) {
             // An SVG opened on its own can run scripts: not from here.
             headers.set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");

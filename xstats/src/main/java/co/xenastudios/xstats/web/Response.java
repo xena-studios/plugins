@@ -12,11 +12,14 @@ import java.util.zip.GZIPOutputStream;
  * browser that has it already gets a 304 with no body.
  *
  * @param gzip the body gzipped, or null when that wouldn't be smaller
- * @param maxAge seconds a browser or proxy may keep it
+ * @param maxAge seconds a browser or proxy may keep it; 0 for not at all, {@link #REVALIDATE}
+ *     to keep it but ask each time, which costs a 304 when it hasn't changed
  */
 public record Response(int status, String type, byte[] body, byte[] gzip, String etag, int maxAge) {
 
     public static final String JSON = "application/json; charset=utf-8";
+    /** Kept by browsers and proxies, but checked with its ETag every time it's used. */
+    public static final int REVALIDATE = -1;
 
     public static Response json(int status, String json, int maxAge) {
         return of(status, JSON, json.getBytes(StandardCharsets.UTF_8), maxAge);

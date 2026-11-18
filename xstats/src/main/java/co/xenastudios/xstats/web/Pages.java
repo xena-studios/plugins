@@ -112,7 +112,8 @@ public final class Pages implements WebServer.Source {
                     Json json = new Json().object().field("stat", stat.id()).field("period", period.id())
                         .field("saved", engine.lastSave().at()).key("entries");
                     entries(json, stat, board.top(size, true));
-                    page = Response.json(json.end(), 60);
+                    // Checked on every visit, so a player who just went private isn't kept in a cache.
+                    page = Response.json(json.end(), Response.REVALIDATE);
                     renderedFrom.put(path, board);
                     boardPages.put(path, page);
                 }
@@ -121,7 +122,7 @@ public final class Pages implements WebServer.Source {
                 entries(summary, stat, board.top(SUMMARY, true));
                 summary.end();
             }
-            pages.put(BASE + "leaderboards/" + period.id(), Response.json(summary.endArray().end(), 60));
+            pages.put(BASE + "leaderboards/" + period.id(), Response.json(summary.endArray().end(), Response.REVALIDATE));
         }
         rendered = Map.copyOf(pages);
     }
@@ -207,13 +208,13 @@ public final class Pages implements WebServer.Source {
     @Override
     public Response search(String query) {
         if (query == null || !NAME.matcher(query).matches()) {
-            return Response.json(200, "{\"players\":[]}", 30);
+            return Response.json(200, "{\"players\":[]}", Response.REVALIDATE);
         }
         Json json = new Json().object().key("players").array();
         for (PlayerRecord player : plugin.engine().search(query, 10, PlayerRecord::hidden)) {
             json.object().field("uuid", player.id.toString()).field("name", player.name()).end();
         }
-        return Response.json(json.endArray().end(), 30);
+        return Response.json(json.endArray().end(), Response.REVALIDATE);
     }
 
     /** A player's page, by name or uuid. Off the server's threads: other plugins' sections and the history may take a moment. */

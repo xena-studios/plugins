@@ -22,7 +22,7 @@ The config is `plugins/xBackup/config.yml`, written on first start. Apply change
 | `retention` | Which backups are kept, the most space they may use, and the space always left free. |
 | `performance` | Limits on disk reads and uploads, compression, and the longest autosave may stay off. |
 | `verify` | How often older data is read back and checked. |
-| `remotes` | Copies of the backups elsewhere: see [Remotes](/xbackup/remotes/). |
+| `remotes` | Copies of the backups elsewhere: see [Remotes](/xbackup/remotes/). Their passwords go in `secrets.yml`, never here. |
 | `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
 
 ## Repository
@@ -36,9 +36,11 @@ A folder, relative to the server folder or absolute. A second disk is the best p
 ## Sources
 
 - `worlds`: every loaded world's save folder. On 1.21.11 that's `world`, `world_nether` and `world_the_end`; on 26.x one `world` folder holds every dimension. Worlds read during the autosave pause.
-- `plugins`: the plugins folder, jars and data. xBackup's own repository and restore folders are never included.
+- `plugins`: the plugins folder, jars and data. xBackup's own repository and restore folders are never included, nor are `secrets.yml`, SFTP key files and the other files holding [passwords](/xbackup/remotes/#passwords).
 - `server-files`: `server.properties` and the `.yml`, `.json`, `.toml` and `.txt` files beside it (ops, whitelist, bans, `bukkit.yml`), and the `config` folder.
 - `extra`: anything else, by path, such as a world no plugin has loaded.
+
+A source that is a link, such as a world kept on another disk, is backed up as the folder it leads to. A link inside a source is kept as a link; if it leads to a folder outside the server folder, the backup says that folder's files aren't in it.
 
 **Databases:** every SQLite file is copied with SQLite's own `VACUUM INTO`, so a plugin writing to it meanwhile is no problem, and its `-wal` and `-shm` files aren't needed. A database that can't be copied that way (one a plugin holds locked) keeps its previous copy, with a warning; its raw bytes are never copied. MySQL and MariaDB databases live outside the server; back them up with `mysqldump`.
 

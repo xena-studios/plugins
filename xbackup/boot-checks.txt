@@ -27,6 +27,12 @@ expect: changed chunk
 run: backup verify full
 expect: All good.
 
+# Remote passwords live in secrets.yml, which is never backed up; config.yml is.
+run: backup restore latest plugins/xBackup/secrets.yml
+expect: has no plugins/xBackup/secrets.yml
+run: backup restore latest plugins/xBackup/config.yml
+expect: would change
+
 # A restore is planned first, staged on confirm, and can be called off.
 run: backup restore latest server.properties
 expect: would change

@@ -11,13 +11,15 @@ The only work on the server's own threads is the pause: autosave off, players sa
 
 Measured on Paper with about 50 changed chunks, the server's thread spends 15 to 45 ms; on Folia the longest single region's save was 15 to 60 ms. It grows with how many chunks changed since the last autosave, not with the size of the world. `/backup status` shows the real numbers for each backup.
 
-While autosave is off, the server still runs normally; chunks players leave are held in memory instead of written, and written as soon as it's back on. Nothing is lost.
+While autosave is off, the server still runs normally; chunks players leave are held in memory instead of written, and written as soon as it's back on. Nothing is lost. However a backup ends (finished, failed, given up by the watchdog, or the plugin disabled), autosave goes back on for exactly the worlds it turned off.
+
+With nobody online, Paper pauses the server after `pause-when-empty-seconds` (60 by default). Backups still run then: xBackup's steps on the main thread go through Paper's scheduler, which keeps running while the server is paused, and the backup doesn't wake the server up. Folia doesn't pause when empty.
 
 ## Reading only what changed
 
 Each backup reads the worlds twice, both off the server's threads. The first read runs with the server saving as usual and stores whatever changed since the last backup. The second, during the pause, reads only what changed since the first. So autosave is off for a moment even after an hour of building, and even the very first backup of a big world.
 
-What counts as changed is cheap to tell: each region file's header records where every chunk sits and when it was written, so an unchanged chunk is recognised from 8 bytes and reused without being read. Other files are recognised by size and time.
+What counts as changed is cheap to tell: each region file's header records where every chunk sits and when it was written, so an unchanged chunk is recognised from 8 bytes and reused without being read. Those times are whole seconds, so a chunk stamped in the same second as the last read is read again, to be sure. Other files are recognised by size and time.
 
 ## Storage
 

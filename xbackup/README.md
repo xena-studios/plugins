@@ -39,7 +39,7 @@ api/                   the developer API (co.xenastudios:xbackup-api)
 boot-checks.txt        console commands CI runs on real Paper and Folia servers
 ```
 
-The store engine, the backup scanner and restores are pure Java with no server classes, so they're tested without a server: `StoreTest`, `BackupTest` (real-format region files, restores compared byte for byte), `CrashTest` (every operation killed at random writes, 160 rounds) and `KillTest` (a second JVM killed with SIGKILL mid-backup).
+The store engine, the backup scanner and restores are pure Java with no server classes, so they're tested without a server: `StoreTest`, `BackupTest` (real-format region files, restores compared byte for byte), `CrashTest` (every operation killed at a random write anywhere in it, 160 rounds), `KillTest` (a second JVM killed with SIGKILL mid-backup), `SwapTest` (the restore swap stopped or failing at every step), `RestoreSafetyTest` (a hostile repository can't write outside the restore), `MirrorTest` (what a copy may delete from a remote) and `AutosaveGateTest` (autosave is never left off).
 
 `RemoteTest` runs every network remote against real servers in Docker when `XB_REMOTES` is set:
 
@@ -49,7 +49,15 @@ docker run -d -p 18080:80 -e AUTH_TYPE=Basic -e USERNAME=xbackup -e PASSWORD=pas
 docker run -d -p 12222:22 atmoz/sftp xbackup:pass:::upload
 docker run -d -p 12121:21 -p 21000-21010:21000-21010 -e "USERS=xbackup|pass" -e ADDRESS=127.0.0.1 \
   -e MIN_PORT=21000 -e MAX_PORT=21010 delfer/alpine-ftp-server
-XB_REMOTES=1 ./gradlew :xbackup:test
+# WebDAV served below the root, as Nextcloud is.
+docker run -d -p 18081:8080 rclone/rclone:1.68.2 serve webdav /tmp --addr :8080 \
+  --baseurl /remote.php/dav/files/xbackup --user xbackup --pass pass
+# FTPS with a self-signed certificate. vsftpd's session reuse check is off: Commons Net can't reuse sessions.
+openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/key.pem -out certs/cert.pem -days 30 -subj /CN=xbackup-test.invalid
+docker run -d -p 12990:21 -p 21100-21110:21100-21110 -e "USERS=xbackup|pass" -e ADDRESS=127.0.0.1 \
+  -e MIN_PORT=21100 -e MAX_PORT=21110 -e "TLS_CERT=/certs/cert.pem -orequire_ssl_reuse=NO" -e TLS_KEY=/certs/key.pem \
+  -v "$PWD/certs:/certs:ro" delfer/alpine-ftp-server
+XB_REMOTES=1 XB_FTPS_PIN="$(openssl x509 -in certs/cert.pem -noout -fingerprint -sha256 | cut -d= -f2)" ./gradlew :xbackup:test
 ```
 
 The cloud drives are tested against local stand-ins for their APIs (`CloudDrivesTest`).

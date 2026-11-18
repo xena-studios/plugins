@@ -134,14 +134,13 @@ public record XBConfig(
         Message noWarnings,
         @Comment("<id> isn't a punishment, or isn't one this command can revoke.") Message noSuchId,
         @Comment("<player> has xbans.exempt.") Message exempt,
-        @Comment("<player> has a higher weight (xbans.weight.<n>) than the sender.") Message outranks,
+        @Comment("<player>'s weight (xbans.weight.<n>) is as high as the sender's or higher.") Message outranks,
         @Comment("Over the sender's staff-limits. <max> is the longest they may give.") Message overLimit,
         @Comment("A template's permission is missing. <template> is its name.") Message templateNoPermission,
         @Comment("Choosing a server: needs xbans.scope.") Message scopeNoPermission,
         Message extraSilentNoPermission,
         @Comment("Another plugin stopped the punishment.") Message cancelled,
         @Comment("Couldn't be saved. The console says why.") Message failed,
-        @Comment("/kick for a player who isn't online (on any server, in network mode).") Message notOnline,
         @Comment("/prunehistory. <count> entries of <player>'s were removed.") Message pruned,
         @Comment("/prunehistory without confirming. <count> would be removed.") Message pruneConfirm,
         @Comment("/history and /staffhistory. <player>, <count>.") Message historyHeader,
@@ -234,7 +233,8 @@ public record XBConfig(
     public record StaffLimits(
         @Comment({
             "Weights: a player with xbans.weight.<n> can only be punished by someone with a higher",
-            "weight. Players without one can be punished by anyone with the command."})
+            "weight. Players without one can be punished by anyone with the command. A player's",
+            "weight is the one they had when they last joined, if they're offline."})
         boolean weights,
         @Comment({
             "Longest ban and mute each group may give. A staff member with a group's permission",
@@ -347,7 +347,6 @@ public record XBConfig(
             Message.of("<prefix><error>You can't use -S."),
             Message.of("<prefix><error>Another plugin stopped that."),
             Message.of("<prefix><error>That couldn't be saved.</error> The console says why."),
-            Message.of("<prefix><error><highlight><player></highlight> isn't online."),
             Message.of("<prefix><success>Removed</success> <highlight><count></highlight> inactive entries from <player>'s history."),
             Message.of("<prefix>That removes <highlight><count></highlight> inactive entries from <player>'s history for good."
                 + " Run it again with <highlight>confirm</highlight> on the end."),

@@ -34,6 +34,7 @@ public class XBans extends XenaPlugin<XBConfig> {
     private Network network;
     private Alts alts;
     private Api api;
+    private co.xenastudios.xbans.importer.Imports imports;
 
     @Override
     protected ConfigSpec<XBConfig> configSpec() {
@@ -57,6 +58,7 @@ public class XBans extends XenaPlugin<XBConfig> {
             cursors = new Cursors(store);
             alts = new Alts(this);
             api = new Api(this);
+            imports = new co.xenastudios.xbans.importer.Imports(this);
         }
         store.origin(config.scopes().serverName());
         store.sync(new Store.Wanted(config.storage(), config.network(), config.ips().hash()));
@@ -117,6 +119,10 @@ public class XBans extends XenaPlugin<XBConfig> {
 
     public Cursors cursors() {
         return cursors;
+    }
+
+    public co.xenastudios.xbans.importer.Imports imports() {
+        return imports;
     }
 
     public Alts alts() {

@@ -194,7 +194,7 @@ public final class Punisher {
         Entry entry = new Entry(draft, ip);
         Entry replaced = replaces;
         Removal replacement = replaced == null ? null : new Removal(request.staff(), request.staffName(), Instant.ofEpochMilli(now),
-            "Replaced by a new " + type.name().toLowerCase(java.util.Locale.ROOT));
+            Store.REPLACED_REASON);
         return plugin.store().insert(entry, replaced, replacement, () -> firePunish(request, entry))
             .thenApply(stored -> {
                 applyMade(stored, replaced == null ? null : replaced.id(), true, request.extraSilent(), request.sender());

@@ -1,7 +1,6 @@
 package co.xenastudios.xbans.model;
 
 import co.xenastudios.core.config.Codec;
-import co.xenastudios.core.text.Durations;
 import java.time.Duration;
 import java.util.Locale;
 
@@ -10,13 +9,42 @@ import java.util.Locale;
  * {@code 1.5h}, {@code 2mo}, {@code 1y}, {@code 5 days}, or {@code perm}. Units are
  * {@code s m h d w mo y}; a month is 30 days and a year 365.
  *
- * @param millis how long, in milliseconds; 0 means permanent
+ * <p>Not a record: the config writes it as one value ({@code 7d}), not a section.
  */
-public record Length(long millis) implements Comparable<Length> {
+public final class Length implements Comparable<Length> {
 
     public static final Length PERMANENT = new Length(0);
     /** The longest a punishment can last before it counts as permanent. */
     static final long MAX_MILLIS = 100L * 365 * 86_400_000L;
+    private static final long[] SIZES = {365 * 86_400_000L, 30 * 86_400_000L, 604_800_000L, 86_400_000L, 3_600_000L, 60_000L, 1_000L};
+    private static final String[] UNITS = {"y", "mo", "w", "d", "h", "m", "s"};
+
+    private final long millis;
+
+    /** @param millis how long, in milliseconds; 0 means permanent */
+    public Length(long millis) {
+        this.millis = millis;
+    }
+
+    /** How long, in milliseconds; 0 means permanent. */
+    public long millis() {
+        return millis;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Length length && length.millis == millis;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(millis);
+    }
+
+    @Override
+    public String toString() {
+        return typed();
+    }
 
     public boolean permanent() {
         return millis == 0;
@@ -40,14 +68,51 @@ public record Length(long millis) implements Comparable<Length> {
         return Long.compare(millis, other.millis);
     }
 
-    /** As typed: {@code perm}, or the short form such as {@code 7d} or {@code 1w3d}. */
+    /** As typed: {@code permanent}, or the short form such as {@code 30d}, {@code 2w} or {@code 1d12h}. */
     public String typed() {
-        return permanent() ? "permanent" : Durations.format(Duration.ofMillis(millis)).replace(" ", "");
+        if (permanent()) {
+            return "permanent";
+        }
+        // One unit when one fits exactly (14d is 2w, 365d is 1y; months are left as days, 30d);
+        // otherwise days and smaller.
+        for (int u : new int[] {0, 2, 3}) {
+            if (millis % SIZES[u] == 0) {
+                return millis / SIZES[u] + UNITS[u];
+            }
+        }
+        StringBuilder out = new StringBuilder();
+        long left = millis;
+        for (int u = 3; u < SIZES.length; u++) {
+            if (left >= SIZES[u]) {
+                out.append(left / SIZES[u]).append(UNITS[u]);
+                left %= SIZES[u];
+            }
+        }
+        return out.isEmpty() ? "1s" : out.toString();
     }
 
-    /** As shown in messages: {@code 7d}, {@code 1w 3d}. Permanent is the caller's word. */
+    /** As shown in messages: {@code 7d}, {@code 1mo}, {@code 1d 12h}: the two largest units. */
     public String shown() {
-        return Durations.format(Duration.ofMillis(millis));
+        return format(millis);
+    }
+
+    /** A length of time in milliseconds as messages show it: the two largest units, such as {@code 2mo 3d}. */
+    public static String format(long millis) {
+        long left = Math.max(0, millis);
+        StringBuilder out = new StringBuilder();
+        int shown = 0;
+        for (int u = 0; u < SIZES.length && shown < 2; u++) {
+            long amount = left / SIZES[u];
+            if (amount > 0) {
+                if (!out.isEmpty()) {
+                    out.append(' ');
+                }
+                out.append(amount).append(UNITS[u]);
+                left -= amount * SIZES[u];
+                shown++;
+            }
+        }
+        return out.isEmpty() ? "0s" : out.toString();
     }
 
     /** Whether the word is one of the ways to say "permanent". */

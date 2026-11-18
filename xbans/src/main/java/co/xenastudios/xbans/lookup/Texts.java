@@ -1,10 +1,10 @@
 package co.xenastudios.xbans.lookup;
 
-import co.xenastudios.core.text.Durations;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xbans.api.Punishment;
 import co.xenastudios.xbans.config.XBConfig;
 import co.xenastudios.xbans.model.Entry;
+import co.xenastudios.xbans.model.Length;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -49,7 +49,7 @@ public final class Texts {
         if (p.expires() == null) {
             return "permanent";
         }
-        return Durations.format(Duration.between(p.created(), p.expires()));
+        return Length.format(Duration.between(p.created(), p.expires()).toMillis());
     }
 
     /** "for 7d" or "permanently", for broadcasts. */
@@ -58,7 +58,7 @@ public final class Texts {
         if (p.expires() == null) {
             return words.permanently();
         }
-        return words.forTime().replace("<time>", Durations.format(Duration.between(p.created(), p.expires())));
+        return words.forTime().replace("<time>", Length.format(Duration.between(p.created(), p.expires()).toMillis()));
     }
 
     public String typeWord(Punishment p) {
@@ -82,7 +82,7 @@ public final class Texts {
         }
         if (entry.active(now)) {
             long left = entry.left(now);
-            return words.active().replace("<time>", left < 0 ? "permanent" : Durations.format(Duration.ofMillis(left)));
+            return words.active().replace("<time>", left < 0 ? "permanent" : Length.format(left));
         }
         return words.ended();
     }
@@ -100,7 +100,7 @@ public final class Texts {
             Placeholders.text("scope", p.isGlobal() ? "global" : p.scope()),
             Placeholders.text("date", date(p.created())),
             Placeholders.text("expires", p.expires() == null ? "never" : date(p.expires())),
-            Placeholders.text("time-left", left < 0 ? "forever" : Durations.format(Duration.ofMillis(left))),
+            Placeholders.text("time-left", left < 0 ? "forever" : Length.format(left)),
             Placeholders.text("length", length(p)),
             Placeholders.text("duration", forDuration(p)),
             Placeholders.text("appeal", current.screens().appealLink()),

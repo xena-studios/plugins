@@ -53,8 +53,12 @@ public final class Store {
     static final Duration RETRY = Duration.ofSeconds(15);
     public static final String TOPIC_PUNISH = "punish";
     public static final String TOPIC_REVOKE = "revoke";
+    /** The reason on a ban or mute's removal when a longer one replaced it. It still counts toward its template's ladder. */
+    public static final String REPLACED_REASON = "Replaced by a longer one";
     /** After a revoked id in the feed: it was replaced by a new punishment, so it isn't announced. */
     public static final String REPLACED = "|r";
+    /** After a punished id in the feed: imported, so it's taken in without a broadcast. */
+    public static final String QUIET = "|q";
     /** After a revoked id in the feed: revoked silently. */
     public static final String SILENT = "|s";
 
@@ -475,6 +479,51 @@ public final class Store {
         return true;
     }
 
+    /**
+     * Stores an imported punishment, with its removal if it had one, unless a row from the
+     * same place was imported before. Part of the caller's transaction.
+     *
+     * @param imported where it came from, such as {@code "litebans:bans:12"}
+     * @return its new id, or -1 if it was already imported
+     */
+    public static long insertImported(Connection c, Backend b, Entry entry, String imported) throws SQLException {
+        try (PreparedStatement exists = c.prepareStatement(b.database().sql("SELECT 1 FROM {p}punishments WHERE imported = ?"))) {
+            exists.setString(1, Rows.clip(imported, 96));
+            try (ResultSet row = exists.executeQuery()) {
+                if (row.next()) {
+                    return -1;
+                }
+            }
+        }
+        long id;
+        try (PreparedStatement insert = c.prepareStatement(b.database().sql(Rows.INSERT), Statement.RETURN_GENERATED_KEYS)) {
+            Rows.bind(insert, entry, "import", imported);
+            insert.executeUpdate();
+            try (ResultSet keys = insert.getGeneratedKeys()) {
+                if (!keys.next()) {
+                    throw new SQLException("The database gave the imported punishment no id.");
+                }
+                id = keys.getLong(1);
+            }
+        }
+        if (entry.punishment().removal() != null) {
+            removal(c, b, id, entry.punishment().removal());
+        }
+        return id;
+    }
+
+    /** Adds a player an import knows about, unless they're already known. Part of the caller's transaction. */
+    public static void importPlayer(Connection c, Backend b, UUID id, String name, long first, long last) throws SQLException {
+        try (PreparedStatement insert = c.prepareStatement(b.database().sql(b.database().dialect().insertIgnore()
+            + " INTO {p}players (uuid, name, first_seen, last_seen, weight, exempt) VALUES (?, ?, ?, ?, 0, 0)"))) {
+            insert.setString(1, id.toString());
+            insert.setString(2, Rows.clip(name, 32));
+            insert.setLong(3, first);
+            insert.setLong(4, last);
+            insert.executeUpdate();
+        }
+    }
+
     /** Records a join: the player's name, weight and exemption, and their IP key if there is one. */
     public void seen(UUID id, String name, String ip, int weight, boolean exempt) {
         long now = System.currentTimeMillis();
@@ -609,15 +658,19 @@ public final class Store {
         return found;
     }
 
-    /** How many of a player's punishments under a template, made since then and not revoked, count toward its ladder. */
+    /**
+     * How many of a player's punishments under a template count toward its ladder: those made
+     * since then that weren't revoked (one replaced by a longer one still counts).
+     */
     public CompletableFuture<Integer> ladderStep(UUID target, String template, long since) {
         return read((c, b) -> {
             try (PreparedStatement select = c.prepareStatement(b.database().sql("SELECT COUNT(*) FROM {p}punishments p"
                 + " LEFT JOIN {p}removals r ON r.punishment = p.id"
-                + " WHERE p.uuid = ? AND p.template = ? AND p.created >= ? AND r.punishment IS NULL"))) {
+                + " WHERE p.uuid = ? AND p.template = ? AND p.created >= ? AND (r.punishment IS NULL OR r.reason = ?)"))) {
                 select.setString(1, target.toString());
                 select.setString(2, template);
                 select.setLong(3, since);
+                select.setString(4, REPLACED_REASON);
                 try (ResultSet row = select.executeQuery()) {
                     return row.next() ? row.getInt(1) : 0;
                 }

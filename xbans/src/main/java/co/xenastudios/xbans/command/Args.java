@@ -129,9 +129,10 @@ public record Args(
         return new Args(args[0], silent, extraSilent, publicFlag, ip, scope, length, template, reason, badLength);
     }
 
-    // A number straight followed by letters: a length typed wrong, not the start of a reason.
+    // A short number and unit letters, such as "3dd" or "1h30": a length typed wrong, not the start of a reason.
     private static boolean looksLikeLength(String word) {
-        return word.length() > 1 && Character.isDigit(word.charAt(0)) && word.chars().allMatch(Character::isLetterOrDigit)
-            && word.chars().anyMatch(Character::isLetter);
+        return word.length() <= 8 && LENGTHISH.matcher(word.toLowerCase(Locale.ROOT)).matches();
     }
+
+    private static final java.util.regex.Pattern LENGTHISH = java.util.regex.Pattern.compile("\\d[\\d.smhdwoy]*[smhdwoy][\\d.smhdwoy]*");
 }

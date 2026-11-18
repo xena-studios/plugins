@@ -1,0 +1,121 @@
+package co.xenastudios.xbans.importer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import co.xenastudios.xbans.api.Punishment;
+import co.xenastudios.xbans.api.PunishmentType;
+import co.xenastudios.xbans.model.Entry;
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+/**
+ * LiteBans' tables, as its web interface reads them (litebans-php), mapped to xBans'
+ * punishments. The same SQL runs on MySQL; SQLite stands in here.
+ */
+class LiteBansSourceTest {
+
+    @TempDir
+    Path folder;
+
+    private static final UUID STEVE = UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5");
+    private static final UUID ALEX = UUID.fromString("853c80ef-3c37-49fd-aa49-938b674adae6");
+    private static final UUID MOD = UUID.fromString("61699b2e-d327-4a01-9f1e-0ea8c3f06bc6");
+
+    @Test
+    void readsBansMutesWarningsKicksAndLogins() throws Exception {
+        long now = System.currentTimeMillis();
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("litebans.db"))) {
+            try (Statement s = c.createStatement()) {
+                String columns = "(id INTEGER PRIMARY KEY, uuid VARCHAR(36), ip VARCHAR(45), reason VARCHAR(2048),"
+                    + " banned_by_uuid VARCHAR(36), banned_by_name VARCHAR(128), removed_by_uuid VARCHAR(36),"
+                    + " removed_by_name VARCHAR(128), removed_by_reason VARCHAR(2048), removed_by_date TIMESTAMP,"
+                    + " time BIGINT, until BIGINT, template INT, server_scope VARCHAR(32), server_origin VARCHAR(32),"
+                    + " silent BIT, ipban BIT, ipban_wildcard BIT, active BIT";
+                s.execute("CREATE TABLE litebans_bans " + columns + ")");
+                s.execute("CREATE TABLE litebans_mutes " + columns + ")");
+                s.execute("CREATE TABLE litebans_warnings " + columns + ", warned BIT)");
+                s.execute("CREATE TABLE litebans_kicks " + columns + ")");
+                s.execute("CREATE TABLE litebans_history (id INTEGER PRIMARY KEY, date TIMESTAMP, name VARCHAR(16),"
+                    + " uuid VARCHAR(36), ip VARCHAR(45))");
+                // A permanent ban in force, by a moderator.
+                s.execute("INSERT INTO litebans_bans VALUES (1, '" + STEVE + "', '203.0.113.9', 'Hacking', '" + MOD
+                    + "', 'Mod', NULL, NULL, NULL, NULL, " + (now - 1000) + ", -1, 0, '*', 'lobby', 0, 0, 0, 1)");
+                // A temporary IP ban that was lifted early.
+                s.execute("INSERT INTO litebans_bans VALUES (2, '" + ALEX + "', '198.51.100.7', 'Alts', 'CONSOLE',"
+                    + " 'Console', '" + MOD + "', 'Mod', 'Appealed', 1700000000000, " + (now - 5000) + ", " + (now + 86_400_000L)
+                    + ", 0, 'survival', 'survival', 1, 1, 0, 0)");
+                // A mute that ran out on its own.
+                s.execute("INSERT INTO litebans_mutes VALUES (1, '" + STEVE + "', NULL, 'Spam', 'CONSOLE', 'Console', NULL,"
+                    + " '#expired', NULL, NULL, " + (now - 100_000) + ", " + (now - 50_000) + ", 0, 'global', 'lobby', 0, 0, 0, 0)");
+                s.execute("INSERT INTO litebans_warnings VALUES (1, '" + STEVE + "', NULL, 'Language', 'CONSOLE', 'Console',"
+                    + " NULL, NULL, NULL, NULL, " + (now - 1000) + ", 0, 0, '*', 'lobby', 0, 0, 0, 1, 1)");
+                s.execute("INSERT INTO litebans_kicks VALUES (1, '" + ALEX + "', NULL, 'Calm down', 'CONSOLE', 'Console',"
+                    + " NULL, NULL, NULL, NULL, " + (now - 1000) + ", 0, 0, '*', 'lobby', 0, 0, 0, 0)");
+                s.execute("INSERT INTO litebans_history VALUES (1, 1600000000000, 'OldSteve', '" + STEVE + "', '203.0.113.9')");
+                s.execute("INSERT INTO litebans_history VALUES (2, 1700000000000, 'Steve', '" + STEVE + "', '203.0.113.9')");
+                s.execute("INSERT INTO litebans_history VALUES (3, 1700000000000, 'Alex', '" + ALEX + "', '203.0.113.9')");
+            }
+            Haul haul = LiteBansSource.read(c, "litebans_", "*");
+            Map<String, Entry> rows = haul.rows.stream()
+                .collect(Collectors.toMap(Haul.Row::key, Haul.Row::entry, (a, b) -> a, java.util.LinkedHashMap::new));
+            assertEquals(5, rows.size());
+            assertEquals(2, haul.count(PunishmentType.BAN));
+            assertEquals(2, haul.players());
+
+            Punishment ban = rows.get("litebans:bans:1").punishment();
+            assertEquals(STEVE, ban.target());
+            assertEquals("Steve", ban.targetName(), "the newest name from the logins");
+            assertEquals(MOD, ban.staff());
+            assertEquals("Mod", ban.staffName());
+            assertTrue(ban.isPermanent());
+            assertNull(ban.removal());
+            assertTrue(rows.get("litebans:bans:1").active(now));
+            assertFalse(ban.ipBased());
+            assertNull(rows.get("litebans:bans:1").ip(), "the IP isn't kept with an account ban");
+
+            Entry lifted = rows.get("litebans:bans:2");
+            assertTrue(lifted.punishment().ipBased());
+            assertEquals("198.51.100.7", lifted.ip());
+            assertEquals("survival", lifted.punishment().scope());
+            assertNull(lifted.punishment().staff(), "CONSOLE isn't a uuid");
+            assertTrue(lifted.punishment().silent());
+            assertNotNull(lifted.punishment().removal());
+            assertEquals("Appealed", lifted.punishment().removal().reason());
+            assertEquals(MOD, lifted.punishment().removal().staff());
+            assertFalse(lifted.active(now), "lifted early, so not in force");
+
+            Entry expired = rows.get("litebans:mutes:1");
+            assertNull(expired.punishment().removal(), "it ran out; nobody revoked it");
+            assertFalse(expired.active(now));
+            assertEquals("*", expired.punishment().scope());
+
+            assertTrue(rows.get("litebans:warnings:1").active(now));
+            assertEquals(PunishmentType.KICK, rows.get("litebans:kicks:1").type());
+
+            Map<UUID, Haul.Seen> seen = haul.seen.stream().collect(Collectors.toMap(Haul.Seen::id, Function.identity()));
+            assertEquals("203.0.113.9", seen.get(STEVE).ip());
+            assertEquals(1600000000000L, seen.get(STEVE).first());
+            assertEquals(1700000000000L, seen.get(STEVE).last());
+        }
+    }
+
+    @Test
+    void missingTablesAreSkipped() throws Exception {
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("empty.db"))) {
+            Haul haul = LiteBansSource.read(c, "litebans_", "*");
+            assertTrue(haul.rows.isEmpty());
+        }
+    }
+}

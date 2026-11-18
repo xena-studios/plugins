@@ -1,5 +1,13 @@
 # xUtilities changelog
 
+## Unreleased
+
+Replace the jar and restart. Your config is kept as it is.
+
+### Added
+
+- A developer API, so other plugins can work with xUtilities: they can read, set and clear where `/back` takes a player (a teleport plugin can make `/back` work for its own teleports, a minigame can stop `/back` returning into it), and check which commands are on. See [Developer API](https://docs.xenastudios.co/xutilities/developer-api/). It costs nothing unless a plugin uses it.
+
 ## 2.0.2
 
 Replace the jar and restart. Your config is kept as it is.

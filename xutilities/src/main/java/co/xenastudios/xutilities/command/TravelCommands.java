@@ -3,6 +3,7 @@ package co.xenastudios.xutilities.command;
 import co.xenastudios.core.Setup;
 import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.task.Tasks;
+import co.xenastudios.xutilities.api.event.BackTeleportEvent;
 import co.xenastudios.xutilities.config.Settings;
 import co.xenastudios.xutilities.config.XConfig;
 import java.util.Set;
@@ -79,6 +80,11 @@ final class TravelCommands {
                     Location previous = tracker.previous(player);
                     if (previous == null || !previous.isWorldLoaded()) {
                         back.messageNone().send(player);
+                        return;
+                    }
+                    // Built only when something listens for it.
+                    if (BackTeleportEvent.getHandlerList().getRegisteredListeners().length > 0
+                        && !new BackTeleportEvent(player, previous).callEvent()) {
                         return;
                     }
                     player.teleportAsync(previous, TeleportCause.COMMAND).thenAccept(moved -> {

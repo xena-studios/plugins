@@ -26,9 +26,11 @@ xBans gives you two ways to keep less:
 
   With SQLite, the salt and the database are in the same folder, so a copy of that folder has both: keep backups of it as private as the database. With MySQL, the salt stays on the game servers and the database server never sees it.
 
-  Turning hashing on hashes every address already stored, and the names of IP bans made without an account. It can't be turned back off for that database: there are no addresses left to go back to.
+  Turning hashing on hashes every address already stored, the names of IP bans made without an account, and the record of where each imported IP ban came from, all in one go: if the server stops halfway, nothing has changed and it starts again from the beginning next time. It can't be turned back off for that database: there are no addresses left to go back to. On a network, see [turning hashing on](/xbans/networks/#turning-on-ip-hashing).
 
   A hashed database only opens with the salt it was hashed with. If `ip-salt.txt` is missing or isn't the right one, xBans doesn't make a new one (no IP ban would match anyone with it): it says so in the console and lets nobody join until the right file is back, trying again every 15 seconds.
+
+  **If the salt is lost for good** (no backup, no other server has it), create an empty file named `reset-ip-salt.txt` in `plugins/xBans/` and start the server. xBans starts over with the `ip-salt.txt` that's there, or makes a new one, and deletes `reset-ip-salt.txt`, so it happens once. IP bans, IP mutes and the record of which accounts shared an IP, made before, no longer match anyone, because their hashes can't be worked out again; account bans and mutes aren't affected. New IP records build up again as players join. On a network, stop every server first, reset on one, then copy its new `ip-salt.txt` to the others before starting them.
 
 - **Don't record them.** With `ips.enabled: false`, xBans stores no IPs at all. IP bans, IP mutes, `/alts` and `/iphistory` are off.
 

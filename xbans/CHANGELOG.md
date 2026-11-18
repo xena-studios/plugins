@@ -12,13 +12,13 @@ The first release. Drop the jar in and start the server: punishments are kept in
 - Templates with escalation ladders (`/ban Steve hacking`: 7 days, then 30, then permanent), each with its own permission (`xbans.template.<name>`), and commands the console runs at a number of warnings.
 - Staff limits: weights (`xbans.weight.<n>`), exempt players, and the longest ban and mute per group, templates' durations included (`xbans.limit.bypass-templates` lifts that). An IP ban is held to every account on the IP.
 - Unbans follow weights too: staff lift their own punishments and those given by staff with no higher a weight; `xbans.unban.override` lifts any.
-- A new ban or mute replaces one on the same server only if it lasts at least as long and reaches everyone the old one did: an account ban never lifts an IP ban.
+- A new ban or mute replaces one on the same server only if it lasts at least as long, reaches everyone the old one did, and its sender could lift the old one: an account ban never lifts an IP ban, and a helper never swaps a senior's ban for their own. Re-banning with the same length changes the reason.
 - Replaces vanilla `/ban`, `/pardon`, `/ban-ip`, `/pardon-ip`, `/kick` and `/banlist`.
 
 ### Enforcing
 
 - Every ban and mute in force is kept in memory and loaded before anyone can join. Bans are checked at login, again as the connection finishes, and at join, so a ban made while someone connects still catches them.
-- Mutes block chat (the older chat events too, while a plugin listens to them), the commands in `mutes.blocked-commands` by any alias or namespace, signs, books and anvil renames.
+- Mutes block chat (the older chat events too, so a script or Discord bridge listening there relays nothing, even one that starts listening long after startup), the commands in `mutes.blocked-commands` by any alias or namespace, signs, books and anvil renames.
 - A ban screen with the reason, time left and your appeal link.
 
 ### Looking up
@@ -29,7 +29,7 @@ The first release. Drop the jar in and start the server: punishments are kept in
 ### Storage, networks and privacy
 
 - SQLite or MySQL/MariaDB. Punishments are never changed or deleted: an unban is recorded beside the ban.
-- Network mode: servers sharing a MySQL database share bans within seconds, and kick a banned player from whichever server they're on. A server that misses a change catches up by reading what's in force again.
-- IPs can be stored as salted hashes (`ips.hash`), or not at all (`ips.enabled: false`). A hashed database won't open without its salt. Broadcasts and ban lists show half an address at most.
+- Network mode: servers sharing a MySQL database share bans within seconds, and kick a banned player from whichever server they're on. A server that misses a change catches up by reading what's in force again, and keeps trying every 15 seconds while the database is down.
+- IPs can be stored as salted hashes (`ips.hash`), or not at all (`ips.enabled: false`). Turning hashing on hashes everything stored in one go, imports' records included. A hashed database won't open without its salt; if the salt is lost for good, `reset-ip-salt.txt` starts over with a new one. Broadcasts and ban lists show half an address at most.
 - Imports from LiteBans (MySQL or MariaDB), the server's ban lists and EssentialsX. Players online who are banned by an import are kicked.
 - A developer API: check bans and mutes from memory, punish and revoke, read history, and punishment events.

@@ -68,9 +68,25 @@ A number and a unit, units added up in any order: `30m`, `1d2h`, `1.5h`, `2w`, `
 
 ### Replacing a punishment
 
-A new ban or mute on someone already banned or muted on the same server replaces the old one if it lasts at least as long and reaches everyone the old one did; a shorter one is refused, so a helper can't turn a permanent ban into a day. Unban first to shorten one.
+A new ban or mute on someone already banned or muted on the same server replaces the old one only if all three hold:
 
-An account ban never replaces an IP ban, since that would let the other accounts on the IP back in. If the IP ban lasts at least as long, the account ban is refused; if not, both stay in force. An IP ban reaches the account too, so it replaces an account ban it outlasts. Mutes work the same way.
+- it reaches everyone the old one did (an IP ban reaches the account too; an account ban doesn't reach the IP's other accounts),
+- it ends no sooner (a permanent one counts as long as a permanent one), and
+- you could lift the old one yourself with `/unban`: you gave it, your weight is at least the weight of whoever did, or you have `xbans.unban.override`.
+
+Otherwise, if the old one already reaches everyone for at least as long, the new one is refused; if not, both stay in force.
+
+| Case | Example | What happens |
+| --- | --- | --- |
+| Same length | `/ban Steve x`, then `/ban Steve y` | Replaced: the new reason stands. |
+| Longer | `/tempban Steve 1d`, then `/ban Steve` | Replaced. |
+| Shorter | `/ban Steve`, then `/tempban Steve 1d` | Refused, so a helper can't turn a permanent ban into a day. Unban first to shorten one. |
+| IP over account | `/tempban Steve 1d`, then `/ipban Steve` | Replaced: the IP ban reaches Steve too. |
+| Account over IP | `/ipban Steve`, then `/ban Steve` | Never replaced, which would let the IP's other accounts back in. Refused if the IP ban lasts as long; otherwise both stay. |
+| A senior's, by a junior | The console bans Steve; a helper bans him again | Never replaced, so a helper can't swap it for their own and unban that. Refused if it's as long or shorter ("given by someone who outranks you"); if it's longer, both stay, and the helper's `/unban` lifts only their own. |
+| Mute and ban | `/ban Steve`, then `/mute Steve` | They never meet: both stay. |
+
+Mutes follow the same rule among themselves. A replaced ban or mute is kept in the history as revoked ("Replaced by a newer one"), and still counts toward its template's ladder.
 
 ### IP bans and mutes
 

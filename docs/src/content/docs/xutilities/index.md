@@ -6,8 +6,6 @@ sidebar:
   order: 1
 ---
 
-**Every command you need. None you don't.**
-
 xUtilities gives a server the small commands it needs: gamemodes, flight, speed, `/top`, `/back`, heal and feed, inventory tools, workstation menus, and link commands like `/discord` that you write yourself. Install it on your lobby, survival and minigame servers alike, then switch off whatever a server doesn't use.
 
 - **Every feature free.** No premium version, no early-access builds.
@@ -15,13 +13,14 @@ xUtilities gives a server the small commands it needs: gamemodes, flight, speed,
 - **You won't feel it running.** Nothing runs on a timer but the daily update check and bStats, and you can turn both off. `/back`'s listener exists only while `/back` is on.
 - **It doesn't stop over a typo.** A bad value in the config falls back to its default with a warning in the console.
 - **Every change applies on reload**, even turning commands on or off and adding link commands. No restarts.
-- **Paper and Folia**, from the same jar.
-
-Current version: **2.1.0**, for Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xutilities).
 
 :::note[Coming from xUtilities 1.x?]
 Replace the jar and restart. Your config is carried forward to 2.0's format, and the old file is kept beside it as `config.yml.bak-v1`. xUtilities 2 needs Paper 1.21.11 or newer.
 :::
+
+## What else it does
+
+- **Paper and Folia**, from the same jar.
 
 ## Getting started
 

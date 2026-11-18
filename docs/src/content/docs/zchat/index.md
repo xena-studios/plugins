@@ -6,8 +6,6 @@ sidebar:
   order: 1
 ---
 
-**Format your chat. Keep it clean.**
-
 zChat handles the chat basics almost every server wants: a chat format per rank, a filter that's hard to dodge, a cooldown and anti-spam, mentions, private messages, a global chat mute, clearing chat, and letting players hide chat for themselves. Every piece can be turned off.
 
 - **Every feature free.** No premium version, no early-access builds.
@@ -15,10 +13,6 @@ zChat handles the chat basics almost every server wants: a chat format per rank,
 - **A filter that's hard to dodge.** It catches `s p a c e d` words, `b4dw0rd`, `baaadword` and `bädword`, but leaves innocent words like *class* alone. See [Moderation](/zchat/moderation/).
 - **Players can't inject formatting.** What a player types goes into the format as plain text, so they can't add colours, links or hover text, unless you give them the colour permission (and even then, only colours and styles). PlaceholderAPI values keep their colours and styles, but can't add links or hover text.
 - **Works with any permissions plugin**, because ranks are picked by permission. PlaceholderAPI is optional.
-- **Every change applies on reload**, even turning commands on or off. No restarts.
-- **Paper and Folia**, from the same jar.
-
-Current version: **3.2.0**, for Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/zchat).
 
 :::note[Coming from zChat 2?]
 Replace the jar and restart. Your config is carried forward to zChat 3's format, and the old file is kept beside it as `config.yml.bak-v1`. zChat 3 needs Paper 1.21.11 or newer. One change to check: the `zchat.group.*` permissions no longer default to operators, so give your ranks their group permission (see [Chat formats](/zchat/formats/#which-format-a-player-gets)).
@@ -27,6 +21,11 @@ Replace the jar and restart. Your config is carried forward to zChat 3's format,
 :::note[Coming from zChat 1.x?]
 zChat 1.x's config can't be carried forward. zChat 3 keeps it as `config.yml.old` and writes a fresh config: copy your formats and words across by hand.
 :::
+
+## What else it does
+
+- **Every change applies on reload**, even turning commands on or off. No restarts.
+- **Paper and Folia**, from the same jar.
 
 ## Getting started
 

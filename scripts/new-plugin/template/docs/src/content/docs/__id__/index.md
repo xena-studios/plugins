@@ -6,7 +6,6 @@ sidebar:
   order: 1
 ---
 
-**{{tagline}}**
 
 TODO: what {{display}} is and who it's for, in two sentences.
 

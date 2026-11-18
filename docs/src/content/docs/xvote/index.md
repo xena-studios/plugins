@@ -6,20 +6,13 @@ sidebar:
   order: 1
 ---
 
-**Votes in. Rewards out.**
-
 xVote receives votes from server lists and rewards players for them, in one jar for Paper and Folia. It's for servers that would otherwise run one plugin to receive votes and another to reward them, and it pays every vote exactly once, even across a network.
 
 - **A Votifier built in.** It speaks Votifier v1 and v2, on its own threads, with limits that keep floods and slow connections out. See [Setting up](/xvote/setting-up/).
 - **Every vote paid once.** Each vote is a row in a ledger, and a vote is taken by one server before it's paid. Offline players are paid when they join; a name that has never joined waits until it does. On a network, the player is paid on whichever server they're on.
 - **Rewards your way.** Money (through Vault), items, commands, messages, broadcasts and sounds, with a chance each. Give them on every vote, per site, on the first vote of the day, every Nth vote, at streak milestones and at vote totals.
 - **For players.** `/vote` lists each site with a link and when it opens again. `/vote top` has today's, this week's, this month's and all-time leaderboards. Reminders when they join, and a vote party for everyone.
-- **You won't feel it running.** Totals and leaderboards are kept in memory; the database is written on its own thread. Nothing repeats unless you turn on timed reminders.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
-- **Every change applies on reload**, sites and rewards included. Only `storage` and `network` wait for a restart.
 - **Easy to switch to.** It takes over NuVotifier's keys and tokens on its first start, so your lists keep working, and imports every player's total from VotingPlugin or SuperbVote. See [Switching](/xvote/switching/).
-
-Current version: **1.0.0**, for Paper 1.21.11 or newer (or Purpur, or Folia) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xvote).
 
 ## How it works
 
@@ -32,6 +25,12 @@ A vote from the same site sooner than that site's **cooldown** is a repeat and i
 ## Storage
 
 Votes are kept in SQLite out of the box, in `plugins/xVote/votes.db`, or in MySQL/MariaDB. Several servers can share one MySQL database: see [Networks](/xvote/setting-up/#networks).
+
+## What else it does
+
+- **You won't feel it running.** Totals and leaderboards are kept in memory; the database is written on its own thread. Nothing repeats unless you turn on timed reminders.
+- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every change applies on reload**, sites and rewards included. Only `storage` and `network` wait for a restart.
 
 ## Getting started
 

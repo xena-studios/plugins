@@ -2,8 +2,9 @@
    Starlight, as docs.raptorpanel.net wears Raptor's: deepslate neutrals, Space
    Grotesk for words, JetBrains Mono for code and labels, dark only. Pages outside
    a plugin use the family's neutral accent; each plugin's pages swap in its own
-   (public/accents/, via src/routeData.ts). The details (link underlines, focus
-   rings, hairlines, pill buttons, frosted header) follow xenastudios.co. */
+   (public/accents/, via src/routeData.ts). The frame is a game GUI (gui.css, DESIGN.md):
+   beveled panels, inset slots and item tooltips; the accent marks only a name, the
+   chosen slot and the primary action. Focus rings are white. */
 @import "@fontsource-variable/space-grotesk";
 @import "@fontsource-variable/jetbrains-mono";
 
@@ -81,9 +82,9 @@ a:hover {
 }
 
 :focus-visible {
-  outline: 2px solid var(--sl-color-accent);
+  outline: var(--gui-px) solid var(--text);
   outline-offset: 3px;
-  border-radius: 2px;
+  border-radius: 0;
 }
 
 ::selection {
@@ -91,17 +92,16 @@ a:hover {
   color: var(--text);
 }
 
-/* Header: a frosted bar with a hairline. */
+/* Header: a solid GUI bar with one dark edge under it. */
 .header {
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  border-bottom-color: color-mix(in srgb, var(--rule) 70%, transparent);
+  background: var(--gui-panel);
+  border-bottom: var(--gui-px) solid var(--gui-edge);
+  box-shadow: none;
+}
+:root {
+  --sl-color-bg-nav: var(--gui-panel);
 }
 
-/* No divider after the GitHub link: it separated the theme picker, which is gone. */
-.social-icons::after {
-  display: none;
-}
 
 /* XENA STUDIOS (the endorsement), then which site this is, as a mono label. */
 .site-title {
@@ -130,11 +130,20 @@ a:hover {
 .sidebar-content a:hover {
   color: var(--text);
 }
+/* The current page is the chosen slot: inset, framed in the accent. */
 .sidebar-content a[aria-current="page"],
 .sidebar-content a[aria-current="page"]:hover {
-  color: var(--sl-color-accent);
-  background: color-mix(in srgb, var(--sl-color-accent) 12%, transparent);
+  color: var(--text);
+  background: var(--gui-slot);
+  border-radius: 0;
+  box-shadow:
+    inset var(--gui-px) var(--gui-px) 0 var(--gui-slot-lo),
+    inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -1) 0 var(--gui-slot-hi),
+    0 0 0 var(--gui-px) var(--sl-color-accent);
   font-weight: 600;
+}
+.sidebar-content a {
+  border-radius: 0;
 }
 .sidebar-content .group-label .large {
   font-family: var(--mono);
@@ -161,63 +170,72 @@ starlight-toc a {
   text-decoration: none;
 }
 starlight-toc a[aria-current="true"] {
-  color: var(--sl-color-accent);
+  color: var(--text);
+  font-weight: 600;
 }
 
-/* Buttons: 44px pills. Primary is solid accent on deepslate. */
+/* Starlight's link buttons, as GUI buttons (gui.css). */
 .sl-link-button {
   min-height: 2.75rem;
-  border-radius: 999px;
+  border-radius: 0;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 700;
+  background: var(--gui-panel);
+  color: var(--text);
+  border: var(--gui-px) solid var(--gui-edge);
+  box-shadow:
+    inset var(--gui-px) var(--gui-px) 0 var(--gui-panel-hi),
+    inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -3) 0 var(--gui-panel-lo);
 }
 .sl-link-button.primary {
   background: var(--sl-color-accent);
-  border-color: var(--sl-color-accent);
-  color: var(--bg);
+  color: var(--gui-on-accent);
+  border-color: var(--gui-edge);
 }
-.sl-link-button.primary:hover {
-  background: color-mix(in oklch, var(--sl-color-accent) 88%, white);
-}
-.sl-link-button.minimal {
-  border: 1px solid var(--rule);
-  padding-inline: 1.25rem;
-}
-.sl-link-button.minimal:hover {
-  border-color: color-mix(in oklch, var(--sl-color-accent) 55%, var(--rule));
+.sl-link-button:hover {
+  filter: brightness(1.15);
 }
 
-/* Inline code: a hairline chip on the raised surface. */
+/* Inline code sits in a slot. */
 .sl-markdown-content :not(pre) > code {
-  background: var(--raised);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  padding: 0.05em 0.35em;
+  background: var(--gui-slot);
+  border: 0;
+  border-radius: 0;
+  padding: 0.1em 0.4em;
+  box-shadow: inset 1px 1px 0 var(--gui-slot-lo), inset -1px -1px 0 var(--gui-slot-hi);
 }
 
 /* Tables: hairline rows, mono labels for the header. */
 .sl-markdown-content table {
   border-collapse: collapse;
 }
+/* Tables: the header row is a GUI bar; rows are ruled like inventory rows. */
 .sl-markdown-content :is(th, td) {
   border-color: var(--rule);
 }
 .sl-markdown-content th {
   font-family: var(--mono);
   font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.14em;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
-  background: none;
+  color: var(--gui-lore);
+  background: var(--gui-panel);
+  box-shadow: inset 0 var(--gui-px) 0 var(--gui-panel-hi), inset 0 calc(var(--gui-px) * -1) 0 var(--gui-panel-lo);
+}
+.sl-markdown-content td {
+  font-variant-numeric: tabular-nums;
 }
 
-/* Asides: hairline boxes with an accent edge. */
+/* Asides: a tooltip's panel and border, the title an attribute line. */
 .starlight-aside {
-  border-radius: 12px;
-  border: 1px solid var(--rule);
-  border-inline-start: 3px solid var(--sl-color-accent);
-  background: var(--raised);
+  border-radius: 0;
+  border: var(--gui-px) solid var(--gui-tooltip-bottom);
+  border-top-color: var(--gui-tooltip-top);
+  background: var(--gui-tooltip);
+}
+.starlight-aside__title {
+  color: var(--gui-attribute);
 }
 .starlight-aside__title {
   font-family: var(--mono);
@@ -226,31 +244,12 @@ starlight-toc a[aria-current="true"] {
   text-transform: uppercase;
 }
 
-/* Home: a big Space Grotesk title over the family's horizon. */
-.hero {
-  padding-block: clamp(3rem, 2rem + 4vw, 6rem) 0;
-}
-.hero h1 {
-  font-size: clamp(2rem, 1.2rem + 4vw, 4.5rem);
-  line-height: 1.05;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-}
-.hero .tagline {
-  max-width: 60ch;
-  font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
-  line-height: 1.7;
-  color: var(--muted);
-}
 
 /* The home page's lists: hairline rows, icon then name and one line. */
 .more-label {
   margin-top: 3rem !important;
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.6rem);
+  letter-spacing: -0.02em;
 }
 .more-list {
   list-style: none;
@@ -286,4 +285,85 @@ starlight-toc a[aria-current="true"] {
   *::after {
     transition-duration: 1ms !important;
   }
+}
+
+/* Section openers in the reading column: a pixel rule above each h2, across the column. */
+.sl-markdown-content .sl-heading-wrapper.level-h2,
+.sl-markdown-content > h2 {
+  padding-top: 1.1rem;
+  border-top: var(--gui-px) solid var(--gui-panel-lo);
+  box-shadow: inset 0 1px 0 var(--gui-panel-hi);
+}
+.sl-markdown-content .sl-heading-wrapper.level-h2 > h2 {
+  border: 0;
+  box-shadow: none;
+  padding-top: 0;
+}
+
+/* The home page has no title row of its own: the inventory carries its heading. */
+.content-panel:has(> .sl-container:empty) {
+  display: none;
+}
+.content-panel:has(> .sl-container:empty) + .content-panel {
+  border-top: 0;
+}
+
+/* Previous and next: two GUI panels. */
+.pagination-links a {
+  border-radius: 0;
+  border: var(--gui-px) solid var(--gui-edge);
+  background: var(--gui-panel);
+  box-shadow: inset var(--gui-px) var(--gui-px) 0 var(--gui-panel-hi), inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -1) 0 var(--gui-panel-lo);
+}
+.pagination-links a:hover {
+  filter: brightness(1.12);
+}
+
+/* The sidebar is a panel's inset ground. */
+:root {
+  --sl-color-bg-sidebar: #0F0E13;
+}
+
+/* Links in the reading column: text colour with a quiet underline; the accent is for names,
+   the chosen slot and the primary action, so it shows on hover only. */
+.sl-markdown-content a:not(.gui-button):not(.sl-link-button) {
+  color: var(--text);
+  text-decoration-color: color-mix(in srgb, var(--gui-lore) 60%, transparent);
+}
+.sl-markdown-content a:not(.gui-button):not(.sl-link-button):hover {
+  color: var(--sl-color-accent);
+  text-decoration-color: currentColor;
+}
+
+/* Reference tables: a command or setting in the first column never breaks mid-name. */
+.sl-markdown-content td:first-child:has(code) {
+  min-width: 14ch;
+}
+.sl-markdown-content td:first-child code {
+  white-space: nowrap;
+}
+
+/* A plugin's overview: its opening list of features reads as the item's lore, in tooltip
+   material, flowing in two columns on wide screens (columns, not grid rows, so a short
+   line never leaves a hole beside a long one). Titles are attribute lines; the accent
+   stays on the name, the chosen slot and Download. */
+.content-panel:has(.product) + .content-panel .sl-markdown-content > ul:first-of-type {
+  columns: 2 19rem;
+  column-gap: 2.25rem;
+  margin-block: 1.75rem;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  list-style: none;
+  background: var(--gui-tooltip);
+  border: var(--gui-px) solid;
+  border-image: linear-gradient(var(--gui-tooltip-top), var(--gui-tooltip-bottom)) 1;
+  outline: var(--gui-px) solid #050208;
+}
+.content-panel:has(.product) + .content-panel .sl-markdown-content > ul:first-of-type > li {
+  break-inside: avoid;
+  margin: 0 0 0.9rem;
+  color: var(--gui-lore);
+  line-height: 1.55;
+}
+.content-panel:has(.product) + .content-panel .sl-markdown-content > ul:first-of-type > li > strong:first-child {
+  color: var(--gui-attribute);
 }

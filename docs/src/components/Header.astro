@@ -1,0 +1,104 @@
+---
+// The site header: one GUI bar. XENA STUDIOS and "Plugins" on the left, the site's own
+// navigation beside it, then search and the source on the right. Starlight's mobile menu
+// button sits outside this component, so on narrow screens the navigation moves there.
+import Search from "@astrojs/starlight/components/Search.astro";
+import SiteTitle from "@astrojs/starlight/components/SiteTitle.astro";
+import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
+import catalog from "../data/plugins.json" with { type: "json" };
+
+const path = Astro.url.pathname;
+const links = [
+  // Plugins is where you are on the home page and on any plugin's pages.
+  { label: "Plugins", href: "/", current: path === "/" || catalog.plugins.some((p) => path.startsWith(p.docs)) },
+  { label: "Get started", href: "/start/requirements/", current: path.startsWith("/start/") },
+  { label: "Developers", href: "/developers/", current: path.startsWith("/developers") },
+];
+---
+<div class="xena-header">
+  <div class="title">
+    <SiteTitle />
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <ul>
+      {links.map((l) => (
+        <li>
+          <a href={l.href} aria-current={l.current ? "page" : undefined}>
+            {l.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+  <div class="tools print:hidden">
+    <Search />
+    <div class="socials">
+      <SocialIcons />
+    </div>
+  </div>
+</div>
+
+<style>
+  .xena-header {
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 2.5vw, 2.25rem);
+    height: 100%;
+  }
+  .title {
+    display: flex;
+    flex: none;
+    min-width: 0;
+  }
+  .site-nav ul {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .site-nav a {
+    display: block;
+    padding: 0.45rem 0.8rem;
+    color: var(--gui-lore);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .site-nav a:hover {
+    color: var(--text);
+    background: var(--gui-slot);
+  }
+  /* The page you're on is the chosen slot. */
+  .site-nav a[aria-current="page"] {
+    color: var(--text);
+    background: var(--gui-slot);
+    box-shadow:
+      inset var(--gui-px) var(--gui-px) 0 var(--gui-slot-lo),
+      inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -1) 0 var(--gui-slot-hi);
+  }
+  .tools {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-inline-start: auto;
+  }
+  .socials {
+    display: flex;
+    align-items: center;
+  }
+  .socials :global(a) {
+    color: var(--gui-lore);
+  }
+  .socials :global(a:hover) {
+    color: var(--text);
+  }
+  @media (max-width: 50rem) {
+    .site-nav {
+      display: none;
+    }
+    .socials {
+      display: none;
+    }
+  }
+</style>

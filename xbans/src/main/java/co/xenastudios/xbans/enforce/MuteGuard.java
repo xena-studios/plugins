@@ -28,9 +28,6 @@ import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.event.server.PluginDisableEvent;
-import org.bukkit.event.server.PluginEnableEvent;
-import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.RegisteredListener;
@@ -156,17 +153,24 @@ public final class MuteGuard {
 
     /**
      * Chat on the older events, {@link AsyncPlayerChatEvent} and {@link PlayerChatEvent}.
-     * Paper fires those in full before {@link AsyncChatEvent}, but only while some plugin
-     * listens to them, and a listener on the synchronous one moves every chat message onto
-     * the main thread. So the guard is on an older event only while another plugin listens
-     * to it: checked when plugins are enabled or disabled, and when the server has loaded.
-     * Each guard cancels at the lowest priority and again at the highest.
+     * Paper fires those in full before {@link AsyncChatEvent}, so a plugin relaying them
+     * (a Discord bridge, a script) would relay a muted player. Each guard cancels at the
+     * lowest priority and again at the highest.
+     *
+     * <p>The asynchronous one is always guarded: Paper then fires it for every message, off
+     * the server's threads, which costs about one event per message. The synchronous one
+     * can't be: a listener on it moves every chat message onto the main thread. So it's
+     * guarded only while another plugin listens to it, and each message's asynchronous event
+     * checks that first. Paper fires the synchronous one after the asynchronous one, and
+     * reads its listeners when it does, so a plugin that started listening a moment ago
+     * (a script loaded late, a bridge that just connected) is guarded from its first message,
+     * and the guard goes once it stops.
      */
-    public static final class LegacyChat implements Module, Listener {
+    public static final class LegacyChat implements Module {
 
         private final XBans xbans;
-        private final Guard async = new Guard(AsyncPlayerChatEvent.class);
-        private final Guard sync = new Guard(PlayerChatEvent.class);
+        private final Guard async = new Guard(AsyncPlayerChatEvent.class, true);
+        private final Guard sync = new Guard(PlayerChatEvent.class, false);
 
         public LegacyChat(XBans xbans) {
             this.xbans = xbans;
@@ -174,36 +178,17 @@ public final class MuteGuard {
 
         @Override
         public void enable() {
-            Bukkit.getPluginManager().registerEvents(this, xbans);
-            refresh();
+            async.on();
         }
 
         @Override
         public void disable() {
-            HandlerList.unregisterAll(this);
             async.off();
             sync.off();
         }
 
-        @EventHandler
-        public void loaded(ServerLoadEvent event) {
-            refresh();
-        }
-
-        @EventHandler
-        public void enabled(PluginEnableEvent event) {
-            refresh();
-        }
-
-        @EventHandler
-        public void disabled(PluginDisableEvent event) {
-            // Its listeners may still be registered while this runs.
-            xbans.tasks().global(this::refresh);
-        }
-
-        /** Puts each guard on while another plugin listens to its event, and takes it off once none does. */
+        /** Puts the synchronous guard on while another plugin listens to its event, and takes it off once none does. */
         void refresh() {
-            async.refresh();
             sync.refresh();
         }
 
@@ -214,10 +199,13 @@ public final class MuteGuard {
         private final class Guard implements Listener {
 
             private final Class<? extends PlayerEvent> type;
+            // The asynchronous guard: each message checks the synchronous one is on when it's needed.
+            private final boolean checks;
             private volatile boolean on;
 
-            Guard(Class<? extends PlayerEvent> type) {
+            Guard(Class<? extends PlayerEvent> type, boolean checks) {
                 this.type = type;
+                this.checks = checks;
             }
 
             synchronized void refresh() {
@@ -228,14 +216,20 @@ public final class MuteGuard {
                         break;
                     }
                 }
-                if (others && !on) {
+                if (others) {
+                    on();
+                } else {
+                    off();
+                }
+            }
+
+            synchronized void on() {
+                if (!on) {
                     EventExecutor first = (listener, event) -> stop(event, true);
                     EventExecutor last = (listener, event) -> stop(event, false);
                     Bukkit.getPluginManager().registerEvent(type, this, EventPriority.LOWEST, first, xbans, false);
                     Bukkit.getPluginManager().registerEvent(type, this, EventPriority.HIGHEST, last, xbans, false);
                     on = true;
-                } else if (!others && on) {
-                    off();
                 }
             }
 
@@ -253,6 +247,9 @@ public final class MuteGuard {
             private void stop(Event event, boolean first) {
                 if (!type.isInstance(event) || !(event instanceof org.bukkit.event.Cancellable cancellable)) {
                     return;
+                }
+                if (first && checks) {
+                    sync.refresh();
                 }
                 Player player = ((PlayerEvent) event).getPlayer();
                 if (first || !cancellable.isCancelled()) {

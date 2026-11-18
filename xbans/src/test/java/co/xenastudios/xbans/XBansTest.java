@@ -372,11 +372,52 @@ class XBansTest {
     }
 
     @Test
-    void theOlderChatEventsArentListenedToUnlessAnotherPluginDoes() {
-        for (org.bukkit.plugin.RegisteredListener listener
-            : org.bukkit.event.player.AsyncPlayerChatEvent.getHandlerList().getRegisteredListeners()) {
-            assertFalse(listener.getPlugin() == plugin, "xBans alone doesn't make Paper fire them");
-        }
+    void theSynchronousChatEventIsntListenedToUnlessAnotherPluginDoes() {
+        // A listener there would move every message onto the main thread.
+        assertEquals(0, org.bukkit.event.player.PlayerChatEvent.getHandlerList().getRegisteredListeners().length);
+    }
+
+    @Test
+    void aChatListenerAddedAfterStartupIsGuardedFromItsFirstMessage() throws Exception {
+        console("mute Steve spam");
+        await(() -> mute(steve.getUniqueId()) != null);
+        // A script loaded late, or a bridge that just connected: no plugin was enabled, nothing announced it.
+        org.bukkit.plugin.Plugin script = MockBukkit.createMockPlugin("LateScript");
+        List<String> relayed = new java.util.concurrent.CopyOnWriteArrayList<>();
+        org.bukkit.event.Listener late = new org.bukkit.event.Listener() {
+            @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+            public void relay(org.bukkit.event.player.PlayerChatEvent event) {
+                relayed.add(event.getMessage());
+            }
+        };
+        org.bukkit.event.HandlerList.unregisterAll(script);
+        server.getPluginManager().registerEvents(late, script);
+
+        // As Paper does it: the asynchronous event, then the synchronous one, cancelled if that was.
+        org.bukkit.event.player.AsyncPlayerChatEvent first = new org.bukkit.event.player.AsyncPlayerChatEvent(true, steve,
+            "hello", new java.util.HashSet<>(server.getOnlinePlayers()));
+        Thread thread = new Thread(() -> server.getPluginManager().callEvent(first));
+        thread.start();
+        thread.join(10_000);
+        assertTrue(first.isCancelled());
+        org.bukkit.event.player.PlayerChatEvent then = new org.bukkit.event.player.PlayerChatEvent(steve, "hello");
+        server.getPluginManager().callEvent(then);
+        assertTrue(then.isCancelled());
+        assertTrue(relayed.isEmpty(), "nothing relayed");
+        // Even if the asynchronous event's result is ignored: the synchronous guard is on.
+        org.bukkit.event.player.PlayerChatEvent alone = new org.bukkit.event.player.PlayerChatEvent(steve, "hi again");
+        server.getPluginManager().callEvent(alone);
+        assertTrue(alone.isCancelled());
+        assertTrue(relayed.isEmpty());
+
+        // Once the script stops listening, the next message takes the guard off again.
+        org.bukkit.event.HandlerList.unregisterAll(late);
+        org.bukkit.event.player.AsyncPlayerChatEvent next = new org.bukkit.event.player.AsyncPlayerChatEvent(true, alex,
+            "bye", new java.util.HashSet<>(server.getOnlinePlayers()));
+        Thread other = new Thread(() -> server.getPluginManager().callEvent(next));
+        other.start();
+        other.join(10_000);
+        assertFalse(next.isCancelled(), "others still chat");
         assertEquals(0, org.bukkit.event.player.PlayerChatEvent.getHandlerList().getRegisteredListeners().length);
     }
 

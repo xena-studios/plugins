@@ -17,6 +17,7 @@ import java.util.logging.Level;
  *
  * <p>A change whose punishment can't be read is tried again; if it still can't be, every
  * ban and mute in force is read again ({@link #resync}), so the change isn't lost for good.
+ * The same happens whenever the feed says it may have missed changes.
  */
 public final class Network {
 
@@ -53,7 +54,9 @@ public final class Network {
         }
         feed.subscribe(Store.TOPIC_PUNISH, change -> handle(backend, change, false));
         feed.subscribe(Store.TOPIC_REVOKE, change -> handle(backend, change, true));
-        // TODO(core #…): feed.onResync(() -> resync(backend)); once ChangeFeed.onResync is on main.
+        // The feed may have missed changes (it couldn't check for a while, or rows went unseen):
+        // read again what's in force.
+        feed.onResync(() -> resync(backend));
     }
 
     /**

@@ -19,8 +19,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * punishment made here or (in network mode) on another server.
  *
  * <p>Safe from any thread: each player's or IP's entries are an immutable list, replaced
- * whole. Expiry is checked when read, so nothing runs on a timer; an expired entry is
- * dropped the next time it's read.
+ * whole, so reads take no lock. Changes (adding, removing, a reload finishing) take this
+ * object's lock: they're rare, and each touches several maps that must agree. Expiry is
+ * checked when read, so nothing runs on a timer; an expired entry is dropped the next time
+ * it's read.
  */
 public final class Active {
 
@@ -34,7 +36,7 @@ public final class Active {
     private final Set<Long> touched = ConcurrentHashMap.newKeySet();
 
     /** Adds a ban or mute that's in force. Anything else is ignored. */
-    public void add(Entry entry) {
+    public synchronized void add(Entry entry) {
         PunishmentType type = entry.type();
         if (type != PunishmentType.BAN && type != PunishmentType.MUTE || entry.punishment().removal() != null) {
             return;
@@ -54,7 +56,7 @@ public final class Active {
     }
 
     /** Takes a punishment out, as when it's revoked. Returns what was there, or null. */
-    public Entry remove(long id) {
+    public synchronized Entry remove(long id) {
         touch(id);
         Entry entry = byId.remove(id);
         if (entry == null) {
@@ -171,6 +173,12 @@ public final class Active {
          * @return the entries that were added
          */
         public List<Entry> finish(Collection<Entry> inForce) {
+            synchronized (Active.this) {
+                return apply(inForce);
+            }
+        }
+
+        private List<Entry> apply(Collection<Entry> inForce) {
             try {
                 Set<Long> ids = new HashSet<>();
                 List<Entry> added = new ArrayList<>();
@@ -188,12 +196,18 @@ public final class Active {
                 }
                 return added;
             } finally {
-                abandon();
+                end();
             }
         }
 
         /** Ends the reload without changing anything, as when the database couldn't be read. */
         public void abandon() {
+            synchronized (Active.this) {
+                end();
+            }
+        }
+
+        private void end() {
             if (!done) {
                 done = true;
                 if (syncing.decrementAndGet() == 0) {
@@ -204,7 +218,7 @@ public final class Active {
     }
 
     /** Starts a reload; call {@link Sync#finish} or {@link Sync#abandon} once the database has been read. */
-    public Sync beginSync() {
+    public synchronized Sync beginSync() {
         syncing.incrementAndGet();
         return new Sync();
     }

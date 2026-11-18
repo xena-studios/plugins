@@ -13,9 +13,11 @@ import co.xenastudios.xbans.model.Entry;
 import co.xenastudios.xbans.storage.Store;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
@@ -28,7 +30,8 @@ import org.mockbukkit.mockbukkit.entity.PlayerMock;
 
 /**
  * A change from another server whose punishment can't be read: tried again, then every
- * ban and mute in force is read again, so the change isn't lost.
+ * ban and mute in force is read again, so the change isn't lost. That reload is tried again
+ * until it works, and never runs more than once at a time.
  */
 class NetworkTest {
 
@@ -75,13 +78,29 @@ class NetworkTest {
         return new ChangeFeed.Change(1, Store.TOPIC_PUNISH, Long.toString(id), System.currentTimeMillis());
     }
 
+    private static ChangeFeed.Change revoked(long id) {
+        return new ChangeFeed.Change(1, Store.TOPIC_REVOKE, Long.toString(id), System.currentTimeMillis());
+    }
+
+    private Network network(Network.Reader reader) {
+        return network(reader, () -> plugin.store().reloadInForce());
+    }
+
+    private Network network(Network.Reader reader, Network.Reloader reloader) {
+        return new Network(plugin, reader, reloader, Duration.ofMillis(100));
+    }
+
+    private static final Network.Reader DOWN = (backend, id) -> {
+        throw new SQLException("the database is gone");
+    };
+
     @Test
     void aReadThatFailsIsTriedAgain() {
         UUID steve = UUID.randomUUID();
         Entry made = madeElsewhere(steve);
         assertNull(banOf(steve));
         AtomicInteger tries = new AtomicInteger();
-        Network network = new Network(plugin, (backend, id) -> {
+        Network network = network((backend, id) -> {
             if (tries.incrementAndGet() == 1) {
                 throw new SQLException("the connection dropped");
             }
@@ -110,7 +129,7 @@ class NetworkTest {
         assertNotNull(banOf(alex));
 
         AtomicInteger tries = new AtomicInteger();
-        Network network = new Network(plugin, (backend, id) -> {
+        Network network = network((backend, id) -> {
             tries.incrementAndGet();
             throw new SQLException("the database is gone");
         });
@@ -119,5 +138,88 @@ class NetworkTest {
         await(() -> banOf(steve) != null);
         await(() -> banOf(alex) == null);
         await(() -> !online.isOnline());
+    }
+
+    @Test
+    void aReloadThatFailsIsTriedAgainUntilItWorks() {
+        UUID steve = UUID.randomUUID();
+        Entry made = madeElsewhere(steve);
+        AtomicInteger reloads = new AtomicInteger();
+        Network network = network(DOWN, () -> reloads.incrementAndGet() <= 2
+            ? CompletableFuture.failedFuture(new SQLException("still gone")) : plugin.store().reloadInForce());
+        network.handle(plugin.store().backend(), punished(made.id()), false);
+        await(() -> banOf(steve) != null);
+        assertEquals(3, reloads.get(), "failed twice, then worked");
+        settle();
+        assertEquals(3, reloads.get(), "and nothing after it worked");
+    }
+
+    @Test
+    void aBurstOfChangesWhileTheDatabaseIsDownStartsOneReload() {
+        UUID steve = UUID.randomUUID();
+        Entry made = madeElsewhere(steve);
+        UUID alex = UUID.randomUUID();
+        Entry lifted = madeElsewhere(alex);
+        plugin.store().backend().active().add(lifted);
+        AtomicInteger reads = new AtomicInteger();
+        AtomicInteger reloads = new AtomicInteger();
+        java.util.concurrent.atomic.AtomicBoolean up = new java.util.concurrent.atomic.AtomicBoolean();
+        Network network = network((backend, id) -> {
+            reads.incrementAndGet();
+            throw new SQLException("the database is gone");
+        }, () -> {
+            reloads.incrementAndGet();
+            return up.get() ? plugin.store().reloadInForce() : CompletableFuture.failedFuture(new SQLException("gone"));
+        });
+        long started = System.nanoTime();
+        network.handle(plugin.store().backend(), punished(made.id()), false);
+        for (int i = 0; i < 500; i++) {
+            network.handle(plugin.store().backend(), punished(made.id() + 1000 + i), false);
+        }
+        // A revocation is felt at once all the same.
+        network.handle(plugin.store().backend(), revoked(lifted.id()), true);
+        assertNull(banOf(alex));
+        long took = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+        assertTrue(took < 3_000, "the feed's thread was held up for " + took + "ms");
+        assertEquals(1 + Network.RETRY_MS.length, reads.get(), "only the first change was tried again");
+        assertEquals(1, reloads.get(), "one reload, not one per change");
+
+        up.set(true);
+        await(() -> banOf(steve) != null);
+        int after = reloads.get();
+        settle();
+        assertEquals(after, reloads.get(), "it stops trying once it worked");
+    }
+
+    @Test
+    void reloadsAskedForWhileOneRunsRunOnceAfterIt() {
+        List<CompletableFuture<List<Entry>>> running = new java.util.concurrent.CopyOnWriteArrayList<>();
+        Network network = network(DOWN, () -> {
+            CompletableFuture<List<Entry>> reload = new CompletableFuture<>();
+            running.add(reload);
+            return reload;
+        });
+        Store.Backend backend = plugin.store().backend();
+        for (int i = 0; i < 100; i++) {
+            network.resync(backend);
+        }
+        assertEquals(1, running.size());
+        running.get(0).complete(List.of());
+        assertEquals(2, running.size(), "the hundred asked for meanwhile are one more");
+        running.get(1).complete(List.of());
+        settle();
+        assertEquals(2, running.size());
+    }
+
+    // Lets delayed tries come due.
+    private void settle() {
+        for (int i = 0; i < 20; i++) {
+            server.getScheduler().performOneTick();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                throw new AssertionError(e);
+            }
+        }
     }
 }

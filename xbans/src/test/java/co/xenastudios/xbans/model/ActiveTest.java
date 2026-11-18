@@ -118,4 +118,76 @@ class ActiveTest {
         assertEquals(1, active.size(), "the ended one is gone");
         assertEquals(List.of("Steve"), active.names(PunishmentType.BAN, NOW, 50));
     }
+
+    // Runs two pieces of work at the same moment on two threads, many times over.
+    private static void race(int rounds, java.util.function.IntFunction<Runnable[]> round) throws Exception {
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            for (int i = 0; i < rounds; i++) {
+                Runnable[] work = round.apply(i);
+                java.util.concurrent.CyclicBarrier start = new java.util.concurrent.CyclicBarrier(2);
+                java.util.concurrent.Future<?> a = pool.submit(() -> {
+                    await(start);
+                    work[0].run();
+                });
+                java.util.concurrent.Future<?> b = pool.submit(() -> {
+                    await(start);
+                    work[1].run();
+                });
+                a.get();
+                b.get();
+                work[2].run();
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    private static void await(java.util.concurrent.CyclicBarrier barrier) {
+        try {
+            barrier.await();
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
+    void aBanAddedWhileAReloadFinishesCanStillBeLifted() throws Exception {
+        // A ban made here while a reload that didn't see it finishes: it's either kept (made
+        // meanwhile) or not, but never in the player's list and missing from the ids, where
+        // an unban couldn't find it.
+        race(5_000, i -> {
+            Active active = new Active();
+            Active.Sync sync = active.beginSync();
+            List<Entry> bans = new java.util.ArrayList<>();
+            for (int n = 1; n <= 50; n++) {
+                bans.add(entry(n, PunishmentType.BAN, new UUID(i, n), null, null, "*"));
+            }
+            return new Runnable[] {
+                () -> bans.forEach(active::add),
+                () -> sync.finish(List.of()),
+                () -> {
+                    for (Entry ban : bans) {
+                        active.remove(ban.id());
+                        assertNull(active.ban(ban.punishment().target(), null, "lobby", NOW),
+                            "round " + i + ": lifted, but still in force");
+                    }
+                }};
+        });
+    }
+
+    @Test
+    void aBanLiftedWhileAReloadFinishesStaysLifted() throws Exception {
+        // The reload read the ban before it was lifted; the lift lands while it finishes.
+        race(20_000, i -> {
+            Active active = new Active();
+            Active.Sync sync = active.beginSync();
+            UUID player = new UUID(0, i + 1);
+            Entry ban = entry(i + 1, PunishmentType.BAN, player, null, null, "*");
+            return new Runnable[] {
+                () -> active.remove(ban.id()),
+                () -> sync.finish(List.of(ban)),
+                () -> assertNull(active.ban(player, null, "lobby", NOW), "round " + i + ": the reload brought it back")};
+        });
+    }
 }

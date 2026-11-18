@@ -165,10 +165,15 @@ public final class Maintenance {
     /**
      * Garbage collection: marks every blob a snapshot uses, deletes packs with none, and
      * moves the live blobs out of packs that are mostly unused. Also deletes packs no index
-     * lists, which only a crashed backup leaves.
+     * lists, which only a crashed backup leaves, and drops index entries for packs that are
+     * missing, so the next backup stores those blobs again instead of pointing at nothing.
      *
-     * <p>Crash-safe: live blobs are copied to new packs and indexed first, then one fresh
-     * index file replaces the old ones, and only then are old packs deleted.
+     * <p>Two steps, so it still frees space on a full disk. First a fresh index without the
+     * unused packs is written and those packs deleted: that writes no pack. Only then are
+     * mostly unused packs repacked, which needs room for new packs; if there isn't any, that
+     * step waits for the next run. Crash-safe: the new index is stored before any pack it no
+     * longer lists is deleted, and repacked blobs are in new, indexed packs before their old
+     * packs go.
      *
      * @param repackUnused repack a pack once at least this share of its bytes is unused (0 to 1)
      */
@@ -193,25 +198,40 @@ public final class Maintenance {
                 before += file.size();
             }
         }
+        // The blobs in use, by the pack the index has them in. Packs missing from the disk are
+        // left out: there's nothing in them to keep.
         Map<Hash, List<PackEntry>> live = new LinkedHashMap<>();
         Map<Hash, Long> liveBytes = new HashMap<>();
+        int[] liveCount = {0};
         index.forEach(location -> {
-            if (used.contains(location.entry().id())) {
+            if (used.contains(location.entry().id()) && sizes.containsKey(location.pack())) {
                 live.computeIfAbsent(location.pack(), key -> new ArrayList<>()).add(location.entry());
                 liveBytes.merge(location.pack(), (long) location.entry().storedLength(), Long::sum);
+                liveCount[0]++;
             }
         });
 
+        // 1. Drop the unused packs: a fresh index listing only blobs in use, then delete
+        //    every pack it doesn't list. Writes one index file and no pack.
+        if (live.size() != index.packs().size() || liveCount[0] != index.size()) {
+            repository.rewriteIndex(live);
+        }
+        int deleted = 0;
+        for (Hash pack : sizes.keySet()) {
+            if (!live.containsKey(pack)) {
+                checkCancelled();
+                repository.backend().delete(Pack.fileName(pack));
+                deleted++;
+            }
+        }
+
+        // 2. Repack the packs that are mostly unused, and many small ones.
         Map<Hash, List<PackEntry>> keep = new LinkedHashMap<>();
         List<Hash> repack = new ArrayList<>();
         long smallPack = options.packSize() / 8;
         int smallCount = 0;
         for (Map.Entry<Hash, List<PackEntry>> pack : live.entrySet()) {
-            Long size = sizes.get(pack.getKey());
-            if (size == null) {
-                // Indexed but missing: nothing to keep or repack. check reports it.
-                continue;
-            }
+            long size = sizes.get(pack.getKey());
             long liveSize = liveBytes.getOrDefault(pack.getKey(), 0L);
             double unused = 1.0 - (double) liveSize / Math.max(1, size);
             if (unused >= repackUnused) {
@@ -233,8 +253,9 @@ public final class Maintenance {
             }
         }
 
-        Map<Hash, List<PackEntry>> fresh = Map.of();
+        int repacked = 0;
         if (!repack.isEmpty()) {
+            Map<Hash, List<PackEntry>> fresh;
             try (Session session = repository.session(options)) {
                 for (Hash pack : repack) {
                     checkCancelled();
@@ -247,31 +268,33 @@ public final class Maintenance {
                 }
                 session.flush();
                 fresh = session.writtenEntries();
+            } catch (Session.NoSpaceException e) {
+                // Not enough room for new packs: step 1 freed what it could; repacking waits.
+                fresh = null;
             }
-        }
-        Map<Hash, List<PackEntry>> next = new LinkedHashMap<>(keep);
-        next.putAll(fresh);
-        repository.rewriteIndex(next);
-
-        int deleted = 0;
-        long after = 0;
-        for (Map.Entry<Hash, Long> pack : sizes.entrySet()) {
-            if (next.containsKey(pack.getKey())) {
-                after += pack.getValue();
-            } else {
-                repository.backend().delete(Pack.fileName(pack.getKey()));
-                deleted++;
-            }
-        }
-        for (List<PackEntry> entries : fresh.values()) {
-            for (PackEntry entry : entries) {
-                after += entry.storedLength();
+            if (fresh != null) {
+                Map<Hash, List<PackEntry>> next = new LinkedHashMap<>(keep);
+                next.putAll(fresh);
+                repository.rewriteIndex(next);
+                for (Hash pack : repack) {
+                    if (!next.containsKey(pack)) {
+                        repository.backend().delete(Pack.fileName(pack));
+                        deleted++;
+                    }
+                }
+                repacked = repack.size();
             }
         }
         if (repository.backend() instanceof LocalBackend local) {
             local.clearTemp();
         }
-        return new Collected(deleted, repack.size(), Math.max(0, before - after), before, after);
+        long after = 0;
+        for (Backend.FileInfo file : repository.backend().list("data/")) {
+            if (Pack.idOf(file.name()) != null) {
+                after += file.size();
+            }
+        }
+        return new Collected(deleted, repacked, Math.max(0, before - after), before, after);
     }
 
     // ---------------------------------------------------------------- checking

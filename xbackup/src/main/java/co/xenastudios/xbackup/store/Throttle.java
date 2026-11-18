@@ -36,7 +36,7 @@ public final class Throttle {
         long sleepNanos;
         synchronized (this) {
             long now = System.nanoTime();
-            available = Math.min(bytesPerSecond, available + (now - last) * bytesPerSecond / 1_000_000_000L);
+            available = refill(available, now - last, bytesPerSecond);
             last = now;
             available -= bytes;
             sleepNanos = available >= 0 ? 0 : -available * 1_000_000_000L / bytesPerSecond;
@@ -49,6 +49,16 @@ public final class Throttle {
                 throw new java.io.InterruptedIOException("stopped");
             }
         }
+    }
+
+    /**
+     * What's available after {@code elapsedNanos}: never more than one second's worth. The
+     * elapsed time is capped at a second before multiplying, so a long idle can't overflow
+     * (100 s at 100 MB/s is past {@code Long.MAX_VALUE}) and turn into a long stall.
+     */
+    static long refill(long available, long elapsedNanos, long bytesPerSecond) {
+        long elapsed = Math.max(0, Math.min(elapsedNanos, 1_000_000_000L));
+        return Math.min(bytesPerSecond, available + elapsed * bytesPerSecond / 1_000_000_000L);
     }
 
     /** The stream, slowed to this limit. */

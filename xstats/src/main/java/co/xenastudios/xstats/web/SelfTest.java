@@ -27,7 +27,7 @@ public final class SelfTest {
     public static List<String> run(XStats plugin) {
         XSConfig.Web settings = plugin.config().web();
         WebServer.Options options = new WebServer.Options("127.0.0.1", 0, true, settings.corsOrigins(), 10_000,
-            settings.maxConcurrent(), List.of(), settings.avatars().url(), false);
+            settings.maxConcurrent(), List.of(), "x-forwarded-for", settings.avatars().url(), false);
         List<String> failures = new ArrayList<>();
         WebServer server;
         try {

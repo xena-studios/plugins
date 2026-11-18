@@ -166,15 +166,23 @@ public record XSConfig(
         List<String> corsOrigins,
         @Comment({
             "Requests one visitor may make each minute. A visit to a page is a few; more are",
-            "answered 429 until the minute is up."})
+            "answered 429 until the minute is up. Players' heads have a limit of their own, five",
+            "times this, since a leaderboard shows many."})
         @Range(min = 10, max = 10_000) int requestsPerMinute,
         @Comment("Requests handled at once. More wait for a moment, then get 503.")
         @Range(min = 1, max = 512) int maxConcurrent,
         @Comment({
-            "Addresses of your reverse proxy or tunnel. Requests from them are counted against",
-            "the visitor's address in X-Forwarded-For (or CF-Connecting-IP) instead, so the rate",
-            "limit is per visitor. Leave it empty when visitors connect directly."})
+            "Addresses of your reverse proxy or tunnel, or ranges such as 173.245.48.0/20.",
+            "Requests from them are counted against the visitor's address the proxy passes on",
+            "(in client-ip-header) instead, so the rate limit is per visitor. Leave it empty when",
+            "visitors connect directly."})
         List<String> trustedProxies,
+        @Comment({
+            "The header a trusted proxy puts the visitor's address in. X-Forwarded-For suits",
+            "nginx, Caddy and most tunnels. CF-Connecting-IP only if Cloudflare is the proxy",
+            "listed above, or the one in front of it with nothing reaching yours another way:",
+            "visitors can send any header themselves, and only Cloudflare replaces this one."})
+        String clientIpHeader,
         Avatars avatars,
         @Comment("How the site looks.") Branding branding) {}
 
@@ -286,7 +294,7 @@ public record XSConfig(
                 Message.of("<gray><rank>.</gray> <white><player></white> <#F77FA5><value>"),
                 Message.of("<gray>Nobody yet"))),
         new Periods("", DayOfWeek.MONDAY, 90, new PeriodNames("Today", "This week", "This month", "All time")),
-        new Web(false, "0.0.0.0", 8804, "", true, List.of("*"), 120, 32, List.of(),
+        new Web(false, "0.0.0.0", 8804, "", true, List.of("*"), 120, 32, List.of(), "X-Forwarded-For",
             new Avatars("https://mc-heads.net/avatar/{uuid}/{size}", false),
             new Branding("", "", "", Colour.of("#F77FA5"), Colour.of("#0F1419"), Colour.of("#1A222B"), Colour.of("#E6EDF3"))),
         "main",

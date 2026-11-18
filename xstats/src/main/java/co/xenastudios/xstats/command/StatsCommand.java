@@ -15,8 +15,6 @@ import co.xenastudios.xstats.data.PlayerRecord;
 import co.xenastudios.xstats.profile.Sections;
 import co.xenastudios.xstats.stat.Format;
 import co.xenastudios.xstats.stat.StatDef;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -177,6 +175,7 @@ public final class StatsCommand {
         if (base.isEmpty() || record.hidden() || record.name() == null || !base.matches("https?://[^\\s'\"<>]+")) {
             return null;
         }
-        return (base.endsWith("/") ? base : base + "/") + "#/player/" + URLEncoder.encode(record.name(), StandardCharsets.UTF_8);
+        // By uuid: it never changes, and Bedrock players' names (Floodgate's .Steve) aren't Java names.
+        return (base.endsWith("/") ? base : base + "/") + "#/player/" + record.id;
     }
 }

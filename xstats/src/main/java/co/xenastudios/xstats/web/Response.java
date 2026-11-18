@@ -30,6 +30,11 @@ public record Response(int status, String type, byte[] body, byte[] gzip, String
         return json(status, new Json().object().field("error", message).end().toString(), 0);
     }
 
+    /** The gzipped copy's ETag: different bytes, so a different tag. */
+    public String gzipEtag() {
+        return etag.substring(0, etag.length() - 1) + "-gz\"";
+    }
+
     public static Response of(int status, String type, byte[] body, int maxAge) {
         CRC32 crc = new CRC32();
         crc.update(body);

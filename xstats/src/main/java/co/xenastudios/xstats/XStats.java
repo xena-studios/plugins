@@ -68,6 +68,9 @@ public class XStats extends XenaPlugin<XSConfig> {
     private volatile WebModule web;
     private volatile String startupProblem;
     private Path world;
+    /** The web module's key: kept while it runs, changed after it failed to start so a reload tries again. */
+    private String webKey = "";
+    private int webAttempts;
 
     @Override
     protected ConfigSpec<XSConfig> configSpec() {
@@ -82,9 +85,24 @@ public class XStats extends XenaPlugin<XSConfig> {
             started = true;
             start(config, settings);
         }
+        Engine.Settings before = engine.settings();
         engine.settings(settings);
         reader.reset();
+        if (!config.leaderboards().excludeBanned()) {
+            // Turned off: the ban list read at the last save stops counting now.
+            engine.bannedPlayers(java.util.Set.of());
+        }
+        // A new time zone or first day of the week: this day's, week's and month's numbers are read again for it.
+        boolean newCalendar = !before.calendar().equals(settings.calendar());
         worker.execute(() -> {
+            if (newCalendar && engine.ready()) {
+                try {
+                    engine.rereadPeriods();
+                } catch (SQLException e) {
+                    getLogger().warning("Couldn't read this week's and month's stats again for the new periods settings: "
+                        + e.getMessage());
+                }
+            }
             engine.recomputeBoards();
             afterSave();
         });
@@ -104,8 +122,14 @@ public class XStats extends XenaPlugin<XSConfig> {
         setup.module("api", () -> api);
         setup.module("boards", () -> boards);
         if (config.web().enabled()) {
-            // Restarted whenever its settings change, so a new port or address applies on reload.
-            setup.module("web:" + config.web().hashCode(), () -> {
+            // Restarted whenever its settings change, so a new port or address applies on
+            // reload, and after it failed to start (the port was taken), so a reload tries again.
+            String base = "web:" + config.web().hashCode() + ":";
+            WebModule current = web;
+            if (!webKey.startsWith(base) || current != null && current.failed()) {
+                webKey = base + ++webAttempts;
+            }
+            setup.module(webKey, () -> {
                 WebModule made = new WebModule(this, config.web());
                 web = made;
                 return made;
@@ -154,6 +178,14 @@ public class XStats extends XenaPlugin<XSConfig> {
         boards = new WorldBoards(this);
         api = new Api(this);
         engine.onNewLeader(api::newLeader);
+        // Someone hidden or shown again: the website's leaderboards are made again straight away, not at the next save.
+        engine.onHiddenChanged(() -> {
+            try {
+                pages.render();
+            } catch (RuntimeException e) {
+                getLogger().log(Level.WARNING, "Couldn't make the website's pages", e);
+            }
+        });
         world = mainWorld();
         String server = config.serverName().matches("[A-Za-z0-9_-]{1,64}") ? config.serverName() : "main";
         if (!server.equals(config.serverName())) {

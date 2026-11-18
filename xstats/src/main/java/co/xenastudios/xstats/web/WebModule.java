@@ -11,6 +11,7 @@ public final class WebModule implements Module {
     private final XStats plugin;
     private final XSConfig.Web settings;
     private WebServer server;
+    private volatile boolean failed;
 
     public WebModule(XStats plugin, XSConfig.Web settings) {
         this.plugin = plugin;
@@ -19,7 +20,8 @@ public final class WebModule implements Module {
 
     static WebServer.Options options(XSConfig.Web settings, int port) {
         return new WebServer.Options(settings.bind(), port, settings.site(), settings.corsOrigins(), settings.requestsPerMinute(),
-            settings.maxConcurrent(), settings.trustedProxies(), settings.avatars().url(), settings.avatars().proxy());
+            settings.maxConcurrent(), settings.trustedProxies(), settings.clientIpHeader(), settings.avatars().url(),
+            settings.avatars().proxy());
     }
 
     @Override
@@ -30,9 +32,11 @@ public final class WebModule implements Module {
             plugin.getLogger().info("The stats website is on " + settings.bind() + ":" + server.port()
                 + (settings.publicUrl().isBlank() ? "." : ", at " + settings.publicUrl() + "."));
         } catch (IOException | RuntimeException e) {
+            failed = true;
             plugin.getLogger().warning("Couldn't start the stats website on " + settings.bind() + ":" + settings.port() + ": " + e
-                + ". Is the port free, and is the address this machine's? Fix web in config.yml and reload.");
+                + ". Is the port free, and is the address this machine's? Fix web in config.yml (or free the port) and reload.");
         } catch (NoClassDefFoundError e) {
+            failed = true;
             plugin.getLogger().warning("This Java has no built-in web server (jdk.httpserver), so the website can't run."
                 + " Most Java builds include it; a trimmed-down one may not.");
         }
@@ -44,6 +48,11 @@ public final class WebModule implements Module {
             server.close();
             server = null;
         }
+    }
+
+    /** Whether it couldn't start, so the next reload should try again. */
+    public boolean failed() {
+        return failed;
     }
 
     /** The server's port while it runs, or 0. */

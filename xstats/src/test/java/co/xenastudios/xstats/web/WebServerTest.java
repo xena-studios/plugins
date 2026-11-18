@@ -37,6 +37,8 @@ class WebServerTest {
     final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     final List<WebServer> servers = new ArrayList<>();
     volatile CountDownLatch hold;
+    volatile boolean everyoneKnown;
+    final List<com.sun.net.httpserver.HttpServer> headServices = new ArrayList<>();
 
     /** A source with one leaderboard page, one player, and a profile that can be held up. */
     final WebServer.Source source = new WebServer.Source() {
@@ -66,7 +68,7 @@ class WebServerTest {
 
         @Override
         public String name(UUID player) {
-            return player.equals(STEVE) ? "Steve" : null;
+            return player.equals(STEVE) || everyoneKnown ? "Steve" : null;
         }
 
         @Override
@@ -76,8 +78,13 @@ class WebServerTest {
     };
 
     WebServer start(int perMinute, int concurrent, List<String> cors, List<String> trusted) throws Exception {
+        return start(perMinute, concurrent, cors, trusted, "X-Forwarded-For", "https://example.invalid/{uuid}", false);
+    }
+
+    WebServer start(int perMinute, int concurrent, List<String> cors, List<String> trusted, String header, String heads,
+                    boolean proxyHeads) throws Exception {
         WebServer server = WebServer.start(new WebServer.Options("127.0.0.1", 0, true, cors, perMinute, concurrent, trusted,
-            "https://example.invalid/{uuid}", false), source, getClass().getClassLoader(), Logger.getLogger("test"));
+            header, heads, proxyHeads), source, getClass().getClassLoader(), Logger.getLogger("test"));
         servers.add(server);
         return server;
     }
@@ -85,6 +92,7 @@ class WebServerTest {
     @AfterEach
     void stop() {
         servers.forEach(WebServer::close);
+        headServices.forEach(service -> service.stop(0));
     }
 
     HttpResponse<byte[]> get(WebServer server, String path, String... headers) throws Exception {
@@ -200,9 +208,171 @@ class WebServerTest {
             assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.5").statusCode());
         }
         assertEquals(429, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.5").statusCode());
-        // Someone else behind the same proxy, and a made-up first hop that doesn't fool it.
+        // Someone else behind the same proxy, with a made-up first hop that doesn't fool it.
         assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.5, 198.51.100.7").statusCode());
-        assertEquals(200, get(server, "/api/v1/server", "CF-Connecting-IP", "192.0.2.9").statusCode());
+    }
+
+    @Test
+    void aVisitorCantPickTheirAddressThroughTheProxy() throws Exception {
+        // nginx or Caddy on this machine, passing on whatever headers the visitor sent.
+        WebServer server = start(3, 8, List.of("*"), List.of("127.0.0.1"));
+        for (int i = 0; i < 3; i++) {
+            assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.5", "CF-Connecting-IP", "192.0.2." + i)
+                .statusCode());
+        }
+        // A made-up CF-Connecting-IP isn't read unless the owner chose it, nor a made-up first hop.
+        assertEquals(429, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.5", "CF-Connecting-IP", "192.0.2.99")
+            .statusCode());
+        assertEquals(429, get(server, "/api/v1/server", "X-Forwarded-For", "198.51.100.1, 203.0.113.5").statusCode());
+        assertEquals(429, get(server, "/api/v1/server", "X-Forwarded-For", "not-an-address, 203.0.113.5").statusCode());
+    }
+
+    @Test
+    void cloudflaresHeaderWhenChosenAndRangesOfProxies() throws Exception {
+        WebServer server = start(2, 8, List.of("*"), List.of("127.0.0.0/8"), "CF-Connecting-IP", "https://example.invalid/{uuid}",
+            false);
+        for (int i = 0; i < 2; i++) {
+            assertEquals(200, get(server, "/api/v1/server", "CF-Connecting-IP", "192.0.2.1", "X-Forwarded-For", "10.0.0." + i)
+                .statusCode());
+        }
+        assertEquals(429, get(server, "/api/v1/server", "CF-Connecting-IP", "192.0.2.1").statusCode());
+        assertEquals(200, get(server, "/api/v1/server", "CF-Connecting-IP", "192.0.2.2").statusCode());
+        // One IPv6 visitor is their /64: new addresses inside it don't get a new limit.
+        assertEquals(200, get(server, "/api/v1/server", "CF-Connecting-IP", "2001:db8:1:2::1").statusCode());
+        assertEquals(200, get(server, "/api/v1/server", "CF-Connecting-IP", "2001:db8:1:2::2").statusCode());
+        assertEquals(429, get(server, "/api/v1/server", "CF-Connecting-IP", "2001:db8:1:2:ffff::3").statusCode());
+    }
+
+    @Test
+    void proxiesAreAddressesAndRangesNeverNames() {
+        Proxies proxies = Proxies.of(List.of("10.1.0.0/16", "::1", "2400:cb00::/32", "localhost", "10.0.0.0/33", "1.2.3.4/x"),
+            "X-Real-IP", Logger.getLogger("test"));
+        assertTrue(proxies.trusted("10.1.200.3"));
+        assertFalse(proxies.trusted("10.2.0.1"));
+        assertTrue(proxies.trusted("::1"));
+        assertTrue(proxies.trusted("2400:cb00:1234::5"));
+        assertFalse(proxies.trusted("127.0.0.1"), "localhost is a name: not read");
+        assertFalse(proxies.trusted("example.com"));
+        assertEquals("x-real-ip", proxies.header());
+        assertEquals("x-forwarded-for", Proxies.of(List.of(), "bad header!", Logger.getLogger("test")).header());
+    }
+
+    @Test
+    void aFloodOfMadeUpAddressesResetsNobody() {
+        long[] now = {0};
+        RateLimit limit = new RateLimit(3, 100, () -> now[0]);
+        for (int i = 0; i < 3; i++) {
+            assertTrue(limit.allow("visitor"));
+        }
+        assertFalse(limit.allow("visitor"));
+        for (int i = 0; i < 10_000; i++) {
+            limit.allow("made-up-" + i);
+        }
+        assertTrue(limit.tracked() <= 101, "bounded: " + limit.tracked());
+        assertFalse(limit.allow("visitor"), "still limited: the map wasn't cleared");
+        assertFalse(limit.allow("someone-new"), "new addresses share one count while it's full");
+        now[0] += 60_000;
+        assertTrue(limit.allow("visitor"), "a new minute");
+        assertTrue(limit.tracked() <= 2, "earlier minutes forgotten");
+    }
+
+    @Test
+    void aRefusedRequestStillCarriesCors() throws Exception {
+        WebServer server = start(10, 8, List.of("https://stats.example.com"), List.of());
+        HttpResponse<byte[]> refused = null;
+        for (int i = 0; i < 11; i++) {
+            refused = get(server, "/api/v1/server", "Origin", "https://stats.example.com");
+        }
+        assertEquals(429, refused.statusCode());
+        assertEquals("https://stats.example.com", refused.headers().firstValue("Access-Control-Allow-Origin").orElse(""));
+    }
+
+    @Test
+    void gzipHasItsOwnEtagAndCanBeRefused() throws Exception {
+        WebServer server = start(1000, 8, List.of("*"), List.of());
+        String plain = get(server, "/api/v1/server").headers().firstValue("ETag").orElseThrow();
+        HttpResponse<byte[]> zipped = get(server, "/api/v1/server", "Accept-Encoding", "gzip");
+        String zippedTag = zipped.headers().firstValue("ETag").orElseThrow();
+        assertFalse(plain.equals(zippedTag));
+        assertEquals(200, get(server, "/api/v1/server", "Accept-Encoding", "gzip", "If-None-Match", plain).statusCode(),
+            "the plain copy's tag doesn't match the gzipped one");
+        HttpResponse<byte[]> notModified = get(server, "/api/v1/server", "Accept-Encoding", "gzip", "If-None-Match", zippedTag);
+        assertEquals(304, notModified.statusCode());
+        assertTrue(notModified.headers().allValues("Vary").stream().anyMatch(v -> v.contains("Accept-Encoding")));
+        assertTrue(get(server, "/api/v1/server", "Accept-Encoding", "gzip;q=0, deflate").headers()
+            .firstValue("Content-Encoding").isEmpty());
+        assertTrue(get(server, "/api/v1/server", "Accept-Encoding", "br, gzip;q=0.5").headers()
+            .firstValue("Content-Encoding").isPresent());
+        assertTrue(get(server, "/api/v1/server", "Accept-Encoding", "*").headers().firstValue("Content-Encoding").isPresent());
+    }
+
+    /** A head service on this machine: a small PNG after a moment, a redirect, or something too big. */
+    String headService() throws Exception {
+        com.sun.net.httpserver.HttpServer service = com.sun.net.httpserver.HttpServer.create(
+            new java.net.InetSocketAddress(java.net.InetAddress.getByName("127.0.0.1"), 0), 64);
+        service.setExecutor(java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor());
+        service.createContext("/", exchange -> {
+            String path = exchange.getRequestURI().getPath();
+            try (exchange) {
+                if (path.startsWith("/same/")) {
+                    exchange.getResponseHeaders().set("Location", "/avatar/" + path.substring("/same/".length()));
+                    exchange.sendResponseHeaders(302, -1);
+                    return;
+                }
+                if (path.startsWith("/away/")) {
+                    exchange.getResponseHeaders().set("Location", "http://localhost:" + exchange.getLocalAddress().getPort()
+                        + "/avatar/" + path.substring("/away/".length()));
+                    exchange.sendResponseHeaders(302, -1);
+                    return;
+                }
+                byte[] body = new byte[path.startsWith("/big/") ? Heads.MAX_BYTES + 1 : 100];
+                Thread.sleep(300);
+                exchange.getResponseHeaders().set("Content-Type", "image/png");
+                exchange.sendResponseHeaders(200, body.length);
+                exchange.getResponseBody().write(body);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        service.start();
+        headServices.add(service);
+        return "http://127.0.0.1:" + service.getAddress().getPort();
+    }
+
+    @Test
+    void manyHeadsAtOnceAllArrive() throws Exception {
+        everyoneKnown = true;
+        // A page limit of 10: a leaderboard's heads have a limit of their own.
+        WebServer server = start(10, 32, List.of("*"), List.of(), "X-Forwarded-For", headService() + "/avatar/{uuid}/{size}", true);
+        List<Thread> threads = new ArrayList<>();
+        java.util.concurrent.ConcurrentLinkedQueue<Integer> statuses = new java.util.concurrent.ConcurrentLinkedQueue<>();
+        for (int i = 0; i < 20; i++) {
+            UUID player = new UUID(1, i);
+            threads.add(Thread.ofVirtual().start(() -> {
+                try {
+                    statuses.add(get(server, "/api/v1/head/" + player).statusCode());
+                } catch (Exception e) {
+                    statuses.add(-1);
+                }
+            }));
+        }
+        for (Thread thread : threads) {
+            thread.join(20_000);
+        }
+        assertEquals(20, statuses.size());
+        assertTrue(statuses.stream().allMatch(status -> status == 200), statuses.toString());
+    }
+
+    @Test
+    void headsFollowRedirectsOnlyOnTheSameHostAndStaySmall() throws Exception {
+        everyoneKnown = true;
+        String service = headService();
+        WebServer same = start(1000, 8, List.of("*"), List.of(), "X-Forwarded-For", service + "/same/{uuid}", true);
+        assertEquals(200, get(same, "/api/v1/head/" + STEVE).statusCode());
+        WebServer away = start(1000, 8, List.of("*"), List.of(), "X-Forwarded-For", service + "/away/{uuid}", true);
+        assertEquals(404, get(away, "/api/v1/head/" + STEVE).statusCode(), "localhost isn't 127.0.0.1's name here");
+        WebServer big = start(1000, 8, List.of("*"), List.of(), "X-Forwarded-For", service + "/big/{uuid}", true);
+        assertEquals(404, get(big, "/api/v1/head/" + STEVE).statusCode());
     }
 
     @Test

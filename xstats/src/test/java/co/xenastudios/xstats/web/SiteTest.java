@@ -24,6 +24,12 @@ class SiteTest {
             assertFalse(script.contains(forbidden), forbidden);
         }
         assertTrue(script.contains("textContent"));
+        // el() builds every element, and refuses handlers and inline styles whatever it's handed,
+        // so a new attribute can't slip past the checks above.
+        assertTrue(script.contains("if (/^on/i.test(key) || key.toLowerCase() === \"style\") throw"), "el()'s guard");
+        assertFalse(script.matches("(?s).*[{,]\\s*\"?(on[a-z]+|style)\"?\\s*:.*"), "a handler or style passed to el()");
+        assertFalse(script.contains("createElement(") && script.indexOf("createElement(") != script.lastIndexOf("createElement("),
+            "elements are made only through el()");
     }
 
     @Test

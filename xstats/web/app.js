@@ -8,7 +8,8 @@
 (() => {
   const view = document.getElementById("view");
   const PERIODS = ["all", "monthly", "weekly", "daily"];
-  const NAME = /^\w{1,16}$/;
+  // Java names, and Bedrock players' through Floodgate, which start with its prefix (a dot by default).
+  const NAME = /^[\w.*+~-]{1,16}$/;
   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const COLOUR = /^#[0-9a-f]{6}$/i;
   let api = "";
@@ -20,6 +21,8 @@
     const node = document.createElement(tag);
     for (const [key, value] of Object.entries(props || {})) {
       if (value === null || value === undefined || value === false) continue;
+      // Never a handler or inline style, whatever a caller passes: the page's policy forbids both anyway.
+      if (/^on/i.test(key) || key.toLowerCase() === "style") throw new Error("el() doesn't set " + key);
       if (key === "class") node.className = value;
       else if (key === "text") node.textContent = value;
       else if (key === "href") node.setAttribute("href", value);
@@ -49,8 +52,9 @@
     return null;
   }
 
-  function playerHref(name) {
-    return "#/player/" + encodeURIComponent(name);
+  /** A player's page: by uuid when there is one (it never changes, and works for any name), else by name. */
+  function playerHref(uuid, name) {
+    return "#/player/" + encodeURIComponent(UUID.test(uuid || "") ? uuid : name);
   }
 
   function head(uuid, name, size) {
@@ -131,7 +135,7 @@
       el("li", {},
         el("span", { class: "place", text: String(entry.rank) }),
         head(entry.uuid, entry.name, big ? 32 : 24),
-        el("a", { class: "who", href: playerHref(entry.name), text: entry.name }),
+        el("a", { class: "who", href: playerHref(entry.uuid, entry.name), text: entry.name }),
         el("span", { class: "amount", text: entry.display }))));
   }
 
@@ -193,7 +197,7 @@
   async function player(name) {
     if (!NAME.test(name) && !UUID.test(name)) return notice("That isn't a player's name.");
     const profile = await get("/api/v1/player/" + encodeURIComponent(name));
-    if (!profile) return notice("No player called " + name + " here, or they keep their stats private.");
+    if (!profile) return notice((UUID.test(name) ? "No such player" : "No player called " + name) + " here, or they keep their stats private.");
     const history = (profile.history && profile.history.stats) || {};
     const cards = profile.stats.map((stat) => {
       // Today, this week and this month, once there's something in them.
@@ -275,14 +279,14 @@
         const found = await get("/api/v1/search?q=" + encodeURIComponent(typed)).catch(() => null);
         if (asked !== typed || !found) return;
         list.replaceChildren(...found.players.map((p) => el("li", {},
-          el("a", { href: playerHref(p.name) }, head(p.uuid, p.name, 24), el("span", { text: p.name })))));
+          el("a", { href: playerHref(p.uuid, p.name) }, head(p.uuid, p.name, 24), el("span", { text: p.name })))));
         list.hidden = found.players.length === 0;
       }, 200);
     });
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const typed = input.value.trim();
-      if (NAME.test(typed)) location.hash = playerHref(typed);
+      if (NAME.test(typed)) location.hash = playerHref(null, typed);
       list.hidden = true;
     });
     list.addEventListener("click", () => {

@@ -8,14 +8,12 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,8 +32,10 @@ import java.util.regex.Pattern;
  *   <li>Each request runs on a virtual thread, at most {@code maxConcurrent} at once; a
  *       request that can't get a turn within two seconds gets 503, and past eight times
  *       that many waiting, new connections are closed.</li>
- *   <li>Each visitor (by address, or by the address a trusted proxy passes on) may make
- *       {@code perMinute} requests a minute; more get 429.</li>
+ *   <li>Each visitor (by address, or by the address a trusted proxy passes on in the one
+ *       header the owner chose; an IPv6 visitor by their /64) may make {@code perMinute}
+ *       requests a minute; more get 429. Heads have a limit of their own, five times that,
+ *       since a leaderboard shows many.</li>
  *   <li>Pages every visitor shares are made after each save and sent from memory, gzipped
  *       and with an ETag. Site files come from the jar, by exact name.</li>
  * </ul>
@@ -59,7 +59,10 @@ public final class WebServer implements AutoCloseable {
     }
 
     public record Options(String bind, int port, boolean site, List<String> corsOrigins, int perMinute, int maxConcurrent,
-                          List<String> trustedProxies, String headTemplate, boolean proxyHeads) {}
+                          List<String> trustedProxies, String clientIpHeader, String headTemplate, boolean proxyHeads) {}
+
+    /** Heads may be asked for this many times more often than pages: a leaderboard shows up to a hundred. */
+    static final int HEADS_PER_PAGE = 5;
 
     private static final Pattern BRAND_FILE = Pattern.compile("[A-Za-z0-9_.-]+\\.(png|jpe?g|svg|webp)");
     private static final Pattern UUID_TEXT = Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
@@ -81,8 +84,9 @@ public final class WebServer implements AutoCloseable {
     private final Site site;
     private final Heads heads;
     private final RateLimit limit;
+    private final RateLimit headLimit;
     private final Semaphore turns;
-    private final Set<String> trusted;
+    private final Proxies proxies;
     private final Logger logger;
     private final AtomicInteger waiting = new AtomicInteger();
 
@@ -95,8 +99,9 @@ public final class WebServer implements AutoCloseable {
         this.logger = logger;
         this.heads = options.proxyHeads() ? new Heads(options.headTemplate()) : null;
         this.limit = new RateLimit(options.perMinute(), System::currentTimeMillis);
+        this.headLimit = new RateLimit(options.perMinute() * HEADS_PER_PAGE, System::currentTimeMillis);
         this.turns = new Semaphore(options.maxConcurrent());
-        this.trusted = addresses(options.trustedProxies(), logger);
+        this.proxies = Proxies.of(options.trustedProxies(), options.clientIpHeader(), logger);
     }
 
     /**
@@ -106,7 +111,9 @@ public final class WebServer implements AutoCloseable {
      */
     public static WebServer start(Options options, Source source, ClassLoader loader, Logger logger) throws IOException {
         // The JDK's server waits forever for a slow request unless told otherwise. These are
-        // the JVM's own settings, read once; set only if nobody has.
+        // the JVM's own settings, read once when its server first loads, so they also apply
+        // to any other plugin's, and are ignored if another plugin's server loaded first: set
+        // only if nobody has. They don't stop a slow trickle of bytes; a reverse proxy does.
         defaultProperty("sun.net.httpserver.maxReqTime", "15");
         defaultProperty("sun.net.httpserver.maxRspTime", "60");
         Site site = options.site() ? Site.load(loader) : null;
@@ -138,24 +145,6 @@ public final class WebServer implements AutoCloseable {
         }
     }
 
-    private static Set<String> addresses(List<String> entries, Logger logger) {
-        Set<String> addresses = new HashSet<>();
-        for (String entry : entries) {
-            String text = entry.strip();
-            // Addresses only: a host name would mean a DNS lookup, and DNS can lie.
-            if (!text.matches("[0-9.]+|[0-9a-fA-F:]+")) {
-                logger.warning("config.yml: web.trusted-proxies: \"" + text + "\" isn't an IP address; it's ignored.");
-                continue;
-            }
-            try {
-                addresses.add(InetAddress.getByName(text).getHostAddress());
-            } catch (UnknownHostException e) {
-                logger.warning("config.yml: web.trusted-proxies: \"" + text + "\" isn't an IP address; it's ignored.");
-            }
-        }
-        return Set.copyOf(addresses);
-    }
-
     public int port() {
         return server.getAddress().getPort();
     }
@@ -164,6 +153,9 @@ public final class WebServer implements AutoCloseable {
     @Override
     public void close() {
         server.stop(1);
+        if (heads != null) {
+            heads.close();
+        }
         threads.shutdownNow();
         try {
             threads.awaitTermination(2, TimeUnit.SECONDS);
@@ -204,14 +196,16 @@ public final class WebServer implements AutoCloseable {
     private void serve(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod().toUpperCase(Locale.ROOT);
         String path = exchange.getRequestURI().getRawPath();
-        if (!limit.allow(client(exchange))) {
-            exchange.getResponseHeaders().set("Retry-After", Long.toString(limit.retryAfter()));
-            send(exchange, Response.error(429, "Too many requests. Wait a minute."), false);
-            return;
-        }
         boolean api = path.startsWith("/api/") || path.equals("/api");
         if (api) {
+            // Before the limit, so a site elsewhere can read a 429 too.
             cors(exchange);
+        }
+        RateLimit which = path.startsWith(Pages.BASE + "head/") ? headLimit : limit;
+        if (!which.allow(client(exchange))) {
+            exchange.getResponseHeaders().set("Retry-After", Long.toString(which.retryAfter()));
+            send(exchange, Response.error(429, "Too many requests. Wait a minute."), false);
+            return;
         }
         if (method.equals("OPTIONS")) {
             exchange.getResponseHeaders().set("Allow", "GET, HEAD, OPTIONS");
@@ -304,30 +298,81 @@ public final class WebServer implements AutoCloseable {
         return null;
     }
 
-    /** Who's asking: the connection's address, or for a trusted proxy, the visitor's address it passes on. */
+    /**
+     * Who's asking, for the rate limit: the connection's address, or for a trusted proxy, the
+     * visitor's address it passes on in the one header the owner chose. Only that header is
+     * read: any other could have come from the visitor, through the proxy, unchanged.
+     */
     String client(HttpExchange exchange) {
-        String remote = exchange.getRemoteAddress().getAddress().getHostAddress();
-        if (!trusted.contains(remote)) {
-            return remote;
+        byte[] remote = exchange.getRemoteAddress().getAddress().getAddress();
+        if (!proxies.trusted(remote)) {
+            return key(remote);
         }
-        Headers headers = exchange.getRequestHeaders();
-        String cloudflare = headers.getFirst("CF-Connecting-IP");
-        if (cloudflare != null && !cloudflare.isBlank()) {
-            return cloudflare.strip();
+        List<String> values = exchange.getRequestHeaders().get(proxies.header());
+        if (values == null || values.isEmpty()) {
+            return key(remote);
         }
-        String forwarded = headers.getFirst("X-Forwarded-For");
-        if (forwarded == null) {
-            return remote;
+        if (!proxies.header().equals(Proxies.FORWARDED_FOR)) {
+            // A header the proxy sets alone, such as CF-Connecting-IP: one address, its last if repeated.
+            byte[] visitor = Proxies.literal(values.getLast().strip());
+            return key(visitor != null ? visitor : remote);
         }
-        // The nearest address that isn't one of our proxies: anything before it, the visitor could have made up.
-        String[] hops = forwarded.split(",");
+        // The nearest address that isn't one of our proxies: anything before it, the visitor
+        // could have made up. Repeated headers count as one list, in order.
+        String[] hops = String.join(",", values).split(",");
         for (int i = hops.length - 1; i >= 0; i--) {
-            String hop = hops[i].strip();
-            if (!hop.isEmpty() && !trusted.contains(hop)) {
-                return hop;
+            String text = hops[i].strip();
+            if (text.isEmpty()) {
+                continue;
+            }
+            byte[] hop = Proxies.literal(text);
+            if (hop == null) {
+                // Not an address: nothing further left can be believed.
+                break;
+            }
+            if (!proxies.trusted(hop)) {
+                return key(hop);
             }
         }
-        return remote;
+        return key(remote);
+    }
+
+    /** The rate limit's key for an address: itself, or for IPv6, its /64, which one visitor usually has whole. */
+    static String key(byte[] address) {
+        HexFormat hex = HexFormat.of();
+        return address.length == 16 ? hex.formatHex(address, 0, 8) + "::/64" : hex.formatHex(address);
+    }
+
+    /** Whether Accept-Encoding allows gzip: listed (or *) without q=0. */
+    static boolean acceptsGzip(List<String> headers) {
+        if (headers == null) {
+            return false;
+        }
+        Boolean any = null;
+        for (String header : headers) {
+            for (String part : header.split(",")) {
+                String[] pieces = part.split(";");
+                String coding = pieces[0].strip().toLowerCase(Locale.ROOT);
+                boolean allowed = true;
+                for (int i = 1; i < pieces.length; i++) {
+                    String parameter = pieces[i].strip().toLowerCase(Locale.ROOT);
+                    if (parameter.startsWith("q=")) {
+                        try {
+                            allowed = Double.parseDouble(parameter.substring(2)) > 0;
+                        } catch (NumberFormatException e) {
+                            allowed = false;
+                        }
+                    }
+                }
+                if (coding.equals("gzip")) {
+                    return allowed;
+                }
+                if (coding.equals("*")) {
+                    any = allowed;
+                }
+            }
+        }
+        return Boolean.TRUE.equals(any);
     }
 
     private void cors(HttpExchange exchange) {
@@ -356,22 +401,26 @@ public final class WebServer implements AutoCloseable {
             // An SVG opened on its own can run scripts: not from here.
             headers.set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
         }
+        boolean zip = false;
+        if (response.gzip() != null) {
+            // Also on a 304, so a cache keeps the plain and gzipped copies apart.
+            headers.add("Vary", "Accept-Encoding");
+            zip = acceptsGzip(exchange.getRequestHeaders().get("Accept-Encoding"));
+        }
         if (response.status() == 200) {
-            headers.set("ETag", response.etag());
+            // The gzipped copy is different bytes, so it has an ETag of its own.
+            String etag = zip ? response.gzipEtag() : response.etag();
+            headers.set("ETag", etag);
             String match = exchange.getRequestHeaders().getFirst("If-None-Match");
-            if (match != null && match.contains(response.etag())) {
+            if (match != null && match.contains(etag)) {
                 exchange.sendResponseHeaders(304, -1);
                 return;
             }
         }
         byte[] body = response.body();
-        if (response.gzip() != null) {
-            headers.add("Vary", "Accept-Encoding");
-            String accepts = exchange.getRequestHeaders().getFirst("Accept-Encoding");
-            if (accepts != null && accepts.contains("gzip")) {
-                headers.set("Content-Encoding", "gzip");
-                body = response.gzip();
-            }
+        if (zip) {
+            headers.set("Content-Encoding", "gzip");
+            body = response.gzip();
         }
         if (head || body.length == 0) {
             if (head) {

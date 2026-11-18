@@ -39,11 +39,19 @@ public final class Pages implements WebServer.Source {
     private static final int SUMMARY = 5;
     private static final Pattern LOGO_FILE = Pattern.compile("[A-Za-z0-9_.-]+\\.(png|jpe?g|svg|webp)");
     private static final Pattern URL = Pattern.compile("https?://[^\\s\"'<>\\\\]+");
+    /**
+     * A name to look up or search for: Java names, and Bedrock players' through Floodgate,
+     * which start with its prefix (a dot unless the owner changed it). Profiles are linked by
+     * uuid; names are for typing.
+     */
+    public static final Pattern NAME = Pattern.compile("[\\w.*+~-]{1,16}");
 
     private final XStats plugin;
     private volatile Map<String, Response> rendered = Map.of();
     private final Map<String, Board> renderedFrom = new HashMap<>();
     private final Map<String, Response> boardPages = new HashMap<>();
+    /** The engine's hidden version the kept board pages were made at: a hide or show makes them again. */
+    private int renderedHidden = -1;
     private final Map<Integer, Cached> history = java.util.Collections.synchronizedMap(new LinkedHashMap<>(64, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<Integer, Cached> eldest) {
@@ -73,11 +81,18 @@ public final class Pages implements WebServer.Source {
         return stat.website();
     }
 
-    /** Makes every page visitors share again. On xStats' thread, after a save. */
+    /** Makes every page visitors share again. On xStats' thread, after a save and after someone is hidden or shown. */
     public void render() {
         Engine engine = plugin.engine();
         if (engine == null || !engine.ready()) {
             return;
+        }
+        int hiddenVersion = engine.hiddenVersion();
+        if (hiddenVersion != renderedHidden) {
+            // Someone was hidden or shown since: no kept page can be trusted to leave out the right players.
+            renderedFrom.clear();
+            boardPages.clear();
+            renderedHidden = hiddenVersion;
         }
         XSConfig config = plugin.config();
         List<StatDef> stats = plugin.catalog().snapshot().stats().stream().filter(Pages::shown).toList();
@@ -195,7 +210,7 @@ public final class Pages implements WebServer.Source {
     /** Players whose names start with what was typed, for the site's search. Any thread. */
     @Override
     public Response search(String query) {
-        if (query == null || !query.matches("\\w{1,16}")) {
+        if (query == null || !NAME.matcher(query).matches()) {
             return Response.json(200, "{\"players\":[]}", 30);
         }
         Json json = new Json().object().key("players").array();
@@ -216,7 +231,7 @@ public final class Pages implements WebServer.Source {
             } catch (IllegalArgumentException e) {
                 record = null;
             }
-        } else if (who.matches("\\w{1,16}")) {
+        } else if (NAME.matcher(who).matches()) {
             record = engine.byName(who);
         }
         if (record == null || record.hidden() || record.name() == null) {
@@ -293,7 +308,8 @@ public final class Pages implements WebServer.Source {
 
     private static void value(Json json, Engine engine, PlayerRecord record, StatDef stat, Period period) {
         long value = engine.value(record, stat, period);
-        json.field("value", value).field("display", Format.value(stat, value)).field("rank", engine.rank(record, stat, period));
+        // The place among players the site shows, so it never gives away someone private above.
+        json.field("value", value).field("display", Format.value(stat, value)).field("rank", engine.visibleRank(record, stat, period));
     }
 
     /** The player's last 30 days and, on a network, each server's numbers: kept a minute. */
@@ -309,8 +325,8 @@ public final class Pages implements WebServer.Source {
         }
         try {
             int today = plugin.engine().today();
-            cached = new Cached(System.currentTimeMillis(), store.history(id, today - HISTORY_DAYS + 1, network),
-                network ? store.perServer(id) : List.of());
+            Store.History read = store.history(id, today - HISTORY_DAYS + 1, network);
+            cached = new Cached(System.currentTimeMillis(), read.days(), read.servers());
         } catch (SQLException e) {
             plugin.getLogger().fine("Couldn't read a profile's history: " + e.getMessage());
             cached = new Cached(System.currentTimeMillis(), List.of(), List.of());

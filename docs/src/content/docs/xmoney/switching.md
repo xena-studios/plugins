@@ -32,7 +32,7 @@ Running an import again sets the balances again, to the old plugin's, undoing an
 /xmoney import essentials confirm overwrite
 ```
 
-On a network, run the import on one server. It's set a hundred balances at a time with payments between, waits rather than drops anything if the database goes away, and the other servers read every balance again once it's done. Shop purchases on any server may be refused while it runs, so pick a quiet time.
+On a network, run the import on one server. It's set in steps of a hundred balances or 20 milliseconds with payments between, waits rather than drops anything if the database goes away, and the other servers read every balance again once it's done. Shop purchases on any server may be refused while it runs, so pick a quiet time.
 
 ## Where it reads from
 
@@ -40,9 +40,17 @@ On a network, run the import on one server. It's set a hundred balances at a tim
 | --- | --- |
 | `/xmoney import essentials` | EssentialsX's `plugins/Essentials/userdata/*.yml`. Accounts EssentialsX made for other plugins (a town's bank) come across as accounts that aren't players'. |
 | `/xmoney import cmi` | CMI's SQLite database, `plugins/CMI/cmi.sqlite.db`, read-only. |
-| `/xmoney import vault` | Whatever other economy plugin is registered with Vault, while it's still installed. This covers every other economy plugin, and CMI or EssentialsX on MySQL. Economy plugins expect to be asked on the main thread, so balances are read there, a few milliseconds each tick, so the server doesn't stall. |
+| `/xmoney import vault` | Whatever other economy plugin is registered with Vault, while it's still installed. This covers every other economy plugin, and CMI or EssentialsX on MySQL. Economy plugins expect to be asked on the main thread, so balances are read there, a few milliseconds each tick, so the server doesn't stall. It runs from the console of an empty server too. |
 
 Only players who have joined this server are imported from a plain Vault economy, since Vault can't list accounts. An economy on VaultUnlocked's API lists its own.
+
+## Names
+
+A name finds the player who has it now. When a player joins, their name is theirs in xMoney: any other account that had it (someone who used the name before and hasn't been back) loses it, shows the start of its uuid in `/baltop` until that player returns, and is saved that way, so it stays sorted out after a restart. An import never gives an account a name another account already has; it gets the name when the player joins.
+
+If two saved accounts do share a name (from two servers on a network at once), `/pay` and `/eco` ask Mojang's records whose it is, and Vault's name-based calls ask the server's own player cache. If that doesn't know either, they're refused rather than guessed.
+
+On an offline-mode server, `Steve` and `steve` are two players with two accounts, but one name for `/pay` and Vault's name-based calls, which ignore case: it belongs to whichever of them joined last.
 
 ## EssentialsX
 

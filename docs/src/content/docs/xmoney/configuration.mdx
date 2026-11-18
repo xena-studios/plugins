@@ -50,11 +50,14 @@ Why it's experimental: a shop asks Vault on the server thread and needs an answe
 
 - A withdrawal made on a server thread waits at most `network-wait-ms` (50 by default, 250 at most) for the database to take it up. If it hasn't, it's refused and nothing is taken, then or later. Commands and xMoney's API don't hold a server thread, so they wait up to 5 seconds.
 - While the database is failing (a save failed and none has worked since), withdrawals are refused at once. Deposits still work and are saved once it's back.
-- Once the database has taken a payment up, the server waits for its answer, a few milliseconds normally and at most a few seconds, since xMoney's connection gives up on any one reply after 3. Only if the database goes away at the very moment it commits does the server wait until xMoney can ask it whether the payment went through.
+- Once the database has taken a payment up, the server waits for its answer, a few milliseconds normally. If the payment hasn't reached its commit within a second, it's undone and refused, with nothing taken; with one slow reply still to wait out, that's about 4 seconds at most. The commit itself waits at most 3 more. xMoney's own connection to the database gives up on connecting, or on any one reply, after 3 seconds, whatever `storage.mysql.properties` says, and while the database is away it tries again every 2 seconds.
+- If the database closed xMoney's connection while the server was quiet (MySQL's `wait_timeout`), the connection is checked and replaced before the next payment, not tried and failed.
 
-A later version keeps each online player's balance on the server they're on, so purchases never wait on the database.
+**If the database dies at the moment a withdrawal commits, the calling thread waits until the database answers again.** Whether the money was taken is never guessed: a payment reported as failed was never charged. On the main thread that can freeze the server, which is why network mode is experimental. Leases, planned for 1.1 ([#66](https://github.com/xena-studios/plugins/issues/66)), remove the case: each online player's balance is decided by the server they're on, in memory.
 
-Deposits are made at once and saved after, as on one server. `max-balance` is checked against what each server knows, so on a network it's a soft limit. If a server's checks for the others' changes stop working for a while, it reads every balance again once they work. An import on one server is set a hundred balances at a time with payments between, and the other servers read every balance again once it's done.
+A burst of deposits (thousands in one moment, from a plugin paying everyone) is saved together, and a withdrawal that arrives meanwhile waits for that save; on a server thread it's refused after `network-wait-ms`, with nothing taken.
+
+Deposits are made at once and saved after, as on one server. `max-balance` is checked against what each server knows, so on a network it's a soft limit. If a server's checks for the others' changes stop working for a while, it reads every balance again once they work. An import on one server is set in steps of a hundred balances or 20 milliseconds, whichever comes first, with payments between, and the other servers read every balance again once it's done.
 
 ## The full default config
 

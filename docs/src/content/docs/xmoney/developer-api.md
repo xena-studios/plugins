@@ -41,7 +41,7 @@ XMoneyApi money = XMoneyApi.get();
 
 `XMoneyApi.get()` throws an `IllegalStateException` if xMoney isn't enabled. It's also registered with Bukkit's services manager, so `Bukkit.getServicesManager().load(XMoneyApi.class)` works too (and returns null instead).
 
-Every method says how it runs. Balances, the top list and the format answer from memory, from any thread, at once. Payments return a `CompletableFuture`: on a single server it's already complete when you get it; on a network a withdrawal completes once the shared database has taken the money, off your thread, or as `UNAVAILABLE` within five seconds if it can't. `history` reads the database and completes off the server's threads. Nothing ever reads the database on your thread.
+Every method says how it runs. Balances, the top list and the format answer from memory, from any thread, at once. Payments return a `CompletableFuture`: on a single server it's already complete when you get it; on a network a withdrawal completes once the shared database has taken the money, off your thread, or as `UNAVAILABLE` within five seconds if the database hasn't taken it up by then, whether or not you wait for it. `history` reads the database and completes off the server's threads. Nothing ever reads the database on your thread.
 
 ## Pay and charge
 
@@ -59,7 +59,7 @@ money.withdraw(this, player.getUniqueId(), new BigDecimal("10"), "teleport cost"
 money.transfer(this, buyer, seller, price, "market sale");   // both change, or neither
 ```
 
-The ledger records each one under your plugin's name, with the reason. Amounts keep four decimal places whatever the currency's decimals, which are only for showing them: paying 0.995 and then 0.005 takes exactly 1. Past four places, deposits are rounded down and withdrawals and transfers up, so rounding never makes money. `result.amount()` is what actually moved, and balances come back with every place they have (`12.50`, `0.995`). A result is never an exception: an invalid amount is `INVALID_AMOUNT`, another plugin refusing is `CANCELLED`, and a network database that's failing or didn't take it up in time is `UNAVAILABLE`: nothing moved, and nothing will later.
+The ledger records each one under your plugin's name, with the reason. Amounts keep four decimal places whatever the currency's decimals, which are only for showing them: paying 0.995 and then 0.005 takes exactly 1. Past four places, deposits are rounded down and withdrawals and transfers up, so rounding never makes money. `result.amount()` is what actually moved, and balances come back with every place they have (`12.50`, `0.995`). A result is never an exception: an invalid amount is `INVALID_AMOUNT`, another plugin refusing is `CANCELLED`, and a network database that's failing or didn't take it up in time is `UNAVAILABLE`: nothing moved, and nothing will later. The one exception is literal: if xMoney stops while a network payment's commit is on its way to the database, nobody knows yet whether it went through, so its future completes exceptionally rather than claim either.
 
 ## Read
 
@@ -70,6 +70,10 @@ List<TopEntry> top = money.top(1, 10);                // ranks 1 to 10
 String shown = money.format(new BigDecimal("1234.5")); // "$1,234.50"
 money.history(uuid, 1).thenAccept(page -> { /* page.entries(), newest first */ });
 ```
+
+## Accounts by name
+
+The API takes uuids. Vault's name-based calls (`getBalance(String)`, `withdrawPlayer(String, double)` and the like) find the account the name belongs to now: the player who last joined with it, or the account a plugin made under it (`town-Foo`). A player joining takes their name from any account that had it, and that's saved, so names don't become ambiguous again after a restart. If two saved accounts still share a name, a name-based call asks the server's player cache (never the disk or Mojang) and is refused if that doesn't know: it never pays the wrong player. Names ignore case, so on an offline-mode server `Steve` and `steve` share one name, and it belongs to whichever joined last.
 
 ## Events
 

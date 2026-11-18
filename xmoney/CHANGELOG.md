@@ -21,6 +21,7 @@ The first release. Remove Vault or VaultUnlocked, drop the jar in and start the 
 ### Also
 
 - Imports from EssentialsX, CMI and any economy registered with Vault, each with a dry run first, and a second confirmation if it would undo changes made in xMoney since.
-- Networks (experimental): servers sharing one MySQL or MariaDB database share balances, and can never spend the same money twice. A shop's purchase waits at most 50 ms for the database, and is refused with nothing taken if the database is slow or away.
+- A name belongs to the player who joined with it last, and stays theirs after a restart: `/pay Steve` and other plugins' payments by name never reach a player who used to be called Steve.
+- Networks (experimental): servers sharing one MySQL or MariaDB database share balances, and can never spend the same money twice. A shop's purchase waits at most 50 ms for the database to take it up and a few seconds for its answer, and is refused with nothing taken if the database is slow or away. A purchase reported as failed was never charged, so if the database dies at the very moment one commits, the server waits until it answers again; leases in 1.1 (#66) remove that case.
 - PlaceholderAPI: `%xmoney_balance%` (and `_raw`, `_short`), and `%xmoney_top_<rank>_name%` and `_balance`.
 - A developer API for payments with a reason in the ledger, the top list and history, and two events.

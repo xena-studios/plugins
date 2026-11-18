@@ -4,7 +4,7 @@ plugins {
     id("xena.plugin")
 }
 
-version = "2.0.3"
+version = "2.1.0"
 description = "Never drop a player again."
 
 paperPluginYaml {

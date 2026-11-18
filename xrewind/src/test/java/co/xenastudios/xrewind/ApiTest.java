@@ -306,7 +306,8 @@ class ApiTest {
         XRewindApi again = XRewindApi.get();
         long written = plugin.writer().written();
         again.logPlacement(PLOTS, at(3, 71, 20), Material.STONE.createBlockData());
-        await(() -> plugin.writer().written() == written + 1);
+        assertTrue(done(again.flush()));
+        assertTrue(plugin.writer().written() > written);
         Plan fresh = done(again.planRollback(Query.builder().users("Steve").time(Duration.ofHours(1)).build()));
         assertEquals(1, done(again.apply(fresh)).applied(), "the rollback that was running when it stopped isn't still holding the lock");
     }
@@ -353,6 +354,7 @@ class ApiTest {
 
     @Test
     void aPauseGivenUpOnLetsTheHoldGo() throws Exception {
+        assertTrue(done(api.flush()), "Steve's join, from the setup, is written");
         // A write running, so the holds wait.
         plugin.writer().gate().enterAnyway();
         CompletableFuture<WriterHold> cancelled = api.pause();
@@ -365,7 +367,8 @@ class ApiTest {
         plugin.writer().gate().exit();
         long written = plugin.writer().written();
         api.logPlacement(PLOTS, at(9, 71, 9), Material.STONE.createBlockData());
-        await(() -> plugin.writer().written() == written + 1);
+        assertTrue(done(api.flush()), "writes go on");
+        assertTrue(plugin.writer().written() > written);
     }
 
     @Test

@@ -472,8 +472,9 @@ public final class Punisher {
         if (action == null || action.commands().isEmpty()) {
             return;
         }
-        // On the next tick on the global thread, outside any command that's running.
-        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+        // On the next tick on the global thread, outside any command that's running. Through
+        // the core's Tasks, which keeps running while an empty Paper server is paused (#67).
+        plugin.tasks().nextTick(() -> {
             for (String command : action.commands()) {
                 String line = command.replace("<player>", name).strip();
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), line.startsWith("/") ? line.substring(1) : line);

@@ -55,13 +55,13 @@ The id (`diamonds`) is what placeholders and `/leaderboard` use, so it can't be 
 
 `time_since_death` and `time_since_rest` go back to 0 by themselves, so they can't be counted up; xStats refuses them as sources.
 
-If another plugin takes some of a Minecraft stat away, xStats' number goes down with it. If a stat suddenly reads far lower (under 90% of before, as when a player's stats file is deleted), it's taken to have started again from 0, and xStats' all-time number keeps growing from there.
+If another plugin takes some of a Minecraft stat away, xStats' number goes down with it. If a stat suddenly reads far lower (by more than a tenth, as when a player's stats file is deleted, or the world is rolled back that far), it's taken to have started again from 0, and xStats' all-time number keeps growing from there.
 
 Minecraft counts distances in centimetres, damage in tenths of a health point and times in ticks. xStats keeps distances and damage as they are and times in seconds, and writes them all as players read them. Every Minecraft stat name goes through one table, checked against the server's own names: `/xstats status` says whether it matches.
 
 ## Placeholder stats
 
-A `papi:` stat goes up and down with its placeholder, such as a balance. Only rises count towards today, this week and this month, and the first value xStats ever sees for a player counts towards all time only. A value that isn't a number (a blank, "none") is skipped. `1,234.56`, `$12.5k` and `2M` all read as numbers, colours included (`&#FF0000`, `<#ff0000>`, `§a`). A k, m, b or t right after the number multiplies it; a word after a space doesn't, so `5 blocks` is 5. On a network, a placeholder stat is the highest any server has, not every server's added up, so a shared balance shows once.
+A `papi:` stat goes up and down with its placeholder, such as a balance. Only rises count towards today, this week and this month, and the first value xStats ever sees for a player counts towards all time only. A value that isn't a number (a blank, "none") is skipped. `1,234.56`, `$12.5k` and `2M` all read as numbers, colours included (`&#FF0000`, `<#ff0000>`, `§a`). A k, m, b or t right after the number multiplies it; a word after a space doesn't, so `5 blocks` is 5. On a network, a placeholder stat is the latest value any server read, not every server's added up, so a shared balance shows once, and goes down when it's spent on another server.
 
 ## Days, weeks and months
 

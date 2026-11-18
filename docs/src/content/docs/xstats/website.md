@@ -59,7 +59,7 @@ server {
 }
 ```
 
-`trusted-proxies` makes the rate limit count each visitor by the address the proxy passes on, instead of counting every visitor as the proxy. Only list your own proxy's address: a header from anyone else is ignored. xStats reads only the header in `client-ip-header`, `X-Forwarded-For` by default, and takes the nearest address in it that isn't one of your proxies, so a visitor can't pick their own address by sending one: nginx and Caddy pass on whatever headers a visitor sends, and add the real address last. An IPv6 visitor is counted by their /64, which one household or server usually has whole.
+`trusted-proxies` makes the rate limit count each visitor by the address the proxy passes on, instead of counting every visitor as the proxy. Only list your own proxy's address: a header from anyone else is ignored. xStats reads only the header in `client-ip-header`, `X-Forwarded-For` by default, and takes the nearest address in it that isn't one of your proxies, so a visitor can't pick their own address by sending one: nginx and Caddy pass on whatever headers a visitor sends, and add the real address last. An IPv6 visitor is counted by their /64, which one household or server usually has whole. A port the proxy adds (`1.2.3.4:5678`, `[2001:db8::1]:443`) is ignored.
 
 **Through a Cloudflare Tunnel.** For hosts with one port and no domain set up, or to keep your server's IP address private. Run `cloudflared` on the same machine, pointed at `http://127.0.0.1:8804`, with `bind: "127.0.0.1"` and `trusted-proxies: ["127.0.0.1"]`. Cloudflare adds the visitor's address to `X-Forwarded-For`, so the default works. Since only Cloudflare reaches `cloudflared`, `client-ip-header: "CF-Connecting-IP"` is safe here too.
 
@@ -69,9 +69,9 @@ server {
 
 ## Limits
 
-- `requests-per-minute` (120): requests one visitor may make each minute. Opening a page is a few. More get `429 Too Many Requests` until the minute is up. Heads, when they're proxied, have a limit of their own, five times this, since a leaderboard shows up to a hundred. If more than 10,000 addresses visit in one minute (a flood of made-up ones), addresses not seen yet that minute share one count, so the flood limits only itself.
+- `requests-per-minute` (120): requests one visitor may make each minute. Opening a page is a few. More get `429 Too Many Requests` until the minute is up. Heads, when they're proxied, have a limit of their own, five times this, since a leaderboard shows up to a hundred. If more than 10,000 addresses visit in one minute (a flood of made-up ones), addresses not seen yet that minute are let through without a count until the next minute, so a flood can't lock out real visitors. The limit on requests at once still protects the server.
 - `max-concurrent` (32): requests handled at once. More wait up to two seconds, then get `503`; when far more than that wait, new connections are closed.
-- Pages everyone sees (the server's page, every leaderboard) are made once after each save and sent from memory, compressed, with cache headers, so a busy site costs about as much as a quiet one. A player's page is made when it's asked for, from memory, with their 30-day history read from the database and kept for a minute.
+- Pages everyone sees (the server's page, every leaderboard) are made once after each save and sent from memory, compressed, with cache headers, so a busy site costs about as much as a quiet one. Leaderboards and search are checked with the server on every visit (a quick `304` when nothing changed), so a player who runs `/stats private` isn't kept in a browser or CDN; a player's own page may be kept for 30 seconds. A player's page is made when it's asked for, from memory, with their 30-day history read from the database and kept for a minute.
 
 The web server stops cleanly on `/xstats reload` (when a web setting changed), when the plugin is disabled, and when the server stops. If it couldn't start (the port was taken), the next `/xstats reload` tries again.
 
@@ -97,7 +97,7 @@ web:
 
 Players' heads come from `web.avatars.url`, with `{uuid}`, `{name}` and `{size}` filled in: [mc-heads.net](https://mc-heads.net) by default, or `https://crafatar.com/avatars/{uuid}?size={size}&overlay`. Each visitor's browser loads them from that service.
 
-With `web.avatars.proxy: true`, xStats fetches heads itself and keeps each for a day (up to 8 MiB of them), so visitors' browsers never contact a third party. Only heads of players xStats knows are fetched, four at a time (others wait up to five seconds for a turn), each at most 64 KiB, following redirects only on the same host, so the proxy can't be used to fetch anything else.
+With `web.avatars.proxy: true`, xStats fetches heads itself and keeps each for a day (up to 8 MiB of them), so visitors' browsers never contact a third party. Only heads of players xStats knows are fetched, four at a time (up to 64 others wait up to five seconds for a turn, without holding up pages), each at most 64 KiB, following redirects only on the same host, so the proxy can't be used to fetch anything else.
 
 ## Which stats show
 

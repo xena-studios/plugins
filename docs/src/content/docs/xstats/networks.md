@@ -24,7 +24,7 @@ network:
 
 Restart each server after changing `storage`.
 
-- **Each server reads its own players.** Minecraft counts stats per server, so a player's kills on survival and on creative are two numbers, added up for the network.
+- **Each server reads its own players.** Minecraft counts stats per server, so a player's kills on survival and on creative are two numbers, added up for the network. A placeholder stat, such as a balance, isn't added up: it's the latest value any server read.
 - **Saves reach the others.** After each save, the other servers hear about it through the database (every `network.check-every` seconds, 3 by default), and read the network's numbers at their next save. `/stats private` reaches them within those few seconds.
 - **One website** for the whole network: turn it on on one server only, and point your domain at that one.
 - **Per server on profiles.** A player's page on the website shows each server's numbers too.

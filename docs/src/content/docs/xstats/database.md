@@ -12,7 +12,7 @@ xStats' tables are documented and kept stable, so you can build your own site or
 | `players` | `id`, `uuid`, `name`, `name_lower`, `first_join`, `last_seen`, `hidden`, `excluded` | Every player xStats has seen. Times are milliseconds since 1970. `hidden` is 1 after `/stats private`; `excluded` is 1 for players with `xstats.leaderboard.exclude`. |
 | `stats` | `id`, `name` | Each stat's id from the config, such as `kills`. |
 | `servers` | `id`, `name` | Each `server-name`. |
-| `totals` | `player`, `stat`, `server`, `value`, `raw` | Each player's all-time value of each stat on each server. `raw` is the last reading of Minecraft's counter, or of a placeholder or another plugin's value; -1 when there's none. Indexed by `stat, server, value` for top-N queries. |
+| `totals` | `player`, `stat`, `server`, `value`, `raw`, `updated` | Each player's all-time value of each stat on each server. `raw` is the last reading of Minecraft's counter, or of a placeholder or another plugin's value; -1 when there's none. `updated` is when the row was last written: on a network, a placeholder stat (a balance) is the value of the row written last, not the sum. Indexed by `stat, server, value` for top-N queries. |
 | `daily` | `player`, `stat`, `server`, `day`, `delta` | How much a stat went up on a day: only stats with periods, only days it changed. `day` is days since 1970-01-01, in `periods.timezone`. |
 | `monthly` | `player`, `stat`, `server`, `month`, `delta` | Daily rows older than `periods.keep-daily-days`, added up per month. `month` is `year * 12 + month - 1`. |
 | `boards` | `id`, `server`, `world`, `x`, `y`, `z`, `yaw`, `stat`, `period` | Leaderboards placed in the world. |

@@ -36,7 +36,7 @@ The first release. Drop the jar in and start the server: stats are kept in SQLit
 
 ### Also
 
-- Networks: several servers sharing MySQL, with leaderboards and the website counting them all, and each server's numbers on player pages.
+- Networks: several servers sharing MySQL, with leaderboards and the website counting them all, and each server's numbers on player pages. A shared balance is the latest value any server read.
 - Stats waiting for a save are kept in order and added up, so a database outage never doubles a counter, and other plugins' increments never pile up in memory.
 - A developer API: read stats, ranks and leaderboards, add stats of your own and sections to player profiles, and listen for saves and new leaders.
 - Paper and Folia, 1.21.11 and 26.x.

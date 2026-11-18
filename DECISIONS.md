@@ -224,5 +224,5 @@ xVote receives votes itself instead of depending on NuVotifier, which hasn't had
 - **Names wait.** Lists send names, not uuids. A name is matched from memory only (online, voted before, or the server's user cache), never by asking Mojang, because a name that never joined may be a typo or a Bedrock player; it waits, and the first player with that name to join gets it. On a network, the change feed's news of a vote lets the server where that name is online match it.
 - **Totals keep their period's key** (the day, week and month they were counted in), so nothing resets them at midnight and no task runs. Leaderboards are sorted again only on the first question after a vote.
 - **The receiver starts off the server's threads,** since it reads key files and may make a key, one change at a time, and never binds after the plugin is disabled.
-- **The jar is about 300 KiB:** the receiver, the ledger and its network claims, rewards, commands and the API. Its budget is 350.
+- **The jar is about 310 KiB:** the receiver, the ledger and its network claims, rewards, commands and the API. Its budget is 350.
 

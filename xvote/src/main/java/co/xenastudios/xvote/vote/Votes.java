@@ -366,7 +366,7 @@ public final class Votes {
 
     // ---- news from the other servers ----
 
-    private record Heard(Voter voter, List<Facts> unpaid, String claim, Ledger.PartyState party) {}
+    private record Heard(UUID player, Voter voter, List<Facts> unpaid, String claim, Ledger.PartyState party) {}
 
     /** Another server stored a vote: count it here, and pay it if its player is online here. */
     CompletableFuture<Void> heard(long voteId) {
@@ -376,7 +376,7 @@ public final class Votes {
             Ledger.Row row = ledger.read(c, voteId);
             Ledger.PartyState party = ledger.party(c, false);
             if (row == null) {
-                return new Heard(null, List.of(), null, party);
+                return new Heard(null, null, List.of(), null, party);
             }
             UUID player = row.player();
             if (player == null) {
@@ -387,7 +387,7 @@ public final class Votes {
                     here = online.byName(prefix + name);
                 }
                 if (here == null) {
-                    return new Heard(null, List.of(), null, party);
+                    return new Heard(null, null, List.of(), null, party);
                 }
                 String hereName = online.name(here);
                 if (ledger.match(c, here, hereName, Names.matchKeys(hereName, prefix), voters.periods()) > 0) {
@@ -401,7 +401,7 @@ public final class Votes {
                 claim = newClaim();
                 unpaid = ledger.claimUnpaid(c, player, claim, now);
             }
-            return new Heard(ledger.voter(c, player, voters.periods(), now, siteWindow()), unpaid, claim, party);
+            return new Heard(player, ledger.voter(c, player, voters.periods(), now, siteWindow()), unpaid, claim, party);
         }).handle((heard, error) -> {
             if (error != null) {
                 logger.log(Level.WARNING, "Couldn't read a vote another server stored", error);
@@ -412,7 +412,7 @@ public final class Votes {
                 voters.put(heard.voter());
             }
             if (!heard.unpaid().isEmpty()) {
-                pay(heard.voter().id(), heard.unpaid(), heard.claim());
+                pay(heard.player(), heard.unpaid(), heard.claim());
             }
             return null;
         });

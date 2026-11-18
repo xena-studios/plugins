@@ -29,6 +29,6 @@ xena {
     // The shared core and bStats (about 75 KiB), plus the Votifier receiver (both
     // protocols, keys, tokens, the NuVotifier import), the vote ledger and its network
     // claims, rewards, the vote party, commands, placeholders and the developer API. No
-    // library is shaded in: JSON is Paper's Gson. About 300 KiB, with ~50 KiB of room.
+    // library is shaded in: JSON is Paper's Gson. About 310 KiB, with ~40 KiB of room.
     jarBudgetKb = 350
 }

@@ -62,6 +62,11 @@ public class XMoney extends XenaPlugin<XMConfig> {
     }
 
     @Override
+    protected int bStatsId() {
+        return 35421;
+    }
+
+    @Override
     protected void setup(Setup setup, XMConfig config) {
         if (!started) {
             started = true;

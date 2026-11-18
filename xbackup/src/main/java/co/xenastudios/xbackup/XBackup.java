@@ -31,6 +31,11 @@ public class XBackup extends XenaPlugin<XBConfig> {
     }
 
     @Override
+    protected int bStatsId() {
+        return 35420;
+    }
+
+    @Override
     protected List<String> adminAliases() {
         return List.of("xb");
     }

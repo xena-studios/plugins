@@ -46,6 +46,11 @@ public final class ReturnHistory {
         tries.computeIfAbsent(player, key -> new ArrayDeque<>()).addLast(now);
     }
 
+    /** Whether the player was sent back moments ago, so being here again means the main server refused them. */
+    public boolean bounced(UUID player, long now) {
+        return recentlySent(player, now);
+    }
+
     boolean recentlySent(UUID player, long now) {
         Deque<Long> times = tries.get(player);
         return times != null && !times.isEmpty() && now - times.peekLast() < BOUNCE_MILLIS;

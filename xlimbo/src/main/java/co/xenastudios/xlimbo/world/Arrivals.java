@@ -2,7 +2,9 @@ package co.xenastudios.xlimbo.world;
 
 import co.xenastudios.core.ListenerModule;
 import co.xenastudios.xlimbo.XLimbo;
+import co.xenastudios.xlimbo.api.event.PlayerEnterLimboEvent;
 import co.xenastudios.xlimbo.config.XLConfig;
+import co.xenastudios.xlimbo.network.Returns;
 import io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent;
 import java.util.Collections;
 import net.kyori.adventure.text.Component;
@@ -44,7 +46,11 @@ public final class Arrivals extends ListenerModule {
     void onJoin(PlayerJoinEvent event) {
         XLConfig config = xlimbo.config();
         Player player = event.getPlayer();
-        xlimbo.returnHistory().arrived(player.getUniqueId(), System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        // Built only when something listens for it; asked before the arrival is noted.
+        PlayerEnterLimboEvent entered = PlayerEnterLimboEvent.getHandlerList().getRegisteredListeners().length == 0
+            ? null : new PlayerEnterLimboEvent(player, reason(player, now));
+        xlimbo.returnHistory().arrived(player.getUniqueId(), now);
         if (config.join().suppressJoinMessage()) {
             event.joinMessage(null);
         }
@@ -58,6 +64,21 @@ public final class Arrivals extends ListenerModule {
             player.sendMessage(CLEAR);
         }
         config.join().customJoinMessage().send(player);
+        if (entered != null) {
+            entered.callEvent();
+        }
+    }
+
+    // Proxies don't say why they sent someone, so this is what xLimbo can tell itself.
+    private PlayerEnterLimboEvent.Reason reason(Player player, long now) {
+        if (xlimbo.returnHistory().bounced(player.getUniqueId(), now)) {
+            return PlayerEnterLimboEvent.Reason.REFUSED;
+        }
+        Returns returns = xlimbo.returns();
+        if (returns != null && xlimbo.config().serverCheck().enabled() && Boolean.FALSE.equals(returns.up())) {
+            return PlayerEnterLimboEvent.Reason.MAIN_SERVER_DOWN;
+        }
+        return PlayerEnterLimboEvent.Reason.UNKNOWN;
     }
 
     /** Creative and flight, as the config says. Also for players already here when it's reloaded. */

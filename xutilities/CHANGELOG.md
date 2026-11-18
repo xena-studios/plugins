@@ -1,12 +1,16 @@
 # xUtilities changelog
 
-## Unreleased
+## 2.1.0
 
 Replace the jar and restart. Your config is kept as it is.
 
 ### Added
 
 - A developer API, so other plugins can work with xUtilities: they can read, set and clear where `/back` takes a player (a teleport plugin can make `/back` work for its own teleports, a minigame can stop `/back` returning into it), and check which commands are on. See [Developer API](https://docs.xenastudios.co/xutilities/developer-api/). It costs nothing unless a plugin uses it.
+
+### Fixed
+
+- `/xutilities reload` works on an empty server. Paper pauses a server that's been empty for a minute, and the reload waited for the next player to join.
 
 ## 2.0.2
 

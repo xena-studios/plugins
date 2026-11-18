@@ -30,6 +30,7 @@ Why the plugins are built the way they are, oldest first.
 | [Network mode: one change feed in the database](#network-mode-one-change-feed-in-the-database-2026-11-17) | 2026-11-17 |
 | [Chat pages, offline players, warmups and Vault move to the core](#chat-pages-offline-players-warmups-and-vault-move-to-the-core-2026-11-17) | 2026-11-17 |
 | [xVote: a receiver of our own, and votes taken before they're paid](#xvote-a-receiver-of-our-own-and-votes-taken-before-theyre-paid-2026-11-18) | 2026-11-18 |
+| [Global work survives an empty server's pause](#global-work-survives-an-empty-servers-pause-2026-11-18) | 2026-11-18 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -226,4 +227,10 @@ xVote receives votes itself instead of depending on NuVotifier, which hasn't had
 - **First of the day comes from the locked `voters` row** (`last_day`), not a count of the day's votes: on MySQL a plain read sees the transaction's snapshot, taken before the row lock, and could miss a vote another server just counted. Only a vote counted late, for a day before `last_day`, counts that day's votes. (MariaDB 11.6+ refuses such a stale locking read anyway, and the job runs again.)
 - **The receiver starts off the server's threads,** since it reads key files and may make a key, one change at a time, and never binds after the plugin is disabled.
 - **The jar is about 317 KiB:** the receiver, the ledger and its network claims, rewards, commands and the API. Its budget is 350.
+
+## Global work survives an empty server's pause (2026-11-18)
+
+Paper pauses a server that has been empty for `pause-when-empty-seconds` (a vanilla setting, 60 by default). While paused it still runs console commands and Bukkit's scheduler, but not the global region scheduler, which Paper ticks with the worlds. So anything a plugin queued there waited for the next player: the core's own `/<plugin> reload` queued the reload itself there (to run after the command), so a reload typed in an empty server's console did nothing until someone joined. Found by xBackup (#61), whose scheduled backups timed out on empty servers, and reproduced with xUtilities 2.0.2 on Paper 1.21.11 and 26.3 with `pause-when-empty-seconds=1`.
+
+`Tasks.global` and the new `Tasks.nextTick` use Bukkit's scheduler on Paper and the global region scheduler on Folia, which never pauses. The core's reload and `editConfig` use `nextTick`. With the fix, the same test logs the reload six seconds after the pause. Plugins that call `Bukkit.getGlobalRegionScheduler()` directly (xLimbo's ticks, xRewind's rollback applier) should move to `Tasks` in their next release.
 

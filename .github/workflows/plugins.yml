@@ -198,7 +198,7 @@ jobs:
           echo "4ec21910767a68b2defacb121cffee9840ded8b01abcbff03779fb9ab637296a  $vu" | sha256sum -c -
           mapfile -t jars < <(find jars/xmoney -name '*.jar' | sort)
           scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
-            --checks xmoney/boot-checks-vaultunlocked.txt "${jars[@]}"
+            --checks xmoney/boot-checks-vaultunlocked.txt "${jars[@]}" "$vu"
 
   # The one check main requires: passes when every job above passed or was
   # skipped because nothing they cover changed, and fails when any that ran failed.

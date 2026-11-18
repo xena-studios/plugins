@@ -83,11 +83,16 @@ The convention shades in the core, generates `paper-plugin.yml`, sets up Modrint
 
 ## Releasing
 
-For maintainers:
+For maintainers, from an up-to-date `main` with a clean working tree:
 
-1. Bump `version` in the plugin's `build.gradle.kts` and the version its `boot-checks.txt` expects from `/<plugin> info`, and rename `## Unreleased` in its `CHANGELOG.md` to `## <version>`.
-2. Merge, then push a tag like `xutilities-v2.1.0`.
-3. The release workflow checks the tag is on `main` and matches the version and changelog, then publishes to Modrinth and GitHub with that changelog section as the notes. It uses the `MODRINTH_TOKEN` secret in the `release` environment, which only `main` and release tags can reach.
+1. **Open the release PR:** `node scripts/release.ts <plugin>[@<version>]...`, such as `node scripts/release.ts xbans xvote@1.1.0`. For each plugin it renames `## Unreleased` in its `CHANGELOG.md` to `## <version>`, bumps `version` in its `build.gradle.kts` and the version its `boot-checks.txt` expects from `/<plugin> info`, and updates its docs: the "Current version" line, the API's Gradle and Maven snippets, and the note that the API reaches Maven Central with the release. Then it regenerates `docs/src/data/plugins.json`, commits on `release/<plugins>`, pushes, and opens one PR with each plugin's changelog section.
+   - Without `@<version>`, the version comes from the Unreleased section: only `### Fixed` (or `### Security`) is a patch, any other heading a minor. A major release, or a section that removes or breaks something, needs `@<version>`.
+   - A build version that's never been tagged, like a new plugin's 1.0.0, is released as it is. If its changelog already has a `## 1.0.0` section, that's the release notes, and the changelog is left alone.
+   - It refuses, changing nothing, when a plugin has nothing under `## Unreleased`, its version is already tagged or isn't newer than its last tag, or the working tree has changes.
+   - `--dry-run` prints every edit and changes nothing; `--no-push` commits on the release branch but doesn't push or open the PR.
+2. **Merge it,** once its checks pass, and wait for the Plugins workflow to pass on `main`'s merge commit.
+3. **Tag it:** `node scripts/release.ts --tag <pr-number>`. It reads each plugin's version and changelog at the merge commit, refuses unless the Plugins workflow passed on exactly that commit (Maven Central can't take a release back), and pushes an annotated `<plugin>-v<version>` tag for each, one at a time. `--dry-run` shows the tags without making them. Given plugin ids instead of a number, it tags `main`'s latest commit.
+4. Each tag runs the release workflow. It checks the tag is on `main` and matches the version and changelog, then publishes the API (if there is one) to Maven Central and the plugin to Modrinth and GitHub, with that changelog section as the notes, and redeploys the docs. Its secrets are in the `release` environment, which only `main` and release tags can reach.
 
 Each plugin's Modrinth page is its `modrinth.md`. [`modrinth.yml`](.github/workflows/modrinth.yml) publishes it whenever it changes on `main`, and every release publishes it again, so **edit the file, never the page on Modrinth**. Text between `<!-- modrinth_exclude.start -->` and `<!-- modrinth_exclude.end -->` is left out. Dry run: `MODRINTH_TOKEN=x ./gradlew :<plugin>:modrinthSyncBody -Pxena.modrinthDryRun=true --info`.
 

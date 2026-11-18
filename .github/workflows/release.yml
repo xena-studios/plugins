@@ -4,6 +4,8 @@ name: Release
 # that plugin to Modrinth and GitHub, and its API (if it has one) to Maven
 # Central. The version must match the module's build.gradle.kts, and
 # <module>/CHANGELOG.md must have a "## <version>" section.
+# `node scripts/release.ts --tag <pr-number>` pushes these once a release PR is merged
+# (CONTRIBUTING.md, "Releasing"). Last, the site is redeployed.
 on:
   push:
     tags: ["*-v*"]
@@ -139,3 +141,17 @@ jobs:
             --notes-file release/changelog.md \
             "${prerelease[@]}" \
             "release/$MODULE-$VERSION.jar"
+
+  # Redeploys the plugin site once the release is out, so its version info is current.
+  # Only starts the Docs workflow: no checkout and no project code, and the one
+  # permission it needs, to dispatch a workflow.
+  docs:
+    needs: github
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: write
+    steps:
+      - name: Redeploy the docs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run docs.yml --repo "$GITHUB_REPOSITORY" --ref main

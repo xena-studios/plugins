@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
@@ -32,7 +33,7 @@ public final class Writer implements Runnable {
     private final Logger logger;
     private final List<Entry> batch = new ArrayList<>();
 
-    private Thread thread;
+    private volatile Thread thread;
     private volatile boolean running;
     private Database database;
     private Connection connection;
@@ -55,6 +56,12 @@ public final class Writer implements Runnable {
     private volatile String problem;
     // The batch being written, for flush to wait on.
     private volatile int pending;
+    // A hold between batches, for a backup (the API's pause): until resumed, or this nanoTime.
+    private volatile boolean holding;
+    private volatile long holdUntil;
+    private volatile CompletableFuture<Void> held;
+    // Not the writer's own monitor: stop() holds that while it waits for the thread.
+    private final Object holdLock = new Object();
 
     public Writer(LogQueue queue, Supplier<Database> databases, Logger logger) {
         this.queue = queue;
@@ -98,9 +105,68 @@ public final class Writer implements Runnable {
         thread = null;
     }
 
+    /**
+     * Holds the writer between batches until {@link #resume()}, or for {@code maxNanos} at
+     * most. The future completes on the writer's thread once the batch it was writing is
+     * done and it's held, or at once if it isn't running. Asked again while held, it's
+     * the same hold, with the time limit reset.
+     */
+    public CompletableFuture<Void> hold(long maxNanos) {
+        synchronized (holdLock) {
+            CompletableFuture<Void> waiting = held;
+            if (waiting == null) {
+                waiting = new CompletableFuture<>();
+                held = waiting;
+            }
+            holdUntil = System.nanoTime() + maxNanos;
+            holding = true;
+            Thread current = thread;
+            if (current == null || !running) {
+                waiting.complete(null);
+            } else {
+                LockSupport.unpark(current);
+            }
+            return waiting;
+        }
+    }
+
+    /** Ends a {@link #hold}. Does nothing if there's none. */
+    public void resume() {
+        synchronized (holdLock) {
+            holding = false;
+            held = null;
+        }
+        Thread current = thread;
+        if (current != null) {
+            LockSupport.unpark(current);
+        }
+    }
+
+    // At the top of the loop, so between batches. Stopping always writes what's left.
+    private boolean held() {
+        if (!holding || !running) {
+            return false;
+        }
+        CompletableFuture<Void> waiting = held;
+        if (waiting != null) {
+            waiting.complete(null);
+        }
+        long left = holdUntil - System.nanoTime();
+        if (left <= 0) {
+            logger.warning("A plugin held the writer for a backup and didn't let go, so it carries on writing.");
+            resume();
+            return false;
+        }
+        LockSupport.parkNanos(left);
+        return true;
+    }
+
     @Override
     public void run() {
         while (true) {
+            if (held()) {
+                continue;
+            }
             Database current = databases.get();
             if (current == null || !connected(current)) {
                 if (!running) {

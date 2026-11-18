@@ -495,7 +495,7 @@ public final class Engine {
             problem = "The last check found " + report.problems().size() + " problems. /backup verify full for details.";
             for (String found : report.problems()) {
                 // Problems name files from the repository, which a remote may have written.
-                logger.warning("Check: " + found.replaceAll("[\r\n\\p{Cntrl}]", "?"));
+                logger.warning("Check: " + found.replaceAll("\\R", "?").replaceAll("\\p{Cntrl}", "?"));
             }
         }
     }

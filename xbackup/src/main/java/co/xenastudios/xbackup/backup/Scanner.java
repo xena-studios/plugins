@@ -52,6 +52,7 @@ final class Scanner {
     private final Session session;
     private final Reference reference;
     private final boolean strict;
+    private final Path realRoot;
     private final Selection selection;
     private final Map<String, Tree.Node> ready;
     private final Throttle throttle;
@@ -75,11 +76,18 @@ final class Scanner {
      * @param databases how to copy databases; null to leave them out with a warning
      * @param temp where database copies go while they're stored
      */
-    Scanner(Session session, Reference reference, boolean strict, Selection selection, Map<String, Tree.Node> ready,
-            Throttle throttle, Databases databases, Path temp, BooleanSupplier cancelled) {
+    Scanner(Session session, Reference reference, boolean strict, Path root, Selection selection,
+            Map<String, Tree.Node> ready, Throttle throttle, Databases databases, Path temp, BooleanSupplier cancelled) {
         this.session = session;
         this.reference = reference;
         this.strict = strict;
+        Path real;
+        try {
+            real = root.toRealPath();
+        } catch (IOException e) {
+            real = root;
+        }
+        this.realRoot = real;
         this.selection = selection;
         this.ready = ready;
         this.throttle = throttle;
@@ -114,16 +122,44 @@ final class Scanner {
         return folder(root, "", "root", Files.readAttributes(root, BasicFileAttributes.class));
     }
 
-    /** Scans one path below the root; strict mode returns its entry, loose mode null. */
+    /**
+     * Scans one source below the root; strict mode returns its entry, loose mode null. A
+     * source that is a link is followed, so a world kept on another disk behind a link is
+     * backed up as the folder it is.
+     */
     Tree.Node scan(Path file, String path) throws IOException {
+        BasicFileAttributes attributes = sourceAttributes(file, path);
+        if (attributes == null) {
+            return null;
+        }
+        String name = path.substring(path.lastIndexOf('/') + 1);
+        return entry(file, path, name, attributes, Set.of());
+    }
+
+    /**
+     * A source's attributes, following it if it's a link (and noting where it leads, so
+     * xBackup's own folders are still left out when reached through it); null if it's gone.
+     */
+    private BasicFileAttributes sourceAttributes(Path file, String path) throws IOException {
         BasicFileAttributes attributes;
         try {
             attributes = Files.readAttributes(file, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
         } catch (NoSuchFileException e) {
             return null;
         }
-        String name = path.substring(path.lastIndexOf('/') + 1);
-        return entry(file, path, name, attributes, Set.of());
+        if (!attributes.isSymbolicLink()) {
+            return attributes;
+        }
+        try {
+            BasicFileAttributes followed = Files.readAttributes(file, BasicFileAttributes.class);
+            if (followed.isDirectory()) {
+                selection.alias(file, file.toRealPath());
+            }
+            return followed;
+        } catch (NoSuchFileException e) {
+            warn(display(path) + " is a link to " + Files.readSymbolicLink(file) + ", which doesn't exist; it was left out.");
+            return null;
+        }
     }
 
     private Tree.Node entry(Path file, String path, String name, BasicFileAttributes attributes, Set<String> siblings)
@@ -133,6 +169,9 @@ final class Scanner {
             return done.named(name);
         }
         if (attributes.isSymbolicLink()) {
+            if (strict) {
+                warnIfLeadsOutside(file, path);
+            }
             return Tree.Node.link(name, attributes.lastModifiedTime().toMillis(),
                 Files.readSymbolicLink(file).toString().replace('\\', '/'));
         }
@@ -149,6 +188,20 @@ final class Scanner {
             return database(file, path, name, attributes);
         }
         return file(file, path, name, attributes);
+    }
+
+    // Only the link is kept, never what it points to: say so when that's a folder outside the
+    // server folder, whose files then aren't in the backup.
+    private void warnIfLeadsOutside(Path link, String path) {
+        try {
+            Path target = link.toRealPath();
+            if (Files.isDirectory(target) && !target.startsWith(realRoot)) {
+                warn(display(path) + " is a link to " + target + ", outside the server folder: only the link is backed"
+                    + " up, not what's in it. Add that folder as a source, or keep it inside the server folder.");
+            }
+        } catch (IOException e) {
+            // A dangling link: there's nothing it points to that could be missed.
+        }
     }
 
     // ---------------------------------------------------------------- folders
@@ -189,10 +242,18 @@ final class Scanner {
                 continue;
             }
             BasicFileAttributes childAttributes;
-            try {
-                childAttributes = Files.readAttributes(child, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-            } catch (NoSuchFileException e) {
-                continue;
+            if (choice == Selection.Choice.DESCEND || selection.isSource(childPath)) {
+                // A source, or a folder on the way to one: followed if it's a link.
+                childAttributes = sourceAttributes(child, childPath);
+                if (childAttributes == null) {
+                    continue;
+                }
+            } else {
+                try {
+                    childAttributes = Files.readAttributes(child, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                } catch (NoSuchFileException e) {
+                    continue;
+                }
             }
             if (choice == Selection.Choice.DESCEND && !childAttributes.isDirectory() && !ready.containsKey(childPath)) {
                 continue;

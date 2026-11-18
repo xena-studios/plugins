@@ -23,6 +23,8 @@ final class Selection {
     private final List<String> includes;
     private final List<Pattern> excludes = new ArrayList<>();
     private final Set<Path> skip;
+    // The skipped paths' real places, to find them again through a source that is a link.
+    private final Set<Path> realSkip = new java.util.HashSet<>();
 
     /**
      * @param includes relative paths to take; "" for everything
@@ -38,7 +40,35 @@ final class Selection {
             }
             this.excludes.add(glob(glob));
         }
-        this.skip = Set.copyOf(skip);
+        this.skip = new java.util.HashSet<>();
+        for (Path path : skip) {
+            Path absolute = path.toAbsolutePath().normalize();
+            this.skip.add(absolute);
+            try {
+                realSkip.add(absolute.toRealPath());
+            } catch (java.io.IOException e) {
+                realSkip.add(absolute);
+            }
+        }
+    }
+
+    /** Whether the path is one of the sources itself (not just inside one). */
+    boolean isSource(String path) {
+        return includes.contains(path);
+    }
+
+    /**
+     * A source reached through a link: anything skipped whose real place is inside the
+     * link's target is skipped under the link's path too, such as the repository inside a
+     * plugins folder that is a link.
+     */
+    void alias(Path link, Path target) {
+        Path logical = link.toAbsolutePath().normalize();
+        for (Path real : realSkip) {
+            if (real.startsWith(target)) {
+                skip.add(logical.resolve(target.relativize(real).toString()).normalize());
+            }
+        }
     }
 
     /**

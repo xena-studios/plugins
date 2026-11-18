@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -72,6 +76,68 @@ public final class Backup {
         void resume();
     }
 
+    /** How long a {@link Quiet#pause} may take before its folder is read anyway. */
+    static volatile long quietTimeoutMillis = 30_000;
+
+    private interface Read {
+        Tree.Node read() throws IOException;
+    }
+
+    /**
+     * Reads a folder with its plugin's writes paused, keeping {@link
+     * co.xenastudios.xbackup.api.QuietMoment}'s promises: a pause that throws or takes longer
+     * than {@link #quietTimeoutMillis} only adds a warning and the folder is read anyway, and
+     * resume always follows pause, one after the other. A pause that never returns gets its
+     * resume once it does, on its own thread; the backup doesn't wait for it.
+     */
+    private static Tree.Node quietly(Quiet quiet, String path, List<String> warnings, Read read) throws IOException {
+        CompletableFuture<Void> paused = new CompletableFuture<>();
+        Thread thread = new Thread(() -> {
+            try {
+                quiet.pause();
+                paused.complete(null);
+            } catch (Throwable e) {
+                paused.completeExceptionally(e);
+            }
+        }, "xBackup quiet moment");
+        thread.setDaemon(true);
+        thread.start();
+        boolean returned = true;
+        try {
+            paused.get(quietTimeoutMillis, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            returned = false;
+            warnings.add(path + ": its plugin didn't pause its writes within " + quietTimeoutMillis / 1000
+                + " s, so it was read while it may have been writing.");
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() == null ? e : e.getCause();
+            warnings.add(path + ": its plugin couldn't pause its writes (" + (cause.getMessage() == null
+                ? cause.getClass().getSimpleName() : cause.getMessage()) + "), so it was read anyway.");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            returned = false;
+        }
+        try {
+            return read.read();
+        } finally {
+            if (returned) {
+                resume(quiet, path, warnings);
+            } else {
+                paused.whenComplete((ignored, error) -> resume(quiet, path, null));
+            }
+        }
+    }
+
+    private static void resume(Quiet quiet, String path, List<String> warnings) {
+        try {
+            quiet.resume();
+        } catch (RuntimeException e) {
+            if (warnings != null) {
+                warnings.add(path + ": its plugin's resume failed: " + e.getMessage());
+            }
+        }
+    }
+
     /**
      * What to back up and how.
      *
@@ -110,7 +176,7 @@ public final class Backup {
             // 1. First pass, while the server saves as usual.
             progress.accept("reading the worlds");
             long pass1Start = System.currentTimeMillis();
-            Scanner first = new Scanner(session, previous, false, worldSelection, Map.of(), plan.throttle(), null,
+            Scanner first = new Scanner(session, previous, false, root, worldSelection, Map.of(), plan.throttle(), null,
                 plan.temp(), cancelled);
             for (String world : plan.worlds()) {
                 first.scan(root.resolve(world), world);
@@ -128,7 +194,7 @@ public final class Backup {
                 pauseMillis = pause.pause();
                 progress.accept("reading what changed during the pause");
                 Reference overlay = Reference.overlay(first.nodes, first.regions, pass1Start, previous);
-                second = new Scanner(session, overlay, true, worldSelection, Map.of(), plan.throttle(), null,
+                second = new Scanner(session, overlay, true, root, worldSelection, Map.of(), plan.throttle(), null,
                     plan.temp(), cancelled);
                 for (String world : plan.worlds()) {
                     Tree.Node node = second.scan(root.resolve(world), world);
@@ -147,21 +213,17 @@ public final class Backup {
             includes.addAll(plan.others());
             Selection selection = new Selection(includes, plan.excludes(), plan.skip());
             Map<String, Tree.Node> ready = new HashMap<>(worlds);
-            Scanner rest = new Scanner(session, previous, true, selection, ready, plan.throttle(), databases,
+            List<String> quietWarnings = new ArrayList<>();
+            Scanner rest = new Scanner(session, previous, true, root, selection, ready, plan.throttle(), databases,
                 plan.temp(), cancelled);
             for (Map.Entry<String, Quiet> quiet : plan.quiet().entrySet()) {
                 String path = quiet.getKey();
                 if (selection.choose(path, root.resolve(path)) != Selection.Choice.INCLUDE || ready.containsKey(path)) {
                     continue;
                 }
-                quiet.getValue().pause();
-                try {
-                    Tree.Node node = rest.scan(root.resolve(path), path);
-                    if (node != null) {
-                        ready.put(path, node);
-                    }
-                } finally {
-                    quiet.getValue().resume();
+                Tree.Node node = quietly(quiet.getValue(), path, quietWarnings, () -> rest.scan(root.resolve(path), path));
+                if (node != null) {
+                    ready.put(path, node);
                 }
             }
             Tree.Node top = rest.scanRoot(root);
@@ -181,6 +243,7 @@ public final class Backup {
                 }
             }
             List<String> warnings = new ArrayList<>(second.warnings);
+            warnings.addAll(quietWarnings);
             warnings.addAll(rest.warnings);
             Snapshot snapshot = session.commit(new Snapshot(null, start, Instant.now(), top.ref(),
                 parent == null ? null : parent.id(), plan.reason(), second.files + rest.files, second.bytes + rest.bytes,

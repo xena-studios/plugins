@@ -229,6 +229,133 @@ class BackupTest {
     }
 
     @Test
+    void collectingFreesSpaceWhenTheDiskIsFull() throws Exception {
+        Random random = new Random(24);
+        Fixtures.server(server(), random);
+        List<Snapshot> snapshots = new ArrayList<>();
+        List<Map<String, byte[]>> states = new ArrayList<>();
+        try (Repository repository = repository()) {
+            for (int round = 0; round < 4; round++) {
+                Fixtures.bytes(server().resolve("plugins/Other/round.bin"), random, 2_000_000);
+                snapshots.add(backup(repository, Backup.Pause.NONE).snapshot());
+                states.add(Fixtures.contents(server(), COMPARED));
+            }
+            Maintenance maintenance = new Maintenance(repository, () -> false);
+            try (AutoCloseable lock = repository.lock(true)) {
+                maintenance.forget(new Retention(1, 0, 0, 0, 0), 0, ZoneOffset.UTC);
+                // No room for even one new pack: repacking can't run, but the unused packs still go.
+                Session.Options full = new Session.Options(6, 16L << 20, Long.MAX_VALUE / 4);
+                Maintenance.Collected collected = maintenance.collect(full, 0.3);
+                assertTrue(collected.bytesFreed() > 4_000_000, collected.toString());
+                assertEquals(0, collected.packsRepacked());
+            }
+            repository.release();
+            Maintenance.Report report = maintenance.check(1.0, null, new Random());
+            assertTrue(report.ok(), report.problems().toString());
+            assertSame(states.get(3), restore(repository, snapshots.get(3), "restored"));
+        }
+    }
+
+    @Test
+    void sourcesBehindLinksAreBackedUpAsTheFoldersTheyAre() throws Exception {
+        Fixtures.server(server(), new Random(25));
+        // The nether on another disk, the plugins folder too, with xBackup's repository inside
+        // it (named by its real place, as an owner might), and a plugin linking to a folder
+        // outside the server.
+        Path nether = dir.resolve("disk2/world_nether");
+        Files.createDirectories(nether.getParent());
+        Files.move(server().resolve("world_nether"), nether);
+        Files.createSymbolicLink(server().resolve("world_nether"), nether);
+        Path plugins = dir.resolve("disk3/plugins");
+        Files.createDirectories(plugins.getParent());
+        Files.move(server().resolve("plugins"), plugins);
+        Files.createSymbolicLink(server().resolve("plugins"), plugins);
+        Fixtures.bytes(plugins.resolve("xBackup/repository/data/junk"), new Random(1), 1000);
+        Files.createDirectories(dir.resolve("shared"));
+        Files.writeString(dir.resolve("shared/a.yml"), "a: 1\n");
+        Files.createSymbolicLink(plugins.resolve("Shared"), dir.resolve("shared"));
+        Map<String, byte[]> before = new java.util.TreeMap<>(Fixtures.contents(server(),
+            COMPARED.and(path -> !path.equals("plugins") && !path.equals("world_nether"))));
+        Fixtures.contents(nether, path -> true).forEach((path, bytes) -> before.put("world_nether/" + path, bytes));
+        Fixtures.contents(plugins, path -> !path.startsWith("xBackup/") && !path.equals("Shared"))
+            .forEach((path, bytes) -> before.put("plugins/" + path, bytes));
+
+        Backup.Plan plan = new Backup.Plan(server(), List.of("world", "world_nether"), List.of("plugins",
+            "server.properties", "bukkit.yml"), EXCLUDES, Set.of(dir.resolve("repo"), plugins.resolve("xBackup/repository")),
+            Map.of(), "test", "test", dir.resolve("temp"), Throttle.NONE, Session.Options.DEFAULTS);
+        try (Repository repository = repository(); AutoCloseable lock = repository.lock(true)) {
+            Snapshot snapshot = Backup.run(repository, plan, Backup.Pause.NONE, Databases.sqlite(), () -> false, step -> {})
+                .snapshot();
+            Tree top = repository.tree(snapshot.tree());
+            assertEquals(Tree.Kind.DIR, top.get("world_nether").kind());
+            assertEquals(Tree.Kind.DIR, top.get("plugins").kind());
+            assertTrue(snapshot.warnings().stream().anyMatch(w -> w.contains("plugins/Shared") && w.contains("outside")),
+                snapshot.warnings().toString());
+            Path restored = dir.resolve("restored");
+            Restore.write(repository, Restore.expand(repository, snapshot, List.of(""), Set.of()), restored, restored, true,
+                Throttle.NONE, () -> false, step -> {});
+            assertFalse(Files.isSymbolicLink(restored.resolve("world_nether")));
+            assertTrue(Files.isSymbolicLink(restored.resolve("plugins/Shared")), "a link inside a source stays a link");
+            assertFalse(Files.exists(restored.resolve("plugins/xBackup/repository")), "the repository was backed up");
+            assertSame(before, Fixtures.contents(restored, COMPARED.and(path -> !path.equals("plugins/Shared"))));
+        }
+    }
+
+    @Test
+    void aQuietMomentThatFailsOrHangsOnlyWarns() throws Exception {
+        Fixtures.server(server(), new Random(26));
+        Files.createDirectories(server().resolve("plugins/Hangs"));
+        Files.writeString(server().resolve("plugins/Hangs/data.yml"), "x: 1\n");
+        java.util.concurrent.atomic.AtomicInteger resumed = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.CountDownLatch never = new java.util.concurrent.CountDownLatch(1);
+        Map<String, Backup.Quiet> quiet = new java.util.LinkedHashMap<>();
+        quiet.put("plugins/Other", new Backup.Quiet() {
+            @Override
+            public void pause() {
+                throw new IllegalStateException("busy saving");
+            }
+
+            @Override
+            public void resume() {
+                resumed.incrementAndGet();
+            }
+        });
+        quiet.put("plugins/Hangs", new Backup.Quiet() {
+            @Override
+            public void pause() throws Exception {
+                never.await();
+            }
+
+            @Override
+            public void resume() {
+                resumed.incrementAndGet();
+            }
+        });
+        Backup.Plan plan = new Backup.Plan(server(), List.of("world"), List.of("plugins"), EXCLUDES, Set.of(dir.resolve("repo")),
+            quiet, "test", "test", dir.resolve("temp"), Throttle.NONE, Session.Options.DEFAULTS);
+        long timeout = Backup.quietTimeoutMillis;
+        Backup.quietTimeoutMillis = 300;
+        try (Repository repository = repository(); AutoCloseable lock = repository.lock(true)) {
+            Snapshot snapshot = Backup.run(repository, plan, Backup.Pause.NONE, Databases.sqlite(), () -> false, step -> {})
+                .snapshot();
+            List<String> warnings = snapshot.warnings();
+            assertTrue(warnings.stream().anyMatch(w -> w.contains("plugins/Other") && w.contains("busy saving")), warnings.toString());
+            assertTrue(warnings.stream().anyMatch(w -> w.contains("plugins/Hangs") && w.contains("didn't pause")), warnings.toString());
+            Tree plugins = repository.tree(repository.tree(snapshot.tree()).get("plugins").ref());
+            assertNotNull(plugins.get("Other"), "read anyway");
+            assertNotNull(plugins.get("Hangs"), "read anyway");
+            assertEquals(1, resumed.get(), "resumed after the failed pause; the hung one not yet");
+            never.countDown();
+            for (int i = 0; i < 100 && resumed.get() < 2; i++) {
+                Thread.sleep(20);
+            }
+            assertEquals(2, resumed.get(), "resumed once its pause returned");
+        } finally {
+            Backup.quietTimeoutMillis = timeout;
+        }
+    }
+
+    @Test
     void aDamagedRegionIsKeptWhole() throws Exception {
         Fixtures.server(server(), new Random(15));
         Path file = server().resolve("world/dimensions/minecraft/overworld/region/r.2.0.mca");

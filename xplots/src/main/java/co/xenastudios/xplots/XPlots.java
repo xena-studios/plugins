@@ -15,7 +15,7 @@ import co.xenastudios.xplots.menu.MenuListener;
 import co.xenastudios.xplots.menu.Menus;
 import co.xenastudios.xplots.model.Plots;
 import co.xenastudios.xplots.play.PlayListener;
-import co.xenastudios.xplots.play.Warmups;
+import co.xenastudios.xplots.play.Teleports;
 import co.xenastudios.xplots.protect.Protection;
 import co.xenastudios.xplots.rent.Expiry;
 import co.xenastudios.xplots.rent.Rentals;
@@ -55,7 +55,7 @@ public class XPlots extends XenaPlugin<XPConfig> {
     private Pending pending;
     private Builder builder;
     private Menus menus;
-    private Warmups warmups;
+    private Teleports teleports;
     private Regions regions;
     private Protection protection;
     private boolean protecting;
@@ -88,7 +88,7 @@ public class XPlots extends XenaPlugin<XPConfig> {
         setup.command(PlotsCommand.spec(this));
         AdminCommands.specs(this).forEach(setup::subcommand);
         setup.permission(Protection.BYPASS, PermissionDefault.OP);
-        setup.permission(Warmups.BYPASS, PermissionDefault.OP);
+        setup.permission(Teleports.BYPASS, PermissionDefault.OP);
     }
 
     // Opens the database and reads every plot, once. It blocks, on purpose: it runs while
@@ -117,7 +117,7 @@ public class XPlots extends XenaPlugin<XPConfig> {
         pending = new Pending(this);
         builder = new Builder(this, Store.maxFieldId(plots));
         menus = new Menus(this);
-        warmups = new Warmups(this);
+        teleports = new Teleports(this);
         regions = Regions.find(getLogger());
         protection = new Protection(this);
         protectionChanged();
@@ -182,7 +182,7 @@ public class XPlots extends XenaPlugin<XPConfig> {
             return;
         }
         pending.clear();
-        warmups.clear();
+        teleports.clear();
         // Finishes any plot being put back, then writes what's left.
         ticker.stop();
         if (protecting) {
@@ -246,8 +246,8 @@ public class XPlots extends XenaPlugin<XPConfig> {
         return menus;
     }
 
-    public Warmups warmups() {
-        return warmups;
+    public Teleports teleports() {
+        return teleports;
     }
 
     public Regions regions() {

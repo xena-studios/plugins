@@ -8,8 +8,7 @@ version = "1.0.1"
 description = "Rentable plots, set up in a minute."
 
 dependencies {
-    // All optional, and only touched when installed.
-    compileOnly(libs.vault.api) { isTransitive = false }
+    // All optional, and only touched when installed. Vault is reached through the core's hook.
     // Only the API jars: their own dependencies pin a Guava that clashes with newer Paper's.
     // 7.0.14 is the newest WorldGuard built for Java 21; its API is the same as later 7.0s.
     for (api in listOf(libs.worldguard.bukkit, libs.worldguard.core, libs.worldedit.bukkit, libs.worldedit.core)) {

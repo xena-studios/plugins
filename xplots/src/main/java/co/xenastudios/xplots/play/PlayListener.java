@@ -149,7 +149,7 @@ public final class PlayListener extends ListenerModule {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        xplots.warmups().cancel(player.getUniqueId());
+        xplots.teleports().cancel(player.getUniqueId());
         xplots.selections().forget(player.getName());
         xplots.pending().cancel(player.getName());
         xplots.forget(player.getUniqueId());

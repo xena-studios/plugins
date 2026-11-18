@@ -27,6 +27,8 @@ Why the plugins are built the way they are, oldest first.
 | [xRewind's write path: references in, numbers out](#xrewinds-write-path-references-in-numbers-out-2026-11-17) | 2026-11-17 |
 | [xPlots: plots in memory, found by arithmetic](#xplots-plots-in-memory-found-by-arithmetic-2026-11-17) | 2026-11-17 |
 | [Developer APIs ship inside the plugin, and shared code lives in the core](#developer-apis-ship-inside-the-plugin-and-shared-code-lives-in-the-core-2026-11-17) | 2026-11-17 |
+| [Network mode: one change feed in the database](#network-mode-one-change-feed-in-the-database-2026-11-17) | 2026-11-17 |
+| [Chat pages, offline players, warmups and Vault move to the core](#chat-pages-offline-players-warmups-and-vault-move-to-the-core-2026-11-17) | 2026-11-17 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -185,3 +187,27 @@ Checked on real servers (`sandbox/api`, used by `sandbox/consumer` and `sandbox/
 Binary-compatibility checks (japicmp) start with the first released API, since until then there's nothing to compare against.
 
 Code two plugins need moves to the core instead of being copied (issue #48). The root build runs PMD's copy-paste detector over every module and fails when a block of about five lines or more is in two modules; repeats inside one module are only reported. The first move: the `Toggle` settings every switchable command has, which xUtilities and zChat each defined and xLimbo wrote out by hand, is now `co.xenastudios.core.command.Toggle`, with `CommandSpec.named(name, settings)`.
+
+## Network mode: one change feed in the database (2026-11-17)
+
+xBans, xVote, xMoney and xStats keep what's hot (active bans, balances) in memory, which is only right on one server. On a network sharing one MySQL or MariaDB database, a ban made on one server has to reach the others' memory. `core/db`'s `ChangeFeed` does that for every plugin, instead of each writing its own.
+
+- **A table, not a message broker.** The servers already share the database, so a change is a row in the plugin's `changes` table (topic, a small payload such as a uuid, the server it came from, when). Redis or a proxy channel would be one more thing to run, or would need a player online to carry the message. A plugin publishes in the same transaction as the change itself, so the others never hear of a change that rolled back.
+- **Off unless asked for.** A plugin with network support adds `NetworkSettings` as its `network` section, off by default. Off, or on SQLite (one server by definition, and the console is told), publishing does nothing, no table is made and nothing repeats. On, one task off the server's threads checks every `check-every` seconds (3 by default), so a change reaches the others in about that.
+- **One index range per check.** Each check reads rows above the newest id it has seen, by the table's key, at most 500 at a time; its own server's rows (a random id per start) are skipped, and subscribers get the rest in order on the feed's thread, hopping to the right thread themselves.
+- **Late commits aren't lost.** Ids are handed out on insert, not on commit, so a slow transaction can commit after a newer row was already read. An id skipped over is asked for again on each check for 15 seconds (a rolled-back insert leaves a gap forever, so it isn't waited on longer), and a jump of over 1,000 ids isn't waited on at all.
+- **Changes from before a start aren't replayed.** A starting server reads its tables anyway; it starts from the newest row.
+- **Pruned to ten minutes, never empty.** Once a minute each server deletes rows older than ten minutes below the newest it has seen, by key range. The newest row always stays, so an old MySQL that forgets its counter on restart can't hand out an id again.
+
+It's tested on SQLite with two feeds sharing a file (`ChangeFeedTest`, including late and never-committed rows and pruning), and against a real MariaDB when `XR_MYSQL` is set (`ChangeFeedMySqlTest`, as xRewind's), which CI runs.
+
+## Chat pages, offline players, warmups and Vault move to the core (2026-11-17)
+
+Each of these has at least two users among the plugins being built (#48's table), so each is in the core before the second one is written.
+
+- **`text/ChatPages`**: a list a page at a time, from memory or a page already read from a database with its total, and a footer players click. The footer's `<next>` and `<previous>` are filled in as pre-processed tags, because inside a `<click>` an ordinary placeholder isn't filled in at all: xRewind's "Next page" ran `<next>` until it moved onto this. `<has_next>` and `<has_previous>` hide a link when there's no such page. `Tasks.sender` sends a reply on the player's thread, or the global one for the console, for lists read off the server's threads.
+- **`player/Profiles`**: a name to a uuid and back for players who may be offline, never blocking. What's in memory (online players, its own 2,000 answers, the server's user cache) answers at once with a completed future; the player's saved data and Paper's profile lookup run off the server's threads. Two lookups of one player share one, and a name Mojang doesn't know isn't asked about for ten minutes, so typos can't use up its rate limit.
+- **`player/Warmups`**: from xPlots. A short task on the entity's own scheduler checks four times a second for moving half a block, so it's Folia-safe though xPlots isn't, and costs nothing for anyone not waiting. Damage cancelling needs a listener, so one is registered only while a warmup that damage cancels is running. The countdown can show on the action bar. It works on any entity, which is how the sandbox checks it on real Paper and Folia servers with a pig.
+- **`hook/VaultEconomy`**: from xPlots. The class plugins use never names a Vault type, and the one that does is only loaded once Vault is enabled, so a server without Vault never sees a `NoClassDefFoundError` (the sandbox checks this on servers without Vault). The economy is looked up each time, as before.
+
+xPlots keeps its own `Wallet` (an economy or an item) and its teleport messages and bypass permission; only the general parts moved. Its jar grew about 8 KiB, mostly the warmup's damage and countdown options that xTeleport will use.

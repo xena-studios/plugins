@@ -242,11 +242,7 @@ public final class Rollbacks {
     }
 
     private void reply(CommandSender sender, Runnable send) {
-        if (sender instanceof Player player) {
-            player.getScheduler().run(plugin, task -> send.run(), null);
-        } else {
-            plugin.tasks().global(send);
-        }
+        plugin.tasks().sender(sender, send);
     }
 
     private static Query withRadius(Query query, int radius) {

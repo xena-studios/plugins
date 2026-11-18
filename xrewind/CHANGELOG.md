@@ -1,5 +1,11 @@
 # xRewind changelog
 
+## Unreleased
+
+### Fixed
+
+- Clicking **Next page** below a lookup's results shows the next page. It ran `<next>` instead, which isn't a command.
+
 ## 1.0.2
 
 Replace the jar and restart. Your config is kept as it is.

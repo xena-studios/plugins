@@ -9,6 +9,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -25,7 +26,11 @@ final class Checks {
             check("command registered at runtime runs, by name, alias and namespace", Checks::runtimeRegister),
             check("command unregistered at runtime is gone from the client tree", Checks::runtimeUnregister),
             check("command re-registered with new aliases drops the old ones", Checks::runtimeRealias),
-            check("core registry replaces a vanilla command and gives it back", () -> replacesVanilla(plugin)));
+            check("core registry replaces a vanilla command and gives it back", () -> replacesVanilla(plugin)),
+            later("warmups finish, and moving, damage or removal cancel them; the damage listener is only there while needed",
+                () -> CoreChecks.warmups(plugin)),
+            check("offline player lookup answers from the server's memory", () -> CoreChecks.profiles(plugin)),
+            check("the Vault hook works on a server without Vault", CoreChecks::vaultWithoutVault));
     }
 
     // ---- The core's CommandRegistry against a real server ----
@@ -146,7 +151,7 @@ final class Checks {
         return dispatcher.getRoot().getChild(label);
     }
 
-    private static void require(boolean condition, String message) {
+    static void require(boolean condition, String message) {
         if (!condition) {
             throw new AssertionError(message);
         }
@@ -160,8 +165,23 @@ final class Checks {
             }
 
             @Override
-            public void run() throws Exception {
+            public CompletableFuture<?> start() throws Exception {
                 body.run();
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+    }
+
+    private static Check later(String name, java.util.function.Supplier<CompletableFuture<?>> body) {
+        return new Check() {
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public CompletableFuture<?> start() {
+                return body.get();
             }
         };
     }

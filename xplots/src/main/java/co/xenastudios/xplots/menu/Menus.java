@@ -226,7 +226,7 @@ public final class Menus {
     public void home(Player player, Plot plot) {
         World world = Bukkit.getWorld(plot.field().world());
         if (world != null) {
-            plugin.warmups().teleport(player, Places.front(world, plot));
+            plugin.teleports().teleport(player, Places.front(world, plot));
         }
     }
 

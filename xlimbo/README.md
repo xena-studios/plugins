@@ -10,7 +10,7 @@ xLimbo turns a small Paper server into your network's fallback. When your main s
 - **Nobody can break it.** The floor can't be broken, players who fall are caught, and portals, liquids, fire, explosions, redstone, mobs and dropped items are all blocked. Each protection can be turned off, and one that's off costs nothing.
 - **Every change applies on reload**, even the world's name and floor.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xlimbo)** · [Docs](https://docs.xenastudios.co/xlimbo/) · [Network setup](https://docs.xenastudios.co/xlimbo/network-setup/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xlimbo)** · [Docs](https://docs.xenastudios.co/xlimbo/) · [Network setup](https://docs.xenastudios.co/xlimbo/network-setup/) · [Developer API](https://docs.xenastudios.co/xlimbo/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. Not for Folia: Folia can't create worlds, and a limbo has nothing for Folia to spread across threads.
 
@@ -24,8 +24,10 @@ From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../C
 ```
 
 ```
+api/               the developer API (co.xenastudios:xlimbo-api), shipped inside the jar
 src/main/java/co/xenastudios/xlimbo/
   XLimbo.java      the plugin: declares the config and, in setup, the features it turns on
+  Api.java         the developer API's implementation, registered while the plugin is enabled
   world/           the void world, arrivals, the action bar and hiding players from each other
   network/         the proxy connection, the return queue and the status ping to the main server
   protect/         the protections

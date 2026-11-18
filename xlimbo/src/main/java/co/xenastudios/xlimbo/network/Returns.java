@@ -2,6 +2,8 @@ package co.xenastudios.xlimbo.network;
 
 import co.xenastudios.core.ListenerModule;
 import co.xenastudios.xlimbo.XLimbo;
+import co.xenastudios.xlimbo.api.event.MainServerStatusEvent;
+import co.xenastudios.xlimbo.api.event.PlayerReturnEvent;
 import co.xenastudios.xlimbo.config.Settings;
 import co.xenastudios.xlimbo.config.XLConfig;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
@@ -78,6 +80,22 @@ public final class Returns extends ListenerModule {
         xlimbo.returns(null);
     }
 
+    /** The last status check's answer, or null before the first. Any thread. */
+    public Boolean up() {
+        return up;
+    }
+
+    /**
+     * Puts a player at the end of the line, for the API. Main thread. Does nothing while
+     * the main server is down (or not yet asked about): the line is emptied then, and
+     * everyone goes back when it comes up.
+     */
+    public void enqueue(UUID player) {
+        if (Boolean.TRUE.equals(up) && queue.add(player)) {
+            publishPositions();
+        }
+    }
+
     /** Each queued player's place in line, from 1, and how long the line is. */
     public Map<UUID, Integer> positions() {
         return positions;
@@ -102,15 +120,28 @@ public final class Returns extends ListenerModule {
                 badAddress = check.address();
                 plugin.getLogger().warning("config.yml: server-check.address " + e.getMessage() + "; nobody is sent back until it's fixed.");
             }
-            up = Boolean.FALSE;
+            answered(false);
             return;
         }
-        boolean answered = StatusPing.isUp(address);
+        answered(StatusPing.isUp(address));
+    }
+
+    /** Keeps a status check's answer, then tells listeners if it changed. Off the main thread. */
+    void answered(boolean answered) {
         Boolean before = up;
         if (answered && Boolean.FALSE.equals(before)) {
             cameUp = true;
         }
+        // Kept first, so a listener asking the API sees the new status.
         up = answered;
+        changed(before, answered);
+    }
+
+    // For the API: a real change only, not the first answer. Built only when listened for.
+    static void changed(Boolean before, boolean now) {
+        if (before != null && before != now && MainServerStatusEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            new MainServerStatusEvent(now).callEvent();
+        }
     }
 
     // Once a second on the main thread: fills the line, then sends the next few.
@@ -155,6 +186,9 @@ public final class Returns extends ListenerModule {
                 continue;
             }
             sending--;
+            if (!xlimbo.mayReturn(player, PlayerReturnEvent.Cause.QUEUE)) {
+                continue;
+            }
             history.tried(id, now);
             config.autoJoin().message().send(player);
             Proxy.connect(plugin, player, config.mainServer());

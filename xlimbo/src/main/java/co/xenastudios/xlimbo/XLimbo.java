@@ -7,6 +7,7 @@ import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.config.ConfigLoader;
 import co.xenastudios.core.config.ConfigSpec;
 import co.xenastudios.core.text.Placeholders;
+import co.xenastudios.xlimbo.api.event.PlayerReturnEvent;
 import co.xenastudios.xlimbo.config.Settings;
 import co.xenastudios.xlimbo.config.XLConfig;
 import co.xenastudios.xlimbo.network.Proxy;
@@ -33,6 +34,7 @@ public class XLimbo extends XenaPlugin<XLConfig> {
     private final ReturnHistory returnHistory = new ReturnHistory();
     private volatile Returns returns;
     private boolean worldPending;
+    private Api api;
 
     @Override
     protected ConfigSpec<XLConfig> configSpec() {
@@ -46,6 +48,11 @@ public class XLimbo extends XenaPlugin<XLConfig> {
 
     @Override
     protected void setup(Setup setup, XLConfig config) {
+        // The developer API, first so it's there even if a later feature fails to set up.
+        if (api == null) {
+            api = new Api(this);
+        }
+        setup.module("api", () -> api);
         Proxy.open(this);
         // xLimbo 1.x made its world without a marker; the one its config names is ours.
         limbo().adoptUnmarked(configCarriedFrom() == 1);
@@ -104,11 +111,17 @@ public class XLimbo extends XenaPlugin<XLConfig> {
                 if (left > 0) {
                     throw new CommandFailure(current.messageCooldown(), Placeholders.text("seconds", (left + 999) / 1000));
                 }
+                // A plugin keeping them here doesn't use up the cooldown.
+                if (!mayReturn(player, PlayerReturnEvent.Cause.JOIN_COMMAND)) {
+                    return;
+                }
                 joinCooldowns.put(player.getUniqueId(), now);
                 Returns waiting = returns;
+                // Commands run on the main thread, as the queue does.
                 if (waiting != null) {
-                    // Commands run on the main thread, as the queue does.
                     waiting.sentByHand(player.getUniqueId());
+                } else {
+                    returnHistory.sent(player.getUniqueId(), now);
                 }
                 current.messageSending().send(player, Placeholders.text("server", config().mainServer()));
                 Proxy.connect(this, player, config().mainServer());
@@ -140,6 +153,15 @@ public class XLimbo extends XenaPlugin<XLConfig> {
             }
         }
         return limbo().generatorFor(current.world());
+    }
+
+    /**
+     * Whether another plugin lets the player go back to the main server, asked just before
+     * they're sent. Main thread. The event is only built when something listens for it.
+     */
+    public boolean mayReturn(Player player, PlayerReturnEvent.Cause cause) {
+        return PlayerReturnEvent.getHandlerList().getRegisteredListeners().length == 0
+            || new PlayerReturnEvent(player, config().mainServer(), cause).callEvent();
     }
 
     /** Forgets a player who left, but not when they were sent back: a refused player comes back. */

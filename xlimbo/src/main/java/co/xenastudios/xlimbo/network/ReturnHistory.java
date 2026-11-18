@@ -42,8 +42,23 @@ public final class ReturnHistory {
         arrived.remove(player);
     }
 
+    /**
+     * Records a player sent back while the return queue is off (by /join or the API), so
+     * coming back moments later still counts as refused. Prunes too: without the queue,
+     * nothing else does.
+     */
+    public void sent(UUID player, long now) {
+        prune(now);
+        tried(player, now);
+    }
+
     void tried(UUID player, long now) {
         tries.computeIfAbsent(player, key -> new ArrayDeque<>()).addLast(now);
+    }
+
+    /** Whether the player was sent back moments ago, so being here again means the main server refused them. */
+    public boolean bounced(UUID player, long now) {
+        return recentlySent(player, now);
     }
 
     boolean recentlySent(UUID player, long now) {

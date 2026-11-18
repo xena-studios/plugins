@@ -415,7 +415,10 @@ public final class Punisher {
             return;
         }
         String prefix = silent || extraSilent ? config().broadcasts().silentPrefix() : "";
-        Message line = prefix.isEmpty() ? message : Message.of(prefix + message.template());
+        String template = message.template();
+        // After the theme's <prefix>, so it reads "» [Silent] Console banned Steve".
+        Message line = prefix.isEmpty() ? message : template.startsWith("<prefix>")
+            ? Message.of("<prefix>" + prefix + template.substring("<prefix>".length())) : Message.of(prefix + template);
         plugin.tasks().global(() -> {
             Component text = line.chat(placeholders);
             Bukkit.getConsoleSender().sendMessage(text);

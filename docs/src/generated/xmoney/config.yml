@@ -1,9 +1,9 @@
 # xMoney: the economy, and Vault, in one plugin.
-# Docs: https://docs.xenastudios.co/xmoney/configuration/
+# Docs: https://plugins.xenastudios.co/xmoney/configuration/
 #
 # Apply changes with /xmoney reload. A bad value falls back to its default with a
 # warning in the console; xMoney never stops over config. Messages are MiniMessage:
-# https://docs.xenastudios.co/start/formatting/
+# https://plugins.xenastudios.co/start/formatting/
 
 # Managed by the plugin, to carry your settings forward on updates. Don't edit it.
 config-version: 1

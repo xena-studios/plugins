@@ -108,12 +108,12 @@ public record XLConfig(
     public static final ConfigSpec<XLConfig> SPEC = ConfigSpec.builder(XLConfig.class, DEFAULTS)
         .header(
             "xLimbo: never drop a player again.",
-            "Docs: https://docs.xenastudios.co/xlimbo/configuration/",
+            "Docs: https://plugins.xenastudios.co/xlimbo/configuration/",
             "",
             "Apply changes with /xlimbo reload. Everything applies, even the world's name and",
             "floor. A bad value falls back to its default with a warning in the console; xLimbo",
             "never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .version(2)
         .codec(Material.class, MATERIAL)
         // 1.x spread arrivals up to 4000 blocks apart: a fresh chunk for nearly every player.

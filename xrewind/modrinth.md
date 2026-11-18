@@ -4,7 +4,7 @@
 
 Someone griefed spawn. Someone emptied the shared chest. Someone says they didn't. **xRewind shows you who placed, broke or took what, where and when, and puts it back.** It's a block logger with rollback, and every feature is free.
 
-**[Read the docs](https://docs.xenastudios.co/xrewind/)** · **[Switching from CoreProtect](https://docs.xenastudios.co/xrewind/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xrewind/)** · **[Switching from CoreProtect](https://plugins.xenastudios.co/xrewind/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -50,7 +50,7 @@ Each command has its own permission, all op-only until you give them out, so hel
 
 **Coming from CoreProtect?** Install xRewind next to it, run `/xr import coreprotect`, and your history comes across: blocks, kills, containers, sessions, signs, chat and commands. Then remove CoreProtect.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/xrewind](https://docs.xenastudios.co/xrewind/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/xrewind](https://plugins.xenastudios.co/xrewind/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. SQLite out of the box, or MySQL/MariaDB.
 

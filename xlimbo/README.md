@@ -11,7 +11,7 @@ xLimbo turns a small Paper server into your network's fallback: when your main s
 - **Nobody can break it.** The floor can't be broken, players who fall are caught, and portals, liquids, fire, explosions, redstone, mobs and dropped items are all blocked. Each protection can be turned off, and one that's off costs nothing.
 - **Every change applies on reload**, even the world's name and floor. No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xlimbo)** · [Docs](https://docs.xenastudios.co/xlimbo/) · [Commands](https://docs.xenastudios.co/xlimbo/commands/) · [Network setup](https://docs.xenastudios.co/xlimbo/network-setup/) · [Developer API](https://docs.xenastudios.co/xlimbo/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xlimbo)** · [Docs](https://plugins.xenastudios.co/xlimbo/) · [Commands](https://plugins.xenastudios.co/xlimbo/commands/) · [Network setup](https://plugins.xenastudios.co/xlimbo/network-setup/) · [Developer API](https://plugins.xenastudios.co/xlimbo/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. Not for Folia: Folia can't create worlds, and a limbo has nothing for Folia to spread across threads.
 

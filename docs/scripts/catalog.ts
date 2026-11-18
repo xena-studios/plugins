@@ -24,7 +24,7 @@ const ROOT = path.resolve(DOCS, "..");
 const check = process.argv.includes("--check");
 const MODRINTH = "https://modrinth.com/plugin";
 // The plugin site. Phase 5 of #80 moves it to plugins.xenastudios.co.
-const SITE = "https://docs.xenastudios.co";
+const SITE = "https://plugins.xenastudios.co";
 
 interface CatalogPlugin {
   id: string;

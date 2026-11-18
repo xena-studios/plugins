@@ -1,4 +1,4 @@
-# Response headers for docs.xenastudios.co (Cloudflare Workers reads this file
+# Response headers for plugins.xenastudios.co (Cloudflare Workers reads this file
 # from the build output). The build fills in the inline-script placeholder with
 # the hashes of Starlight's few inline scripts (scripts/headers.ts), so nothing
 # else inline can run. Search (Pagefind) runs as WebAssembly, hence

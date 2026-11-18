@@ -93,7 +93,7 @@ mavenPublishing {
         // Read late: each API sets its description after this convention is applied.
         description = provider { project.description }
         inceptionYear = "2026"
-        url = "https://docs.xenastudios.co/${pluginProject.name}/developer-api/"
+        url = "https://plugins.xenastudios.co/${pluginProject.name}/developer-api/"
         licenses {
             license {
                 name = "GPL-3.0-only"

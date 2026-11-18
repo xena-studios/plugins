@@ -1,5 +1,5 @@
 name: Docs problem
-description: Something on docs.xenastudios.co is wrong, unclear or missing.
+description: Something on plugins.xenastudios.co is wrong, unclear or missing.
 labels: [documentation]
 body:
   - type: markdown
@@ -11,7 +11,7 @@ body:
     attributes:
       label: Page
       description: The page's address.
-      placeholder: https://docs.xenastudios.co/zchat/formats/
+      placeholder: https://plugins.xenastudios.co/zchat/formats/
     validations:
       required: true
   - type: textarea

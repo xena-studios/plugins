@@ -4,7 +4,7 @@
 
 Every rank wants its own chat style. Someone always finds a way to spell the word you blocked, and someone else sends the same message ten times. **zChat gives every rank its format, catches the words people try to sneak past, and keeps spam in check**, in one small chat plugin built to run on every message without costing you anything.
 
-**[Read the docs](https://docs.xenastudios.co/zchat/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/zchat/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -65,7 +65,7 @@ And every player gets `/togglechat` (or `/tc`) to hide chat for themselves. Staf
 
 **Coming from zChat 2?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`. The `zchat.group.*` permissions no longer go to operators by default, so give your ranks theirs. A zChat 1.x config can't be carried forward; zChat keeps it as `config.yml.old` and writes a fresh one.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/zchat](https://docs.xenastudios.co/zchat/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/zchat](https://plugins.xenastudios.co/zchat/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. PlaceholderAPI is optional.
 

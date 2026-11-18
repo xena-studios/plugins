@@ -1,4 +1,4 @@
-// docs.xenastudios.co: the site for Xena Studios' plugins (every plugin in src/data/plugins.json),
+// plugins.xenastudios.co: the site for Xena Studios' plugins (every plugin in src/data/plugins.json),
 // a static Starlight site served by a Cloudflare Worker. It wears the plugin
 // family's brand (xena-studios/brand), as docs.raptorpanel.net wears Raptor's:
 // deepslate, Space Grotesk, each plugin's pages in its accent with its icon by
@@ -10,7 +10,7 @@ import starlightLinksValidator from "starlight-links-validator";
 import catalog from "./src/data/plugins.json" with { type: "json" };
 
 export default defineConfig({
-  site: "https://docs.xenastudios.co",
+  site: "https://plugins.xenastudios.co",
   trailingSlash: "ignore",
   // Hashed build files go in /assets, not Astro's default /_astro.
   build: { inlineStylesheets: "never", assets: "assets" },
@@ -25,11 +25,11 @@ export default defineConfig({
       favicon: "/favicon.svg",
       // One link preview for every page (xena-studios/brand social/docs-og.png).
       head: [
-        { tag: "meta", attrs: { property: "og:image", content: "https://docs.xenastudios.co/og.png" } },
+        { tag: "meta", attrs: { property: "og:image", content: "https://plugins.xenastudios.co/og.png" } },
         { tag: "meta", attrs: { property: "og:image:width", content: "2400" } },
         { tag: "meta", attrs: { property: "og:image:height", content: "1260" } },
         { tag: "meta", attrs: { property: "og:image:alt", content: "XENA STUDIOS plugins over a planet horizon: small, fast plugins for Paper and Folia." } },
-        { tag: "meta", attrs: { name: "twitter:image", content: "https://docs.xenastudios.co/og.png" } },
+        { tag: "meta", attrs: { name: "twitter:image", content: "https://plugins.xenastudios.co/og.png" } },
       ],
       customCss: ["./src/styles/theme.css"],
       // Code on the family's raised surface with a hairline.

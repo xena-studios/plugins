@@ -2,7 +2,7 @@
 
 **Setup, commands and config for xUtilities, zChat, xLimbo and xRewind.**
 
-The source of **[docs.xenastudios.co](https://docs.xenastudios.co)**, a static [Starlight](https://starlight.astro.build) site served by Cloudflare. The docs describe the current releases, so a plugin change and its docs go in the same pull request.
+The source of **[plugins.xenastudios.co](https://plugins.xenastudios.co)**, a static [Starlight](https://starlight.astro.build) site served by Cloudflare. The docs describe the current releases, so a plugin change and its docs go in the same pull request.
 
 ## Develop
 

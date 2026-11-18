@@ -4,7 +4,7 @@
 
 Players want to see their stats and where they rank. Owners want leaderboards on the scoreboard and a stats page to share. Usually that's three plugins and a web host. **xStats is one plugin: player stats, leaderboards, placeholders and a stats website your server hosts itself, with nothing to sign in to.**
 
-**[Read the docs](https://docs.xenastudios.co/xstats/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xstats/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -50,7 +50,7 @@ Staff get `/xstats` (status, boards, website test and export, reload) with `xsta
 2. Try `/stats` and `/lb playtime`.
 3. For the website, set `web.enabled: true` in `plugins/xStats/config.yml` and run `/xstats reload`.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/xstats](https://docs.xenastudios.co/xstats/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/xstats](https://plugins.xenastudios.co/xstats/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. PlaceholderAPI is optional. SQLite out of the box, or MySQL/MariaDB.
 

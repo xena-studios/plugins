@@ -51,7 +51,7 @@ public record XSConfig(
     @Comment("Days, weeks and months, for daily, weekly and monthly leaderboards.") Periods periods,
     @Comment({
         "The stats website and its JSON API, served by xStats itself on its own port. Off until",
-        "you turn it on: see https://docs.xenastudios.co/xstats/website/ for safe setups,",
+        "you turn it on: see https://plugins.xenastudios.co/xstats/website/ for safe setups,",
         "behind a reverse proxy or a tunnel."})
     Web web,
     @Comment({
@@ -305,11 +305,11 @@ public record XSConfig(
     public static final ConfigSpec<XSConfig> SPEC = ConfigSpec.builder(XSConfig.class, DEFAULTS)
         .header(
             "xStats: player stats, leaderboards and a website.",
-            "Docs: https://docs.xenastudios.co/xstats/configuration/",
+            "Docs: https://plugins.xenastudios.co/xstats/configuration/",
             "",
             "Apply changes with /xstats reload. A bad value falls back to its default with a",
             "warning in the console; xStats never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .codec(Colour.class, Colour.CODEC)
         .template(StatSettings.class, new StatSettings("", "", Unit.AUTO, 0, false, true, true))
         .version(1)

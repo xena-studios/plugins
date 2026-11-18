@@ -57,7 +57,7 @@ public record XBConfig(
     @Comment("Who can punish whom, and for how long.") StaffLimits staffLimits,
     @Comment({
         "IP addresses: for IP bans and mutes, /alts and /iphistory. IP addresses are personal",
-        "data: see https://docs.xenastudios.co/xbans/privacy/"})
+        "data: see https://plugins.xenastudios.co/xbans/privacy/"})
     Ips ips,
     @Comment({
         "Server scopes, for networks: a punishment can apply on every server (global) or on one.",
@@ -437,11 +437,11 @@ public record XBConfig(
     public static final ConfigSpec<XBConfig> SPEC = ConfigSpec.builder(XBConfig.class, DEFAULTS)
         .header(
             "xBans: bans, mutes and warnings, the LiteBans way.",
-            "Docs: https://docs.xenastudios.co/xbans/configuration/",
+            "Docs: https://plugins.xenastudios.co/xbans/configuration/",
             "",
             "Apply changes with /xbans reload. A bad value falls back to its default with a",
             "warning in the console; xBans never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .codec(Length.class, Length.CODEC)
         .template(Template.class, new Template(PunishmentType.BAN, "", List.of(Length.PERMANENT), Length.parse("180d"),
             false, false, ""))

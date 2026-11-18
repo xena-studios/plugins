@@ -4,8 +4,8 @@ contact_links:
     url: https://github.com/xena-studios/plugins/security/advisories/new
     about: Privately, so it can be fixed before it's public.
   - name: Read the docs
-    url: https://docs.xenastudios.co
+    url: https://plugins.xenastudios.co
     about: Setup, commands, permissions and every config option.
   - name: Ask a question
-    url: https://docs.xenastudios.co/start/support/
+    url: https://plugins.xenastudios.co/start/support/
     about: For anything that isn't a bug or an idea, email us; the address is here.

@@ -394,12 +394,12 @@ public record XTConfig(
     public static final ConfigSpec<XTConfig> SPEC = ConfigSpec.builder(XTConfig.class, DEFAULTS)
         .header(
             "xTeleport: every teleport your server needs.",
-            "Docs: https://docs.xenastudios.co/xteleport/configuration/",
+            "Docs: https://plugins.xenastudios.co/xteleport/configuration/",
             "",
             "Apply changes with /xteleport reload (or /xtp reload). Everything applies except",
             "storage, even turning commands on or off. A bad value falls back to its default with",
             "a warning in the console; xTeleport never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .template(HomeLimit.class, new HomeLimit("", 0))
         .template(RtpWorld.class, new RtpWorld(true, "", true, 0, 0, 300, 5000, false))
         .build();

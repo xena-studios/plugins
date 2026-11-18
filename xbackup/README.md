@@ -12,7 +12,7 @@ xBackup is incremental backups for Paper and Folia: only what changed since the 
 - **Copies off the server:** a second disk, S3-compatible storage, WebDAV, SFTP, FTP/FTPS, Google Drive, OneDrive and Dropbox. Only new files are sent.
 - **Every change applies on reload.** No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xbackup)** · [Docs](https://docs.xenastudios.co/xbackup/) · [Commands](https://docs.xenastudios.co/xbackup/commands/) · [Restoring](https://docs.xenastudios.co/xbackup/restoring/) · [Remotes](https://docs.xenastudios.co/xbackup/remotes/) · [Developer API](https://docs.xenastudios.co/xbackup/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xbackup)** · [Docs](https://plugins.xenastudios.co/xbackup/) · [Commands](https://plugins.xenastudios.co/xbackup/commands/) · [Restoring](https://plugins.xenastudios.co/xbackup/restoring/) · [Remotes](https://plugins.xenastudios.co/xbackup/remotes/) · [Developer API](https://plugins.xenastudios.co/xbackup/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Nothing else.
 

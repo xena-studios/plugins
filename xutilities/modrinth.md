@@ -4,7 +4,7 @@
 
 Your players want `/fly`, `/back`, `/craft` and a link to your Discord. Your staff want `/gamemode`, `/heal` and `/clear`. **xUtilities gives you the ones you need, and lets you switch off every one you don't.** Drop it on your lobby, your survival server and your minigames alike.
 
-**[Read the docs](https://docs.xenastudios.co/xutilities/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xutilities/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -56,7 +56,7 @@ Every command has its own permission, op-only until you give it out. `/ping` and
 
 **Coming from xUtilities 1.x?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/xutilities](https://docs.xenastudios.co/xutilities/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/xutilities](https://plugins.xenastudios.co/xutilities/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 

@@ -9,7 +9,7 @@ xUtilities is a lightweight essentials plugin for Paper and Folia: gamemodes, fl
 - **You won't feel it running.** Nothing runs on a timer but the daily update check and bStats, and `/back`'s listener exists only while `/back` is on.
 - **Every change applies on reload**, even turning commands on or off and adding link commands. No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://docs.xenastudios.co/xutilities/) · [Commands](https://docs.xenastudios.co/xutilities/commands/) · [Developer API](https://docs.xenastudios.co/xutilities/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://plugins.xenastudios.co/xutilities/) · [Commands](https://plugins.xenastudios.co/xutilities/commands/) · [Developer API](https://plugins.xenastudios.co/xutilities/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 

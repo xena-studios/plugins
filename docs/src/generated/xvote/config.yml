@@ -1,9 +1,9 @@
 # xVote: votes in, rewards out.
-# Docs: https://docs.xenastudios.co/xvote/configuration/
+# Docs: https://plugins.xenastudios.co/xvote/configuration/
 #
 # Apply changes with /xvote reload. A bad value falls back to its default with a
 # warning in the console; xVote never stops over config. All text is MiniMessage:
-# https://docs.xenastudios.co/start/formatting/
+# https://plugins.xenastudios.co/start/formatting/
 
 # Managed by the plugin, to carry your settings forward on updates. Don't edit it.
 config-version: 1

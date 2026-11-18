@@ -4,7 +4,7 @@
 
 Small plots, close together, that players rent with in-game money: the box-server staple. Usually that means a WorldGuard region and a sign for every plot, made by hand. **With xPlots you select the whole area, say how big each plot is, and confirm. Every plot and every sign is made for you.**
 
-**[Read the docs](https://docs.xenastudios.co/xplots/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://plugins.xenastudios.co/xplots/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
@@ -50,7 +50,7 @@ Small plots, close together, that players rent with in-game money: the box-serve
 
 Then set prices, rent periods and member slots in `plugins/xPlots/config.yml`, or per field with `/xplots field set`.
 
-Full setup, every setting and every permission: **[docs.xenastudios.co/xplots](https://docs.xenastudios.co/xplots/)**
+Full setup, every setting and every permission: **[plugins.xenastudios.co/xplots](https://plugins.xenastudios.co/xplots/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. Vault and an economy plugin to pay rent with money (not needed for item currency). WorldGuard and PlaceholderAPI are optional. SQLite out of the box, or MySQL/MariaDB.
 

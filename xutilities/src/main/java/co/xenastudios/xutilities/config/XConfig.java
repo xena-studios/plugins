@@ -161,12 +161,12 @@ public record XConfig(
     public static final ConfigSpec<XConfig> SPEC = ConfigSpec.builder(XConfig.class, DEFAULTS)
         .header(
             "xUtilities: every command you need. None you don't.",
-            "Docs: https://docs.xenastudios.co/xutilities/configuration/",
+            "Docs: https://plugins.xenastudios.co/xutilities/configuration/",
             "",
             "Apply changes with /xutilities reload (or /xu reload). Everything applies, even",
             "turning commands on or off. A bad value falls back to its default with a warning in the",
             "console; xUtilities never stops over config. All text is MiniMessage:",
-            "https://docs.xenastudios.co/start/formatting/")
+            "https://plugins.xenastudios.co/start/formatting/")
         .version(2)
         // 1.x had an error for disabled commands; a disabled command now doesn't exist.
         .migrate(1, root -> root.set("messages.error.disabled", null))

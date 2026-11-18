@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-26.04
     environment:
       name: docs
-      url: https://docs.xenastudios.co
+      url: https://plugins.xenastudios.co
     defaults:
       run:
         working-directory: docs

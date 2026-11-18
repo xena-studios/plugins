@@ -8,7 +8,7 @@ TODO: what {{display}} is, in one sentence, for Paper and Folia.
 - **You won't feel it running.** TODO: what keeps it light.
 - **Every change applies on reload.** No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/{{id}})** · [Docs](https://docs.xenastudios.co/{{id}}/) · [Commands](https://docs.xenastudios.co/{{id}}/commands/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/{{id}})** · [Docs](https://plugins.xenastudios.co/{{id}}/) · [Commands](https://plugins.xenastudios.co/{{id}}/commands/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 

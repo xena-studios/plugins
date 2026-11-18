@@ -46,7 +46,8 @@ public final class Store {
     /** How much a stat went up today. */
     public record DailyRow(int player, String stat, long delta) {}
 
-    public record Save(List<PlayerRow> players, List<TotalRow> totals, List<DailyRow> daily, int day) {}
+    /** @param at when it's saved, epoch milliseconds: written to each total row as when it was updated */
+    public record Save(List<PlayerRow> players, List<TotalRow> totals, List<DailyRow> daily, int day, long at) {}
 
     // ---- what loading reads ----
 
@@ -56,9 +57,9 @@ public final class Store {
      * A value for a player and stat: all time, or one day's rise.
      *
      * @param value added up across servers (in network mode)
-     * @param max the highest of any one server, for stats that aren't counters (a balance)
+     * @param latest the value of the server that wrote it last, for stats that aren't counters (a balance)
      */
-    public record Value(int player, String stat, int day, long value, long max) {}
+    public record Value(int player, String stat, int day, long value, long latest) {}
 
     public record Loaded(List<LoadedPlayer> players, List<Value> totals, List<Value> days) {}
 
@@ -184,11 +185,16 @@ public final class Store {
                         result.getLong(4), result.getLong(5), result.getInt(6) != 0, result.getInt(7) != 0));
                 }
             }
-            String scope = network ? "" : " WHERE server = " + server;
+            // On a network: every server's rows added up, and the one written last (by the
+            // primary key's first two columns, so a lookup per player and stat, not a scan).
+            String totalsSql = network
+                ? "SELECT t.player, t.stat, SUM(t.value), (SELECT l.value FROM {p}totals l"
+                    + " WHERE l.player = t.player AND l.stat = t.stat ORDER BY l.updated DESC, l.server DESC LIMIT 1)"
+                    + " FROM {p}totals t GROUP BY t.player, t.stat"
+                : "SELECT player, stat, value, value FROM {p}totals WHERE server = " + server;
             List<Value> totals = new ArrayList<>();
             try (Statement statement = connection.createStatement();
-                 ResultSet result = statement.executeQuery(sql(
-                     "SELECT player, stat, SUM(value), MAX(value) FROM {p}totals" + scope + " GROUP BY player, stat"))) {
+                 ResultSet result = statement.executeQuery(sql(totalsSql))) {
                 while (result.next()) {
                     String stat = stats.get(result.getInt(2));
                     if (stat != null) {
@@ -339,10 +345,11 @@ public final class Store {
             return;
         }
         String upsert = database.dialect() == Dialect.MYSQL
-            ? "INSERT INTO {p}totals (player, stat, server, value, raw) VALUES (?, ?, ?, ?, ?)"
-                + " ON DUPLICATE KEY UPDATE value = VALUES(value), raw = VALUES(raw)"
-            : "INSERT INTO {p}totals (player, stat, server, value, raw) VALUES (?, ?, ?, ?, ?)"
-                + " ON CONFLICT (player, stat, server) DO UPDATE SET value = excluded.value, raw = excluded.raw";
+            ? "INSERT INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)"
+                + " ON DUPLICATE KEY UPDATE value = VALUES(value), raw = VALUES(raw), updated = VALUES(updated)"
+            : "INSERT INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)"
+                + " ON CONFLICT (player, stat, server) DO UPDATE SET value = excluded.value, raw = excluded.raw,"
+                + " updated = excluded.updated";
         try (PreparedStatement statement = connection.prepareStatement(sql(upsert))) {
             for (TotalRow row : save.totals()) {
                 statement.setInt(1, ids[row.player()]);
@@ -350,6 +357,7 @@ public final class Store {
                 statement.setInt(3, server);
                 statement.setLong(4, row.value());
                 statement.setLong(5, row.raw());
+                statement.setLong(6, save.at());
                 statement.addBatch();
             }
             statement.executeBatch();
@@ -562,7 +570,7 @@ public final class Store {
             connection.setAutoCommit(false);
             Map<String, Integer> added = new HashMap<>();
             try (PreparedStatement insert = connection.prepareStatement(sql(database.dialect().insertIgnore()
-                + " INTO {p}totals (player, stat, server, value, raw) VALUES (?, ?, ?, ?, ?)"))) {
+                + " INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)"))) {
                 for (Imported player : players) {
                     int id = importPlayer(connection, player);
                     for (Map.Entry<String, Long> value : player.values().entrySet()) {
@@ -571,6 +579,8 @@ public final class Store {
                         insert.setInt(3, server);
                         insert.setLong(4, value.getValue());
                         insert.setLong(5, Boolean.TRUE.equals(player.counters().get(value.getKey())) ? value.getValue() : -1);
+                        // Older than anything counted since: when they were last seen in the files.
+                        insert.setLong(6, player.lastSeen());
                         insert.addBatch();
                     }
                     insert.executeBatch();

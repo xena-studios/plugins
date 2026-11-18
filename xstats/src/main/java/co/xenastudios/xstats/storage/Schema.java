@@ -9,8 +9,10 @@ import java.util.List;
  * once each and referred to by id.
  *
  * <ul>
- *   <li>{@code totals}: each player's all-time value of each stat on each server, and the
- *       last reading of Minecraft's own counter ({@code raw}, -1 for stats that aren't one).</li>
+ *   <li>{@code totals}: each player's all-time value of each stat on each server, the
+ *       last reading of Minecraft's own counter ({@code raw}, -1 for stats that aren't one),
+ *       and when the row was last written ({@code updated}, epoch milliseconds), so a gauge
+ *       on a network is the latest any server wrote.</li>
  *   <li>{@code daily}: how much a stat went up on a day, only for stats with periods and
  *       only on days it changed. {@code day} is days since 1970-01-01 in the config's time zone.</li>
  *   <li>{@code monthly}: daily rows older than {@code periods.keep-daily-days}, added up per
@@ -30,7 +32,7 @@ public final class Schema {
                 + " hidden SMALLINT NOT NULL, excluded SMALLINT NOT NULL){table}",
             "CREATE INDEX {p}players_name ON {p}players (name_lower)",
             "CREATE TABLE IF NOT EXISTS {p}totals (player INT NOT NULL, stat INT NOT NULL, server INT NOT NULL,"
-                + " value BIGINT NOT NULL, raw BIGINT NOT NULL, PRIMARY KEY (player, stat, server)){table}",
+                + " value BIGINT NOT NULL, raw BIGINT NOT NULL, updated BIGINT NOT NULL, PRIMARY KEY (player, stat, server)){table}",
             // For owners' own queries, such as a server's top players of a stat.
             "CREATE INDEX {p}totals_stat ON {p}totals (stat, server, value)",
             "CREATE TABLE IF NOT EXISTS {p}daily (player INT NOT NULL, stat INT NOT NULL, server INT NOT NULL,"

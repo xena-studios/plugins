@@ -2,6 +2,7 @@ package co.xenastudios.xstats.data;
 
 import java.sql.SQLException;
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,7 +20,9 @@ import java.util.logging.Logger;
  *   <li>Other plugins' changes are added up as they come: a thousand increments of one
  *       stat for one player between two saves wait as one, and several sets in a row wait
  *       as their first and last value and the rises between. A set and an increment of the
- *       same stat keep their order.</li>
+ *       same stat keep their order, and so do changes and a player's join or reading: once
+ *       one of those is waiting, later changes wait behind it, never added into one ahead.
+ *       (Another plugin's join listener can add to a stat before xStats hears of the join.)</li>
  *   <li>Each player's events are applied in the order they happened. If one can't be (their
  *       rows couldn't be read), it and every later one of theirs wait for the next save, in
  *       order; everyone else's carry on.</li>
@@ -42,20 +45,23 @@ final class Inbox {
 
     private record Fixed(Event event) implements Slot {}
 
-    private record Key(UUID player, String stat) {}
-
-    /** Increments or sets of one stat for one player, still being added to until a save takes them. */
+    /**
+     * Increments or sets of one stat for one player, still being added to until a save takes
+     * them. Its fields change only while {@link #tails} holds the player's entry locked.
+     */
     private static final class Pending implements Slot {
-        final Key key;
+        final UUID player;
+        final String stat;
         final boolean set;
         /** The first value set (sets only). */
         final long first;
-        volatile long value;
+        long value;
         /** How much later sets went up from the ones before (sets only). */
-        volatile long rise;
+        long rise;
 
-        Pending(Key key, boolean set, long value) {
-            this.key = key;
+        Pending(UUID player, String stat, boolean set, long value) {
+            this.player = player;
+            this.stat = stat;
             this.set = set;
             this.first = value;
             this.value = value;
@@ -66,8 +72,12 @@ final class Inbox {
     private final int limit;
     private final int warnAt;
     private final ConcurrentLinkedQueue<Slot> queue = new ConcurrentLinkedQueue<>();
-    /** The last waiting increment or set of each player's stat, while more can be added to it. */
-    private final Map<Key, Pending> tails = new ConcurrentHashMap<>();
+    /**
+     * The last waiting increment or set of each player's stats, while more can be added to
+     * it, by player then stat. Everything about one player happens inside a {@code compute}
+     * of their entry, so a join and an increment can't pass each other.
+     */
+    private final Map<UUID, Map<String, Pending>> tails = new ConcurrentHashMap<>();
     /** Waiting, held back and not yet applied. */
     private final AtomicInteger size = new AtomicInteger();
     private final AtomicLong dropped = new AtomicLong();
@@ -101,27 +111,36 @@ final class Inbox {
 
     void add(Event event) {
         switch (event) {
-            case Event.Increment increment -> merge(new Key(increment.player(), increment.stat()), false, increment.amount());
+            case Event.Increment increment -> merge(increment.player(), increment.stat(), false, increment.amount());
             case Event.Set set when set.first() == set.value() && set.rise() == 0 ->
-                merge(new Key(set.player(), set.stat()), true, set.value());
-            default -> enqueue(new Fixed(event));
+                merge(set.player(), set.stat(), true, set.value());
+            default -> tails.compute(event.player(), (player, waiting) -> {
+                // Queued while holding the player: changes after this wait behind it, in new slots.
+                enqueue(new Fixed(event));
+                return null;
+            });
         }
     }
 
-    private void merge(Key key, boolean set, long value) {
-        tails.compute(key, (k, tail) -> {
+    private void merge(UUID player, String stat, boolean set, long value) {
+        tails.compute(player, (id, waiting) -> {
+            Map<String, Pending> stats = waiting == null ? new HashMap<>() : waiting;
+            Pending tail = stats.get(stat);
             if (tail != null && tail.set == set) {
-                // Atomic for this key: compute holds it, and a save takes the tail out the same way.
+                // Atomic for this player: compute holds them, and a save takes the tail out the same way.
                 if (set) {
                     tail.rise = saturatedAdd(tail.rise, Math.max(0, value - tail.value));
                     tail.value = value;
                 } else {
                     tail.value = saturatedAdd(tail.value, value);
                 }
-                return tail;
+                return stats;
             }
-            Pending next = new Pending(k, set, value);
-            return enqueue(next) ? next : tail;
+            Pending next = new Pending(id, stat, set, value);
+            if (enqueue(next)) {
+                stats.put(stat, next);
+            }
+            return stats.isEmpty() ? null : stats;
         });
     }
 
@@ -152,10 +171,17 @@ final class Inbox {
         return switch (slot) {
             case Fixed fixed -> fixed.event();
             case Pending pending -> {
-                tails.computeIfPresent(pending.key, (k, tail) -> tail == pending ? null : tail);
-                long value = pending.value;
-                yield pending.set ? new Event.Set(pending.key.player(), pending.key.stat(), pending.first, value, pending.rise)
-                    : new Event.Increment(pending.key.player(), pending.key.stat(), value);
+                Event[] closed = new Event[1];
+                // Read under the player's lock, once no more can be added to it.
+                tails.compute(pending.player, (id, stats) -> {
+                    if (stats != null && stats.get(pending.stat) == pending) {
+                        stats.remove(pending.stat);
+                    }
+                    closed[0] = pending.set ? new Event.Set(id, pending.stat, pending.first, pending.value, pending.rise)
+                        : new Event.Increment(id, pending.stat, pending.value);
+                    return stats == null || stats.isEmpty() ? null : stats;
+                });
+                yield closed[0];
             }
         };
     }

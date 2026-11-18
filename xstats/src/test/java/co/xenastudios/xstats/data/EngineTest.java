@@ -348,22 +348,39 @@ class EngineTest {
     }
 
     @Test
-    void aGaugeIsTheHighestOnANetworkNotEveryServerAddedUp() throws Exception {
+    void aGaugeIsTheLatestOnANetworkNotTheHighestNorEveryServerAddedUp() throws Exception {
         long now = System.currentTimeMillis();
         Engine survival = engine("survival", true);
         Engine creative = engine("creative", true);
         survival.queue(sample(steve, "Steve", now, 0, 1, 0));
+        survival.queue(new Event.Set(steve, "balance", 1_000));
         survival.save(now);
-        survival.queue(new Event.Set(steve, "balance", 500));
-        survival.save(now);
+        assertEquals(1_000, value(survival, steve, balance, Period.ALL));
+        Thread.sleep(5);
+        // He spends 900 on creative; survival's row still says 1000 while he's away.
         creative.queue(sample(steve, "Steve", now, 0, 1, 0));
-        creative.queue(new Event.Set(steve, "balance", 500));
+        creative.queue(new Event.Set(steve, "balance", 100));
         creative.save(now);
-        assertEquals(500, value(creative, steve, balance, Period.ALL));
+        assertEquals(100, value(creative, steve, balance, Period.ALL));
         survival.networkChanged();
         survival.save(now);
-        assertEquals(500, value(survival, steve, balance, Period.ALL), "one balance, not one per server");
-        assertEquals(500, value(engine("lobby", true), steve, balance, Period.ALL));
+        assertEquals(100, value(survival, steve, balance, Period.ALL), "the latest, not the highest");
+        // It stays so across reloads, on every server, and for a server that just started.
+        survival.networkChanged();
+        survival.save(now);
+        assertEquals(100, value(survival, steve, balance, Period.ALL), "no flipping back");
+        creative.networkChanged();
+        creative.save(now);
+        assertEquals(100, value(creative, steve, balance, Period.ALL));
+        assertEquals(100, value(engine("lobby", true), steve, balance, Period.ALL));
+        assertEquals(100, survival.leaderboards().total(balance.index()), "one balance, not one per server");
+        Thread.sleep(5);
+        // Back on survival, it's set again there: that's now the latest.
+        survival.queue(new Event.Set(steve, "balance", 250));
+        survival.save(now);
+        creative.networkChanged();
+        creative.save(now);
+        assertEquals(250, value(creative, steve, balance, Period.ALL));
     }
 
     @Test
@@ -415,6 +432,26 @@ class EngineTest {
     }
 
     @Test
+    void incrementsAfterAJoinArentAddedIntoOneBeforeIt() throws Exception {
+        StatDef votes = new StatDef(catalog.index("votes"), "votes", "Votes", StatUnit.COUNT, 0, true, true, true, "xVote",
+            new StatDef.Custom("xVote"));
+        List<StatDef> with = new java.util.ArrayList<>(catalog.snapshot().stats());
+        with.add(votes);
+        catalog.set(with);
+        Engine engine = engine("main", false);
+        long now = System.currentTimeMillis();
+        // Another plugin's join listener runs before xStats' own hears of the join.
+        engine.queue(new Event.Increment(steve, "votes", 1));
+        engine.queue(new Event.Joined(steve, "Steve", now, now, 0, 0));
+        for (int i = 0; i < 9; i++) {
+            engine.queue(new Event.Increment(steve, "votes", 1));
+        }
+        assertEquals(3, engine.waiting(), "the increments after the join wait behind it");
+        assertTrue(engine.save(now));
+        assertEquals(9, value(engine, steve, votes, Period.ALL), "only the one before they existed is lost");
+    }
+
+    @Test
     void tooManyWaitingAreDroppedNotKept() {
         Inbox inbox = new Inbox(LOGGER, 10, 5);
         for (int i = 0; i < 25; i++) {
@@ -443,6 +480,11 @@ class EngineTest {
         engine.queue(sample(steve, "Steve", now + 3 * MINUTE, 0, 3, 0));
         engine.save(now);
         assertEquals(198, value(engine, steve, kills, Period.ALL));
+        // A small counter going down by 1 is a decrease too, not a restart.
+        engine.queue(sample(alex, "Alex", now, 0, 5, 0));
+        engine.queue(sample(alex, "Alex", now + MINUTE, 0, 4, 0));
+        engine.save(now);
+        assertEquals(4, value(engine, alex, kills, Period.ALL));
     }
 
     @Test
@@ -484,6 +526,22 @@ class EngineTest {
         other.refreshHidden(steve);
         assertFalse(other.player(steve).hidden());
         assertEquals(3, told.get());
+    }
+
+    @Test
+    void aHideThatCouldntBeReadIsPickedUpAtTheNextReload() throws Exception {
+        long now = System.currentTimeMillis();
+        Engine survival = engine("survival", true);
+        survival.queue(sample(steve, "Steve", now, 0, 1, 0));
+        survival.save(now);
+        Engine creative = engine("creative", true);
+        survival.hide(survival.player(steve), true);
+        rename(creative, "players", "players_off");
+        creative.refreshHidden(steve);
+        assertFalse(creative.player(steve).hidden(), "the database couldn't be read");
+        rename(creative, "players_off", "players");
+        creative.save(now);
+        assertTrue(creative.player(steve).hidden(), "read again with everyone at the next save");
     }
 
     @Test

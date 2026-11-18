@@ -263,8 +263,9 @@ public final class Engine {
             PlayerRecord player = byDbId.get(value.player());
             StatDef stat = stats.byId().get(value.stat());
             if (player != null && stat != null) {
-                // On a network, counters add up every server; a gauge (a balance) is the highest, not N times over.
-                totals.computeIfAbsent(player, key -> new long[width])[stat.index()] = stat.counter() ? value.value() : value.max();
+                // On a network, counters add up every server; a gauge (a balance) is the value
+                // written last, not N times over, nor the highest one a server still holds.
+                totals.computeIfAbsent(player, key -> new long[width])[stat.index()] = stat.counter() ? value.value() : value.latest();
             }
         }
         for (Map.Entry<PlayerRecord, long[]> entry : totals.entrySet()) {
@@ -275,9 +276,9 @@ public final class Engine {
                 if (stat.counter()) {
                     // Rises not saved yet are only in memory; keep them on top of what was read.
                     values[i] += i < player.pendingDaily.length ? player.pendingDaily[i] : 0;
-                } else if (player.localLoaded && i < player.local.length && player.raw[i] >= 0) {
+                } else if (player.localLoaded && i < player.local.length && player.changed.get(i)) {
                     // A gauge set here since the last save: this server's value is the latest.
-                    values[i] = current.network() ? Math.max(values[i], player.local[i]) : player.local[i];
+                    values[i] = player.local[i];
                 }
             }
             player.values = values;
@@ -546,9 +547,11 @@ public final class Engine {
         }
         player.raw[index] = reading;
         player.changed.set(index);
-        if (reading < last && reading >= last - last / 10) {
-            // A little lower: another plugin took some away (decrementStatistic). All time
-            // goes down with it; today, this week and this month only ever count rises.
+        if (reading < last && last - reading <= Math.max(1, last / 10)) {
+            // A little lower (by up to a tenth, or by 1 for a small counter): another plugin
+            // took some away (decrementStatistic). All time goes down with it; today, this
+            // week and this month only ever count rises. More than a tenth lower is taken as
+            // a restart from 0, a world rolled back that far included.
             long drop = Math.min(last - reading, player.local[index]);
             player.local[index] -= drop;
             player.values[index] -= drop;
@@ -675,7 +678,7 @@ public final class Engine {
             return true;
         }
         try {
-            int[] ids = store.save(new Store.Save(rows, totals, daily, today), feed);
+            int[] ids = store.save(new Store.Save(rows, totals, daily, today, System.currentTimeMillis()), feed);
             for (int i = 0; i < changed.size(); i++) {
                 PlayerRecord player = changed.get(i);
                 player.dbId = ids[i];
@@ -794,6 +797,8 @@ public final class Engine {
             }
         } catch (SQLException e) {
             logger.fine("Couldn't read whether " + id + " is hidden: " + e.getMessage());
+            // The next network reload reads everyone's again, this player's included.
+            networkDirty = true;
         }
     }
 

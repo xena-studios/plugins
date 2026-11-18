@@ -5,3 +5,13 @@ main: co.xenastudios.sandbox.consumer.ConsumerPlugin
 api-version: "1.21.11"
 folia-supported: true
 depend: [Sandbox]
+# Optional, as for a plugin that only uses xRewind when it's there.
+softdepend: [xRewind]
+commands:
+  apicheck:
+    description: Uses a plugin's API on the real server, from the console.
+    usage: /apicheck xrewind
+    permission: sandbox.apicheck
+permissions:
+  sandbox.apicheck:
+    default: op

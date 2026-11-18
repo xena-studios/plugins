@@ -1,4 +1,4 @@
-// docs.xenastudios.co: the docs for Xena's plugins (xUtilities, zChat, xLimbo, xRewind),
+// docs.xenastudios.co: the site for Xena Studios' plugins (every plugin in src/data/plugins.json),
 // a static Starlight site served by a Cloudflare Worker. It wears the plugin
 // family's brand (xena-studios/brand), as docs.raptorpanel.net wears Raptor's:
 // deepslate, Space Grotesk, each plugin's pages in its accent with its icon by
@@ -18,9 +18,9 @@ export default defineConfig({
   vite: { build: { assetsInlineLimit: 0 } },
   integrations: [
     starlight({
-      title: "Xena Plugin Docs",
+      title: "Xena Studios Plugins",
       description: "Docs for Xena Studios' plugins: small, fast plugins for Paper and Folia servers.",
-      // XENA STUDIOS, then "Plugin docs" as a mono label from theme.css.
+      // XENA STUDIOS, then "Plugins" as a mono label from theme.css.
       logo: { dark: "./src/assets/xena-studios-dark.svg", light: "./src/assets/xena-studios-light.svg", replacesTitle: true },
       favicon: "/favicon.svg",
       // One link preview for every page (xena-studios/brand social/docs-og.png).
@@ -28,7 +28,7 @@ export default defineConfig({
         { tag: "meta", attrs: { property: "og:image", content: "https://docs.xenastudios.co/og.png" } },
         { tag: "meta", attrs: { property: "og:image:width", content: "2400" } },
         { tag: "meta", attrs: { property: "og:image:height", content: "1260" } },
-        { tag: "meta", attrs: { property: "og:image:alt", content: "XENA STUDIOS plugin docs over a planet horizon: xUtilities, zChat, xLimbo and xRewind, setup, commands, config." } },
+        { tag: "meta", attrs: { property: "og:image:alt", content: "XENA STUDIOS plugins over a planet horizon: small, fast plugins for Paper and Folia." } },
         { tag: "meta", attrs: { name: "twitter:image", content: "https://docs.xenastudios.co/og.png" } },
       ],
       customCss: ["./src/styles/theme.css"],
@@ -57,6 +57,7 @@ export default defineConfig({
       },
       components: {
         Footer: "./src/components/Footer.astro",
+        Sidebar: "./src/components/Sidebar.astro",
         PageTitle: "./src/components/PageTitle.astro",
         ThemeProvider: "./src/components/ThemeProvider.astro",
         ThemeSelect: "./src/components/ThemeSelect.astro",
@@ -64,14 +65,18 @@ export default defineConfig({
       social: [{ icon: "github", label: "Source code", href: "https://github.com/xena-studios/plugins" }],
       editLink: { baseUrl: "https://github.com/xena-studios/plugins/edit/main/docs/" },
       lastUpdated: true,
-      plugins: [starlightLinksValidator()],
+      // The home page's "Browse the plugins" jumps to the catalog, which a component draws,
+      // so the validator can't see its id.
+      plugins: [starlightLinksValidator({ exclude: ["#plugins"] })],
       // Each plugin's pages load that plugin's accent (public/accents/).
       routeMiddleware: "./src/routeData.ts",
       // src/pages/404.astro instead, with noindex.
       disable404Route: true,
       sidebar: [
         { label: "Start here", items: [{ autogenerate: { directory: "start" } }] },
+        // One group per plugin; src/routeData.ts shows only the current one, or a link to each.
         ...catalog.plugins.map((p) => ({ label: p.name, items: [{ autogenerate: { directory: p.id } }] })),
+        { label: "Developers", link: "/developers/" },
         {
           label: "More from Xena Studios",
           items: [

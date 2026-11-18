@@ -1,0 +1,208 @@
+---
+// A plugin's download page: its latest version first, then every version before it, read
+// from Modrinth's API when the site is built (a release redeploys the site, and it's
+// rebuilt daily). Downloads go through Modrinth's CDN, so they count on Modrinth; each
+// version links its GitHub release as a mirror. Before a plugin's first release, or if
+// Modrinth can't be reached, the page says so and links what there is instead.
+import catalog from "../data/plugins.json" with { type: "json" };
+import External from "./External.astro";
+
+interface Props {
+  plugin: string;
+}
+interface ModrinthFile {
+  url: string;
+  filename: string;
+  primary: boolean;
+  size: number;
+}
+interface ModrinthVersion {
+  version_number: string;
+  version_type: "release" | "beta" | "alpha";
+  date_published: string;
+  game_versions: string[];
+  loaders: string[];
+  files: ModrinthFile[];
+}
+
+const { plugin: id } = Astro.props;
+const p = catalog.plugins.find((x) => x.id === id);
+if (!p) throw new Error(`Downloads: ${id} isn't in the catalog`);
+const repo = "https://github.com/xena-studios/plugins";
+
+let versions: ModrinthVersion[] = [];
+let unreachable = false;
+if (p.modrinth) {
+  try {
+    const answer = await fetch(`https://api.modrinth.com/v2/project/${id}/version`, {
+      headers: { "User-Agent": "xena-studios/plugins docs build (contact@xenastudios.co)" },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (answer.ok) versions = await answer.json();
+    else if (answer.status !== 404) unreachable = true;
+  } catch {
+    unreachable = true;
+  }
+}
+// Newest first, as Modrinth sends them; the latest is the newest full release.
+const latest = versions.find((v) => v.version_type === "release") ?? versions[0];
+
+const file = (v: ModrinthVersion) => v.files.find((f) => f.primary) ?? v.files[0];
+const date = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const size = (bytes: number) => `${Math.round(bytes / 1024)} KiB`;
+// "1.21.11 to 26.3", from Modrinth's list (oldest first).
+const minecraft = (v: ModrinthVersion) =>
+  v.game_versions.length > 1 ? `${v.game_versions[0]} to ${v.game_versions.at(-1)}` : (v.game_versions[0] ?? "");
+const loaders = (v: ModrinthVersion) =>
+  v.loaders.map((l) => ({ paper: "Paper", folia: "Folia", purpur: "Purpur", spigot: "Spigot", bukkit: "Bukkit" })[l] ?? l).join(", ");
+// The changelog page's heading for a version ("## 2.1.0" becomes #210).
+const changes = (v: ModrinthVersion) => `/${id}/changelog/#${v.version_number.toLowerCase().replace(/[^a-z0-9-]/g, "")}`;
+const github = (v: ModrinthVersion) => `${repo}/releases/tag/${id}-v${v.version_number}`;
+---
+{
+  latest ? (
+    <div class="latest not-content">
+      <p class="label">Latest version</p>
+      <p class="version">
+        {p.name} {latest.version_number}
+      </p>
+      <p class="facts">
+        Minecraft {minecraft(latest)} · {loaders(latest)} · {date(latest.date_published)}
+      </p>
+      <p class="actions">
+        <a class="primary" href={file(latest).url} download>
+          Download {file(latest).filename} <span class="size">({size(file(latest).size)})</span>
+        </a>
+        <a href={changes(latest)}>What's new</a>
+        <a href={p.modrinth!}>
+          Modrinth
+          <External />
+        </a>
+      </p>
+      <p class="needs">Needs Java 21 or newer. {p.folia ? "One jar runs on Paper, Purpur and Folia." : "Runs on Paper and Purpur."}</p>
+    </div>
+  ) : (
+    <div class="latest not-content">
+      <p class="label">{p.released ? "Downloads" : "Coming soon"}</p>
+      <p class="facts">
+        {unreachable
+          ? "Modrinth couldn't be reached when this page was built."
+          : p.released
+            ? `${p.name}'s versions are on Modrinth.`
+            : `${p.name} isn't released yet. Its first version will be here and on Modrinth.`}
+      </p>
+      {p.modrinth && (
+        <p class="actions">
+          <a class="primary" href={`${p.modrinth}/versions`}>
+            All versions on Modrinth
+            <External />
+          </a>
+        </p>
+      )}
+    </div>
+  )
+}
+
+{
+  versions.length > 0 && (
+    <>
+      <h2 id="every-version">Every version</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Version</th>
+            <th>Released</th>
+            <th>Minecraft</th>
+            <th>Runs on</th>
+            <th>Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          {versions.map((v) => (
+            <tr>
+              <td>
+                <a href={changes(v)}>{v.version_number}</a>
+                {v.version_type !== "release" && <span class="type">{v.version_type}</span>}
+              </td>
+              <td>{date(v.date_published)}</td>
+              <td>{minecraft(v)}</td>
+              <td>{loaders(v)}</td>
+              <td>
+                <a href={file(v).url} download>
+                  .jar
+                </a>{" "}
+                · <a href={github(v)}>GitHub</a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p>
+        Every version is also a <a href={`${repo}/releases?q=${id}-v`}>GitHub release</a>, with the same jar. The <a href={`/${id}/changelog/`}>changelog</a> says what changed in each.
+      </p>
+    </>
+  )
+}
+
+<style>
+  .latest {
+    display: grid;
+    gap: 0.5rem;
+    margin-block: 1rem 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--sl-color-accent) 6%, var(--sl-color-gray-6));
+  }
+  .latest p {
+    margin: 0;
+  }
+  .label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+  .version {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  .facts,
+  .needs {
+    color: var(--sl-color-gray-2);
+  }
+  .needs {
+    font-size: 0.875rem;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    margin-block: 0.5rem !important;
+  }
+  .actions a {
+    color: var(--sl-color-white);
+  }
+  .actions .primary {
+    padding: 0.7rem 1.25rem;
+    border-radius: 999px;
+    background: var(--sl-color-accent);
+    color: var(--sl-color-black);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .size {
+    font-weight: 400;
+    opacity: 0.75;
+  }
+  .type {
+    margin-inline-start: 0.5rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--sl-color-gray-3);
+  }
+</style>

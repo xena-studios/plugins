@@ -6,11 +6,15 @@ on:
   push:
     branches: [main]
     # The docs, and what the plugin catalog reads: each plugin's build file (its version and
-    # Folia support) and api/ folder.
-    paths: ["docs/**", ".github/workflows/docs.yml", "*/build.gradle.kts", "*/api/build.gradle.kts"]
+    # Folia support), api/ folder and changelog.
+    paths: ["docs/**", ".github/workflows/docs.yml", "*/build.gradle.kts", "*/api/build.gradle.kts", "*/CHANGELOG.md"]
   pull_request:
-  # Redeploy main by hand from the Actions tab.
+  # Redeploy main by hand from the Actions tab. A release does too (release.yml), so its
+  # download page lists it at once.
   workflow_dispatch:
+  # Daily, so the download pages pick up anything published on Modrinth by hand.
+  schedule:
+    - cron: "17 6 * * *"
 
 permissions:
   contents: read
@@ -45,7 +49,7 @@ jobs:
             # and the ones it writes outside docs/.
             case $file in
               docs/* | .github/workflows/docs.yml) docs=true ;;
-              */build.gradle.kts | */api/build.gradle.kts) docs=true ;;
+              */build.gradle.kts | */api/build.gradle.kts | */CHANGELOG.md | */modrinth.md) docs=true ;;
               README.md | .github/labeler.yml | .github/workflows/labels.yml | .github/ISSUE_TEMPLATE/bug_report.yml) docs=true ;;
             esac
           done <<< "$files"

@@ -1,0 +1,111 @@
+---
+// On a plugin's pages, a switcher above its sidebar: the plugin's icon and name, opening
+// every plugin's (a <details>, so it works without JavaScript), and a link back to them
+// all. The sidebar itself comes from src/routeData.ts.
+import Default from "@astrojs/starlight/components/Sidebar.astro";
+import catalog from "../data/plugins.json" with { type: "json" };
+
+const id = Astro.locals.starlightRoute.id;
+const current = catalog.plugins.find((p) => id === p.id || id.startsWith(`${p.id}/`));
+const files = import.meta.glob<{ default: ImageMetadata }>("../assets/plugins/*.svg", { eager: true });
+const icon = (pid: string) => files[`../assets/plugins/${pid}.svg`]?.default.src;
+---
+{
+  current && (
+    <nav class="switcher" aria-label="Plugins">
+      <details>
+        <summary>
+          <img src={icon(current.id)} alt="" width="28" height="28" />
+          <span class="name">{current.name}</span>
+          <span class="hint">Switch</span>
+        </summary>
+        <ul>
+          {catalog.plugins.map((p) => (
+            <li>
+              <a href={p.docs} aria-current={p.id === current.id ? "page" : undefined}>
+                <img src={icon(p.id)} alt="" width="20" height="20" />
+                {p.name}
+                {!p.released && <span class="soon">Soon</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+      <a class="all" href="/">All plugins</a>
+    </nav>
+  )
+}
+<Default />
+
+<style>
+  .switcher {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 10px;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary img,
+  li img {
+    border-radius: 6px;
+  }
+  .name {
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  .hint {
+    margin-inline-start: auto;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+  ul {
+    display: grid;
+    gap: 0.1rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  li a {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 8px;
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+  }
+  li a:hover,
+  li a[aria-current="page"] {
+    color: var(--sl-color-white);
+    background: var(--sl-color-gray-6);
+  }
+  .soon {
+    margin-inline-start: auto;
+    font-size: 0.7rem;
+    color: var(--sl-color-gray-3);
+  }
+  .all {
+    font-size: 0.875rem;
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+  }
+  .all:hover {
+    color: var(--sl-color-white);
+  }
+</style>

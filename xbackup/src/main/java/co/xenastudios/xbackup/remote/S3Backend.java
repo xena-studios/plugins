@@ -174,7 +174,7 @@ final class S3Backend implements Backend {
     public void put(String file, Path source) throws IOException {
         String key = key(Backend.checkName(file));
         MessageDigest sha = digest("SHA-256");
-        MessageDigest md5 = digest("MD5");
+        MessageDigest md5 = contentMd5();
         try (InputStream in = Files.newInputStream(source)) {
             byte[] buffer = new byte[1 << 16];
             int n;
@@ -198,7 +198,7 @@ final class S3Backend implements Backend {
     public void put(String file, byte[] data) throws IOException {
         String key = key(Backend.checkName(file));
         Map<String, String> headers = Map.of("Content-MD5",
-            Base64.getEncoder().encodeToString(digest("MD5").digest(data)), "Content-Type", "application/octet-stream");
+            Base64.getEncoder().encodeToString(contentMd5().digest(data)), "Content-Type", "application/octet-stream");
         String payload = sha256Hex(data);
         Http.retry(() -> {
             throttle.acquire(data.length);
@@ -341,6 +341,15 @@ final class S3Backend implements Backend {
             String text = Http.utf8(body);
             return text.length() > 200 ? text.substring(0, 200) : text;
         }
+    }
+
+    /**
+     * The digest for S3's {@code Content-MD5} header: a check against damage in transit,
+     * which a bucket with Object Lock requires on every upload. Not used for security: each
+     * upload's SHA-256 is signed, and every file is named by its own SHA-256.
+     */
+    private static MessageDigest contentMd5() {
+        return digest("MD5");
     }
 
     private static MessageDigest digest(String algorithm) {

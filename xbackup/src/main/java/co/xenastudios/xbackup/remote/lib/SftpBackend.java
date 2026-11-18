@@ -195,7 +195,18 @@ public final class SftpBackend implements Backend {
                 try {
                     channel.rename(temp, target);
                 } catch (SftpException e) {
-                    // SFTP v3 can't rename over a file. Content-named files are the same bytes either way.
+                    // SFTP v3 can't rename over a file, and says so only as a general failure:
+                    // the old file is removed only if it's really there, and only then. Repository
+                    // files are named by their content, so it's the same bytes either way.
+                    SftpATTRS existing;
+                    try {
+                        existing = channel.lstat(target);
+                    } catch (SftpException missing) {
+                        throw e;
+                    }
+                    if (existing.isDir()) {
+                        throw e;
+                    }
                     channel.rm(target);
                     channel.rename(temp, target);
                 }

@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -181,6 +182,38 @@ public final class FtpBackend implements Backend {
         };
     }
 
+    /**
+     * The certificate checks, plus: every connection of one session (control, then each data
+     * connection) shows the same certificate as the first, the one whose host name was checked.
+     * A data connection can't be handed to another server.
+     */
+    static javax.net.ssl.X509TrustManager sameOnEveryConnection(javax.net.ssl.X509TrustManager checks, String name) {
+        java.util.concurrent.atomic.AtomicReference<java.security.cert.X509Certificate> first =
+            new java.util.concurrent.atomic.AtomicReference<>();
+        return new javax.net.ssl.X509TrustManager() {
+            @Override
+            public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType)
+                throws java.security.cert.CertificateException {
+                checks.checkClientTrusted(chain, authType);
+            }
+
+            @Override
+            public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
+                throws java.security.cert.CertificateException {
+                checks.checkServerTrusted(chain, authType);
+                if (!first.compareAndSet(null, chain[0]) && !first.get().equals(chain[0])) {
+                    throw new java.security.cert.CertificateException("remote " + name + "'s data connection showed "
+                        + fingerprint(chain[0]) + ", not the certificate of its control connection");
+                }
+            }
+
+            @Override
+            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                return checks.getAcceptedIssuers();
+            }
+        };
+    }
+
     private static String require(String value, String what, String name) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("set " + what + " for remote " + name + ".");
@@ -213,7 +246,7 @@ public final class FtpBackend implements Backend {
             client = new FTPClient();
         } else {
             FTPSClient secure = new FTPSClient("TLS", security.equals("implicit"));
-            secure.setTrustManager(trust(pin, name));
+            secure.setTrustManager(sameOnEveryConnection(trust(pin, name), name));
             // The host name is checked against the certificate, unless it's pinned by fingerprint.
             secure.setEndpointCheckingEnabled(pin == null);
             client = secure;
@@ -223,6 +256,10 @@ public final class FtpBackend implements Backend {
         // A transfer that stops moving fails instead of holding the only worker for good.
         client.setDataTimeout(Duration.ofSeconds(60));
         client.setControlKeepAliveTimeout(Duration.ofSeconds(30));
+        // Data connections go to the server the control connection reached, never to an
+        // address a passive reply names.
+        client.setRemoteVerificationEnabled(true);
+        client.setPassiveNatWorkaroundStrategy(named -> client.getRemoteAddress().getHostAddress());
         client.setControlKeepAliveReplyTimeout(Duration.ofSeconds(30));
         try {
             client.connect(host, port);
@@ -293,7 +330,32 @@ public final class FtpBackend implements Backend {
         try {
             makeFolders(client, target);
             try (InputStream in = source.open()) {
-                if (!client.storeFile(temp, in)) {
+                OutputStream out = client.storeFileStream(temp);
+                if (out == null) {
+                    throw failed("uploading " + file, client);
+                }
+                // The data timeout only bounds reads: an upload the server stops taking would
+                // block for good, so a watch closes it after a minute without progress.
+                Stall stall = new Stall(out);
+                try {
+                    byte[] buffer = new byte[64 << 10];
+                    int n;
+                    while ((n = in.read(buffer)) > 0) {
+                        out.write(buffer, 0, n);
+                        stall.moved();
+                    }
+                    out.close();
+                } catch (IOException e) {
+                    if (stall.fired()) {
+                        closeQuietly();
+                        throw new IOException("remote " + name + ": the upload of " + file + " stopped moving for "
+                            + Stall.LIMIT.toSeconds() + " seconds; it will be sent again next time.", e);
+                    }
+                    throw e;
+                } finally {
+                    stall.stop();
+                }
+                if (!client.completePendingCommand()) {
                     throw failed("uploading " + file, client);
                 }
             }
@@ -304,6 +366,11 @@ public final class FtpBackend implements Backend {
                     + size + "; it will be sent again next time.");
             }
             if (!client.rename(temp, target)) {
+                // A server that can't rename over a file: the old one goes only if it's there.
+                // Repository files are named by their content, so it's the same bytes.
+                if (!exists(client, target)) {
+                    throw failed("moving " + file + " into place", client);
+                }
                 client.deleteFile(target);
                 if (!client.rename(temp, target)) {
                     throw failed("moving " + file + " into place", client);
@@ -342,6 +409,21 @@ public final class FtpBackend implements Backend {
         }
         throw new IOException("remote " + name + ": the server won't say how big " + path + " is (no SIZE, MLST or LIST),"
             + " so the upload can't be checked and isn't used.");
+    }
+
+    private boolean exists(FTPClient client, String path) throws IOException {
+        if (size(client, path) >= 0) {
+            return true;
+        }
+        try {
+            if (client.mlistFile(path) != null) {
+                return true;
+            }
+        } catch (IOException e) {
+            // Try a listing.
+        }
+        FTPFile[] files = client.listFiles(path);
+        return files != null && files.length == 1 && files[0] != null && files[0].isFile();
     }
 
     private long size(FTPClient client, String path) throws IOException {
@@ -458,5 +540,53 @@ public final class FtpBackend implements Backend {
     @Override
     public synchronized void close() {
         closeQuietly();
+    }
+
+    /** Closes an upload's stream once it has made no progress for {@link #LIMIT}. */
+    private static final class Stall implements Runnable {
+        static final Duration LIMIT = Duration.ofSeconds(60);
+        private final java.io.Closeable stream;
+        private final Thread thread;
+        private volatile long last = System.nanoTime();
+        private volatile boolean done;
+        private volatile boolean fired;
+
+        Stall(java.io.Closeable stream) {
+            this.stream = stream;
+            this.thread = Thread.ofVirtual().name("xBackup FTP upload watch").start(this);
+        }
+
+        void moved() {
+            last = System.nanoTime();
+        }
+
+        boolean fired() {
+            return fired;
+        }
+
+        void stop() {
+            done = true;
+            thread.interrupt();
+        }
+
+        @Override
+        public void run() {
+            while (!done) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+                if (!done && System.nanoTime() - last > LIMIT.toNanos()) {
+                    fired = true;
+                    try {
+                        stream.close();
+                    } catch (IOException ignored) {
+                        // Closing is the point.
+                    }
+                    return;
+                }
+            }
+        }
     }
 }

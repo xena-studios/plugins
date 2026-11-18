@@ -4,7 +4,7 @@
 
 Your main server crashes. Restarts. Goes down for an update. Without a fallback, every player on it gets kicked, and some of them don't come back.
 
-**With xLimbo, they don't get kicked.** Your proxy sends them to xLimbo instead: a calm, empty world where they wait in creative with flight on, until your server is back and they go back with `/join`, or automatically the moment it's up.
+**With xLimbo, they don't get kicked.** Your proxy (Velocity or BungeeCord) sends them to xLimbo, a limbo server, instead: a calm, empty world where they wait in creative with flight on, until your server is back and they go back with `/join`, or automatically the moment it's up.
 
 **[Read the docs](https://docs.xenastudios.co/xlimbo/)** · **[Network setup](https://docs.xenastudios.co/xlimbo/network-setup/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 

@@ -1,6 +1,6 @@
 ---
 title: zChat
-description: Format your chat. Keep it clean. Chat formatting, moderation and private messages for Paper and Folia.
+description: "zChat: chat formatting per rank, a chat filter that's hard to dodge, mentions and private messages for Paper and Folia."
 sidebar:
   label: Overview
   order: 1

@@ -1,6 +1,6 @@
 ---
 title: xUtilities
-description: Every command you need. None you don't. Utility commands for Paper and Folia.
+description: "xUtilities: lightweight essentials for Paper and Folia. Gamemode, fly, heal, /back, workstations anywhere and your own link commands, each one switchable."
 sidebar:
   label: Overview
   order: 1

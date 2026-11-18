@@ -2,7 +2,7 @@
 
 ## Format your chat. Keep it clean.
 
-Give every rank its own chat style, stop the words you don't want, and keep spam in check. **zChat does the chat basics every server needs**, in one small plugin built to run on every single message without costing you a thing.
+Give every rank its own chat style, stop the words you don't want, and keep spam in check. **zChat does the chat basics every server needs**, in one small chat plugin built to run on every single message without costing you a thing.
 
 **[Read the docs](https://docs.xenastudios.co/zchat/)** · **[Chat formats](https://docs.xenastudios.co/zchat/formats/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 

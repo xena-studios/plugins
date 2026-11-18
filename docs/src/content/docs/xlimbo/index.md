@@ -1,6 +1,6 @@
 ---
 title: xLimbo
-description: Never drop a player again. A fallback server for Paper networks.
+description: "xLimbo: a limbo and fallback server for Velocity and BungeeCord networks. Players wait safely while your main server is down, then go back on their own."
 sidebar:
   label: Overview
   order: 1

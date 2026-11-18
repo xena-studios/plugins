@@ -2,7 +2,7 @@
 
 ## Every command you need. None you don't.
 
-Your players want `/fly`, `/back`, `/craft` and a link to your Discord. Your staff want `/gamemode`, `/heal` and `/clear`. **xUtilities gives you all of it in one small plugin**, and lets you switch off every command you don't use, so your server only has the ones it needs.
+Your players want `/fly`, `/back`, `/craft` and a link to your Discord. Your staff want `/gamemode`, `/heal` and `/clear`. **xUtilities gives you all of it in one small essentials plugin**, and lets you switch off every command you don't use, so your server only has the ones it needs.
 
 Drop it on your lobby, your survival server and your minigames alike. It costs next to nothing to run, and it never takes your server down.
 

@@ -146,7 +146,7 @@ public final class PlotsCommand {
         if (to == null) {
             throw new CommandFailure(plugin.config().messages().noWarp(), Placeholders.text("field", field.name()));
         }
-        plugin.warmups().teleport(player, to);
+        plugin.teleports().teleport(player, to);
     }
 
     private List<Field> withWarps() {

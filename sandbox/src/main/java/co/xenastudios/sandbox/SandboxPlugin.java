@@ -5,6 +5,9 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -35,24 +38,40 @@ public final class SandboxPlugin extends JavaPlugin {
     }
 
     private void selftest() {
-        List<String> failures = new ArrayList<>();
-        for (Check check : Checks.all(this)) {
-            long start = System.nanoTime();
-            try {
-                check.run();
-                getLogger().info("PASS %s (%.2f ms)".formatted(check.name(), (System.nanoTime() - start) / 1e6));
-            } catch (Throwable t) {
-                failures.add(check.name());
-                getLogger().severe("FAIL %s: %s".formatted(check.name(), t));
-            }
-        }
-        getLogger().info(failures.isEmpty() ? "SELFTEST PASS" : "SELFTEST FAIL " + failures);
+        next(Checks.all(this), 0, new ArrayList<>());
     }
 
-    /** One live-server check. Throws to fail. */
+    /** Runs the checks one after another; a check that waits for the server finishes before the next starts. */
+    private void next(List<Check> checks, int index, List<String> failures) {
+        if (index == checks.size()) {
+            getLogger().info(failures.isEmpty() ? "SELFTEST PASS" : "SELFTEST FAIL " + failures);
+            return;
+        }
+        Check check = checks.get(index);
+        long start = System.nanoTime();
+        CompletableFuture<?> done;
+        try {
+            done = check.start();
+        } catch (Throwable t) {
+            done = CompletableFuture.failedFuture(t);
+        }
+        done.orTimeout(30, TimeUnit.SECONDS).whenComplete((result, error) ->
+            getServer().getGlobalRegionScheduler().execute(this, () -> {
+                Throwable cause = error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
+                if (cause == null) {
+                    getLogger().info("PASS %s (%.2f ms)".formatted(check.name(), (System.nanoTime() - start) / 1e6));
+                } else {
+                    failures.add(check.name());
+                    getLogger().severe("FAIL %s: %s".formatted(check.name(), cause));
+                }
+                next(checks, index + 1, failures);
+            }));
+    }
+
+    /** One live-server check. Fails by throwing, or by failing the future it returns. */
     interface Check {
         String name();
 
-        void run() throws Exception;
+        CompletableFuture<?> start() throws Exception;
     }
 }

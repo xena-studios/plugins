@@ -443,6 +443,62 @@ public final class Ledger {
         }
     }
 
+    // ---- imports ----
+
+    /** When totals were imported from a source before, or 0. */
+    public long imported(Connection c, String source) throws SQLException {
+        try (PreparedStatement query = c.prepareStatement(sql("SELECT value FROM {p}state WHERE name = ?"))) {
+            query.setString(1, "import_" + source.toLowerCase(Locale.ROOT));
+            try (ResultSet row = query.executeQuery()) {
+                return row.next() ? row.getLong(1) : 0;
+            }
+        }
+    }
+
+    /**
+     * Adds other plugins' totals to players' all-time totals, and records that it was
+     * done. Their streaks are left as they are.
+     */
+    public int addImported(Connection c, String source, List<Imports.Imported> players, Periods periods, long now) throws SQLException {
+        int added = 0;
+        for (Imports.Imported player : players) {
+            int changed;
+            try (PreparedStatement update = c.prepareStatement(sql(
+                "UPDATE {p}voters SET total = total + ?, last_vote = CASE WHEN last_vote < ? THEN ? ELSE last_vote END WHERE uuid = ?"))) {
+                update.setInt(1, player.total());
+                update.setLong(2, player.lastVote());
+                update.setLong(3, player.lastVote());
+                update.setString(4, player.id().toString());
+                changed = update.executeUpdate();
+            }
+            if (changed == 0) {
+                try (PreparedStatement insert = c.prepareStatement(sql("INSERT INTO {p}voters (uuid, name, total, streak, best_streak,"
+                    + " last_day, last_vote) VALUES (?, ?, ?, 0, 0, ?, ?)"))) {
+                    insert.setString(1, player.id().toString());
+                    insert.setString(2, player.name().isBlank() ? player.id().toString().substring(0, 8) : player.name());
+                    insert.setInt(3, player.total());
+                    insert.setInt(4, player.lastVote() > 0 ? periods.day(player.lastVote()) : 0);
+                    insert.setLong(5, player.lastVote());
+                    insert.executeUpdate();
+                }
+            }
+            added++;
+        }
+        String key = "import_" + source.toLowerCase(Locale.ROOT);
+        try (PreparedStatement update = c.prepareStatement(sql("UPDATE {p}state SET value = ? WHERE name = ?"))) {
+            update.setLong(1, now);
+            update.setString(2, key);
+            if (update.executeUpdate() == 0) {
+                try (PreparedStatement insert = c.prepareStatement(sql("INSERT INTO {p}state (name, value) VALUES (?, ?)"))) {
+                    insert.setString(1, key);
+                    insert.setLong(2, now);
+                    insert.executeUpdate();
+                }
+            }
+        }
+        return added;
+    }
+
     // ---- upkeep and status ----
 
     /** Deletes votes for names that never joined, older than {@code before}. */

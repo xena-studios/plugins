@@ -36,3 +36,7 @@ run: xvote party
 expect: The vote party is off.
 run: xvote import nuvotifier
 expect: There's no NuVotifier folder
+run: xvote import superbvote
+expect: there's no plugins/SuperbVote/votes.json.
+run: xvote import votingplugin
+expect: there's no plugins/VotingPlugin/Users.db.

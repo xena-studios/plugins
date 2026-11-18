@@ -9,6 +9,7 @@ import co.xenastudios.xvote.receiver.NuVotifierImport;
 import co.xenastudios.xvote.receiver.Protocol;
 import co.xenastudios.xvote.receiver.Receiver;
 import co.xenastudios.xvote.receiver.Tokens;
+import co.xenastudios.xvote.storage.Imports;
 import co.xenastudios.xvote.storage.Ledger;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,8 +38,9 @@ public final class AdminCommands {
             CommandSpec.named("status").permission(permission).usage("/xvote status").executes(commands::status),
             CommandSpec.named("key").permission(permission).usage("/xvote key").executes(commands::key),
             CommandSpec.named("token").permission(permission).usage("/xvote token [site]").executes(commands::token),
-            CommandSpec.named("import").permission(permission).usage("/xvote import nuvotifier")
-                .completes((sender, args) -> args.length <= 1 ? Completions.matching(args.length == 0 ? "" : args[0], List.of("nuvotifier")) : List.of())
+            CommandSpec.named("import").permission(permission).usage("/xvote import <nuvotifier|votingplugin|superbvote>")
+                .completes((sender, args) -> args.length <= 1
+                    ? Completions.matching(args.length == 0 ? "" : args[0], List.of("nuvotifier", "votingplugin", "superbvote")) : List.of())
                 .executes(commands::importFrom),
             CommandSpec.named("party").permission(permission).usage("/xvote party [start]")
                 .completes((sender, args) -> args.length <= 1 ? Completions.matching(args.length == 0 ? "" : args[0], List.of("start")) : List.of())
@@ -167,9 +169,70 @@ public final class AdminCommands {
 
     private void importFrom(Invocation inv) {
         String source = inv.arg(0);
-        if (source == null || !source.equalsIgnoreCase("nuvotifier")) {
+        if (source == null) {
             throw inv.usage();
         }
+        switch (source.toLowerCase(Locale.ROOT)) {
+            case "nuvotifier" -> nuVotifier(inv);
+            case "votingplugin", "superbvote" -> totals(inv, source.toLowerCase(Locale.ROOT));
+            default -> throw inv.usage();
+        }
+    }
+
+    private void totals(Invocation inv, String source) {
+        CommandSender sender = inv.sender();
+        boolean again = "again".equalsIgnoreCase(inv.arg(1));
+        Path plugins = plugin.getDataFolder().toPath().getParent();
+        plugin.tasks().async(() -> {
+            Imports.Found found;
+            try {
+                found = source.equals("superbvote") ? Imports.superbVote(plugins) : Imports.votingPlugin(plugins);
+            } catch (IOException e) {
+                reply(sender, "<error>Couldn't import from " + source + ":</error> " + VoteCommand.escape(e.getMessage()));
+                return;
+            }
+            // Old records may have no name: the server's user cache usually knows it.
+            List<Imports.Imported> players = new java.util.ArrayList<>(found.players().size());
+            for (Imports.Imported player : found.players()) {
+                String name = player.name();
+                if (name.isBlank()) {
+                    String known = org.bukkit.Bukkit.getOfflinePlayer(player.id()).getName();
+                    name = known == null ? "" : known;
+                }
+                players.add(new Imports.Imported(player.id(), name, player.total(), player.lastVote()));
+            }
+            long now = System.currentTimeMillis();
+            var periods = plugin.periods();
+            plugin.store().submit(c -> {
+                long before = plugin.ledger().imported(c, source);
+                if (before > 0 && !again) {
+                    return -before;
+                }
+                return (long) plugin.ledger().addImported(c, source, players, periods, now);
+            }).whenComplete((result, error) -> {
+                if (error == null && result >= 0) {
+                    try {
+                        plugin.votes().load(now);
+                    } catch (java.sql.SQLException e) {
+                        plugin.getLogger().log(java.util.logging.Level.WARNING, "Couldn't read the imported totals back", e);
+                    }
+                }
+                if (error != null) {
+                    reply(sender, "<error>Couldn't store the imported totals:</error> " + VoteCommand.escape(error.getMessage()));
+                } else if (result < 0) {
+                    reply(sender, "<error>" + found.source() + "'s totals were imported before</error> ("
+                        + co.xenastudios.core.text.Durations.format(Duration.ofMillis(now + result)) + " ago). <highlight>/xvote import "
+                        + source + " again</highlight> adds them a second time.");
+                } else {
+                    reply(sender, "<success>Imported</success> the all-time totals of <highlight>" + result + "</highlight> players from "
+                        + VoteCommand.escape(found.from()) + ". Day, week and month totals start now."
+                        + (plugin.feed().on() ? " Other servers on the network show them after a restart." : ""));
+                }
+            });
+        });
+    }
+
+    private void nuVotifier(Invocation inv) {
         CommandSender sender = inv.sender();
         Path folder = plugin.getDataFolder().toPath();
         plugin.tasks().async(() -> {

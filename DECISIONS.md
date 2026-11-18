@@ -28,6 +28,7 @@ Why the plugins are built the way they are, oldest first.
 | [xPlots: plots in memory, found by arithmetic](#xplots-plots-in-memory-found-by-arithmetic-2026-11-17) | 2026-11-17 |
 | [Developer APIs ship inside the plugin, and shared code lives in the core](#developer-apis-ship-inside-the-plugin-and-shared-code-lives-in-the-core-2026-11-17) | 2026-11-17 |
 | [Network mode: one change feed in the database](#network-mode-one-change-feed-in-the-database-2026-11-17) | 2026-11-17 |
+| [Chat pages, offline players, warmups and Vault move to the core](#chat-pages-offline-players-warmups-and-vault-move-to-the-core-2026-11-17) | 2026-11-17 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -199,3 +200,14 @@ xBans, xVote, xMoney and xStats keep what's hot (active bans, balances) in memor
 - **Pruned to ten minutes, never empty.** Once a minute each server deletes rows older than ten minutes below the newest it has seen, by key range. The newest row always stays, so an old MySQL that forgets its counter on restart can't hand out an id again.
 
 It's tested on SQLite with two feeds sharing a file (`ChangeFeedTest`, including late and never-committed rows and pruning), and against a real MariaDB when `XR_MYSQL` is set (`ChangeFeedMySqlTest`, as xRewind's), which CI runs.
+
+## Chat pages, offline players, warmups and Vault move to the core (2026-11-17)
+
+Each of these has at least two users among the plugins being built (#48's table), so each is in the core before the second one is written.
+
+- **`text/ChatPages`**: a list a page at a time, from memory or a page already read from a database with its total, and a footer players click. The footer's `<next>` and `<previous>` are filled in as pre-processed tags, because inside a `<click>` an ordinary placeholder isn't filled in at all: xRewind's "Next page" ran `<next>` until it moved onto this. `<has_next>` and `<has_previous>` hide a link when there's no such page. `Tasks.sender` sends a reply on the player's thread, or the global one for the console, for lists read off the server's threads.
+- **`player/Profiles`**: a name to a uuid and back for players who may be offline, never blocking. What's in memory (online players, its own 2,000 answers, the server's user cache) answers at once with a completed future; the player's saved data and Paper's profile lookup run off the server's threads. Two lookups of one player share one, and a name Mojang doesn't know isn't asked about for ten minutes, so typos can't use up its rate limit.
+- **`player/Warmups`**: from xPlots. A short task on the entity's own scheduler checks four times a second for moving half a block, so it's Folia-safe though xPlots isn't, and costs nothing for anyone not waiting. Damage cancelling needs a listener, so one is registered only while a warmup that damage cancels is running. The countdown can show on the action bar. It works on any entity, which is how the sandbox checks it on real Paper and Folia servers with a pig.
+- **`hook/VaultEconomy`**: from xPlots. The class plugins use never names a Vault type, and the one that does is only loaded once Vault is enabled, so a server without Vault never sees a `NoClassDefFoundError` (the sandbox checks this on servers without Vault). The economy is looked up each time, as before.
+
+xPlots keeps its own `Wallet` (an economy or an item) and its teleport messages and bypass permission; only the general parts moved. Its jar grew about 8 KiB, mostly the warmup's damage and countdown options that xTeleport will use.

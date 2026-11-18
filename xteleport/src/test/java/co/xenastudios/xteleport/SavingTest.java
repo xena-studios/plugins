@@ -88,7 +88,7 @@ class SavingTest extends ServerTest {
         CompletableFuture<Boolean> warp = api.setWarp("arena", new Location(world, 0.5, 64, 0.5));
         assertThrows(CompletionException.class, warp::join);
         assertTrue(api.warp("arena").isEmpty());
-        assertThrows(CompletionException.class, () -> api.deleteHome(steve.getUniqueId(), "anything").join());
+        assertThrows(CompletionException.class, () -> done(api.deleteHome(steve.getUniqueId(), "anything")));
     }
 
     @Test
@@ -102,7 +102,7 @@ class SavingTest extends ServerTest {
         CompletableFuture<Boolean> set = XTeleportApi.get().setHome(steve.getUniqueId(), "early", new Location(world, 0.5, 64, 0.5));
         plugin.flakyStore().holdReads = null;
         hold.complete(null);
-        assertTrue(set.join());
+        assertTrue(done(set));
         assertTrue(hasHome("early"), "the older read didn't wipe it out");
 
         // And one deleted while being read stays deleted.
@@ -113,7 +113,7 @@ class SavingTest extends ServerTest {
         CompletableFuture<Boolean> deleted = XTeleportApi.get().deleteHome(steve.getUniqueId(), "early");
         plugin.flakyStore().holdReads = null;
         again.complete(null);
-        assertTrue(deleted.join());
+        assertTrue(done(deleted));
         assertFalse(hasHome("early"));
     }
 }

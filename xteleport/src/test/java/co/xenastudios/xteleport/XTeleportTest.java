@@ -254,7 +254,7 @@ class XTeleportTest extends ServerTest {
         CompletableFuture<TeleportResult> again = XTeleportApi.get().teleport(alex, new Location(world, 0.5, 64, 0.5),
             TeleportOptions.defaults().cooldown("spawn", 0));
         await(again::isDone);
-        assertEquals(TeleportResult.ON_COOLDOWN, again.join(), "a 0-second cooldown still checks the key");
+        assertEquals(TeleportResult.ON_COOLDOWN, done(again), "a 0-second cooldown still checks the key");
     }
 
     @Test
@@ -293,24 +293,24 @@ class XTeleportTest extends ServerTest {
         CompletableFuture<TeleportResult> result = XTeleportApi.get().teleport(steve, new Location(world, 0.5, 64, 0.5),
             TeleportOptions.defaults());
         await(result::isDone);
-        assertEquals(TeleportResult.BLOCKED, result.join());
+        assertEquals(TeleportResult.BLOCKED, done(result));
     }
 
     @Test
     void apiReadsAndChanges() {
         XTeleportApi api = XTeleportApi.get();
-        assertTrue(api.setHome(steve.getUniqueId(), "fromApi", new Location(world, 0.5, 64, 0.5)).join());
+        assertTrue(done(api.setHome(steve.getUniqueId(), "fromApi", new Location(world, 0.5, 64, 0.5))));
         List<Home> homes = api.cachedHomes(steve.getUniqueId()).orElseThrow();
         assertEquals("fromApi", homes.getFirst().name());
-        assertFalse(api.setHome(steve.getUniqueId(), "bad name", steve.getLocation()).join());
+        assertFalse(done(api.setHome(steve.getUniqueId(), "bad name", steve.getLocation())));
         assertEquals(3, api.homeLimit(steve));
-        assertTrue(api.setWarp("arena", new Location(world, 0.5, 64, 0.5)).join());
+        assertTrue(done(api.setWarp("arena", new Location(world, 0.5, 64, 0.5))));
         assertEquals("arena", api.warp("ARENA").orElseThrow().name());
         assertNotNull(api.spawn().orElse(null));
         CompletableFuture<TeleportResult> moved = api.teleport(alex, new Location(world, 0.5, 64, 0.5),
             TeleportOptions.defaults().cooldown("plothome", 30));
         await(moved::isDone);
-        assertEquals(TeleportResult.TELEPORTED, moved.join());
+        assertEquals(TeleportResult.TELEPORTED, done(moved));
         assertTrue(api.cooldown(alex.getUniqueId(), "plothome").getSeconds() > 25);
     }
 }

@@ -58,7 +58,17 @@ abstract class ServerTest {
         return new Location(world, x + 0.5, 64, z + 0.5);
     }
 
-    void await(BooleanSupplier condition) {
+    /**
+     * Waits for a future while ticking the server, then returns its result. Work handed to
+     * the core's Tasks runs on Bukkit's scheduler on Paper, which only runs when the test
+     * ticks it; a bare join() would wait forever if that work was queued.
+     */
+    <T> T done(java.util.concurrent.CompletableFuture<T> future) {
+        await(future::isDone, () -> " waiting for a future");
+        return future.join();
+    }
+
+        void await(BooleanSupplier condition) {
         await(condition, () -> "");
     }
 

@@ -71,7 +71,11 @@ public final class ChatListener extends ListenerModule {
             }
         }
 
-        Screen screen = Screen.of(zchat, player, PlainTextComponentSerializer.plainText().serialize(event.message()));
+        // Another plugin (an [item] tag, emoji) changed the message before us: keep what
+        // it added, unless the filter has to change the words.
+        Component given = event.message();
+        Component kept = given.equals(event.originalMessage()) ? null : given;
+        Screen screen = Screen.of(zchat, player, PlainTextComponentSerializer.plainText().serialize(given), kept);
         if (screen.blocked()) {
             refuse(event, config.filter().messageBlocked());
             return;

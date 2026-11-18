@@ -17,6 +17,14 @@ import org.bukkit.entity.Player;
 public record Screen(boolean blocked, String plain, Component message) {
 
     public static Screen of(ZChat zchat, Player player, String typed) {
+        return of(zchat, player, typed, null);
+    }
+
+    /**
+     * @param kept the message as another plugin left it, shown as it is if the filter
+     *     lets it through unchanged; null to draw it from what was typed
+     */
+    public static Screen of(ZChat zchat, Player player, String typed, Component kept) {
         ZChat.Compiled compiled = zchat.compiled();
         boolean styled = compiled.formats().mayStyle(player);
         String plain = styled ? Formats.withoutStyles(typed) : typed;
@@ -30,6 +38,6 @@ public record Screen(boolean blocked, String plain, Component message) {
                 return new Screen(false, result.text(), Component.text(result.text()));
             }
         }
-        return new Screen(false, plain, Formats.playerText(typed, styled));
+        return new Screen(false, plain, kept != null ? kept : Formats.playerText(typed, styled));
     }
 }

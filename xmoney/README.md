@@ -26,7 +26,7 @@ XR_MYSQL=127.0.0.1:3306:xr:root:pw ./gradlew :xmoney:test   # also two servers o
 ```
 
 ```
-api/                 the developer API (co.xenastudios:xmoney-api), shipped in the jar unrelocated
+api/                 the developer API (co.xenastudios.xmoney:xmoney-api), shipped in the jar unrelocated
 src/main/java/co/xenastudios/xmoney/
   XMoney.java        the plugin: reads every balance at startup, registers Vault and the API, sets up commands
   Bank.java          what Vault, the API and the commands share: the ledger, the format, the limits

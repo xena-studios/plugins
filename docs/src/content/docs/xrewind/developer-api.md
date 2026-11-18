@@ -11,7 +11,7 @@ The API costs nothing unless a plugin uses it: it adds no listeners and no tasks
 
 ## Add it to your build
 
-The API is `co.xenastudios:xrewind-api`. It's inside the xRewind jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
+The API is `co.xenastudios.xrewind:xrewind-api`. It's inside the xRewind jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
 
 :::note
 The API is published to Maven Central when xRewind 1.1.0 is released. Until then, build it from [the source](https://github.com/xena-studios/plugins) with `./gradlew :xrewind:api:publishToMavenLocal` and add `mavenLocal()` to your repositories.
@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("co.xenastudios:xrewind-api:1.1.0")
+    compileOnly("co.xenastudios.xrewind:xrewind-api:1.1.0")
 }
 ```
 
@@ -33,7 +33,7 @@ Maven:
 
 ```xml
 <dependency>
-    <groupId>co.xenastudios</groupId>
+    <groupId>co.xenastudios.xrewind</groupId>
     <artifactId>xrewind-api</artifactId>
     <version>1.1.0</version>
     <scope>provided</scope>

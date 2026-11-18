@@ -9,7 +9,7 @@ xVote's API is in the `xvote-api` artifact, which xVote ships inside its own jar
 
 ```kotlin
 dependencies {
-    compileOnly("co.xenastudios:xvote-api:1.0.0")
+    compileOnly("co.xenastudios.xvote:xvote-api:1.0.0")
 }
 ```
 

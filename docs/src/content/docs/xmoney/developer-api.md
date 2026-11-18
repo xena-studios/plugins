@@ -11,7 +11,7 @@ The API costs nothing unless a plugin uses it: it adds no listeners and no tasks
 
 ## Add it to your build
 
-The API is `co.xenastudios:xmoney-api`. It's inside the xMoney jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
+The API is `co.xenastudios.xmoney:xmoney-api`. It's inside the xMoney jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
 
 :::note
 The API is published to Maven Central when xMoney 1.0.0 is released. Until then, build it from [the source](https://github.com/xena-studios/plugins) with `./gradlew :xmoney:api:publishToMavenLocal` and add `mavenLocal()` to your repositories.
@@ -19,7 +19,7 @@ The API is published to Maven Central when xMoney 1.0.0 is released. Until then,
 
 ```kotlin
 dependencies {
-    compileOnly("co.xenastudios:xmoney-api:1.0.0")
+    compileOnly("co.xenastudios.xmoney:xmoney-api:1.0.0")
 }
 ```
 

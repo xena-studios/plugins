@@ -7,6 +7,7 @@ dependencies {
     implementation(plugin(libs.plugins.resource.factory))
     implementation(plugin(libs.plugins.run.paper))
     implementation(plugin(libs.plugins.minotaur))
+    implementation(plugin(libs.plugins.maven.publish))
 }
 
 // Lets a precompiled script plugin apply a plugin from the version catalog.

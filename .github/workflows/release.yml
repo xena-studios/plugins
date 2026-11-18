@@ -1,8 +1,9 @@
 name: Release
 
 # Push a tag named <module>-v<version>, such as xutilities-v2.0.0, to publish
-# that plugin to Modrinth and GitHub. The version must match the module's
-# build.gradle.kts, and <module>/CHANGELOG.md must have a "## <version>" section.
+# that plugin to Modrinth and GitHub, and its API (if it has one) to Maven
+# Central. The version must match the module's build.gradle.kts, and
+# <module>/CHANGELOG.md must have a "## <version>" section.
 on:
   push:
     tags: ["*-v*"]
@@ -77,6 +78,31 @@ jobs:
           cp "$jar" "$RUNNER_TEMP/release/"
           # Titled with the plugin's own name, such as "xUtilities 2.0.0", from its descriptor.
           echo "$(unzip -p "$jar" paper-plugin.yml | sed -n 's/^name: //p') $VERSION" >"$RUNNER_TEMP/release/title.txt"
+      - name: Publish the API to Maven Central
+        # As co.xenastudios.<module>:<module>-api, signed, through the Central Portal, and
+        # released straight away: the tag is the decision. First, so a POM or signature
+        # Central refuses stops the release before anything is public. A rerun skips it
+        # once that version is on Central (that takes up to about 30 minutes).
+        env:
+          MODULE: ${{ steps.tag.outputs.module }}
+          VERSION: ${{ steps.tag.outputs.version }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          if [[ ! -f $MODULE/api/build.gradle.kts ]]; then
+            echo "$MODULE has no API"; exit 0
+          fi
+          for secret in mavenCentralUsername mavenCentralPassword signingInMemoryKey signingInMemoryKeyPassword; do
+            var="ORG_GRADLE_PROJECT_$secret"
+            [[ -n ${!var} ]] || { echo "::error::the release environment is missing the secret for $secret"; exit 1; }
+          done
+          url="https://repo1.maven.org/maven2/co/xenastudios/$MODULE/$MODULE-api/$VERSION/$MODULE-api-$VERSION.pom"
+          if curl -sfI "$url" >/dev/null; then
+            echo "$MODULE-api $VERSION is already on Maven Central"; exit 0
+          fi
+          ./gradlew ":$MODULE:api:publishAndReleaseToMavenCentral"
       - name: Publish to Modrinth
         # The version, then the project page from <module>/modrinth.md.
         env:

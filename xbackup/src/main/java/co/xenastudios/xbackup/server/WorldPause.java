@@ -41,6 +41,7 @@ import org.bukkit.plugin.Plugin;
 public final class WorldPause implements Backup.Pause {
 
     private final Plugin plugin;
+    private final co.xenastudios.core.task.Tasks tasks;
     private final boolean folia;
     private final Logger logger;
     private final Duration maxPause;
@@ -62,6 +63,7 @@ public final class WorldPause implements Backup.Pause {
     /** @param onWatchdog called if the watchdog had to turn autosave back on */
     public WorldPause(Plugin plugin, boolean folia, Logger logger, Duration maxPause, Runnable onWatchdog) {
         this.plugin = plugin;
+        this.tasks = new co.xenastudios.core.task.Tasks(plugin);
         this.folia = folia;
         this.logger = logger;
         this.maxPause = maxPause;
@@ -86,7 +88,7 @@ public final class WorldPause implements Backup.Pause {
     // One task on the main thread: autosave off, players saved, every paused world flushed.
     // If the backup gave up waiting before it ran, it does nothing at all.
     private long pausePaper() throws Exception {
-        return MainThread.call(plugin, false, 120, () -> {
+        return MainThread.call(tasks, 120, () -> {
             long start = System.nanoTime();
             List<World> worlds = gate.turnOff(Bukkit.getWorlds());
             if (worlds == null) {
@@ -105,7 +107,7 @@ public final class WorldPause implements Backup.Pause {
         if (worlds == null) {
             throw new java.util.concurrent.CancellationException("the pause ended before it began");
         }
-        MainThread.call(plugin, true, 60, () -> {
+        MainThread.call(tasks, 60, () -> {
             Bukkit.savePlayers();
             return null;
         });

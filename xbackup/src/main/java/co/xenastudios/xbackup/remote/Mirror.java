@@ -2,6 +2,7 @@ package co.xenastudios.xbackup.remote;
 
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.Hash;
+import co.xenastudios.xbackup.store.Maintenance;
 import co.xenastudios.xbackup.store.Pack;
 import co.xenastudios.xbackup.store.Repository;
 import co.xenastudios.xbackup.store.Snapshot;
@@ -220,6 +221,21 @@ public final class Mirror {
             + (lostKept == 1 ? "" : "s") + " this server's repository lost, so " + (lostKept == 1 ? "it was" : "they were")
             + " kept there, with the remote's index files. Backups that need " + (lostKept == 1 ? "it" : "them")
             + " can be restored from the remote (java -jar xBackup.jar restore <id> --remote <name>).");
+    }
+
+    /**
+     * Finds (and with {@code apply}, removes) what the remote keeps that this repository
+     * doesn't: see {@link Maintenance#tidyRemote}. Copies first, so the remote has everything
+     * here before anything there goes.
+     */
+    public static Maintenance.Tidy tidy(Repository local, Backend to, boolean apply, BooleanSupplier cancelled,
+                                        Consumer<String> progress) throws IOException {
+        checkSameRepository(local.backend(), to);
+        if (apply) {
+            push(local, to, cancelled, progress);
+        }
+        progress.accept("looking for what only the remote has");
+        return new Maintenance(local, cancelled).tidyRemote(to, apply);
     }
 
     /**

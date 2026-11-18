@@ -354,6 +354,113 @@ public final class Maintenance {
         return new Collected(deleted, repacked, Math.max(0, before - after), before, after);
     }
 
+    // ---------------------------------------------------------------- remotes
+
+    /**
+     * What tidying a remote finds, or did.
+     *
+     * @param extra the remote's backups this repository doesn't have, oldest first
+     * @param packs remote packs no backup here needs
+     * @param bytes their size
+     * @param keptPacks remote packs kept because a backup here needs data only they hold
+     */
+    public record Tidy(List<Snapshot> extra, int packs, long bytes, int keptPacks) {}
+
+    /**
+     * The way out when a copy keeps everything because the remote has backups this repository
+     * doesn't (a rolled-back disk, a list of removed backups that ran out): finds them, and with
+     * {@code apply} removes them from the remote, then every pack there no backup here needs.
+     * Packs holding data a backup here needs but this repository lost are kept. Index files
+     * only the remote has go only if no such pack is kept. Copy to the remote first.
+     */
+    public Tidy tidyRemote(Backend remote, boolean apply) throws IOException {
+        List<String> problems = new ArrayList<>();
+        List<Snapshot> snapshots = repository.snapshots(problems);
+        if (!problems.isEmpty() || snapshots.isEmpty()) {
+            throw new CorruptException(snapshots.isEmpty() ? "This repository has no backups, so nothing on the remote is"
+                + " removed." : "A backup here can't be read (" + problems.get(0) + "), so nothing on the remote is removed.");
+        }
+        Set<String> local = new HashSet<>();
+        for (Backend.FileInfo file : repository.backend().list("")) {
+            local.add(file.name());
+        }
+        // The remote's other backups.
+        List<Snapshot> extra = new ArrayList<>();
+        for (Backend.FileInfo file : remote.list("snapshots/")) {
+            String hex = file.name().substring("snapshots/".length());
+            if (local.contains(file.name()) || !Hash.isHex(hex)) {
+                continue;
+            }
+            byte[] bytes;
+            try (InputStream in = remote.get(file.name())) {
+                bytes = in.readNBytes(16 << 20);
+            }
+            Hash id = Hash.parse(hex);
+            if (!Hash.sha256(bytes).equals(id)) {
+                throw new CorruptException("the remote's " + file.name() + " is damaged, so nothing on it is removed");
+            }
+            extra.add(Snapshot.decode(id, bytes));
+        }
+        extra.sort(Comparator.comparing(Snapshot::time));
+        // What the backups here use: once the others are gone, those are all the remote keeps.
+        List<Snapshot> newestFirst = new ArrayList<>(snapshots);
+        newestFirst.sort(Comparator.comparing(Snapshot::time).reversed());
+        PrefixMap used;
+        try {
+            used = mark(newestFirst);
+        } catch (CorruptException e) {
+            throw new CorruptException("A backup's structure can't be read here (" + e.getMessage() + "), so nothing on"
+                + " the remote is removed. Restore that backup from the remote first, or /backup forget it.", e);
+        }
+        Index index = repository.index();
+        List<String> packs = new ArrayList<>();
+        long bytes = 0;
+        int kept = 0;
+        for (Backend.FileInfo file : remote.list("data/")) {
+            checkCancelled();
+            if (local.contains(file.name()) || Pack.idOf(file.name()) == null) {
+                continue;
+            }
+            boolean needed;
+            try {
+                needed = false;
+                for (PackEntry entry : Pack.readFooter(remote, file.name(), file.size())) {
+                    if (used.contains(entry.id()) && !index.has(entry.id())) {
+                        needed = true;
+                        break;
+                    }
+                }
+            } catch (CorruptException e) {
+                needed = true;
+            }
+            if (needed) {
+                kept++;
+            } else {
+                packs.add(file.name());
+                bytes += file.size();
+            }
+        }
+        if (apply) {
+            for (Snapshot snapshot : extra) {
+                checkCancelled();
+                remote.delete("keep/" + snapshot.id().hex());
+                remote.delete(Snapshot.fileName(snapshot.id()));
+            }
+            for (String name : packs) {
+                checkCancelled();
+                remote.delete(name);
+            }
+            if (kept == 0) {
+                for (Backend.FileInfo file : remote.list("index/")) {
+                    if (!local.contains(file.name())) {
+                        remote.delete(file.name());
+                    }
+                }
+            }
+        }
+        return new Tidy(extra, packs.size(), bytes, kept);
+    }
+
     // ---------------------------------------------------------------- checking
 
     /** What {@link #check} found. */

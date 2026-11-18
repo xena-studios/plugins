@@ -284,6 +284,40 @@ class MirrorTest {
         }
     }
 
+    @Test
+    void tidyingRemovesWhatOnlyTheRemoteHasOnceConfirmed() throws Exception {
+        Fixtures.server(server(), random);
+        try (Repository repository = local()) {
+            backup(repository);
+            backup(repository);
+        }
+        copy(dir.resolve("repo"), dir.resolve("disk-image"));
+        try (Repository repository = local()) {
+            backup(repository);
+            backup(repository);
+            Mirror.push(repository, remote(), () -> false, step -> {});
+        }
+        Swap.deleteTree(dir.resolve("repo"));
+        copy(dir.resolve("disk-image"), dir.resolve("repo"));
+        try (Repository repository = local()) {
+            backup(repository);
+            assertNotNull(Mirror.push(repository, remote(), () -> false, step -> {}).held());
+            Set<String> before = names(remote(), "");
+            Maintenance.Tidy look = Mirror.tidy(repository, remote(), false, () -> false, step -> {});
+            assertEquals(2, look.extra().size());
+            assertTrue(look.packs() > 0, look.toString());
+            assertEquals(before, names(remote(), ""), "looking changes nothing");
+            Mirror.tidy(repository, remote(), true, () -> false, step -> {});
+            assertEquals(names(repository.backend(), "snapshots/"), names(remote(), "snapshots/"));
+            assertEquals(names(repository.backend(), "data/"), names(remote(), "data/"));
+            assertNull(Mirror.push(repository, remote(), () -> false, step -> {}).held());
+        }
+        try (Repository copy = Repository.open(remote(), dir.resolve("temp2"), false)) {
+            Maintenance.Report report = new Maintenance(copy, () -> false).check(1.0, null, new Random());
+            assertTrue(report.ok(), report.problems().toString());
+        }
+    }
+
     private static void copy(Path from, Path to) throws IOException {
         Files.walkFileTree(from, new SimpleFileVisitor<>() {
             @Override

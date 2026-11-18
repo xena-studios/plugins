@@ -354,7 +354,7 @@ public final class Engine {
     }
 
     private Backup.Plan plan(Settings now, String reason) throws Exception {
-        List<Path> worldFolders = MainThread.call(plugin, plugin.isFolia(), 60, Sources::worldFolders);
+        List<Path> worldFolders = MainThread.call(plugin.tasks(), 60, Sources::worldFolders);
         List<Path> extra = new ArrayList<>();
         List<String> excludes = new ArrayList<>(now.excludes());
         for (Map.Entry<Plugin, List<ApiSource>> entry : sources.entrySet()) {
@@ -377,6 +377,7 @@ public final class Engine {
         // Secrets never go into a backup, which is copied to every remote.
         skip.add(home.resolve(CliFile.NAME));
         skip.add(home.resolve(Remotes.TOKENS));
+        skip.add(home.resolve(Remotes.LEGACY_TOKENS));
         skip.add(home.resolve(Secrets.NAME));
         skip.add(home.resolve(co.xenastudios.xbackup.restore.ServerCheck.MARKER));
         for (RemoteConfig remote : remoteSettings.values()) {
@@ -493,7 +494,8 @@ public final class Engine {
         } else {
             problem = "The last check found " + report.problems().size() + " problems. /backup verify full for details.";
             for (String found : report.problems()) {
-                logger.warning("Check: " + found);
+                // Problems name files from the repository, which a remote may have written.
+                logger.warning("Check: " + found.replaceAll("[\r\n\\p{Cntrl}]", "?"));
             }
         }
     }
@@ -775,6 +777,27 @@ public final class Engine {
         });
     }
 
+    /** Finds, or with {@code apply} removes, the backups and data only the remote has. */
+    public CompletableFuture<Maintenance.Tidy> tidy(String name, boolean apply) {
+        return submit("tidying " + name, () -> {
+            RemoteConfig settings = remoteSettings.get(name);
+            if (settings == null) {
+                throw new IOException("There's no remote named " + name + " in config.yml.");
+            }
+            Repository repo = repository();
+            try (Repository.Lock lock = repo.lock(false); Backend remote = Remotes.open(name, settings, remotesContext())) {
+                Maintenance.Tidy tidy = Mirror.tidy(repo, remote, apply, stopping::get,
+                    step -> progress("tidying " + name, step));
+                if (apply) {
+                    logger.info("Tidied " + name + ": removed " + tidy.extra().size() + " backups only it had and "
+                        + tidy.packs() + " packs (" + Sizes.format(tidy.bytes()) + ")"
+                        + (tidy.keptPacks() == 0 ? "." : "; kept " + tidy.keptPacks() + " packs a backup here needs."));
+                }
+                return tidy;
+            }
+        });
+    }
+
     /**
      * Links a cloud drive remote. Google Drive and OneDrive: {@code say} gets the address and
      * code to enter, then word once it's linked; the wait runs on its own thread, not the
@@ -934,7 +957,7 @@ public final class Engine {
         if (BackupStartEvent.getHandlerList().getRegisteredListeners().length == 0) {
             return true;
         }
-        return MainThread.call(plugin, plugin.isFolia(), 30, () -> {
+        return MainThread.call(plugin.tasks(), 30, () -> {
             BackupStartEvent event = new BackupStartEvent(reason);
             Bukkit.getPluginManager().callEvent(event);
             return !event.isCancelled();
@@ -957,7 +980,7 @@ public final class Engine {
         if (message.isEmpty()) {
             return;
         }
-        MainThread.run(plugin, plugin.isFolia(), () -> Bukkit.broadcast(time == null ? message.chat()
+        plugin.tasks().nextTick(() -> Bukkit.broadcast(time == null ? message.chat()
             : message.chat(co.xenastudios.core.text.Placeholders.text("time", time))));
     }
 

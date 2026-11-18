@@ -56,10 +56,10 @@ public final class BackupCommand {
                 invocation -> pin(engine, invocation, false)),
             sub("forget", "/backup forget <id> confirm", "Remove one backup now.", ids(engine),
                 invocation -> forget(engine, invocation)),
-            sub("copy", "/backup copy <remote>", "Copy the backups to a remote now.",
+            sub("copy", "/backup copy <remote> [tidy [confirm]]", "Copy the backups to a remote now.",
                 (sender, args) -> args.length <= 1
                     ? Completions.matching(args.length == 0 ? "" : args[0], List.copyOf(engine.remotes().keySet()))
-                    : List.of(),
+                    : args.length == 2 ? Completions.matching(args[1], List.of("tidy")) : List.of(),
                 invocation -> copy(engine, invocation)),
             sub("repair", "/backup repair", "Rebuild the index from the stored data.", none,
                 invocation -> repair(engine, invocation)),
@@ -342,10 +342,49 @@ public final class BackupCommand {
             throw invocation.usage();
         }
         CommandSender sender = invocation.sender();
+        if ("tidy".equalsIgnoreCase(invocation.arg(1))) {
+            tidy(engine, sender, name, "confirm".equalsIgnoreCase(invocation.arg(2)));
+            return;
+        }
         say(sender, "<gray>Copying to " + escape(name) + "...</gray>");
         reply(sender, engine.push(name), result -> say(sender, "<success>Copied</success> to " + escape(name) + ": "
             + result.filesSent() + " files (" + Sizes.format(result.bytesSent()) + ") sent, " + result.filesDeleted()
             + " removed." + (result.held() == null ? "" : " <error>Kept some files: " + escape(result.held()) + ".</error>")));
+    }
+
+    // The way out when a copy keeps everything: lists what only the remote has, then removes
+    // it once confirmed.
+    private static void tidy(Engine engine, CommandSender sender, String name, boolean confirm) {
+        say(sender, "<gray>" + (confirm ? "Copying to " + escape(name) + ", then tidying it" : "Looking at " + escape(name))
+            + "...</gray>");
+        reply(sender, engine.tidy(name, confirm), tidy -> {
+            if (confirm) {
+                say(sender, "<success>Tidied</success> " + escape(name) + ": removed " + tidy.extra().size()
+                    + " backups only it had, and " + tidy.packs() + " packs (" + Sizes.format(tidy.bytes()) + ")."
+                    + (tidy.keptPacks() == 0 ? "" : " Kept " + tidy.keptPacks() + " packs that hold data backups here"
+                    + " need and this server lost."));
+                return;
+            }
+            if (tidy.extra().isEmpty() && tidy.packs() == 0) {
+                say(sender, escape(name) + " has nothing this server's repository doesn't.");
+                return;
+            }
+            StringBuilder text = new StringBuilder(escape(name) + " has <highlight>" + tidy.extra().size()
+                + "</highlight> backups this server doesn't");
+            for (Snapshot snapshot : tidy.extra().subList(0, Math.min(5, tidy.extra().size()))) {
+                text.append("<newline> <gray>").append(snapshot.id().shortHex()).append("</gray> ")
+                    .append(ago(snapshot.time())).append(" (").append(escape(snapshot.reason())).append(')');
+            }
+            if (tidy.extra().size() > 5) {
+                text.append("<newline> and ").append(tidy.extra().size() - 5).append(" more");
+            }
+            String command = "/backup copy " + name + " tidy confirm";
+            text.append("<newline>Removing them frees about ").append(Sizes.format(tidy.bytes())).append(" there")
+                .append(tidy.keptPacks() == 0 ? "" : ", keeping " + tidy.keptPacks() + " packs backups here need")
+                .append(". They can't be restored after. <click:run_command:'").append(escape(command))
+                .append("'><hover:show_text:'").append(escape(command)).append("'><error>[Remove them]</error></hover></click>");
+            say(sender, text.toString());
+        });
     }
 
     private static void link(Engine engine, Invocation invocation) {

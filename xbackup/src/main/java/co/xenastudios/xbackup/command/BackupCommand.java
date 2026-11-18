@@ -270,8 +270,8 @@ public final class BackupCommand {
                 StringBuilder text = new StringBuilder("Restoring <highlight>" + escape(what) + "</highlight> from backup <highlight>"
                     + id + "</highlight> (" + ago(snapshot.time()) + ") would change " + plan.changed() + " files"
                     + (plan.changedChunks() > 0 ? " (" + plan.changedChunks() + " region chunks)" : "") + ", bring back "
-                    + plan.added() + " and set aside " + plan.removed() + ". It's staged now and swapped in on the next"
-                    + " start, before any world loads; what's there now is kept in plugins/xBackup/restore/replaced/.");
+                    + plan.added() + " and set aside " + plan.removed() + ". Confirm to stage it: it's swapped in on the next"
+                    + " start, before any world loads, and what's there now is kept in plugins/xBackup/restore/replaced/.");
                 for (String example : plan.examples()) {
                     text.append("\n<gray>").append(escape(example)).append("</gray>");
                 }

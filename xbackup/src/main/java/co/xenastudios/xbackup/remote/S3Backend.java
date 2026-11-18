@@ -3,7 +3,6 @@ package co.xenastudios.xbackup.remote;
 import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.Throttle;
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -362,14 +361,17 @@ final class S3Backend implements Backend {
         }
     }
 
-    /** For tests: reads a whole object into memory. */
-    byte[] readAll(String file) throws IOException {
-        try (InputStream in = get(file)) {
-            return in.readAllBytes();
-        }
-    }
-
-    static InputStream empty() {
-        return new ByteArrayInputStream(new byte[0]);
+    /** Makes the bucket, for tests against a fresh MinIO. */
+    void createBucket() throws IOException {
+        URI uri = pathStyle ? URI.create(endpoint + "/" + Http.encode(bucket, false))
+            : URI.create(scheme() + "://" + bucket + "." + authority() + basePath() + "/");
+        Http.retry(() -> {
+            HttpResponse<byte[]> response = Http.send(request("PUT", uri, Map.of(), EMPTY_SHA256,
+                HttpRequest.BodyPublishers.noBody()).build());
+            if (response.statusCode() != 409) {
+                check("Making the bucket", response);
+            }
+            return null;
+        });
     }
 }

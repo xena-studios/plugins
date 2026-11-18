@@ -114,6 +114,10 @@ final class WebDavBackend implements Backend {
     }
 
     private void makeFolders(String file) throws IOException {
+        if (madeFolders.add("")) {
+            // The base folder itself, once.
+            mkcol(base);
+        }
         int slash = file.lastIndexOf('/');
         if (slash < 0) {
             return;
@@ -123,8 +127,6 @@ final class WebDavBackend implements Backend {
             return;
         }
         StringBuilder path = new StringBuilder();
-        // The base folder itself, then each part.
-        mkcol(base);
         for (String part : folder.split("/")) {
             path.append(part).append('/');
             String current = path.toString();

@@ -209,9 +209,22 @@ public final class Restore {
             return;
         }
         if (node.kind() == Tree.Kind.LINK || attributes.size() != node.size()
-            || attributes.lastModifiedTime().toMillis() != node.mtime()) {
+            || attributes.lastModifiedTime().toMillis() != node.mtime() && !sameContent(node, disk, attributes)) {
             counter.changed++;
             counter.example("~ " + path);
+        }
+    }
+
+    // A file the server rewrote without changing (its time moved, its bytes didn't). Only
+    // small files are hashed, to keep a dry run quick.
+    private static boolean sameContent(Tree.Node node, Path disk, BasicFileAttributes attributes) {
+        if (node.kind() != Tree.Kind.FILE || attributes.size() > (8 << 20)) {
+            return false;
+        }
+        try {
+            return Hash.sha256(Files.readAllBytes(disk)).equals(node.contentHash());
+        } catch (IOException e) {
+            return false;
         }
     }
 

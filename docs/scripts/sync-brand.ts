@@ -28,6 +28,7 @@ const files = [
   ["plugins/xlimbo/icon.svg", "src/assets/plugins/xlimbo.svg"],
   ["plugins/xrewind/icon.svg", "src/assets/plugins/xrewind.svg"],
   ["plugins/xplots/icon.svg", "src/assets/plugins/xplots.svg"],
+  ["plugins/xteleport/icon.svg", "src/assets/plugins/xteleport.svg"],
   // The READMEs' banners, for the repo, the docs and each plugin.
   ["github/plugins-banner.png", "../.github/assets/banner.png"],
   ["github/plugin-docs-banner.png", "../.github/assets/docs-banner.png"],
@@ -36,6 +37,7 @@ const files = [
   ["plugins/xlimbo/banner.png", "../.github/assets/xlimbo-banner.png"],
   ["plugins/xrewind/banner.png", "../.github/assets/xrewind-banner.png"],
   ["plugins/xplots/banner.png", "../.github/assets/xplots-banner.png"],
+  ["plugins/xteleport/banner.png", "../.github/assets/xteleport-banner.png"],
 ];
 
 for (const [from, to] of files) {

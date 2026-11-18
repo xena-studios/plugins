@@ -7,8 +7,9 @@ import zchat from "../assets/plugins/zchat.svg";
 import xlimbo from "../assets/plugins/xlimbo.svg";
 import xrewind from "../assets/plugins/xrewind.svg";
 import xplots from "../assets/plugins/xplots.svg";
+import xteleport from "../assets/plugins/xteleport.svg";
 
-const icons = { xutilities, zchat, xlimbo, xrewind, xplots };
+const icons = { xutilities, zchat, xlimbo, xrewind, xplots, xteleport };
 const id = Astro.locals.starlightRoute.id;
 const plugin = (Object.keys(icons) as (keyof typeof icons)[]).find((p) => id === p || id.startsWith(`${p}/`));
 ---

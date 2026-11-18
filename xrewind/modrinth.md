@@ -2,7 +2,7 @@
 
 ## Every change, logged. Any of it, undone.
 
-Someone griefed spawn. Someone emptied the shared chest. Someone says they didn't. **xRewind shows you who placed, broke or took what, where and when, and puts it back.** It's a block logger with rollback, and a free CoreProtect alternative that brings your CoreProtect history with it.
+Someone griefed spawn. Someone emptied the shared chest. Someone says they didn't. **xRewind shows you who placed, broke or took what, where and when, and puts it back.** It's a block logger with rollback, and every feature is free.
 
 **[Read the docs](https://docs.xenastudios.co/xrewind/)** · **[Switching from CoreProtect](https://docs.xenastudios.co/xrewind/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
@@ -58,8 +58,10 @@ Full setup, every setting and every permission: **[docs.xenastudios.co/xrewind](
 
 ## More from Xena Studios
 
+<!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
+<!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xrewind)

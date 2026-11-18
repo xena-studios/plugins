@@ -1,17 +1,17 @@
-![zChat by Xena Studios. A pixel chat bubble icon and the zChat name over a stepped horizon in green, with the headline "Format your chat. Keep it clean."](../.github/assets/zchat-banner.png)
+![zChat by Xena Studios. A green pixel chat bubble icon and the zChat name over a stepped horizon in green, with the headline "Format your chat. Keep it clean."](../.github/assets/zchat-banner.png)
 
 **Format your chat. Keep it clean.**
 
-zChat handles the chat basics almost every server wants: a chat format per rank, a filter that's hard to dodge, a cooldown and anti-spam, mentions, private messages, a global chat mute, clearing chat, and letting players hide chat for themselves. Every piece can be turned off.
+zChat is a light chat plugin for Paper and Folia: a chat format per rank, a filter that's hard to dodge, a cooldown and anti-spam, mentions, private messages, a chat mute and clearing chat, each one switchable.
 
-- **Built for the hot path.** zChat runs on every chat message, so that path is kept cheap: formats and the filter are compiled when the config loads, the cheapest checks run first, and each message is drawn once, not once per player who sees it. Nothing runs on a timer but the daily update check and bStats, and you can turn both off.
+- **Every feature free.** No premium version, no early-access builds.
+- **You won't feel it running.** zChat runs on every chat message, so that path is kept cheap: formats and the filter are compiled when the config loads, the cheapest checks run first, and each message is drawn once, not once per player who sees it.
 - **A filter that's hard to dodge.** It catches `s p a c e d` words, `b4dw0rd`, `baaadword` and `bädword`, but leaves innocent words like *class* alone.
 - **Players can't inject formatting.** What a player types goes into the format as plain text, unless you give them the colour permission (and even then, only colours and styles).
-- **Every change applies on reload**, even turning commands on or off. No restarts.
 - **Works with any permissions plugin**, because ranks are picked by permission. PlaceholderAPI is optional.
-- **Paper and Folia**, from the same jar.
+- **Every change applies on reload**, even turning commands on or off. No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/zchat)** · [Docs](https://docs.xenastudios.co/zchat/) · [Commands and permissions](https://docs.xenastudios.co/zchat/commands/) · [Developer API](https://docs.xenastudios.co/zchat/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/zchat)** · [Docs](https://docs.xenastudios.co/zchat/) · [Commands](https://docs.xenastudios.co/zchat/commands/) · [Developer API](https://docs.xenastudios.co/zchat/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 

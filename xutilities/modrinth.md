@@ -1,68 +1,73 @@
-![xUtilities by Xena Studios. A pixel wrench icon and the xUtilities name over a stepped horizon in amber, with the headline "Every command you need. None you don't."](https://raw.githubusercontent.com/xena-studios/brand/main/plugins/xutilities/banner.png)
+![xUtilities by Xena Studios. An amber pixel wrench icon and the xUtilities name over a stepped horizon in amber, with the headline "Every command you need. None you don't."](https://raw.githubusercontent.com/xena-studios/brand/main/plugins/xutilities/banner.png)
 
 ## Every command you need. None you don't.
 
-Your players want `/fly`, `/back`, `/craft` and a link to your Discord. Your staff want `/gamemode`, `/heal` and `/clear`. **xUtilities gives you all of it in one small essentials plugin**, and lets you switch off every command you don't use, so your server only has the ones it needs.
+Your players want `/fly`, `/back`, `/craft` and a link to your Discord. Your staff want `/gamemode`, `/heal` and `/clear`. **xUtilities gives you the ones you need, and lets you switch off every one you don't.** Drop it on your lobby, your survival server and your minigames alike.
 
-Drop it on your lobby, your survival server and your minigames alike. It costs next to nothing to run, and it never takes your server down.
-
-**[Read the docs](https://docs.xenastudios.co/xutilities/)** · **[Commands and permissions](https://docs.xenastudios.co/xutilities/commands/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://docs.xenastudios.co/xutilities/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
 ## Why server owners pick it
 
-- **Only what you want.** Every command can be turned off, renamed, given its own permission and reworded. A disabled command disappears completely, even from tab completion, and another plugin can have its name.
-- **Every change applies on reload.** Turning commands on or off, aliases, permissions, new link commands: `/xutilities reload` applies all of it. No restarts.
-- **No lag.** Nothing runs in the background but a daily update check and bStats, and you can turn both off.
-- **Never breaks.** A typo in the config falls back to the default with a warning in the console. xUtilities never disables itself or crashes your server.
-- **Your words, your colours.** Every message uses MiniMessage, and one `theme` at the top of the config restyles them all at once.
-- **Paper and Folia.** One jar runs on Paper, Purpur and Folia, with nothing to set up.
+- **Every feature free.** No premium version, no early-access builds.
+- **Only what you want.** Every command can be turned off, renamed, given its own permission and reworded. A command that's off isn't registered at all, so it's gone from tab completion and another plugin can have its name.
+- **You won't feel it running.** Nothing runs on a timer but the daily update check and bStats, and you can turn both off. `/back`'s listener exists only while `/back` is on.
+- **It doesn't stop over a typo.** A bad value in the config falls back to its default with a warning in the console. xUtilities never stops over config.
+- **Your words, your colours.** Every message is MiniMessage, and one `theme` at the top of the config restyles them all at once.
+- **Every change applies on reload**, even turning commands on or off and adding link commands. No restarts.
+- **Paper and Folia.** One jar runs on Paper, Purpur and Folia.
 
 ---
 
 ## What your players get
 
-**Get around**
-`/fly` · `/speed` · `/top` to jump to the surface · `/back` to return to where they were, or where they died
+**Get around:** `/fly` · `/speed` · `/top` to the highest block above you · `/back` to where you were before your last teleport, or where you died.
 
-**Workstations anywhere**
-`/craft` · `/anvil` · `/smith` · `/grinder` · `/loom` · `/stonecutter` · `/cartography` open the real menus, no block needed, and `/trash` gets rid of junk
+**Workstations anywhere:** `/craft` · `/anvil` · `/smith` · `/grinder` · `/loom` · `/stonecutter` · `/cartography` open the real menus with no block placed, and `/trash` gets rid of junk.
 
-**Stay alive**
-`/heal` · `/feed` · `/repair` (or `/repair all`) · `/enderchest`
+**Stay alive:** `/heal` · `/feed` · `/repair` (or `/repair all`) · `/enderchest`.
 
-**Your links, one command away**
-`/discord`, `/store` and `/website` come ready to fill in, and you can add any others you want, like `/vote` or `/rules`, without writing any code:
+**Your links, one command away:** `/discord`, `/store` and `/website` come ready to fill in, and you can add your own, like `/vote` or `/rules`, with no code:
 
     info-commands:
       vote:
         aliases: ["votes"]
         message: "<prefix>Vote for us: <click:open_url:'https://example.com/vote'><highlight><underlined>example.com/vote"
 
-**And for your staff**
-`/gamemode` (plus `/survival` `/creative` `/adventure` `/spectator`, or `/gms` `/gmc` `/gma` `/gmsp`) · `/clear` · `/ping` · `/setrotation`, and every one of them works on other players with a separate permission.
+---
+
+## What your staff get
+
+- `/gamemode`, plus `/survival` `/creative` `/adventure` `/spectator` (or `/gms` `/gmc` `/gma` `/gmsp`). Giving a rank `/gamemode` doesn't give it creative: each mode needs its own permission.
+- `/clear`, `/ping` and `/setrotation`.
+- `/fly`, `/speed`, `/heal`, `/feed`, `/repair`, `/clear`, `/enderchest`, `/setrotation` and `/ping` work on other players too, with a separate `.others` permission.
+- `/xu reload` and `/xu info`, which shows which commands are on and any config problems.
+
+Every command has its own permission, op-only until you give it out. `/ping` and your link commands work for everyone.
 
 ---
 
 ## Up and running in a minute
 
 1. Drop the jar in `plugins/` and start the server.
-2. Put your own links in `plugins/xUtilities/config.yml` and switch off anything you don't need.
-3. Give your ranks their permissions. Staff commands are op-only until you do; `/ping` and your link commands work for everyone.
+2. Put your own links in `plugins/xUtilities/config.yml`, switch off anything you don't need, and run `/xu reload`.
+3. Give your ranks their permissions, such as `xutilities.command.fly` and `xutilities.command.back`.
+
+**Coming from xUtilities 1.x?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`.
 
 Full setup, every setting and every permission: **[docs.xenastudios.co/xutilities](https://docs.xenastudios.co/xutilities/)**
 
 **Requires** Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 
-**Coming from xUtilities 1.x?** Replace the jar and restart. Your config is carried forward, and the old file is kept as `config.yml.bak-v1`.
-
 ---
 
 ## More from Xena Studios
 
+<!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+<!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xutilities)

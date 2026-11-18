@@ -1,19 +1,22 @@
-![xTeleport by Xena Studios. An fuchsia map pin over the ring it lands in, and the xTeleport name over a stepped horizon, with the headline "Every teleport your server needs."](../.github/assets/xteleport-banner.png)
+![xTeleport by Xena Studios. A fuchsia map pin over the ring it lands in, and the xTeleport name over a stepped horizon, with the headline "Every teleport your server needs."](../.github/assets/xteleport-banner.png)
 
 **Every teleport your server needs.**
 
-xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, for Paper and Folia: what most servers install EssentialsX for, without the rest.
+xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, for Paper and Folia.
 
 - **The whole set.** `/sethome`, `/home`, `/homes`, `/tpa`, `/tpahere`, `/tpaccept`, `/warp`, `/spawn`, `/rtp`, each one switchable, renamable and with its own permission.
 - **Teleports that feel good.** Warmups that moving or damage cancels, on the action bar; cooldowns; Vault costs taken after the warmup and refunded if the teleport fails.
 - **No deaths on arrival.** A home or warp now in lava or over the void is refused. The spot is loaded in the background to check it.
-- **Works with `/back`.** Every teleport uses the command cause, which xUtilities' `/back` records.
 - **RTP that doesn't lag.** One candidate chunk at a time, loaded in the background and checked on its own region's thread, with a cap on searches at once and an option for pre-generated worlds.
-- **Bring your homes** from EssentialsX, with a dry run first.
+- **Works with `/back`.** Every teleport uses the command cause, which xUtilities' `/back` records.
+- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **You won't feel it running.** Nothing repeats, listeners exist only for what's on, and homes are read and saved in the background.
+- **Every change applies on reload**, everything but storage. No restarts.
+- **Easy to switch to.** EssentialsX's command names, and its homes, warps and spawn imported with `/xteleport import essentials`.
 
-Needs Paper or Folia 1.21.11 or newer (or Purpur) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Vault and PlaceholderAPI are optional.
+**[Download on Modrinth](https://modrinth.com/plugin/xteleport)** · [Docs](https://docs.xenastudios.co/xteleport/) · [Commands](https://docs.xenastudios.co/xteleport/commands/) · [Switching from EssentialsX](https://docs.xenastudios.co/xteleport/switching/) · [Developer API](https://docs.xenastudios.co/xteleport/developer-api/) · [Changelog](CHANGELOG.md)
 
-**[Download on Modrinth](https://modrinth.com/plugin/xteleport)** · [Docs](https://docs.xenastudios.co/xteleport/) · [Commands](https://docs.xenastudios.co/xteleport/commands/) · [Developer API](https://docs.xenastudios.co/xteleport/developer-api/) · [Changelog](CHANGELOG.md)
+Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Vault and PlaceholderAPI are optional.
 
 ## Developing
 

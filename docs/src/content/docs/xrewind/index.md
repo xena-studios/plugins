@@ -1,6 +1,6 @@
 ---
 title: xRewind
-description: "xRewind: a free block logger and rollback plugin for Paper and Folia, and a CoreProtect alternative that imports your CoreProtect history."
+description: "xRewind: a free block logger with rollback for Paper and Folia servers, with CoreProtect's commands and an import of your CoreProtect history."
 sidebar:
   label: Overview
   order: 1
@@ -35,7 +35,7 @@ A rollback brings back what a broken block held: a chest's items, a sign's text.
 
 SQLite out of the box, in one file in the plugin's folder, or MySQL/MariaDB for networks. No driver is bundled: Paper and Folia already ship them. See [Configuration](/xrewind/configuration/).
 
-## Start here
+## Getting started
 
 1. [Install it](/start/installing/). It logs to SQLite with nothing to set up.
 2. Choose what's logged, and where it's stored: [Configuration](/xrewind/configuration/).

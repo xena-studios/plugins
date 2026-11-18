@@ -1,15 +1,15 @@
-![xUtilities by Xena Studios. A pixel wrench icon and the xUtilities name over a stepped horizon in amber, with the headline "Every command you need. None you don't."](../.github/assets/xutilities-banner.png)
+![xUtilities by Xena Studios. An amber pixel wrench icon and the xUtilities name over a stepped horizon in amber, with the headline "Every command you need. None you don't."](../.github/assets/xutilities-banner.png)
 
 **Every command you need. None you don't.**
 
-xUtilities gives every server the small commands it needs, whatever kind of server it is: gamemodes, flight, speed, `/top`, `/back`, heal and feed, inventory tools, workstation menus, and link commands like `/discord` that you write yourself. Install it on your lobby, survival and minigame servers alike, then switch off whatever a server doesn't use.
+xUtilities is a lightweight essentials plugin for Paper and Folia: gamemodes, flight, `/back`, heal, workstations anywhere and your own link commands, each one switchable.
 
-- **Every command can be turned off**, renamed with aliases, given its own permission, and reworded. A command that's off isn't registered at all, so it doesn't show up in tab completion and another plugin can have its name.
+- **Every feature free.** No premium version, no early-access builds.
+- **Only what you want.** Every command can be turned off, renamed, given its own permission and reworded. A command that's off isn't registered at all, so another plugin can have its name.
+- **You won't feel it running.** Nothing runs on a timer but the daily update check and bStats, and `/back`'s listener exists only while `/back` is on.
 - **Every change applies on reload**, even turning commands on or off and adding link commands. No restarts.
-- **Next to nothing to run.** Nothing runs on a timer but the daily update check and bStats, and you can turn both off. `/back`'s listener exists only while `/back` is on.
-- **Paper and Folia**, from the same jar.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://docs.xenastudios.co/xutilities/) · [Commands and permissions](https://docs.xenastudios.co/xutilities/commands/) · [Developer API](https://docs.xenastudios.co/xutilities/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://docs.xenastudios.co/xutilities/) · [Commands](https://docs.xenastudios.co/xutilities/commands/) · [Developer API](https://docs.xenastudios.co/xutilities/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 

@@ -85,9 +85,12 @@ jobs:
             */build/libs/*.jar
             sandbox/consumer/build/libs/*.jar
             sandbox/paper-consumer/build/libs/*.jar
+            xmoney/vault-consumer/build/libs/*.jar
+            xmoney/hook-consumer/build/libs/*.jar
             !core/build/libs/*
             !build-logic/build/libs/*
             !*/build/libs/*-plain.jar
+            !xmoney/*/build/libs/*-plain.jar
           if-no-files-found: error
 
   # Compiles against the newest Paper API, failing on anything it marks for
@@ -141,13 +144,31 @@ jobs:
           path: .cache/servers
           key: servers-${{ matrix.project }}-${{ matrix.target.version }}-${{ steps.server.outputs.build }}
           restore-keys: servers-${{ matrix.project }}-${{ matrix.target.version }}-
-      # Runs each module's boot-checks.txt against all the jars at once.
+      # Runs each module's boot-checks.txt against all the jars at once, except xMoney's.
+      # xMoney stands in for Vault, so with it installed every plugin would see Vault, and
+      # the sandbox checks the core's Vault hook on a server without one.
       - run: |
           checks=()
-          for file in */boot-checks.txt; do checks+=(--checks "$file"); done
-          mapfile -t jars < <(find jars -name '*.jar' | sort)
+          for file in */boot-checks.txt; do [[ $file == xmoney/* ]] || checks+=(--checks "$file"); done
+          mapfile -t jars < <(find jars -name '*.jar' -not -path 'jars/xmoney/*' | sort)
           scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
             "${checks[@]}" "${jars[@]}"
+      # xMoney on its own, with two never-released plugins that use it as Vault.
+      - name: boot xMoney
+        run: |
+          mapfile -t jars < <(find jars/xmoney -name '*.jar' | sort)
+          scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
+            --checks xmoney/boot-checks.txt "${jars[@]}"
+      # And beside a real VaultUnlocked, which Paper refuses: the one run that allows an
+      # error, Paper's own about the duplicate (see xmoney/boot-checks-vaultunlocked.txt).
+      - name: boot xMoney beside VaultUnlocked
+        run: |
+          vu="$RUNNER_TEMP/VaultUnlocked-2.20.1.jar"
+          curl -fsSL -o "$vu" https://github.com/TheNewEconomy/VaultUnlocked/releases/download/2.20.1/VaultUnlocked-2.20.1.jar
+          echo "4ec21910767a68b2defacb121cffee9840ded8b01abcbff03779fb9ab637296a  $vu" | sha256sum -c -
+          mapfile -t jars < <(find jars/xmoney -name '*.jar' | sort)
+          scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
+            --checks xmoney/boot-checks-vaultunlocked.txt "${jars[@]}" "$vu"
 
   # The one check main requires: passes when every job above passed or was
   # skipped because nothing they cover changed.

@@ -29,6 +29,7 @@ Why the plugins are built the way they are, oldest first.
 | [Developer APIs ship inside the plugin, and shared code lives in the core](#developer-apis-ship-inside-the-plugin-and-shared-code-lives-in-the-core-2026-11-17) | 2026-11-17 |
 | [Network mode: one change feed in the database](#network-mode-one-change-feed-in-the-database-2026-11-17) | 2026-11-17 |
 | [Chat pages, offline players, warmups and Vault move to the core](#chat-pages-offline-players-warmups-and-vault-move-to-the-core-2026-11-17) | 2026-11-17 |
+| [xTeleport: one path for every teleport, and RTP that can't lag](#xteleport-one-path-for-every-teleport-and-rtp-that-cant-lag-2026-11-18) | 2026-11-18 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -211,3 +212,20 @@ Each of these has at least two users among the plugins being built (#48's table)
 - **`hook/VaultEconomy`**: from xPlots. The class plugins use never names a Vault type, and the one that does is only loaded once Vault is enabled, so a server without Vault never sees a `NoClassDefFoundError` (the sandbox checks this on servers without Vault). The economy is looked up each time, as before.
 
 xPlots keeps its own `Wallet` (an economy or an item) and its teleport messages and bypass permission; only the general parts moved. Its jar grew about 8 KiB, mostly the warmup's damage and countdown options that xTeleport will use.
+
+## xTeleport: one path for every teleport, and RTP that can't lag (2026-11-18)
+
+xTeleport (#35) is homes, TPA, warps, spawn and `/rtp`, on Paper and Folia.
+
+- **Every teleport takes one path** (`teleport/Teleporter`), its own commands' and the API's alike: cooldown and cost checked, the core's warmup, the destination worked out (another player's spot is read on their thread only now), its chunk loaded with `getChunkAtAsync` and the spot checked on the thread that owns it, `PreTeleportEvent`, the cost taken, then `teleportAsync` with the `COMMAND` cause, which xUtilities' `/back` already records. A teleport that fails or throws after paying is refunded. The event fires after the warmup and the check, so a plugin sees the real destination; a combat-tag plugin's refusal comes three seconds late, which is the price.
+- **Safe arrival is about what's there now.** Nothing harmful at the feet or head, neither inside a full block, and something under the feet before the void that isn't lava. A fall onto solid ground is allowed: the player stood there. Checks use `Material` (solid, a liquid set) rather than `Block#isPassable`, which is cheaper and works in MockBukkit.
+- **Whoever asks pays.** For `/tpahere` the player who accepts moves (and has the warmup), but the cost and the cooldown are the asker's, as with `/tpa`.
+- **Requests run out when read.** Each player's inbox is a list replaced whole on each change; anything older than `tpa.expire-after` is dropped whenever it's read or added to. No timer. Requests from a player who left are skipped when answered.
+- **One database thread, in order.** The store opens the database on its own thread and runs every read and write there after it, so a home read after it was set is always there and a slow MySQL never holds up startup. Commands say "not available" until it's open (milliseconds on SQLite). Online players' homes are read on join and kept until they quit; staff reading an offline player's homes go to the database. Every place has a `server` column, empty for now, so cross-server homes can come without a migration. `storage` applies on restart, as in xPlots.
+- **RTP: one chunk at a time.** A candidate is a point spread evenly over the ring's area, inside the world border (and off the End's main island, within 1,000 blocks of 0,0, unless allowed). Its chunk loads with `getChunkAtAsync`; for `only-generated` that's `getChunkAtAsync(x, z, false)`, which completes with null for a chunk never generated, rather than `isChunkGenerated`, which can read the disk on the calling thread. The column is read on the chunk's own thread. At most `attempts` candidates, one search per player, and `max-searches` at once server-wide (over it, players are told to try again; a queue would make them wait without knowing). Blocked biomes are looked up in the registry once per config.
+- **`/xteleport rtpcheck`** runs real searches without a player, so the boot checks exercise the search on Paper and Folia, 1.21.11 and 26.3, and owners can see how often a world's settings find a spot.
+- **The bed home uses `getPotentialRespawnLocation`.** It's deprecated (since 1.21.5, not for removal) for a method that loads the chunk on the calling thread to validate the bed, which is what must not happen. The block is read after the warmup, once its chunk has loaded in the background, to stand on top of it.
+- **Spawn without a teleport.** New (or every) joining players are placed with `AsyncPlayerSpawnLocationEvent`, reading the spawn from memory, so there's no teleport after joining. Respawning at spawn is for deaths only: leaving the End goes where the game sends it.
+- **Tests drive real teleports.** MockBukkit can't `getChunkAtAsync` or `teleportAsync`, so both go through two plugin methods (`loadChunk`, `move`) that the tests' subclass does synchronously. Everything else, schedulers included, is the real code.
+- **Imports: EssentialsX only in 1.0.** Its userdata, warps and spawn files are plain YAML in a known layout. HuskHomes and CMI keep their data in databases whose layout couldn't be checked against a real install here, and a wrong guess would lose homes quietly, so they wait for a version that can be tested against one. An import keeps what's already in xTeleport (insert-or-ignore), so running it twice is safe.
+

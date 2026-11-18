@@ -37,6 +37,7 @@ include("zchat")
 include("xlimbo")
 include("xrewind")
 include("xplots")
+include("xbans")
 // Each plugin's developer API (<plugin>/api, on the xena.api convention), wherever one
 // exists, so a plugin adding an API doesn't need a line here. The sandbox lists its own.
 rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" && file.resolve("api/build.gradle.kts").isFile }

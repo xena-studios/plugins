@@ -5,7 +5,7 @@ plugins {
 }
 
 version = "1.0.0"
-description = "Vote rewards, with a built-in Votifier."
+description = "Votes in. Rewards out."
 
 dependencies {
     // Optional, and only touched when installed. Vault is reached through the core's hook.

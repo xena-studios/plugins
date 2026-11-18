@@ -51,7 +51,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.ServicePriority;
 
-/** xVote: vote rewards, with a built-in Votifier. Not final: MockBukkit subclasses it in tests. */
+/** xVote: votes in, rewards out. Vote rewards with a built-in Votifier. Not final: MockBukkit subclasses it in tests. */
 public class XVote extends XenaPlugin<XVConfig> {
 
     /** /vote, /vote top and /vote claim. Everyone has it. */

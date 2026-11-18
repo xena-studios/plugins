@@ -5,10 +5,10 @@ sidebar:
   order: 2
 ---
 
-1. Download the plugin from its Modrinth page: [xUtilities](https://modrinth.com/plugin/xutilities), [zChat](https://modrinth.com/plugin/zchat), [xLimbo](https://modrinth.com/plugin/xlimbo), [xRewind](https://modrinth.com/plugin/xrewind) or [xPlots](https://modrinth.com/plugin/xplots).
+1. Download the plugin from its Modrinth page: [xUtilities](https://modrinth.com/plugin/xutilities), [zChat](https://modrinth.com/plugin/zchat), [xLimbo](https://modrinth.com/plugin/xlimbo), [xRewind](https://modrinth.com/plugin/xrewind), [xPlots](https://modrinth.com/plugin/xplots) or [xVote](https://modrinth.com/plugin/xvote).
 2. Put the jar in your server's `plugins/` folder.
 3. Start the server once. The plugin writes its default `config.yml` to `plugins/<plugin>/`.
-4. Edit the config, then apply it with the plugin's reload command (`/xutilities reload`, `/zchat reload`, `/xlimbo reload`, `/xrewind reload`, `/xplots reload`).
+4. Edit the config, then apply it with the plugin's reload command (`/xutilities reload`, `/zchat reload`, `/xlimbo reload`, `/xrewind reload`, `/xplots reload`, `/xvote reload`).
 5. Give your ranks the permissions they need: see [Permissions](/start/permissions/).
 
 ## Reload or restart?

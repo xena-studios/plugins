@@ -14,6 +14,9 @@ xrewind:
 xplots:
   - changed-files:
       - any-glob-to-any-file: xplots/**
+xvote:
+  - changed-files:
+      - any-glob-to-any-file: xvote/**
 core:
   - changed-files:
       - any-glob-to-any-file: [core/**, build-logic/**]

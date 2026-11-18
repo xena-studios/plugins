@@ -22,7 +22,7 @@ public record XVConfig(
     @Comment({
         "The look xVote's messages share. The default messages use these as tags, so changing",
         "a colour here restyles them all. Write a style as MiniMessage tags: <gray>,",
-        "<#F2B53A>, or <gold><bold>."})
+        "<#91ACFF>, or <gold><bold>."})
     Theme theme,
     @Comment("What players are told.") Messages messages,
     @Comment({
@@ -240,7 +240,7 @@ public record XVConfig(
 
     public static final ConfigSpec<XVConfig> SPEC = ConfigSpec.builder(XVConfig.class, DEFAULTS)
         .header(
-            "xVote: vote rewards, with a built-in Votifier.",
+            "xVote: votes in, rewards out.",
             "Docs: https://docs.xenastudios.co/xvote/configuration/",
             "",
             "Apply changes with /xvote reload. A bad value falls back to its default with a",

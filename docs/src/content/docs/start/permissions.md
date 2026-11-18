@@ -25,4 +25,4 @@ Each command's permission is set in its plugin's config, so you can rename it to
 - **Blank (`""`) means no restriction**: anyone can use the command.
 - A renamed permission keeps the default the command had: rename `/ping`'s and the new one is still everyone's.
 
-The full lists: [xUtilities](/xutilities/commands/), [zChat](/zchat/commands/), [xLimbo](/xlimbo/commands/), [xRewind](/xrewind/commands/), [xPlots](/xplots/commands/).
+The full lists: [xUtilities](/xutilities/commands/), [zChat](/zchat/commands/), [xLimbo](/xlimbo/commands/), [xRewind](/xrewind/commands/), [xPlots](/xplots/commands/), [xVote](/xvote/commands/).

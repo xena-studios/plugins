@@ -1,4 +1,4 @@
-# xVote: vote rewards, with a built-in Votifier.
+# xVote: votes in, rewards out.
 # Docs: https://docs.xenastudios.co/xvote/configuration/
 #
 # Apply changes with /xvote reload. A bad value falls back to its default with a
@@ -10,7 +10,7 @@ config-version: 1
 
 # The look xVote's messages share. The default messages use these as tags, so changing
 # a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#F2B53A>, or <gold><bold>.
+# <#91ACFF>, or <gold><bold>.
 theme:
   # <prefix> starts the default messages. Make it your server's name, such as
   # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.

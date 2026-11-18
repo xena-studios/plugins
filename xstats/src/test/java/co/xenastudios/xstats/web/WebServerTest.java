@@ -1,0 +1,280 @@
+package co.xenastudios.xstats.web;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+/** The web server on a real socket: what it serves, what it refuses, and its limits. */
+class WebServerTest {
+
+    static final UUID STEVE = UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5");
+
+    @TempDir
+    Path brand;
+
+    final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    final List<WebServer> servers = new ArrayList<>();
+    volatile CountDownLatch hold;
+
+    /** A source with one leaderboard page, one player, and a profile that can be held up. */
+    final WebServer.Source source = new WebServer.Source() {
+        @Override
+        public Response page(String path) {
+            return path.equals("/api/v1/server") ? Response.json(200, "{\"name\":\"Test\"," + "\"pad\":\"" + "x".repeat(2000) + "\"}", 60)
+                : null;
+        }
+
+        @Override
+        public Response search(String query) {
+            return Response.json(200, new Json().object().field("q", query).end().toString(), 30);
+        }
+
+        @Override
+        public Response profile(String who) {
+            CountDownLatch latch = hold;
+            if (latch != null) {
+                try {
+                    latch.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return who.equals("Steve") ? Response.json(200, "{\"name\":\"Steve\"}", 30) : Response.error(404, "No such player.");
+        }
+
+        @Override
+        public String name(UUID player) {
+            return player.equals(STEVE) ? "Steve" : null;
+        }
+
+        @Override
+        public Path brandFolder() {
+            return brand;
+        }
+    };
+
+    WebServer start(int perMinute, int concurrent, List<String> cors, List<String> trusted) throws Exception {
+        WebServer server = WebServer.start(new WebServer.Options("127.0.0.1", 0, true, cors, perMinute, concurrent, trusted,
+            "https://example.invalid/{uuid}", false), source, getClass().getClassLoader(), Logger.getLogger("test"));
+        servers.add(server);
+        return server;
+    }
+
+    @AfterEach
+    void stop() {
+        servers.forEach(WebServer::close);
+    }
+
+    HttpResponse<byte[]> get(WebServer server, String path, String... headers) throws Exception {
+        return send(server, "GET", path, headers);
+    }
+
+    HttpResponse<byte[]> send(WebServer server, String method, String path, String... headers) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + path))
+            .timeout(Duration.ofSeconds(10)).method(method, HttpRequest.BodyPublishers.noBody());
+        for (int i = 0; i < headers.length; i += 2) {
+            request.header(headers[i], headers[i + 1]);
+        }
+        return client.send(request.build(), HttpResponse.BodyHandlers.ofByteArray());
+    }
+
+    static String text(HttpResponse<byte[]> response) {
+        return new String(response.body(), StandardCharsets.UTF_8);
+    }
+
+    @Test
+    void servesTheSiteAndTheApi() throws Exception {
+        WebServer server = start(1000, 8, List.of("*"), List.of());
+        HttpResponse<byte[]> index = get(server, "/");
+        assertEquals(200, index.statusCode());
+        assertTrue(text(index).contains("<title>"));
+        assertTrue(index.headers().firstValue("Content-Security-Policy").orElse("").contains("script-src 'self'"));
+        assertEquals("nosniff", index.headers().firstValue("X-Content-Type-Options").orElse(""));
+        assertEquals(200, get(server, "/app.js").statusCode());
+        assertEquals("{\"api\":\"\"}", text(get(server, "/config.json")));
+        HttpResponse<byte[]> api = get(server, "/api/v1/server");
+        assertEquals(200, api.statusCode());
+        assertTrue(api.headers().firstValue("Content-Type").orElse("").startsWith("application/json"));
+        assertEquals("public, max-age=60", api.headers().firstValue("Cache-Control").orElse(""));
+        assertEquals("*", api.headers().firstValue("Access-Control-Allow-Origin").orElse(""));
+        assertEquals("{\"q\":\"Ste\"}", text(get(server, "/api/v1/search?q=Ste")));
+        assertEquals("{\"q\":\"a b\"}", text(get(server, "/api/v1/search?q=a%20b")));
+        assertEquals(200, get(server, "/api/v1/player/Steve").statusCode());
+        assertEquals(404, get(server, "/api/v1/player/Alex").statusCode());
+        assertTrue(text(get(server, "/api/v1/")).contains("/api/v1/leaderboard/{stat}/{period}"));
+    }
+
+    @Test
+    void nothingOutsideTheSiteCanBeReached() throws Exception {
+        Files.writeString(brand.getParent().resolve("secret.png"), "secret");
+        Files.writeString(brand.resolve("logo.png"), "png");
+        WebServer server = start(1000, 8, List.of("*"), List.of());
+        for (String path : List.of("/../config.yml", "/%2e%2e/config.yml", "/web/app.js", "/index.html/..", "/app.js%00",
+            "/brand/../secret.png", "/brand/%2e%2e/secret.png", "/brand/..%2fsecret.png", "/brand/logo.exe", "/api/v1/nothing",
+            "/api/v1/head/" + STEVE, "/META-INF/MANIFEST.MF", "/co/xenastudios/xstats/XStats.class")) {
+            HttpResponse<byte[]> response = get(server, path);
+            assertEquals(404, response.statusCode(), path);
+            assertFalse(text(response).contains("secret"), path);
+        }
+        assertEquals("png", text(get(server, "/brand/logo.png")));
+    }
+
+    @Test
+    void itsReadOnly() throws Exception {
+        WebServer server = start(1000, 8, List.of("*"), List.of());
+        for (String method : List.of("POST", "PUT", "DELETE", "PATCH")) {
+            HttpResponse<byte[]> response = send(server, method, "/api/v1/server");
+            assertEquals(405, response.statusCode(), method);
+            assertEquals("GET, HEAD, OPTIONS", response.headers().firstValue("Allow").orElse(""));
+        }
+        HttpResponse<byte[]> preflight = send(server, "OPTIONS", "/api/v1/server", "Origin", "https://example.com");
+        assertEquals(204, preflight.statusCode());
+        assertEquals("GET, HEAD, OPTIONS", preflight.headers().firstValue("Access-Control-Allow-Methods").orElse(""));
+        HttpResponse<byte[]> head = send(server, "HEAD", "/api/v1/server");
+        assertEquals(200, head.statusCode());
+        assertEquals(0, head.body().length);
+    }
+
+    @Test
+    void corsOnlyForTheSitesListed() throws Exception {
+        WebServer server = start(1000, 8, List.of("https://stats.example.com"), List.of());
+        assertEquals("https://stats.example.com", get(server, "/api/v1/server", "Origin", "https://stats.example.com").headers()
+            .firstValue("Access-Control-Allow-Origin").orElse(""));
+        assertTrue(get(server, "/api/v1/server", "Origin", "https://evil.example").headers()
+            .firstValue("Access-Control-Allow-Origin").isEmpty());
+    }
+
+    @Test
+    void sharedPagesAreGzippedAndCached() throws Exception {
+        WebServer server = start(1000, 8, List.of("*"), List.of());
+        HttpResponse<byte[]> plain = get(server, "/api/v1/server");
+        HttpResponse<byte[]> zipped = get(server, "/api/v1/server", "Accept-Encoding", "gzip");
+        assertEquals("gzip", zipped.headers().firstValue("Content-Encoding").orElse(""));
+        assertTrue(zipped.body().length < plain.body().length);
+        try (GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(zipped.body()))) {
+            assertArrayEquals(plain.body(), in.readAllBytes());
+        }
+        String etag = plain.headers().firstValue("ETag").orElseThrow();
+        HttpResponse<byte[]> again = get(server, "/api/v1/server", "If-None-Match", etag);
+        assertEquals(304, again.statusCode());
+        assertEquals(0, again.body().length);
+    }
+
+    @Test
+    void eachVisitorHasALimit() throws Exception {
+        WebServer server = start(10, 8, List.of("*"), List.of());
+        for (int i = 0; i < 10; i++) {
+            assertEquals(200, get(server, "/api/v1/server").statusCode());
+        }
+        HttpResponse<byte[]> refused = get(server, "/api/v1/server");
+        assertEquals(429, refused.statusCode());
+        assertTrue(refused.headers().firstValue("Retry-After").isPresent());
+    }
+
+    @Test
+    void behindATrustedProxyTheLimitIsPerVisitor() throws Exception {
+        WebServer server = start(3, 8, List.of("*"), List.of("127.0.0.1"));
+        for (int i = 0; i < 3; i++) {
+            assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.5").statusCode());
+        }
+        assertEquals(429, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.5").statusCode());
+        // Someone else behind the same proxy, and a made-up first hop that doesn't fool it.
+        assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.5, 198.51.100.7").statusCode());
+        assertEquals(200, get(server, "/api/v1/server", "CF-Connecting-IP", "192.0.2.9").statusCode());
+    }
+
+    @Test
+    void anUntrustedClientCantPickItsAddress() throws Exception {
+        WebServer server = start(3, 8, List.of("*"), List.of());
+        for (int i = 0; i < 3; i++) {
+            assertEquals(200, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113." + i).statusCode());
+        }
+        assertEquals(429, get(server, "/api/v1/server", "X-Forwarded-For", "203.0.113.99").statusCode());
+    }
+
+    @Test
+    void tooManyAtOnceAreTurnedAway() throws Exception {
+        WebServer server = start(1000, 1, List.of("*"), List.of());
+        hold = new CountDownLatch(1);
+        Thread slow = Thread.ofVirtual().start(() -> {
+            try {
+                get(server, "/api/v1/player/Steve");
+            } catch (Exception ignored) {
+                // Only here to hold the one turn.
+            }
+        });
+        Thread.sleep(300);
+        long started = System.nanoTime();
+        assertEquals(503, get(server, "/api/v1/server").statusCode());
+        assertTrue(System.nanoTime() - started >= TimeUnit.MILLISECONDS.toNanos(1500), "waited for a turn first");
+        hold.countDown();
+        slow.join(5000);
+        hold = null;
+        assertEquals(200, get(server, "/api/v1/server").statusCode());
+    }
+
+    @Test
+    void aFloodIsCutOffAndTheServerCarriesOn() throws Exception {
+        WebServer server = start(1000, 1, List.of("*"), List.of());
+        hold = new CountDownLatch(1);
+        // One holds the only turn; eight more may wait; the rest are closed straight away.
+        List<Thread> flood = new ArrayList<>();
+        java.util.concurrent.atomic.AtomicInteger cut = new java.util.concurrent.atomic.AtomicInteger();
+        for (int i = 0; i < 20; i++) {
+            flood.add(Thread.ofVirtual().start(() -> {
+                try {
+                    get(server, "/api/v1/player/Steve");
+                } catch (Exception e) {
+                    cut.incrementAndGet();
+                }
+            }));
+        }
+        Thread.sleep(500);
+        hold.countDown();
+        for (Thread thread : flood) {
+            thread.join(10_000);
+        }
+        hold = null;
+        assertTrue(cut.get() > 0, "some connections were cut");
+        assertEquals(200, get(server, "/api/v1/server").statusCode(), "and it still answers");
+    }
+
+    @Test
+    void closingFreesThePort() throws Exception {
+        WebServer server = start(1000, 8, List.of("*"), List.of());
+        int port = server.port();
+        server.close();
+        servers.clear();
+        try (ServerSocket again = new ServerSocket(port, 1, java.net.InetAddress.getByName("127.0.0.1"))) {
+            assertEquals(port, again.getLocalPort());
+        }
+    }
+
+    @Test
+    void jsonStringsCantBreakOut() {
+        String json = new Json().object().field("name", "\"</script><img src=x onerror=alert(1)>\\\n\u2028").end().toString();
+        assertEquals("{\"name\":\"\\\"\\u003c/script\\u003e\\u003cimg src=x onerror=alert(1)\\u003e\\\\\\n\\u2028\"}", json);
+    }
+}

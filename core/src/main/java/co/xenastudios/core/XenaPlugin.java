@@ -234,6 +234,9 @@ public abstract class XenaPlugin<C extends Record & XenaConfig> extends JavaPlug
     private void apply() {
         C current = config;
         Setup setup = new Setup();
+        List<String> own = new java.util.ArrayList<>(adminAliases());
+        own.add(id());
+        setup.reserve(own);
         try {
             setup(setup, current);
         } catch (RuntimeException | LinkageError e) {

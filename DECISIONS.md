@@ -19,6 +19,12 @@ Why the plugins are built the way they are, oldest first.
 | [zChat's chat path](#zchats-chat-path-2026-10-22) | 2026-10-22 |
 | [xLimbo is Paper only](#xlimbo-is-paper-only-2026-10-22) | 2026-10-22 |
 | [Main is protected, and checked by CodeQL](#main-is-protected-and-checked-by-codeql-2026-10-23) | 2026-10-23 |
+| [A config that can't be saved is still used](#a-config-that-cant-be-saved-is-still-used-2026-11-17) | 2026-11-17 |
+| [In-game edits write config.yml](#in-game-edits-write-configyml-2026-11-17) | 2026-11-17 |
+| [Releases: the job that runs Gradle can't write to the repo](#releases-the-job-that-runs-gradle-cant-write-to-the-repo-2026-11-17) | 2026-11-17 |
+| [Audit follow-ups: split words, vanish, reloads](#audit-follow-ups-split-words-vanish-reloads-2026-11-17) | 2026-11-17 |
+| [A shared database layer, with no drivers shaded in](#a-shared-database-layer-with-no-drivers-shaded-in-2026-11-17) | 2026-11-17 |
+| [xRewind's write path: references in, numbers out](#xrewinds-write-path-references-in-numbers-out-2026-11-17) | 2026-11-17 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -64,7 +70,7 @@ Built with xUtilities 2. A plugin extends `XenaPlugin`, declares its config as r
 
 xUtilities 2 is about 146 KiB against 1.x's 100.5: roughly 60 KiB of core (reload for everything, config migration, the theme, the update checker), 15 KiB of bStats, 50 KiB of commands, and 4 KiB of 1.x's default messages (so an upgrader who never changed one gets 2.0's look), plus zip overhead. Compiling without local variable tables (keeping line numbers, for stack traces) saved 13 KiB. Its budget is 150 KiB, so anything that grows it is a decision, not drift. (Budgets were raised the next day: see [Jar budgets are a tripwire, not a target](#jar-budgets-are-a-tripwire-not-a-target-2026-10-22).)
 
-bStats lives in the core, relocated into each plugin's package; a plugin opts in by overriding `bStatsId()`. The IDs: xUtilities 34866, zChat 21533 (from zChat 1.0, which still reports to it, so zChat 3 carries its history on), xLimbo 34867. bStats' Bukkit class submits from its own thread on Folia, so it needs no scheduler of ours. Tests never start it (`xena.offline`). Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every message parsed once, not per send.
+bStats lives in the core, relocated into each plugin's package; a plugin opts in by overriding `bStatsId()`. The IDs: xUtilities 34866, zChat 21533 (from zChat 1.0, which still reports to it, so zChat 3 carries its history on), xLimbo 34867, xRewind 35410. bStats' Bukkit class submits from its own thread on Folia, so it needs no scheduler of ours. Tests never start it (`xena.offline`). Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every message parsed once, not per send.
 
 ## Messages share a theme (2026-10-21)
 

@@ -1,4 +1,4 @@
-// docs.xenastudios.co: the docs for Xena's plugins (xUtilities, zChat, xLimbo),
+// docs.xenastudios.co: the docs for Xena's plugins (xUtilities, zChat, xLimbo, xRewind),
 // a static Starlight site served by a Cloudflare Worker. It wears the plugin
 // family's brand (xena-studios/brand), as docs.raptorpanel.net wears Raptor's:
 // deepslate, Space Grotesk, each plugin's pages in its accent with its icon by
@@ -17,7 +17,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "Xena Plugin Docs",
-      description: "Docs for xUtilities, zChat and xLimbo: small, fast plugins for Paper servers, by Xena Studios.",
+      description: "Docs for xUtilities, zChat, xLimbo and xRewind: small, fast plugins for Paper servers, by Xena Studios.",
       // XENA STUDIOS, then "Plugin docs" as a mono label from theme.css.
       logo: { dark: "./src/assets/xena-studios-dark.svg", light: "./src/assets/xena-studios-light.svg", replacesTitle: true },
       favicon: "/favicon.svg",
@@ -26,7 +26,7 @@ export default defineConfig({
         { tag: "meta", attrs: { property: "og:image", content: "https://docs.xenastudios.co/og.png" } },
         { tag: "meta", attrs: { property: "og:image:width", content: "2400" } },
         { tag: "meta", attrs: { property: "og:image:height", content: "1260" } },
-        { tag: "meta", attrs: { property: "og:image:alt", content: "XENA STUDIOS plugin docs over a planet horizon: xUtilities, zChat and xLimbo, setup, commands, config." } },
+        { tag: "meta", attrs: { property: "og:image:alt", content: "XENA STUDIOS plugin docs over a planet horizon: xUtilities, zChat, xLimbo and xRewind, setup, commands, config." } },
         { tag: "meta", attrs: { name: "twitter:image", content: "https://docs.xenastudios.co/og.png" } },
       ],
       customCss: ["./src/styles/theme.css"],

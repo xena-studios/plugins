@@ -66,6 +66,13 @@ public class XLimbo extends XenaPlugin<XLConfig> {
         Protections.register(setup, this, config.protections());
         joinCommand(setup, config.joinCommand());
         syncWorld(config.world());
+        // Every setting applies on reload: players already waiting get creative and flight
+        // too, if they've just been turned on.
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (limbo().isLimbo(player.getWorld())) {
+                Arrivals.equip(player, config);
+            }
+        }
     }
 
     // xLimbo loads before the server's worlds, so its generator is ready for one named in

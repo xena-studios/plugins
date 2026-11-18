@@ -103,7 +103,7 @@ class CommandsTest {
     @Test
     void adminCommandAnswersToXu() {
         admin.performCommand("xu info");
-        assertTrue(next(admin).startsWith("» xUtilities 2.0.1 on "));
+        assertTrue(next(admin).startsWith("» xUtilities 2.0.2 on "));
     }
 
     @Test
@@ -191,6 +191,17 @@ class CommandsTest {
         admin.setHealth(3);
         admin.performCommand("heal");
         assertEquals(20, admin.getHealth(), "/heal is still xUtilities' heal");
+    }
+
+    @Test
+    void aLinkCommandCantTakeThePluginsOwnCommand() throws Exception {
+        Path config = plugin.getDataFolder().toPath().resolve("config.yml");
+        Files.writeString(config, Files.readString(config).replace("  website:\n",
+            "  xutilities:\n    message: \"nope\"\n  xu:\n    message: \"nope\"\n  website:\n"));
+        plugin.reload();
+        admin.performCommand("xu info");
+        String reply = next(admin);
+        assertTrue(reply != null && reply.contains("xUtilities"), "/xu is still the plugin's own command: " + reply);
     }
 
     @Test

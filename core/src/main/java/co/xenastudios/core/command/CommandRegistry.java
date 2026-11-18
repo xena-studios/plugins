@@ -56,11 +56,15 @@ public final class CommandRegistry {
      */
     public List<String> sync(Collection<CommandSpec> specs) {
         Map<String, CommandSpec> wanted = new LinkedHashMap<>();
+        List<String> warnings = new ArrayList<>();
         for (CommandSpec spec : specs) {
-            wanted.put(spec.name(), spec);
+            // The first of a name wins, so nothing a plugin adds can replace its own
+            // /<plugin> command, which comes first.
+            if (wanted.putIfAbsent(spec.name(), spec) != null) {
+                warnings.add("/" + spec.name() + " is set up twice; the second is skipped.");
+            }
         }
         CommandMap map = Bukkit.getCommandMap();
-        List<String> warnings = new ArrayList<>();
         boolean changed = false;
 
         for (RuntimeCommand command : List.copyOf(active.values())) {

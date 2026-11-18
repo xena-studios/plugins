@@ -60,7 +60,8 @@ public final class Arrivals extends ListenerModule {
         config.join().customJoinMessage().send(player);
     }
 
-    private static void equip(Player player, XLConfig config) {
+    /** Creative and flight, as the config says. Also for players already here when it's reloaded. */
+    public static void equip(Player player, XLConfig config) {
         if (config.player().setCreative() && player.getGameMode() != GameMode.CREATIVE) {
             player.setGameMode(GameMode.CREATIVE);
         }

@@ -19,7 +19,27 @@ public final class Setup {
     final Map<String, Supplier<Module>> modules = new LinkedHashMap<>();
     final List<CommandSpec> subcommands = new ArrayList<>();
 
+    final java.util.Set<String> reserved = new java.util.HashSet<>();
+
     Setup() {}
+
+    /** Labels the core keeps for itself: the plugin's own command and its aliases. */
+    void reserve(java.util.Collection<String> labels) {
+        labels.forEach(label -> reserved.add(label.toLowerCase(java.util.Locale.ROOT)));
+    }
+
+    /**
+     * Every name and alias in use so far, including the plugin's own command, which the
+     * core adds once setup is done: for a plugin's own commands to avoid.
+     */
+    public java.util.Set<String> taken() {
+        java.util.Set<String> taken = new java.util.HashSet<>(reserved);
+        for (CommandSpec spec : commands) {
+            taken.add(spec.name());
+            taken.addAll(spec.aliases());
+        }
+        return taken;
+    }
 
     /** Registers the command and declares its permission. */
     public void command(CommandSpec spec) {

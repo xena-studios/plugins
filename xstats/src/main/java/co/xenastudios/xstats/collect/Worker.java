@@ -26,6 +26,9 @@ public final class Worker {
             return made;
         });
         executor.setRemoveOnCancelPolicy(true);
+        // A save still waiting for its readings when the plugin stops is dropped: the last
+        // save on disable covers it, and the world can't be touched once the plugin is off.
+        executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
     }
 
     public boolean onThread() {

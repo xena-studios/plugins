@@ -126,7 +126,7 @@ public final class WorldBoards implements Module, Listener {
 
     /** Sets every board's text from the leaderboards just worked out. On xStats' thread, after a save. */
     public void update() {
-        if (!on || placed.isEmpty()) {
+        if (!on || placed.isEmpty() || !plugin.isEnabled()) {
             return;
         }
         List<Placed> next = new ArrayList<>();

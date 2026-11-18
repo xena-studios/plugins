@@ -261,6 +261,32 @@ class EngineTest {
     }
 
     @Test
+    void aStatRegisteredLateKeepsItsSavedValues() throws Exception {
+        StatDef votes = new StatDef(catalog.index("votes"), "votes", "Votes", StatUnit.COUNT, 0, true, true, true, "xVote",
+            new StatDef.Custom("xVote"));
+        List<StatDef> without = catalog.snapshot().stats();
+        List<StatDef> with = new java.util.ArrayList<>(without);
+        with.add(votes);
+        long now = System.currentTimeMillis();
+        catalog.set(with);
+        Engine before = engine("main", false);
+        before.queue(sample(steve, "Steve", now, 0, 1, 0));
+        before.queue(new Event.Increment(steve, "votes", 5));
+        before.save(now);
+        // A restart where xVote registers its stat after xStats has loaded and read Steve.
+        catalog.set(without);
+        Engine after = engine("main", false);
+        after.queue(sample(steve, "Steve", now + MINUTE, 0, 2, 0));
+        after.save(now);
+        catalog.set(with);
+        after.queue(new Event.Increment(steve, "votes", 1));
+        after.save(now);
+        assertEquals(6, value(after, steve, votes, Period.ALL));
+        assertEquals(6, engine("main", false).player(steve) == null ? -1
+            : value(engine("main", false), steve, votes, Period.ALL), "and that's what's saved");
+    }
+
+    @Test
     void oldDaysAreAddedIntoTheirMonth() throws Exception {
         Engine engine = engine("main", false);
         long now = System.currentTimeMillis();

@@ -64,6 +64,8 @@ public final class Engine {
     private volatile PlayerRecord[] sortedPlayers = new PlayerRecord[0];
     private volatile LastSave lastSave = new LastSave(0, 0, 0, null);
     private boolean namesChanged = true;
+    /** The stats the last load read from the database. One added since has its saved values read before it's counted. */
+    private Set<String> loadedStats = Set.of();
     private boolean failing;
     private int lastFold = -1;
     private BiConsumer<Board, PlayerRecord> onNewLeader = (board, previous) -> { };
@@ -200,6 +202,7 @@ public final class Engine {
         Store.Loaded loaded = store.load(current.network(), current.calendar().earliestNeeded(today));
         Catalog.Snapshot stats = catalog.snapshot();
         int width = stats.width();
+        loadedStats = Set.copyOf(stats.byId().keySet());
         Map<Integer, PlayerRecord> byDbId = new HashMap<>();
         for (Store.LoadedPlayer row : loaded.players()) {
             PlayerRecord player = players.computeIfAbsent(row.uuid(), id -> new PlayerRecord(id, row.name()));
@@ -310,6 +313,23 @@ public final class Engine {
         long now = System.currentTimeMillis();
         int today = current.calendar().today(now);
         Catalog.Snapshot stats = catalog.snapshot();
+        if (!loadedStats.containsAll(stats.byId().keySet())) {
+            // A stat added since the last load (a reload, or another plugin registering one)
+            // may have values saved from before: read them before counting on top, or its
+            // all-time number would start again from 0.
+            if (!write(stats, today)) {
+                return false;
+            }
+            for (PlayerRecord player : players.values()) {
+                player.localLoaded = false;
+            }
+            try {
+                reload(true);
+            } catch (SQLException e) {
+                problem("Couldn't read the stats added since the last load: " + e.getMessage());
+                return false;
+            }
+        }
         Set<PlayerRecord> touched = new HashSet<>();
         Event event;
         while ((event = events.poll()) != null) {
@@ -691,9 +711,7 @@ public final class Engine {
     /** After an import: read everything again, keeping what's in memory. On xStats' thread. */
     public void afterImport() throws SQLException {
         for (PlayerRecord player : players.values()) {
-            if (!player.online) {
-                player.localLoaded = false;
-            }
+            player.localLoaded = false;
         }
         reload(true);
     }

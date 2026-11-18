@@ -1,5 +1,6 @@
 package co.xenastudios.xmoney.ledger;
 
+import co.xenastudios.xmoney.money.Money;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -15,6 +16,10 @@ import java.util.function.Function;
 /**
  * Every account, in memory: by uuid, by name, and sorted by balance for the top list.
  * A few hundred bytes an account, so 100,000 players are a few tens of MB at most.
+ *
+ * <p>A name finds an account only when it's sure whose it is. Two stored accounts with the
+ * same name (a name that changed hands, or an old import) leave it out, so callers ask the
+ * core's {@code Profiles} instead of guessing; a player joining under a name always takes it.
  */
 public final class Accounts {
 
@@ -25,17 +30,31 @@ public final class Accounts {
 
     private final ConcurrentHashMap<UUID, Account> byId = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Account> byName = new ConcurrentHashMap<>();
+    /** Names more than one stored account has, which find none until a player joins under one. */
+    private final java.util.Set<String> ambiguous = ConcurrentHashMap.newKeySet();
     private final ConcurrentSkipListSet<Rank> top = new ConcurrentSkipListSet<>(ORDER);
-    private final AtomicLong total = new AtomicLong();
+    // Players' money added up, as whole coins and ten-thousandths apart, so even every player
+    // at max-balance can't overflow it.
+    private final AtomicLong totalWhole = new AtomicLong();
+    private final AtomicLong totalPart = new AtomicLong();
 
     /** The account, or null. Any thread. */
     public Account get(UUID id) {
         return byId.get(id);
     }
 
-    /** The account last known by this name, ignoring case, or null. Any thread. */
+    /** The account known by this name, ignoring case, or null if none is (or more than one may be). Any thread. */
     public Account named(String name) {
-        return byName.get(name.toLowerCase(Locale.ROOT));
+        return byName.get(key(name));
+    }
+
+    /** Whether more than one account has had this name, so it can't say which is meant. Any thread. */
+    public boolean ambiguous(String name) {
+        return ambiguous.contains(key(name));
+    }
+
+    private static String key(String name) {
+        return name.toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -48,29 +67,57 @@ public final class Accounts {
         if (account != null) {
             return account;
         }
+        return create(id, create, false);
+    }
+
+    /**
+     * Adds an account read from the database, at startup or from another server. If another
+     * account has its name, neither is found by it any more.
+     */
+    Account load(UUID id, String name, boolean player, long balance) {
+        return create(id, key -> new Account(key, name, player, balance), true);
+    }
+
+    private Account create(UUID id, Function<UUID, Account> create, boolean stored) {
+        Account account = byId.get(id);
+        if (account != null) {
+            return account;
+        }
         // Indexed inside, so no one can change it before it's in the top list and the total.
         return byId.computeIfAbsent(id, key -> {
             Account made = create.apply(key);
-            index(made);
+            index(made, stored);
             return made;
         });
     }
 
-    /** Adds an account read from the database, at startup or from another server. */
-    Account load(UUID id, String name, boolean player, long balance) {
-        return getOrCreate(id, key -> new Account(key, name, player, balance));
-    }
-
-    private void index(Account account) {
+    // A new account's name finds it only if no other account has it. A stored one whose name
+    // another has makes the name ambiguous; a new one just isn't found by it.
+    private void index(Account account, boolean stored) {
         synchronized (account) {
-            if (account.name() != null && !account.name().isEmpty()) {
-                byName.put(account.name().toLowerCase(Locale.ROOT), account);
+            String name = account.name();
+            if (name != null && !name.isEmpty()) {
+                synchronized (byName) {
+                    String key = key(name);
+                    if (!ambiguous.contains(key)) {
+                        Account other = byName.putIfAbsent(key, account);
+                        if (other != null && other != account && stored) {
+                            byName.remove(key, other);
+                            ambiguous.add(key);
+                        }
+                    }
+                }
             }
             if (account.player()) {
                 top.add(new Rank(account.balance, account.id()));
+                addTotal(account.balance);
             }
-            total.addAndGet(account.balance);
         }
+    }
+
+    private void addTotal(long units) {
+        totalWhole.addAndGet(units / Money.ONE);
+        totalPart.addAndGet(units % Money.ONE);
     }
 
     /** Sets a balance. Only under the account's lock. */
@@ -83,21 +130,61 @@ public final class Accounts {
         if (account.player()) {
             top.remove(new Rank(before, account.id()));
             top.add(new Rank(balance, account.id()));
+            addTotal(-before);
+            addTotal(balance);
         }
-        total.addAndGet(balance - before);
     }
 
-    /** A new name for an account, as when a player joins after changing theirs. */
-    void rename(Account account, String name) {
-        String old = account.name();
-        if (name.equals(old)) {
-            return;
+    /**
+     * A player's name, as they join or as Mojang says it is now: it finds this account from
+     * now on, whoever had it before. Only under the account's lock.
+     */
+    void claim(Account account, String name) {
+        synchronized (byName) {
+            String old = account.name();
+            if (old != null && !old.equalsIgnoreCase(name)) {
+                byName.remove(key(old), account);
+            }
+            account.name(name);
+            ambiguous.remove(key(name));
+            byName.put(key(name), account);
         }
-        account.name(name);
-        if (old != null) {
-            byName.remove(old.toLowerCase(Locale.ROOT), account);
+    }
+
+    /**
+     * A new name for an account, unless another account is known by it (or more than one has
+     * had it). Only under the account's lock.
+     *
+     * @return whether it was renamed
+     */
+    boolean rename(Account account, String name) {
+        synchronized (byName) {
+            String key = key(name);
+            Account other = byName.get(key);
+            if (other != null && other != account || ambiguous.contains(key)) {
+                return false;
+            }
+            String old = account.name();
+            if (old != null && !old.equalsIgnoreCase(name)) {
+                byName.remove(key(old), account);
+            }
+            account.name(name);
+            byName.put(key, account);
+            return true;
         }
-        byName.put(name.toLowerCase(Locale.ROOT), account);
+    }
+
+    /**
+     * A name another server saved for an account. A player's takes the name, since it came
+     * from them joining there; any other account's only if it's free. Only under the
+     * account's lock.
+     */
+    void renamedElsewhere(Account account, String name) {
+        if (account.player()) {
+            claim(account, name);
+        } else {
+            rename(account, name);
+        }
     }
 
     /** {@code count} accounts from rank {@code from} (1 is the richest), with the balance each had. */
@@ -132,9 +219,14 @@ public final class Accounts {
         return byId.size();
     }
 
-    /** Every balance added up, in units. */
+    /** Every player's balance added up, in units, or {@link Long#MAX_VALUE} if that's more than a long holds. */
     public long total() {
-        return total.get();
+        long whole = totalWhole.get();
+        long part = totalPart.get();
+        if (whole > (Long.MAX_VALUE - Math.max(0, part)) / Money.ONE) {
+            return Long.MAX_VALUE;
+        }
+        return whole * Money.ONE + part;
     }
 
     /** Every account, for imports and tests. Weakly consistent. */

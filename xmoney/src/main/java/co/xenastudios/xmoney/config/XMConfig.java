@@ -47,8 +47,17 @@ public record XMConfig(
     StorageSettings storage,
     @Comment({
         "For several servers sharing balances through one MySQL or MariaDB database. Every",
-        "server must use the same storage settings and table-prefix. Applies on a restart."})
+        "server must use the same storage settings and table-prefix. Applies on a restart.",
+        "Experimental in 1.0: a withdrawal is decided by the shared database, so a shop's Vault",
+        "call waits for it on the server thread (see network-wait-ms), and while the database",
+        "is away, withdrawals are refused. Money is never lost or made either way."})
     NetworkSettings network,
+    @Comment({
+        "On a network: the longest, in milliseconds, a withdrawal made on a server thread (a",
+        "shop's Vault call) waits for the shared database to take it up. If it hasn't, it's",
+        "refused and nothing is taken. At most 250, so a slow database can't stall the server.",
+        "Commands and xMoney's API don't hold a server thread, so they wait up to 5 seconds."})
+    @Range(min = 1, max = 250) int networkWaitMs,
     @Comment("Tells you when a new version is out.") UpdateCheckerSettings updateChecker) implements XenaConfig {
 
     @Override
@@ -61,8 +70,10 @@ public record XMConfig(
         String plural,
         String symbol,
         @Comment({
-            "Decimal places: 2 for cents, 0 for whole coins. At most 4. Amounts are rounded to",
-            "these. Lowering it later keeps the parts of balances it no longer shows."})
+            "Decimal places: 2 for cents, 0 for whole coins. At most 4. Amounts are shown with",
+            "these, and amounts typed into commands rounded to them. Other plugins' amounts keep",
+            "4 places, so a payment split in two costs what it would whole. Lowering it later",
+            "keeps the parts of balances it no longer shows."})
         @Range(min = 0, max = 4) int decimals,
         @Comment({
             "How an amount is written. {amount} is the number, {symbol} the symbol, and {name}",
@@ -173,7 +184,11 @@ public record XMConfig(
         @Comment("There's nothing to import. <source>, <reason>.") Message nothing,
         @Comment("The other plugin's data couldn't be read. <source>, <reason>.") Message failed,
         Message running,
-        Message reading) {}
+        Message reading,
+        @Comment({
+            "Some of the accounts have changed in xMoney since (payments, /eco, other plugins), and",
+            "importing would set them back. <count> of them, <source>, <command>: the import anyway."})
+        Message overwrite) {}
 
     public record AmountMessages(
         @Comment("Not a number. <amount> is what was typed.") Message invalid,
@@ -237,7 +252,10 @@ public record XMConfig(
                 Message.of("<prefix><error>Nothing to import from <source>: <reason>"),
                 Message.of("<prefix><error>Couldn't read <source>: <reason>"),
                 Message.of("<prefix><error>An import is already running."),
-                Message.of("<prefix><gray>Reading <source>...")),
+                Message.of("<prefix><gray>Reading <source>..."),
+                Message.of("<prefix><error><highlight><count></highlight> of these accounts have changed here since, and importing"
+                    + " sets them back to <source>'s balances. "
+                    + "<click:run_command:'<command>'><hover:show_text:'<command>'><error>[Import anyway]</error></hover></click>")),
             new AmountMessages(
                 Message.of("<prefix><error><highlight><amount></highlight> isn't an amount. Try 250, 12.5 or 1.5k."),
                 Message.of("<prefix><error>Amounts have at most <highlight><decimals></highlight> decimals."),
@@ -253,6 +271,7 @@ public record XMConfig(
         new LedgerSettings(365),
         StorageSettings.defaults(XMoney.ID + "_"),
         NetworkSettings.DEFAULTS,
+        50,
         UpdateCheckerSettings.DEFAULTS);
 
     public static final ConfigSpec<XMConfig> SPEC = ConfigSpec.builder(XMConfig.class, DEFAULTS)

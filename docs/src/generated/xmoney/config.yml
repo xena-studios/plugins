@@ -133,6 +133,9 @@ messages:
     failed: "<prefix><error>Couldn't read <source>: <reason>"
     running: "<prefix><error>An import is already running."
     reading: "<prefix><gray>Reading <source>..."
+    # Some of the accounts have changed in xMoney since (payments, /eco, other plugins), and
+    # importing would set them back. <count> of them, <source>, <command>: the import anyway.
+    overwrite: "<prefix><error><highlight><count></highlight> of these accounts have changed here since, and importing sets them back to <source>'s balances. <click:run_command:'<command>'><hover:show_text:'<command>'><error>[Import anyway]</error></hover></click>"
 
   # Amounts typed into commands.
   amount:
@@ -150,8 +153,10 @@ currency:
   singular: "dollar"
   plural: "dollars"
   symbol: "$"
-  # Decimal places: 2 for cents, 0 for whole coins. At most 4. Amounts are rounded to
-  # these. Lowering it later keeps the parts of balances it no longer shows.
+  # Decimal places: 2 for cents, 0 for whole coins. At most 4. Amounts are shown with
+  # these, and amounts typed into commands rounded to them. Other plugins' amounts keep
+  # 4 places, so a payment split in two costs what it would whole. Lowering it later
+  # keeps the parts of balances it no longer shows.
   decimals: 2
   # How an amount is written. {amount} is the number, {symbol} the symbol, and {name}
   # the singular or plural name: "{amount} {name}" gives "12.50 dollars".
@@ -232,6 +237,9 @@ storage:
 
 # For several servers sharing balances through one MySQL or MariaDB database. Every
 # server must use the same storage settings and table-prefix. Applies on a restart.
+# Experimental in 1.0: a withdrawal is decided by the shared database, so a shop's Vault
+# call waits for it on the server thread (see network-wait-ms), and while the database
+# is away, withdrawals are refused. Money is never lost or made either way.
 network:
   # On when several servers share this plugin's MySQL or MariaDB database, so a change
   # made on one (a ban, a payment) reaches the others within a few seconds.
@@ -239,6 +247,12 @@ network:
   enabled: false
   # Seconds between checks for the other servers' changes.
   check-every: 3
+
+# On a network: the longest, in milliseconds, a withdrawal made on a server thread (a
+# shop's Vault call) waits for the shared database to take it up. If it hasn't, it's
+# refused and nothing is taken. At most 250, so a slow database can't stall the server.
+# Commands and xMoney's API don't hold a server thread, so they wait up to 5 seconds.
+network-wait-ms: 50
 
 # Tells you when a new version is out.
 update-checker:

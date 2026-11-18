@@ -67,7 +67,7 @@ class MySqlTest {
         database.migrate(Schema.STEPS);
         ChangeFeed feed = ChangeFeed.open(database, new NetworkSettings(true, 1), Logger.getLogger("test"));
         Bench bench = new Bench(database, feed, true);
-        feed.subscribe("account", change -> bench.ledger.refresh(UUID.fromString(change.payload())));
+        bench.ledger.listen(feed);
         feeds.add(feed);
         return bench;
     }
@@ -142,5 +142,40 @@ class MySqlTest {
         assertTrue(stored >= 0 && stored < price, "the money should run out, and never past zero: " + stored);
         Bench.assertLedgerMatchesBalances(lobby.database);
         await(() -> onLobby.balance() == stored && onSurvival.balance() == stored, "both servers to agree with the database");
+    }
+
+    @Test
+    void twoServersFirstDepositsToAnAccountBothLand() throws Exception {
+        for (int round = 0; round < 20; round++) {
+            UUID id = UUID.randomUUID();
+            Account onLobby = lobby.ledger.account(id, "Town" + round, false);
+            Account onSurvival = survival.ledger.account(id, "Town" + round, false);
+            java.util.concurrent.CountDownLatch lobbyHeld = lobby.hold();
+            java.util.concurrent.CountDownLatch survivalHeld = survival.hold();
+            lobby.ledger.deposit(onLobby, 3 * Money.ONE, Bench.CAUSE);
+            survival.ledger.deposit(onSurvival, 4 * Money.ONE, Bench.CAUSE);
+            lobbyHeld.countDown();
+            survivalHeld.countDown();
+            lobby.flush();
+            survival.flush();
+            assertEquals(7 * Money.ONE, Bench.stored(lobby.database).get(id));
+        }
+        assertTrue(lobby.logged.isEmpty() && survival.logged.isEmpty(),
+            "a first deposit on both at once made a write fail: " + lobby.logged + survival.logged);
+        Bench.assertLedgerMatchesBalances(lobby.database);
+    }
+
+    @Test
+    void anImportOnOneServerReachesTheOtherInOneResync() throws Exception {
+        List<Ledger.Target> targets = new ArrayList<>();
+        for (int i = 0; i < Writer.IMPORT_CHUNK * 2 + 5; i++) {
+            targets.add(new Ledger.Target(lobby.ledger.account(UUID.randomUUID(), "I" + i, true), (i + 1) * Money.ONE));
+        }
+        int imported = lobby.ledger.setAll(targets, new Cause(co.xenastudios.xmoney.api.TransactionKind.IMPORT, "Test", ""))
+            .get(2, TimeUnit.MINUTES);
+        assertEquals(targets.size(), imported);
+        await(() -> targets.stream().allMatch(target -> survival.accounts.get(target.account().id()) != null
+            && survival.accounts.get(target.account().id()).balance() == target.balance()), "the other server to read the import");
+        Bench.assertLedgerMatchesBalances(lobby.database);
     }
 }

@@ -27,7 +27,6 @@ import co.xenastudios.xmoney.vault.VaultServices;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -114,17 +113,11 @@ public class XMoney extends XenaPlugin<XMConfig> {
         writer = new Writer(store.database(), accounts, feed, feed.on(), getLogger());
         writer.start();
         ledger = new Ledger(accounts, writer, feed.on(), () -> bank.max());
-        bank = new Bank(ledger, this::config, getLogger());
+        bank = new Bank(ledger, this::config, getLogger(), Bukkit::isPrimaryThread);
         events = new BukkitEvents(getLogger());
         ledger.events(events);
         players = new Players(this, new Profiles(tasks()));
-        feed.subscribe("account", change -> {
-            try {
-                ledger.refresh(UUID.fromString(change.payload()));
-            } catch (IllegalArgumentException ignored) {
-                // Not an account; nothing of ours.
-            }
-        });
+        ledger.listen(feed);
         feed.start(tasks());
         service = new MoneyService(this);
         Bukkit.getServicesManager().register(XMoneyApi.class, service, this, ServicePriority.Normal);

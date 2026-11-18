@@ -119,6 +119,49 @@ class SharedTest {
     }
 
     @Test
+    void aResyncReadsEverythingAgainKeepingWhatsUnsaved() throws Exception {
+        Account onLobby = lobby.ledger.open(UUID.randomUUID(), "Steve", 100 * Money.ONE);
+        lobby.flush();
+        survival.ledger.refresh(onLobby.id());
+        survival.flush();
+        Account onSurvival = survival.accounts.get(onLobby.id());
+        // Changes lobby never hears about: as if its feed had missed them.
+        assertEquals(Status.SUCCESS, survival.ledger.withdraw(onSurvival, 30 * Money.ONE, Bench.CAUSE).join().status());
+        UUID newcomer = UUID.randomUUID();
+        survival.ledger.open(newcomer, "Alex", 5 * Money.ONE);
+        survival.flush();
+        assertEquals(100 * Money.ONE, onLobby.balance());
+        assertEquals(null, lobby.accounts.get(newcomer));
+        // A deposit on lobby that isn't saved yet stays on top.
+        java.util.concurrent.CountDownLatch release = lobby.hold();
+        lobby.ledger.deposit(onLobby, 2 * Money.ONE, Bench.CAUSE);
+        lobby.ledger.resync();
+        release.countDown();
+        lobby.flush();
+        assertEquals(72 * Money.ONE, onLobby.balance());
+        assertEquals(5 * Money.ONE, lobby.accounts.get(newcomer).balance(), "an account made on another server is read in");
+        assertEquals("Alex", lobby.accounts.get(newcomer).name());
+        assertEquals(72 * Money.ONE, Bench.stored(lobby.database).get(onLobby.id()));
+    }
+
+    @Test
+    void twoServersFirstDepositToAnAccountDontFailEachOther() throws Exception {
+        UUID id = UUID.randomUUID();
+        Account onLobby = lobby.ledger.account(id, "Town", false);
+        Account onSurvival = survival.ledger.account(id, "Town", false);
+        java.util.concurrent.CountDownLatch lobbyHeld = lobby.hold();
+        java.util.concurrent.CountDownLatch survivalHeld = survival.hold();
+        lobby.ledger.deposit(onLobby, 3 * Money.ONE, Bench.CAUSE);
+        survival.ledger.deposit(onSurvival, 4 * Money.ONE, Bench.CAUSE);
+        lobbyHeld.countDown();
+        survivalHeld.countDown();
+        lobby.flush();
+        survival.flush();
+        assertEquals(7 * Money.ONE, Bench.stored(lobby.database).get(id));
+        assertTrue(lobby.logged.isEmpty() && survival.logged.isEmpty(), "neither write failed: " + lobby.logged + survival.logged);
+    }
+
+    @Test
     void aTransferWaitsForTheDatabaseAndMovesBoth() throws Exception {
         Account steve = lobby.ledger.open(UUID.randomUUID(), "Steve", 50 * Money.ONE);
         Account alex = lobby.ledger.open(UUID.randomUUID(), "Alex", 0);

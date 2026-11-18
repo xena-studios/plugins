@@ -11,7 +11,7 @@ public final class StatusCommand {
 
     private static final Message STATUS = Message.of("""
         <prefix><highlight>Storage</highlight>: <storage><network>
-        <highlight>Accounts</highlight>: <accounts>, holding <total>
+        <highlight>Accounts</highlight>: <accounts>. Players hold <total>
         <highlight>Saved</highlight> since startup: <written> changes. Waiting: <waiting>.
         <highlight>Last save</highlight>: <batch>
         <highlight>Problem</highlight>: <problem>""");
@@ -29,7 +29,7 @@ public final class StatusCommand {
                 int size = writer.lastBatchSize();
                 invocation.sender().sendMessage(STATUS.chat(
                     Replies.text("storage", plugin.store().description()),
-                    Replies.text("network", plugin.feed().on() ? ", shared with other servers" : ""),
+                    Replies.text("network", plugin.feed().on() ? ", shared with other servers (experimental)" : ""),
                     Replies.text("accounts", String.format("%,d", accounts.size())),
                     Replies.text("total", plugin.bank().format(accounts.total())),
                     Replies.text("written", String.format("%,d", writer.written())),

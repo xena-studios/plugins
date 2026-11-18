@@ -1,5 +1,6 @@
 package co.xenastudios.xmoney.ledger;
 
+import co.xenastudios.core.db.ChangeFeed;
 import co.xenastudios.xmoney.api.TransactionKind;
 import co.xenastudios.xmoney.api.TransactionResult.Status;
 import java.nio.charset.StandardCharsets;
@@ -23,17 +24,24 @@ import java.util.function.LongSupplier;
  * database ({@link Op.Checked}: {@code UPDATE ... WHERE balance >= ?}) and its future
  * completes once the writer has done it. Deposits can't overspend, so they're made in memory
  * at once and saved after, as on one server.
+ *
+ * <p>On a network, a change the database decides is refused at once while the writer is
+ * failing (a write failed and none has worked since), and given up if it isn't started
+ * within {@link #WAIT_MS}. Either way nothing was taken. Callers on a game thread give up
+ * sooner (see {@code Bank#await}).
  */
 public final class Ledger {
 
     /** How long a change that waits for the database waits to be started, on a network. */
-    static final long WAIT_MS = 5_000;
+    public static final long WAIT_MS = 5_000;
 
     private final Accounts accounts;
     private final Writer writer;
     private final boolean shared;
     private final LongSupplier maxBalance;
     private volatile Events events = Events.NONE;
+    /** {@link #WAIT_MS}, shorter in tests. */
+    volatile long waitMs = WAIT_MS;
 
     /**
      * @param shared whether the database is shared with other servers
@@ -75,20 +83,23 @@ public final class Ledger {
     public Account open(UUID id, String name, long start) {
         Account existing = accounts.get(id);
         if (existing != null) {
-            rename(existing, name);
+            claim(existing, name);
             return existing;
         }
-        return accounts.getOrCreate(id, key -> {
-            Account account = new Account(key, name, true, shared ? 0 : Math.max(0, start));
-            writer.add(new Op.Name(account));
+        Account account = accounts.getOrCreate(id, key -> {
+            Account made = new Account(key, name, true, shared ? 0 : Math.max(0, start));
+            writer.add(new Op.Name(made));
             Cause cause = new Cause(TransactionKind.START, "xMoney", "starting balance");
             if (shared) {
-                writer.add(new Op.Create(account, Math.max(0, start), cause));
+                writer.add(new Op.Create(made, Math.max(0, start), cause));
             } else if (start > 0) {
-                writer.add(new Op.Write(List.of(new Entry(account, start, start, cause, null, System.currentTimeMillis())), false));
+                writer.add(new Op.Write(List.of(new Entry(made, start, start, cause, null, System.currentTimeMillis())), false));
             }
-            return account;
+            return made;
         });
+        // The name may have been another account's: a player joining under it takes it.
+        claim(account, name);
+        return account;
     }
 
     /**
@@ -114,11 +125,16 @@ public final class Ledger {
      * The account a plugin means by a name, through Vault's old name-based calls: the player
      * or account known by that name, or otherwise an account that isn't a player's (a town's
      * bank, say), made empty, with a uuid worked out from the name so it's the same every time.
+     *
+     * @return null if more than one account has had the name, so it can't say which is meant
      */
     public Account named(String name) {
         Account known = accounts.named(name);
         if (known != null) {
             return known;
+        }
+        if (accounts.ambiguous(name)) {
+            return null; // More than one player has had it: refused rather than guessed.
         }
         UUID id = UUID.nameUUIDFromBytes(("xMoney account:" + name.toLowerCase(Locale.ROOT)).getBytes(StandardCharsets.UTF_8));
         return accounts.getOrCreate(id, key -> {
@@ -128,13 +144,41 @@ public final class Ledger {
         });
     }
 
-    /** Keeps an account's name, as when a player joins after changing theirs. */
-    public void rename(Account account, String name) {
-        if (name != null && !name.isBlank() && !name.equals(account.name())) {
-            synchronized (account) {
-                accounts.rename(account, name);
+    /**
+     * A player's own name, as they join or as Mojang says it is now: it finds their account from
+     * now on, even if another account had it.
+     */
+    public void claim(Account account, String name) {
+        if (name == null || name.isBlank()) {
+            return;
+        }
+        synchronized (account) {
+            boolean changed = !name.equals(account.name());
+            accounts.claim(account, name);
+            if (changed) {
                 writer.add(new Op.Name(account));
             }
+        }
+    }
+
+    /**
+     * A new name for an account, as a plugin asks, unless another account is known by it.
+     *
+     * @return whether the account now has the name
+     */
+    public boolean rename(Account account, String name) {
+        if (name == null || name.isBlank()) {
+            return false;
+        }
+        synchronized (account) {
+            if (name.equals(account.name()) && account == accounts.named(name)) {
+                return true;
+            }
+            if (!accounts.rename(account, name)) {
+                return false;
+            }
+            writer.add(new Op.Name(account));
+            return true;
         }
     }
 
@@ -148,6 +192,9 @@ public final class Ledger {
     private CompletableFuture<Outcome> deposit(Account account, long amount, Cause cause, UUID other) {
         if (amount <= 0) {
             return done(Outcome.failed(Status.INVALID_AMOUNT, account.balance()));
+        }
+        if (writer.full()) {
+            return done(Outcome.failed(Status.UNAVAILABLE, account.balance()));
         }
         if (!events.allow(account.id(), amount, cause, other)) {
             return done(Outcome.failed(Status.CANCELLED, account.balance()));
@@ -171,6 +218,9 @@ public final class Ledger {
     public CompletableFuture<Outcome> withdraw(Account account, long amount, Cause cause) {
         if (amount <= 0) {
             return done(Outcome.failed(Status.INVALID_AMOUNT, account.balance()));
+        }
+        if (writer.full()) {
+            return done(Outcome.failed(Status.UNAVAILABLE, account.balance()));
         }
         if (!events.allow(account.id(), -amount, cause, null)) {
             return done(Outcome.failed(Status.CANCELLED, account.balance()));
@@ -197,6 +247,9 @@ public final class Ledger {
         }
         if (amount <= 0) {
             return done(Outcome.failed(Status.INVALID_AMOUNT, from.balance()));
+        }
+        if (writer.full()) {
+            return done(Outcome.failed(Status.UNAVAILABLE, from.balance()));
         }
         if (!events.allow(from.id(), -amount, cause, to.id())) {
             return done(Outcome.failed(Status.CANCELLED, from.balance()));
@@ -237,6 +290,9 @@ public final class Ledger {
         if (balance < 0 || balance > maxBalance.getAsLong()) {
             return done(Outcome.failed(balance < 0 ? Status.INVALID_AMOUNT : Status.BALANCE_LIMIT, account.balance()));
         }
+        if (writer.full()) {
+            return done(Outcome.failed(Status.UNAVAILABLE, account.balance()));
+        }
         if (cause.kind() != TransactionKind.IMPORT && !events.allow(account.id(), balance - account.balance(), cause, null)) {
             return done(Outcome.failed(Status.CANCELLED, account.balance()));
         }
@@ -254,19 +310,72 @@ public final class Ledger {
         }
     }
 
+    // Called from a handler on the writer's own thread, it would wait for itself; while the
+    // writer is failing, it would only wait to be refused. Both are refused now.
     private CompletableFuture<Outcome> checked(List<Op.Change> changes) {
-        if (writer.isWriter()) {
-            // Called from a handler on the writer's own thread, which would wait for itself.
+        if (writer.isWriter() || writer.failing()) {
             return done(Outcome.failed(Status.UNAVAILABLE, changes.getFirst().account().balance()));
         }
-        CompletableFuture<Outcome> future = new CompletableFuture<>();
-        writer.add(new Op.Checked(changes, future, System.currentTimeMillis() + WAIT_MS));
+        Pending future = new Pending(System.currentTimeMillis() + waitMs);
+        writer.add(new Op.Checked(changes, future));
         return future;
+    }
+
+    /**
+     * Sets many balances at once, for an import: each to its target, as {@code cause}. On a
+     * network the database sets them, {@link Writer#IMPORT_CHUNK} to a transaction with
+     * payments between, and the other servers read everything again once it's done; nothing
+     * is dropped while the database is away, it waits. On one server it's in memory at once.
+     *
+     * @return how many were set
+     */
+    public CompletableFuture<Integer> setAll(List<Target> targets, Cause cause) {
+        if (!shared) {
+            int set = 0;
+            for (Target target : targets) {
+                if (set(target.account(), target.balance(), cause).join().success()) {
+                    set++;
+                }
+            }
+            return CompletableFuture.completedFuture(set);
+        }
+        CompletableFuture<Integer> done = new CompletableFuture<>();
+        if (targets.isEmpty()) {
+            done.complete(0);
+        } else {
+            writer.add(new Op.Import(List.copyOf(targets), cause, new int[1], done));
+        }
+        return done;
+    }
+
+    /** One balance {@link #setAll} sets, in units. */
+    public record Target(Account account, long balance) {}
+
+    /**
+     * Keeps this server's memory in step with the others': accounts another server changed
+     * are read again, and everything is read again when the feed says changes may have been
+     * missed, or after another server's import. Before the feed starts.
+     */
+    public void listen(ChangeFeed feed) {
+        feed.subscribe("account", change -> {
+            try {
+                refresh(UUID.fromString(change.payload()));
+            } catch (IllegalArgumentException ignored) {
+                // Not an account; nothing of ours.
+            }
+        });
+        feed.subscribe(Writer.RESYNC_TOPIC, change -> resync());
+        feed.onResync(this::resync);
     }
 
     /** Re-reads an account another server changed. Network mode only. */
     public void refresh(UUID id) {
         writer.add(new Op.Refresh(id));
+    }
+
+    /** Re-reads every account and balance. Network mode only. */
+    public void resync() {
+        writer.add(new Op.Resync());
     }
 
     /** Deletes ledger rows older than {@code before} (epoch ms), a slice at a time between other writes. */

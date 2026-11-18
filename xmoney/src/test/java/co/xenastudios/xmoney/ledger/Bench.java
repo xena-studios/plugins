@@ -28,6 +28,9 @@ public final class Bench implements AutoCloseable {
     final Accounts accounts = new Accounts();
     final Writer writer;
     final Ledger ledger;
+    final Faults faults = new Faults();
+    /** Warnings and worse the writer logged. */
+    final java.util.List<String> logged = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     Bench(Database database, boolean shared) throws Exception {
         this(database, ChangeFeed.off(), shared);
@@ -37,7 +40,24 @@ public final class Bench implements AutoCloseable {
         this.database = database;
         this.store = Store.of(database);
         store.load(accounts);
-        writer = new Writer(database, accounts, feed, shared, Logger.getLogger("test"));
+        Logger logger = Logger.getAnonymousLogger();
+        logger.setUseParentHandlers(false);
+        logger.addHandler(new java.util.logging.Handler() {
+            @Override
+            public void publish(java.util.logging.LogRecord record) {
+                if (record.getLevel().intValue() >= java.util.logging.Level.WARNING.intValue()) {
+                    logged.add(record.getMessage() + (record.getThrown() == null ? "" : " (" + record.getThrown() + ")"));
+                }
+            }
+
+            @Override
+            public void flush() {}
+
+            @Override
+            public void close() {}
+        });
+        writer = new Writer(database, accounts, feed, shared, logger);
+        writer.wrap = faults::wrap;
         writer.start();
         ledger = new Ledger(accounts, writer, shared, () -> MAX);
     }
@@ -48,6 +68,44 @@ public final class Bench implements AutoCloseable {
 
     void flush() {
         ledger.flush().orTimeout(30, TimeUnit.SECONDS).join();
+    }
+
+    /**
+     * Holds the writer until the returned latch is counted down: everything queued after
+     * this waits behind it, as behind a slow write.
+     */
+    java.util.concurrent.CountDownLatch hold() throws InterruptedException {
+        java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch held = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CompletableFuture<Void> reached = new java.util.concurrent.CompletableFuture<>();
+        // Registered before it's queued, so it runs on the writer's thread when the writer gets there.
+        reached.thenRun(() -> {
+            held.countDown();
+            try {
+                release.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        writer.add(new Op.Flush(reached));
+        held.await();
+        return release;
+    }
+
+    /** The ledger rows of one account, as kind and amount, oldest first. */
+    static java.util.List<String> rows(Database database, UUID id) throws Exception {
+        java.util.List<String> rows = new java.util.ArrayList<>();
+        try (Connection connection = database.connect();
+             java.sql.PreparedStatement query = connection.prepareStatement(
+                 database.sql("SELECT kind, amount FROM {p}transactions WHERE uuid = ? ORDER BY id"))) {
+            query.setString(1, id.toString());
+            try (ResultSet result = query.executeQuery()) {
+                while (result.next()) {
+                    rows.add(result.getString(1) + " " + result.getLong(2));
+                }
+            }
+        }
+        return rows;
     }
 
     @Override

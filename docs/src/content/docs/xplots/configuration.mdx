@@ -1,0 +1,45 @@
+---
+title: Configuration
+description: Every setting in xPlots' config.yml.
+sidebar:
+  order: 4
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/xplots/config.yml?raw";
+
+The config is `plugins/xPlots/config.yml`, written on first start. Apply changes with `/xplots reload`; only `storage` needs a restart.
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours xPlots' messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages` | What players are told, and shared errors under `messages.error`. |
+| `plots` | Every field's settings unless the field changes one: see [Prices and settings](/xplots/setting-up/#prices-and-settings). |
+| `currency` | Vault, or an item. |
+| `max-plots` | How many plots a player may rent at once; `xplots.limit.<n>` raises it. |
+| `signs` | The four lines of a free, rented and nearly expired plot's sign, and which sign is placed. |
+| `menus` | Every menu's title and buttons: each button's material, name and lines. |
+| `teleport-warmup` | Seconds to stand still before `/plots home` and `/plots warp`. |
+| `reset-ms-per-tick` | How long putting plots back may work each tick. |
+| `storage` | Where plots are kept: SQLite in the plugin's folder (`plots.db`), or MySQL/MariaDB. |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+## Currency
+
+`type: vault` takes rent through the server's economy, which needs [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin such as EssentialsX. Until both are installed, plots can't be rented and the console says why when someone tries. A field whose price is 0 is free either way.
+
+`type: item` takes an item from the player's inventory instead. It matches `material`, and `name` (as players see it, without colours) and `custom-model-data` when they're set, so a box server's Coin item works as it is. Amounts are whole items, rounded up. `singular` and `plural` are how amounts are written: "1 Coin", "5 Coins".
+
+## Signs and menus
+
+Sign lines and menu text are MiniMessage, with these placeholders: `<plot>` the plot's name, `<price>` and `<period>` its rent, `<owner>`, `<time>` left, `<slots>` (members) and `<max-slots>`, `<size>`. Signs are written once a minute at most, and only when what they show has changed.
+
+## Storage
+
+`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) and fill in `mysql` to keep plots in a database server. Plots are read once when the server starts, before anyone can join, so they're never unprotected; that's why a change here applies on restart, not on reload. Plots aren't copied between databases.
+
+A bad value falls back to its default with a warning in the console.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/xPlots/config.yml" />

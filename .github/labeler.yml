@@ -11,6 +11,9 @@ xlimbo:
 xrewind:
   - changed-files:
       - any-glob-to-any-file: xrewind/**
+xplots:
+  - changed-files:
+      - any-glob-to-any-file: xplots/**
 core:
   - changed-files:
       - any-glob-to-any-file: [core/**, build-logic/**]

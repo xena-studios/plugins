@@ -11,6 +11,16 @@ dependencyResolutionManagement {
         maven("https://repo.extendedclip.com/releases/") {
             content { includeGroup("me.clip") }
         }
+        // Vault's API and WorldGuard, which xPlots uses when they're installed.
+        maven("https://jitpack.io") {
+            content { includeGroup("com.github.MilkBowl") }
+        }
+        maven("https://maven.enginehub.org/repo/") {
+            content {
+                includeGroupByRegex("com\\.sk89q.*")
+                includeGroupByRegex("org\\.enginehub.*")
+            }
+        }
     }
 }
 
@@ -24,3 +34,4 @@ include("xutilities")
 include("zchat")
 include("xlimbo")
 include("xrewind")
+include("xplots")

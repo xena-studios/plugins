@@ -25,6 +25,7 @@ Why the plugins are built the way they are, oldest first.
 | [Audit follow-ups: split words, vanish, reloads](#audit-follow-ups-split-words-vanish-reloads-2026-11-17) | 2026-11-17 |
 | [A shared database layer, with no drivers shaded in](#a-shared-database-layer-with-no-drivers-shaded-in-2026-11-17) | 2026-11-17 |
 | [xRewind's write path: references in, numbers out](#xrewinds-write-path-references-in-numbers-out-2026-11-17) | 2026-11-17 |
+| [xPlots: plots in memory, found by arithmetic](#xplots-plots-in-memory-found-by-arithmetic-2026-11-17) | 2026-11-17 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -70,7 +71,7 @@ Built with xUtilities 2. A plugin extends `XenaPlugin`, declares its config as r
 
 xUtilities 2 is about 146 KiB against 1.x's 100.5: roughly 60 KiB of core (reload for everything, config migration, the theme, the update checker), 15 KiB of bStats, 50 KiB of commands, and 4 KiB of 1.x's default messages (so an upgrader who never changed one gets 2.0's look), plus zip overhead. Compiling without local variable tables (keeping line numbers, for stack traces) saved 13 KiB. Its budget is 150 KiB, so anything that grows it is a decision, not drift. (Budgets were raised the next day: see [Jar budgets are a tripwire, not a target](#jar-budgets-are-a-tripwire-not-a-target-2026-10-22).)
 
-bStats lives in the core, relocated into each plugin's package; a plugin opts in by overriding `bStatsId()`. The IDs: xUtilities 34866, zChat 21533 (from zChat 1.0, which still reports to it, so zChat 3 carries its history on), xLimbo 34867, xRewind 35410. bStats' Bukkit class submits from its own thread on Folia, so it needs no scheduler of ours. Tests never start it (`xena.offline`). Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every message parsed once, not per send.
+bStats lives in the core, relocated into each plugin's package; a plugin opts in by overriding `bStatsId()`. The IDs: xUtilities 34866, zChat 21533 (from zChat 1.0, which still reports to it, so zChat 3 carries its history on), xLimbo 34867, xRewind 35410, xPlots 35419. bStats' Bukkit class submits from its own thread on Folia, so it needs no scheduler of ours. Tests never start it (`xena.offline`). Runtime cost is what "lightweight" is really about: no repeating tasks, listeners only while their feature is on, and every message parsed once, not per send.
 
 ## Messages share a theme (2026-10-21)
 
@@ -162,3 +163,14 @@ A batch that keeps failing on a live connection (three times in a row) is a row 
 `BlockData` is safe to read from the writer: the server's block states are immutable, and `getBlockData` hands back a copy.
 
 Plugins can now add subcommands to their own command (`Setup.subcommand`): `/xrewind status` sits beside `reload` and `info`, each with its own permission, so staff who aren't admins can use the ones they're given.
+
+## xPlots: plots in memory, found by arithmetic (2026-11-17)
+
+xPlots replaces a Skript that rented one WorldGuard region per plot and rewrote every nearby sign each second. It's Paper only for 1.0, like xLimbo: putting plots back and editing signs across Folia's regions adds risk with little gain for box servers.
+
+- **No region per plot.** A field is one selection split into a grid, and the plot for a block is worked out from the grid: `(x - origin) / (size + path)`, the remainder saying "path". Each world keeps the box around all its fields, so a block outside every field costs one check. A field's whole footprint is protected at every height; plots are buildable only between the selection's lowest and highest blocks. With WorldGuard installed, xPlots makes one region per field that allows building, so a world-wide `build deny` doesn't block plots, and decides who may build itself.
+- **Everything in memory, loaded before anyone joins.** Plots are read once, synchronously, while the server starts, so there's never a moment when plots exist but aren't protected. So `storage` applies on restart, unlike xRewind's. Changes are copied on the main thread and written by one thread in order, retried while the database is down, so the database never has a later change without an earlier one.
+- **One timer.** It's set for whatever is due next (a lease running out, or its owner's warning a day or an hour before) and never waits more than 20 minutes, so lag or a changed clock can't put it far off. A warning due while the owner is offline is sent when they join. Signs are checked once a minute, only in loaded chunks, and rewritten only when what they show changes.
+- **Snapshots, not schematics.** Each plot's blocks are saved when it's made, as a palette of block states and an index per block, deflated: a few hundred bytes for a small plot. Saving and putting back run a few milliseconds per tick, after loading chunks in the background. A plot being put back can't be built in or rented until it's done, and one still going at shutdown is finished rather than left half done.
+- **Vault without a hard dependency.** The economy is looked up when it's used, since economy plugins often register after xPlots starts. Item currency matches material, and name and custom model data when set.
+- **WorldGuard is compiled against 7.0.14**, the newest built for Java 21, with only its API jars: their own dependencies pin a Guava that clashes with newer Paper's.

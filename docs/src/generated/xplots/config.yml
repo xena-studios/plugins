@@ -1,0 +1,319 @@
+# xPlots: rentable plots, set up in a minute.
+# Docs: https://docs.xenastudios.co/xplots/configuration/
+#
+# Apply changes with /xplots reload. A bad value falls back to its default with a
+# warning in the console; xPlots never stops over config. All text is MiniMessage:
+# https://docs.xenastudios.co/start/formatting/
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# The look xPlots' messages share. The default messages use these as tags, so changing
+# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
+# <#A9D750>, or <gold><bold>.
+theme:
+  # <prefix> starts the default messages. Make it your server's name, such as
+  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+  prefix: "<#A9D750>»</#A9D750> "
+  # The colour of message text that has no tag of its own.
+  base: "<gray>"
+  # <highlight>: names and values, such as a player or a speed.
+  highlight: "<#A9D750>"
+  # <success>: something turned on or done.
+  success: "<#5EE08A>"
+  # <error>: something refused or turned off.
+  error: "<#FF6B6B>"
+
+# What players are told.
+messages:
+  error:
+    # The console or a command block ran a command only players can use.
+    player-only: "<prefix><error>Only players can use this command."
+    # The sender lacks the command's permission.
+    no-permission: "<prefix><error>You don't have permission to do that."
+    # No online player has that name. <player> is the name typed.
+    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
+    # The command was typed wrong. <usage> is how to type it.
+    usage: "<prefix><error>Usage:</error> <usage>"
+    # The command hit an error. The console has the details.
+    failed: "<prefix><error>Something went wrong. The console has the details."
+  # <plot>, <price>, <time>: what was rented, for what, and for how long.
+  rented: "<prefix><success>You rented</success> <highlight><plot></highlight> for <price>. It's yours for <time>."
+  # <price> is what it costs.
+  cant-afford: "<prefix><error>You need <highlight><price></highlight> for that."
+  # <max> is the player's limit.
+  limit-reached: "<prefix><error>You can't rent more than <highlight><max></highlight> at once."
+  taken: "<prefix><error>Someone rented that plot first."
+  # Rent paid. <price>, <plot>, <time> left now.
+  paid: "<prefix><success>Paid</success> <highlight><price></highlight>. <highlight><plot></highlight> is yours for <time>."
+  # <max> is max-prepaid.
+  prepaid-full: "<prefix><error>Rent can be paid at most <highlight><max></highlight> ahead."
+  abandoned: "<prefix><highlight><plot></highlight> is no longer yours."
+  # <price> is what came back.
+  refunded: "<prefix>You got back <highlight><price></highlight>."
+  # <slots> is how many it has now.
+  slot-bought: "<prefix><success>Bought a member slot</success> for <highlight><plot></highlight>. It has <slots> now."
+  slots-full: "<prefix><error><highlight><plot></highlight> has no free member slots. Buy one in its menu: <highlight>/plots</highlight>."
+  max-slots: "<prefix><error><highlight><plot></highlight> has as many member slots as it can."
+  # <player> was added to <plot>.
+  member-added: "<prefix><success>Added</success> <highlight><player></highlight> to <plot>."
+  member-removed: "<prefix>Removed <highlight><player></highlight> from <plot>."
+  # To the player added. <owner>, <plot>.
+  added-you: "<prefix><highlight><owner></highlight> added you to <highlight><plot></highlight>. You can build there now."
+  removed-you: "<prefix>You were removed from <highlight><plot></highlight>."
+  already-member: "<prefix><error><highlight><player></highlight> is already a member."
+  not-member: "<prefix><error><highlight><player></highlight> isn't a member."
+  not-yourself: "<prefix><error>You own it, so you don't need a slot."
+  # <player> has never joined this server.
+  never-joined: "<prefix><error><highlight><player></highlight> has never played here."
+  no-plots: "<prefix><error>You don't rent a plot. Click a free plot's sign to rent one."
+  # Several plots and none chosen. <usage> is how to name one.
+  which-plot: "<prefix><error>You have more than one plot: stand in the one you mean, or use <highlight>/plots</highlight>."
+  not-yours: "<prefix><error>That plot isn't yours."
+  # Clicking someone else's sign. <plot>, <owner>, <time>, and <members>: their names,
+  # or none.
+  rented-by: "<prefix><highlight><plot></highlight> is rented by <highlight><owner></highlight> for <time>. Members: <members>."
+  no-members: "none"
+  # <plot>'s rent runs out in <time>.
+  expires-soon: "<prefix><highlight><plot></highlight>'s rent runs out in <highlight><time></highlight>. Pay more with <highlight>/plots</highlight>, or it's reset and anything in it is lost, chests included."
+  # To the owner, if online.
+  expired: "<prefix><highlight><plot></highlight>'s rent ran out, so it's free again."
+  # <seconds> to wait.
+  teleporting: "<prefix>Teleporting in <highlight><seconds>s</highlight>. Don't move."
+  teleport-cancelled: "<prefix><error>Teleport cancelled: you moved."
+  # /plots warp with no warp set. <field> is the field.
+  no-warp: "<prefix><error><highlight><field></highlight> has no warp."
+  # On the action bar, when a player can't build or open something there.
+  protected-here: "<error>You can't do that in this plot."
+  # Something xPlots needs isn't working, such as the economy. The console says what.
+  unavailable: "<prefix><error>That isn't available right now."
+
+# Every field's settings, unless the field changes one with /xplots field set. Times
+# are written like 3d, 12h or 1d12h.
+plots:
+  # What one period of rent costs.
+  price: 100
+  # How long one payment of rent lasts.
+  period: "3d"
+  # The most rent that can be paid ahead. A player can pay again while there's room,
+  # so a plot is never lost to a missed window.
+  max-prepaid: "1w"
+  # Members a new rental can add, besides the owner, who doesn't take a slot.
+  starting-slots: 1
+  # The most member slots a plot can have, after buying more.
+  max-slots: 3
+  # What one more member slot costs.
+  slot-price: 50
+  # Put a plot back as it was when it was made, once its rent runs out or it's
+  # abandoned. Anything built in it is lost, items in chests included.
+  reset: true
+  # How much of the unused rent abandoning a plot gives back, in percent.
+  abandon-refund: 0
+
+# What rent is paid with.
+currency:
+  # vault uses the server's economy (Vault and a plugin that provides one, such as
+  # EssentialsX). item takes the item below from the player's inventory.
+  type: "vault"
+
+  # For type: item.
+  item:
+    material: "gold_nugget"
+    # The item's name as players see it, without colours, such as "Coin". Blank takes
+    # any item of the material.
+    name: "Coin"
+    # The item's custom model data, for a resource pack's coin. 0 takes any.
+    custom-model-data: 0
+    # How amounts are written: "1 Coin", "5 Coins".
+    singular: "Coin"
+    plural: "Coins"
+
+# How many plots a player may rent at once. A player with xplots.limit.<n> may rent
+# <n> instead, the highest they have.
+max-plots: 1
+
+# What plot signs say, four lines each. <plot> is the plot's name, <price> and <period>
+# its rent, <owner> who rents it, <time> how long is left, <slots> and <max-slots>
+# its member slots, <size> its size.
+signs:
+  # A plot nobody rents.
+  free: ["<dark_green><bold>FOR RENT", "<plot>", "<price>", "<period>"]
+  rented: ["<dark_red><bold>RENTED", "<owner>", "<time> left", "<slots>/<max-slots> members"]
+  # A rented plot whose rent runs out within expiring-below.
+  expiring: ["<gold><bold>RENTED", "<owner>", "<red><time> left", "<slots>/<max-slots> members"]
+  expiring-below: "1d"
+  # The sign placed for each plot: any standing sign, such as dark_oak_sign.
+  material: "oak_sign"
+
+# The plot menus. Each button has a material, a name and lines below the name.
+menus:
+  # Fills the empty slots. air leaves them empty.
+  filler: "gray_stained_glass_pane"
+
+  # Clicking a free plot's sign.
+  rent:
+    title: "Rent <plot>?"
+    info:
+      material: "oak_sign"
+      name: "<highlight><plot>"
+      lore: ["<gray>Size: <white><size>", "<gray>Rent: <white><price></white> per <period>", "<gray>Member slots: <white><max-slots>", "", "<gray>Anything you build is reset", "<gray>when the rent runs out."]
+    confirm:
+      material: "lime_concrete"
+      name: "<success>Rent for <price>"
+      lore: ["<gray>Lasts <period>. Pay more any time", "<gray>from /plots."]
+    cancel:
+      material: "red_concrete"
+      name: "<error>Cancel"
+      lore: []
+
+  # Clicking your own plot's sign, or /plots.
+  plot:
+    title: "<plot>"
+    info:
+      material: "oak_sign"
+      name: "<highlight><plot>"
+      lore: ["<gray>Time left: <white><time>", "<gray>Members: <white><slots>/<max-slots>", "<gray>Size: <white><size>"]
+
+    # <periods> is 1, 2 or 3; <price> what that costs; <time> how long it adds.
+    pay:
+      material: "clock"
+      name: "<success>Pay <periods>× rent"
+      lore: ["<gray>Costs <white><price>", "<gray>Adds <white><time>"]
+
+    # Shown instead when paying would go past max-prepaid.
+    pay-full:
+      material: "gray_dye"
+      name: "<gray>Pay <periods>× rent"
+      lore: ["<gray>That's more than can be", "<gray>paid ahead."]
+    members:
+      material: "player_head"
+      name: "<highlight>Members"
+      lore: ["<gray><slots> of <max-slots> slots used", "<gray>Click to add or remove."]
+    buy-slot:
+      material: "emerald"
+      name: "<success>Buy a member slot"
+      lore: ["<gray>Costs <white><price>", "<gray>Up to <max-slots>."]
+
+    # Shown instead when the plot has max-slots.
+    slots-full:
+      material: "gray_dye"
+      name: "<gray>Member slots full"
+      lore: ["<gray>This plot has as many", "<gray>as it can."]
+    home:
+      material: "ender_pearl"
+      name: "<highlight>Teleport here"
+      lore: []
+    abandon:
+      material: "barrier"
+      name: "<error>Abandon"
+      lore: ["<gray>Give the plot up. It's reset,", "<gray>and what's in it is lost."]
+
+  # /plots with more than one plot.
+  list:
+    title: "Your plots"
+    plot:
+      material: "oak_sign"
+      name: "<highlight><plot>"
+      lore: ["<gray>Time left: <white><time>", "<gray>Click to manage."]
+  members:
+    title: "Members of <plot>"
+
+    # <player> is the member.
+    member:
+      material: "player_head"
+      name: "<highlight><player>"
+      lore: ["<gray>Click to remove."]
+    add:
+      material: "lime_dye"
+      name: "<success>Add a member"
+      lore: ["<gray><slots> of <max-slots> slots used"]
+    back:
+      material: "arrow"
+      name: "<gray>Back"
+      lore: []
+
+  # Adding a member: heads of the players online.
+  picker:
+    title: "Add a member"
+    player:
+      material: "player_head"
+      name: "<highlight><player>"
+      lore: ["<gray>Click to add."]
+    previous:
+      material: "arrow"
+      name: "<gray>Previous page"
+      lore: []
+    next:
+      material: "arrow"
+      name: "<gray>Next page"
+      lore: []
+    back:
+      material: "arrow"
+      name: "<gray>Back"
+      lore: []
+  abandon:
+    title: "Abandon <plot>?"
+    confirm:
+      material: "red_concrete"
+      name: "<error>Abandon <plot>"
+      lore: ["<gray>It's reset, and anything", "<gray>in it is lost."]
+    cancel:
+      material: "lime_concrete"
+      name: "<success>Keep it"
+      lore: []
+
+  # Staff clicking a plot with the wand.
+  admin:
+    title: "<plot> (staff)"
+    info:
+      material: "oak_sign"
+      name: "<highlight><plot>"
+      lore: ["<gray>Owner: <white><owner>", "<gray>Time left: <white><time>", "<gray>Members: <white><members>"]
+    home:
+      material: "ender_pearl"
+      name: "<highlight>Teleport to the sign"
+      lore: []
+    evict:
+      material: "iron_door"
+      name: "<error>Evict"
+      lore: ["<gray>End the rent now. The plot", "<gray>is reset if its field says so."]
+    reset:
+      material: "tnt"
+      name: "<error>Reset"
+      lore: ["<gray>Put the plot back as it was", "<gray>made. The renter keeps it."]
+
+# Seconds to stand still before /plots home and /plots warp teleport. xplots.warmup.bypass
+# skips it.
+teleport-warmup: 3
+
+# How long putting a plot back may work each tick, in milliseconds. A tick is 50. A
+# small plot takes a fraction of one.
+reset-ms-per-tick: 5
+
+# Where plots are kept. sqlite needs nothing set up. A change here applies on restart:
+# plots aren't copied across.
+storage:
+  # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
+  # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  type: "sqlite"
+  # Put in front of every table's name, so plugins and servers can share one database.
+  table-prefix: "xplots_"
+
+  # Only for type: mysql.
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "minecraft"
+    username: "minecraft"
+    password: ""
+    # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
+    properties: ""
+
+# Tells you when a new version is out.
+update-checker:
+  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
+  # only the plugin version, the platform and the Minecraft version.
+  enabled: true
+  # Logged, and shown to admins when they join, when a newer version is out.
+  # <plugin>, <current>, <latest> and <url> are filled in.
+  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"

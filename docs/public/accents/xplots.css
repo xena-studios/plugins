@@ -1,0 +1,9 @@
+/* xplots's accent (xena-studios/brand, scripts/plugin-brand.ts), loaded on its pages.
+   Starlight puts route head entries before the bundled theme, so the doubled
+   :root outranks theme.css instead of relying on order. */
+:root:root {
+  --accent: #A9D750;
+  --sl-color-accent-low: #2A311F;
+  --sl-color-accent: #A9D750;
+  --sl-color-accent-high: #D2EAA4;
+}

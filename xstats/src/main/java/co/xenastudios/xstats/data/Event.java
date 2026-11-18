@@ -29,6 +29,18 @@ public sealed interface Event permits Event.Joined, Event.Sample, Event.Incremen
     /** Another plugin added to a stat. */
     record Increment(UUID player, String stat, long amount) implements Event {}
 
-    /** Another plugin set a stat. */
-    record Set(UUID player, String stat, long value) implements Event {}
+    /**
+     * Another plugin set a stat: once, or several times in a row between two saves.
+     *
+     * @param first the first value set
+     * @param value the last
+     * @param rise how much it went up between the first and the last, which counts towards
+     *     today, this week and this month as if each had been applied
+     */
+    record Set(UUID player, String stat, long first, long value, long rise) implements Event {
+
+        public Set(UUID player, String stat, long value) {
+            this(player, stat, value, value, 0);
+        }
+    }
 }

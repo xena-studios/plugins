@@ -32,6 +32,12 @@ public final class StatsFiles {
     /** What reading the files found. */
     public record Result(List<Store.Imported> players, int files, int skipped, List<Path> folders) {}
 
+    /** Each player's newest file, found without reading any, and how many files weren't players'. */
+    public record Index(List<Map.Entry<UUID, Path>> files, int skipped) {}
+
+    /** Some players read from their files, and how many files couldn't be. */
+    public record Part(List<Store.Imported> players, int skipped) {}
+
     private StatsFiles() {}
 
     /**
@@ -61,12 +67,22 @@ public final class StatsFiles {
     }
 
     /**
-     * Reads every file in the folders. A player in both (a world moved to 26.x keeps the old
-     * folder until each player joins) is read from the newer file.
+     * Reads every file in the folders at once. The import reads them a part at a time
+     * ({@link #index}, then {@link #readPart}), so it never holds everyone.
      *
      * @param names a player's last known name, or null
      */
     public static Result read(List<Path> folders, List<StatDef> stats, Function<UUID, String> names) {
+        Index index = index(folders);
+        Part part = readPart(index.files(), stats, names);
+        return new Result(part.players(), index.files().size(), index.skipped() + part.skipped(), folders);
+    }
+
+    /**
+     * Finds every player's file in the folders. A player in both (a world moved to 26.x keeps
+     * the old folder until each player joins) is read from the newer file.
+     */
+    public static Index index(List<Path> folders) {
         Map<UUID, Path> files = new LinkedHashMap<>();
         int skipped = 0;
         for (Path folder : folders) {
@@ -86,8 +102,18 @@ public final class StatsFiles {
                 skipped++;
             }
         }
+        return new Index(files.entrySet().stream().map(entry -> Map.entry(entry.getKey(), entry.getValue())).toList(), skipped);
+    }
+
+    /**
+     * Reads some players' files.
+     *
+     * @param names a player's last known name, or null
+     */
+    public static Part readPart(List<Map.Entry<UUID, Path>> files, List<StatDef> stats, Function<UUID, String> names) {
+        int skipped = 0;
         List<Store.Imported> players = new ArrayList<>();
-        for (Map.Entry<UUID, Path> entry : files.entrySet()) {
+        for (Map.Entry<UUID, Path> entry : files) {
             try {
                 Map<String, Map<String, Long>> parsed = parse(entry.getValue());
                 if (parsed == null) {
@@ -112,7 +138,7 @@ public final class StatsFiles {
                 skipped++;
             }
         }
-        return new Result(players, files.size(), skipped, folders);
+        return new Part(players, skipped);
     }
 
     /** A stat's value from a parsed file, or null if the file can't give it. */

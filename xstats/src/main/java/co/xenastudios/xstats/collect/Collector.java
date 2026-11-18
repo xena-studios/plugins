@@ -78,30 +78,39 @@ public final class Collector implements Module {
         if (!engine.ready() || !saving.compareAndSet(false, true)) {
             return false;
         }
-        long started = System.currentTimeMillis();
-        List<Player> online = new ArrayList<>(Bukkit.getOnlinePlayers());
-        int each = Math.max(1, perTick.getAsInt());
-        for (int i = 0; i < online.size(); i++) {
-            Player player = online.get(i);
-            // Retired (they left) is fine: their quit reading covers it.
-            player.getScheduler().runDelayed(plugin, scheduled -> engine.queue(reader.read(player, false, true)), null, 1 + i / each);
-        }
-        if (excludeBanned) {
-            // Through the core, which keeps running while an empty Paper server is paused.
-            tasks.global(() -> engine.bannedPlayers(banned()));
-        }
-        // Every reading is in by then, with room for a slow tick or two; a late one waits for the next save.
-        long wait = (2L + (online.size() + each - 1) / each + 10) * 50;
-        worker.schedule(() -> {
-            try {
-                engine.save(started);
-                afterSave.run();
-            } finally {
-                saving.set(false);
-                done.run();
+        boolean scheduled = false;
+        try {
+            long started = System.currentTimeMillis();
+            List<Player> online = new ArrayList<>(Bukkit.getOnlinePlayers());
+            int each = Math.max(1, perTick.getAsInt());
+            for (int i = 0; i < online.size(); i++) {
+                Player player = online.get(i);
+                // Retired (they left) is fine: their quit reading covers it.
+                player.getScheduler().runDelayed(plugin, task -> engine.queue(reader.read(player, false, true)), null, 1 + i / each);
             }
-        }, wait);
-        return true;
+            if (excludeBanned) {
+                // Through the core, which keeps running while an empty Paper server is paused.
+                tasks.global(() -> engine.bannedPlayers(banned()));
+            }
+            // Every reading is in by then, with room for a slow tick or two; a late one waits for the next save.
+            long wait = (2L + (online.size() + each - 1) / each + 10) * 50;
+            worker.schedule(() -> {
+                try {
+                    engine.save(started);
+                    afterSave.run();
+                } finally {
+                    saving.set(false);
+                    done.run();
+                }
+            }, wait);
+            scheduled = true;
+            return true;
+        } finally {
+            if (!scheduled) {
+                // Something above failed: the next save can still start.
+                saving.set(false);
+            }
+        }
     }
 
     /** The server's own ban list. On the global thread, where it's kept. */

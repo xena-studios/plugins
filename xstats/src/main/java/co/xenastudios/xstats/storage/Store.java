@@ -52,8 +52,13 @@ public final class Store {
 
     public record LoadedPlayer(int dbId, UUID uuid, String name, long firstJoin, long lastSeen, boolean hidden, boolean excluded) {}
 
-    /** A value for a player and stat: all time, or one day's rise. */
-    public record Value(int player, String stat, int day, long value) {}
+    /**
+     * A value for a player and stat: all time, or one day's rise.
+     *
+     * @param value added up across servers (in network mode)
+     * @param max the highest of any one server, for stats that aren't counters (a balance)
+     */
+    public record Value(int player, String stat, int day, long value, long max) {}
 
     public record Loaded(List<LoadedPlayer> players, List<Value> totals, List<Value> days) {}
 
@@ -130,14 +135,20 @@ public final class Store {
         }
     }
 
-    /** The database id of a stat, adding it the first time. */
-    int statId(Connection connection, String stat) throws SQLException {
+    /**
+     * The database id of a stat, adding it the first time. A new id goes in {@code added},
+     * and is only remembered once its transaction commits: one rolled back doesn't exist.
+     */
+    int statId(Connection connection, String stat, Map<String, Integer> added) throws SQLException {
         Integer known = statIds.get(stat);
+        if (known == null) {
+            known = added.get(stat);
+        }
         if (known != null) {
             return known;
         }
         int id = dictionary(connection, database, "stats", stat);
-        statIds.put(stat, id);
+        added.put(stat, id);
         return id;
     }
 
@@ -177,11 +188,11 @@ public final class Store {
             List<Value> totals = new ArrayList<>();
             try (Statement statement = connection.createStatement();
                  ResultSet result = statement.executeQuery(sql(
-                     "SELECT player, stat, SUM(value) FROM {p}totals" + scope + " GROUP BY player, stat"))) {
+                     "SELECT player, stat, SUM(value), MAX(value) FROM {p}totals" + scope + " GROUP BY player, stat"))) {
                 while (result.next()) {
                     String stat = stats.get(result.getInt(2));
                     if (stat != null) {
-                        totals.add(new Value(result.getInt(1), stat, 0, result.getLong(3)));
+                        totals.add(new Value(result.getInt(1), stat, 0, result.getLong(3), result.getLong(4)));
                     }
                 }
             }
@@ -194,7 +205,8 @@ public final class Store {
                     while (result.next()) {
                         String stat = stats.get(result.getInt(2));
                         if (stat != null) {
-                            days.add(new Value(result.getInt(1), stat, result.getInt(3), result.getLong(4)));
+                            long delta = result.getLong(4);
+                            days.add(new Value(result.getInt(1), stat, result.getInt(3), delta, delta));
                         }
                     }
                 }
@@ -237,13 +249,15 @@ public final class Store {
         try (Connection connection = connect()) {
             connection.setAutoCommit(false);
             try {
+                Map<String, Integer> added = new HashMap<>();
                 int[] ids = players(connection, save.players());
-                totals(connection, save, ids);
-                daily(connection, save, ids);
+                totals(connection, save, ids, added);
+                daily(connection, save, ids, added);
                 if (!save.players().isEmpty()) {
                     feed.publish(connection, "saved", serverName);
                 }
                 connection.commit();
+                statIds.putAll(added);
                 return ids;
             } catch (SQLException | RuntimeException e) {
                 connection.rollback();
@@ -320,7 +334,7 @@ public final class Store {
         }
     }
 
-    private void totals(Connection connection, Save save, int[] ids) throws SQLException {
+    private void totals(Connection connection, Save save, int[] ids, Map<String, Integer> added) throws SQLException {
         if (save.totals().isEmpty()) {
             return;
         }
@@ -332,7 +346,7 @@ public final class Store {
         try (PreparedStatement statement = connection.prepareStatement(sql(upsert))) {
             for (TotalRow row : save.totals()) {
                 statement.setInt(1, ids[row.player()]);
-                statement.setInt(2, statId(connection, row.stat()));
+                statement.setInt(2, statId(connection, row.stat(), added));
                 statement.setInt(3, server);
                 statement.setLong(4, row.value());
                 statement.setLong(5, row.raw());
@@ -342,14 +356,14 @@ public final class Store {
         }
     }
 
-    private void daily(Connection connection, Save save, int[] ids) throws SQLException {
+    private void daily(Connection connection, Save save, int[] ids, Map<String, Integer> added) throws SQLException {
         if (save.daily().isEmpty()) {
             return;
         }
         try (PreparedStatement statement = connection.prepareStatement(sql(addTo("daily", "day")))) {
             for (DailyRow row : save.daily()) {
                 statement.setInt(1, ids[row.player()]);
-                statement.setInt(2, statId(connection, row.stat()));
+                statement.setInt(2, statId(connection, row.stat(), added));
                 statement.setInt(3, server);
                 statement.setInt(4, save.day());
                 statement.setLong(5, row.delta());
@@ -469,27 +483,39 @@ public final class Store {
     /** One day's rise of one stat, for a profile's history. */
     public record Day(int day, String stat, long delta) {}
 
-    /** A player's daily rows from {@code fromDay}, added up across servers in network mode. */
-    public List<Day> history(int player, int fromDay, boolean network) throws SQLException {
+    /** A profile's history and, in network mode, each server's numbers. */
+    public record History(List<Day> days, List<ServerValue> servers) {}
+
+    /**
+     * A player's daily rows from {@code fromDay}, added up across servers in network mode,
+     * and then each server's all-time values: one connection for both.
+     */
+    public History history(int player, int fromDay, boolean network) throws SQLException {
         try (Connection connection = connect()) {
             Map<Integer, String> stats = statNames(connection);
-            List<Day> days = new ArrayList<>();
-            try (PreparedStatement query = connection.prepareStatement(sql(
-                "SELECT day, stat, SUM(delta) FROM {p}daily WHERE player = ? AND day >= ?"
-                    + (network ? "" : " AND server = " + server) + " GROUP BY day, stat ORDER BY day"))) {
-                query.setInt(1, player);
-                query.setInt(2, fromDay);
-                try (ResultSet result = query.executeQuery()) {
-                    while (result.next()) {
-                        String stat = stats.get(result.getInt(2));
-                        if (stat != null) {
-                            days.add(new Day(result.getInt(1), stat, result.getLong(3)));
-                        }
+            return new History(days(connection, stats, player, fromDay, network),
+                network ? perServer(connection, stats, player) : List.of());
+        }
+    }
+
+    private List<Day> days(Connection connection, Map<Integer, String> stats, int player, int fromDay, boolean network)
+        throws SQLException {
+        List<Day> days = new ArrayList<>();
+        try (PreparedStatement query = connection.prepareStatement(sql(
+            "SELECT day, stat, SUM(delta) FROM {p}daily WHERE player = ? AND day >= ?"
+                + (network ? "" : " AND server = " + server) + " GROUP BY day, stat ORDER BY day"))) {
+            query.setInt(1, player);
+            query.setInt(2, fromDay);
+            try (ResultSet result = query.executeQuery()) {
+                while (result.next()) {
+                    String stat = stats.get(result.getInt(2));
+                    if (stat != null) {
+                        days.add(new Day(result.getInt(1), stat, result.getLong(3)));
                     }
                 }
             }
-            return days;
         }
+        return days;
     }
 
     /** One server's all-time value of one stat, for a profile in network mode. */
@@ -497,22 +523,25 @@ public final class Store {
 
     public List<ServerValue> perServer(int player) throws SQLException {
         try (Connection connection = connect()) {
-            Map<Integer, String> stats = statNames(connection);
-            List<ServerValue> values = new ArrayList<>();
-            try (PreparedStatement query = connection.prepareStatement(sql(
-                "SELECT s.name, t.stat, t.value FROM {p}totals t JOIN {p}servers s ON s.id = t.server WHERE t.player = ?"))) {
-                query.setInt(1, player);
-                try (ResultSet result = query.executeQuery()) {
-                    while (result.next()) {
-                        String stat = stats.get(result.getInt(2));
-                        if (stat != null) {
-                            values.add(new ServerValue(result.getString(1), stat, result.getLong(3)));
-                        }
+            return perServer(connection, statNames(connection), player);
+        }
+    }
+
+    private List<ServerValue> perServer(Connection connection, Map<Integer, String> stats, int player) throws SQLException {
+        List<ServerValue> values = new ArrayList<>();
+        try (PreparedStatement query = connection.prepareStatement(sql(
+            "SELECT s.name, t.stat, t.value FROM {p}totals t JOIN {p}servers s ON s.id = t.server WHERE t.player = ?"))) {
+            query.setInt(1, player);
+            try (ResultSet result = query.executeQuery()) {
+                while (result.next()) {
+                    String stat = stats.get(result.getInt(2));
+                    if (stat != null) {
+                        values.add(new ServerValue(result.getString(1), stat, result.getLong(3)));
                     }
                 }
             }
-            return values;
         }
+        return values;
     }
 
     // ---- the import ----
@@ -531,13 +560,14 @@ public final class Store {
             // Counted before and after: MySQL's batched inserts don't say how many each one added.
             long before = totalRows(connection);
             connection.setAutoCommit(false);
+            Map<String, Integer> added = new HashMap<>();
             try (PreparedStatement insert = connection.prepareStatement(sql(database.dialect().insertIgnore()
                 + " INTO {p}totals (player, stat, server, value, raw) VALUES (?, ?, ?, ?, ?)"))) {
                 for (Imported player : players) {
                     int id = importPlayer(connection, player);
                     for (Map.Entry<String, Long> value : player.values().entrySet()) {
                         insert.setInt(1, id);
-                        insert.setInt(2, statId(connection, value.getKey()));
+                        insert.setInt(2, statId(connection, value.getKey(), added));
                         insert.setInt(3, server);
                         insert.setLong(4, value.getValue());
                         insert.setLong(5, Boolean.TRUE.equals(player.counters().get(value.getKey())) ? value.getValue() : -1);
@@ -546,6 +576,7 @@ public final class Store {
                     insert.executeBatch();
                 }
                 connection.commit();
+                statIds.putAll(added);
             } catch (SQLException | RuntimeException e) {
                 connection.rollback();
                 throw e;

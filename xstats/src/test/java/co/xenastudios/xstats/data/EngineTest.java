@@ -257,6 +257,10 @@ class EngineTest {
         survival.save(now);
         assertEquals(14 + 3, value(survival, steve, kills, Period.ALL));
         assertEquals(4 + 2, value(survival, steve, kills, Period.DAILY));
+        // Leaderboards and totals follow the other servers' numbers too, not only this one's.
+        assertEquals(17, survival.leaderboards().get("kills", Period.ALL).values()[0]);
+        assertEquals(6, survival.leaderboards().get("kills", Period.DAILY).values()[0]);
+        assertEquals(17, survival.leaderboards().total(kills.index()));
         // Each server's own counter is still worked out from its own last reading.
         survival.queue(sample(steve, "Steve", now + 2 * MINUTE, 0, 15, 0));
         survival.save(now);
@@ -341,6 +345,170 @@ class EngineTest {
         assertFalse(engine.store().flag("imported"));
         engine.store().setFlag("imported");
         assertTrue(engine.store().flag("imported"));
+    }
+
+    @Test
+    void aGaugeIsTheHighestOnANetworkNotEveryServerAddedUp() throws Exception {
+        long now = System.currentTimeMillis();
+        Engine survival = engine("survival", true);
+        Engine creative = engine("creative", true);
+        survival.queue(sample(steve, "Steve", now, 0, 1, 0));
+        survival.save(now);
+        survival.queue(new Event.Set(steve, "balance", 500));
+        survival.save(now);
+        creative.queue(sample(steve, "Steve", now, 0, 1, 0));
+        creative.queue(new Event.Set(steve, "balance", 500));
+        creative.save(now);
+        assertEquals(500, value(creative, steve, balance, Period.ALL));
+        survival.networkChanged();
+        survival.save(now);
+        assertEquals(500, value(survival, steve, balance, Period.ALL), "one balance, not one per server");
+        assertEquals(500, value(engine("lobby", true), steve, balance, Period.ALL));
+    }
+
+    @Test
+    void readingsKeepTheirOrderAfterADatabaseError() throws Exception {
+        long now = System.currentTimeMillis();
+        Engine before = engine("main", false);
+        before.queue(sample(steve, "Steve", now, 0, 100, 0));
+        before.save(now);
+        // A restart: Steve's own rows are read again at his first event.
+        Engine engine = engine("main", false);
+        rename(engine, "totals", "totals_off");
+        engine.queue(sample(steve, "Steve", now + MINUTE, 0, 500, 0));
+        engine.queue(sample(alex, "Alex", now + MINUTE, 0, 7, 0));
+        engine.queue(sample(steve, "Steve", now + 2 * MINUTE, 0, 510, 0));
+        assertFalse(engine.save(now), "the database can't be read or written");
+        assertEquals(7, value(engine, alex, kills, Period.ALL), "someone else's events aren't held up");
+        assertEquals(100, value(engine, steve, kills, Period.ALL), "Steve's wait for his rows");
+        engine.queue(sample(steve, "Steve", now + 3 * MINUTE, 0, 520, 0));
+        assertFalse(engine.save(now));
+        rename(engine, "totals_off", "totals");
+        assertTrue(engine.save(now));
+        assertEquals(520, value(engine, steve, kills, Period.ALL), "applied in order: no counter restart, no jump");
+        assertEquals(420, value(engine, steve, kills, Period.DAILY));
+        assertEquals(0, engine.waiting());
+        assertEquals(520, value(engine("main", false), steve, kills, Period.ALL));
+        assertEquals(7, value(engine("main", false), alex, kills, Period.ALL));
+    }
+
+    @Test
+    void manyIncrementsWaitAsOne() throws Exception {
+        Engine engine = engine("main", false);
+        long now = System.currentTimeMillis();
+        engine.queue(sample(steve, "Steve", now, 0, 0, 0));
+        engine.save(now);
+        for (int i = 0; i < 10_000; i++) {
+            engine.queue(new Event.Increment(steve, "kills", 1));
+        }
+        assertEquals(1, engine.waiting(), "added up while waiting");
+        // A set and an increment of one stat keep their order.
+        engine.queue(new Event.Set(steve, "balance", 100));
+        engine.queue(new Event.Set(steve, "balance", 200));
+        engine.queue(new Event.Increment(steve, "balance", 5));
+        assertEquals(3, engine.waiting());
+        engine.save(now);
+        assertEquals(10_000, value(engine, steve, kills, Period.ALL));
+        assertEquals(10_000, value(engine, steve, kills, Period.DAILY));
+        assertEquals(205, value(engine, steve, balance, Period.ALL));
+        assertEquals(0, engine.waiting());
+    }
+
+    @Test
+    void tooManyWaitingAreDroppedNotKept() {
+        Inbox inbox = new Inbox(LOGGER, 10, 5);
+        for (int i = 0; i < 25; i++) {
+            inbox.add(new Event.Joined(UUID.randomUUID(), "P" + i, 0, 0, 0, 0));
+        }
+        assertEquals(10, inbox.size());
+        assertEquals(15, inbox.dropped());
+        List<Event> applied = new java.util.ArrayList<>();
+        assertEquals(null, inbox.drain(applied::add));
+        assertEquals(10, applied.size());
+        assertEquals(0, inbox.size());
+    }
+
+    @Test
+    void aSmallDropIsADecreaseAndABigOneARestart() throws Exception {
+        Engine engine = engine("main", false);
+        long now = System.currentTimeMillis();
+        engine.queue(sample(steve, "Steve", now, 0, 100, 0));
+        engine.queue(sample(steve, "Steve", now + MINUTE, 0, 200, 0));
+        // Another plugin took 5 away (decrementStatistic).
+        engine.queue(sample(steve, "Steve", now + 2 * MINUTE, 0, 195, 0));
+        engine.save(now);
+        assertEquals(195, value(engine, steve, kills, Period.ALL));
+        assertEquals(100, value(engine, steve, kills, Period.DAILY), "periods only count rises");
+        // The stats file was deleted: it counts again from 0.
+        engine.queue(sample(steve, "Steve", now + 3 * MINUTE, 0, 3, 0));
+        engine.save(now);
+        assertEquals(198, value(engine, steve, kills, Period.ALL));
+    }
+
+    @Test
+    void aPlaceholdersFirstValueAfterARestartCounts() throws Exception {
+        long now = System.currentTimeMillis();
+        Engine first = engine("main", false);
+        first.queue(sample(steve, "Steve", now, 0, 0, 0));
+        first.queue(new Event.Set(steve, "balance", 1_000));
+        first.save(now);
+        Engine second = engine("main", false);
+        second.queue(new Event.Set(steve, "balance", 1_500));
+        second.save(now);
+        assertEquals(1_500, value(second, steve, balance, Period.ALL));
+        assertEquals(500, value(second, steve, balance, Period.DAILY), "a rise since the last value saved");
+    }
+
+    @Test
+    void hidingSomeoneTellsTheWebsiteAndLeavesThemOutOfItsPlaces() throws Exception {
+        Engine engine = engine("main", false);
+        long now = System.currentTimeMillis();
+        java.util.concurrent.atomic.AtomicInteger told = new java.util.concurrent.atomic.AtomicInteger();
+        engine.onHiddenChanged(told::incrementAndGet);
+        engine.queue(sample(steve, "Steve", now, 0, 9, 0));
+        engine.queue(sample(alex, "Alex", now, 0, 5, 0));
+        engine.save(now);
+        int version = engine.hiddenVersion();
+        engine.hide(engine.player(steve), true);
+        assertEquals(1, told.get());
+        assertTrue(engine.hiddenVersion() != version);
+        assertEquals(2, engine.rank(engine.player(alex), kills, Period.ALL), "in game, Steve is still above");
+        assertEquals(1, engine.visibleRank(engine.player(alex), kills, Period.ALL), "on the site, he isn't counted");
+        Board board = engine.leaderboards().get("kills", Period.ALL);
+        assertEquals(List.of("Alex"), board.top(10, true).stream().map(e -> e.name()).toList());
+        assertEquals(1, board.top(10, true).getFirst().rank());
+        // Another server of the network hid him: this one hears of it through the change feed.
+        Engine other = engine("main", false);
+        other.onHiddenChanged(told::incrementAndGet);
+        engine.hide(engine.player(steve), false);
+        other.refreshHidden(steve);
+        assertFalse(other.player(steve).hidden());
+        assertEquals(3, told.get());
+    }
+
+    @Test
+    void aStatAddedInASaveThatFailedIsntRememberedAsStored() throws Exception {
+        StatDef votes = new StatDef(catalog.index("votes"), "votes", "Votes", StatUnit.COUNT, 0, true, true, true, "xVote",
+            new StatDef.Custom("xVote"));
+        List<StatDef> with = new java.util.ArrayList<>(catalog.snapshot().stats());
+        with.add(votes);
+        catalog.set(with);
+        long now = System.currentTimeMillis();
+        Engine engine = engine("main", false);
+        engine.queue(sample(steve, "Steve", now, 0, 1, 0));
+        engine.save(now);
+        engine.queue(new Event.Increment(steve, "votes", 5));
+        rename(engine, "daily", "daily_off");
+        assertFalse(engine.save(now), "the votes stat is added, then rolled back");
+        rename(engine, "daily_off", "daily");
+        assertTrue(engine.save(now));
+        assertEquals(5, value(engine("main", false), steve, votes, Period.ALL), "saved under an id that exists");
+    }
+
+    private static void rename(Engine engine, String from, String to) throws Exception {
+        try (Connection connection = engine.store().connect(); Statement statement = connection.createStatement()) {
+            statement.executeUpdate(engine.store().database().sql("ALTER TABLE {p}" + from + " RENAME TO {p}" + to));
+        }
     }
 
     private static long count(Engine engine, String sql) throws Exception {

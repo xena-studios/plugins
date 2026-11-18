@@ -49,8 +49,9 @@ public final class Sections {
         sections.removeIf(section -> section.key().equals(key));
     }
 
-    public void removeAll(Plugin plugin) {
-        sections.removeIf(section -> section.plugin().equals(plugin));
+    /** Drops the sections of plugins that were disabled, so they don't keep them loaded. */
+    public void removeDisabled() {
+        sections.removeIf(section -> !section.plugin().isEnabled());
     }
 
     public boolean isEmpty() {

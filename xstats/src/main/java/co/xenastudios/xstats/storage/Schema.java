@@ -31,6 +31,8 @@ public final class Schema {
             "CREATE INDEX {p}players_name ON {p}players (name_lower)",
             "CREATE TABLE IF NOT EXISTS {p}totals (player INT NOT NULL, stat INT NOT NULL, server INT NOT NULL,"
                 + " value BIGINT NOT NULL, raw BIGINT NOT NULL, PRIMARY KEY (player, stat, server)){table}",
+            // For owners' own queries, such as a server's top players of a stat.
+            "CREATE INDEX {p}totals_stat ON {p}totals (stat, server, value)",
             "CREATE TABLE IF NOT EXISTS {p}daily (player INT NOT NULL, stat INT NOT NULL, server INT NOT NULL,"
                 + " day INT NOT NULL, delta BIGINT NOT NULL, PRIMARY KEY (player, stat, server, day)){table}",
             "CREATE INDEX {p}daily_day ON {p}daily (day)",

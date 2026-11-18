@@ -15,6 +15,8 @@ public final class Format {
 
     private static final ThreadLocal<DecimalFormat> WHOLE = ThreadLocal.withInitial(() -> pattern("#,##0"));
     private static final ThreadLocal<DecimalFormat> ONE = ThreadLocal.withInitial(() -> pattern("#,##0.#"));
+    /** By decimal places, 1 to 4 as the config allows, made once per thread: placeholders ask often. */
+    private static final ThreadLocal<DecimalFormat[]> PLACES = ThreadLocal.withInitial(() -> new DecimalFormat[5]);
 
     private Format() {}
 
@@ -28,12 +30,22 @@ public final class Format {
 
     public static String value(StatUnit unit, int decimals, long value) {
         return switch (unit) {
-            case COUNT -> decimals == 0 ? WHOLE.get().format(value)
-                : pattern("#,##0." + "0".repeat(decimals)).format(BigDecimal.valueOf(value, decimals));
+            case COUNT -> decimals == 0 ? WHOLE.get().format(value) : places(decimals).format(BigDecimal.valueOf(value, decimals));
             case TIME -> time(value);
             case DISTANCE -> distance(value);
             case DAMAGE -> ONE.get().format(value / 20.0) + (value == 20 ? " heart" : " hearts");
         };
+    }
+
+    private static DecimalFormat places(int decimals) {
+        DecimalFormat[] made = PLACES.get();
+        if (decimals >= made.length) {
+            return pattern("#,##0." + "0".repeat(decimals));
+        }
+        if (made[decimals] == null) {
+            made[decimals] = pattern("#,##0." + "0".repeat(decimals));
+        }
+        return made[decimals];
     }
 
     /** Seconds as {@code 45s}, {@code 12m}, {@code 3h 12m} or {@code 2d 4h}. */

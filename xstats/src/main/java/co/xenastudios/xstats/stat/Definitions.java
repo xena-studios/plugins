@@ -16,8 +16,31 @@ public final class Definitions {
     public static final Pattern ID = Pattern.compile("[a-z0-9_]{1,32}");
     /** Words a stat id can't be, because placeholders use them: %xstats_rank_kills%, %xstats_top_kills_1_name%. */
     private static final List<String> RESERVED = List.of("rank", "top", "kd", "first_join", "last_seen", "private");
+    /** Endings placeholders add to a stat's id: %xstats_kills_daily%, %xstats_kills_raw%. */
+    private static final List<String> SUFFIXES = List.of("_raw", "_all", "_daily", "_weekly", "_monthly");
+    /** Minecraft's stats that go back to 0 by themselves, so they can't be added up as counters. */
+    private static final List<String> NOT_COUNTERS = List.of("time_since_death", "time_since_rest");
 
     private Definitions() {}
+
+    /**
+     * Why an id can't be used, or null if it can: one placeholders would read as another
+     * stat's ({@code kills_daily} is kills today), or as rank_ and top_ placeholders.
+     */
+    public static String clash(String id) {
+        if (RESERVED.contains(id)) {
+            return "\"" + id + "\" is kept for placeholders; pick another id";
+        }
+        if (id.startsWith("top_") || id.startsWith("rank_")) {
+            return "an id can't start with top_ or rank_, which placeholders use; pick another id";
+        }
+        for (String suffix : SUFFIXES) {
+            if (id.endsWith(suffix)) {
+                return "an id can't end with " + suffix + ", which placeholders add; pick another id";
+            }
+        }
+        return null;
+    }
 
     /** A stat registered through the API, kept across reloads. */
     public record Registered(String id, String name, StatUnit unit, String plugin) {}
@@ -53,8 +76,9 @@ public final class Definitions {
         if (!ID.matcher(id).matches()) {
             throw new IllegalArgumentException("an id is 1 to 32 lowercase letters, digits and _");
         }
-        if (RESERVED.contains(id)) {
-            throw new IllegalArgumentException("\"" + id + "\" is kept for placeholders; pick another id");
+        String clash = clash(id);
+        if (clash != null) {
+            throw new IllegalArgumentException(clash);
         }
         String source = settings.source().strip();
         if (source.isEmpty()) {
@@ -88,6 +112,10 @@ public final class Definitions {
             StatUnit first = null;
             for (String part : source.split("\\+")) {
                 Vanilla.Term term = Vanilla.term(part);
+                if (term.category() == Vanilla.Category.CUSTOM && NOT_COUNTERS.contains(term.name())) {
+                    throw new IllegalArgumentException(term.name() + " goes back to 0 by itself (at each death or sleep), so it"
+                        + " can't be counted up; use a placeholder for it instead");
+                }
                 StatUnit termUnit = Vanilla.unit(term);
                 if (first != null && termUnit != first) {
                     throw new IllegalArgumentException("its parts count different things (" + terms.getFirst() + " and " + term

@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,7 +49,7 @@ public final class Engine {
     private final Logger logger;
     private final Map<UUID, PlayerRecord> players = new ConcurrentHashMap<>();
     private final Map<String, PlayerRecord> byName = new ConcurrentHashMap<>();
-    private final ConcurrentLinkedQueue<Event> events = new ConcurrentLinkedQueue<>();
+    private final Inbox events;
     private final Leaderboards leaderboards = new Leaderboards();
     private final BitSet changedSinceBoards = new BitSet();
 
@@ -63,6 +62,9 @@ public final class Engine {
     private volatile String[] sortedNames = new String[0];
     private volatile PlayerRecord[] sortedPlayers = new PlayerRecord[0];
     private volatile LastSave lastSave = new LastSave(0, 0, 0, null);
+    /** Goes up each time someone is hidden or shown again, so pages made from boards know to leave them out. */
+    private volatile int hiddenVersion;
+    private Runnable onHiddenChanged = () -> { };
     private boolean namesChanged = true;
     /** The stats the last load read from the database. One added since has its saved values read before it's counted. */
     private Set<String> loadedStats = Set.of();
@@ -74,6 +76,7 @@ public final class Engine {
         this.catalog = catalog;
         this.settings = settings;
         this.logger = logger;
+        this.events = new Inbox(logger);
     }
 
     // ---- reading, from any thread ----
@@ -166,6 +169,32 @@ public final class Engine {
         return banned.contains(id);
     }
 
+    /** Changes each time a player is hidden from the website or shown again. Any thread. */
+    public int hiddenVersion() {
+        return hiddenVersion;
+    }
+
+    /**
+     * A player's place among those the website shows: players who keep their stats private
+     * don't count, so a place never gives away that someone private is above. 0 if none.
+     */
+    public int visibleRank(PlayerRecord player, StatDef stat, Period period) {
+        Board board = leaderboards.get(stat.id(), period);
+        if (board == null || player.excluded() || banned.contains(player.id)) {
+            return 0;
+        }
+        return board.visibleRankOf(value(player, stat, period), hiddenVersion);
+    }
+
+    /** Stat changes waiting for the next save, and how many were dropped because too many were. */
+    public int waiting() {
+        return events.size();
+    }
+
+    public long dropped() {
+        return events.dropped();
+    }
+
     // ---- queueing, from any thread ----
 
     public void queue(Event event) {
@@ -185,18 +214,27 @@ public final class Engine {
         this.onNewLeader = listener;
     }
 
+    /** Told on xStats' thread when someone is hidden from the website or shown again, to make its pages again. */
+    public void onHiddenChanged(Runnable listener) {
+        this.onHiddenChanged = listener;
+    }
+
     // ---- xStats' thread ----
 
     /** Uses this database from now on and loads every player from it. On xStats' thread. */
     public void open(Store store, ChangeFeed feed) throws SQLException {
         this.store = store;
         this.feed = feed;
-        reload(true);
+        reload();
         ready = true;
     }
 
-    /** Reads every player's all-time and period numbers again, keeping what's only in memory. */
-    void reload(boolean everything) throws SQLException {
+    /**
+     * Reads every player's all-time and period numbers again, keeping what's only in memory,
+     * and works out every board again: any player's numbers may have changed (on a network,
+     * other servers' saves).
+     */
+    void reload() throws SQLException {
         Settings current = settings;
         int today = current.calendar().today(System.currentTimeMillis());
         Store.Loaded loaded = store.load(current.network(), current.calendar().earliestNeeded(today));
@@ -204,13 +242,17 @@ public final class Engine {
         int width = stats.width();
         loadedStats = Set.copyOf(stats.byId().keySet());
         Map<Integer, PlayerRecord> byDbId = new HashMap<>();
+        boolean hiddenChanged = false;
         for (Store.LoadedPlayer row : loaded.players()) {
             PlayerRecord player = players.computeIfAbsent(row.uuid(), id -> new PlayerRecord(id, row.name()));
             player.dbId = row.dbId();
             if (player.name == null || !player.online) {
                 rename(player, row.name());
             }
-            player.hidden = row.hidden();
+            if (player.hidden != row.hidden()) {
+                player.hidden = row.hidden();
+                hiddenChanged = true;
+            }
             player.excluded = row.excluded();
             player.firstJoin = player.firstJoin == 0 ? row.firstJoin() : Math.min(player.firstJoin, Math.max(1, row.firstJoin()));
             player.lastSeen = Math.max(player.lastSeen, row.lastSeen());
@@ -221,15 +263,22 @@ public final class Engine {
             PlayerRecord player = byDbId.get(value.player());
             StatDef stat = stats.byId().get(value.stat());
             if (player != null && stat != null) {
-                totals.computeIfAbsent(player, key -> new long[width])[stat.index()] = value.value();
+                // On a network, counters add up every server; a gauge (a balance) is the highest, not N times over.
+                totals.computeIfAbsent(player, key -> new long[width])[stat.index()] = stat.counter() ? value.value() : value.max();
             }
         }
         for (Map.Entry<PlayerRecord, long[]> entry : totals.entrySet()) {
             PlayerRecord player = entry.getKey();
             long[] values = entry.getValue();
-            // Rises not saved yet are only in memory; keep them on top of what was read.
-            for (int i = 0; i < values.length && i < player.pendingDaily.length; i++) {
-                values[i] += player.pendingDaily[i];
+            for (StatDef stat : stats.stats()) {
+                int i = stat.index();
+                if (stat.counter()) {
+                    // Rises not saved yet are only in memory; keep them on top of what was read.
+                    values[i] += i < player.pendingDaily.length ? player.pendingDaily[i] : 0;
+                } else if (player.localLoaded && i < player.local.length && player.raw[i] >= 0) {
+                    // A gauge set here since the last save: this server's value is the latest.
+                    values[i] = current.network() ? Math.max(values[i], player.local[i]) : player.local[i];
+                }
             }
             player.values = values;
         }
@@ -282,7 +331,13 @@ public final class Engine {
             player.ensureWidth(width);
         }
         namesChanged = true;
-        boards(everything, today);
+        if (hiddenChanged) {
+            hiddenVersion++;
+        }
+        boards(true, today);
+        if (hiddenChanged) {
+            onHiddenChanged.run();
+        }
     }
 
     private void rename(PlayerRecord player, String name) {
@@ -324,26 +379,24 @@ public final class Engine {
                 player.localLoaded = false;
             }
             try {
-                reload(true);
+                reload();
             } catch (SQLException e) {
                 problem("Couldn't read the stats added since the last load: " + e.getMessage());
                 return false;
             }
         }
         Set<PlayerRecord> touched = new HashSet<>();
-        Event event;
-        while ((event = events.poll()) != null) {
-            try {
-                PlayerRecord player = apply(event, stats, current, today);
-                if (player != null) {
-                    touched.add(player);
-                }
-            } catch (SQLException e) {
-                // Couldn't read their rows: try the event again next time.
-                events.add(event);
-                problem("Couldn't read a player's stats from " + store.description() + ": " + e.getMessage());
-                return false;
+        // A player whose rows can't be read has their events kept, in order, for the next
+        // save; everyone else's are applied and saved now.
+        SQLException unread = events.drain(event -> {
+            PlayerRecord player = apply(event, stats, current, today);
+            if (player != null) {
+                touched.add(player);
             }
+        });
+        if (unread != null) {
+            problem("Couldn't read " + events.held() + " player(s)' stats from " + store.description() + ": " + unread.getMessage()
+                + ". Their changes are kept and tried again at the next save.");
         }
         boolean written = write(stats, today);
         if (written && lastFold != today) {
@@ -352,7 +405,8 @@ public final class Engine {
         if (written && networkDirty && current.network()) {
             networkDirty = false;
             try {
-                reload(false);
+                // Works out every board again too: other servers changed anyone's numbers.
+                reload();
             } catch (SQLException e) {
                 networkDirty = true;
                 logger.warning("Couldn't read the network's stats: " + e.getMessage());
@@ -360,7 +414,7 @@ public final class Engine {
         }
         boards(false, today);
         long took = System.currentTimeMillis() - started;
-        lastSave = new LastSave(now, touched.size(), took, written ? null : lastSave.problem());
+        lastSave = new LastSave(now, touched.size(), took, written && unread == null ? null : lastSave.problem());
         return written;
     }
 
@@ -434,7 +488,11 @@ public final class Engine {
                     return null;
                 }
                 prepare(player, width);
-                gauge(player, stat, set.value(), current, today, width);
+                gauge(player, stat, set.first(), current, today, width);
+                if (set.value() != set.first() || set.rise() > 0) {
+                    // Set again since: the last value, with the rises between counted as they happened.
+                    settle(player, stat, set.value(), set.rise(), current, today, width);
+                }
                 return player;
             }
         }
@@ -486,10 +544,19 @@ public final class Engine {
         if (reading == last) {
             return;
         }
-        // Lower than last time: the counter restarted from 0, as when a stats file is deleted.
-        long rise = reading > last ? reading - last : reading;
         player.raw[index] = reading;
         player.changed.set(index);
+        if (reading < last && reading >= last - last / 10) {
+            // A little lower: another plugin took some away (decrementStatistic). All time
+            // goes down with it; today, this week and this month only ever count rises.
+            long drop = Math.min(last - reading, player.local[index]);
+            player.local[index] -= drop;
+            player.values[index] -= drop;
+            changedSinceBoards.set(index);
+            return;
+        }
+        // Much lower than last time: the counter restarted from 0, as when a stats file is deleted.
+        long rise = reading > last ? reading - last : reading;
         if (rise > 0) {
             add(player, stat, rise, current, today, width);
         }
@@ -506,11 +573,26 @@ public final class Engine {
         }
         player.raw[index] = Math.max(0, value);
         player.local[index] = value;
-        player.values[index] += value - old;
+        // On a network a gauge is its latest value, not every server's added up.
+        player.values[index] = current.network() ? value : player.values[index] + value - old;
         player.changed.set(index);
         changedSinceBoards.set(index);
         if (!first && value > old && stat.periods()) {
             period(player, stat, value - old, current, today, width);
+        }
+    }
+
+    /** A gauge's later value, after {@link #gauge}, with {@code rise} counted towards periods. */
+    private void settle(PlayerRecord player, StatDef stat, long value, long rise, Settings current, int today, int width) {
+        int index = stat.index();
+        long old = player.local[index];
+        player.raw[index] = Math.max(0, value);
+        player.local[index] = value;
+        player.values[index] = current.network() ? value : player.values[index] + value - old;
+        player.changed.set(index);
+        changedSinceBoards.set(index);
+        if (rise > 0 && stat.periods()) {
+            period(player, stat, rise, current, today, width);
         }
     }
 
@@ -580,8 +662,9 @@ public final class Engine {
             for (StatDef stat : stats.stats()) {
                 int index = stat.index();
                 if (player.local != null && player.changed.get(index) && index < player.local.length) {
-                    totals.add(new Store.TotalRow(at, stat.id(), player.local[index], stat.counter() && stat.source() instanceof StatDef.Vanillas
-                        ? player.raw[index] : -1));
+                    // The last reading: Minecraft's counter, or a placeholder's or another
+                    // plugin's last value, so the first one after a restart isn't taken as new.
+                    totals.add(new Store.TotalRow(at, stat.id(), player.local[index], player.raw[index]));
                 }
                 if (index < player.pendingDaily.length && player.pendingDaily[index] > 0 && stat.periods()) {
                     daily.add(new Store.DailyRow(at, stat.id(), player.pendingDaily[index]));
@@ -600,7 +683,7 @@ public final class Engine {
                 player.changed.clear();
                 Arrays.fill(player.pendingDaily, 0);
             }
-            if (failing) {
+            if (failing && events.held() == 0) {
                 failing = false;
                 logger.info("Saving works again.");
             }
@@ -679,7 +762,11 @@ public final class Engine {
 
     /** Hides a player from the website, or shows them again, and saves it right away. On xStats' thread. */
     public void hide(PlayerRecord player, boolean hidden) {
-        player.hidden = hidden;
+        if (player.hidden != hidden) {
+            player.hidden = hidden;
+            hiddenVersion++;
+            onHiddenChanged.run();
+        }
         if (player.dbId == 0 || store == null) {
             player.rowChanged = true;
             return;
@@ -700,12 +787,19 @@ public final class Engine {
         }
         try {
             Boolean hidden = store.hidden(id);
-            if (hidden != null) {
+            if (hidden != null && hidden != player.hidden) {
                 player.hidden = hidden;
+                hiddenVersion++;
+                onHiddenChanged.run();
             }
         } catch (SQLException e) {
             logger.fine("Couldn't read whether " + id + " is hidden: " + e.getMessage());
         }
+    }
+
+    /** After the time zone or the week's first day changed: this day's, week's and month's numbers again. On xStats' thread. */
+    public void rereadPeriods() throws SQLException {
+        reload();
     }
 
     /** After an import: read everything again, keeping what's in memory. On xStats' thread. */
@@ -713,6 +807,6 @@ public final class Engine {
         for (PlayerRecord player : players.values()) {
             player.localLoaded = false;
         }
-        reload(true);
+        reload();
     }
 }

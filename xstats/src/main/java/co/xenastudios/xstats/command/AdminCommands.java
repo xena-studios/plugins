@@ -114,6 +114,8 @@ public final class AdminCommands {
                 + "\n<highlight>Players</highlight>: " + engine.playerCount() + " known, " + Bukkit.getOnlinePlayers().size() + " online"
                 + "\n<highlight>Stats</highlight>: " + plugin.catalog().snapshot().stats().size() + " kept; Minecraft's own: " + table
                 + "\n<highlight>Last save</highlight>: " + saved
+                + "\n<highlight>Waiting</highlight>: " + engine.waiting() + " changes"
+                + (engine.dropped() > 0 ? ", <error>" + engine.dropped() + " dropped</error> while too many waited" : "")
                 + "\n<highlight>Rows</highlight>: " + rows
                 + "\n<highlight>Website</highlight>: " + web
                 + "\n<highlight>Problem</highlight>: " + (last.problem() == null ? "none" : "<error>" + escape(last.problem())));

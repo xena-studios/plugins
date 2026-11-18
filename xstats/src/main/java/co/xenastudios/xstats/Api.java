@@ -142,6 +142,10 @@ final class Api implements XStatsApi, Module {
         if (key.length() > 64 || this.plugin.config().stats().containsKey(key)) {
             throw new IllegalArgumentException("xStats' config already has a stat called " + key + ", or the id is too long.");
         }
+        String clash = Definitions.clash(key);
+        if (clash != null) {
+            throw new IllegalArgumentException(key + ": " + clash);
+        }
         this.plugin.register(new Definitions.Registered(key, displayName, unit, plugin.getName()));
         return new Custom(key);
     }
@@ -189,8 +193,9 @@ final class Api implements XStatsApi, Module {
 
     // ---- events, on xStats' thread ----
 
-    /** After a save: drops stats of plugins that were disabled, and tells listeners. */
+    /** After a save: drops stats and profile sections of plugins that were disabled, and tells listeners. */
     void saved() {
+        plugin.sections().removeDisabled();
         for (Definitions.Registered stat : plugin.registered()) {
             Plugin owner = Bukkit.getPluginManager().getPlugin(stat.plugin());
             if (owner == null || !owner.isEnabled()) {

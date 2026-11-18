@@ -19,6 +19,7 @@ import co.xenastudios.xmoney.ledger.Store;
 import co.xenastudios.xmoney.hook.MoneyService;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -152,7 +153,9 @@ public final class EcoCommand {
         XMConfig.EcoMessages messages = plugin.config().messages().eco();
         Store store = plugin.store();
         messages.working().send(sender);
-        CompletableFuture<Page> read = plugin.players().find(name, false).thenApplyAsync(found -> {
+        // Read once what's been changed so far is saved, so the history has it.
+        CompletableFuture<Optional<Account>> named = plugin.players().find(name, false).thenCombine(plugin.ledger().saved(), (found, saved) -> found);
+        CompletableFuture<Page> read = named.thenApplyAsync(found -> {
             if (found.isEmpty()) {
                 return null;
             }

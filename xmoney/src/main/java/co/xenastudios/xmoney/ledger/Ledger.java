@@ -406,6 +406,15 @@ public final class Ledger {
         return done;
     }
 
+    /**
+     * For reading the database: completes once everything queued so far is saved, so the read
+     * sees changes made just before it, or after {@link #WAIT_MS} if the database is away
+     * (the read then sees what's saved). Never completes exceptionally.
+     */
+    public CompletableFuture<Void> saved() {
+        return flush().exceptionally(stopped -> null).completeOnTimeout(null, WAIT_MS, TimeUnit.MILLISECONDS);
+    }
+
     private static CompletableFuture<Outcome> done(Outcome outcome) {
         return CompletableFuture.completedFuture(outcome);
     }

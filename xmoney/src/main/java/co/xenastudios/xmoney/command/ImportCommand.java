@@ -70,7 +70,11 @@ public final class ImportCommand {
         };
         messages.reading().send(sender, Replies.text("source", source.name()));
         var bank = plugin.bank();
+        // The accounts changed here are read once every change so far is saved: one made just
+        // before would otherwise be missed, and set back without asking.
+        CompletableFuture<Void> saved = plugin.ledger().saved();
         source.read()
+            .thenCombine(saved, (found, ignored) -> found)
             .thenApplyAsync(found -> {
                 Importer.Plan plan = Importer.plan(source.name(), found, bank.max());
                 if (plan.lines().isEmpty()) {

@@ -140,7 +140,8 @@ public final class MoneyService implements XMoneyApi {
     public CompletableFuture<HistoryPage> history(UUID player, int page) {
         Store store = plugin.store();
         int decimals = bank().decimals();
-        return CompletableFuture.supplyAsync(() -> {
+        // Once what's been changed so far is saved, so the page has it.
+        return plugin.ledger().saved().thenApplyAsync(ignored -> {
             try {
                 long total = store.count(player);
                 int pages = ChatPages.pages(total, HISTORY_PAGE);

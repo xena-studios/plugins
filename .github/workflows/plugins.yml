@@ -83,6 +83,8 @@ jobs:
           # jars lack the core.
           path: |
             */build/libs/*.jar
+            sandbox/consumer/build/libs/*.jar
+            sandbox/paper-consumer/build/libs/*.jar
             !core/build/libs/*
             !build-logic/build/libs/*
             !*/build/libs/*-plain.jar

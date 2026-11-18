@@ -46,6 +46,7 @@ These keep the plugins fast and dependable on a busy server. A change that break
 - **Every setting applies on reload.** No "restart to apply".
 - **Old configs keep working.** Renamed or moved settings are carried forward by the config migration. When a default message changes, put its old text in the spec as `formerDefault`.
 - **Paper and Folia both work**, unless the plugin says otherwise (xLimbo is Paper only). Schedule through the core's `Tasks` or Paper's region and entity schedulers, never the Bukkit scheduler.
+- **Nothing copied between plugins.** Code a second plugin needs moves to the core, in its own pull request first; `./gradlew build` fails when the same code is in two modules ([#48](https://github.com/xena-studios/plugins/issues/48)).
 - **The jar stays within its budget** (`jarBudgetKb` in the plugin's `build.gradle.kts`). Going over usually means a library got shaded in by mistake.
 
 ## Tests

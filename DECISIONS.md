@@ -26,6 +26,7 @@ Why the plugins are built the way they are, oldest first.
 | [A shared database layer, with no drivers shaded in](#a-shared-database-layer-with-no-drivers-shaded-in-2026-11-17) | 2026-11-17 |
 | [xRewind's write path: references in, numbers out](#xrewinds-write-path-references-in-numbers-out-2026-11-17) | 2026-11-17 |
 | [xPlots: plots in memory, found by arithmetic](#xplots-plots-in-memory-found-by-arithmetic-2026-11-17) | 2026-11-17 |
+| [Developer APIs ship inside the plugin, and shared code lives in the core](#developer-apis-ship-inside-the-plugin-and-shared-code-lives-in-the-core-2026-11-17) | 2026-11-17 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -174,3 +175,13 @@ xPlots replaces a Skript that rented one WorldGuard region per plot and rewrote 
 - **Snapshots, not schematics.** Each plot's blocks are saved when it's made, as a palette of block states and an index per block, deflated: a few hundred bytes for a small plot. Saving and putting back run a few milliseconds per tick, after loading chunks in the background. A plot being put back can't be built in or rented until it's done, and one still going at shutdown is finished rather than left half done.
 - **Vault without a hard dependency.** The economy is looked up when it's used, since economy plugins often register after xPlots starts. Item currency matches material, and name and custom model data when set.
 - **WorldGuard is compiled against 7.0.14**, the newest built for Java 21, with only its API jars: their own dependencies pin a Guava that clashes with newer Paper's.
+
+## Developer APIs ship inside the plugin, and shared code lives in the core (2026-11-17)
+
+Every plugin gets a public API (issue #42), in `<plugin>/api` on the `xena.api` convention: interfaces, records, enums and events, depending on nothing but paper-api. The plugin shades it into its own jar unrelocated and never minimized, so other plugins find the API classes in the plugin they depend on, and server owners still install one jar. It's published as `co.xenastudios:<plugin>-api` (Maven Central with the first released API). Because an API module can't see the core, an API can't leak core types, which are relocated per plugin and would differ between plugins anyway.
+
+Checked on real servers (`sandbox/api`, used by `sandbox/consumer` and `sandbox/paper-consumer` in CI): on Paper and Folia, 1.21.11 and 26.3, an ordinary `plugin.yml` plugin with `depend` and a Paper plugin with `join-classpath: true` both load the API classes from a paper-plugin and reach it through Bukkit's services manager.
+
+Binary-compatibility checks (japicmp) start with the first released API, since until then there's nothing to compare against.
+
+Code two plugins need moves to the core instead of being copied (issue #48). The root build runs PMD's copy-paste detector over every module and fails when a block of about five lines or more is in two modules; repeats inside one module are only reported. The first move: the `Toggle` settings every switchable command has, which xUtilities and zChat each defined and xLimbo wrote out by hand, is now `co.xenastudios.core.command.Toggle`, with `CommandSpec.named(name, settings)`.

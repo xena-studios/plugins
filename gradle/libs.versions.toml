@@ -15,6 +15,8 @@ shadow = "9.6.1"
 resource-factory = "1.4.0"
 run-paper = "3.1.0"
 minotaur = "2.10.0"
+# The copy-paste detector the root build runs across modules.
+pmd = "7.29.0"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -31,6 +33,8 @@ sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+pmd-cli = { module = "net.sourceforge.pmd:pmd-cli", version.ref = "pmd" }
+pmd-java = { module = "net.sourceforge.pmd:pmd-java", version.ref = "pmd" }
 
 [plugins]
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }

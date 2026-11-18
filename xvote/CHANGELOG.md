@@ -37,6 +37,7 @@ The first release. Drop the jar in and start the server: votes are kept in SQLit
 ### Networks
 
 - Servers sharing one MySQL or MariaDB database pay a player on whichever server they're on, and never pay a vote twice. The vote party starts everywhere at once.
+- A server that couldn't reach the database for a while reads the leaderboards and the party again when it can, and pays the players on it whatever arrived meanwhile.
 
 ### Switching
 

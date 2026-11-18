@@ -149,6 +149,23 @@ public final class Votes {
         feed.subscribe("vote", change -> heard(parseLong(change.payload())));
         feed.subscribe("player", change -> refresh(UUID.fromString(change.payload())));
         feed.subscribe("party", change -> partyNews(change.payload()));
+        feed.onResync(this::resync);
+    }
+
+    /**
+     * This server may have missed other servers' news (it couldn't reach the database for a
+     * while): reads the leaderboards and the party again, and pays everyone online here
+     * whatever is waiting for them, as a join would. Claims make it safe to run any time.
+     */
+    CompletableFuture<Void> resync() {
+        try {
+            load(System.currentTimeMillis());
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "Couldn't read votes again after missing other servers' news", e);
+        }
+        return CompletableFuture.allOf(online.all().entrySet().stream()
+            .map(player -> joined(player.getKey(), player.getValue()))
+            .toArray(CompletableFuture[]::new));
     }
 
     private long siteWindow() {

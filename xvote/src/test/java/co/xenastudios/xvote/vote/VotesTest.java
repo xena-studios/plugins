@@ -367,6 +367,19 @@ class VotesTest {
     }
 
     @Test
+    void aServerThatMissedTheNewsPaysOnceWhenItReadsAgain() throws Exception {
+        serverKnows.put("steve", new Votes.Resolved(STEVE, "Steve"));
+        b.join(STEVE, "Steve");
+        assertEquals(VoteResult.COUNTED, a.vote("Steve", "List", NOON));
+        // B never hears about it (its feed was down), then the feed tells it to read again.
+        b.votes.resync().get(10, TimeUnit.SECONDS);
+        assertEquals(1, b.paid.size());
+        b.votes.resync().get(10, TimeUnit.SECONDS);
+        b.heard(lastId());
+        assertEquals(1, b.paid.size(), "paid once, however it heard");
+    }
+
+    @Test
     void anotherServersNewsMatchesANameOnlineHere() throws Exception {
         assertEquals(VoteResult.WAITING, a.vote("Notch", "List", NOON));
         b.join(NOTCH, "Notch");

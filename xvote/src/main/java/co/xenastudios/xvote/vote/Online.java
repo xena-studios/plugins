@@ -24,6 +24,11 @@ public final class Online {
         ids.remove(name.toLowerCase(Locale.ROOT), id);
     }
 
+    /** Everyone online here, uuid to name, as it is now. */
+    public Map<UUID, String> all() {
+        return Map.copyOf(names);
+    }
+
     public void clear() {
         names.clear();
         ids.clear();

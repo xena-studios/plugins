@@ -12,13 +12,29 @@ import org.bukkit.plugin.Plugin;
 /**
  * Runs work on the right thread on Paper and Folia alike. On Paper every region is
  * the main thread, so "now if this thread owns it" means now.
+ *
+ * <p>Global work goes through Bukkit's scheduler on Paper, not the global region
+ * scheduler: a Paper server that pauses because it's empty ({@code pause-when-empty-seconds},
+ * 60 by default) still runs Bukkit's scheduler and console commands, but not the global
+ * region scheduler, so work queued there waits until a player joins. Folia never pauses.
  */
 public final class Tasks {
+
+    private static final boolean FOLIA = folia();
 
     private final Plugin plugin;
 
     public Tasks(Plugin plugin) {
         this.plugin = plugin;
+    }
+
+    private static boolean folia() {
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     /**
@@ -51,7 +67,19 @@ public final class Tasks {
         if (Bukkit.isGlobalTickThread()) {
             work.run();
         } else {
+            nextTick(work);
+        }
+    }
+
+    /**
+     * Runs on the global thread's next tick, never right away: for work that must happen
+     * after the current command or event, such as a reload that re-registers commands.
+     */
+    public void nextTick(Runnable work) {
+        if (FOLIA) {
             Bukkit.getGlobalRegionScheduler().execute(plugin, work);
+        } else {
+            Bukkit.getScheduler().runTask(plugin, work);
         }
     }
 

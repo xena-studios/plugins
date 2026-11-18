@@ -15,6 +15,10 @@ dependencyResolutionManagement {
         maven("https://jitpack.io") {
             content { includeGroup("com.github.MilkBowl") }
         }
+        // VaultUnlocked's API (Vault's and its own), which xMoney ships.
+        maven("https://repo.codemc.io/repository/creatorfromhell/") {
+            content { includeGroup("net.milkbowl.vault") }
+        }
         maven("https://maven.enginehub.org/repo/") {
             content {
                 includeGroupByRegex("com\\.sk89q.*")

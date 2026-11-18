@@ -1,0 +1,64 @@
+---
+title: Configuration
+description: Every setting in xMoney's config.yml, and setting up a network.
+sidebar:
+  order: 4
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/xmoney/config.yml?raw";
+
+The config is `plugins/xMoney/config.yml`, written on first start. Apply changes with `/xmoney reload`; only `storage` and `network` need a restart.
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours xMoney's messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages` | What players and staff are told, and shared errors under `messages.error`. |
+| `currency` | The currency's names, symbol, decimals and how amounts are written. |
+| `starting-balance` | What a player has the first time they join. |
+| `max-balance` | The most one account can hold. |
+| `commands` | Each command's switch, aliases and permission; the least `/pay` sends, when it asks to confirm, and `/baltop`'s page size. |
+| `ledger` | How long ledger lines are kept: a year by default. |
+| `storage` | Where balances are kept: SQLite in the plugin's folder (`money.db`), or MySQL/MariaDB. |
+| `network` | Sharing balances between servers. |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+## Currency
+
+`format` is how every amount is written, by xMoney and by any plugin that asks Vault: `{symbol}{amount}` gives `$1,234.50`, and `{amount} {name}` gives `1,234.50 dollars` (or `1 dollar`). `decimals` is how many decimal places amounts are shown with, from 0 to 4, and how many an amount typed into a command may have. Amounts from other plugins always keep four places, so a shop that charges 0.995 and then 0.005 takes exactly 1.00, and with `decimals: 0` a 0.4 charge still takes 0.4 rather than nothing. Past four places, money paid in is rounded down and money taken is rounded up, so rounding never makes money. Lowering `decimals` later keeps the parts of balances it no longer shows, so nothing is lost.
+
+## The ledger
+
+Every change to every balance is a line in the ledger, saved together with the balance it changed, so the two always agree, even after a crash. Lines older than `keep-days` are deleted a minute after startup and then once a day, a slice at a time so payments never wait. `0` keeps them all. Balances never depend on old lines.
+
+## Storage
+
+`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) and fill in `mysql` to keep balances on a database server. Every balance is read once when the server starts, before anyone can join or any plugin can ask, so a change here applies on restart. Balances aren't copied between databases.
+
+## Networks
+
+Network mode is **experimental** in 1.0. It never loses or makes money, but on a busy network with a slow or unreliable database, some shop purchases may be refused; see below. A single server isn't affected by any of this.
+
+For servers that share balances, such as a lobby and a survival server:
+
+1. Give every server the same `storage` settings, `type: mysql`, the same database and the same `table-prefix`.
+2. Turn `network.enabled` on, on each server, and restart them.
+
+Each server keeps every balance in memory as usual, and reads again whatever another server changed within `check-every` seconds (3 by default). Anything that takes money (a payment, a shop purchase, `/eco take`) is decided by the database itself, so two servers can never spend the same money twice. On a network that costs one trip to the database, a millisecond or two on the same machine or LAN, for each payment.
+
+Why it's experimental: a shop asks Vault on the server thread and needs an answer on the spot, so the server waits for the database. That wait is kept short:
+
+- A withdrawal made on a server thread waits at most `network-wait-ms` (50 by default, 250 at most) for the database to take it up. If it hasn't, it's refused and nothing is taken, then or later. Commands and xMoney's API don't hold a server thread, so they wait up to 5 seconds.
+- While the database is failing (a save failed and none has worked since), withdrawals are refused at once. Deposits still work and are saved once it's back.
+- Once the database has taken a payment up, the server waits for its answer, a few milliseconds normally. If the payment hasn't reached its commit within a second, it's undone and refused, with nothing taken; with one slow reply still to wait out, that's about 4 seconds at most. The commit itself waits at most 3 more. xMoney's own connection to the database gives up on connecting, or on any one reply, after 3 seconds, whatever `storage.mysql.properties` says, and while the database is away it tries again every 2 seconds.
+- If the database closed xMoney's connection while the server was quiet (MySQL's `wait_timeout`), the connection is checked and replaced before the next payment, not tried and failed.
+
+**If the database dies at the moment a withdrawal commits, the calling thread waits until the database answers again.** Whether the money was taken is never guessed: a payment reported as failed was never charged. On the main thread that can freeze the server, which is why network mode is experimental. Leases, planned for 1.1 ([#66](https://github.com/xena-studios/plugins/issues/66)), remove the case: each online player's balance is decided by the server they're on, in memory.
+
+A burst of deposits (thousands in one moment, from a plugin paying everyone) is saved together, and a withdrawal that arrives meanwhile waits for that save; on a server thread it's refused after `network-wait-ms`, with nothing taken.
+
+Deposits are made at once and saved after, as on one server. `max-balance` is checked against what each server knows, so on a network it's a soft limit. If a server's checks for the others' changes stop working for a while, it reads every balance again once they work. An import on one server is set in steps of a hundred balances or 20 milliseconds, whichever comes first, with payments between, and the other servers read every balance again once it's done.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/xMoney/config.yml" />

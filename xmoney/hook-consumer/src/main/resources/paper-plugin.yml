@@ -1,0 +1,13 @@
+# Never released. A Paper plugin that charges through the core's Vault hook, declared the
+# way xPlots and xTeleport declare Vault: optional, loaded first, classes shared.
+name: HookConsumer
+version: 0.0.0
+main: co.xenastudios.xmoney.hookconsumer.HookConsumer
+api-version: "1.21.11"
+folia-supported: true
+dependencies:
+  server:
+    Vault:
+      load: BEFORE
+      required: false
+      join-classpath: true

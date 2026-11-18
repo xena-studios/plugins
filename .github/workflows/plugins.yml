@@ -49,8 +49,24 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugins == 'true'
     runs-on: ubuntu-26.04
+    outputs:
+      newest: ${{ steps.newest.outputs.minecraft }}
+    # A real MariaDB, so xRewind's MySqlTest runs the same SQL its MySQL users do.
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: ci
+          MARIADB_DATABASE: xr
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - uses: actions/checkout@v7
+      # The newest Minecraft CI boots, from gradle.properties, for the boot matrix.
+      - id: newest
+        run: echo "minecraft=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -58,6 +74,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       # Compiles, runs the tests, and fails any jar over its size budget.
       - run: ./gradlew build
+        env:
+          XR_MYSQL: 127.0.0.1:3306:xr:root:ci
       - uses: actions/upload-artifact@v7
         with:
           name: jars
@@ -83,8 +101,8 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-      # Keep in step with the newest Paper release, as in the boot matrix below.
-      - run: ./gradlew compileJava -Pxena.newestPaper=26.3.build.211-stable
+      # The build scripts/new-minecraft.sh keeps in gradle.properties.
+      - run: ./gradlew compileJava -Pxena.newestPaper="$(sed -n 's/^xena\.ciNewestPaperApi=//p' gradle.properties)"
 
   # Boots every plugin on a real server, at the oldest version we support and
   # the newest, on Paper and Folia.
@@ -95,11 +113,9 @@ jobs:
       fail-fast: false
       matrix:
         project: [paper, folia]
-        # Keep the first in step with `paper` in gradle/libs.versions.toml, and
-        # the second at the newest release.
-        target:
-          - { version: "1.21.11", java: 21 }
-          - { version: "26.3", java: 25 }
+        # The minimum (keep in step with `paper` in gradle/libs.versions.toml), and the
+        # newest release from gradle.properties, which scripts/new-minecraft.sh moves.
+        target: ${{ fromJSON(format('[{{"version":"1.21.11","java":21}},{{"version":"{0}","java":25}}]', needs.build.outputs.newest)) }}
     name: boot (${{ matrix.project }} ${{ matrix.target.version }})
     steps:
       - uses: actions/checkout@v7
@@ -111,10 +127,18 @@ jobs:
         with:
           name: jars
           path: jars
+      # The server build boot-test.sh will download, so the cache refreshes when Paper
+      # or Folia ships a new one instead of keeping the first forever.
+      - id: server
+        env:
+          PROJECT: ${{ matrix.project }}
+          VERSION: ${{ matrix.target.version }}
+        run: echo "build=$(curl -fsS "https://fill.papermc.io/v3/projects/$PROJECT/versions/$VERSION/builds/latest" | jq -r .id)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v6
         with:
           path: .cache/servers
-          key: servers-${{ matrix.project }}-${{ matrix.target.version }}
+          key: servers-${{ matrix.project }}-${{ matrix.target.version }}-${{ steps.server.outputs.build }}
+          restore-keys: servers-${{ matrix.project }}-${{ matrix.target.version }}-
       # Runs each module's boot-checks.txt against all the jars at once.
       - run: |
           checks=()

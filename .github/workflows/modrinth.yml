@@ -42,6 +42,9 @@ jobs:
         with:
           cache-read-only: true
       - if: steps.plugins.outputs.tasks != ''
-        run: ./gradlew ${{ steps.plugins.outputs.tasks }}
+        run: |
+          read -ra tasks <<<"$TASKS"
+          ./gradlew "${tasks[@]}"
         env:
+          TASKS: ${{ steps.plugins.outputs.tasks }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}

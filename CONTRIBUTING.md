@@ -83,9 +83,9 @@ The convention shades in the core, generates `paper-plugin.yml`, sets up Modrint
 
 For maintainers:
 
-1. Bump `version` in the plugin's `build.gradle.kts`, and rename `## Unreleased` in its `CHANGELOG.md` to `## <version>`.
+1. Bump `version` in the plugin's `build.gradle.kts` and the version its `boot-checks.txt` expects from `/<plugin> info`, and rename `## Unreleased` in its `CHANGELOG.md` to `## <version>`.
 2. Merge, then push a tag like `xutilities-v2.1.0`.
-3. The release workflow checks the tag and changelog match, then publishes to Modrinth and GitHub with that changelog section as the notes. It uses the `MODRINTH_TOKEN` secret in the `release` environment, which only `main` and release tags can reach.
+3. The release workflow checks the tag is on `main` and matches the version and changelog, then publishes to Modrinth and GitHub with that changelog section as the notes. It uses the `MODRINTH_TOKEN` secret in the `release` environment, which only `main` and release tags can reach.
 
 Each plugin's Modrinth page is its `modrinth.md`. [`modrinth.yml`](.github/workflows/modrinth.yml) publishes it whenever it changes on `main`, and every release publishes it again, so **edit the file, never the page on Modrinth**. Text between `<!-- modrinth_exclude.start -->` and `<!-- modrinth_exclude.end -->` is left out. Dry run: `MODRINTH_TOKEN=x ./gradlew :<plugin>:modrinthSyncBody -Pxena.modrinthDryRun=true --info`.
 

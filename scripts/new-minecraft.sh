@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Finds Minecraft versions Paper has released as stable since the newest one in
 # xena.gameVersions, and moves the repo onto them: appends them to
-# xena.gameVersions, and points the boot tests and the newest-API compile in
-# .github/workflows/plugins.yml at the newest. Prints the new versions, or
-# nothing if there are none. Needs curl and jq.
+# xena.gameVersions, and points the boot tests and the newest-API compile at the
+# newest (xena.ciNewestMinecraft and xena.ciNewestPaperApi, which
+# .github/workflows/plugins.yml reads). Everything is in gradle.properties: the
+# workflow's token can't push changes to workflow files. Prints the new versions,
+# or nothing if there are none. Needs curl and jq.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 props=gradle.properties
-ci=.github/workflows/plugins.yml
 fill=https://fill.papermc.io/v3/projects/paper
 
 listed=$(sed -n 's/^xena\.gameVersions=//p' "$props")
@@ -33,8 +34,8 @@ api=$(curl -fsS https://repo.papermc.io/repository/maven-public/io/papermc/paper
 [[ -n $api ]] || { echo "no stable paper-api build of $top yet" >&2; exit 0; }
 
 sed -i.bak "s/^xena\.gameVersions=.*/&,$(IFS=,; echo "${added[*]}")/" "$props"
-sed -i.bak -E "s/-Pxena\.newestPaper=[^ ]+/-Pxena.newestPaper=$api/" "$ci"
-sed -i.bak -E "s/(- \{ version: \")${newest//./\\.}(\", java: [0-9]+ \})/\1$top\2/" "$ci"
-rm -f "$props.bak" "$ci.bak"
+sed -i.bak "s/^xena\.ciNewestMinecraft=.*/xena.ciNewestMinecraft=$top/" "$props"
+sed -i.bak "s/^xena\.ciNewestPaperApi=.*/xena.ciNewestPaperApi=$api/" "$props"
+rm -f "$props.bak"
 
 printf '%s\n' "${added[@]}"

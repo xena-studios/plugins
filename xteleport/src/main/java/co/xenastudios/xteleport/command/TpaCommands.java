@@ -116,6 +116,9 @@ public final class TpaCommands {
         if (plugin.homes().tpaOff(target.getUniqueId()) && !sender.hasPermission(XTeleport.TPTOGGLE_BYPASS)) {
             throw new CommandFailure(messages().notTaking(), Placeholders.text("player", target.getName()));
         }
+        if (plugin.requests().asked(target.getUniqueId(), sender.getUniqueId(), expireMillis())) {
+            throw new CommandFailure(messages().alreadyAsked(), Placeholders.text("player", target.getName()));
+        }
         // Whoever asks pays and has the cooldown, so check now that they could.
         if (plugin.teleporter().precheck(sender, trip(here, sender).paidBy(sender)) != null) {
             return;
@@ -127,8 +130,10 @@ public final class TpaCommands {
                 return;
             }
         }
-        plugin.requests().add(target.getUniqueId(),
-            new Requests.Request(sender.getUniqueId(), sender.getName(), here, plugin.requests().now()), expireMillis());
+        if (!plugin.requests().add(target.getUniqueId(),
+            new Requests.Request(sender.getUniqueId(), sender.getName(), here, plugin.requests().now()), expireMillis())) {
+            throw new CommandFailure(messages().alreadyAsked(), Placeholders.text("player", target.getName()));
+        }
         int seconds = plugin.config().tpa().expireAfter();
         (here ? messages().sentHere() : messages().sent()).send(sender,
             Placeholders.text("player", target.getName()), Placeholders.text("seconds", seconds));
@@ -138,9 +143,12 @@ public final class TpaCommands {
             Replies.click("deny", "/tpdeny " + sender.getName()));
     }
 
+    // Checked for safety like a home: the player gone to may be over lava or the End's void.
+    // Their spot is read once the warmup is over, on their own thread, and checked on the
+    // thread that owns it.
     private Teleporter.Trip trip(boolean here, Player arrivingAt) {
         Settings.TeleportCommand settings = here ? commands.tpahere() : commands.tpa();
-        return Teleporter.Trip.of(here ? TeleportType.TPAHERE : TeleportType.TPA, here ? "tpahere" : "tpa", settings, false,
+        return Teleporter.Trip.of(here ? TeleportType.TPAHERE : TeleportType.TPA, here ? "tpahere" : "tpa", settings, true,
             messages().teleported(), Placeholders.text("player", arrivingAt.getName()));
     }
 
@@ -217,8 +225,8 @@ public final class TpaCommands {
             throw new CommandFailure(plugin.config().messages().teleport().unavailable());
         }
         boolean off = !plugin.homes().tpaOff(player.getUniqueId());
-        plugin.homes().tpaOff(player.getUniqueId(), off);
-        (off ? messages().toggledOff() : messages().toggledOn()).send(player);
+        Replies.whenSaved(plugin, player, plugin.homes().tpaOff(player.getUniqueId(), off),
+            () -> (off ? messages().toggledOff() : messages().toggledOn()).send(player));
     }
 
     private static List<String> completePlayers(CommandSender sender, String[] args) {

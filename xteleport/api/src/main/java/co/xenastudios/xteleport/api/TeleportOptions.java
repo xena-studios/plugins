@@ -7,9 +7,12 @@ package co.xenastudios.xteleport.api;
  * @param warmupSeconds seconds to stand still first; -1 uses xTeleport's own warmup
  *     setting, 0 teleports at once. {@code xteleport.warmup.bypass} skips it.
  * @param cooldownKey the cooldown to check and start, such as {@code "plothome"}; blank
- *     for none. A key xTeleport uses itself ({@code home}, {@code warp}, {@code spawn},
- *     {@code tpa}, {@code tpahere}, {@code rtp}) shares that command's cooldown.
- * @param cooldownSeconds how long the cooldown lasts after a teleport that arrives
+ *     for none. A cooldown still running on this key refuses the teleport, whatever
+ *     {@code cooldownSeconds} is. A key xTeleport uses itself ({@code home}, {@code warp},
+ *     {@code spawn}, {@code tpa}, {@code tpahere}, {@code rtp}) shares that command's
+ *     cooldown, both ways. {@code xteleport.cooldown.bypass} skips the check.
+ * @param cooldownSeconds how long a new cooldown on the key lasts, started when the
+ *     teleport arrives; 0 checks the key without starting one
  * @param cost what the teleport costs through Vault, charged after the warmup and
  *     refunded if it fails; 0 for nothing. {@code xteleport.cost.bypass} skips it.
  * @param checkSafe whether to refuse a destination in lava, inside blocks, or over the void
@@ -54,8 +57,8 @@ public record TeleportOptions(int warmupSeconds, String cooldownKey, int cooldow
     /**
      * These options with a cooldown.
      *
-     * @param key the cooldown's key
-     * @param seconds how long it lasts
+     * @param key the cooldown's key, checked before teleporting
+     * @param seconds how long it lasts once the teleport arrives; 0 only checks it
      * @return the new options
      * @since 1.0.0
      */

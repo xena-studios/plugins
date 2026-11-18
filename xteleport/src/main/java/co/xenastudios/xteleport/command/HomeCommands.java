@@ -14,7 +14,6 @@ import co.xenastudios.xteleport.api.TeleportType;
 import co.xenastudios.xteleport.api.event.HomeSetEvent;
 import co.xenastudios.xteleport.config.Settings;
 import co.xenastudios.xteleport.config.XTConfig;
-import co.xenastudios.xteleport.home.HomeLimits;
 import co.xenastudios.xteleport.home.Homes;
 import co.xenastudios.xteleport.teleport.Teleporter;
 import java.util.ArrayList;
@@ -26,6 +25,7 @@ import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -157,7 +157,7 @@ public final class HomeCommands {
         }
         withHomes(player, player.getUniqueId(), loaded -> {
             boolean replacing = loaded.home(name).isPresent();
-            int limit = HomeLimits.of(player, settings);
+            int limit = plugin.homeLimits().of(player, settings);
             if (!replacing && loaded.homes().size() >= limit) {
                 messages().limitReached().send(player, Placeholders.text("limit", limit));
                 return;
@@ -170,9 +170,9 @@ public final class HomeCommands {
                     return;
                 }
             }
-            plugin.homes().set(new Home(player.getUniqueId(), name, at.getWorld().getName(), at.getX(), at.getY(), at.getZ(),
-                at.getYaw(), at.getPitch()));
-            (replacing ? messages().moved() : messages().set()).send(player, Placeholders.text("home", name));
+            Replies.whenSaved(plugin, player, plugin.homes().set(new Home(player.getUniqueId(), name, at.getWorld().getName(),
+                at.getX(), at.getY(), at.getZ(), at.getYaw(), at.getPitch())),
+                () -> (replacing ? messages().moved() : messages().set()).send(player, Placeholders.text("home", name)));
         });
     }
 
@@ -231,7 +231,8 @@ public final class HomeCommands {
     }
 
     // The bed or respawn anchor, worked out once the warmup is over: its chunk loads in the
-    // background, and the block is read on its own thread to stand on top of it.
+    // background, and the block is read on its own thread to stand on top of it. A bed or
+    // anchor broken since it was set isn't there to go to: "no bed", not its old spot.
     private void bed(Player player, Settings.HomeCommand settings, String bedName) {
         Location spawnBlock = bedOf(player);
         if (spawnBlock == null || !spawnBlock.isWorldLoaded()) {
@@ -252,10 +253,11 @@ public final class HomeCommands {
                 return;
             }
             Runnable read = () -> {
-                Block at = block.getBlock();
-                // A bed is just over half a block high; an anchor is a full block.
-                double height = Tag.BEDS.isTagged(at.getType()) ? 0.5625 : 1;
-                spot.complete(new Location(world, at.getX() + 0.5, at.getY() + height, at.getZ() + 0.5));
+                try {
+                    spot.complete(onTop(block, world));
+                } catch (RuntimeException e) {
+                    spot.completeExceptionally(e);
+                }
             };
             if (Bukkit.isOwnedByCurrentRegion(block)) {
                 read.run();
@@ -264,6 +266,18 @@ public final class HomeCommands {
             }
         });
         return spot;
+    }
+
+    // Where to stand on a bed or anchor, read on the block's thread; NoDestination if it's gone.
+    private Location onTop(Location block, World world) {
+        Block at = block.getBlock();
+        boolean bed = Tag.BEDS.isTagged(at.getType());
+        if (!bed && at.getType() != Material.RESPAWN_ANCHOR) {
+            throw new Teleporter.NoDestination(messages().noBed());
+        }
+        // A bed is just over half a block high; an anchor is a full block.
+        double height = bed ? 0.5625 : 1;
+        return new Location(world, at.getX() + 0.5, at.getY() + height, at.getZ() + 0.5);
     }
 
     private void delhome(Invocation invocation, Settings.OthersCommand settings) {
@@ -275,11 +289,10 @@ public final class HomeCommands {
         }
         if (typed.indexOf(':') > 0) {
             invocation.require(settings.permissionOthers());
-            othersHome(player, typed, (profile, home) -> {
-                plugin.homes().delete(profile.id(), home.name());
-                messages().deletedOthers().send(player, Placeholders.text("player", profile.name()),
-                    Placeholders.text("home", home.name()));
-            });
+            othersHome(player, typed, (profile, home) -> Replies.whenSaved(plugin, player,
+                plugin.homes().delete(profile.id(), home.name()),
+                () -> messages().deletedOthers().send(player, Placeholders.text("player", profile.name()),
+                    Placeholders.text("home", home.name()))));
             return;
         }
         withHomes(player, player.getUniqueId(), loaded -> {
@@ -288,8 +301,8 @@ public final class HomeCommands {
                 messages().notFound().send(player, Placeholders.text("home", typed));
                 return;
             }
-            plugin.homes().delete(player.getUniqueId(), typed);
-            messages().deleted().send(player, Placeholders.text("home", home.get().name()));
+            Replies.whenSaved(plugin, player, plugin.homes().delete(player.getUniqueId(), typed),
+                () -> messages().deleted().send(player, Placeholders.text("home", home.get().name())));
         });
     }
 
@@ -337,7 +350,7 @@ public final class HomeCommands {
         if (others) {
             messages().headerOthers().send(viewer, Placeholders.text("player", ownerName), Placeholders.text("count", loaded.homes().size()));
         } else {
-            int limit = viewer instanceof Player player ? HomeLimits.of(player, settings) : 0;
+            int limit = viewer instanceof Player player ? plugin.homeLimits().of(player, settings) : 0;
             messages().header().send(viewer, Placeholders.text("count", loaded.homes().size()),
                 Placeholders.text("limit", limit == Integer.MAX_VALUE ? "∞" : Integer.toString(limit)));
         }

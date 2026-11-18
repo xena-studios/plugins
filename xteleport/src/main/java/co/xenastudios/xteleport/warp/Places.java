@@ -30,7 +30,7 @@ public final class Places {
     }
 
     /** Takes what was read from the database. */
-    public void load(Store.ServerData data) {
+    public synchronized void load(Store.ServerData data) {
         Map<String, Warp> read = new TreeMap<>();
         data.warps().forEach(warp -> read.put(Homes.key(warp.name()), warp));
         warps = Collections.unmodifiableMap(read);
@@ -51,18 +51,50 @@ public final class Places {
         return Optional.ofNullable(warps.get(Homes.key(name)));
     }
 
-    public synchronized CompletableFuture<Boolean> setWarp(Warp warp) {
-        Map<String, Warp> copy = new TreeMap<>(warps);
-        copy.put(Homes.key(warp.name()), warp);
-        warps = Collections.unmodifiableMap(copy);
-        return store.saveWarp(warp);
+    /**
+     * Sets a warp and saves it. It's in memory at once; if the save fails, it's taken back
+     * out and the future completes exceptionally. Once saved, it's put in memory again, in
+     * case the warps were being read when it was set (the read, ahead of the save, didn't
+     * have it).
+     */
+    public CompletableFuture<Boolean> setWarp(Warp warp) {
+        String key = Homes.key(warp.name());
+        Warp before = put(key, warp);
+        return store.saveWarp(warp).whenComplete((done, error) -> {
+            if (error == null) {
+                put(key, warp);
+            } else {
+                replaceIf(key, warp, before);
+            }
+        });
     }
 
-    public synchronized CompletableFuture<Boolean> deleteWarp(String name) {
+    /** Deletes a warp; as {@link #setWarp}, put back if the delete fails. */
+    public CompletableFuture<Boolean> deleteWarp(String name) {
+        String key = Homes.key(name);
+        Warp before = put(key, null);
+        return store.deleteWarp(name).whenComplete((done, error) -> {
+            if (error == null) {
+                put(key, null);
+            } else {
+                replaceIf(key, null, before);
+            }
+        });
+    }
+
+    // Sets or removes one warp, returning what it replaced.
+    private synchronized Warp put(String key, Warp warp) {
         Map<String, Warp> copy = new TreeMap<>(warps);
-        copy.remove(Homes.key(name));
+        Warp before = warp == null ? copy.remove(key) : copy.put(key, warp);
         warps = Collections.unmodifiableMap(copy);
-        return store.deleteWarp(name);
+        return before;
+    }
+
+    // Undoes a change that failed to save, unless something changed that warp since.
+    private synchronized void replaceIf(String key, Warp expected, Warp restore) {
+        if (warps.get(key) == expected && (expected != null || restore != null)) {
+            put(key, restore);
+        }
     }
 
     /** The spawn set with /setspawn, or null. */
@@ -70,9 +102,22 @@ public final class Places {
         return spawn;
     }
 
+    /** Sets the spawn and saves it; as {@link #setWarp}, the old one comes back if the save fails. */
     public CompletableFuture<Boolean> setSpawn(Warp at) {
-        spawn = at;
-        return store.saveSpawn(at);
+        Warp before;
+        synchronized (this) {
+            before = spawn;
+            spawn = at;
+        }
+        return store.saveSpawn(at).whenComplete((done, error) -> {
+            synchronized (this) {
+                if (error == null) {
+                    spawn = at;
+                } else if (spawn == at) {
+                    spawn = before;
+                }
+            }
+        });
     }
 
     /**

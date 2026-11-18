@@ -5,13 +5,14 @@ import java.util.concurrent.CompletableFuture;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Whether a spot is safe to arrive at: not in lava or fire, not inside blocks, and not
- * over the void. The spot's chunk is loaded in the background first, and the blocks are
+ * Whether a spot is safe to arrive at: not in lava or fire, not inside blocks, not over the
+ * void or a long fall, and inside the world border. The spot's chunk is loaded in the background first, and the blocks are
  * read on the thread that owns them, so the check never loads a chunk on a game thread.
  */
 public final class Safety {
@@ -26,9 +27,10 @@ public final class Safety {
     /**
      * Loads the spot's chunk in the background, then checks the spot on its own thread.
      *
+     * @param maxFall the most blocks of air there may be between the spot and the ground
      * @return a future completed with whether it's safe; false if its world isn't loaded
      */
-    public static CompletableFuture<Boolean> check(Plugin plugin, ChunkLoader loader, Location at) {
+    public static CompletableFuture<Boolean> check(Plugin plugin, ChunkLoader loader, Location at, int maxFall) {
         World world = at.isWorldLoaded() ? at.getWorld() : null;
         if (world == null) {
             return CompletableFuture.completedFuture(false);
@@ -41,7 +43,7 @@ public final class Safety {
             }
             onRegion(plugin, at, () -> {
                 try {
-                    safe.complete(arrival(at));
+                    safe.complete(arrival(at, maxFall));
                 } catch (RuntimeException e) {
                     safe.completeExceptionally(e);
                 }
@@ -75,17 +77,20 @@ public final class Safety {
     }
 
     /**
-     * Whether a loaded spot is safe to stand at, as a player saved it: nothing harmful at the
-     * feet or head, neither inside a full block, and something to land on above the void
-     * that isn't lava. A fall onto solid ground is allowed: the player stood there before.
-     * On the thread that owns the spot.
+     * Whether a loaded spot is safe to stand at: inside the world border, nothing harmful
+     * at the feet or head, neither inside a full block, and ground that isn't harmful at
+     * most {@code maxFall} blocks below, or water at any depth below. A ladder, vine or
+     * scaffolding on the way down counts as ground. On the thread that owns the spot.
+     *
+     * <p>The world border is read from this thread too. On Folia it belongs to no region,
+     * but reading it is only reading a few numbers, which every region's entities do.
      */
-    public static boolean arrival(Location at) {
+    public static boolean arrival(Location at, int maxFall) {
         World world = at.getWorld();
         int x = at.getBlockX();
         int y = at.getBlockY();
         int z = at.getBlockZ();
-        if (y <= world.getMinHeight() || y >= world.getMaxHeight()) {
+        if (y <= world.getMinHeight() || y >= world.getMaxHeight() || !world.getWorldBorder().isInside(at)) {
             return false;
         }
         Block feet = world.getBlockAt(x, y, z);
@@ -94,14 +99,17 @@ public final class Safety {
             return false;
         }
         // From just under the feet, so a spot on a slab (y = 64.5) finds the slab itself.
-        for (int below = (int) Math.floor(at.getY() - 0.01); below >= world.getMinHeight(); below--) {
-            Block ground = world.getBlockAt(x, below, z);
-            Material type = ground.getType();
+        int top = (int) Math.floor(at.getY() - 0.01);
+        for (int below = top; below >= world.getMinHeight(); below--) {
+            Material type = world.getBlockAt(x, below, z).getType();
             if (HURTS.contains(type)) {
                 return false;
             }
-            if (type.isSolid() || liquid(type)) {
-                return true;
+            if (liquid(type)) {
+                return true; // Water: lava is in HURTS.
+            }
+            if (type.isSolid() || Tag.CLIMBABLE.isTagged(type)) {
+                return top - below <= maxFall;
             }
         }
         return false;

@@ -100,11 +100,15 @@ public interface XTeleportApi {
      * check the player's home limit and doesn't fire
      * {@link co.xenastudios.xteleport.api.event.HomeSetEvent}: the caller decided.
      *
+     * <p>For an online player it's in {@link #cachedHomes} at once, and taken back out if
+     * the save fails.
+     *
      * @param player the player's uuid
      * @param name the home's name: 1 to 32 letters, digits, {@code -} or {@code _}
      * @param location where; it's copied, and its world must be loaded
-     * @return a future completed off the server's threads once it's saved, with true, or
-     *     false if the name isn't allowed or the database refused it
+     * @return a future completed off the server's threads: with true once it's saved, with
+     *     false at once if the name isn't allowed or the world isn't loaded, or
+     *     exceptionally if the database couldn't save it
      * @since 1.0.0
      */
     CompletableFuture<Boolean> setHome(UUID player, String name, Location location);
@@ -114,7 +118,8 @@ public interface XTeleportApi {
      *
      * @param player the player's uuid
      * @param name the home's name, in any case
-     * @return a future completed off the server's threads, with true if a home was deleted
+     * @return a future completed off the server's threads, with true if a home was deleted,
+     *     or exceptionally if the database couldn't delete it (it's then still there)
      * @since 1.0.0
      */
     CompletableFuture<Boolean> deleteHome(UUID player, String name);
@@ -147,21 +152,25 @@ public interface XTeleportApi {
     Optional<Warp> warp(String name);
 
     /**
-     * Sets a warp, replacing one of the same name. It's in {@link #warps()} at once.
+     * Sets a warp, replacing one of the same name. It's in {@link #warps()} at once, and
+     * taken back out if the save fails.
      *
      * @param name the warp's name: 1 to 32 letters, digits, {@code -} or {@code _}
      * @param location where; it's copied, and its world must be loaded
-     * @return a future completed off the server's threads once it's saved, with true, or
-     *     false if the name isn't allowed or the database refused it
+     * @return a future completed off the server's threads: with true once it's saved, with
+     *     false at once if the name isn't allowed or the world isn't loaded, or
+     *     exceptionally if the database couldn't save it
      * @since 1.0.0
      */
     CompletableFuture<Boolean> setWarp(String name, Location location);
 
     /**
-     * Deletes a warp. It's gone from {@link #warps()} at once.
+     * Deletes a warp. It's gone from {@link #warps()} at once, and put back if the delete
+     * fails.
      *
      * @param name the warp's name, in any case
-     * @return a future completed off the server's threads, with true if a warp was deleted
+     * @return a future completed off the server's threads, with true if a warp was deleted,
+     *     or exceptionally if the database couldn't delete it
      * @since 1.0.0
      */
     CompletableFuture<Boolean> deleteWarp(String name);

@@ -7,7 +7,10 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import org.bukkit.configuration.ConfigurationSection;
@@ -56,11 +59,16 @@ public final class EssentialsImport {
                 continue;
             }
             int before = homes.size();
+            Set<String> named = new HashSet<>();
             for (String name : section.getKeys(false)) {
                 Warp place = place(section.getConfigurationSection(name), worldName);
                 String clean = cleanName(name);
                 if (place == null || clean == null) {
                     problem(problems, "Skipped home \"" + name + "\" in " + base + ": " + (clean == null ? "its name" : "its world") + ".");
+                    continue;
+                }
+                if (!named.add(clean.toLowerCase(Locale.ROOT))) {
+                    problem(problems, "Skipped home \"" + name + "\" in " + base + ": as " + clean + ", its name is another of the player's homes'.");
                     continue;
                 }
                 homes.add(new Home(owner, clean, place.world(), place.x(), place.y(), place.z(), place.yaw(), place.pitch()));
@@ -69,6 +77,7 @@ public final class EssentialsImport {
                 players++;
             }
         }
+        Set<String> warpNames = new HashSet<>();
         for (Path file : ymlFiles(folder.resolve("warps"), problems)) {
             YamlConfiguration yaml = load(file, problems);
             if (yaml == null) {
@@ -79,6 +88,10 @@ public final class EssentialsImport {
             Warp place = place(yaml, worldName);
             if (place == null || name == null) {
                 problem(problems, "Skipped warp " + base + ": " + (name == null ? "its name" : "its world") + ".");
+                continue;
+            }
+            if (!warpNames.add(name.toLowerCase(Locale.ROOT))) {
+                problem(problems, "Skipped warp " + base + ": as " + name + ", its name is another warp's.");
                 continue;
             }
             warps.add(new Warp(name, place.world(), place.x(), place.y(), place.z(), place.yaw(), place.pitch()));

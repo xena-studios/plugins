@@ -98,6 +98,36 @@ class EssentialsImportTest {
     }
 
     @Test
+    void namesThatCleanTheSameAreReportedNotDropped() throws Exception {
+        UUID steve = UUID.randomUUID();
+        Files.createDirectories(essentials.resolve("userdata"));
+        Files.writeString(essentials.resolve("userdata").resolve(steve + ".yml"), """
+            homes:
+              my farm:
+                world-name: world
+                x: 1.0
+                y: 70.0
+                z: 2.0
+              my_farm:
+                world-name: world
+                x: 3.0
+                y: 70.0
+                z: 4.0
+            """);
+        Files.createDirectories(essentials.resolve("warps"));
+        Files.writeString(essentials.resolve("warps").resolve("a.yml"), "name: Shop\nworld: world\nx: 1.0\ny: 64.0\nz: 1.0\n");
+        Files.writeString(essentials.resolve("warps").resolve("b.yml"), "name: shop\nworld: world\nx: 2.0\ny: 64.0\nz: 2.0\n");
+
+        EssentialsImport.Found found = EssentialsImport.read(essentials, id -> null);
+
+        assertEquals(1, found.homes().size());
+        assertEquals(1, found.warps().size());
+        assertEquals(2, found.problems().size(), found.problems().toString());
+        assertTrue(found.problems().getFirst().contains("my_farm"), found.problems().getFirst());
+        assertTrue(found.problems().get(1).contains("b.yml"), found.problems().get(1));
+    }
+
+    @Test
     void cleansNames() {
         assertEquals("a_b", EssentialsImport.cleanName("a b"));
         assertNull(EssentialsImport.cleanName("??"));

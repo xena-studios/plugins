@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 /**
@@ -125,22 +126,65 @@ public final class Homes {
         loaded.clear();
     }
 
-    /** Sets a home, replacing one of the same name, and saves it. */
+    /**
+     * Sets a home, replacing one of the same name, and saves it. It's in memory at once; if
+     * the save fails, it's taken back out and the future completes exceptionally.
+     */
     public CompletableFuture<Boolean> set(Home home) {
-        loaded.computeIfPresent(home.owner(), (id, homes) -> homes.with(home));
-        return store.saveHome(home);
+        String name = key(home.name());
+        Home[] before = new Home[1];
+        return change(home.owner(), store.saveHome(home), homes -> {
+            before[0] = homes.homes().get(name);
+            return homes.with(home);
+        }, homes -> homes.homes().get(name) != home ? homes
+            : before[0] == null ? homes.without(name) : homes.with(before[0]));
     }
 
-    /** Deletes a home, and from the database. */
+    /**
+     * Deletes a home, and from the database. It's gone from memory at once; if the delete
+     * fails, it's put back and the future completes exceptionally.
+     */
     public CompletableFuture<Boolean> delete(UUID owner, String name) {
-        loaded.computeIfPresent(owner, (id, homes) -> homes.without(name));
-        return store.deleteHome(owner, name);
+        String key = key(name);
+        Home[] before = new Home[1];
+        return change(owner, store.deleteHome(owner, name), homes -> {
+            before[0] = homes.homes().get(key);
+            return homes.without(name);
+        }, homes -> before[0] == null || homes.homes().containsKey(key) ? homes : homes.with(before[0]));
     }
 
-    /** Turns a player's TPA requests on or off, and saves it. */
-    public void tpaOff(UUID player, boolean off) {
-        loaded.computeIfPresent(player, (id, homes) -> new Loaded(homes.homes(), off));
-        store.setTpaOff(player, off);
+    /** Turns a player's TPA requests on or off, and saves it; as {@link #set}, undone if the save fails. */
+    public CompletableFuture<Boolean> tpaOff(UUID player, boolean off) {
+        boolean[] before = new boolean[1];
+        return change(player, store.setTpaOff(player, off), homes -> {
+            before[0] = homes.tpaOff();
+            return new Loaded(homes.homes(), off);
+        }, homes -> homes.tpaOff() == off ? new Loaded(homes.homes(), before[0]) : homes);
+    }
+
+    /**
+     * Makes a change in memory now, while its write is queued behind any read of the player
+     * already running, and again once the write is done: a read that was running when the
+     * change was made stores what it read, which is older. If the write fails, {@code undo}
+     * takes the change back, as long as nothing has changed it since.
+     *
+     * <p>The store runs everything in order on one thread, and a read stores what it read
+     * before the next write starts, so "once the write is done" is always after that read.
+     */
+    private CompletableFuture<Boolean> change(UUID player, CompletableFuture<Boolean> write, UnaryOperator<Loaded> apply,
+                                              UnaryOperator<Loaded> undo) {
+        boolean[] applied = new boolean[1];
+        loaded.computeIfPresent(player, (id, homes) -> {
+            applied[0] = true;
+            return apply.apply(homes);
+        });
+        return write.whenComplete((done, error) -> {
+            if (error == null) {
+                loaded.computeIfPresent(player, (id, homes) -> apply.apply(homes));
+            } else if (applied[0]) {
+                loaded.computeIfPresent(player, (id, homes) -> undo.apply(homes));
+            }
+        });
     }
 
     /** Whether an online player turned TPA requests off. False until they're read. */

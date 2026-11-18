@@ -14,6 +14,7 @@ import co.xenastudios.xteleport.storage.Store;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -163,8 +164,16 @@ public final class AdminCommands {
     }
 
     // One search after another, so a check costs no more than one player's /rtp at a time.
+    // The place among the searches is given back however the last one ends, even if
+    // starting it threw.
     private void check(CommandSender sender, World world, RtpWorld rules, int runs, Tally tally) {
-        plugin.rtp().find(world, rules).whenComplete((found, error) -> {
+        CompletableFuture<Search.Found> search;
+        try {
+            search = plugin.rtp().find(world, rules);
+        } catch (RuntimeException e) {
+            search = CompletableFuture.failedFuture(e);
+        }
+        search.whenComplete((found, error) -> {
             tally.runs++;
             if (found != null) {
                 tally.found++;

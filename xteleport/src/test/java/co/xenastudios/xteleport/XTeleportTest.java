@@ -11,125 +11,17 @@ import co.xenastudios.xteleport.api.TeleportResult;
 import co.xenastudios.xteleport.api.XTeleportApi;
 import co.xenastudios.xteleport.api.event.HomeSetEvent;
 import co.xenastudios.xteleport.api.event.PreTeleportEvent;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BooleanSupplier;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockbukkit.mockbukkit.MockBukkit;
-import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
-import org.mockbukkit.mockbukkit.world.WorldMock;
 
 /** xTeleport on a mock server: homes, TPA, warps and spawn, through to the teleport. */
-class XTeleportTest {
-
-    ServerMock server;
-    WorldMock world;
-    XTeleport plugin;
-    PlayerMock steve;
-    PlayerMock alex;
-
-    @BeforeEach
-    void start() {
-        server = MockBukkit.mock();
-        world = server.addSimpleWorld("world");
-        plugin = MockBukkit.load(TestXTeleport.class);
-        await(plugin::ready);
-        // MockBukkit can't say where a player's bed is.
-        set("homes.bed-home", false);
-        steve = server.addPlayer("Steve");
-        alex = server.addPlayer("Alex");
-        // Warmups are covered by the core's tests; here teleports go at once.
-        steve.addAttachment(plugin, "xteleport.warmup.bypass", true);
-        alex.addAttachment(plugin, "xteleport.warmup.bypass", true);
-        await(() -> plugin.homes().cached(steve.getUniqueId()).isPresent() && plugin.homes().cached(alex.getUniqueId()).isPresent());
-        steve.teleport(floor(0, 0));
-        alex.teleport(floor(50, 50));
-        drain(steve);
-        drain(alex);
-    }
-
-    @AfterEach
-    void stop() {
-        MockBukkit.unmock();
-    }
-
-    /** A safe spot: stone underfoot, air at the feet and head. */
-    Location floor(int x, int z) {
-        world.getBlockAt(x, 63, z).setType(Material.STONE);
-        world.getBlockAt(x, 64, z).setType(Material.AIR);
-        world.getBlockAt(x, 65, z).setType(Material.AIR);
-        return new Location(world, x + 0.5, 64, z + 0.5);
-    }
-
-    void await(BooleanSupplier condition) {
-        await(condition, () -> "");
-    }
-
-    void await(BooleanSupplier condition, java.util.function.Supplier<String> seen) {
-        long until = System.nanoTime() + 5_000_000_000L;
-        while (!condition.getAsBoolean()) {
-            assertTrue(System.nanoTime() < until, () -> "timed out" + seen.get());
-            server.getScheduler().performOneTick();
-            try {
-                Thread.sleep(2);
-            } catch (InterruptedException e) {
-                throw new AssertionError(e);
-            }
-        }
-    }
-
-    /** Changes a setting in config.yml and reloads, as /xteleport reload would. */
-    void set(String path, Object value) {
-        var done = new java.util.concurrent.atomic.AtomicBoolean();
-        plugin.editConfig(yaml -> {
-            yaml.set(path, value);
-            return true;
-        }, reason -> done.set(true));
-        await(done::get);
-    }
-
-    static String text(Component component) {
-        return PlainTextComponentSerializer.plainText().serialize(component);
-    }
-
-    List<String> drain(PlayerMock player) {
-        List<String> all = new ArrayList<>();
-        Component next;
-        while ((next = player.nextComponentMessage()) != null) {
-            all.add(text(next));
-        }
-        return all;
-    }
-
-    final java.util.Map<PlayerMock, List<String>> unread = new java.util.HashMap<>();
-
-    /** Waits until the player has been told something containing the text; what came after it is kept for the next call. */
-    void told(PlayerMock player, String part) {
-        List<String> seen = unread.computeIfAbsent(player, p -> new ArrayList<>());
-        await(() -> {
-            seen.addAll(drain(player));
-            return seen.stream().anyMatch(line -> line.contains(part));
-        }, () -> " waiting for \"" + part + "\"; " + player.getName() + " was told " + seen);
-        int at = 0;
-        while (!seen.get(at).contains(part)) {
-            at++;
-        }
-        seen.subList(0, at + 1).clear();
-    }
-
-    boolean at(PlayerMock player, Location where) {
-        return player.getLocation().getBlockX() == where.getBlockX() && player.getLocation().getBlockZ() == where.getBlockZ();
-    }
+class XTeleportTest extends ServerTest {
 
     @Test
     void setsGoesToAndDeletesHomes() {
@@ -174,6 +66,20 @@ class XTeleportTest {
         told(steve, "your bed's name");
         steve.performCommand("sethome no!");
         told(steve, "1 to 32 letters");
+    }
+
+    @Test
+    void homeLimitsAreKeptForPlaceholdersButSettingAHomeChecksAgain() {
+        assertEquals(3, plugin.homeLimits().cached(steve, plugin.config().homes()));
+        steve.addAttachment(plugin, "xteleport.homes.10", true);
+        assertEquals(3, plugin.homeLimits().cached(steve, plugin.config().homes()), "from memory, for a while");
+        for (String name : List.of("a", "b", "c", "d")) {
+            steve.performCommand("sethome " + name);
+            told(steve, "Set home " + name);
+        }
+        assertEquals(10, plugin.homeLimits().cached(steve, plugin.config().homes()), "worked out again by /sethome");
+        set("homes.default-limit", 20);
+        assertEquals(20, plugin.homeLimits().cached(steve, plugin.config().homes()), "forgotten on reload");
     }
 
     @Test
@@ -222,6 +128,47 @@ class XTeleportTest {
         steve.performCommand("tpaccept Alex");
         told(steve, "Teleported to Alex");
         assertTrue(at(steve, alex.getLocation()));
+    }
+
+    @Test
+    void askingAgainDoesntNotifyAgain() {
+        alex.performCommand("tpa Steve");
+        told(steve, "Alex wants to teleport to you");
+        alex.performCommand("tpa Steve");
+        told(alex, "You already asked Steve");
+        alex.performCommand("tpahere Steve");
+        told(alex, "You already asked Steve");
+        assertTrue(drain(steve).isEmpty(), "Steve was told once");
+        alex.performCommand("tpacancel Steve");
+        told(alex, "Took back 1");
+        alex.performCommand("tpahere Steve");
+        told(steve, "Alex wants you to teleport to them");
+    }
+
+    @Test
+    void tpahereRefusesToBringSomeoneIntoLava() {
+        // Alex stands in a lava pool's edge: lava underfoot.
+        world.getBlockAt(70, 63, 70).setType(Material.LAVA);
+        world.getBlockAt(70, 64, 70).setType(Material.AIR);
+        world.getBlockAt(70, 65, 70).setType(Material.AIR);
+        alex.teleport(new Location(world, 70.5, 64, 70.5));
+        alex.performCommand("tpahere Steve");
+        told(steve, "Alex wants you to teleport to them");
+        steve.performCommand("tpaccept");
+        told(steve, "isn't safe");
+        assertTrue(at(steve, new Location(world, 0, 64, 0)), "Steve stayed where he was");
+    }
+
+    @Test
+    void tpaRefusesToSendSomeoneIntoTheAir() {
+        // Steve is flying ten blocks up: arriving there would be a fall.
+        world.getBlockAt(0, 63, 0).setType(Material.AIR);
+        steve.teleport(new Location(world, 0.5, 74, 0.5));
+        alex.performCommand("tpa Steve");
+        told(steve, "wants to teleport");
+        steve.performCommand("tpaccept");
+        told(alex, "isn't safe");
+        assertTrue(at(alex, new Location(world, 50, 64, 50)));
     }
 
     @Test
@@ -297,6 +244,29 @@ class XTeleportTest {
         told(alex, "Welcome to spawn");
         alex.performCommand("spawn");
         told(alex, "You can do that again in 1m");
+    }
+
+    @Test
+    void anApiTeleportOnACommandsKeySharesItsCooldown() {
+        set("commands.spawn.cooldown", 60);
+        alex.performCommand("spawn");
+        told(alex, "Welcome to spawn");
+        CompletableFuture<TeleportResult> again = XTeleportApi.get().teleport(alex, new Location(world, 0.5, 64, 0.5),
+            TeleportOptions.defaults().cooldown("spawn", 0));
+        await(again::isDone);
+        assertEquals(TeleportResult.ON_COOLDOWN, again.join(), "a 0-second cooldown still checks the key");
+    }
+
+    @Test
+    void stoppingFinishesTeleportsStillWaiting() {
+        PlayerMock sam = new TickingPlayer(server, "Sam");
+        server.addPlayer(sam);
+        sam.teleport(floor(5, 5));
+        CompletableFuture<TeleportResult> waiting = XTeleportApi.get().teleport(sam, new Location(world, 0.5, 64, 0.5),
+            TeleportOptions.defaults().warmup(30));
+        assertFalse(waiting.isDone());
+        server.getPluginManager().disablePlugin(plugin);
+        assertEquals(TeleportResult.CANCELLED, waiting.getNow(null));
     }
 
     public static final class Refuser implements Listener {

@@ -28,9 +28,13 @@ import java.util.logging.Logger;
  * always there, and the database is opened on that thread first, so a slow MySQL never
  * holds up the server starting.
  *
- * <p>Writes are rare (a player setting a home), so each opens its own connection.
+ * <p>Writes are rare (a player setting a home), so each opens its own connection. A write
+ * that fails is logged and completes its future exceptionally; the caller undoes what it
+ * changed in memory and tells the player.
+ *
+ * <p>Not final: the tests make one whose writes fail.
  */
-public final class Store {
+public class Store {
 
     /** A player's homes and their TPA setting, as read when they join. */
     public record PlayerData(List<Home> homes, boolean tpaOff) {}
@@ -47,7 +51,7 @@ public final class Store {
     private final ExecutorService thread;
     private final CompletableFuture<Database> opened = new CompletableFuture<>();
 
-    private Store(Logger logger) {
+    protected Store(Logger logger) {
         this.logger = logger;
         this.thread = Executors.newSingleThreadExecutor(work -> {
             Thread t = new Thread(work, "xTeleport database");
@@ -62,16 +66,21 @@ public final class Store {
      */
     public static Store open(StorageSettings settings, Path folder, Logger logger) {
         Store store = new Store(logger);
-        store.thread.execute(() -> {
+        store.start(settings, folder);
+        return store;
+    }
+
+    /** Starts opening the database on the store's thread. Once, right after it's made. */
+    protected final void start(StorageSettings settings, Path folder) {
+        thread.execute(() -> {
             try {
                 Database database = Database.open(settings, folder.resolve("xteleport.db"));
                 database.migrate(Schema.STEPS);
-                store.opened.complete(database);
+                opened.complete(database);
             } catch (DatabaseException | RuntimeException e) {
-                store.opened.completeExceptionally(e);
+                opened.completeExceptionally(e);
             }
         });
-        return store;
     }
 
     /** Completes when the database is open and up to date, or with why it couldn't be. */

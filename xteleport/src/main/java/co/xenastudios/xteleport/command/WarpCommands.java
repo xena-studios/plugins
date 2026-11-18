@@ -103,8 +103,8 @@ public final class WarpCommands {
             throw new CommandFailure(messages().badName());
         }
         boolean replacing = plugin.places().warp(name).isPresent();
-        plugin.places().setWarp(Places.of(name, player.getLocation()));
-        (replacing ? messages().moved() : messages().set()).send(player, Placeholders.text("warp", name));
+        Replies.whenSaved(plugin, player, plugin.places().setWarp(Places.of(name, player.getLocation())),
+            () -> (replacing ? messages().moved() : messages().set()).send(player, Placeholders.text("warp", name)));
     }
 
     private void warp(Invocation invocation) {
@@ -138,8 +138,9 @@ public final class WarpCommands {
         if (warp.isEmpty()) {
             throw new CommandFailure(messages().notFound(), Placeholders.text("warp", name));
         }
-        plugin.places().deleteWarp(name);
-        messages().deleted().send(invocation.sender(), Placeholders.text("warp", warp.get().name()));
+        CommandSender sender = invocation.sender();
+        Replies.whenSaved(plugin, sender, plugin.places().deleteWarp(name),
+            () -> messages().deleted().send(sender, Placeholders.text("warp", warp.get().name())));
     }
 
     private void list(CommandSender viewer, int page) {
@@ -163,8 +164,8 @@ public final class WarpCommands {
     private void setspawn(Invocation invocation) {
         Player player = invocation.player();
         Replies.requireReady(plugin);
-        plugin.places().setSpawn(Places.of("spawn", player.getLocation()));
-        plugin.config().messages().spawn().set().send(player);
+        Replies.whenSaved(plugin, player, plugin.places().setSpawn(Places.of("spawn", player.getLocation())),
+            () -> plugin.config().messages().spawn().set().send(player));
     }
 
     private void spawn(Invocation invocation) {

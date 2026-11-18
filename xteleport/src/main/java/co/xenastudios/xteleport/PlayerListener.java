@@ -29,6 +29,7 @@ final class PlayerListener extends ListenerModule {
     void onQuit(PlayerQuitEvent event) {
         UUID player = event.getPlayer().getUniqueId();
         plugin.homes().forget(player);
+        plugin.homeLimits().forget(player);
         plugin.requests().forget(player);
         plugin.teleporter().cooldowns().prune();
     }

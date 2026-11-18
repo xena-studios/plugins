@@ -13,7 +13,8 @@ public enum TeleportResult {
      */
     TELEPORTED,
     /**
-     * The player moved during the warmup, or took damage, or started another teleport.
+     * The player moved during the warmup, or took damage, or started another teleport; or
+     * xTeleport stopped before the teleport finished.
      *
      * @since 1.0.0
      */

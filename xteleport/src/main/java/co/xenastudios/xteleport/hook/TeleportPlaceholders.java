@@ -1,7 +1,6 @@
 package co.xenastudios.xteleport.hook;
 
 import co.xenastudios.xteleport.XTeleport;
-import co.xenastudios.xteleport.home.HomeLimits;
 import java.time.Duration;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
@@ -61,7 +60,7 @@ public final class TeleportPlaceholders extends PlaceholderExpansion {
                 if (!(player instanceof Player online)) {
                     yield "";
                 }
-                int limit = HomeLimits.of(online, plugin.config().homes());
+                int limit = plugin.homeLimits().cached(online, plugin.config().homes());
                 yield limit == Integer.MAX_VALUE ? "∞" : Integer.toString(limit);
             }
             case "requests" -> Integer.toString(plugin.requests().pending(player.getUniqueId(),

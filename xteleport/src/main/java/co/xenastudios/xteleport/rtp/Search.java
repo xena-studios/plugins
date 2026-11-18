@@ -99,6 +99,11 @@ public final class Search {
         }
     }
 
+    /** Whether the player has a search running. */
+    public boolean searching(UUID player) {
+        return searching.contains(player);
+    }
+
     /** How many searches are running, for tests. */
     int running() {
         return running.get();
@@ -108,16 +113,17 @@ public final class Search {
      * Searches. Call {@link #begin} first and {@link #end} when the future completes. Any
      * thread.
      *
-     * @return a future completed with a spot, or null if none was found in the attempts
+     * @return a future completed with a spot, or null if none was found in the attempts;
+     *     never thrown, so the caller's {@link #end} always runs
      */
     public CompletableFuture<Found> find(World world, Area area) {
         CompletableFuture<Found> found = new CompletableFuture<>();
-        WorldBorder border = world.getWorldBorder();
-        double half = border.getSize() / 2 - BORDER_MARGIN;
-        Location center = border.getCenter();
-        Bounds bounds = new Bounds(center.getX() - half, center.getX() + half, center.getZ() - half, center.getZ() + half);
-        boolean end = world.getEnvironment() == World.Environment.THE_END && !area.allowMainIsland();
         try {
+            WorldBorder border = world.getWorldBorder();
+            double half = border.getSize() / 2 - BORDER_MARGIN;
+            Location center = border.getCenter();
+            Bounds bounds = new Bounds(center.getX() - half, center.getX() + half, center.getZ() - half, center.getZ() + half);
+            boolean end = world.getEnvironment() == World.Environment.THE_END && !area.allowMainIsland();
             attempt(world, area, bounds, end, 1, found);
         } catch (RuntimeException e) {
             found.completeExceptionally(e);
@@ -205,9 +211,8 @@ public final class Search {
      * thread that owns the column.
      */
     static Location safeSpot(World world, int x, int z, Set<Biome> blockedBiomes) {
-        Block ground = world.hasCeiling() ? floorUnderRoof(world, x, z) : world.getHighestBlockAt(x, z, HeightMap.MOTION_BLOCKING);
-        // An empty column (the End's void) reports a block below the world's floor.
-        if (ground == null || ground.getY() < world.getMinHeight() || !goodGround(ground)) {
+        Block ground = world.hasCeiling() ? floorUnderRoof(world, x, z) : top(world, x, z);
+        if (ground == null || !goodGround(ground)) {
             return null;
         }
         Block feet = ground.getRelative(0, 1, 0);
@@ -222,7 +227,14 @@ public final class Search {
         return new Location(world, x + 0.5, feet.getY(), z + 0.5, yaw, 0);
     }
 
-    // The Nether: the highest floor with two blocks of room above it, below the roof.
+    // The highest block, from the heightmap; null for an empty column (the End's void),
+    // which the heightmap reports as below the world's floor.
+    private static Block top(World world, int x, int z) {
+        int y = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING);
+        return y < world.getMinHeight() ? null : world.getBlockAt(x, y, z);
+    }
+
+    // The Nether: the highest good floor with two blocks of room above it, below the roof.
     private static Block floorUnderRoof(World world, int x, int z) {
         int top = Math.min(world.getLogicalHeight(), world.getMaxHeight()) - 2;
         int room = 0;
@@ -231,7 +243,7 @@ public final class Search {
             if (room(block)) {
                 room++;
             } else {
-                if (room >= 2 && block.getType().isSolid()) {
+                if (room >= 2 && goodGround(block)) {
                     return block;
                 }
                 room = 0;

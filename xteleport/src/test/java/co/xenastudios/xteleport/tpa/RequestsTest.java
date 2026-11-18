@@ -1,6 +1,7 @@
 package co.xenastudios.xteleport.tpa;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -24,15 +25,20 @@ class RequestsTest {
 
     @Test
     void severalPendingOnePerSender() {
-        requests.add(alex, from(steve, "Steve"), EXPIRE);
+        assertTrue(requests.add(alex, from(steve, "Steve"), EXPIRE));
         now.addAndGet(1000);
-        requests.add(alex, from(sam, "Sam"), EXPIRE);
+        assertTrue(requests.add(alex, from(sam, "Sam"), EXPIRE));
         now.addAndGet(1000);
-        requests.add(alex, new Requests.Request(steve, "Steve", true, now.get()), EXPIRE);
+        assertFalse(requests.add(alex, new Requests.Request(steve, "Steve", true, now.get()), EXPIRE),
+            "asking again while one is pending adds nothing");
+        assertTrue(requests.asked(alex, steve, EXPIRE));
         List<Requests.Request> pending = requests.pending(alex, EXPIRE);
         assertEquals(2, pending.size());
-        assertEquals("Sam", pending.get(0).fromName());
-        assertTrue(pending.get(1).here(), "a second request from Steve replaces his first");
+        assertEquals("Steve", pending.get(0).fromName());
+        assertFalse(pending.get(0).here(), "the first request is kept as it was");
+        now.addAndGet(EXPIRE);
+        assertFalse(requests.asked(alex, steve, EXPIRE));
+        assertTrue(requests.add(alex, from(steve, "Steve"), EXPIRE), "once it ran out, a new one can be sent");
     }
 
     @Test

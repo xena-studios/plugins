@@ -9,7 +9,6 @@ import co.xenastudios.xteleport.api.TeleportResult;
 import co.xenastudios.xteleport.api.TeleportType;
 import co.xenastudios.xteleport.api.Warp;
 import co.xenastudios.xteleport.api.XTeleportApi;
-import co.xenastudios.xteleport.home.HomeLimits;
 import co.xenastudios.xteleport.home.Homes;
 import co.xenastudios.xteleport.rtp.Search;
 import co.xenastudios.xteleport.teleport.Teleporter;
@@ -85,17 +84,17 @@ final class Api implements XTeleportApi, Module {
             return CompletableFuture.completedFuture(false);
         }
         return plugin.homes().set(new Home(player, name, location.getWorld().getName(), location.getX(), location.getY(),
-            location.getZ(), location.getYaw(), location.getPitch())).exceptionally(error -> false);
+            location.getZ(), location.getYaw(), location.getPitch()));
     }
 
     @Override
     public CompletableFuture<Boolean> deleteHome(UUID player, String name) {
-        return plugin.homes().delete(player, name).exceptionally(error -> false);
+        return plugin.homes().delete(player, name);
     }
 
     @Override
     public int homeLimit(Player player) {
-        return HomeLimits.of(player, plugin.config().homes());
+        return plugin.homeLimits().cached(player, plugin.config().homes());
     }
 
     @Override
@@ -113,15 +112,16 @@ final class Api implements XTeleportApi, Module {
         if (!Homes.validName(name) || !location.isWorldLoaded()) {
             return CompletableFuture.completedFuture(false);
         }
-        return plugin.places().setWarp(Places.of(name, location)).exceptionally(error -> false);
+        return plugin.places().setWarp(Places.of(name, location));
     }
 
     @Override
     public CompletableFuture<Boolean> deleteWarp(String name) {
-        if (plugin.places().warp(name).isEmpty()) {
+        // Before the warps are read, only the database knows whether there's one.
+        if (plugin.places().loaded() && plugin.places().warp(name).isEmpty()) {
             return CompletableFuture.completedFuture(false);
         }
-        return plugin.places().deleteWarp(name).exceptionally(error -> false);
+        return plugin.places().deleteWarp(name);
     }
 
     @Override

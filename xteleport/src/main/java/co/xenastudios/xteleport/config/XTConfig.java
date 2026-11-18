@@ -81,10 +81,15 @@ public record XTConfig(
         @Range(min = 0, max = 60) int warmup,
         @Comment("Whether taking damage during the warmup cancels it, as moving does.") boolean cancelOnDamage,
         @Comment({
-            "Refuse to send players to a home, warp or spawn that is now in lava, inside blocks or",
-            "over the void, with a message instead of a death. The spot's chunk is loaded in the",
-            "background to check, never on the server's thread."})
-        boolean checkSafe) {}
+            "Refuse to send players somewhere that is now in lava, inside blocks, over the void,",
+            "high in the air or outside the world border, with a message instead of a death:",
+            "homes, warps, the spawn, and the player a TPA goes to. The spot's chunk is loaded",
+            "in the background to check, never on the server's thread."})
+        boolean checkSafe,
+        @Comment({
+            "With check-safe, the most blocks a player may fall on arriving. Falls of 3 or less",
+            "don't hurt. Water below is safe from any height."})
+        @Range(min = 0, max = 4096) int maxFall) {}
 
     public record Homes(
         @Comment({
@@ -126,6 +131,11 @@ public record XTConfig(
         @Comment("Spots tried before giving up. Each loads one chunk in the background.")
         @Range(min = 1, max = 50) int attempts,
         @Comment({
+            "Seconds before a player can start another search, whether it found a spot or not,",
+            "so nobody can keep the server busy generating chunks. The cooldown under",
+            "commands.rtp is the longer wait, after arriving. xteleport.cooldown.bypass skips both."})
+        @Range(min = 0, max = 86_400) int searchCooldown,
+        @Comment({
             "How many /rtp searches may run at once, server-wide. Anyone over it is told to try",
             "again in a few seconds, so a crowd typing /rtp can't slow the server."})
         @Range(min = 1, max = 32) int maxSearches,
@@ -163,7 +173,11 @@ public record XTConfig(
         @Comment("The server refused the teleport, or the player left.") Message failed,
         @Comment("Teleports cost money, but Vault or an economy plugin is missing. The console says which.")
         Message noEconomy,
-        @Comment("The database isn't open yet, or couldn't be opened. The console says why.") Message unavailable) {}
+        @Comment("The database isn't open yet, or couldn't be opened. The console says why.") Message unavailable,
+        @Comment({
+            "A home, warp, the spawn or /tptoggle couldn't be saved, so nothing changed. The",
+            "console says why."})
+        Message notSaved) {}
 
     public record HomeMessages(
         @Comment("<home> is its name.") Message set,
@@ -207,6 +221,7 @@ public record XTConfig(
         Message nothingToCancel,
         Message notYourself,
         Message notTaking,
+        @Comment("Asking again while the last request to <player> is still waiting.") Message alreadyAsked,
         Message toggledOff,
         Message toggledOn,
         @Comment("After arriving. <player> is who they went to.") Message teleported) {}
@@ -257,7 +272,8 @@ public record XTConfig(
                 Message.of("<prefix><error>That spot is in <highlight><world></highlight>, which isn't loaded."),
                 Message.of("<prefix><error>The teleport didn't work. Try again."),
                 Message.of("<prefix><error>Teleports cost money here, but the economy isn't working. Tell staff."),
-                Message.of("<prefix><error>Teleports aren't available right now. Try again in a moment.")),
+                Message.of("<prefix><error>Teleports aren't available right now. Try again in a moment."),
+                Message.of("<prefix><error>Couldn't save that, so nothing changed. Try again in a moment.")),
             new HomeMessages(
                 Message.of("<prefix><success>Set home</success> <highlight><home></highlight>."),
                 Message.of("<prefix><success>Moved home</success> <highlight><home></highlight> here."),
@@ -297,6 +313,8 @@ public record XTConfig(
                 Message.of("<prefix><error>You have no requests to take back."),
                 Message.of("<prefix><error>You can't ask yourself."),
                 Message.of("<prefix><error><highlight><player></highlight> isn't taking teleport requests."),
+                Message.of("<prefix><error>You already asked <highlight><player></highlight>. Wait for an answer, or take it back"
+                    + " with <highlight>/tpacancel</highlight>."),
                 Message.of("<prefix>You won't get teleport requests now. <highlight>/tptoggle</highlight> turns them back on."),
                 Message.of("<prefix>You'll get teleport requests again."),
                 Message.of("<prefix>Teleported to <highlight><player></highlight>.")),
@@ -339,12 +357,12 @@ public record XTConfig(
             command("setspawn"),
             teleport("spawn", List.of()),
             new TeleportCommand(true, List.of("wild"), "xteleport.command.rtp", 300, 0)),
-        new Teleports(3, true, true),
+        new Teleports(3, true, true, 3),
         new Homes(3, limits(), "home", true, "bed", 10),
         new Tpa(60),
         new Warps(false, 10),
         new Spawn(true, false, true),
-        new Rtp("", 10, 3, false,
+        new Rtp("", 10, 30, 3, false,
             List.of("ocean", "deep_ocean", "warm_ocean", "lukewarm_ocean", "deep_lukewarm_ocean", "cold_ocean",
                 "deep_cold_ocean", "frozen_ocean", "deep_frozen_ocean"),
             rtpWorlds()),

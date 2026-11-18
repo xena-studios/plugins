@@ -13,8 +13,12 @@ import co.xenastudios.xteleport.api.event.TeleportEvent;
 import co.xenastudios.xteleport.config.Settings;
 import co.xenastudios.xteleport.config.XTConfig;
 import java.time.Duration;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
@@ -27,7 +31,8 @@ import org.bukkit.entity.Player;
  * or damage), the destination worked out and its chunk loaded in the background, the
  * safety check on the destination's own thread, {@link PreTeleportEvent}, the cost taken,
  * then {@code teleportAsync} with the {@code COMMAND} cause, which xUtilities' {@code /back}
- * records. A teleport that fails after paying is refunded.
+ * records. A teleport that fails after paying is refunded. Every teleport's future
+ * completes, even when the plugin stops partway: then with {@code CANCELLED}.
  */
 public final class Teleporter {
 
@@ -57,10 +62,26 @@ public final class Teleporter {
         }
     }
 
+    /**
+     * A destination that turned out not to exist, with what to tell the player instead of
+     * "the teleport didn't work": complete the destination's future with it.
+     */
+    public static final class NoDestination extends RuntimeException {
+
+        private final transient Message message;
+
+        public NoDestination(Message message) {
+            super(null, null, false, false);
+            this.message = message;
+        }
+    }
+
     private final XTeleport plugin;
     private final Warmups warmups;
     private final Cooldowns cooldowns = new Cooldowns();
     private final VaultEconomy economy = new VaultEconomy();
+    // Every teleport not yet finished, so stopping the plugin can finish them.
+    private final Set<CompletableFuture<TeleportResult>> unfinished = ConcurrentHashMap.newKeySet();
     private volatile boolean warnedEconomy;
 
     public Teleporter(XTeleport plugin) {
@@ -77,9 +98,16 @@ public final class Teleporter {
         return warmups.waiting(player);
     }
 
-    /** Stops every warmup without a word, as when the plugin stops. */
+    /**
+     * Stops every warmup without a word, as when the plugin stops, and completes every
+     * teleport not yet finished with {@code CANCELLED}, so no caller waits forever.
+     */
     public void clear() {
         warmups.clear();
+        for (CompletableFuture<TeleportResult> result : List.copyOf(unfinished)) {
+            result.complete(TeleportResult.CANCELLED);
+        }
+        unfinished.clear();
     }
 
     private XTConfig.TeleportMessages messages() {
@@ -107,12 +135,8 @@ public final class Teleporter {
      */
     public TeleportResult precheck(Player player, Trip trip) {
         Player payer = payer(trip, player);
-        if (trip.cooldown() > 0 && !trip.cooldownKey().isEmpty() && !payer.hasPermission(COOLDOWN_BYPASS)) {
-            Duration left = cooldowns.remaining(payer.getUniqueId(), trip.cooldownKey());
-            if (!left.isZero()) {
-                messages().cooldown().send(payer, Placeholders.text("time", Durations.format(left.plusMillis(999))));
-                return TeleportResult.ON_COOLDOWN;
-            }
+        if (onCooldown(payer, trip.cooldownKey())) {
+            return TeleportResult.ON_COOLDOWN;
         }
         double cost = cost(trip, player);
         if (cost > 0) {
@@ -126,6 +150,24 @@ public final class Teleporter {
             }
         }
         return null;
+    }
+
+    /**
+     * Whether a cooldown on this key is still running for the player, telling them how
+     * long is left if so. Whatever length the teleport would start: a cooldown another
+     * teleport started on the same key counts. False for a blank key or with
+     * {@link #COOLDOWN_BYPASS}.
+     */
+    public boolean onCooldown(Player player, String key) {
+        if (key.isEmpty() || player.hasPermission(COOLDOWN_BYPASS)) {
+            return false;
+        }
+        Duration left = cooldowns.remaining(player.getUniqueId(), key);
+        if (left.isZero()) {
+            return false;
+        }
+        messages().cooldown().send(player, Placeholders.text("time", Durations.format(left.plusMillis(999))));
+        return true;
     }
 
     private void noEconomy(Player payer) {
@@ -153,6 +195,8 @@ public final class Teleporter {
             result.complete(refused);
             return result;
         }
+        unfinished.add(result);
+        result.whenComplete((done, error) -> unfinished.remove(result));
         XTConfig config = plugin.config();
         int seconds = player.hasPermission(WARMUP_BYPASS) ? 0 : trip.warmup() >= 0 ? trip.warmup() : config.teleports().warmup();
         if (seconds > 0) {
@@ -181,6 +225,12 @@ public final class Teleporter {
             where = CompletableFuture.failedFuture(e);
         }
         where.whenComplete((to, error) -> {
+            Throwable cause = error instanceof CompletionException wrapped && wrapped.getCause() != null ? wrapped.getCause() : error;
+            if (cause instanceof NoDestination none) {
+                onPlayer(player, () -> none.message.send(player), () -> {});
+                result.complete(TeleportResult.FAILED);
+                return;
+            }
             if (error != null || to == null) {
                 onPlayer(player, () -> messages().failed().send(player), () -> {});
                 result.complete(TeleportResult.FAILED);
@@ -195,7 +245,7 @@ public final class Teleporter {
                 onPlayer(player, () -> go(player, trip, to, result), () -> result.complete(TeleportResult.FAILED));
                 return;
             }
-            Safety.check(plugin, plugin::loadChunk, to).whenComplete((safe, failed) -> {
+            Safety.check(plugin, plugin::loadChunk, to, plugin.config().teleports().maxFall()).whenComplete((safe, failed) -> {
                 if (failed != null) {
                     plugin.getLogger().log(java.util.logging.Level.WARNING, "Couldn't check a teleport's destination", failed);
                 }

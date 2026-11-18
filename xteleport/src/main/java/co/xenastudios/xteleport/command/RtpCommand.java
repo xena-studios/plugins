@@ -26,8 +26,15 @@ import org.bukkit.permissions.PermissionDefault;
 /**
  * {@code /rtp [world]}: the cooldown and cost are checked before searching, so nobody waits
  * for a spot they can't use; then the search, then the usual warmup and teleport.
+ *
+ * <p>Two cooldowns: a short one that starts with each search, found or not, so nobody can
+ * keep the server generating chunks by searching again and again (or by moving during the
+ * warmup), and the command's own, which starts on arrival.
  */
 public final class RtpCommand {
+
+    /** The cooldown each search starts. */
+    public static final String SEARCH_COOLDOWN = "rtp-search";
 
     private final XTeleport plugin;
     private final XTConfig.Commands commands;
@@ -71,21 +78,28 @@ public final class RtpCommand {
             return;
         }
         UUID id = player.getUniqueId();
+        // A search still running says so, rather than the cooldown it started.
+        if (!plugin.rtp().searching(id) && plugin.teleporter().onCooldown(player, SEARCH_COOLDOWN)) {
+            return;
+        }
         switch (plugin.rtp().begin(id)) {
             case ALREADY -> throw new CommandFailure(messages().alreadySearching());
             case BUSY -> throw new CommandFailure(messages().busy());
             case STARTED -> { }
         }
+        plugin.teleporter().cooldowns().start(id, SEARCH_COOLDOWN, plugin.config().rtp().searchCooldown());
         messages().searching().send(player);
         CompletableFuture<Search.Found> search;
         try {
             search = plugin.rtp().find(world, rules);
         } catch (RuntimeException e) {
-            plugin.rtp().end(id);
-            throw e;
+            search = CompletableFuture.failedFuture(e);
         }
         search.whenComplete((found, error) -> {
             plugin.rtp().end(id);
+            if (error != null) {
+                plugin.getLogger().log(java.util.logging.Level.WARNING, "An /rtp search failed", error);
+            }
             plugin.teleporter().onPlayer(player, () -> {
                 if (error != null || found == null) {
                     messages().notFound().send(player);

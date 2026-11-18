@@ -10,6 +10,10 @@ run: xteleport rtpcheck world 5
 expect: Found a safe spot
 run: xteleport rtpcheck world_nether 3
 expect: Found a safe spot
+# The End: off the main island, on the outer islands. Most columns there are void, so
+# five searches of ten tries.
+run: xteleport rtpcheck world_the_end 5
+expect: Found a safe spot
 run: xteleport rtpcheck nowhere
 expect: can't send anyone to nowhere
 

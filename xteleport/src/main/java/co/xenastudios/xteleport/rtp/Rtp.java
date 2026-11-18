@@ -77,13 +77,32 @@ public final class Rtp {
         search.end(player);
     }
 
-    /** Searches a world by its settings. Call {@link #begin} first and {@link #end} after. */
+    /** Whether the player has a search running. Any thread. */
+    public boolean searching(UUID player) {
+        return search.searching(player);
+    }
+
+    /**
+     * Searches a world by its settings. Call {@link #begin} first and {@link #end} once the
+     * future completes; it always completes, with what went wrong if anything did. Any
+     * thread.
+     *
+     * <p>The world's spawn point (and, in the search, its border) may be read from another
+     * world's region on Folia, as for {@code /rtp world_nether} typed in the overworld.
+     * Folia doesn't tie either to a region: both are read as a few plain values, with no
+     * thread check on 1.21.11 or 26.3, so this is safe.
+     */
     public CompletableFuture<Search.Found> find(World world, RtpWorld rules) {
         XTConfig.Rtp current = settings;
         int centerX = rules.centerX();
         int centerZ = rules.centerZ();
         if (rules.centerOnSpawn()) {
-            Location spawn = world.getSpawnLocation();
+            Location spawn;
+            try {
+                spawn = world.getSpawnLocation();
+            } catch (RuntimeException e) {
+                return CompletableFuture.failedFuture(e);
+            }
             centerX = spawn.getBlockX();
             centerZ = spawn.getBlockZ();
         }

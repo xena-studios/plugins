@@ -51,15 +51,29 @@ public final class Requests {
         return kept;
     }
 
-    /** Adds a request, replacing one the sender already had pending with this target. */
-    public void add(UUID to, Request request, long expireMillis) {
+    /**
+     * Adds a request, unless the sender already has one pending with this target: asking
+     * again doesn't notify them again, so nobody can be spammed.
+     *
+     * @return false if there was already one, which is kept as it was
+     */
+    public boolean add(UUID to, Request request, long expireMillis) {
         long oldest = clock.getAsLong() - expireMillis;
+        boolean[] added = new boolean[1];
         inbox.compute(to, (id, list) -> {
             List<Request> kept = list == null ? new ArrayList<>() : fresh(list, oldest);
-            kept.removeIf(old -> old.from().equals(request.from()));
-            kept.add(request);
-            return List.copyOf(kept);
+            if (kept.stream().noneMatch(old -> old.from().equals(request.from()))) {
+                kept.add(request);
+                added[0] = true;
+            }
+            return kept.isEmpty() ? null : List.copyOf(kept);
         });
+        return added[0];
+    }
+
+    /** Whether the sender has a request to this player still pending. */
+    public boolean asked(UUID to, UUID from, long expireMillis) {
+        return pending(to, expireMillis).stream().anyMatch(request -> request.from().equals(from));
     }
 
     /** A player's pending requests, oldest first, dropping the ones that ran out. */

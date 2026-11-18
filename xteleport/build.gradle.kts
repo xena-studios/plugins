@@ -11,6 +11,8 @@ dependencies {
     // Optional, and only touched when installed. Vault is reached through the core's hook.
     compileOnly(libs.placeholderapi)
     testRuntimeOnly(libs.sqlite.jdbc)
+    // A fake economy behind a mock Vault, to test costs.
+    testImplementation(libs.vault.api) { isTransitive = false }
 }
 
 paperPluginYaml {

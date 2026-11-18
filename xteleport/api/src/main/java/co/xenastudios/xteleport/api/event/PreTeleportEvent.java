@@ -8,10 +8,14 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 
 /**
- * A teleport is about to happen: the warmup is over, the destination is loaded and was
- * found safe, and nothing has been charged yet. Cancel it to stop the teleport, as a
- * combat-tag, jail or minigame plugin would; xTeleport says nothing to the player then,
- * so tell them why.
+ * A teleport is about to happen: the warmup is over, and nothing has been charged yet.
+ * The destination has passed xTeleport's safety check (its chunk loaded, no lava, void or
+ * blocks in the way), unless the check is off: {@code teleports.check-safe: false} in the
+ * config, or {@link co.xenastudios.xteleport.api.TeleportOptions#checkSafe} false through
+ * the API. A random teleport's spot was checked when it was found.
+ *
+ * <p>Cancel it to stop the teleport, as a combat-tag, jail or minigame plugin would;
+ * xTeleport says nothing to the player then, so tell them why.
  *
  * <p>Fired on the player's own thread (the main thread on Paper), and built only while
  * something listens for it.

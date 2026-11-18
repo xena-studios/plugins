@@ -11,6 +11,7 @@ import co.xenastudios.xteleport.command.RtpCommand;
 import co.xenastudios.xteleport.command.TpaCommands;
 import co.xenastudios.xteleport.command.WarpCommands;
 import co.xenastudios.xteleport.config.XTConfig;
+import co.xenastudios.xteleport.home.HomeLimits;
 import co.xenastudios.xteleport.home.Homes;
 import co.xenastudios.xteleport.rtp.Rtp;
 import co.xenastudios.xteleport.storage.Store;
@@ -38,6 +39,7 @@ public class XTeleport extends XenaPlugin<XTConfig> {
 
     private Store store;
     private Homes homes;
+    private HomeLimits homeLimits;
     private Places places;
     private Requests requests;
     private Teleporter teleporter;
@@ -61,6 +63,7 @@ public class XTeleport extends XenaPlugin<XTConfig> {
             start(config);
         }
         rtp.configure(config.rtp(), getLogger());
+        homeLimits.clear();
         setup.module("players", () -> new PlayerListener(this));
         XTConfig.Spawn spawn = config.spawn();
         if (spawn.onFirstJoin() || spawn.onEveryJoin() || spawn.onRespawn()) {
@@ -84,8 +87,9 @@ public class XTeleport extends XenaPlugin<XTConfig> {
     // Once. The database opens on its own thread, so a slow MySQL can't hold up startup;
     // commands say "not available" for the moment until it's open.
     private void start(XTConfig config) {
-        store = Store.open(config.storage(), getDataFolder().toPath(), getLogger());
+        store = openStore(config.storage());
         homes = new Homes(store, id -> Bukkit.getPlayer(id) != null);
+        homeLimits = new HomeLimits();
         places = new Places(store);
         requests = new Requests();
         teleporter = new Teleporter(this);
@@ -134,6 +138,11 @@ public class XTeleport extends XenaPlugin<XTConfig> {
         store.close(10, TimeUnit.SECONDS);
     }
 
+    /** Opens the database. Overridden in tests, for a store whose writes fail. */
+    protected Store openStore(co.xenastudios.core.db.StorageSettings settings) {
+        return Store.open(settings, getDataFolder().toPath(), getLogger());
+    }
+
     /**
      * Loads a chunk in the background: every chunk xTeleport reads goes through here.
      * Overridden in tests, where MockBukkit can't load chunks asynchronously.
@@ -164,6 +173,10 @@ public class XTeleport extends XenaPlugin<XTConfig> {
 
     public Homes homes() {
         return homes;
+    }
+
+    public HomeLimits homeLimits() {
+        return homeLimits;
     }
 
     public Places places() {

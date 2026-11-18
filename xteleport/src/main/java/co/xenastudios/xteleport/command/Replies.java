@@ -3,9 +3,11 @@ package co.xenastudios.xteleport.command;
 import co.xenastudios.core.command.CommandFailure;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xteleport.XTeleport;
+import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import org.bukkit.command.CommandSender;
 
 /** What the command classes share. */
 final class Replies {
@@ -17,6 +19,21 @@ final class Replies {
         if (!plugin.ready()) {
             throw new CommandFailure(plugin.config().messages().teleport().unavailable());
         }
+    }
+
+    /**
+     * Replies once a change has been written to the database, on the sender's thread:
+     * {@code saved} if it was, otherwise "couldn't save, try again" (the change was already
+     * undone in memory, and the console says why).
+     */
+    static void whenSaved(XTeleport plugin, CommandSender sender, CompletableFuture<?> write, Runnable saved) {
+        write.whenComplete((done, error) -> plugin.tasks().sender(sender, () -> {
+            if (error != null) {
+                plugin.config().messages().teleport().notSaved().send(sender);
+            } else {
+                saved.run();
+            }
+        }));
     }
 
     /**

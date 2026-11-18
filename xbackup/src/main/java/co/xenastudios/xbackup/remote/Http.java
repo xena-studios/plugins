@@ -106,6 +106,30 @@ final class Http {
             }), size);
     }
 
+    /**
+     * The bytes a ranged GET asked for. A 200 means the server ignored the range and sent the
+     * whole file, so the range is cut from it.
+     */
+    static byte[] ranged(HttpResponse<byte[]> response, String file, long offset, int length)
+        throws java.io.EOFException {
+        byte[] body = response.body();
+        if (response.statusCode() == 200 && body.length != length) {
+            if (body.length < offset + length) {
+                throw new java.io.EOFException(file + " is shorter than " + (offset + length) + " bytes");
+            }
+            return java.util.Arrays.copyOfRange(body, (int) offset, (int) offset + length);
+        }
+        if (body.length != length) {
+            throw new java.io.EOFException(file + " is shorter than " + (offset + length) + " bytes");
+        }
+        return body;
+    }
+
+    /** A Range header's value for {@code length} bytes from {@code offset}. */
+    static String range(long offset, int length) {
+        return "bytes=" + offset + "-" + (offset + length - 1);
+    }
+
     static HttpResponse<byte[]> send(HttpRequest request) throws IOException, InterruptedException {
         return CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
     }

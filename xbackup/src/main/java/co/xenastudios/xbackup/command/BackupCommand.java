@@ -61,7 +61,12 @@ public final class BackupCommand {
                     : List.of(),
                 invocation -> copy(engine, invocation)),
             sub("repair", "/backup repair", "Rebuild the index from the stored data.", none,
-                invocation -> repair(engine, invocation)));
+                invocation -> repair(engine, invocation)),
+            sub("link", "/backup link <remote> [code]", "Link a Google Drive, OneDrive or Dropbox remote.",
+                (sender, args) -> args.length <= 1
+                    ? Completions.matching(args.length == 0 ? "" : args[0], List.copyOf(engine.remotes().keySet()))
+                    : List.of(),
+                invocation -> link(engine, invocation)));
         return CommandSpec.named("backup", settings)
             .description("Run, list, check and restore backups.")
             .usage("/backup " + Subcommands.names(subcommands))
@@ -71,7 +76,7 @@ public final class BackupCommand {
 
     /** Every subcommand's permission, for the core to declare. */
     public static List<String> permissions() {
-        return List.of("now", "list", "status", "verify", "restore", "prune", "pin", "unpin", "forget", "copy", "repair")
+        return List.of("now", "list", "status", "verify", "restore", "prune", "pin", "unpin", "forget", "copy", "repair", "link")
             .stream().map(name -> "xbackup." + name).toList();
     }
 
@@ -332,6 +337,19 @@ public final class BackupCommand {
         reply(sender, engine.push(name), result -> say(sender, "<success>Copied</success> to " + escape(name) + ": "
             + result.filesSent() + " files (" + Sizes.format(result.bytesSent()) + ") sent, " + result.filesDeleted()
             + " removed."));
+    }
+
+    private static void link(Engine engine, Invocation invocation) {
+        String name = invocation.arg(0);
+        if (name == null) {
+            throw invocation.usage();
+        }
+        CommandSender sender = invocation.sender();
+        try {
+            engine.link(name, invocation.arg(1), text -> say(sender, text));
+        } catch (IllegalArgumentException e) {
+            throw new CommandFailure(Message.of("<prefix><error>" + escape(e.getMessage())));
+        }
     }
 
     private static void repair(Engine engine, Invocation invocation) {

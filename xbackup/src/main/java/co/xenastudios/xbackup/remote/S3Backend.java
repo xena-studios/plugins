@@ -235,7 +235,7 @@ final class S3Backend implements Backend {
         if (length == 0) {
             return new byte[0];
         }
-        Map<String, String> headers = Map.of("Range", "bytes=" + offset + "-" + (offset + length - 1));
+        Map<String, String> headers = Map.of("Range", Http.range(offset, length));
         return Http.retry(() -> {
             HttpResponse<byte[]> response = Http.send(request("GET", uri(key, Map.of()), headers, EMPTY_SHA256,
                 HttpRequest.BodyPublishers.noBody()).build());
@@ -246,18 +246,7 @@ final class S3Backend implements Backend {
                 throw new EOFException(file + " is shorter than " + (offset + length) + " bytes");
             }
             check("Reading " + file, response);
-            byte[] body = response.body();
-            if (response.statusCode() == 200 && body.length > length) {
-                // The server ignored the range: take the slice.
-                if (body.length < offset + length) {
-                    throw new EOFException(file + " is shorter than " + (offset + length) + " bytes");
-                }
-                return java.util.Arrays.copyOfRange(body, (int) offset, (int) offset + length);
-            }
-            if (body.length != length) {
-                throw new EOFException(file + " is shorter than " + (offset + length) + " bytes");
-            }
-            return body;
+            return Http.ranged(response, file, offset, length);
         });
     }
 

@@ -185,7 +185,7 @@ final class WebDavBackend implements Backend {
         }
         return Http.retry(() -> {
             HttpResponse<byte[]> response = Http.send(request(uri(Backend.checkName(file)), "GET",
-                HttpRequest.BodyPublishers.noBody()).header("Range", "bytes=" + offset + "-" + (offset + length - 1)).build());
+                HttpRequest.BodyPublishers.noBody()).header("Range", Http.range(offset, length)).build());
             if (response.statusCode() == 404) {
                 throw new NoSuchFileException(file);
             }
@@ -193,18 +193,7 @@ final class WebDavBackend implements Backend {
                 throw new EOFException(file + " is shorter than " + (offset + length) + " bytes");
             }
             check("Reading " + file, response);
-            byte[] body = response.body();
-            if (response.statusCode() == 200) {
-                // No range support: slice the whole file.
-                if (body.length < offset + length) {
-                    throw new EOFException(file + " is shorter than " + (offset + length) + " bytes");
-                }
-                return java.util.Arrays.copyOfRange(body, (int) offset, (int) offset + length);
-            }
-            if (body.length != length) {
-                throw new EOFException(file + " is shorter than " + (offset + length) + " bytes");
-            }
-            return body;
+            return Http.ranged(response, file, offset, length);
         });
     }
 

@@ -687,6 +687,47 @@ public final class Engine {
         });
     }
 
+    /**
+     * Links a cloud drive remote. Google Drive and OneDrive: {@code say} gets the address and
+     * code to enter, then word once it's linked; the wait runs on its own thread, not the
+     * worker, so backups carry on. Dropbox: without a code, {@code say} gets the link to open;
+     * with the code Dropbox showed, it's swapped for a token.
+     */
+    public void link(String name, String code, java.util.function.Consumer<String> say) {
+        XBConfig.Remote remote = remoteSettings.get(name);
+        if (remote == null) {
+            throw new IllegalArgumentException("There's no remote named " + name + " in config.yml.");
+        }
+        String type = remote.type().strip().toLowerCase(java.util.Locale.ROOT);
+        if (!List.of("drive", "onedrive", "dropbox").contains(type)) {
+            throw new IllegalArgumentException(name + " is a " + type + " remote; only drive, onedrive and dropbox are linked.");
+        }
+        plugin.tasks().async(() -> {
+            try {
+                if (type.equals("dropbox")) {
+                    if (code == null) {
+                        say.accept("Open <click:open_url:'" + co.xenastudios.xbackup.remote.OAuth.dropboxUrl(home, name, remote)
+                            + "'><highlight><underlined>this link</underlined></highlight></click>, allow xBackup, then"
+                            + " run <highlight>/backup link " + name + " <code></highlight> with the code Dropbox shows.");
+                        return;
+                    }
+                    co.xenastudios.xbackup.remote.OAuth.dropboxCode(home, name, remote, code);
+                } else {
+                    co.xenastudios.xbackup.remote.OAuth.DeviceCode device =
+                        co.xenastudios.xbackup.remote.OAuth.start(name, type, remote);
+                    say.accept("Go to <click:open_url:'" + device.url() + "'><highlight><underlined>" + device.url()
+                        + "</underlined></highlight></click> on any device and enter <highlight>" + device.userCode()
+                        + "</highlight>. Waiting...");
+                    co.xenastudios.xbackup.remote.OAuth.finish(home, name, type, remote, device, stopping::get);
+                }
+                say.accept("<success>Linked</success> " + name + ". Backups are copied to it from the next one; "
+                    + "<highlight>/backup copy " + name + "</highlight> copies them now.");
+            } catch (IOException | RuntimeException e) {
+                say.accept("<error>Couldn't link " + name + ": " + describe(e) + "</error>");
+            }
+        });
+    }
+
     public Remotes.Context remotesContext() {
         return new Remotes.Context(home, new Throttle(settings.uploadLimit()), logger, backends::get);
     }

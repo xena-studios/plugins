@@ -6,7 +6,6 @@ import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.zchat.ZChat;
 import co.xenastudios.zchat.chat.ChatState;
 import co.xenastudios.zchat.config.Settings;
-import co.xenastudios.zchat.config.Toggle;
 import co.xenastudios.zchat.config.ZConfig;
 import java.util.Collections;
 import net.kyori.adventure.text.Component;
@@ -22,10 +21,6 @@ public final class ChatCommands {
 
     private ChatCommands() {}
 
-    static CommandSpec.Builder named(String name, Toggle settings) {
-        return CommandSpec.named(name).aliases(settings.aliases()).permission(settings.permission());
-    }
-
     public static void register(Setup setup, ZChat zchat, ZConfig config) {
         ChatState state = zchat.state();
 
@@ -34,7 +29,7 @@ public final class ChatCommands {
             setup.permission(BYPASS_CLEAR, PermissionDefault.OP);
             // One message of blank lines: a single packet per player, not one per line.
             Component blank = Component.text(String.join("\n", Collections.nCopies(clear.lines(), " ")));
-            setup.command(named("clearchat", clear)
+            setup.command(CommandSpec.named("clearchat", clear)
                 .description("Clear chat for everyone.")
                 .executes(invocation -> {
                     for (Player player : Bukkit.getOnlinePlayers()) {
@@ -48,7 +43,7 @@ public final class ChatCommands {
 
         Settings.MuteChat mute = config.mutechat();
         if (mute.enabled()) {
-            setup.command(named("mutechat", mute)
+            setup.command(CommandSpec.named("mutechat", mute)
                 .description("Mute or unmute chat for everyone.")
                 .executes(invocation -> {
                     boolean muted = !state.muted();
@@ -60,7 +55,7 @@ public final class ChatCommands {
 
         Settings.ToggleChat toggle = config.togglechat();
         if (toggle.enabled()) {
-            setup.command(named("togglechat", toggle)
+            setup.command(CommandSpec.named("togglechat", toggle)
                 .permissionDefault(PermissionDefault.TRUE)
                 .description("Hide or show other players' chat.")
                 .executes(invocation -> {

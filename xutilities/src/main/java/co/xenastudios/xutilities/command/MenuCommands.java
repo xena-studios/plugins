@@ -1,6 +1,7 @@
 package co.xenastudios.xutilities.command;
 
 import co.xenastudios.core.Setup;
+import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.task.Tasks;
 import co.xenastudios.xutilities.config.Settings;
 import co.xenastudios.xutilities.config.XConfig;
@@ -33,7 +34,7 @@ final class MenuCommands {
             if (!station.settings().enabled()) {
                 return;
             }
-            setup.command(Specs.named(name, station.settings())
+            setup.command(CommandSpec.named(name, station.settings())
                 .description("Open " + station.what() + ".")
                 .executes(invocation -> {
                     Player player = invocation.player();
@@ -48,7 +49,7 @@ final class MenuCommands {
 
         Settings.Trash trash = commands.trash();
         if (trash.enabled()) {
-            setup.command(Specs.named("trash", trash)
+            setup.command(CommandSpec.named("trash", trash)
                 .description("Open a menu that deletes what's left in it.")
                 .executes(invocation -> {
                     Player player = invocation.player();

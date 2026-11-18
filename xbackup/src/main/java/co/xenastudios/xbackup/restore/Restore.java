@@ -108,12 +108,15 @@ public final class Restore {
 
     private static void expand(Repository repository, String path, Tree.Node node, Set<String> protect, List<Item> items,
                                Set<String> seen) throws IOException {
-        if (protect.contains(path)) {
-            return;
-        }
+        // Compared ignoring case: on Windows and macOS, Plugins/XBACKUP is plugins/xBackup.
+        String lower = path.toLowerCase(java.util.Locale.ROOT);
         boolean containsProtected = path.isEmpty();
         for (String p : protect) {
-            if (p.startsWith(path + "/")) {
+            String protectedPath = p.toLowerCase(java.util.Locale.ROOT);
+            if (protectedPath.equals(lower)) {
+                return;
+            }
+            if (protectedPath.startsWith(lower + "/")) {
                 containsProtected = true;
             }
         }
@@ -142,13 +145,17 @@ public final class Restore {
     /** Compares the items with the files under {@code root}, reading only metadata and region headers. */
     public static Plan dryRun(Repository repository, List<Item> items, Path root) throws IOException {
         Counter counter = new Counter();
+        Path base = root.toAbsolutePath().normalize();
         for (Item item : items) {
-            Path disk = root.resolve(item.path());
+            Path disk = base.resolve(item.path()).normalize();
+            if (!disk.startsWith(base)) {
+                throw new IOException(item.path() + " is outside " + base + ".");
+            }
             if (item.node().kind() == Tree.Kind.DIR && Files.isSymbolicLink(disk) && Files.isDirectory(disk)) {
                 // A folder kept elsewhere behind a link is restored where the link leads.
                 disk = disk.toRealPath();
             }
-            compare(repository, item.path(), item.node(), disk, counter);
+            compare(repository, item.path(), item.node(), disk, disk, counter);
         }
         return new Plan(items, counter.files, counter.bytes, counter.added, counter.changed, counter.removed,
             counter.chunks, List.copyOf(counter.examples));
@@ -170,8 +177,13 @@ public final class Restore {
         }
     }
 
-    private static void compare(Repository repository, String path, Tree.Node node, Path disk, Counter counter)
+    // Everything read stays inside the item's own folder (or file): names come from the backup.
+    private static void compare(Repository repository, String path, Tree.Node node, Path base, Path at, Counter counter)
         throws IOException {
+        Path disk = at.normalize();
+        if (!disk.startsWith(base)) {
+            throw new IOException(path + " is outside " + base + ".");
+        }
         BasicFileAttributes attributes = attributes(disk);
         if (node.kind() == Tree.Kind.DIR) {
             Tree tree = repository.tree(node.ref());
@@ -183,7 +195,7 @@ public final class Restore {
             Set<String> names = new HashSet<>();
             for (Tree.Node child : tree.nodes()) {
                 names.add(child.name());
-                compare(repository, join(path, child.name()), child, disk.resolve(child.name()), counter);
+                compare(repository, join(path, child.name()), child, base, disk.resolve(child.name()), counter);
             }
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(disk)) {
                 for (Path child : stream) {
@@ -332,14 +344,29 @@ public final class Restore {
      * Tree entries already can't hold {@code /}, {@code .} or {@code ..}.
      */
     static void checkName(String name, String path, boolean windows) throws UnsafeException {
+        boolean plain = true;
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
-            if (c < 0x20 || c == 0x7F || windows && (c == '\\' || c == ':')) {
-                throw new UnsafeException("The backup has an entry named " + printable(name) + " in " + display(path)
-                    + ", which isn't a plain file name here. It wasn't restored; the backup may have been tampered with.");
+            if (c < 0x20 || c == 0x7F || windows && (c == '\\' || c == ':' || "<>\"|?*".indexOf(c) >= 0)) {
+                plain = false;
             }
         }
+        // Windows also drops a trailing dot or space (so "world." is "world"), keeps device
+        // names (NUL, COM1) whatever their extension, and reads PROGRA~1 as a short name for
+        // some other, longer one: any of them could write somewhere else than its name says.
+        if (plain && windows && (name.endsWith(".") || name.endsWith(" ") || RESERVED.matcher(name).matches()
+            || SHORT_NAME.matcher(name).find())) {
+            plain = false;
+        }
+        if (!plain) {
+            throw new UnsafeException("The backup has an entry named " + printable(name) + " in " + display(path)
+                + ", which isn't a plain file name here. It wasn't restored; the backup may have been tampered with.");
+        }
     }
+
+    private static final java.util.regex.Pattern RESERVED = java.util.regex.Pattern.compile(
+        "(?i)(con|prn|aux|nul|conin\\$|conout\\$|com[0-9\u00b9\u00b2\u00b3]|lpt[0-9\u00b9\u00b2\u00b3])( *\\..*)?");
+    private static final java.util.regex.Pattern SHORT_NAME = java.util.regex.Pattern.compile("~[0-9]");
 
     private static String printable(String name) {
         StringBuilder out = new StringBuilder("\"");
@@ -460,12 +487,33 @@ public final class Restore {
             }
             Path placed = home.resolve(base.relativize(out).toString());
             Path leads = (link.isAbsolute() ? link : placed.getParent().resolve(link)).normalize();
-            if (!allowLinksOutside && !leads.startsWith(home)) {
+            if (!allowLinksOutside && !(leads.startsWith(home) && resolved(leads).startsWith(resolved(home)))) {
                 throw new UnsafeException(display(path) + " is a link to " + target + ", outside " + home
                     + ", so it isn't restored. If you made that link yourself, restore it from the command line with"
                     + " --allow-links-outside, or leave it out of the restore.");
             }
             Files.createSymbolicLink(out, link);
+        }
+
+        // Where a path really leads through the links already on disk: its longest existing
+        // part resolved, the rest added back. A link into a folder that's itself a link out
+        // of the server folder leads outside it.
+        private static Path resolved(Path path) {
+            Path existing = path;
+            Path rest = existing.getFileSystem().getPath("");
+            while (existing != null && !Files.exists(existing)) {
+                Path name = existing.getFileName();
+                rest = name == null ? rest : name.resolve(rest);
+                existing = existing.getParent();
+            }
+            if (existing == null) {
+                return path;
+            }
+            try {
+                return existing.toRealPath().resolve(rest).normalize();
+            } catch (IOException e) {
+                return path;
+            }
         }
 
         private void writeFile(Tree.Node node, Path out, String path) throws IOException {

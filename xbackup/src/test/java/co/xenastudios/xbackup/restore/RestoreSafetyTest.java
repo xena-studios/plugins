@@ -116,7 +116,45 @@ class RestoreSafetyTest {
         assertDoesNotThrow(() -> Restore.checkName("minecraft:stone.yml", "", false));
         assertDoesNotThrow(() -> Restore.checkName("back\\slash", "", false));
         assertDoesNotThrow(() -> Restore.checkName("ünïcode name.yml", "", true));
+        // Windows' other ways for a name to mean another file.
+        for (String name : List.of("world.", "world ", "NUL", "nul.txt", "Com1", "LPT9.log", "CONIN$", "PROGRA~1",
+            "a<b", "what?")) {
+            assertThrows(Restore.UnsafeException.class, () -> Restore.checkName(name, "", true), name);
+            assertDoesNotThrow(() -> Restore.checkName(name, "", false), name);
+        }
+        assertDoesNotThrow(() -> Restore.checkName("console.yml", "", true));
+        assertDoesNotThrow(() -> Restore.checkName("null.txt", "", true));
         List<String> unused = new ArrayList<>();
         assertTrue(unused.isEmpty());
+    }
+
+    @Test
+    void protectedPathsAreLeftOutWhateverTheirCase() throws IOException {
+        try (Repository opened = open()) {
+            Snapshot snapshot = snapshot(folder("Plugins", folder("XBACKUP", file("secrets.yml", "old")),
+                file("other.yml", "o")));
+            List<Restore.Item> items = Restore.expand(repository, snapshot, List.of(""), Set.of("plugins/xBackup"));
+            List<String> paths = new ArrayList<>();
+            items.forEach(item -> paths.add(item.path()));
+            assertEquals(List.of("Plugins/other.yml"), paths);
+        }
+    }
+
+    @Test
+    void aLinkThroughALinkOutsideIsRefused() throws IOException {
+        try (Repository opened = open()) {
+            // The server folder already has a link "shared" leading out of it: a restored link
+            // into shared/... reads as inside, but leads outside.
+            Path into = dir.resolve("server");
+            Files.createDirectories(dir.resolve("elsewhere"));
+            Files.createDirectories(into);
+            Files.createSymbolicLink(into.resolve("shared"), dir.resolve("elsewhere"));
+            Snapshot through = snapshot(Tree.Node.link("sneaky", 0, "shared/passwd"));
+            Path target = dir.resolve("staged");
+            List<Restore.Item> items = Restore.expand(repository, through, List.of("sneaky"), Set.of());
+            Restore.UnsafeException refused = assertThrows(Restore.UnsafeException.class, () -> Restore.write(repository,
+                items, target, into, false, Throttle.NONE, () -> false, step -> {}));
+            assertTrue(refused.getMessage().contains("outside"), refused.getMessage());
+        }
     }
 }

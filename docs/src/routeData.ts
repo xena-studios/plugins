@@ -1,7 +1,7 @@
 // A plugin's pages wear its accent: amber for xUtilities, green for zChat,
 // violet for xLimbo, teal for xRewind, lime for xPlots,
-// orchid for xTeleport, periwinkle for xVote, tangerine for xBans, glacier blue for xMoney,
-// apricot for xBackup, rose for xStats (xena-studios/brand, scripts/plugin-brand.ts). The rest
+// fuchsia for xTeleport, cobalt for xVote, crimson for xBans, emerald for xMoney,
+// ice for xBackup, green for xStats (xena-studios/brand, scripts/plugin-brand.ts). The rest
 // of the site keeps the family's neutral accent from theme.css.
 import { defineRouteMiddleware } from "@astrojs/starlight/route-data";
 

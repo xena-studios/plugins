@@ -85,7 +85,7 @@ web:
     name: "My Server"
     tagline: "Survival since 2019"
     logo: "logo.png"
-    accent: "#F77FA5"
+    accent: "#3EC407"
     background: "#0F1419"
     surface: "#1A222B"
     text: "#E6EDF3"

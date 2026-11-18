@@ -27,7 +27,7 @@ The server, its stats and their totals. Made at each save, cached for a minute.
   "name": "My Server",
   "tagline": "",
   "logo": "/brand/logo.png",
-  "colours": {"accent": "#f77fa5", "background": "#0f1419", "surface": "#1a222b", "text": "#e6edf3"},
+  "colours": {"accent": "#3ec407", "background": "#0f1419", "surface": "#1a222b", "text": "#e6edf3"},
   "avatar": "https://mc-heads.net/avatar/{uuid}/{size}",
   "players": 1234,
   "saved": 1795000000000,

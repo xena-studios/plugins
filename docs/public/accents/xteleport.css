@@ -2,8 +2,8 @@
    Starlight puts route head entries before the bundled theme, so the doubled
    :root outranks theme.css instead of relying on order. */
 :root:root {
-  --accent: #EA87E2;
-  --sl-color-accent-low: #352437;
-  --sl-color-accent: #EA87E2;
-  --sl-color-accent-high: #F4C1F0;
+  --accent: #CE41E3;
+  --sl-color-accent-low: #321939;
+  --sl-color-accent: #CE41E3;
+  --sl-color-accent-high: #E6A0F1;
 }

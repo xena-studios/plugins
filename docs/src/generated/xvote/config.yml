@@ -10,7 +10,7 @@ config-version: 1
 
 # The look xVote's messages share. The default messages use these as tags, so changing
 # a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#91ACFF>, or <gold><bold>.
+# <#4D7BFD>, or <gold><bold>.
 theme:
   # <prefix> starts the default messages. Make it your server's name, such as
   # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.

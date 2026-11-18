@@ -174,4 +174,34 @@ class LedgerTest {
         assertEquals(0, bench.store.count(steve.id()));
         assertEquals(12_000L, Bench.stored(bench.database).get(steve.id()));
     }
+
+    @Test
+    void aPruneStopsAtTheFirstNewerRowAndAFailingOneNeverHoldsUpSaving() throws Exception {
+        Account steve = ledger.open(UUID.randomUUID(), "Steve", 0);
+        for (int i = 0; i < 7_000; i++) {
+            ledger.deposit(steve, 1, Bench.CAUSE);
+        }
+        bench.flush();
+        long cutoff = System.currentTimeMillis() + 1;
+        Thread.sleep(5);
+        ledger.deposit(steve, 1, Bench.CAUSE); // newer than the cutoff
+        bench.flush();
+        // The database refuses the prune: it's given up on, and saving goes on.
+        bench.faults.failText = "DELETE FROM";
+        bench.faults.failures.set(1_000);
+        ledger.prune(cutoff);
+        ledger.deposit(steve, 5, Bench.CAUSE);
+        bench.flush();
+        assertEquals(7_006L, Bench.stored(bench.database).get(steve.id()));
+        assertEquals(7_002, bench.store.count(steve.id()), "nothing pruned yet");
+        assertFalse(bench.writer.failing());
+        // It works the next time, a slice at a time, and keeps the newer rows.
+        bench.faults.failures.set(0);
+        ledger.prune(cutoff);
+        for (int i = 0; i < 5 && bench.store.count(steve.id()) > 2; i++) {
+            bench.flush();
+        }
+        assertEquals(2, bench.store.count(steve.id()));
+        assertEquals(7_006L, Bench.stored(bench.database).get(steve.id()));
+    }
 }

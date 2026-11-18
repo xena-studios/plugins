@@ -110,8 +110,12 @@ public final class Bank {
      * the shared database decides (on a network) isn't done already. Not yet started by the
      * writer within {@code network-wait-ms} on a server thread, or {@link Ledger#WAIT_MS}
      * elsewhere, it's abandoned and refused, and the writer never runs it, so nothing was
-     * taken. Once started, its real outcome is waited for: the writer's connection answers
-     * within a few seconds, or the attempt fails and is reported for what it was.
+     * taken. Once started, its real outcome is waited for: up to about 4 seconds before its
+     * commit (past {@code Writer#CHECKED_BUDGET_MS} it's refused, honestly, before the commit),
+     * and up to 3 more for the commit. Only if the database goes away at the moment of the
+     * commit does the caller wait until it answers again: whether it went through is never
+     * guessed. That's the case per-account leases (#66) remove, and why network mode is
+     * experimental.
      */
     public Outcome await(CompletableFuture<Outcome> future, Account account) {
         if (future.isDone()) {

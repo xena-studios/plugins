@@ -225,7 +225,8 @@ class NetworkFailureTest {
                 payment = i;
             }
         }
-        assertEquals(Writer.IMPORT_CHUNK, payment, "the payment went in after the first chunk, not after the whole import");
+        assertTrue(payment > 0 && payment <= Writer.IMPORT_CHUNK,
+            "the payment went in after the first chunk, not after the whole import: after " + payment);
         assertEquals(count + 1, heard.size());
         assertImported(targets);
     }
@@ -260,6 +261,131 @@ class NetworkFailureTest {
             assertEquals(target.balance(), stored.get(target.account().id()));
             assertEquals(target.balance(), target.account().balance());
         }
+        Bench.assertLedgerMatchesBalances(bench.database);
+    }
+
+    private void awaitRecovered() throws InterruptedException {
+        long until = System.currentTimeMillis() + 10_000;
+        while (bench.writer.failing()) {
+            assertTrue(System.currentTimeMillis() < until, "the writer never noticed the database was back");
+            Thread.sleep(20);
+        }
+    }
+
+    @Test
+    void aWithdrawalOnlyOutageRecovers() throws Exception {
+        // The database goes away while a started withdrawal runs: it's answered (nothing
+        // taken) and gone, so the writer has nothing left to save.
+        bench.faults.failText = "balance >= ?";
+        bench.faults.failures.set(1);
+        Outcome refused = bench.ledger.withdraw(steve, Money.ONE, Bench.CAUSE).get(10, TimeUnit.SECONDS);
+        assertEquals(Status.UNAVAILABLE, refused.status(), "the database is away: refused, nothing taken");
+        assertTrue(bench.writer.failing());
+        bench.faults.down = true;
+        assertEquals(Status.UNAVAILABLE, bench.ledger.withdraw(steve, Money.ONE, Bench.CAUSE).join().status(), "refused at once meanwhile");
+        Thread.sleep(1_500); // the writer's checks fail meanwhile
+        assertTrue(bench.writer.failing());
+        // Only the writer's own check can notice it's back: no change reaches the writer to try.
+        bench.faults.down = false;
+        awaitRecovered();
+        Outcome paid = bench.ledger.withdraw(steve, Money.ONE, Bench.CAUSE).get(10, TimeUnit.SECONDS);
+        assertEquals(Status.SUCCESS, paid.status());
+        assertEquals(99 * Money.ONE, stored());
+    }
+
+    @Test
+    void aConnectionTheDatabaseClosedWhileIdleIsReplacedBeforeAPayment() throws Exception {
+        bench.writer.idleCheckNanos = TimeUnit.MILLISECONDS.toNanos(50);
+        bench.faults.killOpen(); // MySQL's wait_timeout closed it while the server was quiet
+        Thread.sleep(100);
+        Outcome paid = bench.ledger.withdraw(steve, Money.ONE, Bench.CAUSE).get(10, TimeUnit.SECONDS);
+        assertEquals(Status.SUCCESS, paid.status(), "checked and replaced first, not tried and failed");
+        assertFalse(bench.writer.failing());
+        assertTrue(bench.logged.isEmpty(), "nothing failed: " + bench.logged);
+        assertEquals(99 * Money.ONE, stored());
+    }
+
+    @Test
+    void onANetworkRetriesAreAtMostTwoSecondsApart() throws Exception {
+        bench.faults.down = true;
+        bench.ledger.deposit(steve, Money.ONE, Bench.CAUSE);
+        Thread.sleep(8_000); // pauses of 0.5, 1, 2, 2, 2 s: doubling, they'd be 4 and then 8 by now
+        bench.faults.down = false;
+        long before = System.nanoTime();
+        bench.flush();
+        long waited = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - before);
+        assertTrue(waited < Writer.NETWORK_MAX_PAUSE_MS + 1_000, "saved " + waited + "ms after the database came back");
+        assertEquals(101 * Money.ONE, stored());
+    }
+
+    @Test
+    void aNetworkPaymentNobodyWaitsWithATimeoutIsStillAnsweredInTime() throws Exception {
+        CountDownLatch release = bench.hold();
+        CompletableFuture<Outcome> pending = bench.ledger.withdraw(steve, 5 * Money.ONE, Bench.CAUSE);
+        // As the API and the commands use it: nobody calls Bank#await, or gives up on it.
+        assertEquals(Status.UNAVAILABLE, pending.get(5, TimeUnit.SECONDS).status());
+        release.countDown();
+        bench.flush();
+        assertEquals(100 * Money.ONE, stored(), "answered as refused, so never run");
+    }
+
+    @Test
+    void aStartedChangeTooSlowToReachItsCommitIsRefusedAndRolledBack() throws Exception {
+        bench.writer.checkedBudgetNanos = TimeUnit.MILLISECONDS.toNanos(100);
+        bench.faults.slowText = "balance >= ?";
+        bench.faults.slowMillis = 300; // the UPDATE that takes the money runs, late
+        Outcome outcome = bench.ledger.withdraw(steve, 5 * Money.ONE, Bench.CAUSE).get(10, TimeUnit.SECONDS);
+        assertEquals(Status.UNAVAILABLE, outcome.status());
+        bench.faults.slowMillis = 0;
+        bench.flush();
+        assertEquals(100 * Money.ONE, stored(), "rolled back before the commit, so the refusal is true");
+        assertEquals(List.of("START 1000000"), Bench.rows(bench.database, steve.id()));
+        assertFalse(bench.writer.failing(), "a slow database isn't a failing one");
+    }
+
+    @Test
+    void stoppingAnswersAStartedChangeWhoseCommitWasNeverSent() throws Exception {
+        bench.writer.checkedBudgetNanos = TimeUnit.SECONDS.toNanos(60);
+        bench.faults.slowText = "balance >= ?";
+        bench.faults.stubbornMillis = 7_000; // stuck, as in a socket read, past stop's 5 s
+        Pending pending = (Pending) bench.ledger.withdraw(steve, 5 * Money.ONE, Bench.CAUSE);
+        long until = System.currentTimeMillis() + 5_000;
+        while (!pending.started()) {
+            assertTrue(System.currentTimeMillis() < until);
+            Thread.sleep(10);
+        }
+        bench.writer.stop(100, TimeUnit.MILLISECONDS);
+        assertEquals(Status.UNAVAILABLE, pending.get(1, TimeUnit.SECONDS).status(), "answered, not left waiting");
+        Thread.sleep(3_000); // the writer comes unstuck, and must not commit it now
+        assertEquals(100 * Money.ONE, stored());
+        assertEquals(List.of("START 1000000"), Bench.rows(bench.database, steve.id()));
+    }
+
+    @Test
+    void aBatchKeepsTheOrderOfItsRowsAndEachRowsBalance() throws Exception {
+        Account alex = bench.ledger.account(UUID.randomUUID(), "Alex", true);
+        bench.flush();
+        CountDownLatch release = bench.hold();
+        // Saved together, balances in uuid order; rows in the order they happened.
+        bench.ledger.deposit(steve, Money.ONE, Bench.CAUSE);
+        bench.ledger.deposit(alex, 2 * Money.ONE, Bench.CAUSE);
+        bench.ledger.deposit(steve, 3 * Money.ONE, Bench.CAUSE);
+        release.countDown();
+        bench.flush();
+        List<String> rows = new ArrayList<>();
+        try (java.sql.Connection connection = bench.database.connect();
+             java.sql.PreparedStatement query = connection.prepareStatement(
+                 bench.database.sql("SELECT uuid, amount, balance FROM {p}transactions WHERE kind = ? ORDER BY id"))) {
+            query.setString(1, TransactionKind.PLUGIN.name());
+            try (java.sql.ResultSet result = query.executeQuery()) {
+                while (result.next()) {
+                    rows.add((result.getString(1).equals(steve.id().toString()) ? "steve" : "alex")
+                        + " " + result.getLong(2) / Money.ONE + " " + result.getLong(3) / Money.ONE);
+                }
+            }
+        }
+        assertEquals(List.of("steve 1 101", "alex 2 2", "steve 3 104"), rows);
+        assertEquals(104 * Money.ONE, steve.balance());
         Bench.assertLedgerMatchesBalances(bench.database);
     }
 

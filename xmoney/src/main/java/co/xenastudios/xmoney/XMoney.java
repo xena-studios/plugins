@@ -5,6 +5,7 @@ import co.xenastudios.core.Setup;
 import co.xenastudios.core.XenaPlugin;
 import co.xenastudios.core.config.ConfigSpec;
 import co.xenastudios.core.db.ChangeFeed;
+import co.xenastudios.core.db.Database;
 import co.xenastudios.core.db.DatabaseException;
 import co.xenastudios.core.player.Profiles;
 import co.xenastudios.xmoney.api.XMoneyApi;
@@ -99,10 +100,12 @@ public class XMoney extends XenaPlugin<XMConfig> {
     // balance is never read or changed before it's loaded.
     private void start(XMConfig config) {
         Accounts accounts = new Accounts();
+        Database writes;
         try {
             store = Store.open(config.storage(), getDataFolder().toPath());
             store.load(accounts);
             feed = ChangeFeed.open(store.database(), config.network(), getLogger());
+            writes = feed.on() ? Store.forWriter(config.storage(), getDataFolder().toPath(), store.database()) : store.database();
         } catch (DatabaseException | SQLException e) {
             getLogger().severe(e.getMessage());
             getLogger().severe(NAME + " can't run without its database. Fix storage in config.yml and restart."
@@ -110,7 +113,7 @@ public class XMoney extends XenaPlugin<XMConfig> {
             store = null;
             return;
         }
-        writer = new Writer(store.database(), accounts, feed, feed.on(), getLogger());
+        writer = new Writer(writes, accounts, feed, feed.on(), getLogger());
         writer.start();
         ledger = new Ledger(accounts, writer, feed.on(), () -> bank.max());
         bank = new Bank(ledger, this::config, getLogger(), Bukkit::isPrimaryThread);

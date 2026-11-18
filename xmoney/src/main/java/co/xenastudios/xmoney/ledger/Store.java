@@ -36,6 +36,25 @@ public final class Store {
         return new Store(database);
     }
 
+    /**
+     * The database for the writer's own connections. On a network on MySQL, those wait at
+     * most {@link Writer#NETWORK_TIMEOUT_MS} to connect and for any one reply, the handshake
+     * included, whatever {@code storage.mysql.properties} says, since a caller may be waiting
+     * on a payment the writer has started. Otherwise it's the same database. Blocks: it
+     * checks the database can be reached, while the server starts.
+     */
+    public static Database forWriter(StorageSettings settings, Path folder, Database database) throws DatabaseException {
+        if (settings.type() != StorageSettings.Type.MYSQL) {
+            return database;
+        }
+        StorageSettings.MySql mysql = settings.mysql();
+        String bounded = "connectTimeout=" + Writer.NETWORK_TIMEOUT_MS + "&socketTimeout=" + Writer.NETWORK_TIMEOUT_MS;
+        // Last, so they win over the owner's own: Connector/J takes a repeated property's last value.
+        String properties = mysql.properties().isBlank() ? bounded : mysql.properties().strip() + "&" + bounded;
+        return Database.open(new StorageSettings(settings.type(), settings.tablePrefix(), new StorageSettings.MySql(
+            mysql.host(), mysql.port(), mysql.database(), mysql.username(), mysql.password(), properties)), folder.resolve(FILE));
+    }
+
     public static Store of(Database database) throws DatabaseException {
         database.migrate(Schema.STEPS);
         return new Store(database);

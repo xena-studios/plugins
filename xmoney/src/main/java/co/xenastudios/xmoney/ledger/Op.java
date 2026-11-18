@@ -63,8 +63,17 @@ sealed interface Op {
      */
     record Import(List<Ledger.Target> targets, Cause cause, int[] next, CompletableFuture<Integer> done) implements Op {}
 
-    /** Deletes ledger rows older than {@code before} (epoch ms), a slice at a time. */
-    record Prune(long before) implements Op {}
+    /**
+     * Deletes ledger rows older than {@code before} (epoch ms), walking the ledger by id a
+     * slice at a time from the oldest row, so each slice is a short range of the primary key
+     * however big the ledger is. {@code cursor[0]} is the id the next slice starts at, and
+     * {@code cursor[1]} how many rows were deleted so far.
+     */
+    record Prune(long before, long[] cursor) implements Op {
+        Prune(long before) {
+            this(before, new long[2]);
+        }
+    }
 
     /** Completes once everything queued before it is saved. */
     record Flush(CompletableFuture<Void> done) implements Op {}

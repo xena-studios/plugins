@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
 /**
@@ -27,8 +28,9 @@ import java.util.function.LongSupplier;
  *
  * <p>On a network, a change the database decides is refused at once while the writer is
  * failing (a write failed and none has worked since), and given up if it isn't started
- * within {@link #WAIT_MS}. Either way nothing was taken. Callers on a game thread give up
- * sooner (see {@code Bank#await}).
+ * within {@link #WAIT_MS}, whether or not its caller is waiting for it: the future is
+ * completed then. Either way nothing was taken. Callers on a game thread give up sooner
+ * (see {@code Bank#await}).
  */
 public final class Ledger {
 
@@ -322,8 +324,13 @@ public final class Ledger {
         if (writer.isWriter() || writer.failing()) {
             return done(Outcome.failed(Status.UNAVAILABLE, changes.getFirst().account().balance()));
         }
-        Pending future = new Pending(System.currentTimeMillis() + waitMs);
+        long wait = waitMs;
+        Pending future = new Pending(System.currentTimeMillis() + wait);
         writer.add(new Op.Checked(changes, future));
+        // A caller that never waits with a timeout of its own (the API, the commands) still hears
+        // within the wait: if the writer hasn't started it by then, it never will.
+        CompletableFuture.delayedExecutor(wait, TimeUnit.MILLISECONDS)
+            .execute(() -> future.abandon(Outcome.failed(Status.UNAVAILABLE, changes.getFirst().account().balance())));
         return future;
     }
 
@@ -349,7 +356,10 @@ public final class Ledger {
         if (targets.isEmpty()) {
             done.complete(0);
         } else {
-            writer.add(new Op.Import(List.copyOf(targets), cause, new int[1], done));
+            // In uuid order, as every other write changes rows, so it can't deadlock another server's.
+            List<Target> ordered = new java.util.ArrayList<>(targets);
+            ordered.sort(java.util.Comparator.comparing(target -> target.account().id()));
+            writer.add(new Op.Import(List.copyOf(ordered), cause, new int[1], done));
         }
         return done;
     }

@@ -17,6 +17,8 @@ public final class Pending extends CompletableFuture<Outcome> {
 
     private final AtomicInteger state = new AtomicInteger(QUEUED);
     private final long deadline;
+    /** When the writer started it ({@link System#nanoTime}), for its budget before the commit. */
+    private volatile long startedNanos;
 
     /** @param deadline epoch ms after which the writer won't start it; {@link Long#MAX_VALUE} for none */
     Pending(long deadline) {
@@ -61,7 +63,16 @@ public final class Pending extends CompletableFuture<Outcome> {
             abandon(refused);
             return state.get() == STARTED;
         }
-        return state.compareAndSet(QUEUED, STARTED) || state.get() == STARTED;
+        if (state.compareAndSet(QUEUED, STARTED)) {
+            startedNanos = System.nanoTime();
+            return true;
+        }
+        return state.get() == STARTED;
+    }
+
+    /** When the writer started it, by {@link System#nanoTime}; only once {@link #started}. */
+    long startedNanos() {
+        return startedNanos;
     }
 
     /** Whether it's still waiting to be started, and past its deadline. */

@@ -33,18 +33,26 @@ import java.util.logging.Logger;
  * <p>Each change's new balance and its ledger row are in the same transaction, so after a
  * crash the database still agrees with itself: a change is either wholly saved or not at
  * all. A transaction that fails is retried on a fresh connection, with a pause that grows
- * to 30 seconds; the console hears about it once. Its first ledger row carries a random
- * {@code commit_id}, so if a commit reached the database but its answer was lost, the retry
- * finds it and doesn't apply it twice.
+ * to 30 seconds (2 on a network); the console hears about it once. Its first ledger row
+ * carries a random {@code commit_id}, so if a commit reached the database but its answer
+ * was lost, the retry finds it and doesn't apply it twice. While failing with nothing left
+ * to save, the writer checks the database once a second, so it notices it's back without
+ * waiting for a change to try. Housekeeping (pruning, and re-reading what other servers
+ * changed) is given up on when it fails, and done again later, so it never holds up saving.
  *
  * <p>On a network, a change the database decides ({@link Op.Checked}) has a caller waiting
  * for it, so it runs at most once: it's started only if its caller hasn't given up (see
- * {@link Pending}), and if its transaction fails before the commit was sent, the caller is
- * told nothing changed, which is true. Only when a commit was sent and its answer lost does
- * the writer find out from {@code commit_id} what really happened before answering. The
- * writer's connection then waits at most {@link #NETWORK_TIMEOUT_MS} for any one reply, so a
- * started change can't hold its caller for the five minutes a MySQL connection otherwise
- * waits.
+ * {@link Pending}), and if its transaction fails before the commit was sent, or takes longer
+ * than {@link #CHECKED_BUDGET_MS} to get there, the caller is told nothing changed, which is
+ * true. Only when a commit was sent and its answer lost does the writer find out from
+ * {@code commit_id} what really happened before answering, with a locking read that waits
+ * for a commit still in progress. The writer's connection waits at most
+ * {@link #NETWORK_TIMEOUT_MS} for any one reply (and to connect), not the five minutes a
+ * MySQL connection otherwise waits.
+ *
+ * <p>Rows are changed in uuid order (accounts, then balances), whatever order the changes
+ * came in, so two servers' transactions can't deadlock each other; ledger rows keep the
+ * order of the changes.
  */
 public final class Writer {
 
@@ -56,8 +64,24 @@ public final class Writer {
      * so a payment arriving mid-chunk waits a fraction of a second for it.
      */
     static final int IMPORT_CHUNK = 100;
-    /** On a network, the longest the writer's connection waits for one reply from MySQL. */
+    /** On a network, the longest the writer's connection waits for one reply from MySQL, or to connect. */
     static final int NETWORK_TIMEOUT_MS = 3_000;
+    /**
+     * On a network, the longest a started change may take before its commit: past it, it's
+     * rolled back and refused, which is true. With one reply that may take
+     * {@link #NETWORK_TIMEOUT_MS}, its caller waits about 4 seconds at most before the commit.
+     */
+    static final long CHECKED_BUDGET_MS = 1_000;
+    /** On a network, the longest one import chunk works before letting payments in. */
+    static final long IMPORT_BUDGET_MS = 20;
+    /** The longest pause between retries, on a network: a caller may be waiting. */
+    static final long NETWORK_MAX_PAUSE_MS = 2_000;
+    /** A connection unused this long is checked before it's trusted with a change. */
+    static final long IDLE_CHECK_MS = 30_000;
+    /** While failing with nothing to save, how often the database is checked. */
+    static final long PROBE_EVERY_MS = 1_000;
+    /** Attempts at re-reading what other servers changed before it's put off until saving works. */
+    static final int HOUSEKEEPING_ATTEMPTS = 2;
     /**
      * Changes waiting beyond which new ones are refused rather than queued: the database has
      * been away a long time, and memory shouldn't grow without end.
@@ -89,11 +113,31 @@ public final class Writer {
     private volatile boolean warnedFull;
     /** For tests: wraps each new connection, to make the database fail on cue. */
     volatile UnaryOperator<Connection> wrap = UnaryOperator.identity();
+    /** {@link #CHECKED_BUDGET_MS} and {@link #IMPORT_BUDGET_MS} in nanoseconds, changed by tests. */
+    volatile long checkedBudgetNanos = TimeUnit.MILLISECONDS.toNanos(CHECKED_BUDGET_MS);
+    volatile long importBudgetNanos = TimeUnit.MILLISECONDS.toNanos(IMPORT_BUDGET_MS);
+    /** {@link #IDLE_CHECK_MS} in nanoseconds, changed by tests. */
+    volatile long idleCheckNanos = TimeUnit.MILLISECONDS.toNanos(IDLE_CHECK_MS);
+
+    /**
+     * Guards the moment a commit is sent against {@link #stop} answering a started change:
+     * once stop has closed it, no commit is sent, so "nothing changed" stays true.
+     */
+    private final Object gate = new Object();
+    /** Under {@link #gate}: whether the batch being saved sent its commit, so it may have gone through. */
+    private boolean commitSent;
+    /** Under {@link #gate}: set by {@link #stop}, after which no commit is sent. */
+    private boolean gateClosed;
+    /** The started change being saved, if any: at most one, since each is alone in its batch. */
+    private volatile Op.Checked current;
 
     // Writer thread only.
     private Connection connection;
-    /** Whether the batch being saved sent its commit: if that fails, it may still have gone through. */
-    private boolean commitSent;
+    private long lastUsedNanos;
+    private long lastProbe;
+    /** Whether re-reading what other servers changed was put off, to do once saving works again. */
+    private boolean resyncLater;
+    private long lastSlowWarning;
     /** What the attempt whose commit was sent would have done, for when it turns out it did. */
     private Attempt attempt;
 
@@ -184,6 +228,7 @@ public final class Writer {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+        answerStarted();
         List<Op> left = new ArrayList<>(queue);
         // Changes the database would have decided are refused below, not lost: they never happened.
         long lost = unsaved.get() + entries(left.stream().filter(op -> !(op instanceof Op.Checked)).toList());
@@ -203,6 +248,27 @@ public final class Writer {
             return false;
         }
         return true;
+    }
+
+    // A started change the writer didn't finish before stopping. If its commit wasn't sent, it
+    // never will be now, so its caller is told nothing changed; if it was, nobody knows yet
+    // whether it went through, so its caller gets an error, never a refusal.
+    private void answerStarted() {
+        Op.Checked started = current;
+        boolean sent;
+        synchronized (gate) {
+            gateClosed = true;
+            sent = commitSent;
+        }
+        if (started == null || started.done().isDone()) {
+            return;
+        }
+        if (!sent) {
+            started.done().complete(unavailable(started));
+        } else {
+            started.done().completeExceptionally(new IllegalStateException(
+                "stopped before " + database.description() + " said whether the change was saved"));
+        }
     }
 
     /** Changes waiting to be saved. */
@@ -244,6 +310,9 @@ public final class Writer {
                 if (stopping) {
                     break;
                 }
+                if (failing) {
+                    probe();
+                }
                 continue;
             }
             batch.clear();
@@ -255,6 +324,7 @@ public final class Writer {
                 }
             }
             save(batch);
+            current = null;
             if (abandon) {
                 break;
             }
@@ -264,15 +334,45 @@ public final class Writer {
 
     // ---- one batch, with retries ----
 
+    // Failing, with nothing left to save: a withdrawal that failed is answered and gone, so
+    // without this nothing would ever find out the database is back, and withdrawals would be
+    // refused for good. Once a second at most.
+    private void probe() {
+        long now = System.currentTimeMillis();
+        if (now - lastProbe < PROBE_EVERY_MS) {
+            return;
+        }
+        lastProbe = now;
+        try {
+            Connection db = connection();
+            if (db.isValid(2)) {
+                lastUsedNanos = System.nanoTime();
+                recovered();
+                return;
+            }
+        } catch (SQLException | RuntimeException e) {
+            problem = e.getMessage();
+        }
+        close();
+    }
+
+    private static boolean housekeeping(Op op) {
+        return op instanceof Op.Prune || op instanceof Op.Refresh || op instanceof Op.Resync;
+    }
+
     private void save(List<Op> batch) {
         long commitId = random.nextLong() & Long.MAX_VALUE;
         long pause = 500;
         // Whether a commit for this batch may have reached the database without our hearing.
         boolean uncertain = false;
         int deadlocks = 0;
+        int attempts = 0;
         attempt = null;
         while (true) {
-            commitSent = false;
+            synchronized (gate) {
+                commitSent = false;
+            }
+            attempts++;
             try {
                 Connection db = connection();
                 if (uncertain && committed(db, commitId)) {
@@ -294,7 +394,9 @@ public final class Writer {
                 recovered();
                 return;
             } catch (SQLException | RuntimeException e) {
-                uncertain |= commitSent;
+                synchronized (gate) {
+                    uncertain |= commitSent;
+                }
                 if (!uncertain && deadlocks++ < 3 && rolledBack(e)) {
                     // Another server's transaction wanted the same rows; the database undid ours
                     // and nothing else is wrong. Its caller is still waiting: run it again now.
@@ -304,14 +406,24 @@ public final class Writer {
                 rollback();
                 close();
                 problem = e.getMessage();
+                long maxPause = shared ? NETWORK_MAX_PAUSE_MS : 30_000;
                 if (!failing) {
                     failing = true;
                     logger.log(Level.WARNING, "Couldn't save balance changes to " + database.description()
-                        + "; trying again, every " + 30 + "s at most. Balances in memory are right meanwhile.", e);
+                        + "; trying again, every " + maxPause / 1000 + "s at most. Balances in memory are right meanwhile.", e);
                 }
                 if (!uncertain) {
                     // Nothing was committed, so a started change is answered: nothing changed.
                     notSaved(batch);
+                }
+                if (!uncertain && !batch.isEmpty() && housekeeping(batch.getFirst())
+                    && (batch.getFirst() instanceof Op.Prune || attempts >= HOUSEKEEPING_ATTEMPTS)) {
+                    // Never worth holding up saving for. A prune runs again tomorrow; re-reading
+                    // other servers' changes is done once saving works again.
+                    if (!(batch.getFirst() instanceof Op.Prune)) {
+                        resyncLater = true;
+                    }
+                    batch.clear();
                 }
                 expire(batch);
                 if (batch.isEmpty()) {
@@ -325,7 +437,7 @@ public final class Writer {
                     unsaved.addAndGet(entries(batch));
                     return;
                 }
-                pause = Math.min(pause * 2, 30_000);
+                pause = Math.min(pause * 2, maxPause);
             }
         }
     }
@@ -340,6 +452,10 @@ public final class Writer {
             failing = false;
             problem = null;
             logger.info("Saving balances to " + database.description() + " again.");
+        }
+        if (resyncLater) {
+            resyncLater = false;
+            queue.add(new Op.Resync());
         }
     }
 
@@ -404,13 +520,26 @@ public final class Writer {
         return count;
     }
 
-    private boolean committed(Connection db, long commitId) throws SQLException {
-        try (PreparedStatement query = db.prepareStatement(database.sql("SELECT 1 FROM {p}transactions WHERE commit_id = ?"))) {
+    /**
+     * Whether the attempt with this {@code commit_id} went through. On MySQL it's a locking
+     * read: a commit the database is still making (a slow disk, or replication holding it)
+     * holds the row it inserted, so this waits for it to land or roll back instead of
+     * missing it and telling a caller "failed" just before it's charged. If that wait is
+     * longer than the connection's, it fails, and the writer asks again.
+     */
+    boolean committed(Connection db, long commitId) throws SQLException {
+        String statement = database.dialect() == Dialect.MYSQL
+            ? "SELECT 1 FROM {p}transactions WHERE commit_id = ? LOCK IN SHARE MODE"
+            : "SELECT 1 FROM {p}transactions WHERE commit_id = ?";
+        boolean found;
+        try (PreparedStatement query = db.prepareStatement(database.sql(statement))) {
             query.setLong(1, commitId);
             try (ResultSet result = query.executeQuery()) {
-                return result.next();
+                found = result.next();
             }
         }
+        db.commit(); // lets the lock go
+        return found;
     }
 
     // The commit reached the database, but its answer didn't reach us: what that attempt would
@@ -466,36 +595,32 @@ public final class Writer {
         int importEnd = -1;
         try {
             long[] commit = {commitId};
-            for (Op op : batch) {
-                switch (op) {
-                    case Op.Write write -> {
-                        for (Entry entry : write.entries()) {
-                            long balance = sql.add(entry.account(), entry.delta());
-                            if (!shared) {
-                                balance = entry.after();
-                            }
-                            Entry row = shared ? new Entry(entry.account(), entry.delta(), balance, entry.cause(), entry.other(), entry.time()) : entry;
-                            sql.ledger(row, commit);
-                            saved.add(row);
-                            after.put(entry.account(), balance);
-                        }
-                    }
-                    case Op.Name name -> {
-                        sql.account(name.account());
-                        renamed.add(name.account());
-                    }
+            Op first = batch.getFirst();
+            if (first.batches()) {
+                writes(sql, batch, commit, saved, after, renamed);
+            } else {
+                switch (first) {
                     case Op.Checked checked -> {
                         // Alone in its batch. Given up on by its caller, or too late: nothing runs.
                         if (!checked.done().start(System.currentTimeMillis(), unavailable(checked))) {
                             return;
                         }
-                        checkedOutcome = checked(sql, checked.changes(), commit, saved, after);
+                        current = checked;
+                        if (shared) {
+                            sql.deadline(checked.done().startedNanos() + checkedBudgetNanos);
+                        }
+                        try {
+                            checkedOutcome = checked(sql, checked.changes(), commit, saved, after);
+                        } catch (TooSlow slow) {
+                            tooSlow(db, checked);
+                            return;
+                        }
                         if (!checkedOutcome.success()) {
                             db.rollback();
+                            checked.done().complete(Outcome.failed(checkedOutcome.status(), checked.changes().getFirst().account().balance()));
                             for (Op.Change change : checked.changes()) {
                                 refresh(db, change.account().id());
                             }
-                            checked.done().complete(Outcome.failed(checkedOutcome.status(), checked.changes().getFirst().account().balance()));
                             return;
                         }
                     }
@@ -517,12 +642,14 @@ public final class Writer {
                         flush.done().complete(null);
                         return;
                     }
+                    case Op.Write write -> throw new IllegalStateException("batched above");
+                    case Op.Name name -> throw new IllegalStateException("batched above");
                 }
             }
             if (shared) {
                 if (importEnd >= 0) {
                     // One word to the other servers once the import is done, not one per account.
-                    if (importEnd == ((Op.Import) batch.getFirst()).targets().size()) {
+                    if (importEnd == ((Op.Import) first).targets().size()) {
                         feed.publish(db, RESYNC_TOPIC, "import");
                     }
                 } else {
@@ -533,8 +660,17 @@ public final class Writer {
                     }
                 }
             }
+            if (first instanceof Op.Checked checked && sql.overdue()) {
+                tooSlow(db, checked);
+                return;
+            }
             attempt = new Attempt(saved, after, checkedOutcome, importEnd);
-            commitSent = true;
+            synchronized (gate) {
+                if (gateClosed) {
+                    throw new SQLException("stopping");
+                }
+                commitSent = true;
+            }
             db.commit();
         } finally {
             sql.close();
@@ -556,6 +692,73 @@ public final class Writer {
         finish(batch, checkedOutcome, after, importEnd);
         if (!saved.isEmpty()) {
             events.saved(saved);
+        }
+    }
+
+    // A started change took too long to reach its commit: it's rolled back and refused, which
+    // is true, since its commit was never sent. Its caller is answered first: a rollback is
+    // one more reply to wait for.
+    private void tooSlow(Connection db, Op.Checked checked) throws SQLException {
+        checked.done().complete(unavailable(checked));
+        long now = System.currentTimeMillis();
+        if (now - lastSlowWarning > 60_000) {
+            lastSlowWarning = now;
+            logger.warning(database.description() + " took over " + TimeUnit.NANOSECONDS.toMillis(checkedBudgetNanos)
+                + "ms to take up a payment, so it was refused before its commit. Nothing was taken.");
+        }
+        db.rollback();
+    }
+
+    /**
+     * Balance changes already made in memory, and names: accounts in uuid order, then
+     * balances in uuid order (one change per account however many it had), then the ledger
+     * rows in the order the changes happened. On a network each row's balance after is worked
+     * back from what the database has once the batch's changes are in.
+     */
+    private void writes(Statements sql, List<Op> batch, long[] commit, List<Entry> saved, Map<Account, Long> after,
+                        java.util.Set<Account> renamed) throws SQLException {
+        java.util.TreeMap<UUID, Account> names = new java.util.TreeMap<>();
+        java.util.TreeMap<UUID, Account> changed = new java.util.TreeMap<>();
+        Map<Account, Long> totals = new java.util.HashMap<>();
+        List<Entry> entries = new ArrayList<>();
+        for (Op op : batch) {
+            if (op instanceof Op.Name name) {
+                names.put(name.account().id(), name.account());
+            } else if (op instanceof Op.Write write) {
+                for (Entry entry : write.entries()) {
+                    entries.add(entry);
+                    changed.put(entry.account().id(), entry.account());
+                    totals.merge(entry.account(), entry.delta(), Long::sum);
+                }
+            }
+        }
+        for (Account account : names.values()) {
+            sql.account(account);
+            renamed.add(account);
+        }
+        Map<Account, Long> balance = new java.util.HashMap<>();
+        for (Account account : changed.values()) {
+            long now = sql.add(account, totals.get(account));
+            if (shared) {
+                balance.put(account, now);
+            }
+        }
+        List<Entry> rows = entries;
+        if (shared) {
+            // Walked back from the newest: each row's balance is what followed it, less its own change.
+            Entry[] worked = new Entry[entries.size()];
+            for (int i = entries.size() - 1; i >= 0; i--) {
+                Entry entry = entries.get(i);
+                long then = balance.get(entry.account());
+                worked[i] = new Entry(entry.account(), entry.delta(), then, entry.cause(), entry.other(), entry.time());
+                balance.put(entry.account(), then - entry.delta());
+            }
+            rows = java.util.Arrays.asList(worked);
+        }
+        for (Entry row : rows) {
+            sql.ledger(row, commit);
+            saved.add(row);
+            after.put(row.account(), row.after());
         }
     }
 
@@ -631,16 +834,21 @@ public final class Writer {
         return new Outcome(Status.SUCCESS, moved, 0);
     }
 
-    // The next chunk of an import, as sets the database makes. Returns where the next one starts.
+    // The next chunk of an import, as sets the database makes: up to IMPORT_CHUNK, or as
+    // many as fit in IMPORT_BUDGET_MS, so a payment waiting behind it starts soon. The targets
+    // are in uuid order (see Ledger#setAll), so chunks change rows in uuid order too.
+    // Returns where the next one starts.
     private int importChunk(Statements sql, Op.Import importing, long[] commit, List<Entry> saved, Map<Account, Long> after)
         throws SQLException {
         int from = importing.next()[0];
-        int end = Math.min(importing.targets().size(), from + IMPORT_CHUNK);
-        List<Op.Change> changes = new ArrayList<>(end - from);
-        for (Ledger.Target target : importing.targets().subList(from, end)) {
-            changes.add(new Op.Change(target.account(), 0, target.balance(), importing.cause(), null));
+        int last = Math.min(importing.targets().size(), from + IMPORT_CHUNK);
+        long until = System.nanoTime() + importBudgetNanos;
+        int end = from;
+        while (end < last && (end == from || System.nanoTime() - until < 0)) {
+            Ledger.Target target = importing.targets().get(end);
+            checked(sql, List.of(new Op.Change(target.account(), 0, target.balance(), importing.cause(), null)), commit, saved, after);
+            end++;
         }
-        checked(sql, changes, commit, saved, after);
         return end;
     }
 
@@ -716,43 +924,53 @@ public final class Writer {
         }
     }
 
+    // One slice of a prune: from the oldest row still there, the next PRUNE_SLICE ids, found
+    // through the primary key. Rows are written in time order, so it stops at the first row
+    // newer than the cutoff.
     private void prune(Connection db, Op.Prune prune) throws SQLException {
-        long oldest;
-        long newest;
-        try (PreparedStatement query = db.prepareStatement(database.sql("SELECT MIN(id), MAX(id) FROM {p}transactions WHERE time < ?"))) {
-            query.setLong(1, prune.before());
+        long[] cursor = prune.cursor();
+        long first;
+        try (PreparedStatement query = db.prepareStatement(database.sql(
+            "SELECT id, time FROM {p}transactions WHERE id >= ? ORDER BY id LIMIT 1"))) {
+            query.setLong(1, cursor[0]);
             try (ResultSet result = query.executeQuery()) {
-                if (!result.next() || result.getObject(1) == null) {
+                if (!result.next() || result.getLong(2) >= prune.before()) {
                     db.commit();
+                    if (cursor[1] > 0 && database.dialect() == Dialect.SQLITE) {
+                        try (var statement = db.createStatement()) {
+                            statement.execute("PRAGMA incremental_vacuum(1000)");
+                        }
+                        db.commit();
+                    }
                     return;
                 }
-                oldest = result.getLong(1);
-                newest = result.getLong(2);
+                first = result.getLong(1);
             }
         }
-        long upTo = Math.min(newest, oldest + PRUNE_SLICE - 1);
-        int deleted;
-        try (PreparedStatement delete = db.prepareStatement(database.sql("DELETE FROM {p}transactions WHERE id <= ? AND time < ?"))) {
-            delete.setLong(1, upTo);
-            delete.setLong(2, prune.before());
-            deleted = delete.executeUpdate();
+        try (PreparedStatement delete = db.prepareStatement(database.sql(
+            "DELETE FROM {p}transactions WHERE id >= ? AND id < ? AND time < ?"))) {
+            delete.setLong(1, first);
+            delete.setLong(2, first + PRUNE_SLICE);
+            delete.setLong(3, prune.before());
+            cursor[1] += delete.executeUpdate();
         }
         db.commit();
-        if (upTo < newest) {
-            // The rest after whatever else is waiting, so a big prune never holds up payments.
-            queue.add(prune);
-        } else if (deleted > 0 && database.dialect() == Dialect.SQLITE) {
-            try (var statement = db.createStatement()) {
-                statement.execute("PRAGMA incremental_vacuum(1000)");
-            }
-            db.commit();
-        }
+        cursor[0] = first + PRUNE_SLICE;
+        // The rest after whatever else is waiting, so a big prune never holds up payments.
+        queue.add(prune);
     }
 
     // ---- connection ----
 
     private Connection connection() throws SQLException {
+        if (connection != null && System.nanoTime() - lastUsedNanos > idleCheckNanos && !valid(connection)) {
+            // Idle long enough for MySQL's wait_timeout to have closed it: a change sent on it
+            // would only fail. Checked first, while nothing has started.
+            close();
+        }
         if (connection == null || connection.isClosed()) {
+            // On a network the database's own connect and reply timeouts are already short
+            // (see Store#forWriter); this covers the connection once it's open, too.
             connection = wrap.apply(database.connect());
             connection.setAutoCommit(false);
             if (shared && database.dialect() == Dialect.MYSQL) {
@@ -760,7 +978,16 @@ public final class Writer {
                 connection.setNetworkTimeout(Runnable::run, NETWORK_TIMEOUT_MS);
             }
         }
+        lastUsedNanos = System.nanoTime();
         return connection;
+    }
+
+    private static boolean valid(Connection connection) {
+        try {
+            return connection.isValid(2);
+        } catch (SQLException e) {
+            return false;
+        }
     }
 
     private void rollback() {
@@ -784,6 +1011,13 @@ public final class Writer {
         connection = null;
     }
 
+    /** A started change ran out of {@link #CHECKED_BUDGET_MS} before its commit. */
+    private static final class TooSlow extends RuntimeException {
+        TooSlow() {
+            super("took too long before its commit", null, false, false);
+        }
+    }
+
     /** The writer's statements on one connection, prepared once per batch. */
     private final class Statements implements AutoCloseable {
         private final Connection db;
@@ -794,12 +1028,26 @@ public final class Writer {
         private PreparedStatement ledger;
         private PreparedStatement accountUpsert;
         private PreparedStatement compareSet;
+        /** When a started change's budget runs out, by {@link System#nanoTime}; 0 for no budget. */
+        private long deadline;
 
         Statements(Connection db) {
             this.db = db;
         }
 
+        void deadline(long nanos) {
+            deadline = nanos == 0 ? 1 : nanos;
+        }
+
+        boolean overdue() {
+            return deadline != 0 && System.nanoTime() - deadline > 0;
+        }
+
+        // Before each statement: past the budget, nothing more is sent and the change is refused.
         private PreparedStatement prepare(PreparedStatement existing, String statement) throws SQLException {
+            if (overdue()) {
+                throw new TooSlow();
+            }
             return existing != null ? existing : db.prepareStatement(database.sql(statement));
         }
 

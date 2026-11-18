@@ -1,0 +1,11 @@
+# Never released. An ordinary plugin.yml plugin written for Vault, as shops and jobs
+# plugins are: it depends on Vault, and xMoney provides it.
+name: VaultConsumer
+version: 0.0.0
+main: co.xenastudios.xmoney.vaultconsumer.VaultConsumer
+api-version: "1.21.11"
+folia-supported: true
+depend: [Vault]
+commands:
+  vaulttest:
+    description: Calls Vault the ways badly behaved plugins do, and checks the answers.

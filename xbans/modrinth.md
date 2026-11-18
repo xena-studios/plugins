@@ -1,21 +1,21 @@
-![xBans by Xena Studios. A tangerine pixel gavel icon and the xBans name over a stepped horizon in tangerine, with the headline "Bans, mutes and warnings, the LiteBans way."](https://raw.githubusercontent.com/xena-studios/brand/main/plugins/xbans/banner.png)
+![xBans by Xena Studios. A crimson pixel gavel icon and the xBans name over a stepped horizon in crimson, with the headline "Bans, mutes and warnings. Nothing slips through."](https://raw.githubusercontent.com/xena-studios/brand/main/plugins/xbans/banner.png)
 
-## Bans, mutes and warnings, the LiteBans way.
+## Bans, mutes and warnings. Nothing slips through.
 
-A punishment plugin for Paper and Folia, free and open source: bans, temporary bans, IP bans, mutes, warnings and kicks, with history, alts, templates and staff limits. **It uses LiteBans' commands, flags and duration format, so your staff carry on as they always have, and it brings your LiteBans bans with it in one command.**
+A punishment plugin for Paper and Folia, free and open source: bans, temporary bans, IP bans, mutes, warnings and kicks, with history, alts, templates and staff limits. **Every ban and mute in force is checked from memory, so a banned player never gets in while the database thinks, and a muted one finds no alias, sign or book to talk through.**
 
-**[Read the docs](https://docs.xenastudios.co/xbans/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
+**[Read the docs](https://docs.xenastudios.co/xbans/)** · **[Switching from LiteBans](https://docs.xenastudios.co/xbans/switching/)** · **[Report a bug](https://github.com/xena-studios/plugins/issues/new/choose)**
 
 ---
 
 ## Why server owners pick it
 
-- **Your staff already know it.** `/ban Steve -s 7d server:survival Hacking`, `/tempmute Alex 1d2h`, `/unban #123`, `/history`, `/alts`, `-s`, `-S`, `-p`, `mo` and `y`. The same as LiteBans.
 - **Bans that hold.** Every ban and mute in force is kept in memory and loaded before anyone can join, so the join check never waits on the database and keeps working if MySQL drops for a moment. A ban made while someone is connecting still catches them.
 - **Mutes with no way round.** Chat, `/msg`, `/r`, `/me` and any command you list, by every alias and namespace (`/essentials:msg`, `/emsg`), plus signs, books and anvil renames, and chat plugins on the older chat events too.
 - **Nothing is ever deleted.** An unban is recorded beside the ban, with who, when and why. Only `/prunehistory` deletes, when you tell it to.
 - **You won't feel it running.** The join and chat checks are lookups in memory. Writes go through one background thread. History pages are read by key range, so the 300th page is as quick as the first. Nothing repeats on a single server.
 - **Every feature free.** No premium version, no early-access builds.
+- **Easy to switch to.** LiteBans' command syntax (`/ban Steve -s 7d server:survival Hacking`, `/tempmute Alex 1d2h`, `/unban #123`, `-s`, `-S`, `-p`), so your staff's habits carry over, and your LiteBans history comes with you.
 
 ---
 

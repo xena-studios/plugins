@@ -3,7 +3,7 @@ plugins {
 }
 
 version = "1.0.0"
-description = "Bans, mutes and warnings, the LiteBans way."
+description = "Bans, mutes and warnings. Nothing slips through."
 
 paperPluginYaml {
     name = "xBans"

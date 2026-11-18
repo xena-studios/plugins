@@ -6,6 +6,8 @@
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
+// Every plugin, from the brand catalog (scripts/catalog.ts writes it).
+import catalog from "./src/data/plugins.json" with { type: "json" };
 
 export default defineConfig({
   site: "https://docs.xenastudios.co",
@@ -17,7 +19,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "Xena Plugin Docs",
-      description: "Docs for xUtilities, zChat, xLimbo and xRewind: small, fast plugins for Paper servers, by Xena Studios.",
+      description: "Docs for Xena Studios' plugins: small, fast plugins for Paper and Folia servers.",
       // XENA STUDIOS, then "Plugin docs" as a mono label from theme.css.
       logo: { dark: "./src/assets/xena-studios-dark.svg", light: "./src/assets/xena-studios-light.svg", replacesTitle: true },
       favicon: "/favicon.svg",
@@ -69,17 +71,7 @@ export default defineConfig({
       disable404Route: true,
       sidebar: [
         { label: "Start here", items: [{ autogenerate: { directory: "start" } }] },
-        { label: "xUtilities", items: [{ autogenerate: { directory: "xutilities" } }] },
-        { label: "zChat", items: [{ autogenerate: { directory: "zchat" } }] },
-        { label: "xLimbo", items: [{ autogenerate: { directory: "xlimbo" } }] },
-        { label: "xRewind", items: [{ autogenerate: { directory: "xrewind" } }] },
-        { label: "xPlots", items: [{ autogenerate: { directory: "xplots" } }] },
-        { label: "xTeleport", items: [{ autogenerate: { directory: "xteleport" } }] },
-        { label: "xVote", items: [{ autogenerate: { directory: "xvote" } }] },
-        { label: "xBans", items: [{ autogenerate: { directory: "xbans" } }] },
-        { label: "xMoney", items: [{ autogenerate: { directory: "xmoney" } }] },
-        { label: "xBackup", items: [{ autogenerate: { directory: "xbackup" } }] },
-        { label: "xStats", items: [{ autogenerate: { directory: "xstats" } }] },
+        ...catalog.plugins.map((p) => ({ label: p.name, items: [{ autogenerate: { directory: p.id } }] })),
         {
           label: "More from Xena Studios",
           items: [

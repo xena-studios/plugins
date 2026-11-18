@@ -1,15 +1,14 @@
-![xBans by Xena Studios. A tangerine pixel gavel icon and the xBans name over a stepped horizon in tangerine, with the headline "Bans, mutes and warnings, the LiteBans way."](../.github/assets/xbans-banner.png)
+![xBans by Xena Studios. A crimson pixel gavel icon and the xBans name over a stepped horizon in crimson, with the headline "Bans, mutes and warnings. Nothing slips through."](../.github/assets/xbans-banner.png)
 
-**Bans, mutes and warnings, the LiteBans way.**
+**Bans, mutes and warnings. Nothing slips through.**
 
-xBans is a free, open-source punishment plugin with LiteBans' commands, flags and durations: bans, temporary and IP bans, mutes, warnings and kicks, with history, alts, templates and staff limits.
+xBans is a free, open-source punishment plugin: bans, temporary and IP bans, mutes, warnings and kicks, with history, alts, templates and staff limits, all checked from memory.
 
-- **Your staff already know it.** `/ban Steve -s 7d server:survival Hacking`, `/tempmute Alex 1d2h`, `/unban #123`, `/history`, `/alts`.
 - **Bans that hold.** What's in force is in memory before anyone can join, so the join and chat checks never ask the database. Mutes cover chat (on the older chat events too), the listed commands by any alias, signs, books and anvil renames.
 - **Nothing is ever deleted.** An unban is a record beside the ban; only `/prunehistory` deletes.
 - **Networks without a proxy plugin.** Servers sharing a MySQL database share bans within seconds.
 - **IPs can be hashed**, so alts and IP bans work with no list of addresses to leak.
-- **One-command imports** from LiteBans, EssentialsX and vanilla.
+- **Easy to switch to.** LiteBans' command syntax, so staff habits carry over, and one-command imports from LiteBans, EssentialsX and vanilla.
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB.
 

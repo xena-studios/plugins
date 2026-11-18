@@ -73,11 +73,11 @@ Contributions are licensed under [GPL-3.0-only](LICENSE).
 
 ## Adding a plugin
 
-Copy xUtilities. A new plugin needs:
+A plugin's name, words, category and colours live in one place, the brand repo's catalog, and every list of the plugins here is built from it.
 
-- A folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`. Add it to `settings.gradle.kts`.
-- `README.md`, `CHANGELOG.md`, `modrinth.md` (its Modrinth page) and `boot-checks.txt` (CI finds it on its own).
-- A banner, added to `docs/scripts/sync-brand.ts`, and a folder in the docs.
+1. In xena-studios/brand, `pnpm new-plugin <id> <Name> <category>` adds it with a placeholder glyph and an accent that stays clear of every other. Draw the glyph, write the headline, summary and blurb, and rebuild (see its `docs/plugins.md`).
+2. Here, a folder with a `build.gradle.kts` that applies `id("xena.plugin")`, sets `version`, and names its main class in `paperPluginYaml`. Gradle finds it on its own. Then `README.md`, `CHANGELOG.md`, `modrinth.md` (its Modrinth page), `boot-checks.txt` (CI finds it on its own), a folder in the docs, and an `api/` folder for its developer API.
+3. In `docs/`, `pnpm brand:sync` (with the brand repo checked out beside this one) copies its icon, banner and the catalog, and `pnpm catalog` adds it to the README, the docs' sidebar, home page, footer and accents, the labels and the bug form. CI fails if they're out of date.
 
 The convention shades in the core, generates `paper-plugin.yml`, sets up Modrinth, and starts the jar budget at 150 KiB (`xena { jarBudgetKb = ... }`).
 

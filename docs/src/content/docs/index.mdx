@@ -14,78 +14,12 @@ hero:
       variant: minimal
 ---
 
-import xutilities from "../../assets/plugins/xutilities.svg";
-import zchat from "../../assets/plugins/zchat.svg";
-import xlimbo from "../../assets/plugins/xlimbo.svg";
-import xrewind from "../../assets/plugins/xrewind.svg";
-import xplots from "../../assets/plugins/xplots.svg";
-import xteleport from "../../assets/plugins/xteleport.svg";
-import xvote from "../../assets/plugins/xvote.svg";
-import xbans from "../../assets/plugins/xbans.svg";
-import xmoney from "../../assets/plugins/xmoney.svg";
-import xbackup from "../../assets/plugins/xbackup.svg";
-import xstats from "../../assets/plugins/xstats.svg";
 import Horizon from "../../components/Horizon.astro";
+import PluginList from "../../components/PluginList.astro";
 
 <Horizon />
 
-<ul class="plugin-list">
-  <li>
-    <img src={xutilities.src} alt="" width="48" height="48" />
-    <a href="/xutilities/">xUtilities</a>
-    <p>Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.</p>
-  </li>
-  <li>
-    <img src={zchat.src} alt="" width="48" height="48" />
-    <a href="/zchat/">zChat</a>
-    <p>Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.</p>
-  </li>
-  <li>
-    <img src={xlimbo.src} alt="" width="48" height="48" />
-    <a href="/xlimbo/">xLimbo</a>
-    <p>Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.</p>
-  </li>
-  <li>
-    <img src={xrewind.src} alt="" width="48" height="48" />
-    <a href="/xrewind/">xRewind</a>
-    <p>Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.</p>
-  </li>
-  <li>
-    <img src={xplots.src} alt="" width="48" height="48" />
-    <a href="/xplots/">xPlots</a>
-    <p>Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.</p>
-  </li>
-  <li>
-    <img src={xteleport.src} alt="" width="48" height="48" />
-    <a href="/xteleport/">xTeleport</a>
-    <p>Every teleport your server needs. Homes, TPA, warps, spawn and random teleport in one plugin, with warmups, cooldowns and costs.</p>
-  </li>
-  <li>
-    <img src={xvote.src} alt="" width="48" height="48" />
-    <a href="/xvote/">xVote</a>
-    <p>Votes in. Rewards out. A built-in Votifier that keeps NuVotifier's keys, rewards per site, streaks and a vote party, paid once even across a network.</p>
-  </li>
-  <li>
-    <img src={xbans.src} alt="" width="48" height="48" />
-    <a href="/xbans/">xBans</a>
-    <p>Bans, mutes and warnings, the LiteBans way. LiteBans' commands and flags, checked from memory, with templates, staff limits, alts and a one-command import.</p>
-  </li>
-  <li>
-    <img src={xmoney.src} alt="" width="48" height="48" />
-    <a href="/xmoney/">xMoney</a>
-    <p>The economy and Vault, in one plugin. Balances, /pay and /baltop, a ledger of every change, and Vault's API built in, so shops work without Vault.jar.</p>
-  </li>
-  <li>
-    <img src={xbackup.src} alt="" width="48" height="48" />
-    <a href="/xbackup/">xBackup</a>
-    <p>Backups that cost nothing, restores you can trust. Only what changed is stored, chunk by chunk, and copied to S3, SFTP, WebDAV or a cloud drive.</p>
-  </li>
-  <li>
-    <img src={xstats.src} alt="" width="48" height="48" />
-    <a href="/xstats/">xStats</a>
-    <p>Every player's stats, on your own website. Playtime that leaves out AFK time, leaderboards by day, week and month, placeholders, and a stats site your server hosts itself.</p>
-  </li>
-</ul>
+<PluginList />
 
 <p class="more-label">More from Xena Studios</p>
 

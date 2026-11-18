@@ -36,20 +36,15 @@ include("core")
 include("sandbox")
 // Its API, and two plugins that use it, so CI checks that other plugins can use an API.
 include("sandbox:api", "sandbox:consumer", "sandbox:paper-consumer")
-include("xutilities")
-include("zchat")
-include("xlimbo")
-include("xrewind")
-include("xplots")
-include("xteleport")
-include("xvote")
-include("xbans")
-include("xmoney")
+// Every plugin: each top-level folder whose build applies xena.plugin, so a new plugin
+// needs no line here. The sandbox, which is never released, is listed above.
+rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" }
+    ?.filter { it.resolve("build.gradle.kts").let { build -> build.isFile && "id(\"xena.plugin\")" in build.readText() } }
+    ?.sortedBy { it.name }
+    ?.forEach { include(it.name) }
 // Never released: a plugin.yml plugin using Vault's APIs and a Paper plugin using the core's
 // Vault hook, so CI checks that xMoney stands in for Vault on real servers.
 include("xmoney:vault-consumer", "xmoney:hook-consumer")
-include("xbackup")
-include("xstats")
 // Each plugin's developer API (<plugin>/api, on the xena.api convention), wherever one
 // exists, so a plugin adding an API doesn't need a line here. The sandbox lists its own.
 rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" && file.resolve("api/build.gradle.kts").isFile }

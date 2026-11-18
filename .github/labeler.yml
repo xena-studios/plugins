@@ -1,4 +1,5 @@
 # Labels for pull requests, by the files they change (actions/labeler, in labels.yml).
+# catalog:start: a label per plugin, from the brand catalog (pnpm catalog in docs/).
 xutilities:
   - changed-files:
       - any-glob-to-any-file: xutilities/**
@@ -26,12 +27,13 @@ xbans:
 xmoney:
   - changed-files:
       - any-glob-to-any-file: xmoney/**
-xbackup:
-  - changed-files:
-      - any-glob-to-any-file: xbackup/**
 xstats:
   - changed-files:
       - any-glob-to-any-file: xstats/**
+xbackup:
+  - changed-files:
+      - any-glob-to-any-file: xbackup/**
+# catalog:end
 core:
   - changed-files:
       - any-glob-to-any-file: [core/**, build-logic/**]

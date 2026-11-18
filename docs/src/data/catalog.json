@@ -1,0 +1,238 @@
+{
+  "version": 1,
+  "colors": {
+    "bg": "#121116",
+    "raised": "#1B1A21",
+    "rule": "#2A2832",
+    "text": "#F2F0F5",
+    "muted": "#9C99A8"
+  },
+  "categories": [
+    "Players",
+    "Moderation",
+    "Economy",
+    "Server"
+  ],
+  "plugins": [
+    {
+      "id": "xutilities",
+      "name": "xUtilities",
+      "prefix": "x",
+      "category": "Players",
+      "tagline": "Every command you need. None you don't.",
+      "headline": [
+        "Every command you need.",
+        "None you don't."
+      ],
+      "blurb": "Gamemodes, fly, heal, `/back`, workstations and your own link commands.",
+      "summary": "Lightweight essentials for Paper and Folia: gamemode, fly, speed, heal, feed, /back, /top and repair, with anvils, crafting tables and other workstations anywhere. Add your own link commands like /discord, and switch off any command.",
+      "released": true,
+      "accent": "#F5B83D",
+      "accentText": "#F5B83D",
+      "accentLow": "#392D1D",
+      "accentHigh": "#FADC9E",
+      "icon": "plugins/xutilities/icon.svg",
+      "banner": "plugins/xutilities/banner.png"
+    },
+    {
+      "id": "zchat",
+      "name": "zChat",
+      "prefix": "z",
+      "category": "Players",
+      "tagline": "Format your chat. Keep it clean.",
+      "headline": [
+        "Format your chat.",
+        "Keep it clean."
+      ],
+      "blurb": "Chat formats per rank, a filter that's hard to dodge, mentions and private messages.",
+      "summary": "Chat formatting per rank, a chat filter that's hard to dodge, mentions, private messages, cooldowns and anti-spam, in one light chat plugin. Each message is drawn once, however many players see it. For Paper and Folia.",
+      "released": true,
+      "accent": "#5EE08A",
+      "accentText": "#5EE08A",
+      "accentLow": "#1F342A",
+      "accentHigh": "#AFF0C4",
+      "icon": "plugins/zchat/icon.svg",
+      "banner": "plugins/zchat/banner.png"
+    },
+    {
+      "id": "xlimbo",
+      "name": "xLimbo",
+      "prefix": "x",
+      "category": "Server",
+      "tagline": "Never drop a player again.",
+      "headline": [
+        "Never drop",
+        "a player again."
+      ],
+      "blurb": "A fallback server that holds players when your main server goes down, and sends them back when it's up.",
+      "summary": "A limbo and fallback server for Velocity and BungeeCord. When your main server goes down, players wait in a safe void world instead of being kicked, then go back with /join, or on their own once it's up. For Paper.",
+      "released": true,
+      "accent": "#B48CFF",
+      "accentText": "#B48CFF",
+      "accentLow": "#2E263E",
+      "accentHigh": "#DAC6FF",
+      "icon": "plugins/xlimbo/icon.svg",
+      "banner": "plugins/xlimbo/banner.png"
+    },
+    {
+      "id": "xrewind",
+      "name": "xRewind",
+      "prefix": "x",
+      "category": "Moderation",
+      "tagline": "Every change, logged. Any of it, undone.",
+      "headline": [
+        "Every change, logged.",
+        "Any of it, undone."
+      ],
+      "blurb": "A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.",
+      "summary": "Block logger and rollback, and a free CoreProtect alternative: see who placed, broke or took what, then preview a rollback and undo it. Uses CoreProtect's commands and imports its history. For Paper and Folia.",
+      "released": true,
+      "accent": "#3DD6C6",
+      "accentText": "#3DD6C6",
+      "accentLow": "#193234",
+      "accentHigh": "#9EEBE3",
+      "icon": "plugins/xrewind/icon.svg",
+      "banner": "plugins/xrewind/banner.png"
+    },
+    {
+      "id": "xplots",
+      "name": "xPlots",
+      "prefix": "x",
+      "category": "Economy",
+      "tagline": "Rentable plots, set up in a minute.",
+      "headline": [
+        "Rentable plots,",
+        "set up in a minute."
+      ],
+      "blurb": "Select an area and every plot and sign is made for you; players rent, add members and pay ahead.",
+      "summary": "Rentable plots for box and PvP servers: select an area and it's split into a grid of plots, each with its sign. Players rent with Vault or an item, add members and pay ahead; expired plots reset themselves. For Paper.",
+      "released": false,
+      "accent": "#A9D750",
+      "accentText": "#A9D750",
+      "accentLow": "#2C3320",
+      "accentHigh": "#D4EBA8",
+      "icon": "plugins/xplots/icon.svg",
+      "banner": "plugins/xplots/banner.png"
+    },
+    {
+      "id": "xteleport",
+      "name": "xTeleport",
+      "prefix": "x",
+      "category": "Players",
+      "tagline": "Every teleport your server needs.",
+      "headline": [
+        "Every teleport",
+        "your server needs."
+      ],
+      "blurb": "Homes, TPA, warps, spawn and random teleport in one plugin, with warmups, cooldowns and costs.",
+      "summary": "Homes, TPA, warps, spawn and random teleport in one light plugin, with warmups, cooldowns and costs through Vault. Imports homes and warps from EssentialsX. For Paper and Folia.",
+      "released": false,
+      "accent": "#CE41E3",
+      "accentText": "#CE41E3",
+      "accentLow": "#321939",
+      "accentHigh": "#E7A0F1",
+      "icon": "plugins/xteleport/icon.svg",
+      "banner": "plugins/xteleport/banner.png"
+    },
+    {
+      "id": "xvote",
+      "name": "xVote",
+      "prefix": "x",
+      "category": "Economy",
+      "tagline": "Votes in. Rewards out.",
+      "headline": [
+        "Votes in.",
+        "Rewards out."
+      ],
+      "blurb": "A built-in Votifier that keeps NuVotifier's keys, rewards per site, streaks and a vote party, paid once even across a network.",
+      "summary": "Vote rewards with a built-in Votifier for Paper and Folia: keeps NuVotifier's keys and tokens, rewards per site, streaks and every Nth vote, a vote party, leaderboards, and offline votes paid on join. Imports VotingPlugin and SuperbVote totals.",
+      "released": false,
+      "accent": "#4D7BFD",
+      "accentText": "#4D7BFD",
+      "accentLow": "#1C233D",
+      "accentHigh": "#A6BDFE",
+      "icon": "plugins/xvote/icon.svg",
+      "banner": "plugins/xvote/banner.png"
+    },
+    {
+      "id": "xbans",
+      "name": "xBans",
+      "prefix": "x",
+      "category": "Moderation",
+      "tagline": "Bans, mutes and warnings. Nothing slips through.",
+      "headline": [
+        "Bans, mutes and warnings.",
+        "Nothing slips through."
+      ],
+      "blurb": "Checked from memory at every join and chat message, with templates, staff limits, alts and IP bans. Uses LiteBans' commands and imports its history.",
+      "summary": "Bans, mutes, warnings and kicks for Paper and Folia, free and open source. Checked from memory at every join and chat message, with templates, staff limits, alts and IP bans. Uses LiteBans' commands and imports its history.",
+      "released": false,
+      "accent": "#D70E3A",
+      "accentText": "#EB2F4A",
+      "accentLow": "#33101C",
+      "accentHigh": "#EB879D",
+      "icon": "plugins/xbans/icon.svg",
+      "banner": "plugins/xbans/banner.png"
+    },
+    {
+      "id": "xmoney",
+      "name": "xMoney",
+      "prefix": "x",
+      "category": "Economy",
+      "tagline": "The economy and Vault, in one plugin.",
+      "headline": [
+        "The economy and Vault,",
+        "in one plugin."
+      ],
+      "blurb": "Balances, /pay and /baltop, a ledger of every change, and Vault's API built in, so shops work without Vault.jar.",
+      "summary": "An economy that is its own Vault: balances, /pay, /baltop and a ledger of every change, with the Vault and VaultUnlocked APIs built in, so shop and jobs plugins work without Vault.jar. Imports from EssentialsX, CMI or any Vault economy. For Paper and Folia.",
+      "released": false,
+      "accent": "#10AC79",
+      "accentText": "#10AC79",
+      "accentLow": "#122B27",
+      "accentHigh": "#88D6BC",
+      "icon": "plugins/xmoney/icon.svg",
+      "banner": "plugins/xmoney/banner.png"
+    },
+    {
+      "id": "xstats",
+      "name": "xStats",
+      "prefix": "x",
+      "category": "Players",
+      "tagline": "Every player's stats, on your own website.",
+      "headline": [
+        "Every player's stats,",
+        "on your own website."
+      ],
+      "blurb": "Playtime that leaves out AFK time, leaderboards by day, week and month, placeholders, and a stats site your server hosts itself.",
+      "summary": "Player stats, leaderboards and a stats website your server hosts itself: playtime that leaves out AFK time, kills, blocks and any placeholder, with daily, weekly and monthly leaderboards, PlaceholderAPI and in-world boards. For Paper and Folia.",
+      "released": false,
+      "accent": "#3EC407",
+      "accentText": "#3EC407",
+      "accentLow": "#192F13",
+      "accentHigh": "#9FE283",
+      "icon": "plugins/xstats/icon.svg",
+      "banner": "plugins/xstats/banner.png"
+    },
+    {
+      "id": "xbackup",
+      "name": "xBackup",
+      "prefix": "x",
+      "category": "Server",
+      "tagline": "Backups that cost nothing. Restores you can trust.",
+      "headline": [
+        "Backups that cost nothing.",
+        "Restores you can trust."
+      ],
+      "blurb": "Only what changed is stored, chunk by chunk, and copied to S3, SFTP, WebDAV or a cloud drive.",
+      "summary": "Incremental backups for Paper and Folia: only what changed is stored, chunk by chunk, with a save pause of milliseconds. Copies to S3, WebDAV, SFTP, FTP, Google Drive, OneDrive and Dropbox, and restores from the command line or on the next start.",
+      "released": false,
+      "accent": "#9EEDFD",
+      "accentText": "#9EEDFD",
+      "accentLow": "#2A363D",
+      "accentHigh": "#CFF6FE",
+      "icon": "plugins/xbackup/icon.svg",
+      "banner": "plugins/xbackup/banner.png"
+    }
+  ]
+}

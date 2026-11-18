@@ -1,11 +1,10 @@
-// A plugin's pages wear its accent: amber for xUtilities, green for zChat,
-// violet for xLimbo, teal for xRewind, lime for xPlots,
-// fuchsia for xTeleport, cobalt for xVote, crimson for xBans, emerald for xMoney,
-// ice for xBackup, green for xStats (xena-studios/brand, scripts/plugin-brand.ts). The rest
-// of the site keeps the family's neutral accent from theme.css.
+// A plugin's pages wear its accent (public/accents/<id>.css, generated from the brand
+// catalog by scripts/catalog.ts). The rest of the site keeps the family's neutral accent
+// from theme.css.
 import { defineRouteMiddleware } from "@astrojs/starlight/route-data";
+import catalog from "./data/plugins.json" with { type: "json" };
 
-const plugins = ["xutilities", "zchat", "xlimbo", "xrewind", "xplots", "xteleport", "xvote", "xbans", "xmoney", "xbackup", "xstats"];
+const plugins = catalog.plugins.map((p) => p.id);
 
 export const onRequest = defineRouteMiddleware((context) => {
   const route = context.locals.starlightRoute;

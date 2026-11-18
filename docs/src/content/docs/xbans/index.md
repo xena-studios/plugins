@@ -1,17 +1,17 @@
 ---
 title: xBans
-description: "xBans: free, open-source bans, mutes, warnings and kicks for Paper and Folia, with LiteBans' commands, flags and durations, and a one-command import from LiteBans."
+description: "xBans: free, open-source bans, mutes, warnings and kicks for Paper and Folia, checked from memory, with templates, staff limits, alts, IP bans and networks."
 sidebar:
   label: Overview
   order: 1
 ---
 
-**Bans, mutes and warnings, the LiteBans way.**
+**Bans, mutes and warnings. Nothing slips through.**
 
-xBans is a punishment plugin for Paper and Folia: bans, temporary bans, IP bans, mutes, warnings and kicks, with history, alts and staff limits. It uses LiteBans' commands, flags and duration format, so your staff's habits carry over, and it imports your LiteBans, vanilla and EssentialsX bans with one command.
+xBans is a punishment plugin for Paper and Folia: bans, temporary bans, IP bans, mutes, warnings and kicks, with history, alts and staff limits. Every ban and mute in force is checked from memory, so the join check never waits on your database. It uses LiteBans' command syntax, so staff habits carry over, and imports your LiteBans, vanilla and EssentialsX bans with one command.
 
 - **Free and open source.** Every feature, no premium version.
-- **LiteBans' syntax.** `/ban Steve -s 7d server:survival Hacking`, `/tempmute Alex 1d2h`, `/unban #123`, `/history`, `/alts`. Silent (`-s`), extra silent (`-S`) and public (`-p`) punishments, and server scopes. See [Commands](/xbans/commands/).
+- **Commands staff already know.** `/ban Steve -s 7d server:survival Hacking`, `/tempmute Alex 1d2h`, `/unban #123`, `/history`, `/alts`. Silent (`-s`), extra silent (`-S`) and public (`-p`) punishments, and server scopes, in LiteBans' syntax. See [Commands](/xbans/commands/).
 - **Bans that hold.** Every ban and mute in force is kept in memory, loaded before anyone can join, so the join check never waits on the database and keeps working if MySQL drops for a moment. A ban made while someone is connecting still catches them. Mutes block chat, `/msg`, `/r`, `/me` and the rest (by any alias, `/essentials:msg` included), signs and books.
 - **Nothing is ever deleted.** An unban is recorded next to the ban, with who, when and why. Only `/prunehistory` deletes, when you ask it to.
 - **Templates and escalation.** `/ban Steve hacking` gives 7 days, then 30, then permanent. Three warnings can mute for an hour. All in the config.

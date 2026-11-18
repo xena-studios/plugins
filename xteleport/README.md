@@ -1,4 +1,4 @@
-![xTeleport by Xena Studios. An orchid map pin over the ring it lands in, and the xTeleport name over a stepped horizon, with the headline "Every teleport your server needs."](../.github/assets/xteleport-banner.png)
+![xTeleport by Xena Studios. An fuchsia map pin over the ring it lands in, and the xTeleport name over a stepped horizon, with the headline "Every teleport your server needs."](../.github/assets/xteleport-banner.png)
 
 **Every teleport your server needs.**
 

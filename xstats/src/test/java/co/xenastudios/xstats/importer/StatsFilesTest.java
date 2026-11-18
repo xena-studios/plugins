@@ -23,13 +23,15 @@ class StatsFilesTest {
 
     static final UUID STEVE = UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5");
     static final UUID ALEX = UUID.fromString("61699b2e-d327-4a01-9f1e-0ea8c3f06bc6");
+    static final UUID BEDROCK = UUID.fromString("00000000-0000-0000-0009-01f2a3b4c5d6");
 
     @Test
     void namesComeFromTheUserCache() throws Exception {
         Path cache = world.resolve("usercache.json");
         Files.writeString(cache, "[{\"uuid\":\"" + STEVE + "\",\"name\":\"Steve\",\"expiresOn\":\"2099-01-01 00:00:00 +0000\"},"
-            + "{\"uuid\":\"" + ALEX + "\",\"name\":\"<b>bad</b>\"},{\"uuid\":\"nope\",\"name\":\"X\"}]");
-        assertEquals(java.util.Map.of(STEVE, "Steve"), StatsFiles.userCache(cache));
+            + "{\"uuid\":\"" + ALEX + "\",\"name\":\"<b>bad</b>\"},{\"uuid\":\"nope\",\"name\":\"X\"},"
+            + "{\"uuid\":\"" + BEDROCK + "\",\"name\":\".Bedrock_Sam\"}]");
+        assertEquals(java.util.Map.of(STEVE, "Steve", BEDROCK, ".Bedrock_Sam"), StatsFiles.userCache(cache), "Floodgate's names too");
         assertEquals(java.util.Map.of(), StatsFiles.userCache(world.resolve("missing.json")));
     }
 

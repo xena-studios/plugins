@@ -184,7 +184,8 @@ public final class StatsFiles {
                 JsonElement name = object.get("name");
                 if (uuid != null && name != null && uuid.isJsonPrimitive() && name.isJsonPrimitive()) {
                     UUID id = uuid(uuid.getAsString() + ".json");
-                    if (id != null && co.xenastudios.core.player.Profiles.validName(name.getAsString())) {
+                    // Bedrock players' names (Floodgate's .Steve) too, not only Java ones.
+                    if (id != null && co.xenastudios.xstats.data.PlayerRecord.NAME.matcher(name.getAsString()).matches()) {
                         names.put(id, name.getAsString());
                     }
                 }

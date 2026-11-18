@@ -16,6 +16,12 @@ public final class PlayerRecord {
 
     private static final long[] NONE = new long[0];
 
+    /**
+     * A player's name: Java names, and Bedrock players' through Floodgate, which start with
+     * its prefix (a dot unless the owner changed it), such as {@code .Steve}.
+     */
+    public static final java.util.regex.Pattern NAME = java.util.regex.Pattern.compile("[\\w.*+~-]{1,16}");
+
     public final UUID id;
     /** The row id in the players table, or 0 until the first save stores them. */
     volatile int dbId;

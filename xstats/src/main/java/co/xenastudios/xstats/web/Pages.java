@@ -39,12 +39,8 @@ public final class Pages implements WebServer.Source {
     private static final int SUMMARY = 5;
     private static final Pattern LOGO_FILE = Pattern.compile("[A-Za-z0-9_.-]+\\.(png|jpe?g|svg|webp)");
     private static final Pattern URL = Pattern.compile("https?://[^\\s\"'<>\\\\]+");
-    /**
-     * A name to look up or search for: Java names, and Bedrock players' through Floodgate,
-     * which start with its prefix (a dot unless the owner changed it). Profiles are linked by
-     * uuid; names are for typing.
-     */
-    public static final Pattern NAME = Pattern.compile("[\\w.*+~-]{1,16}");
+    /** A name to look up or search for. Profiles are linked by uuid; names are for typing. */
+    public static final Pattern NAME = PlayerRecord.NAME;
 
     private final XStats plugin;
     private volatile Map<String, Response> rendered = Map.of();

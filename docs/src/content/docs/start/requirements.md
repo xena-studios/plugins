@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-Every plugin runs on **Paper** and forks of it such as **Purpur**, with **Java 21 or newer**. Paper 26.x itself needs Java 25, so that's what a 26.x server runs on. None of the plugins needs another plugin, except that xPlots takes rent through [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin unless you set it to take an item instead.
+Every plugin runs on **Paper** and forks of it such as **Purpur**, with **Java 21 or newer**. Paper 26.x itself needs Java 25, so that's what a 26.x server runs on. None of the plugins needs another plugin, except that xPlots takes rent through [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin unless you set it to take an item instead, and xVote pays money rewards through Vault when you give any.
 
 | Plugin | Paper | Folia | Java |
 | --- | --- | --- | --- |

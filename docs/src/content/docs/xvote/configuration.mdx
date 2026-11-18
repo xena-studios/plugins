@@ -1,0 +1,75 @@
+---
+title: Configuration
+description: Every setting in xVote's config.yml.
+sidebar:
+  order: 5
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/xvote/config.yml?raw";
+
+The config is `plugins/xVote/config.yml`, written on first start. Apply changes with `/xvote reload`; only `storage` and `network` need a restart. Keys and tokens aren't in it: they're in `rsa/` and `tokens.yml` ([Keys and tokens](/xvote/setting-up/#keys-and-tokens)).
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours xVote's messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages` | `/vote`, `/vote top`, held items, and shared errors under `messages.error`. |
+| `receiver` | Where lists send votes: the port, v1, and the limits. See [The receiver](/xvote/setting-up/#the-receiver). |
+| `sites` | The sites `/vote` lists, each with its service name, link, cooldown and own rewards: see [Sites](/xvote/setting-up/#sites). |
+| `rewards` | What can be given, by name. |
+| `triggers` | Which rewards which votes earn. |
+| `party` | The vote party. |
+| `reminders` | Telling players they can vote. |
+| `counting` | The time zone, the day weeks start, the Bedrock prefix, and how long votes for unknown names wait. |
+| `storage` | Where votes are kept: SQLite in the plugin's folder (`votes.db`), or MySQL/MariaDB. |
+| `network` | Servers sharing one database: see [Networks](/xvote/setting-up/#networks). |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+## Rewards and triggers
+
+A reward is defined once, by name, and used by triggers, sites and the party:
+
+```yaml
+rewards:
+  vote:
+    chance: 100
+    money: 50
+    items: ["diamond 1", "diamond_sword[enchantments={sharpness:3}] 1"]
+    commands: ["lp user <player> permission settemp vote.fly true 1h"]
+    message: "<prefix>Thanks for voting on <site>!"
+    broadcast: "<prefix><player> voted on <site>."
+    sound: "entity.player.levelup"
+    custom: []
+```
+
+- `chance` is in percent. Each reward rolls its own.
+- `money` is paid through [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin. Without them, money is skipped and the console says so once.
+- `items` are written like `/give`, then an amount. Items that don't fit wait for `/vote claim`; nothing is dropped.
+- `commands` run from the console, one after another.
+- `custom` lists reward types other plugins add, such as a crate key, as `"<type> <argument>"`.
+- Commands, messages and broadcasts can use `<player>`, `<uuid>`, `<site>`, `<total>` (the player's votes) and `<streak>`.
+- In `commands` and `custom`, `<site>` is a listed site's `name`. For a site that isn't listed, it's the name the list sent with anything but letters, digits, `.`, `_` and `-` made `_`, so a vote can't add arguments or commands of its own.
+
+`triggers` say which rewards a vote earns, on top of its site's:
+
+| Trigger | When |
+| --- | --- |
+| `every-vote` | Every vote. |
+| `first-vote-of-day` | A player's first vote each day. |
+| `every` | Every Nth vote, by N: `every: {"10": {rewards: [bonus]}}`. |
+| `streak` | The day a streak reaches that many days. |
+| `total` | Once, on a player's Nth vote. |
+
+## Vote party
+
+With `party.enabled`, every `party.votes` votes from anyone start a party: `party.rewards` for everyone online (`who: online`), or for everyone online who voted since the last one (`who: voted`). `progress-every` broadcasts how many are left on the way. On a network, the party starts on every server.
+
+## Counting
+
+Days, weeks and months start at midnight in `counting.time-zone`, and weeks on `week-starts`. Nothing resets totals at midnight: each total knows which day, week or month it was counted in.
+
+A bad value falls back to its default with a warning in the console.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/xVote/config.yml" />

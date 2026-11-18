@@ -28,7 +28,7 @@ scripts/boot-test.sh --project paper --version 1.21.11 \
 | `core/` | Code every plugin shares, shaded into each jar |
 | `build-logic/` | The `xena.plugin` Gradle convention every plugin applies |
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
-| `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/` | The plugins, each with its own README |
+| `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/`, `xstats/` | The plugins, each with its own README |
 | `scripts/` | `boot-test.sh`, `changelog.sh`, `new-minecraft.sh` |
 | `docs/` | docs.xenastudios.co |
 

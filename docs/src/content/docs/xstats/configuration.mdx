@@ -1,0 +1,38 @@
+---
+title: Configuration
+description: Every setting in xStats' config.yml.
+sidebar:
+  order: 9
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/xstats/config.yml?raw";
+
+The config is `plugins/xStats/config.yml`, written on first start. Apply changes with `/xstats reload`; only `storage`, `server-name` and `network` need a restart.
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours xStats' messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages` | What players are told, and shared errors under `messages.error`. |
+| `commands` | `/stats` and `/leaderboard`: on or off, their aliases and permission. |
+| `stats` | The stats xStats keeps, where each comes from, and which have periods: see [Choosing stats](/xstats/setting-up/#choosing-stats). |
+| `collecting` | How often to save, how many players to read each tick, AFK-aware playtime, and the first-start import. |
+| `leaderboards` | Places kept, leaving banned players out, `/leaderboard`'s page size, and how boards in the world look. |
+| `periods` | The time zone, the day weeks start, how long each day's numbers are kept, and the periods' names. |
+| `web` | The website and its API: see [The website](/xstats/website/). |
+| `server-name` | This server's name in the database, for [networks](/xstats/networks/). |
+| `storage` | SQLite in the plugin's folder (`stats.db`), or MySQL/MariaDB. |
+| `network` | Several servers sharing one database: see [Networks](/xstats/networks/). |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+## Saving
+
+Every `collecting.save-every-minutes` (5), xStats reads every online player's stats, `collecting.reads-per-tick` (4) players a tick, writes what changed, and works out every leaderboard. Reading is a lookup in counters the server already keeps; a stat that adds up every block or item (`mined:*`) looks at each one, so it's the costliest kind. Lower `reads-per-tick` to spread a save over more ticks on a very full server.
+
+A crash loses at most one save's worth of playtime and placeholder stats. Minecraft's own stats aren't lost: the next reading makes up the difference.
+
+A bad value falls back to its default with a warning in the console.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/xStats/config.yml" />

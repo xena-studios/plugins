@@ -102,6 +102,11 @@ class ApiTest {
     }
 
     @Test
+    void aSpotWithoutAWorldIsRefused() {
+        assertThrows(IllegalArgumentException.class, () -> api.setBackLocation(player, new Location(null, 0, 64, 0)));
+    }
+
+    @Test
     void aSpotForSomeoneOfflineIsntKept() {
         Location spot = player.getLocation().clone();
         server.getPluginManager().callEvent(new PlayerQuitEvent(player, Component.empty(), PlayerQuitEvent.QuitReason.DISCONNECTED));
@@ -166,6 +171,10 @@ class ApiTest {
         assertTrue(api.isCommandEnabled("gmc"));
         assertTrue(api.isCommandEnabled("discord"), "link commands count");
         assertFalse(api.isCommandEnabled("tpa"));
+        assertTrue(api.isCommandEnabled("xutilities"), "its own command counts");
+        assertTrue(api.isCommandEnabled("/XU"));
+        assertTrue(api.isCommandEnabled("/xutilities:fly"), "the namespaced label counts");
+        assertFalse(api.isCommandEnabled("xutilities:tpa"));
 
         setConfig("(?s)(  fly:\\n    enabled: )true", "$1false");
         assertFalse(api.isCommandEnabled("fly"));

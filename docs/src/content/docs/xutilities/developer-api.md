@@ -66,7 +66,7 @@ Every method can be called from any thread. Each answers from memory and returns
 | --- | --- |
 | `isBackEnabled()` | Whether `/back` is turned on. While it's off, nothing is remembered. |
 | `getBackLocation(player)` | Where `/back` would take the player, as an `Optional<Location>` (a copy). Empty if there's nowhere, or `/back` is off. |
-| `setBackLocation(player, location)` | Sets where `/back` takes the player. Returns false if `/back` is off or the player isn't online. |
+| `setBackLocation(player, location)` | Sets where `/back` takes the player. Returns false if `/back` is off or the player isn't online. Throws an `IllegalArgumentException` if the location's world isn't loaded. |
 | `clearBackLocation(player)` | Forgets where `/back` would take the player. |
 
 xUtilities already remembers teleports by commands and plugins (the `COMMAND`, `PLUGIN` and `UNKNOWN` causes) and deaths. Use `setBackLocation` for anything else, such as a teleport with another cause, or a move your plugin makes some other way:
@@ -84,13 +84,15 @@ A spot is forgotten when the player leaves the server.
 
 ## Commands
 
-`isCommandEnabled(label)` says whether one of xUtilities' commands, including [link commands](/xutilities/link-commands/), is on under that name or alias. A leading `/` and upper case are fine. Use it to avoid registering a command that clashes, or to point players at the right one:
+`isCommandEnabled(label)` says whether xUtilities has a command on under that name or alias: one of its commands, a [link command](/xutilities/link-commands/), or `/xutilities` itself (and `/xu`). A leading `/`, the `xutilities:` prefix and upper case are fine. Use it to avoid registering a command that clashes, or to point players at the right one:
 
 ```java
 if (!XUtilitiesApi.get().isCommandEnabled("spawn")) {
     registerMySpawnCommand();
 }
 ```
+
+True means xUtilities registered the command, not that `/spawn` runs it. If another plugin had `/spawn` first, it keeps it and xUtilities' is only `/xutilities:spawn`. Bukkit's command map (`Bukkit.getCommandMap().getCommand("spawn")`) says who has the bare label.
 
 ## Events
 

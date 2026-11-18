@@ -1,11 +1,9 @@
 package co.xenastudios.xutilities;
 
 import co.xenastudios.core.Module;
-import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.xutilities.api.XUtilitiesApi;
 import co.xenastudios.xutilities.command.BackTracker;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -19,6 +17,8 @@ import org.bukkit.plugin.ServicePriority;
  */
 final class Api implements XUtilitiesApi, Module {
 
+    private static final String NAMESPACE = "xutilities:";
+
     private final XUtilities plugin;
     private final BackTracker tracker;
     // Swapped whole on every reload.
@@ -29,14 +29,14 @@ final class Api implements XUtilitiesApi, Module {
         this.tracker = tracker;
     }
 
-    /** The commands this config turned on: names and aliases, lowercase. */
-    void commands(List<CommandSpec> specs) {
-        Set<String> labels = new HashSet<>();
-        for (CommandSpec spec : specs) {
-            labels.add(spec.name().toLowerCase(Locale.ROOT));
-            spec.aliases().forEach(alias -> labels.add(alias.toLowerCase(Locale.ROOT)));
-        }
-        commands = Set.copyOf(labels);
+    /**
+     * The labels this config turned on: every command's name and aliases, and
+     * {@code /xutilities} with its aliases, which the core adds after setup.
+     */
+    void commands(Set<String> labels) {
+        Set<String> lower = new HashSet<>();
+        labels.forEach(label -> lower.add(label.toLowerCase(Locale.ROOT)));
+        commands = Set.copyOf(lower);
     }
 
     @Override
@@ -75,7 +75,12 @@ final class Api implements XUtilitiesApi, Module {
 
     @Override
     public boolean isCommandEnabled(String label) {
-        String name = label.startsWith("/") ? label.substring(1) : label;
-        return commands.contains(name.toLowerCase(Locale.ROOT));
+        String name = (label.startsWith("/") ? label.substring(1) : label).toLowerCase(Locale.ROOT);
+        // Every command is also registered as /xutilities:<label>, which is how players
+        // reach one whose bare label another plugin already had.
+        if (name.startsWith(NAMESPACE)) {
+            name = name.substring(NAMESPACE.length());
+        }
+        return commands.contains(name);
     }
 }

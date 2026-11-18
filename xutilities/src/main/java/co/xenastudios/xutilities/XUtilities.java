@@ -42,7 +42,8 @@ public class XUtilities extends XenaPlugin<XConfig> {
         // First, so the API is there even if a command fails to set up.
         setup.module("api", () -> api);
         Commands.register(setup, this, config, backTracker);
-        api.commands(setup.commands());
+        // Includes /xutilities and /xu, which the core keeps for itself.
+        api.commands(setup.taken());
         warnAboutUnknownSounds(config.commands());
     }
 

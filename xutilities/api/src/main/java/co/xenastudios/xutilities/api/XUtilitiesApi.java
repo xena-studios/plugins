@@ -66,6 +66,8 @@ public interface XUtilitiesApi {
      * @param player an online player
      * @param location the spot, in a loaded world; it's copied
      * @return true if it was set; false if {@code /back} is off or the player isn't online
+     * @throws IllegalArgumentException if the location has no world, or its world isn't
+     *     loaded
      * @since 2.1.0
      */
     boolean setBackLocation(Player player, Location location);
@@ -80,12 +82,18 @@ public interface XUtilitiesApi {
     void clearBackLocation(Player player);
 
     /**
-     * Whether one of xUtilities' commands, including the link commands an owner defines,
-     * is turned on under this name or alias. Lets another plugin avoid a clashing name,
-     * or point players at the right command. Any thread, answers from memory.
+     * Whether xUtilities has a command turned on under this name or alias: one of its
+     * commands, a link command an owner defines, or {@code /xutilities} itself (alias
+     * {@code /xu}). Lets another plugin avoid a clashing name, or point players at the
+     * right command. Any thread, answers from memory.
      *
-     * @param label a command name or alias, with or without the leading {@code /}; case
-     *     doesn't matter
+     * <p>True means xUtilities registered the command, not that the bare label runs it.
+     * If another plugin already had the label when xUtilities registered its own,
+     * {@code /label} stays the other plugin's and xUtilities' is only reachable as
+     * {@code /xutilities:label}. Bukkit's command map says who has a bare label.
+     *
+     * @param label a command name or alias, with or without the leading {@code /} and
+     *     the {@code xutilities:} prefix; case doesn't matter
      * @return true if xUtilities has a command turned on by that name or alias
      * @since 2.1.0
      */

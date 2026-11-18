@@ -13,6 +13,7 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -37,6 +38,7 @@ public final class Profiles {
     /** A player's uuid and their name, as they write it. */
     public record Profile(UUID id, String name) {}
 
+    private static final Pattern NAME = Pattern.compile("\\w{1,16}");
     static final int KEEP = 2_000;
     static final long MISS_MS = 10 * 60_000;
 
@@ -69,7 +71,7 @@ public final class Profiles {
 
     /** Whether a name could be a Minecraft name: 1 to 16 letters, digits and underscores. */
     public static boolean validName(String name) {
-        return name.matches("\\w{1,16}");
+        return NAME.matcher(name).matches();
     }
 
     /**

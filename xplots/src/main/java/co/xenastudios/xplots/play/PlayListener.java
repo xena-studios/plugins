@@ -5,6 +5,7 @@ import co.xenastudios.xplots.XPlots;
 import co.xenastudios.xplots.model.Field;
 import co.xenastudios.xplots.model.Lease;
 import co.xenastudios.xplots.model.Plot;
+import co.xenastudios.xplots.model.SignPlacement;
 import co.xenastudios.xplots.setup.Selections;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -77,7 +78,12 @@ public final class PlayListener extends ListenerModule {
                 xplots.menus().admin(player, plot);
             }
         } else if (action == Action.RIGHT_CLICK_BLOCK && sneaking) {
-            moveSign(player, block.getRelative(face));
+            Plot sign = xplots.plots().signAt(block);
+            if (sign != null) {
+                turnSign(player, sign);
+            } else {
+                moveSign(player, block.getRelative(face));
+            }
         } else if (action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK) {
             int which = action == Action.LEFT_CLICK_BLOCK ? 1 : 2;
             Selections.Selection selection = xplots.selections().corner(player.getName(), which,
@@ -87,6 +93,16 @@ public final class PlayListener extends ListenerModule {
             player.sendMessage(xplots.staffMessage("Corner " + which + " set at <highlight>" + block.getX() + " "
                 + block.getY() + " " + block.getZ() + "</highlight>" + size + "."));
         }
+    }
+
+    // Turns a plot's sign 45° clockwise, where it stands.
+    private void turnSign(Player player, Plot plot) {
+        BlockFace facing = SignPlacement.turn(plot.signFacing());
+        xplots.plots().moveSign(plot, plot.signX(), plot.signY(), plot.signZ(), facing);
+        xplots.store().savePlot(plot);
+        xplots.signs().place(plot);
+        player.sendMessage(xplots.staffMessage("Turned <highlight>" + plot.id() + "</highlight>'s sign to face "
+            + facing.name().toLowerCase(java.util.Locale.ROOT).replace('_', '-') + "."));
     }
 
     // Moves the nearest plot's sign to where the player pointed, facing them.
@@ -116,7 +132,8 @@ public final class PlayListener extends ListenerModule {
             player.sendMessage(xplots.staffMessage("<error>There's something in the way there."));
             return;
         }
-        BlockFace facing = player.getFacing().getOppositeFace();
+        // Facing the player who placed it, to the nearest 22.5°.
+        BlockFace facing = SignPlacement.toward(player.getLocation().getYaw());
         xplots.signs().remove(nearest);
         xplots.plots().moveSign(nearest, target.getX(), target.getY(), target.getZ(), facing);
         xplots.store().savePlot(nearest);

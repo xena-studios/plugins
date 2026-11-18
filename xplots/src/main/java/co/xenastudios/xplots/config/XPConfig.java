@@ -11,6 +11,7 @@ import co.xenastudios.core.db.StorageSettings;
 import co.xenastudios.core.text.Durations;
 import co.xenastudios.core.text.Message;
 import co.xenastudios.core.text.Theme;
+import co.xenastudios.xplots.model.SignPlacement;
 import java.time.Duration;
 import java.util.List;
 import org.bukkit.Material;
@@ -102,7 +103,23 @@ public record XPConfig(
         List<String> rented,
         @Comment("A rented plot whose rent runs out within expiring-below.") List<String> expiring,
         Duration expiringBelow,
-        @Comment("The sign placed for each plot: any standing sign, such as dark_oak_sign.") Material material) {}
+        @Comment("The sign placed for each plot: any standing sign, such as dark_oak_sign.") Material material,
+        @Comment({
+            "Where on a plot's front edge its sign stands: middle, left-corner or right-corner, as",
+            "seen from the walkway looking at the plot. A field can change it with",
+            "/xplots field set <field> sign-position. Signs already placed move with",
+            "/xplots field signs <field>."})
+        SignPlacement.Position position,
+        @Comment({
+            "Which way a sign faces: straight at the walkway, or diagonal: turned 45° out from",
+            "its corner, so it reads from both walkways where they cross. Any sign can also be",
+            "turned by hand: sneak and right click it with the wand."})
+        SignPlacement.Rotation rotation) {
+
+        public SignPlacement placement() {
+            return new SignPlacement(position, rotation);
+        }
+    }
 
     public record Menus(
         @Comment("Fills the empty slots. air leaves them empty.") Material filler,
@@ -265,7 +282,9 @@ public record XPConfig(
             List.of("<dark_red><bold>RENTED", "<owner>", "<time> left", "<slots>/<max-slots> members"),
             List.of("<gold><bold>RENTED", "<owner>", "<red><time> left", "<slots>/<max-slots> members"),
             Duration.ofDays(1),
-            Material.OAK_SIGN),
+            Material.OAK_SIGN,
+            SignPlacement.Position.LEFT_CORNER,
+            SignPlacement.Rotation.STRAIGHT),
         new Menus(
             Material.GRAY_STAINED_GLASS_PANE,
             new RentMenu("Rent <plot>?",

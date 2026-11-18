@@ -149,6 +149,11 @@ public final class Field {
         return settings;
     }
 
+    /** Where this field's signs go: the config's, with the field's own sign settings on top. */
+    public SignPlacement signPlacement(SignPlacement defaults) {
+        return SignPlacement.of(defaults, overrides);
+    }
+
     /** Where /plots warp takes players, as {@code x,y,z,yaw,pitch}, or null for none. */
     public String warp() {
         return warp;

@@ -25,7 +25,7 @@ Every `/xplots` command needs `xplots.admin`, which operators have.
 
 | Command | What it does |
 | --- | --- |
-| `/xplots wand` | The selection wand. Left click: first corner. Right click: second corner. Sneak and right click: move the nearest plot's sign there. Sneak and left click: a plot's staff menu. |
+| `/xplots wand` | The selection wand. Left click: first corner. Right click: second corner. Sneak and right click a block: move the nearest plot's sign there. Sneak and right click a sign: turn it 45°. Sneak and left click: a plot's staff menu. |
 | `/xplots select <world> <x1> <y1> <z1> <x2> <y2> <z2>` | Selects by typing the corners, as from the console. |
 | `/xplots field create <name> size:<n or WxD> [path:<n>]` | Splits the selection into a field of plots and previews it. |
 | `/xplots confirm`, `/xplots cancel` | Makes or drops what's waiting: a previewed field, or deleting one. |
@@ -33,6 +33,7 @@ Every `/xplots` command needs `xplots.admin`, which operators have.
 | `/xplots field list` | Every field, and how many of its plots are rented. |
 | `/xplots field info <field>` | A field's size and its settings. |
 | `/xplots field set <field> <setting> <value or default>` | Changes one of a field's settings: see [Setting up](/xplots/setting-up/#prices-and-settings). |
+| `/xplots field signs <field>` | Moves every sign in the field to where its sign settings say, undoing any moved by hand. |
 | `/xplots field setwarp <field> [remove]` | Sets the field's warp where you stand, or removes it. |
 | `/xplots plot create <field>` | Makes one plot from the selection, in the field. |
 | `/xplots plot delete [plot]` | Deletes a plot. |

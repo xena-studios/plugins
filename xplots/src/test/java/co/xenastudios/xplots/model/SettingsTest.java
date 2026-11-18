@@ -22,6 +22,9 @@ class SettingsTest {
         assertThrows(IllegalArgumentException.class, () -> Settings.check("period", "10s"));
         assertThrows(IllegalArgumentException.class, () -> Settings.check("max-slots", "46"));
         assertThrows(IllegalArgumentException.class, () -> Settings.check("colour", "red"));
+        assertEquals("left-corner", Settings.check("sign-position", "LEFT_CORNER"));
+        assertEquals("diagonal", Settings.check("sign-rotation", "diagonal"));
+        assertThrows(IllegalArgumentException.class, () -> Settings.check("sign-position", "top"));
     }
 
     @Test

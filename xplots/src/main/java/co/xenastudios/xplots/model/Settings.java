@@ -12,7 +12,11 @@ import java.util.Map;
 public final class Settings {
 
     public static final List<String> KEYS = List.of(
-        "price", "period", "max-prepaid", "starting-slots", "max-slots", "slot-price", "reset", "abandon-refund");
+        "price", "period", "max-prepaid", "starting-slots", "max-slots", "slot-price", "reset", "abandon-refund",
+        "sign-position", "sign-rotation");
+
+    /** The settings that move a field's signs when they change. */
+    public static final List<String> SIGN_KEYS = List.of("sign-position", "sign-rotation");
 
     private Settings() {}
 
@@ -43,6 +47,12 @@ public final class Settings {
             }
             case "abandon-refund" -> {
                 return Integer.toString(whole(v.replace("%", ""), 0, 100));
+            }
+            case "sign-position" -> {
+                return oneOf(SignPlacement.Position.class, v);
+            }
+            case "sign-rotation" -> {
+                return oneOf(SignPlacement.Rotation.class, v);
             }
             case "reset" -> {
                 if (!v.equals("true") && !v.equals("false")) {
@@ -108,6 +118,25 @@ public final class Settings {
             }
         }
         return overrides;
+    }
+
+    private static <E extends Enum<E>> String oneOf(Class<E> type, String v) {
+        E value = SignPlacement.parse(type, v, null);
+        if (value == null) {
+            throw new IllegalArgumentException("must be one of " + String.join(", ",
+                java.util.Arrays.stream(type.getEnumConstants()).map(SignPlacement::name).toList()));
+        }
+        return SignPlacement.name(value);
+    }
+
+    /** The values a setting takes, for tab completion; empty for free-form ones. */
+    public static List<String> values(String key) {
+        return switch (key) {
+            case "sign-position" -> java.util.Arrays.stream(SignPlacement.Position.values()).map(SignPlacement::name).toList();
+            case "sign-rotation" -> java.util.Arrays.stream(SignPlacement.Rotation.values()).map(SignPlacement::name).toList();
+            case "reset" -> List.of("true", "false");
+            default -> List.of();
+        };
     }
 
     private static double number(String v) {

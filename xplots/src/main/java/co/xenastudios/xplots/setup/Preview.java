@@ -19,13 +19,15 @@ import org.bukkit.scheduler.BukkitTask;
 final class Preview {
 
     private static final double RANGE = 48;
-    private static final Particle.DustOptions EDGE = new Particle.DustOptions(Color.fromRGB(0xA9D750), 1.0f);
-    private static final Particle.DustOptions SIGN = new Particle.DustOptions(Color.fromRGB(0x5EE08A), 1.6f);
+    // White, and two to a block, so the outline shows on grass, sand or stone alike; a
+    // colour near the ground's disappears into it.
+    private static final Particle.DustOptions EDGE = new Particle.DustOptions(Color.WHITE, 1.5f);
+    private static final Particle.DustOptions SIGN = new Particle.DustOptions(Color.fromRGB(0xA9D750), 2.0f);
 
     private final BukkitTask task;
 
-    Preview(Plugin plugin, Player player, String world, Layout layout) {
-        List<Layout.Spot> spots = layout.spots();
+    Preview(Plugin plugin, Player player, String world, Layout layout, co.xenastudios.xplots.model.SignPlacement signs) {
+        List<Layout.Spot> spots = layout.spots(signs);
         this.task = Bukkit.getScheduler().runTaskTimer(plugin, () -> draw(player, world, layout, spots), 0, 10);
     }
 
@@ -46,13 +48,13 @@ final class Preview {
             if (Math.abs(cx - eye.getX()) > RANGE || Math.abs(cz - eye.getZ()) > RANGE) {
                 continue;
             }
-            for (int x = box.minX(); x <= box.maxX() + 1; x++) {
-                player.spawnParticle(Particle.DUST, x, y, box.minZ(), 1, EDGE);
-                player.spawnParticle(Particle.DUST, x, y, box.maxZ() + 1, 1, EDGE);
+            for (double x = box.minX(); x <= box.maxX() + 1; x += 0.5) {
+                player.spawnParticle(Particle.DUST, x, y, box.minZ(), 1, 0, 0, 0, 0, EDGE);
+                player.spawnParticle(Particle.DUST, x, y, box.maxZ() + 1, 1, 0, 0, 0, 0, EDGE);
             }
-            for (int z = box.minZ() + 1; z <= box.maxZ(); z++) {
-                player.spawnParticle(Particle.DUST, box.minX(), y, z, 1, EDGE);
-                player.spawnParticle(Particle.DUST, box.maxX() + 1, y, z, 1, EDGE);
+            for (double z = box.minZ() + 0.5; z < box.maxZ() + 1; z += 0.5) {
+                player.spawnParticle(Particle.DUST, box.minX(), y, z, 1, 0, 0, 0, 0, EDGE);
+                player.spawnParticle(Particle.DUST, box.maxX() + 1, y, z, 1, 0, 0, 0, 0, EDGE);
             }
             player.spawnParticle(Particle.DUST, spot.signX() + 0.5, spot.signY() + 0.5, spot.signZ() + 0.5, 3, 0.15, 0.3, 0.15, SIGN);
         }

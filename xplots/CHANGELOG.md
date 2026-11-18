@@ -1,5 +1,19 @@
 # xPlots changelog
 
+## 1.0.1
+
+Replace the jar and restart. Your config gains two sign settings; everything else is kept.
+
+### Added
+
+- **Corner signs.** `signs.position` puts each plot's sign at its `left-corner` (the new default), `right-corner` or `middle`, as seen from the walkway, and `signs.rotation` turns corner signs `diagonal`, out from their corner, so they read from both walkways where they cross. A field can have its own with `/xplots field set <field> sign-position` and `sign-rotation`, which move its signs at once. Fields made with 1.0.0 keep their signs where they are until you run `/xplots field signs <field>`.
+- Sneak and right click a plot's sign with the wand to turn it 45°. Moving a sign with the wand faces it toward you to the nearest 22.5°, not just the four sides.
+
+### Fixed
+
+- The plot menu's pay buttons showed the plot's rent and time left instead of what paying 1, 2 or 3 periods costs and adds, and "Buy a member slot" showed the rent instead of the slot price. What players were charged was right; the "Paid" message showed the same wrong amount.
+- The field preview's outline was the same green as grass, so it was hard to see on a grass field. It's white now, and twice as dense.
+
 ## 1.0.0
 
 The first release. Drop the jar in and start the server: plots are kept in SQLite in its own folder, with nothing to set up. Run `/xplots wand`, select the plot area, and `/xplots field create box size:5 path:2`.

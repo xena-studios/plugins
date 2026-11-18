@@ -144,6 +144,15 @@ signs:
   expiring-below: "1d"
   # The sign placed for each plot: any standing sign, such as dark_oak_sign.
   material: "oak_sign"
+  # Where on a plot's front edge its sign stands: middle, left-corner or right-corner, as
+  # seen from the walkway looking at the plot. A field can change it with
+  # /xplots field set <field> sign-position. Signs already placed move with
+  # /xplots field signs <field>.
+  position: "left-corner"
+  # Which way a sign faces: straight at the walkway, or diagonal: turned 45° out from
+  # its corner, so it reads from both walkways where they cross. Any sign can also be
+  # turned by hand: sneak and right click it with the wand.
+  rotation: "straight"
 
 # The plot menus. Each button has a material, a name and lines below the name.
 menus:

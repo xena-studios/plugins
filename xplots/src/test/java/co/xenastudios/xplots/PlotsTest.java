@@ -137,6 +137,24 @@ class PlotsTest {
     }
 
     @Test
+    void changingAFieldsSignPositionMovesItsSigns() {
+        makeField();
+        Plot plot = plugin.plots().plot("box-1");
+        int oldX = plot.signX();
+        int oldZ = plot.signZ();
+        server.dispatchCommand(server.getConsoleSender(), "xplots field set box sign-position right-corner");
+        server.dispatchCommand(server.getConsoleSender(), "xplots field set box sign-rotation diagonal");
+        // Row 1 faces south: from the walkway its right is east, the plot's max x.
+        assertEquals(plot.box().maxX(), plot.signX());
+        assertEquals(BlockFace.SOUTH_EAST, plot.signFacing());
+        assertTrue(signAt(plot), "the sign is up at the corner");
+        assertEquals(plot, plugin.plots().signAt(world.getBlockAt(plot.signX(), plot.signY(), plot.signZ())));
+        if (oldX != plot.signX() || oldZ != plot.signZ()) {
+            assertFalse(Tag.STANDING_SIGNS.isTagged(world.getBlockAt(oldX, plot.signY(), oldZ).getType()), "and down where it was");
+        }
+    }
+
+    @Test
     void reloadKeepsEverything() {
         makeField();
         server.dispatchCommand(server.getConsoleSender(), "xplots plot setowner box-2 Alex");

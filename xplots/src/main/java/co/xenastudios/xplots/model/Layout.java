@@ -6,7 +6,7 @@ import org.bukkit.block.BlockFace;
 
 /**
  * How a selection splits into a grid of plots with paths between them, and where each
- * plot's sign goes. Columns run along x and rows along z; the grid is centred in the
+ * plot's sign goes ({@link SignPlacement}: the middle of the front edge, or a corner). Columns run along x and rows along z; the grid is centred in the
  * selection, and whatever's left over at the edges is path.
  *
  * <p>Rows face each other in pairs across a path, and each plot's sign stands on that
@@ -54,8 +54,8 @@ public record Layout(Box area, int sizeX, int sizeZ, int path, int originX, int 
         return row * cols + col + 1;
     }
 
-    /** Every plot, in number order. */
-    public List<Spot> spots() {
+    /** Every plot, in number order, with signs placed as {@code signs} says. */
+    public List<Spot> spots(SignPlacement signs) {
         List<Spot> spots = new ArrayList<>(count());
         boolean onPath = path >= 2;
         for (int row = 0; row < rows; row++) {
@@ -66,10 +66,9 @@ public record Layout(Box area, int sizeX, int sizeZ, int path, int originX, int 
                 int minX = originX + col * (sizeX + path);
                 int minZ = originZ + row * (sizeZ + path);
                 Box box = new Box(minX, area.minY(), minZ, minX + sizeX - 1, area.maxY(), minZ + sizeZ - 1);
-                int signX = minX + (sizeX - 1) / 2;
-                int signZ = south ? (onPath ? box.maxZ() + 1 : box.maxZ()) : (onPath ? box.minZ() - 1 : box.minZ());
+                SignPlacement.Spot sign = signs.place(box, south ? BlockFace.SOUTH : BlockFace.NORTH, onPath);
                 int signY = Math.min(area.minY() + 1, area.maxY());
-                spots.add(new Spot(row * cols + col + 1, box, signX, signY, signZ, south ? BlockFace.SOUTH : BlockFace.NORTH));
+                spots.add(new Spot(row * cols + col + 1, box, sign.x(), signY, sign.z(), sign.facing()));
             }
         }
         return spots;

@@ -30,10 +30,13 @@ public record Info(String plot, String price, String period, String owner, Strin
             wallet.format(settings.slotPrice()));
     }
 
-    /** Placeholders for every detail. Any extra come first, so they win over a detail of the same name. */
+    /**
+     * Placeholders for every detail, then any extra. MiniMessage lets a later placeholder
+     * replace an earlier one of the same name, so an extra (a pay button's own price and
+     * time) wins over the plot's.
+     */
     public TagResolver[] placeholders(TagResolver... extra) {
-        List<TagResolver> all = new ArrayList<>(List.of(extra));
-        all.addAll(List.of(
+        List<TagResolver> all = new ArrayList<>(List.of(
             Placeholders.text("plot", plot),
             Placeholders.text("price", price),
             Placeholders.text("period", period),
@@ -43,6 +46,7 @@ public record Info(String plot, String price, String period, String owner, Strin
             Placeholders.text("max-slots", slots),
             Placeholders.text("size", size),
             Placeholders.text("members", memberNames)));
+        all.addAll(List.of(extra));
         return all.toArray(TagResolver[]::new);
     }
 

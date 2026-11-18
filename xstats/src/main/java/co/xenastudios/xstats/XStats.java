@@ -78,6 +78,11 @@ public class XStats extends XenaPlugin<XSConfig> {
     }
 
     @Override
+    protected int bStatsId() {
+        return 35436;
+    }
+
+    @Override
     protected void setup(Setup setup, XSConfig config) {
         stats(config);
         Engine.Settings settings = settings(config);

@@ -83,6 +83,11 @@ public class XVote extends XenaPlugin<XVConfig> {
     }
 
     @Override
+    protected int bStatsId() {
+        return 35422;
+    }
+
+    @Override
     protected void setup(Setup setup, XVConfig config) {
         rewards = Rewards.of(config, Items::parse, warning -> getLogger().warning("config.yml: " + warning));
         Periods next = new Periods(Periods.zone(config.counting().timeZone(), warning -> getLogger().warning("config.yml: " + warning)),

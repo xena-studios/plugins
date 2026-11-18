@@ -42,6 +42,11 @@ public class XBans extends XenaPlugin<XBConfig> {
     }
 
     @Override
+    protected int bStatsId() {
+        return 35418;
+    }
+
+    @Override
     protected void setup(Setup setup, XBConfig config) {
         if (store == null) {
             sessions = new Sessions();

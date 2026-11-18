@@ -53,6 +53,11 @@ public class XTeleport extends XenaPlugin<XTConfig> {
     }
 
     @Override
+    protected int bStatsId() {
+        return 35423;
+    }
+
+    @Override
     protected List<String> adminAliases() {
         return List.of("xtp");
     }

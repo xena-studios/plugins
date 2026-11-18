@@ -119,18 +119,31 @@ class ImportsTest {
     @EnabledIfEnvironmentVariable(named = "XR_MYSQL", matches = ".+")
     void superbVotesMysqlTable() throws Exception {
         String[] parts = System.getenv("XR_MYSQL").split(":");
-        String table = "sv" + Long.toHexString(System.nanoTime());
+        String table = "xvote_test_superbvote";
         Path folder = Files.createDirectories(plugins.resolve("SuperbVote"));
         Files.writeString(folder.resolve("config.yml"), "storage:\n  database: mysql\n  mysql:\n    host: " + parts[0]
             + "\n    port: " + parts[1] + "\n    database: " + parts[2] + "\n    username: " + parts[3]
             + "\n    password: '" + parts[4] + "'\n    table: " + table + "\n");
         String url = "jdbc:mysql://" + parts[0] + ":" + parts[1] + "/" + parts[2];
         try (Connection c = DriverManager.getConnection(url, parts[3], parts[4]); Statement statement = c.createStatement()) {
-            statement.executeUpdate("CREATE TABLE " + table + " (uuid VARCHAR(36) PRIMARY KEY NOT NULL, last_name VARCHAR(16),"
-                + " votes INT NOT NULL, last_vote TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+            // Fixed SQL only: the table name is a constant, and values go in as parameters.
+            statement.executeUpdate("DROP TABLE IF EXISTS xvote_test_superbvote");
+            statement.executeUpdate("CREATE TABLE xvote_test_superbvote (uuid VARCHAR(36) PRIMARY KEY NOT NULL,"
+                + " last_name VARCHAR(16), votes INT NOT NULL, last_vote TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)");
             try {
-                statement.executeUpdate("INSERT INTO " + table + " VALUES ('" + STEVE + "', 'Steve', 12, '2026-11-16 12:00:00'),"
-                    + " ('" + ALEX + "', NULL, 0, CURRENT_TIMESTAMP)");
+                try (PreparedStatement insert = c.prepareStatement(
+                    "INSERT INTO xvote_test_superbvote (uuid, last_name, votes, last_vote) VALUES (?, ?, ?, ?)")) {
+                    insert.setString(1, STEVE.toString());
+                    insert.setString(2, "Steve");
+                    insert.setInt(3, 12);
+                    insert.setTimestamp(4, java.sql.Timestamp.valueOf("2026-11-16 12:00:00"));
+                    insert.executeUpdate();
+                    insert.setString(1, ALEX.toString());
+                    insert.setNull(2, java.sql.Types.VARCHAR);
+                    insert.setInt(3, 0);
+                    insert.setTimestamp(4, new java.sql.Timestamp(System.currentTimeMillis()));
+                    insert.executeUpdate();
+                }
                 Imports.Found found = Imports.superbVote(plugins);
                 assertEquals(1, found.players().size());
                 assertEquals(STEVE, found.players().get(0).id());
@@ -138,7 +151,7 @@ class ImportsTest {
                 assertTrue(found.players().get(0).lastVote() > 0);
                 assertTrue(found.from().contains(parts[1]), found.from());
             } finally {
-                statement.executeUpdate("DROP TABLE " + table);
+                statement.executeUpdate("DROP TABLE xvote_test_superbvote");
             }
         }
     }

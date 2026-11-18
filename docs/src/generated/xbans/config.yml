@@ -107,7 +107,8 @@ messages:
   # <player>'s weight (xbans.weight.<n>) is as high as the sender's or higher.
   outranks: "<prefix><error><highlight><player></highlight> outranks you."
   # Revoking a punishment made by someone whose weight was higher than the sender's (the
-  # console's is highest). Staff can always revoke their own; xbans.unban.override revokes any.
+  # console's is highest), or replacing one with a ban or mute that's no longer. Staff can
+  # always revoke their own; xbans.unban.override revokes any. <player>, <expires>, <id>.
   cant-lift: "<prefix><error>That was given by someone who outranks you.</error> <dark_gray>#<id>"
   # Over the sender's staff-limits. <max> is the longest they may give.
   over-limit: "<prefix><error>You can give at most <highlight><max></highlight>."

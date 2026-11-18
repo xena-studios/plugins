@@ -84,7 +84,7 @@ final class Api implements XBansApi, Module {
         String name = xbans.profiles().cached(request.target()).map(profile -> profile.name()).orElse(request.target().toString());
         Punisher.Request made = new Punisher.Request(request.type(), request.target(), name, null, request.ipBased(),
             Length.of(request.duration()), request.reason(), null, request.scope(), request.silent(), false,
-            request.staff(), request.staffName(), null, null, false);
+            request.staff(), request.staffName(), null, null, false, List.of());
         return xbans.punisher().punish(made).handle((entry, failure) -> {
             if (failure != null) {
                 Refusal refusal = Refusal.of(failure);
@@ -108,7 +108,7 @@ final class Api implements XBansApi, Module {
             return CompletableFuture.completedFuture(Optional.empty());
         }
         Punisher.Revoke request = new Punisher.Revoke(type, player, player.toString(), null, null, null, reason, false, false,
-            staff, staffName, null, true, null);
+            staff, staffName, null, null);
         return xbans.punisher().revoke(request).handle((revoked, failure) -> {
             if (failure != null) {
                 if (Refusal.of(failure) != null) {

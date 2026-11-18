@@ -65,12 +65,11 @@ public final class RevokeCommands {
         boolean silent = parsed.silent() || config.punishing().silentByDefault() && !parsed.publicFlag();
         UUID staff = sender instanceof Player player ? player.getUniqueId() : null;
         co.xenastudios.xbans.Power power = co.xenastudios.xbans.Power.of(sender, config.staffLimits());
-        boolean override = sender.hasPermission(Punisher.OVERRIDE);
         String staffName = sender instanceof Player player ? player.getName() : "Console";
         targets.resolve(parsed.target(), type != PunishmentType.WARN, true)
             .thenCompose(target -> xbans.punisher().revoke(new Punisher.Revoke(type, target.id(), target.name(), target.ip(),
                 target.punishment(), parsed.scope(), parsed.reason(), silent, parsed.extraSilent(), staff, staffName, power,
-                override, sender)))
+                sender)))
             .whenComplete((revoked, failure) -> {
                 if (failure != null) {
                     PunishCommands.fail(xbans, sender, failure);

@@ -138,7 +138,8 @@ public record XBConfig(
         @Comment("<player>'s weight (xbans.weight.<n>) is as high as the sender's or higher.") Message outranks,
         @Comment({
             "Revoking a punishment made by someone whose weight was higher than the sender's (the",
-            "console's is highest). Staff can always revoke their own; xbans.unban.override revokes any."})
+            "console's is highest), or replacing one with a ban or mute that's no longer. Staff can",
+            "always revoke their own; xbans.unban.override revokes any. <player>, <expires>, <id>."})
         Message cantLift,
         @Comment("Over the sender's staff-limits. <max> is the longest they may give.") Message overLimit,
         @Comment("A template's permission is missing. <template> is its name.") Message templateNoPermission,

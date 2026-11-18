@@ -657,6 +657,117 @@ class XBansTest {
         await(() -> ban(alex.getUniqueId()) == null);
     }
 
+    // ---- Replacing: the rule's cases, each on a real server ----
+
+    private void staff(PlayerMock player, int weight) {
+        for (String command : List.of("ban", "tempban", "ipban", "tempipban", "mute", "tempmute", "unban", "unmute")) {
+            player.addAttachment(plugin, "xbans." + command, true);
+        }
+        player.addAttachment(plugin, "xbans.weight." + weight, true);
+    }
+
+    private List<Entry> bansOf(UUID id) {
+        return backend().active().onScope(PunishmentType.BAN, id, null, "*", System.currentTimeMillis());
+    }
+
+    @Test
+    void reBanningAPermanentBanChangesItsReason() {
+        alex.disconnect();
+        console("ban Alex first reason");
+        await(() -> ban(alex.getUniqueId()) != null);
+        long first = ban(alex.getUniqueId()).id();
+        console("ban Alex second reason");
+        await(() -> ban(alex.getUniqueId()).id() != first);
+        assertEquals("second reason", ban(alex.getUniqueId()).punishment().reason());
+        assertEquals(1, bansOf(alex.getUniqueId()).size());
+        assertEquals(Store.REPLACED_REASON, plugin.store().find(first).join().punishment().removal().reason());
+    }
+
+    @Test
+    void aShorterBanIsRefusedWithHowToShortenIt() {
+        alex.disconnect();
+        steve.addAttachment(plugin, Punisher.OVERRIDE, true);
+        staff(steve, 10);
+        steve.performCommand("ban Alex forever");
+        await(() -> ban(alex.getUniqueId()) != null);
+        said(steve);
+        steve.performCommand("tempban Alex 1d shorter");
+        List<String> lines = awaitSaid(steve, "already banned");
+        assertTrue(anyContains(lines, "Unban them first"), String.join("\n", lines));
+        assertEquals(1, bansOf(alex.getUniqueId()).size());
+    }
+
+    @Test
+    void aJuniorCantEscapeASeniorsBanByReplacingIt() {
+        alex.disconnect();
+        staff(steve, 10);
+        console("tempban Alex 1d the console's");
+        await(() -> ban(alex.getUniqueId()) != null);
+        long console = ban(alex.getUniqueId()).id();
+
+        // Longer: both stay in force, and the junior's unban lifts only their own.
+        steve.performCommand("tempban Alex 2d mine");
+        await(() -> bansOf(alex.getUniqueId()).size() == 2);
+        assertNull(plugin.store().find(console).join().punishment().removal(), "the console's isn't replaced");
+        steve.performCommand("unban Alex");
+        await(() -> bansOf(alex.getUniqueId()).size() == 1);
+        assertEquals(console, ban(alex.getUniqueId()).id(), "still banned by the console");
+
+        // By IP, which would reach the account too: the same.
+        steve.performCommand("ipban Alex wider");
+        await(() -> bansOf(alex.getUniqueId()).size() == 2);
+        assertNull(plugin.store().find(console).join().punishment().removal());
+
+        // A mute: the same, by the console's mute.
+        console("tempmute Alex 1d quiet");
+        await(() -> mute(alex.getUniqueId()) != null);
+        long consoleMute = mute(alex.getUniqueId()).id();
+        steve.performCommand("mute Alex louder");
+        await(() -> backend().active().onScope(PunishmentType.MUTE, alex.getUniqueId(), null, "*",
+            System.currentTimeMillis()).size() == 2);
+        assertNull(plugin.store().find(consoleMute).join().punishment().removal());
+    }
+
+    @Test
+    void aJuniorCantReissueASeniorsPermanentBan() {
+        alex.disconnect();
+        staff(steve, 10);
+        console("ban Alex the console's");
+        await(() -> ban(alex.getUniqueId()) != null);
+        long console = ban(alex.getUniqueId()).id();
+        said(steve);
+        steve.performCommand("ban Alex my reason");
+        List<String> lines = awaitSaid(steve, "outranks you");
+        assertFalse(anyContains(lines, "Unban them first"), "advice they can't follow");
+        assertEquals(console, ban(alex.getUniqueId()).id());
+        assertEquals(1, bansOf(alex.getUniqueId()).size());
+        // Shorter: refused the same way.
+        steve.performCommand("tempban Alex 1d shorter");
+        awaitSaid(steve, "outranks you");
+        assertEquals(1, bansOf(alex.getUniqueId()).size());
+
+        // With the weight to lift it, or the override, they may replace it.
+        steve.addAttachment(plugin, Punisher.OVERRIDE, true);
+        steve.performCommand("ban Alex my reason");
+        await(() -> ban(alex.getUniqueId()).id() != console);
+        assertEquals("my reason", ban(alex.getUniqueId()).punishment().reason());
+    }
+
+    @Test
+    void aMuteNeverReplacesABan() {
+        alex.disconnect();
+        console("ban Alex banned");
+        await(() -> ban(alex.getUniqueId()) != null);
+        long banned = ban(alex.getUniqueId()).id();
+        console("mute Alex muted");
+        await(() -> mute(alex.getUniqueId()) != null);
+        assertEquals(banned, ban(alex.getUniqueId()).id(), "both in force");
+        assertNull(plugin.store().find(banned).join().punishment().removal());
+        console("ban Alex banned again");
+        await(() -> ban(alex.getUniqueId()).id() != banned);
+        assertNotNull(mute(alex.getUniqueId()), "and a ban never replaces a mute");
+    }
+
     @Test
     void anUnbanOnAServerThatMissedTheBanStillLiftsIt() {
         alex.disconnect();

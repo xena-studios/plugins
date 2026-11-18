@@ -56,7 +56,7 @@ public final class Store {
     public static final String TOPIC_PUNISH = "punish";
     public static final String TOPIC_REVOKE = "revoke";
     /** The reason on a ban or mute's removal when a longer one replaced it. It still counts toward its template's ladder. */
-    public static final String REPLACED_REASON = "Replaced by a longer one";
+    public static final String REPLACED_REASON = "Replaced by a newer one";
     /** After a revoked id in the feed: it was replaced by a new punishment, so it isn't announced. */
     public static final String REPLACED = "|r";
     /** After a punished id in the feed: imported, so it's taken in without a broadcast. */
@@ -490,8 +490,16 @@ public final class Store {
 
     /** A punishment it replaces was revoked meanwhile (by another command, or another server). Nothing was stored. */
     public static final class Conflict extends RuntimeException {
-        Conflict() {
-            super("A punishment it replaces was revoked meanwhile", null, false, false);
+        private final long id;
+
+        Conflict(long id) {
+            super("Punishment #" + id + ", which it replaces, was revoked meanwhile", null, false, false);
+            this.id = id;
+        }
+
+        /** The punishment that was revoked meanwhile. */
+        public long id() {
+            return id;
         }
     }
 
@@ -508,7 +516,7 @@ public final class Store {
         return write((c, b) -> {
             for (Entry replaced : replaces) {
                 if (!removal(c, b, replaced.id(), replacedBy)) {
-                    throw new Conflict();
+                    throw new Conflict(replaced.id());
                 }
             }
             long id;
@@ -803,7 +811,7 @@ public final class Store {
 
     /**
      * How many of a player's punishments under a template count toward its ladder: those made
-     * since then that weren't revoked (one replaced by a longer one still counts).
+     * since then that weren't revoked (one replaced by a newer one still counts).
      */
     public CompletableFuture<Integer> ladderStep(UUID target, String template, long since) {
         return read((c, b) -> {

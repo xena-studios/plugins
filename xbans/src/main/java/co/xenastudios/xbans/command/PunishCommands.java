@@ -146,9 +146,12 @@ public final class PunishCommands {
         Power power = Power.of(sender, config.staffLimits());
         UUID staff = sender instanceof Player player ? player.getUniqueId() : null;
         String staffName = sender instanceof Player player ? player.getName() : "Console";
+        // Read here, on the command's thread: the target and everyone on an IP are held to the sender's limits.
+        List<Punisher.Online> online = xbans.punisher().online(power);
         targets.resolve(args[0], ip, false).thenCompose(target -> xbans.punisher().punish(new Punisher.Request(
                 kind.type(), target.id(), target.name(), target.ip(), ip || target.ip() != null, parsed.length(),
-                parsed.reason(), parsed.template(), parsed.scope(), silent, parsed.extraSilent(), staff, staffName, power, sender, false)))
+                parsed.reason(), parsed.template(), parsed.scope(), silent, parsed.extraSilent(), staff, staffName, power, sender,
+                false, online)))
             .whenComplete((entry, failure) -> {
                 if (failure != null) {
                     fail(xbans, sender, failure);

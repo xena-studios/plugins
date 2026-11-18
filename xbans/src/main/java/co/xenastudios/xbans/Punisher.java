@@ -53,23 +53,26 @@ public final class Punisher {
      * @param sender who asked, to tell them the outcome, or null for the API
      * @param templateLength whether the length is a template's own: held to staff caps like
      *     any other, unless the sender has {@value Power#BYPASS_TEMPLATES}
+     * @param online who was online when the command ran, read on its thread ({@link #online}),
+     *     to hold the target and everyone on an IP to the sender's limits; empty without a power
      */
     public record Request(
         PunishmentType type, UUID target, String targetName, String ip, boolean ipBased, Length length, String reason,
         String template, String scope, boolean silent, boolean extraSilent, UUID staff, String staffName, Power power,
-        CommandSender sender, boolean templateLength) {}
+        CommandSender sender, boolean templateLength, List<Online> online) {}
+
+    /** An online player as a staff limit sees them: their IP key, weight and exemption. */
+    public record Online(UUID id, String name, String ip, int weight, boolean exempt) {}
 
     /**
      * Revoking: a player's (all their scopes, unless {@code scope} names one), an IP's, or one
      * punishment by id.
      *
      * @param power the sender's weight, or null for none (the console, the API): who may lift what
-     * @param override whether the sender has {@value #OVERRIDE}, and may lift anyone's
      */
     public record Revoke(
         PunishmentType type, UUID target, String targetName, String ip, Long id, String scope, String reason,
-        boolean silent, boolean extraSilent, UUID staff, String staffName, Power power, boolean override,
-        CommandSender sender) {}
+        boolean silent, boolean extraSilent, UUID staff, String staffName, Power power, CommandSender sender) {}
 
     /** Lifting punishments made by staff with a higher weight (or by the console). */
     public static final String OVERRIDE = "xbans.unban.override";
@@ -111,24 +114,47 @@ public final class Punisher {
 
     // ---- Punishing ----
 
+    /**
+     * Everyone online now, with their weight and exemption, for a {@link Request} from a sender
+     * with limits. On the command's thread, where their permissions may be read; empty for a
+     * sender without limits, who isn't held to anyone's.
+     */
+    public List<Online> online(Power power) {
+        if (power == null) {
+            return List.of();
+        }
+        List<Online> found = new ArrayList<>();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            found.add(new Online(player.getUniqueId(), player.getName(), plugin.sessions().ip(player.getUniqueId()),
+                Power.weight(player), player.hasPermission(Power.EXEMPT)));
+        }
+        return found;
+    }
+
     /** Checks, stores and applies a punishment. Fails with a {@link Refusal} when it can't be made. */
     public CompletableFuture<Entry> punish(Request request) {
         return punish(request, true);
     }
 
-    private CompletableFuture<Entry> punish(Request request, boolean retry) {
+    // first: false when trying again after a conflict, which has already asked PunishEvent's listeners.
+    private CompletableFuture<Entry> punish(Request request, boolean first) {
         try {
             backend();
         } catch (Refusal refusal) {
             return CompletableFuture.failedFuture(refusal);
         }
-        Player online = request.target() == null ? null : Bukkit.getPlayer(request.target());
+        Online seen = request.target() == null ? null
+            : request.online().stream().filter(player -> player.id().equals(request.target())).findFirst().orElse(null);
+        Player online = seen != null || request.target() == null ? null : Bukkit.getPlayer(request.target());
         CompletableFuture<Store.Known> known;
         if (request.target() == null) {
             known = CompletableFuture.completedFuture(new Store.Known(null, 0, false, null));
-        } else if (online != null) {
-            known = CompletableFuture.completedFuture(new Store.Known(online.getName(), Power.weight(online),
-                online.hasPermission(Power.EXEMPT), plugin.sessions().ip(online.getUniqueId())));
+        } else if (seen != null) {
+            known = CompletableFuture.completedFuture(new Store.Known(seen.name(), seen.weight(), seen.exempt(), seen.ip()));
+        } else if (online != null && request.power() == null) {
+            // No limits to hold them to, so their permissions aren't needed.
+            known = CompletableFuture.completedFuture(new Store.Known(online.getName(), 0, false,
+                plugin.sessions().ip(online.getUniqueId())));
         } else {
             known = plugin.store().known(request.target());
         }
@@ -138,15 +164,20 @@ public final class Punisher {
             CompletableFuture<List<Store.Account>> sharing = ip == null || resolved.power() == null
                 ? CompletableFuture.completedFuture(List.of()) : plugin.store().accountsOn(ip);
             // Off the server's threads, and outside any transaction: PunishEvent's listeners may call the API.
-            return sharing.thenApplyAsync(accounts -> prepare(resolved, target, ip, accounts), async);
+            return sharing.thenApplyAsync(accounts -> prepare(resolved, target, ip, accounts, first), async);
         })).thenCompose(prepared -> plugin.store().insert(prepared.entry(), prepared.replaces(), prepared.replacement())
             .thenApply(stored -> {
                 applyMade(stored.entry(), prepared.replaces().stream().map(Entry::id).toList(), true,
                     request.extraSilent(), request.sender(), stored.warnings());
                 return stored.entry();
             })).exceptionallyCompose(failure -> {
-                if (retry && cause(failure) instanceof Store.Conflict) {
-                    // What it replaced was replaced meanwhile: decide again from what's in force now.
+                if (first && cause(failure) instanceof Store.Conflict conflict) {
+                    // What it replaced was revoked meanwhile, maybe on a server whose change hasn't
+                    // reached this one yet: forget it, and decide again from what's in force now.
+                    Store.Backend backend = plugin.store().backend();
+                    if (backend != null) {
+                        backend.active().remove(conflict.id());
+                    }
                     return punish(request, false);
                 }
                 if (cause(failure) instanceof Store.Conflict) {
@@ -185,14 +216,14 @@ public final class Punisher {
                 return new Request(request.type(), request.target(), request.targetName(), request.ip(),
                     request.ipBased() || template.ip(), length, reason, request.template(), request.scope(),
                     request.silent() || template.silent(), request.extraSilent(), request.staff(), request.staffName(),
-                    request.power(), request.sender(), request.length() == null);
+                    request.power(), request.sender(), request.length() == null, request.online());
             });
     }
 
     /** A punishment checked and ready to store, with the bans or mutes it replaces. */
     private record Prepared(Entry entry, List<Entry> replaces, Removal replacement) {}
 
-    private Prepared prepare(Request request, Store.Known target, String ip, List<Store.Account> sharing) {
+    private Prepared prepare(Request request, Store.Known target, String ip, List<Store.Account> sharing, boolean ask) {
         XBConfig current = config();
         XBConfig.Messages messages = current.messages();
         Store.Backend backend = backend();
@@ -207,7 +238,7 @@ public final class Punisher {
                 throw new Refusal(messages.outranks(), Placeholders.text("player", name));
             }
             if (ip != null) {
-                limitsOnIp(current, power, ip, sharing);
+                limitsOnIp(current, power, ip, sharing, request.online());
             }
         }
         Length length = request.length();
@@ -231,18 +262,14 @@ public final class Punisher {
         Instant expires = length.permanent() ? null : Instant.ofEpochMilli(now + length.millis());
         List<Entry> replaces = new ArrayList<>();
         if (type == PunishmentType.BAN || type == PunishmentType.MUTE) {
-            for (Entry old : backend.active().onScope(type, request.target(), request.ipBased() ? ip : null, scope, now)) {
-                Instant oldExpires = old.punishment().expires();
-                if (covers(old.punishment().target(), old.punishment().ipBased() ? old.ip() : null, request.target(),
-                    request.ipBased() ? ip : null) && lastsAsLong(oldExpires, expires)) {
-                    throw new Refusal(type == PunishmentType.BAN ? messages.alreadyBanned() : messages.alreadyMuted(),
-                        plugin.texts().of(old, now));
-                }
-                // Replaced only by one that reaches everything it did, for at least as long: an
-                // account ban never lifts an IP ban. Otherwise both stay in force.
-                if (covers(request.target(), request.ipBased() ? ip : null, old.punishment().target(),
-                    old.punishment().ipBased() ? old.ip() : null) && lastsAsLong(expires, oldExpires)) {
-                    replaces.add(old);
+            String newIp = request.ipBased() ? ip : null;
+            for (Entry old : backend.active().onScope(type, request.target(), newIp, scope, now)) {
+                switch (replacing(old, request.target(), newIp, expires, mayLift(current, power, request.staff(), old))) {
+                    case REPLACE -> replaces.add(old);
+                    case REFUSE_LONGER -> throw new Refusal(type == PunishmentType.BAN ? messages.alreadyBanned()
+                        : messages.alreadyMuted(), plugin.texts().of(old, now));
+                    case REFUSE_OUTRANKED -> throw new Refusal(messages.cantLift(), plugin.texts().of(old, now));
+                    case BOTH -> { }
                 }
             }
         }
@@ -251,10 +278,50 @@ public final class Punisher {
             request.staffName(), Instant.ofEpochMilli(now), expires, scope, request.silent() || request.extraSilent(),
             request.template(), null);
         Entry entry = new Entry(draft, ip, power == null ? Entry.CONSOLE : power.weight());
-        firePunish(entry);
+        if (ask) {
+            firePunish(entry);
+        }
         Removal replacement = replaces.isEmpty() ? null : new Removal(request.staff(), request.staffName(),
             Instant.ofEpochMilli(now), Store.REPLACED_REASON);
         return new Prepared(entry, List.copyOf(replaces), replacement);
+    }
+
+    /** What a new ban or mute does to one already in force on the same scope. */
+    enum Replacing {
+        /** The new one takes its place: the old one is revoked as replaced. */
+        REPLACE,
+        /** Refused: the old one already reaches everyone the new one would, for at least as long. */
+        REFUSE_LONGER,
+        /** Refused: as {@link #REFUSE_LONGER}, but the old one was given by someone who outranks the sender. */
+        REFUSE_OUTRANKED,
+        /** Neither covers the other: both stay in force. */
+        BOTH
+    }
+
+    /**
+     * The replacement rule. A new one replaces an old one only if it reaches everyone the old
+     * one did (an account ban never lifts an IP ban), lasts at least as long (a permanent one
+     * as long as a permanent one, so re-banning changes the reason), and the sender could lift
+     * the old one themselves: otherwise a junior could swap a senior's ban for their own, then
+     * unban it. Failing that, if the old one already reaches everyone for at least as long,
+     * the new one is refused; if not, both stay in force.
+     *
+     * @param newIp the new one's IP key if it's by IP, else null
+     * @param expires when the new one ends, null for never
+     * @param mayLift whether the sender may lift the old one
+     */
+    static Replacing replacing(Entry old, UUID newAccount, String newIp, Instant expires, boolean mayLift) {
+        UUID oldAccount = old.punishment().target();
+        String oldIp = old.punishment().ipBased() ? old.ip() : null;
+        Instant oldExpires = old.punishment().expires();
+        boolean replaces = covers(newAccount, newIp, oldAccount, oldIp) && lastsAsLong(expires, oldExpires);
+        if (replaces && mayLift) {
+            return Replacing.REPLACE;
+        }
+        if (covers(oldAccount, oldIp, newAccount, newIp) && lastsAsLong(oldExpires, expires)) {
+            return mayLift ? Replacing.REFUSE_LONGER : Replacing.REFUSE_OUTRANKED;
+        }
+        return Replacing.BOTH;
     }
 
     private static boolean outranks(XBConfig current, Power power, int weight) {
@@ -263,16 +330,16 @@ public final class Punisher {
 
     // Every account seen on the IP, and everyone online on it now (their permissions as they
     // are), held to exemptions and weights as the target is.
-    private void limitsOnIp(XBConfig current, Power power, String ip, List<Store.Account> sharing) {
+    private static void limitsOnIp(XBConfig current, Power power, String ip, List<Store.Account> sharing,
+                                   List<Online> online) {
         XBConfig.Messages messages = current.messages();
         java.util.Map<UUID, Store.Account> accounts = new java.util.LinkedHashMap<>();
         for (Store.Account account : sharing) {
             accounts.put(account.id(), account);
         }
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (ip.equals(plugin.sessions().ip(player.getUniqueId()))) {
-                accounts.put(player.getUniqueId(), new Store.Account(player.getUniqueId(), player.getName(),
-                    Power.weight(player), player.hasPermission(Power.EXEMPT)));
+        for (Online player : online) {
+            if (ip.equals(player.ip())) {
+                accounts.put(player.id(), new Store.Account(player.id(), player.name(), player.weight(), player.exempt()));
             }
         }
         for (Store.Account account : accounts.values()) {
@@ -438,7 +505,9 @@ public final class Punisher {
                     default -> messages.noWarnings();
                 }, Placeholders.text("player", request.targetName()));
             }
-            List<Entry> allowed = found.stream().filter(entry -> mayLift(request, entry)).toList();
+            XBConfig current = config();
+            List<Entry> allowed = found.stream()
+                .filter(entry -> mayLift(current, request.power(), request.staff(), entry)).toList();
             if (allowed.isEmpty()) {
                 throw new Refusal(messages.cantLift(), plugin.texts().of(found.get(0), System.currentTimeMillis()));
             }
@@ -464,13 +533,13 @@ public final class Punisher {
 
     // Staff lift their own punishments, and those made by staff whose weight was no higher than
     // theirs; the console's is highest. xbans.unban.override, the console and the API lift anything.
-    private boolean mayLift(Revoke request, Entry entry) {
-        Power power = request.power();
-        if (power == null || request.override() || !config().staffLimits().weights()) {
+    // The same decides whether a new punishment may replace an old one.
+    private static boolean mayLift(XBConfig current, Power power, UUID staff, Entry entry) {
+        if (power == null || power.override() || !current.staffLimits().weights()) {
             return true;
         }
         UUID madeBy = entry.punishment().staff();
-        return madeBy != null && madeBy.equals(request.staff()) || power.weight() >= entry.staffWeight();
+        return madeBy != null && madeBy.equals(staff) || power.weight() >= entry.staffWeight();
     }
 
     // From the database, not memory: what's in force there is what can be revoked, even on a

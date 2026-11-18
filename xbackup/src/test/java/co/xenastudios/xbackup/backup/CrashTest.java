@@ -55,12 +55,16 @@ class CrashTest {
         Fixtures.server(server, random);
         Map<Hash, Map<String, byte[]>> saved = new HashMap<>();
         int deaths = 0;
+        // How many writes each kind of job made the last time it ran to the end, so the kill
+        // point falls anywhere in a job, not just in its first few writes.
+        int[] writes = {6, 6, 6};
         for (int round = 0; round < rounds; round++) {
             mutate(server, random, round);
             LocalBackend local = new LocalBackend(repoFolder);
             boolean dies = random.nextInt(3) != 0;
-            Fixtures.Dying dying = new Fixtures.Dying(local, dies ? random.nextInt(6) : Integer.MAX_VALUE);
             int op = random.nextInt(10);
+            int kind = op < 7 ? 0 : op < 9 ? 1 : 2;
+            Fixtures.Dying dying = new Fixtures.Dying(local, dies ? random.nextInt(writes[kind] + 1) : Integer.MAX_VALUE);
             Map<String, byte[]> before = Fixtures.contents(server, BackupTest.COMPARED);
             try {
                 Repository repository = Repository.open(dying, base.resolve("temp"), true);
@@ -74,6 +78,9 @@ class CrashTest {
                     maintenance.collect(new Session.Options(6, 64 << 10, 0), 0.2);
                 } else {
                     new Maintenance(repository, () -> false).rebuildIndex();
+                }
+                if (!dying.dead) {
+                    writes[kind] = Math.max(1, dying.written());
                 }
             } catch (IOException e) {
                 if (!dying.dead) {

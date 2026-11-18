@@ -192,6 +192,7 @@ public final class Fixtures {
     public static final class Dying implements Backend {
         public final LocalBackend inner;
         private final AtomicInteger writesLeft;
+        private final AtomicInteger written = new AtomicInteger();
         public volatile boolean dead;
 
         public Dying(LocalBackend inner, int writes) {
@@ -199,11 +200,17 @@ public final class Fixtures {
             this.writesLeft = new AtomicInteger(writes);
         }
 
+        /** How many writes went through. */
+        public int written() {
+            return written.get();
+        }
+
         private void write() throws IOException {
             if (dead || writesLeft.decrementAndGet() < 0) {
                 dead = true;
                 throw new IOException("killed");
             }
+            written.incrementAndGet();
         }
 
         private void alive() throws IOException {

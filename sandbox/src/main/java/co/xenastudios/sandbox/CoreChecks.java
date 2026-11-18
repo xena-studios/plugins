@@ -2,6 +2,7 @@ package co.xenastudios.sandbox;
 
 import static co.xenastudios.sandbox.Checks.require;
 
+import co.xenastudios.core.hook.VaultEconomy;
 import co.xenastudios.core.player.Profiles;
 import co.xenastudios.core.player.Warmups;
 import co.xenastudios.core.player.Warmups.Cancel;
@@ -88,6 +89,14 @@ final class CoreChecks {
     private static boolean damageListened(Plugin plugin) {
         return Arrays.stream(EntityDamageEvent.getHandlerList().getRegisteredListeners())
             .anyMatch(listener -> listener.getPlugin() == plugin);
+    }
+
+    /** The sandbox runs without Vault: the hook must say so without loading Vault's classes. */
+    static void vaultWithoutVault() {
+        VaultEconomy economy = new VaultEconomy();
+        require(!economy.installed() && !economy.ready(), "Vault seen where there is none");
+        require(!economy.take(Bukkit.getOfflinePlayer(java.util.UUID.randomUUID()), 1), "took money with no economy");
+        require(economy.format(1) == null, "formatted with no economy");
     }
 
     /** Only from memory: anything further would ask Mojang, which CI shouldn't. */

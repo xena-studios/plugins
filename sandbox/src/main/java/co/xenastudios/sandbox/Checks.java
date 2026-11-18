@@ -29,7 +29,8 @@ final class Checks {
             check("core registry replaces a vanilla command and gives it back", () -> replacesVanilla(plugin)),
             later("warmups finish, and moving, damage or removal cancel them; the damage listener is only there while needed",
                 () -> CoreChecks.warmups(plugin)),
-            check("offline player lookup answers from the server's memory", () -> CoreChecks.profiles(plugin)));
+            check("offline player lookup answers from the server's memory", () -> CoreChecks.profiles(plugin)),
+            check("the Vault hook works on a server without Vault", CoreChecks::vaultWithoutVault));
     }
 
     // ---- The core's CommandRegistry against a real server ----

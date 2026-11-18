@@ -1,56 +1,41 @@
 package co.xenastudios.xplots.rent;
 
+import co.xenastudios.core.hook.VaultEconomy;
 import co.xenastudios.xplots.model.Settings;
-import net.milkbowl.vault.economy.Economy;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
 
-/**
- * Rent through Vault's economy. The economy is looked up when it's used, since economy
- * plugins often register after xPlots starts. Only loaded when Vault is installed.
- */
+/** Rent through Vault's economy, by the core's hook. Without Vault, or an economy plugin, nothing can be taken. */
 final class VaultWallet implements Wallet {
 
-    private Economy economy() {
-        RegisteredServiceProvider<Economy> provider = Bukkit.getServicesManager().getRegistration(Economy.class);
-        return provider == null ? null : provider.getProvider();
+    private final VaultEconomy economy = new VaultEconomy();
+
+    boolean installed() {
+        return economy.installed();
     }
 
     @Override
     public boolean ready() {
-        return economy() != null;
+        return economy.ready();
     }
 
     @Override
     public boolean has(Player player, double amount) {
-        Economy economy = economy();
-        return economy != null && (amount <= 0 || economy.has(player, amount));
+        return economy.has(player, amount);
     }
 
     @Override
     public boolean take(Player player, double amount) {
-        Economy economy = economy();
-        if (economy == null) {
-            return false;
-        }
-        if (amount <= 0) {
-            return true;
-        }
-        return economy.has(player, amount) && economy.withdrawPlayer(player, amount).transactionSuccess();
+        return economy.take(player, amount);
     }
 
     @Override
     public void give(Player player, double amount) {
-        Economy economy = economy();
-        if (economy != null && amount > 0) {
-            economy.depositPlayer(player, amount);
-        }
+        economy.give(player, amount);
     }
 
     @Override
     public String format(double amount) {
-        Economy economy = economy();
-        return economy != null ? economy.format(amount) : Settings.strip(amount);
+        String shown = economy.format(amount);
+        return shown != null ? shown : Settings.strip(amount);
     }
 }

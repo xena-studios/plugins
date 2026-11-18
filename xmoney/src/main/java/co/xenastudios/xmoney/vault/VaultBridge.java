@@ -55,7 +55,9 @@ final class VaultBridge {
         }
         Player online = Bukkit.getPlayer(id);
         String name = online != null ? online.getName() : plugin.players().cachedName(id);
-        return bank.ledger().account(id, name, true);
+        // Players' uuids are version 4 (online mode) or 3 (offline); Citizens' NPCs use version
+        // 2, and stay out of the top list.
+        return bank.ledger().account(id, name, id.version() != 2);
     }
 
     Account payee(OfflinePlayer player) {

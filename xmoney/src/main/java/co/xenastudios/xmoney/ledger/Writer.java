@@ -310,6 +310,7 @@ public final class Writer {
         Statements sql = new Statements(db);
         List<Entry> saved = new ArrayList<>();
         Map<Account, Long> after = new LinkedHashMap<>();
+        java.util.Set<Account> renamed = new java.util.LinkedHashSet<>();
         Outcome checkedOutcome = null;
         try {
             long[] commit = {commitId};
@@ -327,7 +328,10 @@ public final class Writer {
                             after.put(entry.account(), balance);
                         }
                     }
-                    case Op.Name name -> sql.account(name.account());
+                    case Op.Name name -> {
+                        sql.account(name.account());
+                        renamed.add(name.account());
+                    }
                     case Op.Checked checked -> {
                         checkedOutcome = checked(sql, checked, commit, saved, after);
                         if (!checkedOutcome.success()) {
@@ -355,7 +359,9 @@ public final class Writer {
                 }
             }
             if (shared) {
-                for (Account account : after.keySet()) {
+                // The other servers read each changed account again, names included.
+                renamed.addAll(after.keySet());
+                for (Account account : renamed) {
                     feed.publish(db, "account", account.id().toString());
                 }
             }
@@ -485,10 +491,10 @@ public final class Writer {
             accounts.load(id, name == null ? id.toString().substring(0, 8) : name, player, stored);
             return;
         }
-        if (name != null && !name.equals(account.name())) {
-            accounts.rename(account, name);
-        }
         synchronized (account) {
+            if (name != null && !name.equals(account.name())) {
+                accounts.rename(account, name);
+            }
             accounts.set(account, stored + account.pending);
         }
     }

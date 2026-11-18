@@ -25,6 +25,7 @@ import net.milkbowl.vault2.economy.MultiEconomyResponse;
  * another finds nothing and changes nothing. Worlds are ignored. Shared accounts aren't
  * supported in 1.0, and say so. Every call answers from memory and is safe from any thread.
  */
+@SuppressWarnings("deprecation") // getBalance, which VaultUnlocked deprecated for balance() but still calls.
 final class UnlockedEconomy implements Economy {
 
     private final VaultBridge bridge;

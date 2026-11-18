@@ -17,6 +17,7 @@ Needs JDK 21 or newer, plus JDK 25 to boot-test on 26.x servers. The docs need N
 ./gradlew :<plugin>:runServer     # a Paper server with the plugin, in <plugin>/run/
 ./gradlew test -PupdateGolden     # rewrite docs/src/generated/ after changing a default config
 ./gradlew compileJava -Pxena.newestPaper=<paper-api version>   # build against the newest Paper
+./gradlew :<plugin>:api:apiDump   # after a deliberate API change: rewrite <plugin>/api/<plugin>-api.api
 scripts/boot-test.sh --project paper --version 1.21.11 \
   --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/sandbox-0.0.0.jar
 ```

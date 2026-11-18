@@ -7,6 +7,8 @@
 // It depends on nothing but paper-api, so it can't expose the core: the core is
 // relocated into each plugin and isn't part of any API. Rules for what goes in an
 // API are in issue #42.
+import co.xenastudios.gradle.ApiCheck
+import co.xenastudios.gradle.ApiDump
 import com.vanniktech.maven.publish.JavaLibrary
 import com.vanniktech.maven.publish.JavadocJar
 import xyz.jpenilla.resourcefactory.paper.PaperPluginYaml
@@ -39,6 +41,37 @@ tasks.javadoc {
         docTitle = "$pluginName API ${project.version}"
         links("https://docs.oracle.com/en/java/javase/21/docs/api/")
     }
+}
+
+// The API's signatures, committed in <plugin>/api/<plugin>-api.api, as NeoSkript does. `check`
+// (and so `build`) fails when they change, so a change to an API is always deliberate:
+// run ./gradlew :<plugin>:api:apiDump and commit the file. Other plugins compile against a
+// released API, so removing or changing a signature waits for a major release.
+val apiSignatures = layout.projectDirectory.file("$artifact.api")
+val apiClasses = sourceSets.main.map { it.output.classesDirs }
+
+tasks.register<ApiDump>("apiDump") {
+    group = "verification"
+    description = "Writes the API's signatures to $artifact.api."
+    plugin = pluginProject.name
+    classes.from(apiClasses)
+    signatures = apiSignatures
+}
+
+val apiCheck = tasks.register<ApiCheck>("apiCheck") {
+    group = "verification"
+    description = "Checks the API's signatures against $artifact.api."
+    plugin = pluginProject.name
+    classes.from(apiClasses)
+    signatures = apiSignatures
+    marker = layout.buildDirectory.file("apiCheck/ok")
+}
+
+tasks.check {
+    dependsOn(apiCheck)
+    // The check reads class files with code in build-logic, which has tests of its own:
+    // they run with every API's checks.
+    dependsOn(gradle.includedBuild("build-logic").task(":test"))
 }
 
 // The same setup as NeoSkript's neoskript-api, with its sources and javadoc. Signing and

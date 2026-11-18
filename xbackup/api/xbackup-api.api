@@ -1,0 +1,81 @@
+public final record co.xenastudios.xbackup.api.BackupSnapshot
+  public BackupSnapshot(java.lang.String, java.time.Instant, java.time.Duration, java.lang.String, long, long, long, java.time.Duration, boolean, java.util.List) signature (Ljava/lang/String;Ljava/time/Instant;Ljava/time/Duration;Ljava/lang/String;JJJLjava/time/Duration;ZLjava/util/List<Ljava/lang/String;>;)V
+  public long addedBytes()
+  public long bytes()
+  public java.time.Duration duration()
+  public final boolean equals(java.lang.Object)
+  public long files()
+  public final int hashCode()
+  public java.lang.String id()
+  public java.time.Duration pause()
+  public boolean pinned()
+  public java.lang.String reason()
+  public java.lang.String shortId()
+  public java.time.Instant time()
+  public final java.lang.String toString()
+  public java.util.List warnings() signature ()Ljava/util/List<Ljava/lang/String;>;
+
+public final record co.xenastudios.xbackup.api.BackupStatus
+  public BackupStatus(java.lang.String, co.xenastudios.xbackup.api.BackupSnapshot, java.time.Instant, int, long, java.lang.String)
+  public java.lang.String activity()
+  public boolean busy()
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public co.xenastudios.xbackup.api.BackupSnapshot last()
+  public java.time.Instant nextBackup()
+  public java.lang.String problem()
+  public long repositoryBytes()
+  public int snapshots()
+  public final java.lang.String toString()
+
+public interface co.xenastudios.xbackup.api.QuietMoment
+  public abstract void pause() throws java.lang.Exception
+  public abstract void resume()
+
+public interface co.xenastudios.xbackup.api.StorageBackend
+  public abstract void delete(java.lang.String) throws java.io.IOException
+  public abstract java.lang.String describe()
+  public abstract java.io.InputStream get(java.lang.String) throws java.io.IOException
+  public abstract java.util.List list(java.lang.String) throws java.io.IOException signature (Ljava/lang/String;)Ljava/util/List<Lco/xenastudios/xbackup/api/StorageBackend$StoredFile;>;
+  public abstract void put(java.lang.String, java.nio.file.Path) throws java.io.IOException
+
+public final record co.xenastudios.xbackup.api.StorageBackend$StoredFile
+  public StoredFile(java.lang.String, long)
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public java.lang.String name()
+  public long size()
+  public final java.lang.String toString()
+
+public interface co.xenastudios.xbackup.api.XBackupApi
+  public abstract java.util.concurrent.CompletableFuture backupNow(java.lang.String) signature (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture<Lco/xenastudios/xbackup/api/BackupSnapshot;>;
+  public static co.xenastudios.xbackup.api.XBackupApi get()
+  public abstract co.xenastudios.xbackup.api.BackupStatus getStatus()
+  public abstract java.util.List listSnapshots() signature ()Ljava/util/List<Lco/xenastudios/xbackup/api/BackupSnapshot;>;
+  public abstract void registerBackend(org.bukkit.plugin.Plugin, java.lang.String, co.xenastudios.xbackup.api.StorageBackend)
+  public abstract void registerQuietMoment(org.bukkit.plugin.Plugin, co.xenastudios.xbackup.api.QuietMoment)
+  public abstract void registerSource(org.bukkit.plugin.Plugin, java.nio.file.Path, java.util.List) signature (Lorg/bukkit/plugin/Plugin;Ljava/nio/file/Path;Ljava/util/List<Ljava/lang/String;>;)V
+  public abstract void unregisterBackend(java.lang.String)
+  public abstract void unregisterQuietMoment(org.bukkit.plugin.Plugin)
+  public abstract void unregisterSources(org.bukkit.plugin.Plugin)
+
+public final class co.xenastudios.xbackup.api.event.BackupFailedEvent extends org.bukkit.event.Event
+  public BackupFailedEvent(java.lang.String, java.lang.String)
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public java.lang.String problem()
+  public java.lang.String reason()
+
+public final class co.xenastudios.xbackup.api.event.BackupFinishedEvent extends org.bukkit.event.Event
+  public BackupFinishedEvent(co.xenastudios.xbackup.api.BackupSnapshot)
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public co.xenastudios.xbackup.api.BackupSnapshot snapshot()
+
+public final class co.xenastudios.xbackup.api.event.BackupStartEvent extends org.bukkit.event.Event implements org.bukkit.event.Cancellable
+  public BackupStartEvent(java.lang.String)
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public boolean isCancelled()
+  public java.lang.String reason()
+  public void setCancelled(boolean)

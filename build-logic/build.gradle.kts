@@ -8,6 +8,16 @@ dependencies {
     implementation(plugin(libs.plugins.run.paper))
     implementation(plugin(libs.plugins.minotaur))
     implementation(plugin(libs.plugins.maven.publish))
+    // Reads each API's class files for its signature check.
+    implementation(libs.asm.tree)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.launcher)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 // Lets a precompiled script plugin apply a plugin from the version catalog.

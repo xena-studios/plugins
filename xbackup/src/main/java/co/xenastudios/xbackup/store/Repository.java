@@ -248,6 +248,49 @@ public final class Repository implements AutoCloseable {
         }
     }
 
+    /**
+     * Drops the index's entries for packs missing from the backend, so a backup stores those
+     * blobs again (where the files still have them) instead of pointing at nothing. Hold the
+     * exclusive lock.
+     *
+     * @return the missing packs
+     */
+    public synchronized List<Hash> dropMissingPacks() throws IOException {
+        Set<Hash> present = new HashSet<>();
+        for (Backend.FileInfo file : backend.list("data/")) {
+            Hash pack = Pack.idOf(file.name());
+            if (pack != null) {
+                present.add(pack);
+            }
+        }
+        List<Hash> missing = new ArrayList<>();
+        for (Hash pack : index().packs()) {
+            if (!present.contains(pack)) {
+                missing.add(pack);
+            }
+        }
+        if (missing.isEmpty()) {
+            return missing;
+        }
+        // Every entry of every index file, not just each blob's first place: a blob in a
+        // missing pack may also be in one that's there.
+        Map<Hash, List<PackEntry>> kept = new LinkedHashMap<>();
+        for (Backend.FileInfo file : backend.list("index/")) {
+            String hex = file.name().substring("index/".length());
+            if (!Hash.isHex(hex)) {
+                continue;
+            }
+            for (Map.Entry<Hash, List<PackEntry>> pack : Index.decode(readVerified(file.name(), Hash.parse(hex)),
+                file.name()).entrySet()) {
+                if (present.contains(pack.getKey())) {
+                    kept.computeIfAbsent(pack.getKey(), key -> new ArrayList<>()).addAll(pack.getValue());
+                }
+            }
+        }
+        rewriteIndex(kept);
+        return missing;
+    }
+
     // ---------------------------------------------------------------- reading
 
     /** Reads a whole repository file and checks its bytes hash to its name. */

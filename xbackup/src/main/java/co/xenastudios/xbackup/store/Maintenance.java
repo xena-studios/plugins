@@ -440,13 +440,16 @@ public final class Maintenance {
                 }
                 case FILE, SQLITE -> {
                     long total = 0;
+                    // The size is checked whenever this file's own pieces are all found, whatever
+                    // else this snapshot has wrong.
+                    int before = problems.size();
                     for (Hash blob : node.blobs()) {
                         Index.Location location = checkBlob(blob, node.name(), index, missingPacks, problems);
                         if (location != null) {
                             total += location.entry().rawLength();
                         }
                     }
-                    if (total != node.contentSize() && problems.isEmpty()) {
+                    if (total != node.contentSize() && problems.size() == before) {
                         problems.add(node.name() + " adds up to " + total + " bytes, not " + node.contentSize());
                     }
                 }

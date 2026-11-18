@@ -60,7 +60,7 @@ public final class LocalBackend implements Backend {
             source = copy;
         }
         sync(source);
-        Files.createDirectories(target.getParent());
+        makeFolders(target.getParent());
         move(source, target);
         syncDirectory(target.getParent());
     }
@@ -79,9 +79,25 @@ public final class LocalBackend implements Backend {
             throw e;
         }
         Path target = resolve(name);
-        Files.createDirectories(target.getParent());
+        makeFolders(target.getParent());
         move(temp, target);
         syncDirectory(target.getParent());
+    }
+
+    // Makes the folders a file goes in, and flushes each new one's entry in its parent, so
+    // after a power cut a new data/ab/ is there along with the file renamed into it.
+    private void makeFolders(Path folder) throws IOException {
+        if (Files.isDirectory(folder)) {
+            return;
+        }
+        List<Path> made = new ArrayList<>();
+        for (Path at = folder; at != null && !Files.isDirectory(at); at = at.getParent()) {
+            made.add(at);
+        }
+        Files.createDirectories(folder);
+        for (Path at : made) {
+            syncDirectory(at.getParent());
+        }
     }
 
     private static void move(Path source, Path target) throws IOException {

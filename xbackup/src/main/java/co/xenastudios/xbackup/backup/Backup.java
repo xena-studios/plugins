@@ -164,6 +164,14 @@ public final class Backup {
     public static Result run(Repository repository, Plan plan, Pause pause, Databases databases,
                              BooleanSupplier cancelled, Consumer<String> progress) throws Exception {
         Instant start = Instant.now();
+        List<String> lost = new ArrayList<>();
+        List<Hash> missing = repository.dropMissingPacks();
+        if (!missing.isEmpty()) {
+            lost.add(missing.size() + " pack" + (missing.size() == 1 ? " the index listed was" : "s the index listed were")
+                + " missing (" + missing.get(0).shortHex() + (missing.size() > 1 ? ", ..." : "") + "). This backup stored"
+                + " their data again where the files still have it; older backups that used them are damaged."
+                + " /backup verify full says which.");
+        }
         List<String> problems = new ArrayList<>();
         List<Snapshot> snapshots = repository.snapshots(problems);
         Snapshot parent = snapshots.isEmpty() ? null : snapshots.get(snapshots.size() - 1);
@@ -242,7 +250,8 @@ public final class Backup {
                         + report.problems().get(0) + " The backup was not saved.");
                 }
             }
-            List<String> warnings = new ArrayList<>(second.warnings);
+            List<String> warnings = new ArrayList<>(lost);
+            warnings.addAll(second.warnings);
             warnings.addAll(quietWarnings);
             warnings.addAll(rest.warnings);
             Snapshot snapshot = session.commit(new Snapshot(null, start, Instant.now(), top.ref(),

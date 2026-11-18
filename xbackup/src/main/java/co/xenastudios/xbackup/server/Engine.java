@@ -364,7 +364,7 @@ public final class Engine {
             }
             for (ApiSource source : entry.getValue()) {
                 extra.add(source.path());
-                excludes.addAll(source.excludes());
+                excludes.addAll(scoped(Sources.relative(root, source.path()), source.excludes()));
             }
         }
         Sources.Resolved resolved = Sources.resolve(root, now.sources(), worldFolders,
@@ -409,6 +409,29 @@ public final class Engine {
         return new Backup.Plan(root, resolved.worlds(), resolved.others(), excludes, skip, quiet, reason,
             plugin.getName() + " " + plugin.getPluginMeta().getVersion(), temp(), new Throttle(now.readLimit()),
             new Session.Options(now.level(), 16L << 20, Math.max(now.minFree(), 64L << 20)));
+    }
+
+    /**
+     * A plugin's excludes for its own source, made to apply only inside it: a pattern that
+     * starts with the source's path stays as it is, and any other is read from the source,
+     * so {@code **}{@code /*.log} leaves out that plugin's logs, never every log on the server.
+     */
+    static List<String> scoped(String source, List<String> excludes) {
+        List<String> scoped = new ArrayList<>();
+        if (source == null || source.isEmpty()) {
+            return scoped;
+        }
+        for (String pattern : excludes) {
+            String clean = pattern.strip().replace('\\', '/');
+            while (clean.startsWith("/")) {
+                clean = clean.substring(1);
+            }
+            if (clean.isEmpty()) {
+                continue;
+            }
+            scoped.add(clean.equals(source) || clean.startsWith(source + "/") ? clean : source + "/" + clean);
+        }
+        return scoped;
     }
 
     // Never start a backup that can't finish: make room first if the disk is short.
@@ -623,7 +646,15 @@ public final class Engine {
      * Writes the paths from a snapshot into the restore folder, checked, and schedules them to
      * be swapped in on the next start, before any world loads.
      */
-    public CompletableFuture<Restore.Written> stage(Snapshot snapshot, List<String> paths) {
+    /**
+     * A staged restore.
+     *
+     * @param jars plugin jars in it: Paper has loaded every plugin's jar before xBackup can swap
+     *     files in, so those take effect only from the start after
+     */
+    public record Staged(Restore.Written written, List<String> jars) {}
+
+    public CompletableFuture<Staged> stage(Snapshot snapshot, List<String> paths) {
         return submit("staging a restore", () -> {
             if (Swap.pending(restoreFolder()) != null) {
                 throw new IOException("A restore is already waiting for the next start. /backup restore cancel first.");
@@ -653,7 +684,19 @@ public final class Engine {
                     entries.add(new Swap.Entry(item.path(), item.node().kind() == co.xenastudios.xbackup.store.Tree.Kind.SQLITE));
                 }
                 Swap.schedule(restoreFolder(), snapshot.id().hex(), entries);
-                return written;
+                List<String> jars = new ArrayList<>();
+                for (Restore.Item item : items) {
+                    if (item.path().endsWith(".jar") && item.node().kind() != co.xenastudios.xbackup.store.Tree.Kind.DIR) {
+                        jars.add(item.path());
+                    } else if (item.node().kind() == co.xenastudios.xbackup.store.Tree.Kind.DIR) {
+                        for (co.xenastudios.xbackup.store.Tree.Node child : repo.tree(item.node().ref()).nodes()) {
+                            if (child.name().endsWith(".jar") && child.kind() != co.xenastudios.xbackup.store.Tree.Kind.DIR) {
+                                jars.add(item.path() + "/" + child.name());
+                            }
+                        }
+                    }
+                }
+                return new Staged(written, jars);
             }
         });
     }

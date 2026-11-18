@@ -56,11 +56,17 @@ public final class Index {
 
     /** Decodes an index file. */
     static Map<Hash, List<PackEntry>> decode(byte[] file, String name) throws CorruptException {
+        // Hashes don't compress, so a real index inflates to about twice its size. A hostile
+        // remote's "index" that inflates far past that is refused before it eats the memory.
+        int limit = (int) Math.min(1 << 30, Math.max(16L << 20, (long) file.length * 32));
         byte[] raw;
         try (InflaterInputStream in = new InflaterInputStream(new ByteArrayInputStream(file))) {
-            raw = in.readNBytes(1 << 30);
+            raw = in.readNBytes(limit + 1);
         } catch (IOException e) {
             throw new CorruptException(name + " is damaged: " + e.getMessage(), e);
+        }
+        if (raw.length > limit) {
+            throw new CorruptException(name + " is damaged: it inflates to more than " + Sizes.format(limit));
         }
         Codec.In in = new Codec.In(raw, name);
         if (!Arrays.equals(in.bytes(4), MAGIC)) {

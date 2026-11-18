@@ -289,9 +289,17 @@ public final class BackupCommand {
             return;
         }
         say(sender, "<gray>Staging " + escape(what) + " from backup " + id + "...</gray>");
-        reply(sender, engine.stage(snapshot, paths), written -> say(sender, "<success>Staged</success> " + written.files()
-            + " files (" + Sizes.format(written.bytes()) + "), each checked against its backup. <highlight>Restart the"
-            + " server</highlight> to put them in place. <highlight>/backup restore cancel</highlight> calls it off."));
+        reply(sender, engine.stage(snapshot, paths), staged -> {
+            say(sender, "<success>Staged</success> " + staged.written().files() + " files ("
+                + Sizes.format(staged.written().bytes()) + "), each checked against its backup. <highlight>Restart the"
+                + " server</highlight> to put them in place. <highlight>/backup restore cancel</highlight> calls it off.");
+            if (!staged.jars().isEmpty()) {
+                say(sender, "<error>" + staged.jars().size() + " plugin jar" + (staged.jars().size() == 1 ? " is" : "s are")
+                    + " in it (" + escape(staged.jars().get(0)) + (staged.jars().size() > 1 ? ", ..." : "") + ").</error>"
+                    + " The server loads plugin jars before xBackup puts files back, so these take effect only from the"
+                    + " start after. To restore jars at once, stop the server and use the command-line restore.");
+            }
+        });
     }
 
     private static void prune(Engine engine, Invocation invocation) {

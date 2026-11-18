@@ -99,8 +99,10 @@ class BackupTest {
             backup(repository, Backup.Pause.NONE);
             Path file = server().resolve("world/dimensions/minecraft/overworld/region/r.1.0.mca");
             Fixtures.Region region = readRegion(file);
+            // Stamped in the past, as the server stamps them: a chunk stamped at or after the
+            // second the last read started is read again, to be sure.
             Fixtures.Region.rewrite(file, Set.copyOf(region.payloads.keySet().stream().limit(3).toList()), random,
-                1_800_000_000);
+                1_750_000_000);
             Backup.Result second = backup(repository, Backup.Pause.NONE);
             assertEquals(3, second.chunksRead());
             // Three chunks of ~5 KB, the region's layout and a few trees: far less than a region.
@@ -352,6 +354,67 @@ class BackupTest {
             assertEquals(2, resumed.get(), "resumed once its pause returned");
         } finally {
             Backup.quietTimeoutMillis = timeout;
+        }
+    }
+
+    @Test
+    void aChunkRewrittenInTheSameSecondIsReadAgain() throws Exception {
+        Fixtures.server(server(), new Random(27));
+        Path file = server().resolve("world/dimensions/minecraft/overworld/region/r.0.0.mca");
+        try (Repository repository = repository()) {
+            Snapshot first = backup(repository, Backup.Pause.NONE).snapshot();
+            // The server writes a chunk again within the second that backup started, back into
+            // the same sectors (it alternates slots), so its place and its timestamp match.
+            int chunk = readRegion(file).payloads.firstKey();
+            byte[] bytes = Files.readAllBytes(file);
+            java.nio.ByteBuffer header = java.nio.ByteBuffer.wrap(bytes);
+            int location = header.getInt(chunk * 4);
+            int start = (location >>> 8) * 4096;
+            int length = header.getInt(start);
+            for (int i = start + 5; i < start + 4 + length; i++) {
+                bytes[i] ^= 0x5A;
+            }
+            header.putInt(4096 + chunk * 4, (int) first.time().getEpochSecond());
+            Files.write(file, bytes);
+            Backup.Result second = backup(repository, Backup.Pause.NONE);
+            assertTrue(second.chunksRead() >= 1, "the chunk wasn't read again");
+            assertSame(Fixtures.contents(server(), COMPARED), restore(repository, second.snapshot(), "restored"));
+        }
+    }
+
+    @Test
+    void aMissingPackIsStoredAgainNotPointedAt() throws Exception {
+        Fixtures.server(server(), new Random(28));
+        try (Repository repository = repository()) {
+            backup(repository, Backup.Pause.NONE);
+            // A pack disappears (a bad disk, a careless clean-up); the index still lists it.
+            Path pack;
+            try (var walk = Files.walk(dir.resolve("repo/data"))) {
+                pack = walk.filter(Files::isRegularFile).max(java.util.Comparator.comparingLong(p -> p.toFile().length()))
+                    .orElseThrow();
+            }
+            Files.delete(pack);
+            repository.release();
+            Snapshot second = backup(repository, Backup.Pause.NONE).snapshot();
+            assertTrue(second.warnings().stream().anyMatch(w -> w.contains("missing")), second.warnings().toString());
+            assertSame(Fixtures.contents(server(), COMPARED), restore(repository, second, "restored"));
+        }
+    }
+
+    @Test
+    void anIndexThatInflatesHugelyIsRefused() throws Exception {
+        java.io.ByteArrayOutputStream bomb = new java.io.ByteArrayOutputStream();
+        try (java.util.zip.DeflaterOutputStream out = new java.util.zip.DeflaterOutputStream(bomb)) {
+            out.write(new byte[64 << 20]);
+        }
+        assertTrue(bomb.size() < 1 << 20);
+        Files.createDirectories(dir.resolve("repo/index"));
+        try (Repository repository = repository()) {
+            byte[] bytes = bomb.toByteArray();
+            Files.write(dir.resolve("repo/index").resolve(co.xenastudios.xbackup.store.Hash.sha256(bytes).hex()), bytes);
+            java.io.IOException refused = org.junit.jupiter.api.Assertions.assertThrows(java.io.IOException.class,
+                repository::index);
+            assertTrue(refused.getMessage().contains("inflates"), refused.getMessage());
         }
     }
 

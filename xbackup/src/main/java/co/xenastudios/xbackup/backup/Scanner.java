@@ -379,10 +379,14 @@ final class Scanner {
         Reference.Previous previous = reference.find(path);
         RegionLayout before = previous != null && previous.node().kind() == Tree.Kind.REGION
             ? reference.region(previous.node().ref()) : null;
+        // Chunk timestamps are whole seconds, and the server alternates a chunk between two
+        // sector slots, so a chunk written again in the same second as the earlier read can
+        // have the same place and time: only chunks stamped before that second are reused.
+        long readAtSecond = previous == null ? 0 : Math.floorDiv(previous.readAt(), 1000);
         for (int attempt = 0; attempt < 3; attempt++) {
             RegionLayout layout;
             try (FileChannel channel = FileChannel.open(file, StandardOpenOption.READ)) {
-                layout = readRegion(channel, path, before);
+                layout = readRegion(channel, path, before, readAtSecond);
             } catch (NoSuchFileException e) {
                 return null;
             } catch (AccessDeniedException e) {
@@ -437,7 +441,8 @@ final class Scanner {
      * file to keep whole, or null in strict mode if a chunk moved while it was read. In
      * loose mode a chunk that moved is left out (as if absent), for the strict pass to read.
      */
-    private RegionLayout readRegion(FileChannel channel, String path, RegionLayout before) throws IOException {
+    private RegionLayout readRegion(FileChannel channel, String path, RegionLayout before, long readAtSecond)
+        throws IOException {
         long fileLength = channel.size();
         if (fileLength < RegionLayout.HEADER) {
             return UNREADABLE;
@@ -455,6 +460,7 @@ final class Scanner {
                 continue;
             }
             if (before != null && before.location(i) == location[i] && before.timestamp(i) == timestamp[i]
+                && (timestamp[i] & 0xFFFFFFFFL) < readAtSecond
                 && session.has(before.blob(i))) {
                 blob[i] = before.blob(i);
                 recordLength[i] = before.recordLength(i);

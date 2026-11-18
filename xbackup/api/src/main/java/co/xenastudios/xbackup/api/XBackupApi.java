@@ -68,7 +68,9 @@ public interface XBackupApi {
      *
      * @param plugin the plugin that owns it
      * @param path a path inside the server folder
-     * @param excludes glob patterns, relative to the server folder, to leave out
+     * @param excludes glob patterns to leave out, which only ever apply inside this source: one
+     *     that starts with the source's path relative to the server folder is used as it is,
+     *     any other is read from the source itself ({@code "cache/**"}, {@code "**}{@code /*.tmp"})
      * @since 1.0.0
      */
     void registerSource(Plugin plugin, Path path, List<String> excludes);

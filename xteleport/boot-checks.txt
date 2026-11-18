@@ -1,0 +1,28 @@
+# xTeleport on a real server, from the console, on Paper and Folia. The database opens
+# on its own thread with the SQLite driver the server ships.
+logged: Loaded 0 warps from the SQLite database xteleport.db.
+run: xteleport info
+expect: xTeleport 1.0.0 on
+
+# Real /rtp searches: candidate chunks load in the background and are checked on their
+# own thread (a region's on Folia). Five searches, so one unlucky search can't fail it.
+run: xteleport rtpcheck world 5
+expect: Found a safe spot
+run: xteleport rtpcheck world_nether 3
+expect: Found a safe spot
+run: xteleport rtpcheck nowhere
+expect: can't send anyone to nowhere
+
+# Lists and the import's dry run work without players.
+run: warps
+expect: There are no warps yet.
+run: homes
+expect: Only players can use this command.
+run: xteleport import essentials
+expect: No EssentialsX data found
+
+# Reloading keeps everything running.
+run: xteleport reload
+expect: Reloaded xTeleport in
+run: xteleport rtpcheck world
+expect: Found a safe spot

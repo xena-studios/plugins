@@ -25,8 +25,8 @@ import org.bukkit.plugin.Plugin;
  * marks with a {@value #MARKER} file. A world it didn't make, such as the server's main
  * world given xLimbo's generator in bukkit.yml, is used as it is and never touched.
  *
- * <p>Every method runs on the main thread, except {@link #spawn()} and {@link #spot()},
- * which any thread may call.
+ * <p>Every method runs on the main thread, except {@link #spawn()}, {@link #world()},
+ * {@link #isLimbo(World)} and {@link #floorY()}, which any thread may call.
  */
 public final class LimboWorld {
 
@@ -66,11 +66,6 @@ public final class LimboWorld {
      */
     public void adoptUnmarked(boolean adopt) {
         this.adoptUnmarked = adopt;
-    }
-
-    /** Where arrivals go now, or null while there's no world. Safe from any thread. */
-    public Spot spot() {
-        return spot;
     }
 
     /** The world, or null before it's made. */

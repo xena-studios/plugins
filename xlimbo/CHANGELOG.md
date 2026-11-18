@@ -1,5 +1,17 @@
 # xLimbo changelog
 
+## 2.0.3
+
+Replace the jar and restart. Your config is kept as it is.
+
+### Fixed
+
+- Turning on `player.set-creative` or `player.enable-flight` and running `/xlimbo reload` now applies to players already in limbo. Before, it applied only to players arriving after.
+
+### Changed
+
+- With only the queue's action bar on, xLimbo no longer checks every player each time it repeats while nobody is waiting.
+
 ## 2.0.2
 
 Replace the jar and restart. Your config is kept as it is.

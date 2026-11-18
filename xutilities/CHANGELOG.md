@@ -1,5 +1,13 @@
 # xUtilities changelog
 
+## 2.0.2
+
+Replace the jar and restart. Your config is kept as it is.
+
+### Fixed
+
+- A link command named `xutilities` or `xu` is skipped with a warning, like any other clash. Before, it replaced `/xutilities` itself, `reload` with it, so only a restart brought it back.
+
 ## 2.0.1
 
 Replace the jar and restart. Your config is kept as it is.

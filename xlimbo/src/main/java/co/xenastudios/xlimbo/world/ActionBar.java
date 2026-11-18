@@ -47,6 +47,10 @@ public final class ActionBar implements Module {
         // The line template is parsed once; each player's number is swapped in after.
         Component line = positions.isEmpty() ? null : config.queue().actionBar().chat(
             Placeholders.text("position", POSITION), Placeholders.text("total", positions.size()));
+        if (hint == null && line == null) {
+            // Only the queue line is on and nobody's waiting: nothing to show anyone.
+            return;
+        }
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!xlimbo.limbo().isLimbo(player.getWorld())) {
                 continue;

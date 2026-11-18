@@ -159,9 +159,25 @@ class NetworkFailureTest {
         assertEquals(List.of("START 1000000"), Bench.rows(bench.database, steve.id()));
     }
 
+    /**
+     * How many entries {@code heard} holds once it has at least {@code expected}, or after a second. The
+     * writer answers the caller before it tells other plugins, so a test that reads its answer
+     * can get there first.
+     */
+    private static int heard(List<Entry> heard, int expected) throws InterruptedException {
+        long until = System.currentTimeMillis() + 1_000;
+        while (heard.size() < expected && System.currentTimeMillis() < until) {
+            Thread.sleep(5);
+        }
+        // A moment more, so one heard twice would show.
+        Thread.sleep(20);
+        return heard.size();
+    }
+
     @Test
     void aCommitWhoseAnswerWasLostIsReportedAsDoneAndNotAppliedTwice() throws Exception {
-        List<Entry> heard = new ArrayList<>();
+        // Filled on the writer's thread, after it answers the caller: read with heard(..).
+        List<Entry> heard = new java.util.concurrent.CopyOnWriteArrayList<>();
         bench.ledger.events(new Events() {
             @Override
             public void saved(List<Entry> entries) {
@@ -175,7 +191,7 @@ class NetworkFailureTest {
         assertEquals(95 * Money.ONE, outcome.balance());
         assertEquals(95 * Money.ONE, stored());
         assertEquals(List.of("START 1000000", "PLUGIN -50000"), Bench.rows(bench.database, steve.id()), "applied once");
-        assertEquals(1, heard.size(), "other plugins hear about it once");
+        assertEquals(1, heard(heard, 1), "other plugins hear about it once");
 
         // A set whose answer is lost reports how much it moved, not 0.
         bench.faults.lostCommits.set(1);
@@ -183,7 +199,7 @@ class NetworkFailureTest {
         assertEquals(Status.SUCCESS, set.status());
         assertEquals(75 * Money.ONE, set.amount());
         assertEquals(20 * Money.ONE, steve.balance());
-        assertEquals(2, heard.size());
+        assertEquals(2, heard(heard, 2));
         Bench.assertLedgerMatchesBalances(bench.database);
     }
 
@@ -219,6 +235,7 @@ class NetworkFailureTest {
         release.countDown();
         assertEquals(count, imported.get(60, TimeUnit.SECONDS));
         assertEquals(Status.SUCCESS, paid.get(10, TimeUnit.SECONDS).status());
+        assertEquals(count + 1, heard(heard, count + 1));
         int payment = 0;
         for (int i = 0; i < heard.size(); i++) {
             if (heard.get(i).cause().kind() != TransactionKind.IMPORT) {
@@ -227,7 +244,6 @@ class NetworkFailureTest {
         }
         assertTrue(payment > 0 && payment <= Writer.IMPORT_CHUNK,
             "the payment went in after the first chunk, not after the whole import: after " + payment);
-        assertEquals(count + 1, heard.size());
         assertImported(targets);
     }
 

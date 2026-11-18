@@ -5,7 +5,7 @@
 xBans is a free, open-source punishment plugin with LiteBans' commands, flags and durations: bans, temporary and IP bans, mutes, warnings and kicks, with history, alts, templates and staff limits.
 
 - **Your staff already know it.** `/ban Steve -s 7d server:survival Hacking`, `/tempmute Alex 1d2h`, `/unban #123`, `/history`, `/alts`.
-- **Bans that hold.** What's in force is in memory before anyone can join, so the join and chat checks never ask the database. Mutes cover chat, the listed commands by any alias, signs and books.
+- **Bans that hold.** What's in force is in memory before anyone can join, so the join and chat checks never ask the database. Mutes cover chat (on the older chat events too), the listed commands by any alias, signs, books and anvil renames.
 - **Nothing is ever deleted.** An unban is a record beside the ban; only `/prunehistory` deletes.
 - **Networks without a proxy plugin.** Servers sharing a MySQL database share bans within seconds.
 - **IPs can be hashed**, so alts and IP bans work with no list of addresses to leak.

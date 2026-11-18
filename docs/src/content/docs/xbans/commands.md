@@ -64,11 +64,19 @@ A number and a unit, units added up in any order: `30m`, `1d2h`, `1.5h`, `2w`, `
 
 ### Templates
 
-`/ban Steve hacking` follows the `hacking` template: its reason, and a duration that climbs each time the same player gets it, 7 days, then 30, then permanent. A duration typed with a template (`/ban Steve 3d hacking`) is used instead of the ladder's. Templates are set in the [configuration](/xbans/configuration/#templates). Tab completion lists the ones you may use.
+`/ban Steve hacking` follows the `hacking` template: its reason, and a duration that climbs each time the same player gets it, 7 days, then 30, then permanent. A duration typed with a template (`/ban Steve 3d hacking`) is used instead of the ladder's. Each template needs `xbans.template.<name>` (operators have it), and its durations are held to the sender's staff limits. Templates are set in the [configuration](/xbans/configuration/#templates). Tab completion lists the ones you may use.
 
 ### Replacing a punishment
 
-A new ban or mute on someone already banned or muted on the same server replaces the old one if it lasts at least as long; a shorter one is refused, so a helper can't turn a permanent ban into a day. Unban first to shorten one.
+A new ban or mute on someone already banned or muted on the same server replaces the old one if it lasts at least as long and reaches everyone the old one did; a shorter one is refused, so a helper can't turn a permanent ban into a day. Unban first to shorten one.
+
+An account ban never replaces an IP ban, since that would let the other accounts on the IP back in. If the IP ban lasts at least as long, the account ban is refused; if not, both stay in force. An IP ban reaches the account too, so it replaces an account ban it outlasts. Mutes work the same way.
+
+### IP bans and mutes
+
+`/ipban Steve` bans the IP Steve last joined from, and every account on it. `/ipban 203.0.113.9` bans that address. An IPv6 address is banned on its own (a /128), not its network. The broadcast and ban lists show only the first half of the address (`203.0.x.x`), or the start of its hash.
+
+Staff limits apply to everyone on the IP: if any account seen on it, or online on it now, is exempt or has a weight as high as yours, the IP ban is refused.
 
 ## Looking things up
 
@@ -98,9 +106,14 @@ A new ban or mute on someone already banned or muted on the same server replaces
 | --- | --- | --- |
 | `xbans.weight.<n>` | A rank's weight. A player with a weight can only be punished by someone with a higher one. Players without one can be punished by any staff. | nobody |
 | `xbans.exempt` | Can't be punished by staff at all (the console still can). | nobody |
-| `xbans.limit.<group>` | The group's longest ban and mute, from `staff-limits.groups`. | nobody |
+| `xbans.limit.<group>` | The group's longest ban and mute, from `staff-limits.groups`. Template durations count too. | nobody |
+| `xbans.limit.bypass-templates` | A template's own durations may go past the group's limit. | nobody |
+| `xbans.template.<name>` | May use that template. | op |
+| `xbans.unban.override` | May lift any punishment, whoever gave it (see below). | op |
 
-Operators don't get these by default, so an operator isn't held to a helper's limit, and isn't exempt. A player's weight and exemption are recorded when they join, so they count while they're offline too.
+Operators don't get the first four by default, so an operator isn't held to a helper's limit, and isn't exempt. A player's weight and exemption are recorded when they join, so they count while they're offline too.
+
+**Lifting punishments.** The weight of whoever gives a punishment is recorded with it. With `staff-limits.weights` on, `/unban`, `/unmute` and `/unwarn` lift only punishments you gave yourself, or that were given by someone whose weight was no higher than yours, like LiteBans' `litebans.unban.own` but by weight. The console's weight is the highest, so a ban from the console (or from a plugin, or from a warnings action) needs `xbans.unban.override`. Imported punishments have no weight, so anyone with the command can lift them.
 
 ```
 /lp group helper permission set xbans.weight.10 true

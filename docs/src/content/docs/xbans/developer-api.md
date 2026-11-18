@@ -85,14 +85,14 @@ xbans.punish(PunishRequest.of(PunishmentType.BAN, cheater.getUniqueId(), "Kill a
     .thenAccept(ban -> getLogger().info("Banned as #" + ban.id()));
 ```
 
-A punishment made through the API is recorded, broadcast and enforced like one made by a staff command: the player is kicked or told, and network mode tells the other servers. Staff limits (weights and caps) don't apply; your plugin decides who may punish. The future fails with an `IllegalStateException` saying why if it can't be made (for example, a shorter ban on someone already banned), or a `CancellationException` if a `PunishEvent` listener cancelled it.
+A punishment made through the API is recorded, broadcast and enforced like one made by a staff command: the player is kicked or told, and network mode tells the other servers. None of the staff rules apply: a player with `xbans.exempt` or a weight can be punished, for any length, so your plugin decides who may punish whom. The future fails with an `IllegalStateException` saying why if it can't be made (for example, a shorter ban on someone already banned), or a `CancellationException` if a `PunishEvent` listener cancelled it.
 
 ```java
 xbans.revoke(player, PunishmentType.MUTE, null, "Discord", "Appeal accepted")
     .thenAccept(revoked -> revoked.ifPresent(mute -> getLogger().info("Unmuted #" + mute.id())));
 ```
 
-`revoke` lifts the player's ban or mute (on every server's scope), or their newest warning. It's empty if there was nothing to revoke.
+`revoke` lifts the player's ban or mute (on every server's scope), or their newest warning, whoever gave it. It's empty if there was nothing to revoke.
 
 ## History and alts
 
@@ -112,7 +112,7 @@ The API never shows IP addresses.
 
 | Event | When | Thread |
 | --- | --- | --- |
-| `PunishEvent` | A punishment is about to be stored. Cancel it to stop it. Not fired for punishments made on another server. | xBans' database thread (async) |
+| `PunishEvent` | A punishment is about to be stored. Cancel it to stop it. Not fired for punishments made on another server. | Off the server's threads (async), before the database is touched: a listener may call the API and wait for it |
 | `PunishedEvent` | A punishment was stored. `isFromOtherServer()` for one made elsewhere on the network. | xBans' database thread, or the network thread (async) |
 | `RevokedEvent` | A ban, mute or warning was revoked. | The same (async) |
 

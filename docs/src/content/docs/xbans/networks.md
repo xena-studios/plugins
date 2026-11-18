@@ -40,7 +40,7 @@ On every backend server:
      server-name: "survival"
    ```
 
-4. If IPs are hashed (`ips.hash: true`), copy `plugins/xBans/ip-salt.txt` from one server to all the others, so they hash the same address the same way. A server with a different salt says so in its console.
+4. If IPs are hashed (`ips.hash: true`), copy `plugins/xBans/ip-salt.txt` from one server to all the others, so they hash the same address the same way. A server without it, or with a different one, says so in its console and lets nobody join until it has the right one.
 
 Then `/xbans reload` on each.
 
@@ -49,6 +49,7 @@ Then `/xbans reload` on each.
 - **A ban on one server kicks the player from whichever server they're on**, and every server's ban list has it within `check-every` seconds. Unbans, mutes and unmutes travel the same way. Broadcasts are shown on every server.
 - **Every server reads the same history**, so `/history`, `/alts` and `/checkban` show the same everywhere.
 - **Warning actions run once**, on the server where the warning was given.
+- **A server that misses a change catches up.** If a server can't read a punishment another made (MySQL dropped for a moment), it tries again, then reads every ban and mute in force afresh, and kicks anyone it finds banned. `/unban` reads the database, not the server's memory, so it lifts a ban even on a server that missed it.
 
 Network mode adds one check every `check-every` seconds, off the server's threads: a single quick query for anything newer than the last change it saw. It's the plugin's only repeating task, and it's off unless `network.enabled` is on with a MySQL database.
 

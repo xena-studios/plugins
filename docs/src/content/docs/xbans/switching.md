@@ -20,7 +20,9 @@ Every import works the same way:
 
 Importing twice adds nothing: each row remembers where it came from. Bans and mutes in force are enforced as soon as they're in, and in [network mode](/xbans/networks/) the other servers take them in too, without a broadcast for each.
 
-Imported punishments get the default scope (`scopes.default-scope`), unless the source had its own server scope.
+Punishments from the server's lists and EssentialsX get the default scope (`scopes.default-scope`). LiteBans' keep theirs: a global LiteBans ban (`*`) stays global, whatever the default scope.
+
+With `ips.enabled: false`, no IP is imported, and a ban of an IP alone is skipped. Players already online who are banned by the import are kicked.
 
 ## From LiteBans
 
@@ -43,7 +45,8 @@ If LiteBans asks for a user name and password for the H2 file, they're in its `h
 - **Templates** are in xBans' `config.yml`, under `templates`, with the same idea: a ladder that climbs each time. LiteBans' `templates.yml` isn't imported, so set up the ones you use; imported punishments don't count toward a template's ladder.
 - **Permissions** start with `xbans.` instead of `litebans.`: `xbans.ban`, `xbans.mute`, `xbans.history`. See [Commands](/xbans/commands/).
 - **Weights** are permissions (`xbans.weight.<n>`), not group weights read through Vault.
-- **Not in 1.0:** wildcard IP bans (`192.168.1.*`), `/staffrollback`, `/lockdown`, `--modify`, GeoIP, the web interface and a proxy plugin.
+- **Unbanning** follows weights: staff lift their own punishments and those given by staff with a weight no higher than theirs, and `xbans.unban.override` lifts any. See [Commands](/xbans/commands/#staff-limits).
+- **Not in 1.0:** wildcard IP bans (`192.168.1.*`; the import counts them and leaves them out, since they'd match nobody), `/staffrollback`, `/lockdown`, `--modify`, GeoIP, the web interface and a proxy plugin.
 
 ## From vanilla or EssentialsX
 

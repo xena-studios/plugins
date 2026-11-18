@@ -12,7 +12,7 @@ A punishment plugin for Paper and Folia, free and open source: bans, temporary b
 
 - **Your staff already know it.** `/ban Steve -s 7d server:survival Hacking`, `/tempmute Alex 1d2h`, `/unban #123`, `/history`, `/alts`, `-s`, `-S`, `-p`, `mo` and `y`. The same as LiteBans.
 - **Bans that hold.** Every ban and mute in force is kept in memory and loaded before anyone can join, so the join check never waits on the database and keeps working if MySQL drops for a moment. A ban made while someone is connecting still catches them.
-- **Mutes with no way round.** Chat, `/msg`, `/r`, `/me` and any command you list, by every alias and namespace (`/essentials:msg`, `/emsg`), plus signs and books.
+- **Mutes with no way round.** Chat, `/msg`, `/r`, `/me` and any command you list, by every alias and namespace (`/essentials:msg`, `/emsg`), plus signs, books and anvil renames, and chat plugins on the older chat events too.
 - **Nothing is ever deleted.** An unban is recorded beside the ban, with who, when and why. Only `/prunehistory` deletes, when you tell it to.
 - **You won't feel it running.** The join and chat checks are lookups in memory. Writes go through one background thread. History pages are read by key range, so the 300th page is as quick as the first. Nothing repeats on a single server.
 - **Every feature free.** No premium version, no early-access builds.

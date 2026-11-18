@@ -18,7 +18,7 @@ The config is `plugins/xBans/config.yml`, written on first start. Apply changes 
 | `messages` | Replies to staff, lookups and imports. |
 | `commands` | Each command on or off, its aliases and permission. |
 | `punishing` | The default reason, and whether punishments are silent unless `-p` is given. |
-| `mutes` | Which commands a mute blocks, and signs and books. |
+| `mutes` | Which commands a mute blocks, and signs, books and anvil renames. |
 | `warnings` | How long a warning lasts, and what happens at 3 or 5. |
 | `templates` | Reasons and escalation ladders, such as `hacking`. |
 | `staff-limits` | Weights, and the longest ban and mute per group. |
@@ -40,9 +40,9 @@ templates:
     expire-ladder: "180d"
 ```
 
-`/ban Steve hacking` gives the first step of the ladder the first time, the second the next time, and the last step every time after. A past punishment counts toward the ladder until `expire-ladder` has passed since it was made; one that was revoked (an appeal, a mistake) doesn't count. `type` is `ban`, `mute` or `warn`, and a template only works with its own kind of command. `ip: true` makes it an IP punishment, `silent: true` a silent one, and `permission` limits who may use it.
+`/ban Steve hacking` gives the first step of the ladder the first time, the second the next time, and the last step every time after. A past punishment counts toward the ladder until `expire-ladder` has passed since it was made; one that was revoked (an appeal, a mistake) doesn't count. `type` is `ban`, `mute` or `warn`, and a template only works with its own kind of command. `ip: true` makes it an IP punishment, and `silent: true` a silent one.
 
-Template durations aren't held to staff limits: give a template a permission if only some staff should use it.
+Each template needs its own permission, `xbans.template.<name>` unless `permission` names another. Operators have it; give it to the staff who should use the template. A template's durations are held to the sender's [staff limits](#staff-limits) like typed ones, so a helper capped at a day can't get to a permanent ban by repeating `/ban Steve hacking`: past their cap, it's refused. Staff with `xbans.limit.bypass-templates` may use a template's own durations past their cap (not ones they type).
 
 ## Warnings
 

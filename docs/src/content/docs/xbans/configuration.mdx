@@ -1,0 +1,87 @@
+---
+title: Configuration
+description: Every setting in xBans' config.yml.
+sidebar:
+  order: 3
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/xbans/config.yml?raw";
+
+The config is `plugins/xBans/config.yml`, written on first start. Apply changes with `/xbans reload`: everything applies, even switching to another database.
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours xBans' messages share: see [the theme](/start/formatting/#the-theme). |
+| `screens` | What punished players see: the ban and kick screens, and what a muted player is told. |
+| `broadcasts` | What everyone (or, for silent ones, staff) is told about a punishment. |
+| `messages` | Replies to staff, lookups and imports. |
+| `commands` | Each command on or off, its aliases and permission. |
+| `punishing` | The default reason, and whether punishments are silent unless `-p` is given. |
+| `mutes` | Which commands a mute blocks, and signs, books and anvil renames. |
+| `warnings` | How long a warning lasts, and what happens at 3 or 5. |
+| `templates` | Reasons and escalation ladders, such as `hacking`. |
+| `staff-limits` | Weights, and the longest ban and mute per group. |
+| `ips` | Whether IPs are recorded, hashed, and checked for banned alts. |
+| `scopes` | This server's name, and whether punishments are global or local by default: [Networks](/xbans/networks/). |
+| `lists` | How many to a page, and how dates are written. |
+| `storage` | Where punishments are kept: SQLite in the plugin's folder (`punishments.db`), or MySQL/MariaDB. |
+| `network` | Sharing bans between servers: [Networks](/xbans/networks/). |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+## Templates
+
+```yaml
+templates:
+  hacking:
+    type: "ban"
+    reason: "Hacking"
+    ladder: ["1w", "30d", "permanent"]
+    expire-ladder: "180d"
+```
+
+`/ban Steve hacking` gives the first step of the ladder the first time, the second the next time, and the last step every time after. A past punishment counts toward the ladder until `expire-ladder` has passed since it was made; one that was revoked (an appeal, a mistake) doesn't count. `type` is `ban`, `mute` or `warn`, and a template only works with its own kind of command. `ip: true` makes it an IP punishment, and `silent: true` a silent one.
+
+Each template needs its own permission, `xbans.template.<name>` unless `permission` names another. Operators have it; give it to the staff who should use the template. A template's durations are held to the sender's [staff limits](#staff-limits) like typed ones, so a helper capped at a day can't get to a permanent ban by repeating `/ban Steve hacking`: past their cap, it's refused. Staff with `xbans.limit.bypass-templates` may use a template's own durations past their cap (not ones they type).
+
+## Warnings
+
+```yaml
+warnings:
+  default-duration: "30d"
+  actions:
+    3:
+      commands: ["tempmute <player> 1h -s Reached 3 warnings"]
+```
+
+When a player reaches a number of active warnings, the console runs that number's commands. Any command works, including other plugins'.
+
+## Mutes
+
+`mutes.blocked-commands` lists the commands a muted player can't use. A command's aliases and namespaced forms are blocked too: blocking `msg` blocks `/tell`, `/essentials:msg` and EssentialsX's `/emsg`. Muted players also can't write on signs (`block-signs`) or in books (`block-books`).
+
+## Staff limits
+
+```yaml
+staff-limits:
+  weights: true
+  groups:
+    helper:
+      permission: "xbans.limit.helper"
+      ban: "1d"
+      mute: "1d"
+```
+
+A staff member with a group's permission can't ban or mute for longer than its limits; with several groups, the longest applies. `permanent` means no limit. See [Commands](/xbans/commands/#staff-limits) for weights.
+
+## Storage
+
+`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) for a network, or point several servers at one database. `table-prefix` goes in front of every table's name.
+
+The database is opened in the background, and every ban and mute in force is read into memory before it's used. Until then, players trying to join wait up to 10 seconds, then see `screens.not-ready`; that's only in the first moments after a start. If the database can't be opened at startup, xBans tries again every 15 seconds, and nobody can join until it opens: a ban plugin that lets everyone in when its database is down would let banned players in too. Changing `storage` on a reload switches to the new database once its bans are loaded; a reload that can't open the new one keeps using the old one. Punishments aren't copied between databases.
+
+A bad value falls back to its default with a warning in the console.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/xBans/config.yml" />

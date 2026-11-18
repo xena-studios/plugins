@@ -1,0 +1,130 @@
+public final record co.xenastudios.xteleport.api.Home
+  public Home(java.util.UUID, java.lang.String, java.lang.String, double, double, double, float, float)
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public org.bukkit.Location location()
+  public java.lang.String name()
+  public java.util.UUID owner()
+  public float pitch()
+  public final java.lang.String toString()
+  public java.lang.String world()
+  public double x()
+  public double y()
+  public float yaw()
+  public double z()
+
+public final record co.xenastudios.xteleport.api.RtpSettings
+  public RtpSettings(int, int, int, int, int, boolean)
+  public int attempts()
+  public int centerX()
+  public int centerZ()
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public int maxRadius()
+  public int minRadius()
+  public boolean onlyGenerated()
+  public final java.lang.String toString()
+
+public final record co.xenastudios.xteleport.api.TeleportOptions
+  public TeleportOptions(int, java.lang.String, int, double, boolean)
+  public boolean checkSafe()
+  public co.xenastudios.xteleport.api.TeleportOptions checkSafe(boolean)
+  public co.xenastudios.xteleport.api.TeleportOptions cooldown(java.lang.String, int)
+  public java.lang.String cooldownKey()
+  public int cooldownSeconds()
+  public double cost()
+  public co.xenastudios.xteleport.api.TeleportOptions cost(double)
+  public static co.xenastudios.xteleport.api.TeleportOptions defaults()
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public final java.lang.String toString()
+  public co.xenastudios.xteleport.api.TeleportOptions warmup(int)
+  public int warmupSeconds()
+
+public enum co.xenastudios.xteleport.api.TeleportResult signature Ljava/lang/Enum<Lco/xenastudios/xteleport/api/TeleportResult;>;
+  public static final co.xenastudios.xteleport.api.TeleportResult BLOCKED
+  public static final co.xenastudios.xteleport.api.TeleportResult CANCELLED
+  public static final co.xenastudios.xteleport.api.TeleportResult CANT_AFFORD
+  public static final co.xenastudios.xteleport.api.TeleportResult FAILED
+  public static final co.xenastudios.xteleport.api.TeleportResult ON_COOLDOWN
+  public static final co.xenastudios.xteleport.api.TeleportResult TELEPORTED
+  public static final co.xenastudios.xteleport.api.TeleportResult UNSAFE
+  public static co.xenastudios.xteleport.api.TeleportResult valueOf(java.lang.String)
+  public static co.xenastudios.xteleport.api.TeleportResult[] values()
+
+public enum co.xenastudios.xteleport.api.TeleportType signature Ljava/lang/Enum<Lco/xenastudios/xteleport/api/TeleportType;>;
+  public static final co.xenastudios.xteleport.api.TeleportType HOME
+  public static final co.xenastudios.xteleport.api.TeleportType PLUGIN
+  public static final co.xenastudios.xteleport.api.TeleportType RTP
+  public static final co.xenastudios.xteleport.api.TeleportType SPAWN
+  public static final co.xenastudios.xteleport.api.TeleportType TPA
+  public static final co.xenastudios.xteleport.api.TeleportType TPAHERE
+  public static final co.xenastudios.xteleport.api.TeleportType WARP
+  public static co.xenastudios.xteleport.api.TeleportType valueOf(java.lang.String)
+  public static co.xenastudios.xteleport.api.TeleportType[] values()
+
+public final record co.xenastudios.xteleport.api.Warp
+  public Warp(java.lang.String, java.lang.String, double, double, double, float, float)
+  public final boolean equals(java.lang.Object)
+  public final int hashCode()
+  public org.bukkit.Location location()
+  public java.lang.String name()
+  public float pitch()
+  public final java.lang.String toString()
+  public java.lang.String world()
+  public double x()
+  public double y()
+  public float yaw()
+  public double z()
+
+public interface co.xenastudios.xteleport.api.XTeleportApi
+  public abstract java.util.Optional cachedHomes(java.util.UUID) signature (Ljava/util/UUID;)Ljava/util/Optional<Ljava/util/List<Lco/xenastudios/xteleport/api/Home;>;>;
+  public abstract java.time.Duration cooldown(java.util.UUID, java.lang.String)
+  public abstract java.util.concurrent.CompletableFuture deleteHome(java.util.UUID, java.lang.String) signature (Ljava/util/UUID;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture<Ljava/lang/Boolean;>;
+  public abstract java.util.concurrent.CompletableFuture deleteWarp(java.lang.String) signature (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture<Ljava/lang/Boolean;>;
+  public abstract java.util.concurrent.CompletableFuture findSafeLocation(org.bukkit.World, co.xenastudios.xteleport.api.RtpSettings) signature (Lorg/bukkit/World;Lco/xenastudios/xteleport/api/RtpSettings;)Ljava/util/concurrent/CompletableFuture<Ljava/util/Optional<Lorg/bukkit/Location;>;>;
+  public static co.xenastudios.xteleport.api.XTeleportApi get()
+  public abstract int homeLimit(org.bukkit.entity.Player)
+  public abstract java.util.concurrent.CompletableFuture homes(java.util.UUID) signature (Ljava/util/UUID;)Ljava/util/concurrent/CompletableFuture<Ljava/util/List<Lco/xenastudios/xteleport/api/Home;>;>;
+  public abstract java.util.concurrent.CompletableFuture setHome(java.util.UUID, java.lang.String, org.bukkit.Location) signature (Ljava/util/UUID;Ljava/lang/String;Lorg/bukkit/Location;)Ljava/util/concurrent/CompletableFuture<Ljava/lang/Boolean;>;
+  public abstract java.util.concurrent.CompletableFuture setWarp(java.lang.String, org.bukkit.Location) signature (Ljava/lang/String;Lorg/bukkit/Location;)Ljava/util/concurrent/CompletableFuture<Ljava/lang/Boolean;>;
+  public abstract java.util.Optional spawn() signature ()Ljava/util/Optional<Lorg/bukkit/Location;>;
+  public abstract java.util.concurrent.CompletableFuture teleport(org.bukkit.entity.Player, org.bukkit.Location, co.xenastudios.xteleport.api.TeleportOptions) signature (Lorg/bukkit/entity/Player;Lorg/bukkit/Location;Lco/xenastudios/xteleport/api/TeleportOptions;)Ljava/util/concurrent/CompletableFuture<Lco/xenastudios/xteleport/api/TeleportResult;>;
+  public abstract java.util.Optional warp(java.lang.String) signature (Ljava/lang/String;)Ljava/util/Optional<Lco/xenastudios/xteleport/api/Warp;>;
+  public abstract java.util.List warps() signature ()Ljava/util/List<Lco/xenastudios/xteleport/api/Warp;>;
+
+public final class co.xenastudios.xteleport.api.event.HomeSetEvent extends org.bukkit.event.player.PlayerEvent implements org.bukkit.event.Cancellable
+  public HomeSetEvent(org.bukkit.entity.Player, java.lang.String, org.bukkit.Location, boolean)
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public org.bukkit.Location getLocation()
+  public java.lang.String getName()
+  public boolean isCancelled()
+  public boolean isReplacing()
+  public void setCancelled(boolean)
+
+public final class co.xenastudios.xteleport.api.event.PreTeleportEvent extends org.bukkit.event.player.PlayerEvent implements org.bukkit.event.Cancellable
+  public PreTeleportEvent(org.bukkit.entity.Player, org.bukkit.Location, co.xenastudios.xteleport.api.TeleportType)
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public org.bukkit.Location getTo()
+  public co.xenastudios.xteleport.api.TeleportType getType()
+  public boolean isCancelled()
+  public void setCancelled(boolean)
+
+public final class co.xenastudios.xteleport.api.event.TeleportEvent extends org.bukkit.event.player.PlayerEvent
+  public TeleportEvent(org.bukkit.entity.Player, org.bukkit.Location, org.bukkit.Location, co.xenastudios.xteleport.api.TeleportType)
+  public org.bukkit.Location getFrom()
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public org.bukkit.Location getTo()
+  public co.xenastudios.xteleport.api.TeleportType getType()
+
+public final class co.xenastudios.xteleport.api.event.TpaRequestEvent extends org.bukkit.event.player.PlayerEvent implements org.bukkit.event.Cancellable
+  public TpaRequestEvent(org.bukkit.entity.Player, org.bukkit.entity.Player, boolean)
+  public static org.bukkit.event.HandlerList getHandlerList()
+  public org.bukkit.event.HandlerList getHandlers()
+  public org.bukkit.entity.Player getTarget()
+  public boolean isCancelled()
+  public boolean isHere()
+  public void setCancelled(boolean)

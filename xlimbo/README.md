@@ -24,7 +24,7 @@ From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../C
 ```
 
 ```
-api/               the developer API (co.xenastudios:xlimbo-api), shipped inside the jar
+api/               the developer API (co.xenastudios.xlimbo:xlimbo-api), shipped inside the jar
 src/main/java/co/xenastudios/xlimbo/
   XLimbo.java      the plugin: declares the config and, in setup, the features it turns on
   Api.java         the developer API's implementation, registered while the plugin is enabled

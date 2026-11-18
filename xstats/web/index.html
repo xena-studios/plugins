@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Server stats</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="#/">
+      <img id="logo" alt="" hidden>
+      <span>
+        <span id="site-name">Server stats</span>
+        <span id="tagline" hidden></span>
+      </span>
+    </a>
+    <form id="search" role="search" autocomplete="off">
+      <label class="hidden" for="q">Find a player</label>
+      <input id="q" type="search" placeholder="Find a player" maxlength="16" spellcheck="false">
+      <ul id="suggest" role="listbox" hidden></ul>
+    </form>
+  </header>
+  <nav class="tabs" aria-label="Pages">
+    <a href="#/" data-page="home">Overview</a>
+    <a href="#/top" data-page="top">Leaderboards</a>
+  </nav>
+  <main id="view" aria-live="polite">
+    <p class="muted">Loading…</p>
+    <noscript><p>This page needs JavaScript to show the stats.</p></noscript>
+  </main>
+  <footer>
+    <span id="updated"></span>
+    <span>Stats by <a href="https://modrinth.com/plugin/xstats" rel="noopener">xStats</a></span>
+  </footer>
+</body>
+</html>

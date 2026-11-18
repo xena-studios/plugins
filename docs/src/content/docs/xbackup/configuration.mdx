@@ -1,0 +1,67 @@
+---
+title: Configuration
+description: Every setting in xBackup's config.yml.
+sidebar:
+  order: 5
+---
+
+import { Code } from "@astrojs/starlight/components";
+import config from "../../../generated/xbackup/config.yml?raw";
+
+The config is `plugins/xBackup/config.yml`, written on first start. Apply changes with `/xbackup reload`; every setting applies on reload, remotes included.
+
+| Section | What it covers |
+| --- | --- |
+| `theme` | The prefix and colours xBackup's messages share: see [the theme](/start/formatting/#the-theme). |
+| `messages` | Shared errors, and optional broadcasts when a backup starts and finishes. |
+| `command` | Whether `/backup` is on, and its aliases. |
+| `repository` | Where backups are kept. |
+| `schedule` | How often backups run. |
+| `sources` | What's backed up. |
+| `exclude` | Paths to leave out. |
+| `retention` | Which backups are kept, the most space they may use, and the space always left free. |
+| `performance` | Limits on disk reads and uploads, compression, and the longest autosave may stay off. |
+| `verify` | How often older data is read back and checked. |
+| `remotes` | Copies of the backups elsewhere: see [Remotes](/xbackup/remotes/). Their passwords go in `secrets.yml`, never here. |
+| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+
+## Repository
+
+A folder, relative to the server folder or absolute. A second disk is the best place for it: a backup on the same disk as the server doesn't survive that disk failing. A network mount works too. Changing it starts a new, empty repository; the old one stays as it is.
+
+## Schedule
+
+`every: "1h"` backs up once an hour, counted from the last backup, so a restart doesn't reset the clock. `"off"` backs up only with `/backup now`. With `skip-when-idle`, a scheduled backup is skipped when nobody has been online since the last one, since nothing in the worlds has changed. A restart always counts as a change.
+
+## Sources
+
+- `worlds`: every loaded world's save folder. On 1.21.11 that's `world`, `world_nether` and `world_the_end`; on 26.x one `world` folder holds every dimension. Worlds read during the autosave pause.
+- `plugins`: the plugins folder, jars and data. xBackup's own repository and restore folders are never included, nor are `secrets.yml`, SFTP key files and the other files holding [passwords](/xbackup/remotes/#passwords).
+- `server-files`: `server.properties` and the `.yml`, `.json`, `.toml` and `.txt` files beside it (ops, whitelist, bans, `bukkit.yml`), and the `config` folder.
+- `extra`: anything else, by path, such as a world no plugin has loaded.
+
+A source that is a link, such as a world kept on another disk, is backed up as the folder it leads to. A link inside a source is kept as a link; if it leads to a folder outside the server folder, the backup says that folder's files aren't in it.
+
+**Databases:** every SQLite file is copied with SQLite's own `VACUUM INTO`, so a plugin writing to it meanwhile is no problem, and its `-wal` and `-shm` files aren't needed. A database that can't be copied that way (one a plugin holds locked) keeps its previous copy, with a warning; its raw bytes are never copied. MySQL and MariaDB databases live outside the server; back them up with `mysqldump`.
+
+## Retention
+
+Each tier keeps the newest backup of each of its last so many hours, days, weeks and months, and a backup can count for several. `last` keeps the newest few whatever their age. The newest backup and pinned ones (`/backup pin`) are always kept.
+
+With the defaults (`last: 3`, `hourly: 24`, `daily: 7`, `weekly: 4`, `monthly: 6`), an hourly schedule keeps about 40 backups covering six months.
+
+`max-size` caps the repository, such as `"50GB"`: past it, the oldest backups go first. `min-free-space` is the space a backup always leaves on the repository's disk. A backup that might go under it removes old backups first, and if that's still not enough it doesn't start; one that runs short part way stops cleanly, and nothing it wrote is used.
+
+## Performance
+
+`read-limit` and `upload-limit` cap how fast a backup reads from disk and sends to remotes, such as `"50MB"` (per second). A backup runs on one low-priority thread, never on the server's threads. `compression-level` is deflate's, 1 to 9; region files are already compressed and stored as they are.
+
+`max-pause` is the longest autosave may stay off for one backup (15 minutes by default). Usually it's off for under a second; the very first backup of a big world reads everything once, before the pause, so even that's short. If it's ever passed, autosave goes back on and that backup is abandoned. Chunks aren't lost either way: while autosave is off, the server holds them until it's back on.
+
+## Verify
+
+Each backup reads back what it wrote before it counts. `every` also reads back `percent` of the older data now and then (10% weekly by default), so a failing disk is found before you need a restore. `/backup verify full` reads everything.
+
+## The full default config
+
+<Code code={config} lang="yaml" title="plugins/xBackup/config.yml" />

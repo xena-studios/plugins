@@ -11,7 +11,7 @@ The API costs nothing unless a plugin uses it: it adds no listeners and no tasks
 
 ## Add it to your build
 
-The API is `co.xenastudios:xutilities-api`. It's inside the xUtilities jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
+The API is `co.xenastudios.xutilities:xutilities-api`. It's inside the xUtilities jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
 
 :::note
 The API is published to Maven Central when xUtilities 2.1.0 is released. Until then, build it from [the source](https://github.com/xena-studios/plugins) with `./gradlew :xutilities:api:publishToMavenLocal` and add `mavenLocal()` to your repositories.
@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("co.xenastudios:xutilities-api:2.1.0")
+    compileOnly("co.xenastudios.xutilities:xutilities-api:2.1.0")
 }
 ```
 
@@ -33,7 +33,7 @@ Maven:
 
 ```xml
 <dependency>
-    <groupId>co.xenastudios</groupId>
+    <groupId>co.xenastudios.xutilities</groupId>
     <artifactId>xutilities-api</artifactId>
     <version>2.1.0</version>
     <scope>provided</scope>

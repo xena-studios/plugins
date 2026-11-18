@@ -32,8 +32,10 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           if [[ $GITHUB_EVENT_NAME != pull_request ]]; then echo "plugins=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          # Read first, so a failed call fails the step instead of skipping the build.
-          files=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only)
+          # The changed files, from the files API, paged: `gh pr diff` refuses pull requests
+          # over 300 files. If the call fails, everything is checked, never skipped.
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename') \
+            || { echo "plugins=true" >> "$GITHUB_OUTPUT"; exit 0; }
           plugins=false
           while read -r file; do
             case $file in
@@ -49,6 +51,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugins == 'true'
     runs-on: ubuntu-26.04
+    # A hung test or server fails the job instead of holding a runner for six hours.
+    timeout-minutes: 30
     outputs:
       newest: ${{ steps.newest.outputs.minecraft }}
     # A real MariaDB, so xRewind's MySqlTest runs the same SQL its MySQL users do.
@@ -85,9 +89,12 @@ jobs:
             */build/libs/*.jar
             sandbox/consumer/build/libs/*.jar
             sandbox/paper-consumer/build/libs/*.jar
+            xmoney/vault-consumer/build/libs/*.jar
+            xmoney/hook-consumer/build/libs/*.jar
             !core/build/libs/*
             !build-logic/build/libs/*
             !*/build/libs/*-plain.jar
+            !xmoney/*/build/libs/*-plain.jar
           if-no-files-found: error
 
   # Compiles against the newest Paper API, failing on anything it marks for
@@ -96,6 +103,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.plugins == 'true'
     runs-on: ubuntu-26.04
+    # A hung test or server fails the job instead of holding a runner for six hours.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -111,6 +120,8 @@ jobs:
   boot:
     needs: build
     runs-on: ubuntu-26.04
+    # A hung test or server fails the job instead of holding a runner for six hours.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -141,13 +152,31 @@ jobs:
           path: .cache/servers
           key: servers-${{ matrix.project }}-${{ matrix.target.version }}-${{ steps.server.outputs.build }}
           restore-keys: servers-${{ matrix.project }}-${{ matrix.target.version }}-
-      # Runs each module's boot-checks.txt against all the jars at once.
+      # Runs each module's boot-checks.txt against all the jars at once, except xMoney's.
+      # xMoney stands in for Vault, so with it installed every plugin would see Vault, and
+      # the sandbox checks the core's Vault hook on a server without one.
       - run: |
           checks=()
-          for file in */boot-checks.txt; do checks+=(--checks "$file"); done
-          mapfile -t jars < <(find jars -name '*.jar' | sort)
+          for file in */boot-checks.txt; do [[ $file == xmoney/* ]] || checks+=(--checks "$file"); done
+          mapfile -t jars < <(find jars -name '*.jar' -not -path 'jars/xmoney/*' | sort)
           scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
             "${checks[@]}" "${jars[@]}"
+      # xMoney on its own, with two never-released plugins that use it as Vault.
+      - name: boot xMoney
+        run: |
+          mapfile -t jars < <(find jars/xmoney -name '*.jar' | sort)
+          scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
+            --checks xmoney/boot-checks.txt "${jars[@]}"
+      # And beside a real VaultUnlocked, which Paper refuses: the one run that allows an
+      # error, Paper's own about the duplicate (see xmoney/boot-checks-vaultunlocked.txt).
+      - name: boot xMoney beside VaultUnlocked
+        run: |
+          vu="$RUNNER_TEMP/VaultUnlocked-2.20.1.jar"
+          curl -fsSL -o "$vu" https://github.com/TheNewEconomy/VaultUnlocked/releases/download/2.20.1/VaultUnlocked-2.20.1.jar
+          echo "4ec21910767a68b2defacb121cffee9840ded8b01abcbff03779fb9ab637296a  $vu" | sha256sum -c -
+          mapfile -t jars < <(find jars/xmoney -name '*.jar' | sort)
+          scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
+            --checks xmoney/boot-checks-vaultunlocked.txt "${jars[@]}" "$vu"
 
   # The one check main requires: passes when every job above passed or was
   # skipped because nothing they cover changed.

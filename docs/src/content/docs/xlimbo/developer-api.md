@@ -11,7 +11,7 @@ The API costs nothing unless a plugin uses it. It adds no listeners and no tasks
 
 ## Add it to your build
 
-The API is `co.xenastudios:xlimbo-api`. It's inside the xLimbo jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
+The API is `co.xenastudios.xlimbo:xlimbo-api`. It's inside the xLimbo jar, so don't shade it: depend on it as `compileOnly` (Gradle) or `provided` (Maven).
 
 :::note
 The API is published to Maven Central when xLimbo 2.1.0 is released. Until then, build it from [the source](https://github.com/xena-studios/plugins) with `./gradlew :xlimbo:api:publishToMavenLocal` and add `mavenLocal()` to your repositories.
@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("co.xenastudios:xlimbo-api:2.1.0")
+    compileOnly("co.xenastudios.xlimbo:xlimbo-api:2.1.0")
 }
 ```
 
@@ -33,7 +33,7 @@ Maven:
 
 ```xml
 <dependency>
-    <groupId>co.xenastudios</groupId>
+    <groupId>co.xenastudios.xlimbo</groupId>
     <artifactId>xlimbo-api</artifactId>
     <version>2.1.0</version>
     <scope>provided</scope>

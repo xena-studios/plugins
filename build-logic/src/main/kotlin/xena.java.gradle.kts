@@ -1,3 +1,5 @@
+import java.time.Duration
+
 // Every module: Java 21 bytecode, compiled against the oldest Paper we support.
 plugins {
     `java-library`
@@ -38,6 +40,9 @@ val repoRoot = rootProject.layout.projectDirectory
 
 tasks.test {
     useJUnitPlatform()
+    // A test that hangs (a join() on work nothing will run) fails the build instead of
+    // running until CI gives up: no plugin's tests come near this.
+    timeout = Duration.ofMinutes(20)
     // For golden-file tests: files the build generates for the docs.
     // No network calls (the update checker) from tests.
     systemProperty("xena.offline", true)

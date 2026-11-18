@@ -143,7 +143,12 @@ public final class Restore {
     public static Plan dryRun(Repository repository, List<Item> items, Path root) throws IOException {
         Counter counter = new Counter();
         for (Item item : items) {
-            compare(repository, item.path(), item.node(), root.resolve(item.path()), counter);
+            Path disk = root.resolve(item.path());
+            if (item.node().kind() == Tree.Kind.DIR && Files.isSymbolicLink(disk) && Files.isDirectory(disk)) {
+                // A folder kept elsewhere behind a link is restored where the link leads.
+                disk = disk.toRealPath();
+            }
+            compare(repository, item.path(), item.node(), disk, counter);
         }
         return new Plan(items, counter.files, counter.bytes, counter.added, counter.changed, counter.removed,
             counter.chunks, List.copyOf(counter.examples));
@@ -275,22 +280,84 @@ public final class Restore {
     /**
      * Writes the items under {@code target} (each at its own path), checking every file against
      * the hash it was saved with and every region chunk against its blob's. Nothing under
-     * {@code target} should exist yet.
+     * {@code target} should exist yet. The files will stay where they are written: links in
+     * the backup may only point inside {@code target}.
      */
     public static Written write(Repository repository, List<Item> items, Path target, Throttle throttle,
                                 BooleanSupplier cancelled, Consumer<String> progress) throws IOException {
-        Writer writer = new Writer(repository, throttle, cancelled, progress);
+        return write(repository, items, target, target, false, throttle, cancelled, progress);
+    }
+
+    /**
+     * Writes the items under {@code target}, as {@link #write(Repository, List, Path, Throttle,
+     * BooleanSupplier, Consumer)} does, for files that will be moved to {@code home} afterwards.
+     *
+     * <p>A repository or remote can't make a restore write anywhere else: every name is
+     * checked before it's used, every path is checked to stay inside {@code target}, nothing
+     * is written through a link, and a link that would point outside {@code home} is refused
+     * (unless {@code allowLinksOutside}, for owners who keep links to other disks on purpose).
+     *
+     * @param home where the restored files will end up, which links are checked against
+     */
+    public static Written write(Repository repository, List<Item> items, Path target, Path home,
+                                boolean allowLinksOutside, Throttle throttle, BooleanSupplier cancelled,
+                                Consumer<String> progress) throws IOException {
+        Path base = target.toAbsolutePath().normalize();
+        Writer writer = new Writer(repository, base, home.toAbsolutePath().normalize(), allowLinksOutside, throttle,
+            cancelled, progress);
+        Files.createDirectories(base);
         for (Item item : items) {
-            Path out = item.path().isEmpty() ? target : target.resolve(item.path());
-            Files.createDirectories(out.getParent());
+            Path out = item.path().isEmpty() ? base : writer.inside(base.resolve(item.path()), item.path());
+            if (!item.path().isEmpty()) {
+                writer.makeParents(base, item.path());
+            }
             writer.write(item.node(), out, item.path());
         }
         writer.finishFolders();
         return new Written(writer.files, writer.bytes, writer.chunks);
     }
 
+    /** A restore that would write outside its folder, or through a link: refused. */
+    public static final class UnsafeException extends IOException {
+        UnsafeException(String message) {
+            super(message);
+        }
+    }
+
+    private static final boolean WINDOWS = java.io.File.separatorChar == '\\';
+
+    /**
+     * Throws unless the name is one plain file name on this system: no control characters,
+     * and on Windows no {@code \\} or {@code :} (a folder separator, a drive or a stream).
+     * Tree entries already can't hold {@code /}, {@code .} or {@code ..}.
+     */
+    static void checkName(String name, String path, boolean windows) throws UnsafeException {
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c < 0x20 || c == 0x7F || windows && (c == '\\' || c == ':')) {
+                throw new UnsafeException("The backup has an entry named " + printable(name) + " in " + display(path)
+                    + ", which isn't a plain file name here. It wasn't restored; the backup may have been tampered with.");
+            }
+        }
+    }
+
+    private static String printable(String name) {
+        StringBuilder out = new StringBuilder("\"");
+        for (char c : name.toCharArray()) {
+            out.append(c < 0x20 || c == 0x7F ? String.format("\\u%04x", (int) c) : String.valueOf(c));
+        }
+        return out.append('"').toString();
+    }
+
+    private static String display(String path) {
+        return path.isEmpty() ? "the top folder" : path;
+    }
+
     private static final class Writer {
         private final Repository repository;
+        private final Path base;
+        private final Path home;
+        private final boolean allowLinksOutside;
         private final Throttle throttle;
         private final BooleanSupplier cancelled;
         private final Consumer<String> progress;
@@ -299,11 +366,54 @@ public final class Restore {
         long bytes;
         long chunks;
 
-        Writer(Repository repository, Throttle throttle, BooleanSupplier cancelled, Consumer<String> progress) {
+        Writer(Repository repository, Path base, Path home, boolean allowLinksOutside, Throttle throttle,
+               BooleanSupplier cancelled, Consumer<String> progress) {
             this.repository = repository;
+            this.base = base;
+            this.home = home;
+            this.allowLinksOutside = allowLinksOutside;
             this.throttle = throttle;
             this.cancelled = cancelled;
             this.progress = progress;
+        }
+
+        // The path, if it's inside the folder being written; throws if it isn't.
+        Path inside(Path out, String path) throws UnsafeException {
+            Path clean = out.toAbsolutePath().normalize();
+            if (!clean.startsWith(base) || clean.equals(base) && !path.isEmpty()) {
+                throw new UnsafeException(display(path) + " would be written outside " + base + ". Nothing more was"
+                    + " written; the backup may have been tampered with.");
+            }
+            return clean;
+        }
+
+        // The folders above an item, made one by one, none of them a link.
+        void makeParents(Path base, String path) throws IOException {
+            String[] parts = path.split("/");
+            Path at = base;
+            StringBuilder sofar = new StringBuilder();
+            for (int i = 0; i < parts.length - 1; i++) {
+                checkName(parts[i], sofar.toString(), WINDOWS);
+                at = inside(at.resolve(parts[i]), join(sofar.toString(), parts[i]));
+                sofar.append(sofar.isEmpty() ? "" : "/").append(parts[i]);
+                makeFolder(at, sofar.toString());
+            }
+            checkName(parts[parts.length - 1], sofar.toString(), WINDOWS);
+        }
+
+        // A new folder, or one this restore already made; never a link to somewhere else.
+        private void makeFolder(Path out, String path) throws IOException {
+            try {
+                Files.createDirectory(out);
+            } catch (java.nio.file.FileAlreadyExistsException e) {
+                BasicFileAttributes attributes = attributes(out);
+                if (attributes == null || !attributes.isDirectory()) {
+                    throw new UnsafeException(display(path) + " is already there as "
+                        + (attributes != null && attributes.isSymbolicLink() ? "a link" : "a file")
+                        + ", so nothing is written into it. Two entries in the backup may have names that differ only in"
+                        + " case, which this disk can't keep apart.");
+                }
+            }
         }
 
         void write(Tree.Node node, Path out, String path) throws IOException {
@@ -312,9 +422,15 @@ public final class Restore {
             }
             switch (node.kind()) {
                 case DIR -> {
-                    Files.createDirectories(out);
+                    if (out.equals(base)) {
+                        Files.createDirectories(out);
+                    } else {
+                        makeFolder(out, path);
+                    }
                     for (Tree.Node child : repository.tree(node.ref()).nodes()) {
-                        write(child, out.resolve(child.name()), join(path, child.name()));
+                        checkName(child.name(), path, WINDOWS);
+                        String childPath = join(path, child.name());
+                        write(child, inside(out.resolve(child.name()), childPath), childPath);
                     }
                     folders.add(new Object[] {out, node});
                 }
@@ -326,15 +442,37 @@ public final class Restore {
                     writeRegion(repository.region(node.ref()), out, path);
                     finish(out, node);
                 }
-                case LINK -> Files.createSymbolicLink(out, Path.of(node.target()));
+                case LINK -> writeLink(node, out, path);
             }
+        }
+
+        // A link is put back only if it points inside the folder the files end up in.
+        private void writeLink(Tree.Node node, Path out, String path) throws IOException {
+            String target = node.target();
+            if (target.isEmpty() || target.indexOf('\0') >= 0) {
+                throw new UnsafeException(display(path) + " is a link with no usable target in the backup.");
+            }
+            Path link;
+            try {
+                link = Path.of(WINDOWS ? target : target.replace('\\', '/'));
+            } catch (java.nio.file.InvalidPathException e) {
+                throw new UnsafeException(display(path) + " is a link to " + printable(target) + ", which isn't a path here.");
+            }
+            Path placed = home.resolve(base.relativize(out).toString());
+            Path leads = (link.isAbsolute() ? link : placed.getParent().resolve(link)).normalize();
+            if (!allowLinksOutside && !leads.startsWith(home)) {
+                throw new UnsafeException(display(path) + " is a link to " + target + ", outside " + home
+                    + ", so it isn't restored. If you made that link yourself, restore it from the command line with"
+                    + " --allow-links-outside, or leave it out of the restore.");
+            }
+            Files.createSymbolicLink(out, link);
         }
 
         private void writeFile(Tree.Node node, Path out, String path) throws IOException {
             MessageDigest digest = Hash.digest();
             long size = 0;
             try (OutputStream stream = new DigestOutputStream(Files.newOutputStream(out, StandardOpenOption.CREATE_NEW,
-                StandardOpenOption.WRITE), digest)) {
+                StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS), digest)) {
                 for (Hash blob : node.blobs()) {
                     byte[] data = repository.readBlob(blob);
                     throttle.acquire(data.length);
@@ -355,7 +493,7 @@ public final class Restore {
 
         private void writeRegion(RegionLayout layout, Path out, String path) throws IOException {
             try (FileChannel channel = FileChannel.open(out, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE,
-                StandardOpenOption.READ)) {
+                StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
                 writeAt(channel, ByteBuffer.wrap(layout.header()), 0);
                 for (int i = 0; i < RegionLayout.CHUNKS; i++) {
                     if (!layout.present(i)) {

@@ -1,5 +1,6 @@
 package co.xenastudios.xbackup;
 
+import co.xenastudios.xbackup.restore.ServerCheck;
 import co.xenastudios.xbackup.restore.Swap;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
@@ -12,7 +13,8 @@ import java.util.List;
 /**
  * Finishes a restore staged with {@code /backup restore}: runs while the server starts,
  * before it loads any world, and swaps the staged files in (M0 showed this is early enough on
- * Paper and Folia, 1.21.11 and 26.x). Only reads a journal file when there's nothing to do.
+ * Paper and Folia, 1.21.11 and 26.x). Otherwise it only locks {@link ServerCheck#MARKER} and
+ * looks for a journal file.
  */
 public final class XBackupBootstrap implements PluginBootstrap {
 
@@ -21,6 +23,8 @@ public final class XBackupBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(BootstrapContext context) {
+        // From now until xBackup is disabled, the command-line restore sees the server running.
+        ServerCheck.hold(context.getDataDirectory().toAbsolutePath());
         Path restore = context.getDataDirectory().toAbsolutePath().resolve("restore");
         if (!Files.exists(restore.resolve(Swap.PENDING))) {
             return;
@@ -40,10 +44,15 @@ public final class XBackupBootstrap implements PluginBootstrap {
             context.getLogger().info(done);
             lines.add(done);
             Files.write(restore.resolve(DONE), lines, StandardCharsets.UTF_8);
+        } catch (Swap.StuckException e) {
+            // Half a world swapped in: starting would load it, or generate a new one beside it,
+            // and the next start would think it was finished. Stop here instead.
+            context.getLogger().error("xBackup stopped the server from starting: " + e.getMessage(), e);
+            System.err.flush();
+            Runtime.getRuntime().halt(1);
         } catch (Exception e) {
-            context.getLogger().error("Couldn't finish the restore waiting in " + restore + ": " + e.getMessage()
-                + ". Nothing more was changed; it will try again on the next start. The journal is "
-                + restore.resolve(Swap.PENDING) + ".", e);
+            context.getLogger().error("Couldn't put the restore waiting in " + restore + " in place: " + e.getMessage()
+                + (e instanceof Swap.FailedException ? "" : " Nothing was changed."), e);
         }
     }
 }

@@ -5,6 +5,7 @@ import co.xenastudios.xbackup.remote.Fetch;
 import co.xenastudios.xbackup.remote.Remotes;
 import co.xenastudios.xbackup.remote.RestoreSettings;
 import co.xenastudios.xbackup.restore.Restore;
+import co.xenastudios.xbackup.restore.ServerCheck;
 import co.xenastudios.xbackup.restore.Swap;
 import co.xenastudios.xbackup.store.Backend;
 import co.xenastudios.xbackup.store.LocalBackend;
@@ -17,14 +18,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -60,6 +56,7 @@ public final class Main {
     private boolean dryRun;
     private boolean yes;
     private boolean full;
+    private boolean allowLinksOutside;
     private final List<String> arguments = new ArrayList<>();
 
     Main(PrintStream out, BufferedReader in) {
@@ -122,6 +119,7 @@ public final class Main {
                 case "--dry-run", "-n" -> dryRun = true;
                 case "--yes", "-y" -> yes = true;
                 case "--full" -> full = true;
+                case "--allow-links-outside" -> allowLinksOutside = true;
                 case "--help", "-h" -> arguments.add(0, "help");
                 default -> {
                     if (arg.startsWith("--")) {
@@ -164,10 +162,14 @@ public final class Main {
             Options:
               --dry-run         show what a restore would change, and change nothing
               --yes             don't ask before restoring
-              --to <folder>     restore into another folder instead (the server can keep running)
+              --to <folder>     restore into another folder instead, which must be empty or new
+                                (the server can keep running)
               --remote <name>   read from a remote in config.yml instead of the local repository
               --server <folder> the server folder (default: the one this jar's plugins folder is in)
               --repo <folder>   the repository folder (default: from xBackup's config)
+              --allow-links-outside
+                                restore links that point outside the server folder too;
+                                only for links you made yourself
 
             Paths are relative to the server folder, such as world, world_nether or
             plugins/xRewind. What's there now is moved to plugins/xBackup/restore/replaced/.""");
@@ -268,11 +270,18 @@ public final class Main {
             paths.add("");
         }
         boolean inPlace = to == null;
+        if (!inPlace && !dryRun) {
+            String problem = ServerCheck.notEmpty(to, server);
+            if (problem != null) {
+                out.println(problem);
+                return 1;
+            }
+        }
         if (inPlace && !dryRun) {
-            String running = runningWorld();
+            String running = ServerCheck.running(server, paths);
             if (running != null) {
-                out.println("The server is running (" + running + " is locked). Stop it first, or restore with"
-                    + " /backup restore in game, or into another folder with --to.");
+                out.println("The server is running (" + running + "). Stop it first, or restore with"
+                    + " /backup restore in game, or into an empty folder with --to.");
                 return 1;
             }
         }
@@ -318,7 +327,8 @@ public final class Main {
             }
             if (!inPlace) {
                 Files.createDirectories(to);
-                Restore.Written written = Restore.write(repository, items, to, Throttle.NONE, () -> false, out::println);
+                Restore.Written written = Restore.write(repository, items, to, to, allowLinksOutside, Throttle.NONE,
+                    () -> false, out::println);
                 out.println("Wrote " + written.files() + " files (" + Sizes.format(written.bytes())
                     + "), each checked against its backup, into " + to + ".");
                 return 0;
@@ -332,7 +342,8 @@ public final class Main {
             Path staged = restoreFolder.resolve(Swap.STAGED);
             Swap.deleteTree(staged);
             Files.createDirectories(staged);
-            Restore.Written written = Restore.write(repository, items, staged, Throttle.NONE, () -> false, out::println);
+            Restore.Written written = Restore.write(repository, items, staged, server, allowLinksOutside, Throttle.NONE,
+                () -> false, out::println);
             out.println("Checked " + written.files() + " files (" + Sizes.format(written.bytes()) + "). Putting them in place...");
             List<Swap.Entry> entries = new ArrayList<>();
             for (Restore.Item item : items) {
@@ -381,39 +392,5 @@ public final class Main {
             throw new IllegalArgumentException("no backup's id starts with " + id + ". list shows them.");
         }
         return found;
-    }
-
-    /**
-     * A world the server holds open, or null. Minecraft locks each world's session.lock while
-     * it runs, so if one can't be locked here, the server is running.
-     */
-    private String runningWorld() throws IOException {
-        if (!Files.isDirectory(server)) {
-            return null;
-        }
-        List<Path> locks = new ArrayList<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(server)) {
-            for (Path child : stream) {
-                Path lock = child.resolve("session.lock");
-                if (Files.isRegularFile(lock)) {
-                    locks.add(lock);
-                }
-            }
-        }
-        for (Path lock : locks) {
-            try (FileChannel channel = FileChannel.open(lock, StandardOpenOption.WRITE)) {
-                FileLock held = channel.tryLock();
-                if (held == null) {
-                    return server.relativize(lock).toString();
-                }
-                held.release();
-            } catch (OverlappingFileLockException e) {
-                return server.relativize(lock).toString();
-            } catch (IOException e) {
-                // Windows refuses to open a locked file at all.
-                return server.relativize(lock).toString();
-            }
-        }
-        return null;
     }
 }

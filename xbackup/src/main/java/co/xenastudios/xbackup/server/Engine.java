@@ -631,7 +631,7 @@ public final class Engine {
                 }
                 Restore.Written written;
                 try {
-                    written = Restore.write(repo, items, staged, new Throttle(settings.readLimit()), stopping::get,
+                    written = Restore.write(repo, items, staged, root, false, new Throttle(settings.readLimit()), stopping::get,
                         step -> progress("staging a restore", step));
                 } catch (IOException e) {
                     Swap.deleteTree(staged);

@@ -7,6 +7,7 @@ import co.xenastudios.core.config.ConfigSpec;
 import co.xenastudios.xbackup.api.XBackupApi;
 import co.xenastudios.xbackup.command.BackupCommand;
 import co.xenastudios.xbackup.config.XBConfig;
+import co.xenastudios.xbackup.restore.ServerCheck;
 import co.xenastudios.xbackup.server.Api;
 import co.xenastudios.xbackup.server.Engine;
 import java.nio.file.Files;
@@ -36,6 +37,7 @@ public class XBackup extends XenaPlugin<XBConfig> {
     @Override
     protected void setup(Setup setup, XBConfig config) {
         if (engine == null) {
+            ServerCheck.hold(getDataFolder().toPath().toAbsolutePath());
             engine = new Engine(this);
             api = new Api(engine);
             Bukkit.getServicesManager().register(XBackupApi.class, api, this, ServicePriority.Normal);
@@ -80,6 +82,7 @@ public class XBackup extends XenaPlugin<XBConfig> {
             Bukkit.getServicesManager().unregister(XBackupApi.class, api);
             engine.stop();
             engine = null;
+            ServerCheck.release();
         }
     }
 

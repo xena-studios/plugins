@@ -11,7 +11,7 @@ xRewind is a block logger with rollback for Paper and Folia. When someone griefs
 - **Easy to switch to.** CoreProtect's command syntax, and its history imported with `/xr import coreprotect`.
 - **Every change applies on reload**, even what's logged and where it's stored. No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xrewind)** · [Docs](https://docs.xenastudios.co/xrewind/) · [Commands](https://docs.xenastudios.co/xrewind/commands/) · [Switching from CoreProtect](https://docs.xenastudios.co/xrewind/switching/) · [Changelog](CHANGELOG.md)
+**[Download on Modrinth](https://modrinth.com/plugin/xrewind)** · [Docs](https://docs.xenastudios.co/xrewind/) · [Commands](https://docs.xenastudios.co/xrewind/commands/) · [Switching from CoreProtect](https://docs.xenastudios.co/xrewind/switching/) · [Developer API](https://docs.xenastudios.co/xrewind/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB.
 
@@ -25,8 +25,10 @@ From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../C
 ```
 
 ```
+api/               the developer API (co.xenastudios:xrewind-api), shipped inside the jar
 src/main/java/co/xenastudios/xrewind/
   XRewind.java     the plugin: declares the config and, in setup, the features it turns on
+  Api.java         the developer API's implementation, registered while the plugin is enabled
   storage/         the database: its tables, and opening it off the server's threads
   listen/          the listeners, one module per kind of change, each on only when it's logged
   log/             the queue listeners hand changes to, and the one thread that writes them

@@ -2,7 +2,7 @@
 # The database opens with the SQLite driver Paper and Folia ship, from a paper-plugin.
 logged: Storage ready: the SQLite database history.db, schema 1.
 run: xrewind info
-expect: xRewind 1.0.2 on
+expect: xRewind 1.1.0 on
 
 run: xrewind reload
 expect: Reloaded xRewind in
@@ -11,8 +11,9 @@ expect: Reloaded xRewind in
 run: xr status
 expect: Problem: none
 
-# A lookup runs its SQL against the real database and replies.
-run: xr lookup w:world t:1h
+# A lookup runs its SQL against the real database and replies. For a player with no
+# history, since other checks (the sandbox's use of the API) log changes too.
+run: xr lookup w:world t:1h u:Nobody
 expect: Nothing found.
 run: xr lookup t:1h
 expect: From the console, add w:<world> or r:#global.

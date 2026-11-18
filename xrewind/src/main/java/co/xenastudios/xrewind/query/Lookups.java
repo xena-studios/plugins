@@ -4,6 +4,7 @@ import co.xenastudios.core.db.Database;
 import co.xenastudios.core.text.ChatPages;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xrewind.XRewind;
+import co.xenastudios.xrewind.api.event.LookupEvent;
 import co.xenastudios.xrewind.config.XRConfig;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -87,6 +88,10 @@ public final class Lookups {
         last.put(sender, new Last(query, center, inspect));
         plugin.tasks().async(() -> {
             try {
+                // For an audit log. Built only when something listens for it.
+                if (LookupEvent.getHandlerList().getRegisteredListeners().length > 0) {
+                    new LookupEvent(sender, ApiTypes.api(query, center, PER_PAGE), page).callEvent();
+                }
                 plugin.writer().flush(1_000);
                 Lookup.Result result = Lookup.page(database, query, center, page, PER_PAGE);
                 reply(sender, render(messages, query, center, page, inspect, result));

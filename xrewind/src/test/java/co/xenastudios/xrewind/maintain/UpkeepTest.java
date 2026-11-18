@@ -1,6 +1,7 @@
 package co.xenastudios.xrewind.maintain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.xenastudios.core.db.Database;
@@ -9,6 +10,7 @@ import co.xenastudios.xrewind.log.Actions;
 import co.xenastudios.xrewind.log.Actor;
 import co.xenastudios.xrewind.log.Entry;
 import co.xenastudios.xrewind.log.LogQueue;
+import co.xenastudios.xrewind.log.WriteGate;
 import co.xenastudios.xrewind.log.Writer;
 import co.xenastudios.xrewind.storage.Clock;
 import co.xenastudios.xrewind.storage.Schema;
@@ -20,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.logging.Logger;
 import org.bukkit.Material;
 import org.junit.jupiter.api.AfterEach;
@@ -36,6 +39,7 @@ class UpkeepTest {
 
     Database database;
     final Logger logger = Logger.getLogger("test");
+    final WriteGate gate = new WriteGate(logger);
 
     @BeforeEach
     void start() throws Exception {
@@ -68,9 +72,85 @@ class UpkeepTest {
             new Entry.BlockChange(now, steve, "world", 1, 64, 0, Actions.BREAK,
                 Material.STONE.createBlockData(), Material.AIR.createBlockData()),
             new Entry.Session(now - 40 * 86_400, steve, "world", 0, 64, 0, Actions.JOIN));
-        assertEquals(2, Purge.run(database, Purge.daysAgo(30)));
+        assertEquals(2, Purge.run(database, gate, Purge.daysAgo(30)));
         assertEquals(1, count("SELECT COUNT(*) FROM xr_block"));
         assertEquals(0, count("SELECT COUNT(*) FROM xr_session"));
+    }
+
+    @Test
+    void aPurgeWaitsWhileABackupHoldsTheWriter() throws Exception {
+        Actor steve = new Actor(UUID.randomUUID(), "Steve");
+        write(new Entry.BlockChange(Clock.now() - 40 * 86_400, steve, "world", 0, 64, 0, Actions.BREAK,
+            Material.STONE.createBlockData(), Material.AIR.createBlockData()));
+        WriteGate.Hold hold = gate.hold(TimeUnit.SECONDS.toNanos(60));
+        assertTrue(hold.ready().isDone(), "nothing was writing");
+        long[] deleted = {-1};
+        Thread purge = new Thread(() -> {
+            try {
+                deleted[0] = Purge.run(database, gate, Purge.daysAgo(30));
+            } catch (java.sql.SQLException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+        purge.start();
+        purge.join(500);
+        assertTrue(purge.isAlive(), "it waits for the hold");
+        assertEquals(1, count("SELECT COUNT(*) FROM xr_block"), "and has deleted nothing");
+        hold.release();
+        purge.join(10_000);
+        assertEquals(1, deleted[0]);
+        assertEquals(0, count("SELECT COUNT(*) FROM xr_block"));
+    }
+
+    @Test
+    void aPauseWhileAPurgesDeleteRunsIsReadyOnlyAfterIt() throws Exception {
+        Actor steve = new Actor(UUID.randomUUID(), "Steve");
+        int old = Clock.now() - 40 * 86_400;
+        write(new Entry.BlockChange(old, steve, "world", 0, 64, 0, Actions.BREAK,
+                Material.STONE.createBlockData(), Material.AIR.createBlockData()),
+            new Entry.Session(old, steve, "world", 0, 64, 0, Actions.JOIN));
+        long[] deleted = {-1};
+        Thread purge = new Thread(() -> {
+            try {
+                deleted[0] = Purge.run(database, gate, Purge.daysAgo(30));
+            } catch (java.sql.SQLException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+        // Another connection's write keeps the purge's first DELETE waiting on SQLite's lock.
+        try (Connection blocker = database.connect(); Statement sql = blocker.createStatement()) {
+            blocker.setAutoCommit(false);
+            sql.execute("INSERT INTO xr_meta (name, value) VALUES ('test-lock', 'x')");
+            purge.start();
+            await(gate::writing);
+            WriteGate.Hold hold = gate.hold(TimeUnit.SECONDS.toNanos(60));
+            Thread.sleep(300);
+            assertFalse(hold.ready().isDone(), "the DELETE is still running");
+            blocker.rollback();
+            await(hold.ready()::isDone);
+            assertFalse(hold.ready().isCompletedExceptionally());
+            assertEquals(0, count("SELECT COUNT(*) FROM xr_block"), "ready once the DELETE is done");
+            Thread.sleep(200);
+            assertEquals(1, count("SELECT COUNT(*) FROM xr_session"), "and the next waits for the hold");
+            hold.release();
+        }
+        purge.join(10_000);
+        assertEquals(2, deleted[0]);
+    }
+
+    @Test
+    void aPurgeHandsTheSpaceBackALittleAtATime() throws Exception {
+        Actor steve = new Actor(UUID.randomUUID(), "Steve");
+        int old = Clock.now() - 40 * 86_400;
+        // About 10 MB of chat: more pages than one turn's vacuum hands back.
+        String words = "x".repeat(180);
+        Entry[] entries = new Entry[50_000];
+        for (int i = 0; i < entries.length; i++) {
+            entries[i] = new Entry.Text(old, steve, "world", i, 64, 0, (byte) 1, words + i);
+        }
+        write(entries);
+        assertEquals(50_000, Purge.run(database, gate, Purge.daysAgo(30)));
+        assertEquals(0, count("PRAGMA freelist_count"), "every freed page went back to the disk, over several turns");
     }
 
     @Test
@@ -79,8 +159,8 @@ class UpkeepTest {
         write(new Entry.BlockChange(Clock.now(), steve, "world", 0, 64, 0, Actions.BREAK,
             Material.STONE.createBlockData(), Material.AIR.createBlockData()));
         assertEquals(Integer.MIN_VALUE, Purge.daysAgo(30_000), "held at the earliest time, not wrapped to the future");
-        assertEquals(0, Purge.run(database, Purge.daysAgo(10_000)));
-        assertEquals(0, Purge.run(database, Purge.secondsAgo(100L * 365 * 86_400)));
+        assertEquals(0, Purge.run(database, gate, Purge.daysAgo(10_000)));
+        assertEquals(0, Purge.run(database, gate, Purge.secondsAgo(100L * 365 * 86_400)));
         assertEquals(1, count("SELECT COUNT(*) FROM xr_block"));
     }
 
@@ -144,6 +224,14 @@ class UpkeepTest {
             assertEquals(1, count("SELECT COUNT(*) FROM xr_text WHERE message = 'Hello | there'"));
             assertEquals(1, count("SELECT COUNT(*) FROM xr_text WHERE message = 'hi all' AND kind = 1"));
             assertTrue(count("SELECT COUNT(*) FROM xr_user WHERE uuid_most IS NOT NULL") == 1, "Notch keeps his uuid");
+        }
+    }
+
+    private static void await(BooleanSupplier done) throws InterruptedException {
+        long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (!done.getAsBoolean()) {
+            assertTrue(System.nanoTime() < until, "timed out");
+            Thread.sleep(5);
         }
     }
 

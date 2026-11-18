@@ -45,6 +45,7 @@ public class XRewind extends XenaPlugin<XRConfig> {
     private Rollbacks rollbacks;
     private Upkeep upkeep;
     private final RecentBreaks recent = new RecentBreaks();
+    private Api api;
 
     @Override
     protected ConfigSpec<XRConfig> configSpec() {
@@ -63,6 +64,11 @@ public class XRewind extends XenaPlugin<XRConfig> {
 
     @Override
     protected void setup(Setup setup, XRConfig config) {
+        // The developer API, first so it's there even if a later feature fails to set up.
+        if (api == null) {
+            api = new Api(this);
+        }
+        setup.module("api", () -> api);
         storage().sync(config.storage());
         writer().start();
         XRConfig.Logging log = config.log();
@@ -113,6 +119,9 @@ public class XRewind extends XenaPlugin<XRConfig> {
         if (inspector != null) {
             inspector.clear();
         }
+        if (rollbacks != null) {
+            rollbacks.shutdown();
+        }
         if (writer != null) {
             writer.stop(10, TimeUnit.SECONDS);
         }
@@ -128,6 +137,11 @@ public class XRewind extends XenaPlugin<XRConfig> {
     public LogQueue queue() {
         writer();
         return queue;
+    }
+
+    /** Rollbacks, restores and undo; null until the first setup. */
+    public Rollbacks rollbacks() {
+        return rollbacks;
     }
 
     public Writer writer() {

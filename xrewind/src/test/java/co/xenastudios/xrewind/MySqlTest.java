@@ -10,6 +10,7 @@ import co.xenastudios.xrewind.log.Entry;
 import co.xenastudios.xrewind.log.LogQueue;
 import co.xenastudios.xrewind.log.Writer;
 import co.xenastudios.xrewind.maintain.Purge;
+import co.xenastudios.xrewind.query.ApiTypes;
 import co.xenastudios.xrewind.query.Lookup;
 import co.xenastudios.xrewind.query.Params;
 import co.xenastudios.xrewind.storage.Clock;
@@ -88,8 +89,33 @@ class MySqlTest {
         marker.stop(30, TimeUnit.SECONDS);
         assertEquals(1_250, count("SELECT COUNT(*) FROM " + database.table("block") + " WHERE rolled_back = 1"));
 
-        assertEquals(1_250, Purge.run(database, Purge.daysAgo(30)));
+        assertEquals(1_250, Purge.run(database, new co.xenastudios.xrewind.log.WriteGate(logger), Purge.daysAgo(30)));
         assertEquals(1_250, count("SELECT COUNT(*) FROM " + database.table("block")));
+    }
+
+    /** The API's queries and entries, through the same SQL, on MySQL. */
+    @Test
+    void theApisQueriesWork() throws Exception {
+        int now = Clock.now();
+        LogQueue queue = new LogQueue(logger);
+        Writer writer = new Writer(queue, () -> database, logger);
+        queue.add(new Entry.BlockChange(now, Actor.source("xplots"), "world", 10, 64, 10, Actions.BREAK,
+            Material.GRASS_BLOCK.createBlockData(), Material.AIR.createBlockData()));
+        queue.add(new Entry.BlockChange(now, new Actor(UUID.randomUUID(), "Steve"), "world", 500, 64, 500, Actions.PLACE,
+            Material.AIR.createBlockData(), Material.STONE.createBlockData()));
+        writer.start();
+        writer.stop(30, TimeUnit.SECONDS);
+
+        co.xenastudios.xrewind.api.Query nearby = co.xenastudios.xrewind.api.Query.builder()
+            .users("#xplots").time(java.time.Duration.ofHours(1)).radius("world", 10, 64, 10, 5).build();
+        List<co.xenastudios.xrewind.api.Entry> found = Lookup.page(database, ApiTypes.query(nearby), ApiTypes.center(nearby), 1, 100)
+            .rows().stream().map(ApiTypes::entry).toList();
+        assertEquals(1, found.size());
+        assertEquals("#xplots", found.getFirst().actor());
+        assertEquals(co.xenastudios.xrewind.api.Action.BREAK, found.getFirst().action());
+
+        co.xenastudios.xrewind.api.Query everywhere = co.xenastudios.xrewind.api.Query.builder().world("world").build();
+        assertEquals(2, Lookup.page(database, ApiTypes.query(everywhere), ApiTypes.center(everywhere), 1, 100).total());
     }
 
     private long count(String query) throws Exception {

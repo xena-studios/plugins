@@ -29,6 +29,10 @@ public final class LogQueue {
     private final Logger logger;
     private volatile Thread writer;
     private volatile java.util.Set<String> excluded = java.util.Set.of();
+    // Entries the writer has taken, ever. Written by the writer alone; see poll.
+    private volatile long taken;
+    // Whether a backup holds writes, for the warning below. Read only when it's given.
+    private volatile java.util.function.BooleanSupplier held = () -> false;
 
     public LogQueue(Logger logger) {
         this.logger = logger;
@@ -56,7 +60,8 @@ public final class LogQueue {
         }
         entries.add(entry);
         if (waiting == WARN_AT) {
-            logger.warning(WARN_AT + " changes are waiting to be saved: the database is slow or can't be reached.");
+            logger.warning(WARN_AT + " changes are waiting to be saved: " + (held.getAsBoolean()
+                ? "a plugin is holding writes for a backup." : "the database is slow or can't be reached."));
         }
         if (waiting == BATCH) {
             Thread thread = writer;
@@ -70,9 +75,26 @@ public final class LogQueue {
     Entry poll() {
         Entry entry = entries.poll();
         if (entry != null) {
+            // Counted as taken before it stops counting as waiting, so one that's being taken
+            // is never in neither count: see taken.
+            taken++;
             size.decrementAndGet();
         }
         return entry;
+    }
+
+    /**
+     * Entries the writer has taken off the queue since it was made. Read {@link #size()}
+     * first, then this: their sum is then at least every entry added before the first read,
+     * counting one being taken meanwhile twice at worst, never not at all.
+     */
+    long taken() {
+        return taken;
+    }
+
+    /** What says whether a backup holds writes, so the warning above blames the right thing. */
+    void held(java.util.function.BooleanSupplier held) {
+        this.held = held;
     }
 
     void writer(Thread thread) {

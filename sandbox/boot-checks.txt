@@ -5,3 +5,10 @@ expect: SELFTEST PASS
 # Other plugins can use a plugin's API (xena.api): a plugin.yml plugin and a Paper plugin.
 logged: API CONSUMER OK
 logged: PAPER API CONSUMER OK
+
+# A plugin uses xRewind's API on a real server: logs a removed block, looks it up, and
+# rolls it back on the region's thread. CI boots every plugin together, so xRewind is here.
+logged: Storage ready:
+run: apicheck xrewind
+expect: XREWIND LOOKUP 1
+expect: XREWIND API OK 1

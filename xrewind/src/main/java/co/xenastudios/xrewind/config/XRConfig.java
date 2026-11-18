@@ -52,7 +52,9 @@ public record XRConfig(
         @Comment("<count> changes imported in <seconds>s.") Message imported,
         @Comment("It was imported before. <date>.") Message importedBefore,
         @Comment("CoreProtect's database couldn't be read. <reason>.") Message importFailed,
-        Message importRunning) {}
+        Message importRunning,
+        @Comment("The server stopped a purge partway. <count> changes were deleted by then.") Message purgeInterrupted,
+        @Comment("The server stopped an import partway.") Message importInterrupted) {}
 
     public record RollbackMessages(
         @Comment("A rollback or restore without t:.") Message needTime,
@@ -66,6 +68,7 @@ public record XRConfig(
         @Comment("When it's finished. <verb>, <count>, <seconds>.") Message done,
         @Comment("Stored blocks this server couldn't read. <count>.") Message skipped,
         Message noUndo,
+        @Comment("Another plugin stopped a rollback, restore or undo before it started.") Message stopped,
         Verbs verbs) {}
 
     public record Verbs(String rollback, String restore, String undo) {}
@@ -154,6 +157,7 @@ public record XRConfig(
                 Message.of("<prefix><success><verb></success> <highlight><count></highlight> blocks in <seconds>s."),
                 Message.of("<prefix><error><count> blocks were stored by a Minecraft version this one can't read, and were left as they are."),
                 Message.of("<prefix><error>Nothing to undo. Undo works on your last rollback or restore since the server started."),
+                Message.of("<prefix><error>Another plugin stopped it before it started. Nothing changed."),
                 new Verbs("Rolled back", "Restored", "Undid")),
             new UpkeepMessages(
                 Message.of("<prefix><error>Purge history at least a day old: <highlight>t:1d</highlight> or more."),
@@ -163,7 +167,9 @@ public record XRConfig(
                 Message.of("<prefix><success>Imported</success> <highlight><count></highlight> changes from CoreProtect in <seconds>s."),
                 Message.of("<prefix><error>CoreProtect's history was already imported (<date>). <highlight>#again</highlight> imports it again, and what came across before shows twice."),
                 Message.of("<prefix><error>Couldn't read CoreProtect's history: <reason>"),
-                Message.of("<prefix><error>An import is already running."))),
+                Message.of("<prefix><error>An import is already running."),
+                Message.of("<prefix><error>The purge was stopped partway, after deleting <highlight><count></highlight> changes. Run it again to finish."),
+                Message.of("<prefix><error>The import was stopped partway. Run it again with <highlight>#again</highlight>; what came across before shows twice."))),
         StorageSettings.defaults("xrewind_"),
         new Logging(true, true, true, true, true, true, true, true, true, false, true, false, false, true, false, false, List.of()),
         new Rollback(10, 10, 100),

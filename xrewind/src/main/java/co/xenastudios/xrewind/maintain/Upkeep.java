@@ -5,6 +5,7 @@ import co.xenastudios.core.text.Durations;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xrewind.XRewind;
 import co.xenastudios.xrewind.config.XRConfig;
+import co.xenastudios.xrewind.log.WriteGate;
 import co.xenastudios.xrewind.storage.Clock;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,8 +47,15 @@ public final class Upkeep {
         plugin.tasks().async(() -> {
             try {
                 plugin.writer().flush(2_000);
-                long deleted = Purge.run(database, Purge.secondsAgo(seconds));
-                reply(sender, () -> messages().purged().send(sender, Placeholders.text("count", String.format("%,d", deleted)),
+                long deleted = Purge.run(database, plugin.writer().gate(), Purge.secondsAgo(seconds));
+                String count = String.format("%,d", deleted);
+                if (Thread.currentThread().isInterrupted()) {
+                    // Purge.run stops between batches when interrupted, as the server stops.
+                    plugin.getLogger().warning("A purge was stopped partway, after deleting " + count + " changes.");
+                    reply(sender, () -> messages().purgeInterrupted().send(sender, Placeholders.text("count", count)));
+                    return;
+                }
+                reply(sender, () -> messages().purged().send(sender, Placeholders.text("count", count),
                     Placeholders.text("time", Durations.format(Duration.ofSeconds(seconds)))));
             } catch (SQLException | RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "A purge failed", e);
@@ -83,16 +91,22 @@ public final class Upkeep {
                 reply(sender, () -> messages().importing().send(sender, Placeholders.text("source", source.description())));
                 // Recorded before anything's read: a second import, even after this one stops
                 // partway, would duplicate what came across, so it needs #again.
-                setMeta(database, IMPORTED, "partway, " + LocalDate.now());
+                setMeta(database, plugin.writer().gate(), IMPORTED, "partway, " + LocalDate.now());
                 long start = System.nanoTime();
                 long count = new CoreProtectImport(source, plugin.queue(), plugin.getLogger()).run();
                 // Done once what it queued is written. Live logging keeps the queue busy, so
-                // wait for this import's rows, not for the queue to be empty.
-                long target = plugin.writer().written() + plugin.queue().size();
-                while (plugin.writer().written() < target && plugin.writer().problem() == null) {
-                    plugin.writer().flush(5_000);
+                // wait for this import's rows, not for the queue to be empty. A row the
+                // database wouldn't take counts as dealt with, so this can't wait forever.
+                long target = plugin.writer().target();
+                while (!plugin.writer().flushed(target, 5_000) && plugin.writer().problem() == null) {
+                    if (Thread.currentThread().isInterrupted()) {
+                        throw new InterruptedException();
+                    }
+                    if (!plugin.writer().started()) {
+                        throw new IllegalStateException("xRewind stopped before what was imported was saved");
+                    }
                 }
-                setMeta(database, IMPORTED, LocalDate.now().toString());
+                setMeta(database, plugin.writer().gate(), IMPORTED, LocalDate.now().toString());
                 double seconds = (System.nanoTime() - start) / 1e9;
                 plugin.getLogger().info("Imported " + String.format("%,d", count) + " changes from CoreProtect in "
                     + co.xenastudios.xrewind.rollback.Rollbacks.seconds(seconds) + "s.");
@@ -103,6 +117,8 @@ public final class Upkeep {
                 reply(sender, () -> messages().importFailed().send(sender, Placeholders.text("reason", String.valueOf(e.getMessage()))));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                plugin.getLogger().warning("The CoreProtect import was stopped partway.");
+                reply(sender, () -> messages().importInterrupted().send(sender));
             } finally {
                 importing.set(false);
             }
@@ -127,7 +143,9 @@ public final class Upkeep {
         }
     }
 
-    private static void setMeta(Database database, String name, String value) throws SQLException {
+    // A write, so a turn at the gate: a backup's hold waits for it, and it for the hold.
+    private static void setMeta(Database database, WriteGate gate, String name, String value) throws SQLException, InterruptedException {
+        gate.enter();
         try (Connection connection = database.connect()) {
             try (PreparedStatement update = connection.prepareStatement(database.sql("UPDATE {p}meta SET value = ? WHERE name = ?"))) {
                 update.setString(1, value);
@@ -141,10 +159,18 @@ public final class Upkeep {
                 insert.setString(2, value);
                 insert.executeUpdate();
             }
+        } finally {
+            gate.exit();
         }
     }
 
+    // The scheduler refuses once xRewind is disabled, as it is when the server stopped the
+    // work; the console was told already.
     private void reply(CommandSender sender, Runnable send) {
-        plugin.tasks().sender(sender, send);
+        try {
+            plugin.tasks().sender(sender, send);
+        } catch (RuntimeException e) {
+            plugin.getLogger().log(Level.FINE, "Couldn't reply to " + sender.getName(), e);
+        }
     }
 }

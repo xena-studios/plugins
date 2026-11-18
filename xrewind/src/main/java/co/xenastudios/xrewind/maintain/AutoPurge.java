@@ -39,7 +39,7 @@ public final class AutoPurge implements Module {
             return;
         }
         try {
-            long deleted = Purge.run(database, Purge.daysAgo(days));
+            long deleted = Purge.run(database, plugin.writer().gate(), Purge.daysAgo(days));
             if (deleted > 0) {
                 plugin.getLogger().info("Purged " + String.format("%,d", deleted) + " changes older than " + days + " days.");
             }

@@ -30,6 +30,7 @@ Why the plugins are built the way they are, oldest first.
 | [Network mode: one change feed in the database](#network-mode-one-change-feed-in-the-database-2026-11-17) | 2026-11-17 |
 | [Chat pages, offline players, warmups and Vault move to the core](#chat-pages-offline-players-warmups-and-vault-move-to-the-core-2026-11-17) | 2026-11-17 |
 | [xBackup: a content-addressed store, read twice, restored on start](#xbackup-a-content-addressed-store-read-twice-restored-on-start-2026-11-18) | 2026-11-18 |
+| [Global work survives an empty server's pause](#global-work-survives-an-empty-servers-pause-2026-11-18) | 2026-11-18 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -199,6 +200,7 @@ xBans, xVote, xMoney and xStats keep what's hot (active bans, balances) in memor
 - **Late commits aren't lost.** Ids are handed out on insert, not on commit, so a slow transaction can commit after a newer row was already read. An id skipped over is asked for again on each check for 15 seconds (a rolled-back insert leaves a gap forever, so it isn't waited on longer), and a jump of over 1,000 ids isn't waited on at all.
 - **Changes from before a start aren't replayed.** A starting server reads its tables anyway; it starts from the newest row.
 - **Pruned to ten minutes, never empty.** Once a minute each server deletes rows older than ten minutes below the newest it has seen, by key range. The newest row always stays, so an old MySQL that forgets its counter on restart can't hand out an id again.
+- **A server that may have missed changes reads again.** A feed is only as good as the server's memory of what it read, so `onResync` tells a plugin to reload what it keeps in memory from its tables whenever that can't be trusted: when checks start working after failing, when none worked for five minutes (rows it never saw may be pruned), and after a jump in ids too big to wait for. Found reviewing xBans (#63): without it, a server cut off from MySQL for more than ten minutes kept enforcing lifted bans and missed new ones until a restart.
 
 It's tested on SQLite with two feeds sharing a file (`ChangeFeedTest`, including late and never-committed rows and pruning), and against a real MariaDB when `XR_MYSQL` is set (`ChangeFeedMySqlTest`, as xRewind's), which CI runs.
 
@@ -226,4 +228,10 @@ xBackup (#23) keeps backups in a small restic-like repository it writes itself: 
 - **Remotes are mirrors.** Packs are immutable, so a backend only needs put, get, list and delete; copies send what's missing (packs, then indexes, then snapshots) and refuse a remote holding a different repository. A copy deletes from the remote only snapshots the repository removed on purpose (noted in a local `forgotten` file, never copied) and older than its newest, and packs and indexes only when every snapshot left on the remote is also local and no local index lists them. Local damage, a rolled-back disk, or an empty repository deletes nothing. S3 is SigV4 by hand on `java.net.http` (checked against AWS's published example); WebDAV and the drives are plain REST with a small JSON reader, because the command-line restore has no Gson.
 - **Remote secrets live in `secrets.yml`, not `config.yml`.** Owners share their config for help, and xBackup backs it up and copies it to every remote. Passwords and client secrets go in an owner-only `secrets.yml`, which is never backed up, nor are SFTP keys, tokens and the command line's settings file. Any found in `config.yml` are moved there each time the config loads, before its first load at startup.
 - **SFTP and FTP libraries are fetched by xBackup, not Paper's library loader.** The issue planned Paper's loader. It resolves only at startup, so a remote added on reload would need a restart, and the command-line restore has no Paper at all. xBackup downloads JSch or Commons Net (one dependency-free jar each, Google's mirror of Maven Central first, then Maven Central) only when a remote of that type is used, checks a pinned SHA-256 (`LibrariesTest` fails if the catalog version moves without it), and loads the code that uses it through its own class loader: xBackup's `remote.lib` classes only from xBackup's jar, the library's only from its jar.
+
+## Global work survives an empty server's pause (2026-11-18)
+
+Paper pauses a server that has been empty for `pause-when-empty-seconds` (a vanilla setting, 60 by default). While paused it still runs console commands and Bukkit's scheduler, but not the global region scheduler, which Paper ticks with the worlds. So anything a plugin queued there waited for the next player: the core's own `/<plugin> reload` queued the reload itself there (to run after the command), so a reload typed in an empty server's console did nothing until someone joined. Found by xBackup (#61), whose scheduled backups timed out on empty servers, and reproduced with xUtilities 2.0.2 on Paper 1.21.11 and 26.3 with `pause-when-empty-seconds=1`.
+
+`Tasks.global` and the new `Tasks.nextTick` use Bukkit's scheduler on Paper and the global region scheduler on Folia, which never pauses. The core's reload and `editConfig` use `nextTick`. With the fix, the same test logs the reload six seconds after the pause. Plugins that call `Bukkit.getGlobalRegionScheduler()` directly (xLimbo's ticks, xRewind's rollback applier) should move to `Tasks` in their next release.
 

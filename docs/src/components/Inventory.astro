@@ -1,0 +1,402 @@
+---
+// The home page's first screen: the family as a chest inventory. Every plugin is an item in
+// a slot, one row per category; the selected item's tooltip, docked beside the inventory,
+// carries its pitch, its stats and its Download. Pointing at a slot shows its tooltip at the
+// pointer, as in the game; clicking or focusing one selects it. Without JavaScript each slot
+// is a link to the plugin's page and the docked tooltip shows the first plugin.
+// All of it comes from the brand catalog and the build files (src/data/plugins.json).
+import catalog from "../data/plugins.json" with { type: "json" };
+
+const files = import.meta.glob<{ default: ImageMetadata }>("../assets/plugins/*.svg", { eager: true });
+const icon = (id: string) => files[`../assets/plugins/${id}.svg`]?.default.src;
+const plugins = catalog.plugins;
+const first = plugins.find((p) => p.released) ?? plugins[0];
+// The chest is nine slots a row, six on a phone. Each row's plugins wrap onto as many rows
+// as they need, and empty slots fill out the last row for whichever width is showing.
+const pad = (n: number, columns: number) => Math.max(1, Math.ceil(n / columns)) * columns - n;
+const rows = catalog.categories.map((category) => ({ category, items: plugins.filter((p) => p.category === category) }));
+// Blurbs are plain text with `code` spans, as in the brand repo.
+const html = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/`([^`]+)`/g, "<code>$1</code>");
+const runsOn = (p: (typeof plugins)[number]) => (p.folia ? "Paper, Purpur and Folia" : "Paper and Purpur");
+---
+<section class="inventory-screen not-content" aria-labelledby="inventory-title">
+  <div class="pitch">
+    <h1 id="inventory-title">Xena Studios Plugins</h1>
+    <p class="lead">
+      Small plugins for Paper and Folia that each do one job. Free, every feature, and light enough to forget they're running.
+    </p>
+    <label class="search gui-slot">
+      <span class="sr-only">Search the plugins</span>
+      <input type="search" data-search placeholder="Search: bans, economy, teleport…" autocomplete="off" />
+    </label>
+    <p class="hint">Point at a plugin to read it. Choose one to get it.</p>
+  </div>
+
+  <div class="workbench">
+    <div class="gui-panel chest" role="group" aria-label="The plugins">
+      <p class="chest-title">Plugins</p>
+      {rows.map((row) => (
+        <div class="row" data-row>
+          <p class="row-label">{row.category}</p>
+          <ul class="slots" role="list">
+            {row.items.map((p) => (
+              <li>
+                <a
+                  class="gui-slot slot"
+                  href={p.docs}
+                  data-slot={p.id}
+                  data-search-text={`${p.name} ${p.category} ${p.tagline} ${p.blurb} ${p.summary}`.toLowerCase()}
+                  aria-label={`${p.name}: ${p.tagline}`}
+                  aria-current={p.id === first.id ? "true" : undefined}
+                  style={`--item: ${p.accentText}`}
+                >
+                  <img src={icon(p.id)} alt="" width="48" height="48" />
+                </a>
+              </li>
+            ))}
+            {Array.from({ length: Math.max(pad(row.items.length, 9), pad(row.items.length, 6)) }, (_, i) => (
+              <li
+                class:list={[
+                  "empty",
+                  { "wide-only": i >= pad(row.items.length, 6), "phone-only": i >= pad(row.items.length, 9) },
+                ]}
+                aria-hidden="true"
+              >
+                <span class="gui-slot slot" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    <div class="tooltips" aria-live="polite">
+    {plugins.map((p) => (
+      <article
+        class="gui-tooltip docked"
+        data-tooltip={p.id}
+        hidden={p.id !== first.id}
+        style={`--item: ${p.accentText}`}
+      >
+        <h2 class="item-name">{p.name}</h2>
+        <p class="item-tagline">{p.tagline}</p>
+        <p class="item-lore" set:html={html(p.blurb)} />
+        <ul class="item-attributes" role="list">
+          {p.released && <li>Version {p.version}</li>}
+          <li>Runs on {runsOn(p)}</li>
+          <li>Jar under {p.jarBudgetKb} KB</li>
+          {p.api && <li>Developer API</li>}
+        </ul>
+        {!p.released && (
+          <p class="item-soon">
+            Coming soon. <a href="https://github.com/xena-studios/plugins/releases">Follow releases on GitHub</a>.
+          </p>
+        )}
+        <p class="item-actions">
+          {p.released && (
+            <a class="gui-button primary" href={`${p.docs}download/`} style={`--b: ${p.accentText}`}>
+              Download {p.name}
+            </a>
+          )}
+          <a class="gui-button" href={p.docs}>
+            How it works
+          </a>
+        </p>
+      </article>
+    ))}
+    </div>
+  </div>
+
+  <div class="gui-tooltip floating" data-floating hidden aria-hidden="true">
+    <p class="item-name" data-floating-name></p>
+    <p class="item-tagline" data-floating-tagline></p>
+  </div>
+  <p class="none" data-none hidden>
+    No plugin matches that. <a href="https://github.com/xena-studios/plugins/issues/new/choose">Ask for one</a>.
+  </p>
+</section>
+
+<script>
+  // Pointing shows a tooltip at the pointer; choosing (click, Enter, focus) docks it.
+  const screen = document.querySelector<HTMLElement>(".inventory-screen");
+  if (screen) {
+    const slots = [...screen.querySelectorAll<HTMLAnchorElement>("[data-slot]")];
+    const docked = [...screen.querySelectorAll<HTMLElement>("[data-tooltip]")];
+    const floating = screen.querySelector<HTMLElement>("[data-floating]")!;
+    const floatingName = screen.querySelector<HTMLElement>("[data-floating-name]")!;
+    const floatingTagline = screen.querySelector<HTMLElement>("[data-floating-tagline]")!;
+    const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+    const select = (id: string) => {
+      for (const slot of slots) slot.toggleAttribute("aria-current", slot.dataset.slot === id);
+      for (const tip of docked) tip.hidden = tip.dataset.tooltip !== id;
+    };
+
+    for (const slot of slots) {
+      const id = slot.dataset.slot!;
+      const tip = docked.find((t) => t.dataset.tooltip === id)!;
+      slot.addEventListener("click", (event) => {
+        // A second click on the chosen plugin opens its page, as the link would.
+        if (slot.hasAttribute("aria-current")) return;
+        event.preventDefault();
+        select(id);
+      });
+      slot.addEventListener("focus", () => select(id));
+      if (finePointer) {
+        slot.addEventListener("pointerenter", () => {
+          floatingName.textContent = tip.querySelector(".item-name")!.textContent;
+          floatingTagline.textContent = tip.querySelector(".item-tagline")!.textContent;
+          floating.style.setProperty("--item", slot.style.getPropertyValue("--item"));
+          floating.hidden = false;
+        });
+        slot.addEventListener("pointermove", (event) => {
+          floating.style.translate = `${event.clientX + 18}px ${event.clientY - 30}px`;
+        });
+        slot.addEventListener("pointerleave", () => (floating.hidden = true));
+      }
+    }
+
+    // The search box filters the slots, as the creative inventory's does.
+    const input = screen.querySelector<HTMLInputElement>("[data-search]")!;
+    const none = screen.querySelector<HTMLElement>("[data-none]")!;
+    input.addEventListener("input", () => {
+      const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+      let shown = 0;
+      for (const slot of slots) {
+        const match = words.every((w) => slot.dataset.searchText!.includes(w));
+        slot.classList.toggle("filtered", !match);
+        slot.tabIndex = match ? 0 : -1;
+        if (match) shown++;
+      }
+      none.hidden = shown > 0;
+      const firstMatch = slots.find((s) => !s.classList.contains("filtered"));
+      if (firstMatch && words.length) select(firstMatch.dataset.slot!);
+    });
+  }
+</script>
+
+<style>
+  .inventory-screen {
+    display: grid;
+    /* The pitch above, then the chest and its tooltip side by side: the reading column is
+       too narrow for all three in one row. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.75rem, 3vw, 2.5rem);
+    padding-block: clamp(1.5rem, 4vw, 3rem) clamp(2rem, 5vw, 4rem);
+  }
+  .pitch h1 {
+    margin: 0;
+    font-size: clamp(2.4rem, 1.4rem + 3.4vw, 4.75rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+  }
+  .lead {
+    margin: 1.25rem 0 0;
+    max-width: 34ch;
+    font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+    line-height: 1.6;
+    color: var(--gui-lore);
+  }
+  .search {
+    display: block;
+    margin-top: 2rem;
+    max-width: 24rem;
+    padding: 0.2rem;
+  }
+  .search input {
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    font: inherit;
+    font-size: 1rem;
+  }
+  .search input::placeholder {
+    color: var(--gui-hint);
+  }
+  .search:focus-within {
+    outline: var(--gui-px) solid var(--text);
+    outline-offset: 2px;
+  }
+  .search input:focus-visible {
+    outline: none;
+  }
+  .hint {
+    margin: 0.85rem 0 0;
+    font-size: 0.875rem;
+    color: var(--gui-hint);
+  }
+
+  .workbench {
+    display: grid;
+    grid-template-columns: auto minmax(15rem, 20rem);
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .chest {
+    padding: 0.9rem 1rem 1.1rem;
+  }
+  .chest-title {
+    margin: 0 0 0.6rem;
+    font-weight: 700;
+    color: var(--gui-lore);
+    font-size: 0.9375rem;
+  }
+  .row + .row {
+    margin-top: 0.7rem;
+  }
+  .row-label {
+    margin: 0 0 0.3rem;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gui-hint);
+  }
+  .slots {
+    --slot: clamp(2.6rem, 2rem + 1.6vw, 3.6rem);
+    display: grid;
+    grid-template-columns: repeat(9, var(--slot));
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .slots li.phone-only {
+    display: none;
+  }
+  .slots li {
+    margin: 0;
+  }
+  .slot {
+    width: var(--slot);
+    height: var(--slot);
+  }
+  .slot img {
+    width: 72%;
+    height: 72%;
+    border-radius: 8%;
+  }
+  /* Hover lightens the slot, as the game does; the chosen one keeps a frame in its colour. */
+  a.slot:hover::after,
+  a.slot:focus-visible::after {
+    content: "";
+    position: absolute;
+    inset: var(--gui-px);
+    background: rgb(255 255 255 / 0.16);
+  }
+  a.slot[aria-current="true"] {
+    outline: var(--gui-px) solid var(--item);
+    outline-offset: 0;
+    z-index: 1;
+  }
+  a.slot:focus-visible {
+    outline: var(--gui-px) solid var(--text);
+    border-radius: 0;
+  }
+  a.slot.filtered {
+    opacity: 0.18;
+    filter: grayscale(1);
+  }
+  .item-soon {
+    margin: 0.9rem 0 0;
+    font-weight: 600;
+    color: var(--item);
+  }
+  .item-soon a {
+    color: var(--text);
+  }
+
+  .docked {
+    padding: 1.1rem 1.2rem 1.2rem;
+  }
+  .item-name {
+    margin: 0;
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--item);
+  }
+  .item-tagline {
+    margin: 0.2rem 0 0;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .item-lore {
+    margin: 0.7rem 0 0;
+    color: var(--gui-lore);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+  .item-attributes {
+    margin: 0.8rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    color: var(--gui-attribute);
+  }
+  .item-attributes li {
+    margin: 0;
+  }
+  .item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1.1rem 0 0;
+  }
+
+  .floating {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    padding: 0.45rem 0.65rem;
+    pointer-events: none;
+    max-width: 18rem;
+  }
+  .floating .item-name {
+    font-size: 1rem;
+  }
+  .floating .item-tagline {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gui-lore);
+  }
+  .none {
+    grid-column: 1 / -1;
+    color: var(--gui-lore);
+  }
+
+  @media (max-width: 44rem) {
+    .workbench {
+      grid-template-columns: 1fr;
+    }
+    /* On a phone the chosen plugin's tooltip, with its Download, comes before the chest. */
+    .tooltips {
+      order: -1;
+    }
+    /* Six slots a row on a phone, so each stays a thumb's width. */
+    .slots {
+      --slot: calc((100vw - 2rem - 1.9rem - 5 * 0.25rem) / 6);
+      grid-template-columns: repeat(6, var(--slot));
+    }
+    .slots li.wide-only {
+      display: none;
+    }
+    .slots li.phone-only {
+      display: revert;
+    }
+    .chest {
+      padding: 0.7rem 0.75rem 0.85rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gui-button {
+      transition: none;
+    }
+  }
+</style>

@@ -2,7 +2,7 @@
 // a static Starlight site served by a Cloudflare Worker. It wears the plugin
 // family's brand (xena-studios/brand), as docs.raptorpanel.net wears Raptor's:
 // deepslate, Space Grotesk, each plugin's pages in its accent with its icon by
-// the title, and xenastudios.co's details (hairlines, pills, focus rings).
+// the title, framed as a game GUI (src/styles/gui.css, DESIGN.md).
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
@@ -31,12 +31,12 @@ export default defineConfig({
         { tag: "meta", attrs: { property: "og:image:alt", content: "XENA STUDIOS plugins over a planet horizon: small, fast plugins for Paper and Folia." } },
         { tag: "meta", attrs: { name: "twitter:image", content: "https://plugins.xenastudios.co/og.png" } },
       ],
-      customCss: ["./src/styles/theme.css"],
+      customCss: ["./src/styles/gui.css", "./src/styles/theme.css"],
       // Code on the family's raised surface with a hairline.
       expressiveCode: {
         themes: ["github-dark-default"],
         styleOverrides: {
-          borderRadius: "12px",
+          borderRadius: "0px",
           borderColor: "#2A2832",
           codeFontFamily: '"JetBrains Mono Variable", ui-monospace, monospace',
           uiFontFamily: '"Space Grotesk Variable", system-ui, sans-serif',
@@ -50,13 +50,14 @@ export default defineConfig({
             editorBackground: "#0D0C10",
             editorTabBarBackground: "#0D0C10",
             editorActiveTabBackground: "#0D0C10",
-            editorActiveTabIndicatorBottomColor: "#C9C2E0",
+            editorActiveTabIndicatorBottomColor: "#46434F",
             editorTabBarBorderBottomColor: "#2A2832",
           },
         },
       },
       components: {
         Footer: "./src/components/Footer.astro",
+        Header: "./src/components/Header.astro",
         Sidebar: "./src/components/Sidebar.astro",
         PageTitle: "./src/components/PageTitle.astro",
         ThemeProvider: "./src/components/ThemeProvider.astro",
@@ -65,9 +66,7 @@ export default defineConfig({
       social: [{ icon: "github", label: "Source code", href: "https://github.com/xena-studios/plugins" }],
       editLink: { baseUrl: "https://github.com/xena-studios/plugins/edit/main/docs/" },
       lastUpdated: true,
-      // The home page's "Browse the plugins" jumps to the catalog, which a component draws,
-      // so the validator can't see its id.
-      plugins: [starlightLinksValidator({ exclude: ["#plugins"] })],
+      plugins: [starlightLinksValidator()],
       // Each plugin's pages load that plugin's accent (public/accents/).
       routeMiddleware: "./src/routeData.ts",
       // src/pages/404.astro instead, with noindex.

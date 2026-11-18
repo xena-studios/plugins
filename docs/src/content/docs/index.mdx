@@ -2,31 +2,19 @@
 title: Small, fast plugins for Paper and Folia
 description: "Small, fast Minecraft plugins for Paper and Folia servers by Xena Studios: essentials, chat, teleports, bans, a block logger and rollback, an economy, vote rewards, rentable plots, backups, player stats and a limbo server. Free and open source."
 template: splash
-hero:
-  title: Xena Studios Plugins
-  tagline: Small, fast plugins for Paper and Folia. Each does one job, costs next to nothing to run, and lets you switch off anything you don't use. Free, every feature.
-  actions:
-    - text: Browse the plugins
-      link: "#plugins"
-      icon: down-arrow
-    - text: Get started
-      link: /start/requirements/
-      icon: right-arrow
-      variant: secondary
-    - text: Modrinth
-      link: https://modrinth.com/organization/xena-studios
-      icon: external
-      variant: minimal
 ---
 
 import Horizon from "../../components/Horizon.astro";
-import Catalog from "../../components/Catalog.astro";
+import Inventory from "../../components/Inventory.astro";
+import Reasons from "../../components/Reasons.astro";
+
+<Inventory />
 
 <Horizon />
 
-<Catalog />
+<Reasons />
 
-<p class="more-label">More from Xena Studios</p>
+<h2 class="more-label">More from Xena Studios</h2>
 
 <ul class="more-list">
   <li>

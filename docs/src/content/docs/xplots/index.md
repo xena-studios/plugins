@@ -6,8 +6,6 @@ sidebar:
   order: 1
 ---
 
-**Rentable plots, set up in a minute.**
-
 xPlots rents small plots to players for in-game money, the box-server staple, on Paper and Purpur. Instead of a region and a sign for every plot made by hand, you select the whole area, say how big each plot is, and confirm: every plot and every sign is made for you.
 
 - **Setup in a minute.** One selection becomes a grid of plots with paths between them, outlined in particles before anything changes. See [Setting up](/xplots/setting-up/).
@@ -15,10 +13,6 @@ xPlots rents small plots to players for in-game money, the box-server staple, on
 - **Plots come back clean.** Each plot is saved when it's made, and put back as it was when its rent runs out or it's abandoned, a few milliseconds per tick.
 - **No region per plot.** xPlots protects its own plots. With WorldGuard installed, it makes one region per field, so a world-wide `build deny` doesn't block them.
 - **Vault or your own coin.** Rent goes through your economy, or takes an item instead, so a box server's Coin works as it is.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
-- **Every change applies on reload.** Prices, rent periods, signs and menus, with `/xplots reload`. Only a change of storage waits for a restart.
-
-Current version: **1.0.1**, for Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xplots).
 
 ## How it works
 
@@ -33,6 +27,11 @@ When the **rent runs out**, the owner is warned a day and an hour before (or whe
 ## Storage
 
 Plots are kept in SQLite out of the box, in `plugins/xPlots/plots.db`, or in MySQL/MariaDB. Everything is held in memory while the server runs and saved in the background, so a click never waits on the disk. See [Configuration](/xplots/configuration/).
+
+## What else it does
+
+- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every change applies on reload.** Prices, rent periods, signs and menus, with `/xplots reload`. Only a change of storage waits for a restart.
 
 ## Getting started
 

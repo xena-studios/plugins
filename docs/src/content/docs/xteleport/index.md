@@ -6,20 +6,14 @@ sidebar:
   order: 1
 ---
 
-**Every teleport your server needs.**
-
 xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, for Paper and Folia. It's for servers that want every teleport with one config and one look, and nothing they don't use.
 
 - **The whole set.** `/sethome`, `/home`, `/homes`, `/tpa`, `/tpahere`, `/tpaccept`, `/warp`, `/spawn`, `/rtp` and the rest. See [Commands](/xteleport/commands/).
 - **Switch off what you don't use.** Every command can be turned off, renamed with aliases or given its own permission, and every setting but storage applies on `/xteleport reload`.
 - **Teleports that feel good.** A warmup that moving or taking damage cancels, with a countdown on the action bar. Cooldowns per command. An optional cost through Vault, taken after the warmup and given back if the teleport fails.
 - **No deaths on arrival.** A home, warp or TPA that would land a player in lava, inside blocks, over the void or high in the air is refused with a message. The spot is loaded in the background to check it, never on the server's thread.
-- **Works with `/back`.** Every teleport uses the command cause, so xUtilities' `/back` (or any plugin's that does the same) returns from it.
-- **Random teleport that doesn't lag.** `/rtp` loads one candidate chunk at a time in the background, checks it on the thread that owns it, and caps how many searches run at once. It can stick to chunks that already exist, for worlds pre-generated with Chunky.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
 - **Easy to switch to.** EssentialsX's command names, so players keep typing what they know, and its homes, warps and spawn imported with one command. See [Switching from EssentialsX](/xteleport/switching/).
 
-Current version: **1.0.0**, for Paper or Folia 1.21.11 or newer (or Purpur) and Java 21 or newer. [Download on Modrinth](https://modrinth.com/plugin/xteleport).
 
 ## How it works
 
@@ -42,6 +36,12 @@ Current version: **1.0.0**, for Paper or Folia 1.21.11 or newer (or Purpur) and 
 ## Storage
 
 Homes and warps are kept in SQLite out of the box, in `plugins/xTeleport/xteleport.db`, or in MySQL/MariaDB. See [Configuration](/xteleport/configuration/).
+
+## What else it does
+
+- **Works with `/back`.** Every teleport uses the command cause, so xUtilities' `/back` (or any plugin's that does the same) returns from it.
+- **Random teleport that doesn't lag.** `/rtp` loads one candidate chunk at a time in the background, checks it on the thread that owns it, and caps how many searches run at once. It can stick to chunks that already exist, for worlds pre-generated with Chunky.
+- **Every feature free.** No early-access builds, nothing behind a Patreon.
 
 ## Getting started
 

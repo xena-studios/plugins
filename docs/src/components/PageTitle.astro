@@ -1,19 +1,63 @@
 ---
-// A plugin's pages carry its icon beside the title, alongside its accent
-// (src/routeData.ts).
+// Page titles in the GUI's material, from the brand catalog (src/data/plugins.json):
+// - Home: none here; the inventory carries the page's heading.
+// - A plugin's overview: the plugin as an item in a large slot, its tooltip's stats, and
+//   Download first, so the page opens like the plugin's own page rather than a doc.
+// - A plugin's other pages: its icon in a slot beside the title.
+// - Everything else: Starlight's title.
 import Default from "@astrojs/starlight/components/PageTitle.astro";
 import catalog from "../data/plugins.json" with { type: "json" };
 
-// Every plugin's icon, synced from the brand repo (scripts/sync-brand.ts).
+const route = Astro.locals.starlightRoute;
+const id = route.id;
 const files = import.meta.glob<{ default: ImageMetadata }>("../assets/plugins/*.svg", { eager: true });
-const icons = Object.fromEntries(catalog.plugins.map((p) => [p.id, files[`../assets/plugins/${p.id}.svg`]?.default]));
-const id = Astro.locals.starlightRoute.id;
-const plugin = catalog.plugins.map((p) => p.id).find((p) => id === p || id.startsWith(`${p}/`));
+const plugin = catalog.plugins.find((p) => id === p.id || id.startsWith(`${p.id}/`));
+const icon = plugin ? files[`../assets/plugins/${plugin.id}.svg`]?.default : undefined;
+const isHome = id === "" || id === "index";
+const isOverview = plugin && id === plugin.id;
+const runsOn = plugin?.folia ? "Paper, Purpur and Folia" : "Paper and Purpur";
 ---
 {
-  plugin && icons[plugin] ? (
+  isHome ? null : isOverview && plugin && icon ? (
+    <header class="product" style={`--item: ${plugin.accentText}`}>
+      <div class="gui-slot big-slot">
+        <img src={icon.src} alt="" width="96" height="96" />
+      </div>
+      <div class="product-text">
+        <h1 id="_top">{plugin.name}</h1>
+        <p class="product-tagline">{plugin.tagline}</p>
+        <ul class="product-stats gui-stat" role="list">
+          {plugin.released && <li>Version {plugin.version}</li>}
+          <li>{runsOn} 1.21.11+</li>
+          <li>Java 21+</li>
+          <li>Jar under {plugin.jarBudgetKb} KB</li>
+          {plugin.api && <li>Developer API</li>}
+        </ul>
+        {!plugin.released && (
+          <p class="soon">
+            Coming soon. <a href="https://github.com/xena-studios/plugins/releases">Follow releases on GitHub</a>.
+          </p>
+        )}
+        <p class="product-actions">
+          {plugin.released && (
+            <a class="gui-button primary" href={`/${plugin.id}/download/`}>
+              Download {plugin.name}
+            </a>
+          )}
+          <a class="gui-button" href={`/${plugin.id}/commands/`}>
+            Commands
+          </a>
+          <a class="gui-button" href={`/${plugin.id}/configuration/`}>
+            Configuration
+          </a>
+        </p>
+      </div>
+    </header>
+  ) : plugin && icon ? (
     <div class="plugin-title">
-      <img src={icons[plugin]!.src} alt="" width="44" height="44" />
+      <span class="gui-slot small-slot">
+        <img src={icon.src} alt="" width="40" height="40" />
+      </span>
       <Default />
     </div>
   ) : (
@@ -22,19 +66,85 @@ const plugin = catalog.plugins.map((p) => p.id).find((p) => id === p || id.start
 }
 
 <style>
+  .product {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(1.25rem, 3vw, 2.25rem);
+    align-items: center;
+    margin-top: 1rem;
+    padding-bottom: 2rem;
+    border-bottom: var(--gui-px) solid var(--gui-panel-lo);
+    box-shadow: 0 1px 0 var(--gui-panel-hi);
+  }
+  .big-slot {
+    width: clamp(6rem, 4rem + 6vw, 9.5rem);
+    aspect-ratio: 1;
+  }
+  .big-slot img {
+    width: 74%;
+    height: 74%;
+    border-radius: 8%;
+  }
+  .product h1 {
+    margin: 0;
+    font-size: clamp(2.25rem, 1.5rem + 2.6vw, 3.75rem);
+    line-height: 1;
+    letter-spacing: -0.035em;
+    color: var(--item);
+  }
+  .product-tagline {
+    margin: 0.5rem 0 0;
+    font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+    font-weight: 600;
+    color: var(--text);
+  }
+  .product-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin: 0.85rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .product-stats li {
+    margin: 0;
+  }
+  .product-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1.25rem 0 0;
+  }
+  .soon {
+    margin: 1rem 0 0;
+    font-weight: 600;
+    color: var(--gui-attribute);
+  }
+  .soon a {
+    color: var(--text);
+  }
   .plugin-title {
     display: flex;
     align-items: center;
     gap: 1rem;
     margin-top: 1rem;
   }
-  .plugin-title img {
+  .small-slot {
     flex: none;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 10px;
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+  .small-slot img {
+    width: 76%;
+    height: 76%;
+    border-radius: 8%;
   }
   .plugin-title :global(h1) {
     margin-top: 0;
+  }
+  @media (max-width: 40rem) {
+    .product {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

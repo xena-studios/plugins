@@ -1,0 +1,156 @@
+/* The plugin site's world: a deepslate game GUI. Panels are raised with a 2px pixel bevel
+   (light top-left, dark bottom-right) and square corners; slots are the same bevel inverted;
+   the item tooltip is a near-black violet panel with a violet-to-indigo border. These are the
+   GUI's real material, used for the frame (header, navigation, title, panels, code and
+   tables); the reading column inside stays calm. The accent of the page's plugin, or the
+   family's lavender elsewhere, marks only a name, the selected slot and the primary action. */
+
+:root {
+  --gui-ground: #121116;
+  --gui-panel: #1B1A21;
+  --gui-panel-hi: #46434F;
+  --gui-panel-lo: #08070B;
+  --gui-slot: #0E0D12;
+  --gui-slot-hi: #2E2C36;
+  --gui-slot-lo: #050407;
+  --gui-edge: #050407;
+  --gui-tooltip: #100A18;
+  --gui-tooltip-top: #6E3CF0;
+  --gui-tooltip-bottom: #2C1478;
+  --gui-lore: #A9A6B4;
+  --gui-attribute: #8FA8FF;
+  --gui-px: 2px;
+  /* Ink on an accent-filled button: near-black, so every plugin's accent reads. */
+  --gui-on-accent: #0B0A0E;
+  /* Secondary text on the ground: hints, placeholders, row labels (5.1:1). */
+  --gui-hint: #8A8796;
+}
+
+/* The horizon runs edge to edge (100vw); never let it add a sideways scroll. */
+html {
+  overflow-x: clip;
+}
+
+/* A raised panel: the inventory's own frame. */
+.gui-panel {
+  position: relative;
+  background: var(--gui-panel);
+  border: var(--gui-px) solid var(--gui-edge);
+  box-shadow:
+    inset var(--gui-px) var(--gui-px) 0 var(--gui-panel-hi),
+    inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -1) 0 var(--gui-panel-lo);
+}
+
+/* A slot: the bevel inverted, so it sits into the panel. */
+.gui-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: var(--gui-slot);
+  box-shadow:
+    inset var(--gui-px) var(--gui-px) 0 var(--gui-slot-lo),
+    inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -1) 0 var(--gui-slot-hi);
+}
+.gui-slot img {
+  image-rendering: pixelated;
+}
+
+/* The item tooltip: name in the item's colour, lore in grey, attributes below. */
+.gui-tooltip {
+  background: var(--gui-tooltip);
+  border: var(--gui-px) solid transparent;
+  background-clip: padding-box;
+  outline: var(--gui-px) solid #050208;
+  box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.65);
+  position: relative;
+}
+.gui-tooltip::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--gui-px) * -1);
+  padding: var(--gui-px);
+  background: linear-gradient(var(--gui-tooltip-top), var(--gui-tooltip-bottom));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* A GUI button: a raised block that presses in. Primary takes the accent. */
+.gui-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 1.15rem;
+  background: var(--gui-panel);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  line-height: 1.2;
+  text-decoration: none;
+  border: var(--gui-px) solid var(--gui-edge);
+  box-shadow:
+    inset var(--gui-px) var(--gui-px) 0 var(--gui-panel-hi),
+    inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -3) 0 var(--gui-panel-lo);
+  transition: filter 120ms var(--ease), transform 80ms var(--ease);
+  cursor: pointer;
+}
+.gui-button:hover {
+  filter: brightness(1.18);
+  color: var(--text);
+}
+.gui-button:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset var(--gui-px) var(--gui-px) 0 var(--gui-panel-lo),
+    inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -1) 0 var(--gui-panel-hi);
+}
+.gui-button.primary {
+  --b: var(--sl-color-accent);
+  background: var(--b);
+  color: var(--gui-on-accent);
+  box-shadow:
+    inset var(--gui-px) var(--gui-px) 0 color-mix(in srgb, var(--b) 55%, white),
+    inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -3) 0 color-mix(in srgb, var(--b) 55%, black);
+}
+.gui-button.primary:hover {
+  color: var(--gui-on-accent);
+}
+.gui-button[aria-disabled="true"] {
+  pointer-events: none;
+  filter: saturate(0.2) brightness(0.75);
+}
+.gui-button:focus-visible {
+  outline: var(--gui-px) solid var(--text);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
+/* Small mono labels for measured facts: stats, never decoration. */
+.gui-stat {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gui-attribute);
+}
+
+/* Scrollbars and the caret, in the GUI's own material. */
+html {
+  scrollbar-color: var(--gui-panel-hi) var(--gui-ground);
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--gui-ground);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gui-panel-hi);
+  border: 3px solid var(--gui-ground);
+}
+input,
+textarea {
+  caret-color: var(--sl-color-accent);
+}

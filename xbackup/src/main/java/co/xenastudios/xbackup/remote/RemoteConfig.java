@@ -25,4 +25,14 @@ public record RemoteConfig(String type, boolean enabled, String path, String url
             remote.bucket(), remote.pathStyle(), remote.username(), password, remote.host(), remote.port(),
             remote.privateKey(), remote.hostKey(), remote.security(), remote.clientId(), clientSecret);
     }
+
+    /** Everything but the secrets, which never reach a log or an exception's message. */
+    @Override
+    public String toString() {
+        return "RemoteConfig[type=" + type + ", enabled=" + enabled + ", path=" + path + ", url=" + url + ", region="
+            + region + ", bucket=" + bucket + ", pathStyle=" + pathStyle + ", username=" + username + ", password="
+            + (password.isEmpty() ? "" : "(set)") + ", host=" + host + ", port=" + port + ", privateKey=" + privateKey
+            + ", hostKey=" + hostKey + ", security=" + security + ", clientId=" + clientId + ", clientSecret="
+            + (clientSecret.isEmpty() ? "" : "(set)") + "]";
+    }
 }

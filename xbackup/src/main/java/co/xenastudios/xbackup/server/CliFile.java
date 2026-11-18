@@ -11,8 +11,8 @@ import java.util.logging.Logger;
 /**
  * What the command-line restore needs from config.yml, which it can't read without a
  * server: where the repository is and how to reach each remote. Written whenever the config
- * loads, readable by the file's owner only, since it holds the remotes' passwords from
- * {@link Secrets}. Never backed up.
+ * loads. No passwords: the command line reads those from {@link Secrets}' file itself. Still
+ * readable by its owner only, and never backed up.
  */
 public final class CliFile {
 
@@ -34,19 +34,17 @@ public final class CliFile {
             properties.setProperty(key + "bucket", remote.bucket());
             properties.setProperty(key + "path-style", Boolean.toString(remote.pathStyle()));
             properties.setProperty(key + "username", remote.username());
-            properties.setProperty(key + "password", remote.password());
             properties.setProperty(key + "host", remote.host());
             properties.setProperty(key + "port", Integer.toString(remote.port()));
             properties.setProperty(key + "private-key", remote.privateKey());
             properties.setProperty(key + "host-key", remote.hostKey());
             properties.setProperty(key + "security", remote.security());
             properties.setProperty(key + "client-id", remote.clientId());
-            properties.setProperty(key + "client-secret", remote.clientSecret());
         }
         try {
             StringWriter text = new StringWriter();
-            properties.store(text, "For the command-line restore (java -jar xBackup.jar restore). Written from config.yml"
-                + " and secrets.yml; edits here are overwritten. Never backed up.");
+            properties.store(text, "For the command-line restore (java -jar xBackup.jar restore). Written from config.yml;"
+                + " edits here are overwritten. Passwords stay in secrets.yml.");
             co.xenastudios.xbackup.remote.OwnerOnlyFile.write(home.resolve(NAME), text.toString());
         } catch (IOException e) {
             logger.warning("Couldn't write " + NAME + " for the command-line restore: " + e.getMessage());

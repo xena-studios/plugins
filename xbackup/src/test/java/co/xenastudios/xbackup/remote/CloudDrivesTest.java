@@ -318,6 +318,18 @@ class CloudDrivesTest {
         return Remotes.open(type, settings, new Remotes.Context(home, Throttle.NONE, Logger.getLogger("test"), t -> null));
     }
 
+    @org.junit.jupiter.api.Test
+    void tokensFromAnEarlierBuildMoveToTheOwnerOnlyFile() throws Exception {
+        Path home = dir.resolve("legacy");
+        Files.createDirectories(home);
+        Files.writeString(home.resolve(Remotes.LEGACY_TOKENS), "gdrive.refresh-token=abc\ngdrive.expires=0\n");
+        assertTrue(OAuth.linked(home, "gdrive"));
+        assertTrue(!Files.exists(home.resolve(Remotes.LEGACY_TOKENS)));
+        assertEquals("rw-------", java.nio.file.attribute.PosixFilePermissions.toString(
+            Files.getPosixFilePermissions(home.resolve(Remotes.TOKENS))));
+        assertEquals("abc", SecretFile.read(home.resolve(Remotes.TOKENS)).get("gdrive").get("refresh-token"));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"drive", "onedrive", "dropbox"})
     void linkThenPutGetListReadDelete(String type) throws Exception {

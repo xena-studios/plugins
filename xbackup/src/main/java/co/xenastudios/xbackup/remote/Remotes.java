@@ -21,7 +21,9 @@ import java.util.logging.Logger;
 public final class Remotes {
 
     /** OAuth tokens for the cloud drives, owner-only, beside config.yml. */
-    public static final String TOKENS = "tokens.properties";
+    public static final String TOKENS = "tokens.yml";
+    /** Where earlier builds kept the tokens; moved to {@link #TOKENS} on first use. */
+    public static final String LEGACY_TOKENS = "tokens.properties";
 
     private Remotes() {}
 

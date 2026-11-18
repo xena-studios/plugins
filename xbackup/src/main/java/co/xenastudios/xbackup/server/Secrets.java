@@ -3,6 +3,7 @@ package co.xenastudios.xbackup.server;
 import co.xenastudios.core.config.ConfigException;
 import co.xenastudios.core.config.ConfigLoader;
 import co.xenastudios.xbackup.remote.OwnerOnlyFile;
+import co.xenastudios.xbackup.remote.SecretFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,7 +35,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
  */
 public final class Secrets {
 
-    public static final String NAME = "secrets.yml";
+    public static final String NAME = SecretFile.SECRETS;
     private static final List<String> KEYS = List.of("password", "client-secret");
 
     private static final String HEADER = """
@@ -125,7 +126,9 @@ public final class Secrets {
             });
             if (!moved.isEmpty()) {
                 logger.info("Moved the passwords of " + String.join(", ", moved) + " from config.yml to " + NAME
-                    + ", which only the server's user can read and which is never backed up.");
+                    + ", which only the server's user can read and which is never backed up. Backups taken before"
+                    + " hold config.yml with them in it, and so do the remotes' copies: change those passwords if"
+                    + " anyone else could read the backups.");
             }
             return moved;
         } catch (IOException | ConfigException e) {
@@ -146,6 +149,11 @@ public final class Secrets {
             if (Files.exists(file)) {
                 OwnerOnlyFile.restrict(file);
                 YamlConfiguration secrets = load(file);
+                try {
+                    SecretFile.read(file);
+                } catch (IOException e) {
+                    logger.warning("The command-line restore can't read " + NAME + ": " + e.getMessage());
+                }
                 for (String name : secrets.getKeys(false)) {
                     ConfigurationSection section = secrets.getConfigurationSection(name);
                     if (section != null) {
@@ -203,9 +211,23 @@ public final class Secrets {
         return yaml;
     }
 
+    // Written plainly, every value quoted on one line, so the command-line restore reads it
+    // without a server (SecretFile).
     private static void write(Path file, YamlConfiguration yaml) throws IOException {
-        yaml.options().setHeader(HEADER.lines().toList());
-        yaml.options().parseComments(true);
-        OwnerOnlyFile.write(file, yaml.saveToString());
+        Map<String, Map<String, String>> values = new LinkedHashMap<>();
+        for (String name : yaml.getKeys(false)) {
+            ConfigurationSection section = yaml.getConfigurationSection(name);
+            if (section == null) {
+                continue;
+            }
+            Map<String, String> remote = new LinkedHashMap<>();
+            for (String key : section.getKeys(false)) {
+                if (!section.isConfigurationSection(key)) {
+                    remote.put(key, String.valueOf(section.get(key)));
+                }
+            }
+            values.put(name, remote);
+        }
+        SecretFile.write(file, HEADER, values);
     }
 }

@@ -188,6 +188,10 @@ public final class Main {
                 throw new IllegalArgumentException("there's no remote named " + remote + " in "
                     + home().resolve(RestoreSettings.NAME) + ". Start the server once with it in config.yml.");
             }
+            if (settings.secretsProblem() != null) {
+                out.println("Couldn't read the passwords in " + home().resolve(co.xenastudios.xbackup.remote.SecretFile.SECRETS)
+                    + ": " + settings.secretsProblem());
+            }
             RemoteConfig remoteSettings = settings.remotes().get(remote);
             Backend backend = Remotes.open(remote, remoteSettings, new Remotes.Context(home(), Throttle.NONE,
                 Logger.getLogger("xBackup"), type -> null));

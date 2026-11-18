@@ -2,7 +2,6 @@ package co.xenastudios.xbackup.remote;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
@@ -16,7 +15,6 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -24,8 +22,8 @@ import java.util.function.BooleanSupplier;
  * shows a short code, the owner enters it on the provider's site from any device, and
  * xBackup gets a refresh token. Dropbox has no device flow, so it's the PKCE code flow with
  * no redirect: the owner opens a link, approves, and pastes the code Dropbox shows into
- * {@code /backup link}. Only the refresh token is kept, in {@code tokens.properties},
- * readable by its owner only, never in config.yml.
+ * {@code /backup link}. The tokens are kept in {@code tokens.yml}, readable by its
+ * owner only, never in config.yml and never backed up.
  *
  * <p>Each provider needs an app registered by whoever runs the server (or by Xena Studios
  * for a shared app); its client id (and for Google, secret) goes in the remote's settings.
@@ -53,21 +51,63 @@ public final class OAuth {
         return home.resolve(Remotes.TOKENS);
     }
 
-    private static Properties load(Path home) throws IOException {
-        Properties properties = new Properties();
-        Path file = file(home);
-        if (Files.exists(file)) {
-            properties.load(new StringReader(Files.readString(file, StandardCharsets.UTF_8)));
+    private static final String TOKENS_HEADER = "Cloud drive tokens from /backup link, by remote. Only the server's"
+        + " user can read this file,\nand it's never backed up. Delete a remote's lines to unlink it.";
+
+    /** The tokens, as "remote.key" names over {@code tokens.yml}'s two levels. */
+    private static final class Tokens {
+        final Map<String, Map<String, String>> values;
+
+        Tokens(Map<String, Map<String, String>> values) {
+            this.values = values;
         }
-        return properties;
+
+        String getProperty(String name) {
+            int dot = name.lastIndexOf('.');
+            Map<String, String> remote = values.get(name.substring(0, dot));
+            return remote == null ? null : remote.get(name.substring(dot + 1));
+        }
+
+        String getProperty(String name, String fallback) {
+            String value = getProperty(name);
+            return value == null ? fallback : value;
+        }
+
+        void setProperty(String name, String value) {
+            int dot = name.lastIndexOf('.');
+            values.computeIfAbsent(name.substring(0, dot), key -> new LinkedHashMap<>()).put(name.substring(dot + 1), value);
+        }
+
+        String remove(String name) {
+            int dot = name.lastIndexOf('.');
+            Map<String, String> remote = values.get(name.substring(0, dot));
+            return remote == null ? null : remote.remove(name.substring(dot + 1));
+        }
     }
 
-    private static void save(Path home, Properties properties) throws IOException {
+    private static Tokens load(Path home) throws IOException {
+        Path file = file(home);
+        Path legacy = home.resolve(Remotes.LEGACY_TOKENS);
+        if (!Files.exists(file) && Files.exists(legacy)) {
+            // From an earlier build: moved over once, then the old file goes.
+            java.util.Properties old = new java.util.Properties();
+            old.load(new StringReader(Files.readString(legacy, StandardCharsets.UTF_8)));
+            Tokens moved = new Tokens(new LinkedHashMap<>());
+            for (String name : old.stringPropertyNames()) {
+                if (name.indexOf('.') > 0) {
+                    moved.setProperty(name, old.getProperty(name));
+                }
+            }
+            save(home, moved);
+            Files.delete(legacy);
+            return moved;
+        }
+        return new Tokens(SecretFile.read(file));
+    }
+
+    private static void save(Path home, Tokens tokens) throws IOException {
         Files.createDirectories(home);
-        StringWriter writer = new StringWriter();
-        properties.store(writer, "Cloud drive tokens from /backup link. Keep this file private; delete a remote's lines"
-            + " to unlink it.");
-        OwnerOnlyFile.write(file(home), writer.toString());
+        SecretFile.write(file(home), TOKENS_HEADER, tokens.values);
     }
 
     /** Whether the remote has been linked. */
@@ -83,7 +123,7 @@ public final class OAuth {
      */
     static String accessToken(Path home, String remote, String type, RemoteConfig settings) throws IOException {
         synchronized (LOCK) {
-            Properties tokens = load(home);
+            Tokens tokens = load(home);
             String refresh = tokens.getProperty(remote + ".refresh-token");
             if (refresh == null) {
                 throw new Http.Permanent("remote " + remote + " isn't linked yet. Run /backup link " + remote + ".");
@@ -121,14 +161,14 @@ public final class OAuth {
     /** Drops the cached access token, so the next request gets a fresh one. */
     static void expire(Path home, String remote) throws IOException {
         synchronized (LOCK) {
-            Properties tokens = load(home);
+            Tokens tokens = load(home);
             if (tokens.remove(remote + ".expires") != null) {
                 save(home, tokens);
             }
         }
     }
 
-    private static void store(Properties tokens, String remote, Map<String, Object> reply) throws IOException {
+    private static void store(Tokens tokens, String remote, Map<String, Object> reply) throws IOException {
         String access = Json.string(reply, "access_token");
         if (access == null) {
             throw new IOException("the provider's reply had no access token");
@@ -197,7 +237,7 @@ public final class OAuth {
             String error = Json.string(reply, "error");
             if (error == null) {
                 synchronized (LOCK) {
-                    Properties tokens = load(home);
+                    Tokens tokens = load(home);
                     store(tokens, remote, reply);
                     if (tokens.getProperty(remote + ".refresh-token") == null) {
                         throw new IOException("the provider gave no refresh token; check the app's settings");
@@ -234,7 +274,7 @@ public final class OAuth {
             throw new IllegalStateException(e);
         }
         synchronized (LOCK) {
-            Properties tokens = load(home);
+            Tokens tokens = load(home);
             tokens.setProperty(remote + ".verifier", verifier);
             save(home, tokens);
         }
@@ -245,7 +285,7 @@ public final class OAuth {
     /** Swaps the code Dropbox showed for a refresh token. */
     public static void dropboxCode(Path home, String remote, RemoteConfig settings, String code) throws IOException {
         synchronized (LOCK) {
-            Properties tokens = load(home);
+            Tokens tokens = load(home);
             String verifier = tokens.getProperty(remote + ".verifier");
             if (verifier == null) {
                 throw new IOException("start with /backup link " + remote + " to get the link first.");

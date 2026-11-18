@@ -1,0 +1,15 @@
+# NuVotifier's config, as it writes it, with test values.
+host: 0.0.0.0
+
+port: 8193
+
+disable-v1-protocol: false
+
+tokens:
+  default: r1kpn4qcl9m3c0k4tbm2ffbu3e
+  MinecraftServers.org: 8m9f5ljm8okk2gcq2ncv8g1ab5
+
+forwarding:
+  method: none
+  pluginMessaging:
+    channel: nuvotifier:votes

@@ -9,7 +9,7 @@
 //   .github/labeler.yml              a label per plugin for pull requests
 //   .github/workflows/labels.yml     a label per plugin for bug reports
 //   .github/ISSUE_TEMPLATE/bug_report.yml   the plugin list and the /<plugin> info hint
-//   <plugin>/modrinth.md             "More from Xena Studios": the other released plugins
+//   <plugin>/modrinth.md             "More from Xena Studios": the plugins that go with it
 //
 // Generated parts of hand-written files sit between "catalog:start" and "catalog:end"
 // markers; everything outside them is left alone.
@@ -167,14 +167,31 @@ between(".github/ISSUE_TEMPLATE/bug_report.yml", plugins.map((p) => `        - $
   write(file, text.replace(/^(\s*description: )From `\/[a-z]+ info`.*$/m, `$1${hint}`));
 }
 
-// --- Modrinth pages: "More from Xena Studios", the other released plugins ---
-// Only pages with the markers (new-plugin's template has them).
+// --- Modrinth pages: "More from Xena Studios", the plugins that go with this one ---
+// src/data/related.json says which, and why. A released one links to its Modrinth page; one
+// that isn't out yet links to its docs, marked coming soon (a draft's Modrinth page is a 404
+// for everyone else). Only pages with the markers (new-plugin's template has them).
+const related: Record<string, Record<string, string>> = JSON.parse(fs.readFileSync(path.join(DOCS, "src/data/related.json"), "utf8"));
+for (const [id, list] of Object.entries(related)) {
+  if (id === "//") continue;
+  if (!plugins.some((p) => p.id === id)) throw new Error(`src/data/related.json: ${id} isn't in the catalog`);
+  for (const other of Object.keys(list)) {
+    if (other === id || !plugins.some((p) => p.id === other)) throw new Error(`src/data/related.json: ${id} lists ${other}, which isn't another plugin in the catalog`);
+  }
+}
 for (const p of plugins) {
   const file = `${p.id}/modrinth.md`;
   const full = path.join(ROOT, file);
   if (!fs.existsSync(full) || !/catalog:start/.test(fs.readFileSync(full, "utf8"))) continue;
-  const others = plugins.filter((o) => o.id !== p.id && o.modrinth);
-  between(file, others.map((o) => `- **[${o.name}](${o.modrinth})**: ${o.tagline} ${o.blurb}`).join("\n") || "- More are on the way.");
+  // Released ones first, each group in the order related.json gives. A plugin it doesn't list
+  // yet (a new one) gets every other released plugin, with its blurb.
+  const why = related[p.id] ?? Object.fromEntries(plugins.filter((o) => o.id !== p.id && o.modrinth).map((o) => [o.id, o.blurb]));
+  const shown = Object.keys(why).map((id) => plugins.find((o) => o.id === id)!).sort((a, b) => Number(!a.modrinth) - Number(!b.modrinth));
+  const lines = shown.map((o) => o.modrinth
+    ? `- **[${o.name}](${o.modrinth})**: ${o.tagline} ${why[o.id]}`
+    : `- **[${o.name}](${SITE}${o.docs})** (coming soon): ${o.tagline} ${why[o.id]}`);
+  if (!lines.length) lines.push("- More are on the way.");
+  between(file, [...lines, "", `Every plugin in the family: **[plugins.xenastudios.co](${SITE}/)**`].join("\n"));
 }
 
 // --- Each plugin's changelog and download pages, and its current version ---

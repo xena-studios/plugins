@@ -62,10 +62,10 @@ Velocity, BungeeCord, and keeping `/join` secure: **[plugins.xenastudios.co/xlim
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
-- **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.
-- **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
-- **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
-- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
+- **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. The everyday commands for the main server, in the same look.
+- **[xBans](https://plugins.xenastudios.co/xbans/)** (coming soon): Bans, mutes and warnings. Nothing slips through. Install it on the limbo server too and it enforces the network's bans there, with nothing else to set up.
+
+Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xlimbo)

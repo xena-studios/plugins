@@ -1,0 +1,48 @@
+{
+  "//": "Each plugin's Modrinth page lists these in \"More from Xena Studios\", with why, and only once they're released. Read by scripts/catalog.ts. Keep every reason true of the plugins as they are: no planned integrations.",
+  "xutilities": {
+    "xteleport": "Homes, TPA, warps and `/rtp` to go with xUtilities' `/back`, which takes players back from every xTeleport teleport.",
+    "zchat": "Chat formats per rank and a filter, with messages themed the same way as xUtilities' own."
+  },
+  "zchat": {
+    "xbans": "Mutes that hold in chat and `/msg`, by every alias, with a history of who was muted and why.",
+    "xutilities": "The everyday commands, `/fly`, `/heal` and `/back`, in the same look."
+  },
+  "xlimbo": {
+    "xbans": "Install it on the limbo server too and it enforces the network's bans there, with nothing else to set up.",
+    "xutilities": "The everyday commands for the main server, in the same look."
+  },
+  "xrewind": {
+    "xbans": "Found who griefed spawn? Ban them, with templates that go from a week to a month to permanent.",
+    "xbackup": "Backups of the whole server, with xRewind's SQLite database copied safely while it's being written."
+  },
+  "xplots": {
+    "xmoney": "Rent paid through Vault, with no Vault.jar installed.",
+    "xrewind": "See who placed or broke what on a plot, and put it back."
+  },
+  "xteleport": {
+    "xutilities": "`/back` and `/top`: `/back` takes players back from every xTeleport teleport.",
+    "xmoney": "Teleport costs through Vault, with no Vault.jar installed."
+  },
+  "xvote": {
+    "xmoney": "Money rewards through Vault, with no Vault.jar installed.",
+    "xstats": "Turn xVote's placeholders into daily, weekly and monthly leaderboards, and onto your stats website."
+  },
+  "xbans": {
+    "xrewind": "See what a banned griefer broke or took, and roll it back.",
+    "xlimbo": "A fallback server for when your main one goes down. With xBans installed there too, it enforces the same bans."
+  },
+  "xmoney": {
+    "xvote": "Pays vote rewards into xMoney balances through Vault.",
+    "xplots": "Plots players rent with xMoney, through Vault.",
+    "xteleport": "Teleport costs, taken from xMoney balances through Vault."
+  },
+  "xstats": {
+    "xvote": "Vote totals and streaks as placeholders, for xStats to rank by day, week and month.",
+    "xmoney": "Balances as placeholders, for a money leaderboard and a page on your stats website."
+  },
+  "xbackup": {
+    "xrewind": "Its SQLite database is copied by SQLite itself, so a backup never holds a half-written block log.",
+    "xplots": "Its SQLite database and every plot's saved state, backed up with the rest of the server."
+  }
+}

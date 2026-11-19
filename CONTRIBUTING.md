@@ -86,7 +86,7 @@ It warns if another project already has the id as its Modrinth slug: the update 
 3. Copies the brand's art and catalog into the docs (`pnpm brand:sync`) and rebuilds every list of the plugins (`pnpm catalog`): the README, the docs' sidebar, home page, footer and accents, the labels and the bug form.
 4. Writes the API's signatures and the docs' default config, and builds the plugin. It boots green as it is.
 
-What's left is marked TODO, and the script lists the files. Gradle finds the new folder on its own. In the brand repo, draw the glyph, write the headline, summary and blurb, rebuild, and open a pull request there; then `pnpm brand:sync` and `pnpm catalog` in `docs/` again. Change the templates when the standard for every plugin changes, so the next one starts from it.
+What's left is marked TODO, and the script lists the files. Gradle finds the new folder on its own. In the brand repo, draw the glyph, write the headline, summary and blurb, rebuild, and open a pull request there; then `pnpm brand:sync` and `pnpm catalog` in `docs/` again. Add the plugin to [`docs/src/data/related.json`](docs/src/data/related.json), with the plugins it goes with and why, and add it to theirs: that's each Modrinth page's "More from Xena Studios". Until then its page lists every released plugin. Change the templates when the standard for every plugin changes, so the next one starts from it.
 
 The convention shades in the core, generates `paper-plugin.yml`, sets up Modrinth, and starts the jar budget at 150 KiB (`xena { jarBudgetKb = ... }`).
 

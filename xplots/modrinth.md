@@ -59,10 +59,10 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xplots
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
-- **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.
-- **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
-- **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
-- **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+- **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. See who placed or broke what on a plot, and put it back.
+- **[xMoney](https://plugins.xenastudios.co/xmoney/)** (coming soon): The economy and Vault, in one plugin. Rent paid through Vault, with no Vault.jar installed.
+
+Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xplots)

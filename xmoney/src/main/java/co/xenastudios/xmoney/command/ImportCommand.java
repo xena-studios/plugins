@@ -2,6 +2,7 @@ package co.xenastudios.xmoney.command;
 
 import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.command.Completions;
+import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xmoney.XMoney;
 import co.xenastudios.xmoney.config.XMConfig;
 import co.xenastudios.xmoney.imports.CmiBalances;
@@ -96,7 +97,7 @@ public final class ImportCommand {
                         }
                         messages.overwrite().send(sender, Replies.text("source", plan.source()),
                             Replies.text("count", String.format("%,d", checked.overwrites())),
-                            Replies.text("command", command + " overwrite"));
+                            Placeholders.click("command", command + " overwrite"));
                     });
                     return CompletableFuture.completedFuture(null);
                 }
@@ -143,6 +144,6 @@ public final class ImportCommand {
             Replies.text("count", String.format("%,d", plan.lines().size())),
             Replies.text("total", bank.format(plan.total())),
             Replies.text("skipped", String.format("%,d", plan.skipped())),
-            Replies.text("command", command));
+            Placeholders.click("command", command));
     }
 }

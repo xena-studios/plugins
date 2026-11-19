@@ -4,6 +4,7 @@ import co.xenastudios.core.command.CommandFailure;
 import co.xenastudios.core.command.CommandSpec;
 import co.xenastudios.core.command.Completions;
 import co.xenastudios.core.command.Invocation;
+import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xmoney.Bank;
 import co.xenastudios.xmoney.XMoney;
 import co.xenastudios.xmoney.api.TransactionKind;
@@ -70,7 +71,7 @@ public final class PayCommand {
             if (confirmAbove > 0 && amount >= confirmAbove && !confirmed) {
                 String command = "/" + invocation.label() + " " + payee.name() + " " + bank.format().plain(amount) + " confirm";
                 messages.confirm().send(payer, Replies.text("amount", bank.format(amount)), Replies.text("player", payee.name()),
-                    Replies.text("command", command));
+                    Placeholders.click("command", command));
                 return;
             }
             Cause cause = new Cause(TransactionKind.PAY, payer.getName(), "");

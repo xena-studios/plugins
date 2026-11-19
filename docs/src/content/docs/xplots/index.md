@@ -8,6 +8,7 @@ sidebar:
 
 xPlots rents small plots to players for in-game money, the box-server staple, on Paper and Purpur. Instead of a region and a sign for every plot made by hand, you select the whole area, say how big each plot is, and confirm: every plot and every sign is made for you.
 
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Setup in a minute.** One selection becomes a grid of plots with paths between them, outlined in particles before anything changes. See [Setting up](/xplots/setting-up/).
 - **You won't feel it running.** Finding which plot a block is in is a bit of arithmetic, the same for ten plots or ten thousand, and a block outside every field stops at the first check. There's one timer, set for the next rent to run out, and signs are checked once a minute, only in loaded chunks. Nothing else repeats, and protection isn't listened for until you make a field.
 - **Plots come back clean.** Each plot is saved when it's made, and put back as it was when its rent runs out or it's abandoned, a few milliseconds per tick.
@@ -30,7 +31,6 @@ Plots are kept in SQLite out of the box, in `plugins/xPlots/plots.db`, or in MyS
 
 ## What else it does
 
-- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Every change applies on reload.** Prices, rent periods, signs and menus, with `/xplots reload`. Only a change of storage waits for a restart.
 
 ## Getting started

@@ -8,6 +8,7 @@ sidebar:
 
 xBans is a punishment plugin for Paper and Folia: bans, temporary bans, IP bans, mutes, warnings and kicks, with history, alts and staff limits. Every ban and mute in force is checked from memory, so the join check never waits on your database and nothing gets round a mute.
 
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Bans that hold.** Every ban and mute in force is kept in memory, loaded before anyone can join, so the join check never waits on the database and keeps working if MySQL drops for a moment. A ban made while someone is connecting still catches them. Mutes block chat, `/msg`, `/r`, `/me` and the rest (by any alias, `/essentials:msg` included), signs, books and anvil renames.
 - **Nothing is ever deleted.** An unban is recorded next to the ban, with who, when and why. Only `/prunehistory` deletes, when you ask it to.
 - **Templates and escalation.** `/ban Steve hacking` gives 7 days, then 30, then permanent. Three warnings can mute for an hour. All in the config.
@@ -24,7 +25,6 @@ SQLite out of the box, in one file in the plugin's folder, or MySQL/MariaDB for 
 
 ## What else it does
 
-- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **IP privacy.** IPs can be stored as salted hashes: alts and IP bans still work, with no list of addresses to leak. See [Privacy](/xbans/privacy/).
 - **Networks without a proxy plugin.** Servers that share a MySQL database share bans: a ban on one kicks the player from the others within seconds. See [Networks](/xbans/networks/).
 - **Replaces vanilla** `/ban`, `/pardon`, `/ban-ip`, `/pardon-ip`, `/kick` and `/banlist`.

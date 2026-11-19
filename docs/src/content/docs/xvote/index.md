@@ -8,6 +8,7 @@ sidebar:
 
 xVote receives votes from server lists and rewards players for them, in one jar for Paper and Folia. It's for servers that would otherwise run one plugin to receive votes and another to reward them, and it pays every vote exactly once, even across a network.
 
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **A Votifier built in.** It speaks Votifier v1 and v2, on its own threads, with limits that keep floods and slow connections out. See [Setting up](/xvote/setting-up/).
 - **Every vote paid once.** Each vote is a row in a ledger, and a vote is taken by one server before it's paid. Offline players are paid when they join; a name that has never joined waits until it does. On a network, the player is paid on whichever server they're on.
 - **Rewards your way.** Money (through Vault), items, commands, messages, broadcasts and sounds, with a chance each. Give them on every vote, per site, on the first vote of the day, every Nth vote, at streak milestones and at vote totals.
@@ -29,7 +30,6 @@ Votes are kept in SQLite out of the box, in `plugins/xVote/votes.db`, or in MySQ
 ## What else it does
 
 - **You won't feel it running.** Totals and leaderboards are kept in memory; the database is written on its own thread. Nothing repeats unless you turn on timed reminders.
-- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Every change applies on reload**, sites and rewards included. Only `storage` and `network` wait for a restart.
 
 ## Getting started

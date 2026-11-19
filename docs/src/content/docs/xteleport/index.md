@@ -8,6 +8,7 @@ sidebar:
 
 xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, for Paper and Folia. It's for servers that want every teleport with one config and one look, and nothing they don't use.
 
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **The whole set.** `/sethome`, `/home`, `/homes`, `/tpa`, `/tpahere`, `/tpaccept`, `/warp`, `/spawn`, `/rtp` and the rest. See [Commands](/xteleport/commands/).
 - **Switch off what you don't use.** Every command can be turned off, renamed with aliases or given its own permission, and every setting but storage applies on `/xteleport reload`.
 - **Teleports that feel good.** A warmup that moving or taking damage cancels, with a countdown on the action bar. Cooldowns per command. An optional cost through Vault, taken after the warmup and given back if the teleport fails.
@@ -41,7 +42,6 @@ Homes and warps are kept in SQLite out of the box, in `plugins/xTeleport/xtelepo
 
 - **Works with `/back`.** Every teleport uses the command cause, so xUtilities' `/back` (or any plugin's that does the same) returns from it.
 - **Random teleport that doesn't lag.** `/rtp` loads one candidate chunk at a time in the background, checks it on the thread that owns it, and caps how many searches run at once. It can stick to chunks that already exist, for worlds pre-generated with Chunky.
-- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 
 ## Getting started
 

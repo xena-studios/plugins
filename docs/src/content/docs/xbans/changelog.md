@@ -15,9 +15,9 @@ The first release. Drop the jar in and start the server: punishments are kept in
 - `/ban`, `/tempban`, `/ipban`, `/tempipban`, `/mute`, `/tempmute`, `/ipmute`, `/tempipmute`, `/warn` and `/kick`, and `/unban`, `/unmute` and `/unwarn` by name, uuid, IP or `#id`.
 - LiteBans' flags: `-s` silent, `-S` extra silent, `-p` public, `-g` global, `-I` by IP, `server:<name>`, and `--` before a reason that looks like a flag.
 - LiteBans' durations: `30m`, `1d2h`, `1.5h`, `2mo`, `1y`, `5 days`, `perm`.
-- Templates with escalation ladders (`/ban Steve hacking`: 7 days, then 30, then permanent), each with its own permission (`xbans.template.<name>`), and commands the console runs at a number of warnings.
+- Templates with escalation ladders (`/ban Steve hacking`: 7 days, then 30, then permanent), each with its own permission (`xbans.template.<name>`), and commands the console runs at a number of warnings. `/tempban` and `/tempmute` never reach a ladder's permanent step.
 - Staff limits: weights (`xbans.weight.<n>`), exempt players, and the longest ban and mute per group, templates' durations included (`xbans.limit.bypass-templates` lifts that). An IP ban is held to every account on the IP.
-- Unbans follow weights too: staff lift their own punishments and those given by staff with no higher a weight; `xbans.unban.override` lifts any.
+- Unbans follow weights too: staff lift their own punishments and those given by staff with no higher a weight; `xbans.unban.override` lifts any. Imported punishments count as the console's, since their staff's weights aren't known.
 - A new ban or mute replaces one on the same server only if it lasts at least as long, reaches everyone the old one did, and its sender could lift the old one: an account ban never lifts an IP ban, and a helper never swaps a senior's ban for their own. Re-banning with the same length changes the reason.
 - Replaces vanilla `/ban`, `/pardon`, `/ban-ip`, `/pardon-ip`, `/kick` and `/banlist`.
 

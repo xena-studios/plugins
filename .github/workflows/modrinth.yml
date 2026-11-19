@@ -26,7 +26,8 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           if [[ $GITHUB_EVENT_NAME == push ]]; then
-            changed=$(git diff --name-only "$BEFORE" HEAD -- '*/modrinth.md')
+            # glob magic: * stops at a slash, so scripts/new-plugin/template/ is left out.
+            changed=$(git diff --name-only "$BEFORE" HEAD -- ':(glob)*/modrinth.md')
           else
             changed=$(printf '%s\n' ./*/modrinth.md | sed 's#^\./##')
           fi

@@ -8,7 +8,7 @@ sidebar:
 
 xBackup backs up Paper and Folia servers incrementally, storing only what changed since the last backup, down to single chunks. Hourly backups take almost no disk, and the server pauses for milliseconds, not seconds.
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Only what changed.** A world's region files are kept chunk by chunk: edit one chunk and a backup stores one chunk, not an 8 MB region file. Everything else is stored once however many backups use it.
 - **A restore you can trust.** Every file comes back checked against the hash it was saved with. You always see what a restore will change before it happens, and it never writes over a running world: it's put in place on the next start, before any world loads, or from the command line with the server stopped.
 - **Databases copied safely.** SQLite databases (xRewind's, xPlots', any plugin's) are copied by SQLite itself, never as raw bytes, so a backup never holds a half-written database.

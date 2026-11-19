@@ -13,7 +13,7 @@ Vote rewards usually take two plugins: one to receive votes from server lists, a
 - **A Votifier built in.** Votifier v1 and v2, so every server list that sends Votifier votes works with xVote. It runs on its own threads, with limits per address, a deadline per connection and a cap on how many at once, so a flood or a slow connection can't touch your server.
 - **Every vote paid once.** Every vote is a row in a ledger, and a server takes a vote in the database before paying it. Offline players are paid when they join. A name that has never joined waits until it does, Bedrock prefix or not.
 - **Networks without a proxy plugin.** Share one MySQL database and a vote for a player on another backend is paid there, within seconds. Never twice, even when two servers try at once.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** Totals and leaderboards live in memory, the database is written on its own thread, and nothing repeats unless you turn on timed reminders.
 - **Every change applies on reload**, sites and rewards included. Only storage and network settings wait for a restart.
 - **Paper and Folia.** One jar runs on Paper, Purpur and Folia.
@@ -60,6 +60,7 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xvote]
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xvote)

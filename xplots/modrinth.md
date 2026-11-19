@@ -10,14 +10,14 @@ Small plots, close together, that players rent with in-game money: the box-serve
 
 ## Why server owners pick it
 
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Setup in a minute, not an afternoon.** One selection becomes a grid of plots with paths between them. You see it outlined in particles before anything changes, then the signs go up on their own.
 - **Plots come back clean.** Each plot is saved when it's made. When its rent runs out or it's abandoned, it's put back exactly as it was, a few milliseconds per tick.
 - **No region per plot.** xPlots protects its own plots. If WorldGuard is installed, it makes one region per field so a world-wide `build deny` doesn't block your plots, and that's all.
 - **Vault or your own coin.** Rent goes through your economy, or it can take an item instead: match it by material, name and custom model data, so a box server's Coin works as it is.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** Finding which plot a block is in is a bit of arithmetic, the same for ten plots or ten thousand. There's one timer, set for the next rent to run out, and signs are checked once a minute, only in loaded chunks. Nothing else repeats.
-- **Every change applies on reload.** Prices, rent periods, signs and menus, with `/xplots reload`. Only a change of storage waits for a restart.
-- **Paper and Purpur.** One jar for Paper 1.21.11 and newer, and Purpur.
+- **Every change applies on reload**, prices, rent periods, signs and menus included. Only a change of storage waits for a restart.
+- **Paper and Purpur.** One jar runs on Paper and Purpur.
 
 ---
 

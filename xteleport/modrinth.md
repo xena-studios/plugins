@@ -10,11 +10,11 @@ Players expect homes, TPA, warps, spawn and `/rtp`. Usually that means a big all
 
 ## Why server owners pick it
 
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **One plugin, not four.** Homes, TPA, warps, spawn and RTP, with one config, one look and one set of messages.
 - **Switch off what you don't use.** Every command can be turned off, renamed with aliases or given its own permission. A command you turn off isn't registered, so another plugin can have it.
 - **Nobody dies arriving.** A home or warp that's now in lava, inside blocks or over the void is refused with a message, checked after its chunk loads in the background.
 - **RTP that doesn't lag.** One candidate chunk at a time, checked on its own thread, with a cap on searches at once (3 by default) so a crowd typing `/rtp` can't touch your TPS. Pre-generated with Chunky? Tell it to stick to chunks that already exist.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** Nothing repeats: a warmup is a short check on the waiting player's own thread that ends with it, and requests run out when they're next read, never on a timer. The damage listener exists only while someone is warming up. Homes are read in the background as players join, and saved in the background as they change.
 - **Every change applies on reload**, even turning commands on or off. Only a change of storage waits for a restart.
 - **Paper and Folia.** One jar runs on Paper, Purpur and Folia. Every teleport is asynchronous and nothing assumes a main thread.
@@ -48,7 +48,7 @@ Players expect homes, TPA, warps, spawn and `/rtp`. Usually that means a big all
 ## Up and running in a minute
 
 1. Drop the jar in `plugins/` and start the server. Homes are kept in SQLite with nothing to set up, or MySQL/MariaDB.
-2. `/setspawn` and `/setwarp shop`.
+2. Stand where you want them and run `/setspawn` and `/setwarp shop`.
 3. Set warmups, cooldowns, home limits and RTP's worlds in `plugins/xTeleport/config.yml`, then `/xteleport reload`.
 
 **Coming from EssentialsX?** Install xTeleport next to it and run `/xteleport import essentials` to see what it finds, then `/xteleport import essentials confirm`. Everyone's homes, the warps and the spawn come across. Then remove EssentialsX, or turn off its teleport commands.
@@ -66,6 +66,7 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xtelep
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xteleport)

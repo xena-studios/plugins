@@ -10,12 +10,12 @@ Most backup plugins zip your whole server every time: slow, big, and a long free
 
 ## Why server owners pick it
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Only what changed.** Edit one chunk and the next backup stores one chunk, not an 8 MB region file. Everything is stored once, however many backups use it, so a day of hourly backups costs about what changed that day, not 24 copies of the server.
 - **You won't feel it running.** Autosave goes off, the worlds are written to disk, xBackup reads what changed, and autosave goes back on: 15 to 45 ms on the server's thread in our tests on Paper. Hashing, compressing and uploading happen off the server's threads. `/backup status` shows the real pause for every backup.
 - **A restore you can trust.** Every file comes back checked against the hash it was saved with. You see what a restore will change before it happens, and it never writes over a running world: it's swapped in on the next start, before any world loads.
 - **Databases copied safely.** SQLite databases (block loggers, economies, any plugin's) are copied by SQLite itself, never as raw bytes, so a backup never holds a half-written database.
-- **Every change applies on reload.** No restarts.
+- **Every change applies on reload**, schedules and remotes included. No restarts.
 - **Paper and Folia.** One jar runs on Paper, Purpur and Folia.
 
 ---
@@ -61,6 +61,7 @@ Full setup, every setting, every remote and how to restore: **[plugins.xenastudi
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xbackup)

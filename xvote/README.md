@@ -7,7 +7,7 @@ xVote receives votes from server lists and rewards players for them, in one jar 
 - **A Votifier built in.** v1 and v2, on its own threads, with limits per address, per connection and in total.
 - **Every vote paid once.** Every vote is a row; a server takes a vote in the database before paying it, so two servers sharing a database can't both pay it. Offline votes are paid on join.
 - **Rewards your way.** Money, items, commands, messages, broadcasts and sounds, on every vote, per site, first of the day, every Nth vote, streaks and totals, plus a vote party.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** Totals and leaderboards in memory, the database on its own thread, nothing repeating unless timed reminders are on.
 - **Every change applies on reload**, all but storage and network settings. No restarts.
 - **Easy to switch to.** NuVotifier's keys and tokens taken over on first start, so no list needs changing, and totals imported from VotingPlugin and SuperbVote.

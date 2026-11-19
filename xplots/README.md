@@ -8,7 +8,7 @@ xPlots rents small plots to players for in-game money on Paper: select the whole
 - **Plots come back clean.** Each plot is saved when it's made and put back when its rent runs out, a few milliseconds per tick.
 - **No region per plot.** xPlots protects its own plots. With WorldGuard installed, it adds one region per field so a world-wide `build deny` doesn't block them.
 - **Vault or an item.** Rent is paid through Vault's economy, or with an item such as a box server's Coin.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** Finding a block's plot is arithmetic on the grid, the same for ten plots or ten thousand. There's one timer for the next lease to end and a once-a-minute check of signs in loaded chunks. Nothing else repeats.
 - **Every change applies on reload**, everything but storage. No restarts.
 

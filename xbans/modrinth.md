@@ -10,7 +10,7 @@ A banned player gets back in while the database is slow. A muted one carries on 
 
 ## Why server owners pick it
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Bans that hold.** Every ban and mute in force is kept in memory and loaded before anyone can join, so the join check never waits on the database and keeps working if MySQL drops for a moment. A ban made while someone is connecting still catches them.
 - **Mutes with no way round.** Chat, `/msg`, `/r`, `/me` and any command you list, by every alias and namespace (`/essentials:msg`, `/emsg`), plus signs, books and anvil renames, and chat plugins on the older chat events too.
 - **Nothing is ever deleted.** An unban is recorded beside the ban, with who, when and why. Only `/prunehistory` deletes, when you tell it to.
@@ -64,6 +64,7 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xbans]
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xbans)

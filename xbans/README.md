@@ -4,7 +4,7 @@
 
 xBans is a free, open-source punishment plugin for Paper and Folia: bans, temporary and IP bans, mutes, warnings and kicks, with history, alts, templates and staff limits, all checked from memory.
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Bans that hold.** What's in force is in memory before anyone can join, so the join and chat checks never ask the database. Mutes cover chat (on the older chat events too), the listed commands by any alias, signs, books and anvil renames.
 - **You won't feel it running.** Writes go through one background thread, history pages are read by key range, and nothing repeats on a single server.
 - **Nothing is ever deleted.** An unban is a record beside the ban; only `/prunehistory` deletes.

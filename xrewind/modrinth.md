@@ -10,13 +10,13 @@ Someone griefed spawn. Someone emptied the shared chest. Someone says they didn'
 
 ## Why server owners pick it
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon, automatic purges included.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon. Automatic purges included.
 - **New Minecraft versions the same week.** xRewind uses only Paper's API, never the server's internals, so an update rarely breaks it.
 - **You won't feel it running.** Nothing touches the database on a game thread. Each change is queued as a few numbers and written in batches in the background, and logging you turn off isn't listened for at all.
 - **Rollback that doesn't freeze the server.** Each block's final state is worked out once, then applied a few milliseconds per tick (region by region on Folia). Preview a rollback before you apply it, and undo it after.
-- **Easy to switch to.** CoreProtect's command syntax, so habits and guides carry over, and your CoreProtect history comes with you.
 - **Every change applies on reload**, even what's logged and where it's stored. No restarts.
 - **Paper and Folia.** One jar runs on Paper, Purpur and Folia.
+- **Easy to switch to.** CoreProtect's command syntax, so habits and guides carry over, and your CoreProtect history comes with you.
 
 ---
 
@@ -62,6 +62,7 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xrewin
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
+- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xrewind)

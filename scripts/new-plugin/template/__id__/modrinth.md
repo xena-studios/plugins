@@ -10,7 +10,7 @@ TODO: the problem in a server owner's words, one or two sentences. **Then what {
 
 ## Why server owners pick it
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** TODO: what keeps it light: nothing on a game thread that could wait, nothing repeating that doesn't need to.
 - **Every change applies on reload.** No restarts.
 - **Paper and Folia.** One jar runs on Paper, Purpur and Folia.

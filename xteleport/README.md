@@ -9,7 +9,7 @@ xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, f
 - **No deaths on arrival.** A home or warp now in lava or over the void is refused. The spot is loaded in the background to check it.
 - **RTP that doesn't lag.** One candidate chunk at a time, loaded in the background and checked on its own region's thread, with a cap on searches at once and an option for pre-generated worlds.
 - **Works with `/back`.** Every teleport uses the command cause, which xUtilities' `/back` records.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** Nothing repeats, listeners exist only for what's on, and homes are read and saved in the background.
 - **Every change applies on reload**, everything but storage. No restarts.
 - **Easy to switch to.** EssentialsX's command names, and its homes, warps and spawn imported with `/xteleport import essentials`.

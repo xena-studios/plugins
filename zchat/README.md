@@ -4,7 +4,7 @@
 
 zChat is a light chat plugin for Paper and Folia: a chat format per rank, a filter that's hard to dodge, a cooldown and anti-spam, mentions, private messages, a chat mute and clearing chat, each one switchable.
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** zChat runs on every chat message, so that path is kept cheap: formats and the filter are compiled when the config loads, the cheapest checks run first, and each message is drawn once, not once per player who sees it.
 - **A filter that's hard to dodge.** It catches `s p a c e d` words, `b4dw0rd`, `baaadword` and `bädword`, but leaves innocent words like *class* alone.
 - **Players can't inject formatting.** What a player types goes into the format as plain text, unless you give them the colour permission (and even then, only colours and styles).

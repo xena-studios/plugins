@@ -4,7 +4,7 @@
 
 xLimbo turns a small Paper server into your network's fallback: when your main server crashes, restarts or can't be reached, your proxy sends players to xLimbo instead of disconnecting them, and they go back with `/join`, or on their own the moment it's up.
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Built for everyone arriving at once.** Players are placed before they're in the world, on land that's already loaded, so a whole network landing at once never waits on world generation. By default, nothing is saved to disk.
 - **Sends everyone back, without a stampede.** With server-check on, xLimbo watches your main server and sends players back as soon as it's up, a few per second, showing each player their place in line.
 - **It stays up.** A feature that fails is logged and stays off, never taking the server down. A bad config value falls back to its default.

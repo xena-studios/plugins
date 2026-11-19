@@ -4,7 +4,7 @@
 
 xRewind is a block logger with rollback for Paper and Folia. When someone griefs spawn or empties the shared chest, it shows you who placed, broke or took what, where and when, and puts it back.
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon, automatic purges included.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon. Automatic purges included.
 - **New Minecraft versions the same week.** Paper's API only, no server internals, so an update rarely breaks it.
 - **You won't feel it running.** Nothing touches the database on a game thread: changes are queued as a few numbers and written in batches.
 - **Rollback that doesn't freeze the server.** Blocks are set a few milliseconds per tick, region by region on Folia. Preview it first, and undo it after.

@@ -10,7 +10,7 @@ Every rank wants its own chat style. Someone always finds a way to spell the wor
 
 ## Why server owners pick it
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running, even in busy chat.** Formats and the filter are prepared once when the config loads, the cheapest checks run first, and each message is drawn once, not once for every player who sees it. Nothing runs on a timer but the daily update check and bStats, and you can turn both off.
 - **A filter that's hard to dodge.** It catches `s p a c e d` words, `b4dw0rd`, `baaadword` and `bädword`, but leaves innocent words like *class* alone.
 - **Players can't break your chat.** What players type is shown as plain text, so nobody can sneak in colours, fake links or hover text. Give them the colour permission and they get colours and styles, never clicks or hovers.
@@ -77,6 +77,7 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/zchat]
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/zchat)

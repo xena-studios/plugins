@@ -24,7 +24,7 @@ SQLite out of the box, in one file in the plugin's folder, or MySQL/MariaDB for 
 
 ## What else it does
 
-- **Every feature free.** Free and open source, no premium version.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **IP privacy.** IPs can be stored as salted hashes: alts and IP bans still work, with no list of addresses to leak. See [Privacy](/xbans/privacy/).
 - **Networks without a proxy plugin.** Servers that share a MySQL database share bans: a ban on one kicks the player from the others within seconds. See [Networks](/xbans/networks/).
 - **Replaces vanilla** `/ban`, `/pardon`, `/ban-ip`, `/pardon-ip`, `/kick` and `/banlist`.

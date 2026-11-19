@@ -10,7 +10,7 @@ Your main server crashes. Restarts. Goes down for an update. Without a fallback,
 
 ## Why server owners pick it
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **It stays up when everything else is down.** That's its whole job. Each feature is turned on separately, so one that fails is logged and stays off without taking the server down, and a bad config value falls back to its default.
 - **Built for everyone arriving at once.** Players are placed before they're in the world, on land that's already loaded, so a whole network landing at once never waits on world generation. The world is one floor layer and nothing else, a world border caps how far it can grow, and by default nothing is saved to disk.
 - **You won't feel it running.** Players can't see each other, which takes away the biggest load a limbo has, and a protection that's off costs nothing.
@@ -65,6 +65,7 @@ Velocity, BungeeCord, and keeping `/join` secure: **[plugins.xenastudios.co/xlim
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. Gamemodes, fly, heal, `/back`, workstations and your own link commands.
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xlimbo)

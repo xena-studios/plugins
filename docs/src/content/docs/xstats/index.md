@@ -8,7 +8,7 @@ sidebar:
 
 xStats gives players their stats, everyone leaderboards, and you placeholders and a stats website your server hosts itself, without a separate web host, an account or a sign-in. It reads the stats Minecraft already counts, adds playtime that leaves out time away from the keyboard, and can keep any PlaceholderAPI value as a stat too.
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **History from day one.** On first start xStats reads every player's stats from the world's own files, so leaderboards aren't empty.
 - **Leaderboards by day, week, month and all time.** `/lb kills monthly`, placeholders such as `%xstats_top_kills_monthly_1_name%`, and boards in the world, with banned players and anyone you choose left out.
 - **A website, built in.** Player search, profiles with heads and 30-day charts, leaderboards and server totals, in your server's name, logo and colours. It's served by xStats itself, or copied to GitHub Pages, Cloudflare Pages or your own domain. There's a documented JSON API for building your own.

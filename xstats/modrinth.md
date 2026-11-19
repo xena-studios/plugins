@@ -10,7 +10,7 @@ Players want to see their stats and where they rank. Owners want leaderboards on
 
 ## Why server owners pick it
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **History from day one.** On first start it reads every player's stats from your world's own files, so leaderboards aren't empty on launch day.
 - **Playtime that leaves out AFK time.** Minecraft counts time spent away from the keyboard. xStats doesn't.
 - **A website, built in.** No web host, no account. Or copy the same site to GitHub Pages or your own domain.
@@ -63,6 +63,7 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xstats
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xstats)

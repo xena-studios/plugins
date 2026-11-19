@@ -10,7 +10,7 @@ Your players want `/fly`, `/back`, `/craft` and a link to your Discord. Your sta
 
 ## Why server owners pick it
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Only what you want.** Every command can be turned off, renamed, given its own permission and reworded. A command that's off isn't registered at all, so it's gone from tab completion and another plugin can have its name.
 - **You won't feel it running.** Nothing runs on a timer but the daily update check and bStats, and you can turn both off. `/back`'s listener exists only while `/back` is on.
 - **It doesn't stop over a typo.** A bad value in the config falls back to its default with a warning in the console. xUtilities never stops over config.
@@ -20,7 +20,7 @@ Your players want `/fly`, `/back`, `/craft` and a link to your Discord. Your sta
 
 ---
 
-## What your players get
+## What players get
 
 **Get around:** `/fly` · `/speed` · `/top` to the highest block above you · `/back` to where you were before your last teleport, or where you died.
 
@@ -68,6 +68,7 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xutili
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank, a filter that's hard to dodge, mentions and private messages.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server that holds players when your main server goes down, and sends them back when it's up.
 - **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. A block logger with rollback, every feature free, with CoreProtect's commands and your CoreProtect history.
+- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Select an area and every plot and sign is made for you; players rent, add members and pay ahead.
 <!-- catalog:end -->
 
 Made by **[Xena Studios](https://xenastudios.co)** · Open source under GPL-3.0-only · [Source](https://github.com/xena-studios/plugins/tree/main/xutilities)

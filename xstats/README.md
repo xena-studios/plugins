@@ -4,7 +4,7 @@
 
 xStats is player stats, leaderboards, placeholders and a stats website the server hosts itself, for Paper and Folia, with no web host, account or sign-in.
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Minecraft's own stats.** Kills, deaths, blocks mined, distance and any other vanilla stat, read from the counters the server already keeps, with no listeners. Plus AFK-aware playtime, sessions, and any PlaceholderAPI value.
 - **History from day one.** The first start imports every player's stats files, off the main thread.
 - **Leaderboards per day, week, month and all time,** worked out during the save and answered from memory: `/leaderboard`, `%xstats_top_kills_monthly_1_name%`, Paper text display boards.

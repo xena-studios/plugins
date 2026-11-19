@@ -4,7 +4,7 @@
 
 xUtilities is a lightweight essentials plugin for Paper and Folia: gamemodes, flight, `/back`, heal, workstations anywhere and your own link commands, each one switchable.
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Only what you want.** Every command can be turned off, renamed, given its own permission and reworded. A command that's off isn't registered at all, so another plugin can have its name.
 - **You won't feel it running.** Nothing runs on a timer but the daily update check and bStats, and `/back`'s listener exists only while `/back` is on.
 - **Every change applies on reload**, even turning commands on or off and adding link commands. No restarts.

@@ -41,7 +41,7 @@ Homes and warps are kept in SQLite out of the box, in `plugins/xTeleport/xtelepo
 
 - **Works with `/back`.** Every teleport uses the command cause, so xUtilities' `/back` (or any plugin's that does the same) returns from it.
 - **Random teleport that doesn't lag.** `/rtp` loads one candidate chunk at a time in the background, checks it on the thread that owns it, and caps how many searches run at once. It can stick to chunks that already exist, for worlds pre-generated with Chunky.
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 
 ## Getting started
 

@@ -25,7 +25,7 @@ By [Xena Studios](https://xenastudios.co). Each does one job, costs next to noth
 
 | | Plugin | | |
 |---|---|---|---|
-| <img src="docs/src/assets/plugins/xplots.svg" width="40" alt=""> | **[xPlots](xplots)** | Rentable plots, set up in a minute. | [Docs](https://plugins.xenastudios.co/xplots/) · Coming soon |
+| <img src="docs/src/assets/plugins/xplots.svg" width="40" alt=""> | **[xPlots](xplots)** | Rentable plots, set up in a minute. | [Docs](https://plugins.xenastudios.co/xplots/) · [Modrinth](https://modrinth.com/plugin/xplots) |
 | <img src="docs/src/assets/plugins/xvote.svg" width="40" alt=""> | **[xVote](xvote)** | Votes in. Rewards out. | [Docs](https://plugins.xenastudios.co/xvote/) · Coming soon |
 | <img src="docs/src/assets/plugins/xmoney.svg" width="40" alt=""> | **[xMoney](xmoney)** | The economy and Vault, in one plugin. | [Docs](https://plugins.xenastudios.co/xmoney/) · Coming soon |
 

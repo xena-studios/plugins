@@ -8,7 +8,7 @@ sidebar:
 
 xUtilities gives a server the small commands it needs: gamemodes, flight, speed, `/top`, `/back`, heal and feed, inventory tools, workstation menus, and link commands like `/discord` that you write yourself. Install it on your lobby, survival and minigame servers alike, then switch off whatever a server doesn't use.
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Only what you want.** Every command can be turned off, renamed with aliases, given its own permission, and reworded. A command that's off isn't registered at all, so it doesn't show up in tab completion and another plugin can have its name.
 - **You won't feel it running.** Nothing runs on a timer but the daily update check and bStats, and you can turn both off. `/back`'s listener exists only while `/back` is on.
 - **It doesn't stop over a typo.** A bad value in the config falls back to its default with a warning in the console.

@@ -36,7 +36,7 @@ Balances and the ledger are kept in SQLite out of the box, in `plugins/xMoney/mo
 
 ## What else it does
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** Every balance is in memory, so a shop asking about a player, online or not, never waits on the disk. Changes are saved by one background thread as they happen, with no timer. The only listener is for players joining.
 - **Every change applies on reload**, except `storage` and `network`, which take a restart.
 

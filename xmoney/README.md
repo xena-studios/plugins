@@ -4,7 +4,7 @@
 
 xMoney is an economy plugin for Paper and Folia with Vault built in: shops, jobs and vote plugins written for Vault or VaultUnlocked find it, and the money, with no Vault jar installed. ("xMoney" is a working name.)
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **One jar instead of two.** It carries Vault's and VaultUnlocked's APIs and answers both.
 - **A ledger of every change:** who, how much, the balance after, and why. `/eco history` shows it.
 - **You won't feel it running.** Every balance is in memory, so Vault calls never wait on the disk, from any thread. One background thread saves each change with its ledger line, in the same transaction, as it happens.

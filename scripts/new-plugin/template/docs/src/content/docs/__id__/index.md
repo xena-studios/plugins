@@ -9,7 +9,7 @@ sidebar:
 
 TODO: what {{display}} is and who it's for, in two sentences.
 
-- **Every feature free.** No premium version, no early-access builds.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** TODO: what keeps it light.
 - **Every change applies on reload.** No restarts.
 

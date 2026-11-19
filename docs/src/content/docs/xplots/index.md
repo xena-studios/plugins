@@ -30,7 +30,7 @@ Plots are kept in SQLite out of the box, in `plugins/xPlots/plots.db`, or in MyS
 
 ## What else it does
 
-- **Every feature free.** No early-access builds, nothing behind a Patreon.
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **Every change applies on reload.** Prices, rent periods, signs and menus, with `/xplots reload`. Only a change of storage waits for a restart.
 
 ## Getting started

@@ -4,8 +4,6 @@ import co.xenastudios.core.command.CommandFailure;
 import co.xenastudios.core.text.Placeholders;
 import co.xenastudios.xteleport.XTeleport;
 import java.util.concurrent.CompletableFuture;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.CommandSender;
 
@@ -36,13 +34,9 @@ final class Replies {
         }));
     }
 
-    /**
-     * A placeholder for a command to click, such as {@code <command>} in
-     * {@code <click:run_command:'<command>'>}. Inside a click only pre-processed tags are
-     * filled in; escaped, so nothing in it can add formatting.
-     */
+    /** A command to click: see {@link Placeholders#click}. */
     static TagResolver click(String name, String command) {
-        return TagResolver.resolver(name, Tag.preProcessParsed(MiniMessage.miniMessage().escapeTags(command)));
+        return Placeholders.click(name, command);
     }
 
     /** {@code <world>}, {@code <x>}, {@code <y>} and {@code <z>}, in whole blocks. */

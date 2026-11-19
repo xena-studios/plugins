@@ -23,7 +23,19 @@ public final class Alts {
 
     /** Looks for banned alts off the server's threads, after the join: never holds it up. */
     public void alertOnJoin(UUID player, String name, String ip) {
-        xbans.store().alts(player, null).thenAccept(alts -> {
+        // By the IP they joined on as well as by their own: a new account's first visit may not
+        // be written yet, and that visit is the one this is for.
+        xbans.store().alts(null, ip).thenCombine(xbans.store().alts(player, null), (here, before) -> {
+            java.util.Map<UUID, Store.IpUse> all = new java.util.LinkedHashMap<>();
+            for (Store.IpUse use : here) {
+                all.putIfAbsent(use.id(), use);
+            }
+            for (Store.IpUse use : before) {
+                all.putIfAbsent(use.id(), use);
+            }
+            all.remove(player);
+            return all.values();
+        }).thenAccept(alts -> {
             Store.Backend backend = xbans.store().backend();
             if (backend == null) {
                 return;

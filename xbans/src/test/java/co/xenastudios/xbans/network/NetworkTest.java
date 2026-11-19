@@ -67,7 +67,7 @@ class NetworkTest {
     private Entry madeElsewhere(UUID target) {
         Punishment p = new Punishment(0, PunishmentType.BAN, target, "Steve", false, "elsewhere", null, "Console",
             Instant.now(), null, "*", false, null, null);
-        return plugin.store().insert(new Entry(p, null), List.of(), null).join().entry();
+        return plugin.store().insert(new Entry(p, null), List.of(), null, false).join().entry();
     }
 
     private Entry banOf(UUID id) {
@@ -114,6 +114,25 @@ class NetworkTest {
     }
 
     @Test
+    void anExtraSilentBanFromElsewhereIsntShownToStaff() {
+        PlayerMock staff = server.addPlayer("Mod");
+        staff.addAttachment(plugin, "xbans.notify.silent", true);
+        staff.addAttachment(plugin, "xbans.notify.broadcast", true);
+        UUID steve = UUID.randomUUID();
+        Entry made = madeElsewhere(steve);
+        Network network = network((backend, id) -> {
+            try (Connection c = backend.database().connect()) {
+                return Store.findNow(c, backend, id);
+            }
+        });
+        network.handle(plugin.store().backend(), new ChangeFeed.Change(1, Store.TOPIC_PUNISH,
+            made.id() + Store.EXTRA_SILENT, System.currentTimeMillis()), false);
+        assertNotNull(banOf(steve), "still enforced");
+        settle();
+        assertNull(staff.nextComponentMessage(), "only the console is told of -S");
+    }
+
+    @Test
     void aReadThatKeepsFailingCatchesUpOnEverything() throws Exception {
         UUID steve = UUID.randomUUID();
         PlayerMock online = new PlayerMock(server, "Steve", steve);
@@ -124,7 +143,7 @@ class NetworkTest {
         UUID alex = UUID.randomUUID();
         Entry lifted = madeElsewhere(alex);
         plugin.store().backend().active().add(lifted);
-        plugin.store().revoke(lifted.id(), new co.xenastudios.xbans.api.Removal(null, "Console", Instant.now(), ""), false)
+        plugin.store().revoke(lifted.id(), new co.xenastudios.xbans.api.Removal(null, "Console", Instant.now(), ""), false, false)
             .get(10, TimeUnit.SECONDS);
         assertNotNull(banOf(alex));
 

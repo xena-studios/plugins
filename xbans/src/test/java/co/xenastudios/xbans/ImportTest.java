@@ -101,6 +101,8 @@ class ImportTest {
         Entry ban = plugin.store().backend().active().ban(steve, null, "server", System.currentTimeMillis());
         assertEquals("Griefing", ban.punishment().reason());
         assertEquals("Notch", ban.punishment().staffName());
+        assertEquals(Entry.CONSOLE, ban.staffWeight(), "who gave it isn't known here: held as the console's");
+        assertEquals(Entry.CONSOLE, plugin.store().find(ban.id()).join().staffWeight(), "and stored so");
         assertEquals(1714557600000L, ban.punishment().created().toEpochMilli());
         await(() -> plugin.store().backend().active().ban(UUID.randomUUID(), "198.51.100.7", "server", System.currentTimeMillis()) != null);
         assertEquals("198.51.x.x", plugin.store().backend().active().ban(UUID.randomUUID(), "198.51.100.7", "server",
@@ -195,7 +197,7 @@ class ImportTest {
         UUID steve = UUID.randomUUID();
         raw.seen(steve, "Steve", "203.0.113.9", 0, false);
         raw.insert(new Entry(new Punishment(0, PunishmentType.BAN, null, IpKeys.label("198.51.100.7"), true, "alts", null,
-            "Console", Instant.now(), null, "*", false, null, null), "198.51.100.7"), List.of(), null).get(10, TimeUnit.SECONDS);
+            "Console", Instant.now(), null, "*", false, null, null), "198.51.100.7"), List.of(), null, false).get(10, TimeUnit.SECONDS);
         // A vanilla IP ban imported before, which names where it came from by its address.
         raw.write((c, b) -> Store.insertImported(c, b, new Entry(new Punishment(0, PunishmentType.BAN, null,
             IpKeys.label("198.51.100.8"), true, "imported", null, "Server", Instant.now(), null, "*", false, null, null),

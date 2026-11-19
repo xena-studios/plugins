@@ -200,6 +200,8 @@ public final class Imports {
             p = new Punishment(p.id(), p.type(), null, IpKeys.label(key), p.ipBased(), p.reason(), p.staff(), p.staffName(),
                 p.created(), p.expires(), p.scope(), p.silent(), p.template(), p.removal());
         }
-        return new Entry(p, key);
+        // Who gave it may not be on this server, and their weight is unknown: held as high as the
+        // console's, so only they and `xbans.unban.override` lift it.
+        return new Entry(p, key, Entry.CONSOLE);
     }
 }

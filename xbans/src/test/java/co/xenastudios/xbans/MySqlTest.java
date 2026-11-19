@@ -81,7 +81,7 @@ class MySqlTest {
         assertTrue(a.backend().feed().on());
         UUID steve = UUID.randomUUID();
 
-        Entry ban = a.insert(draft(PunishmentType.BAN, steve, "hello ünïcode 🙂"), List.of(), null).get(10, TimeUnit.SECONDS).entry();
+        Entry ban = a.insert(draft(PunishmentType.BAN, steve, "hello ünïcode 🙂"), List.of(), null, false).get(10, TimeUnit.SECONDS).entry();
         long deadline = System.currentTimeMillis() + 15_000;
         while (heardByB.isEmpty() && System.currentTimeMillis() < deadline) {
             // The mock's async scheduler runs repeating tasks as it ticks.
@@ -94,8 +94,8 @@ class MySqlTest {
         assertEquals("hello ünïcode 🙂", b.find(ban.id()).get(10, TimeUnit.SECONDS).punishment().reason());
 
         Removal removal = new Removal(null, "Console", Instant.now(), "sorry");
-        assertTrue(b.revoke(ban.id(), removal, true).get(10, TimeUnit.SECONDS));
-        assertFalse(a.revoke(ban.id(), removal, false).get(10, TimeUnit.SECONDS), "revoked once only");
+        assertTrue(b.revoke(ban.id(), removal, true, false).get(10, TimeUnit.SECONDS));
+        assertFalse(a.revoke(ban.id(), removal, false, false).get(10, TimeUnit.SECONDS), "revoked once only");
         deadline = System.currentTimeMillis() + 15_000;
         while (heardByA.isEmpty() && System.currentTimeMillis() < deadline) {
             // The mock's async scheduler runs repeating tasks as it ticks.
@@ -106,15 +106,15 @@ class MySqlTest {
 
         // Both servers revoking one punishment at the same moment: exactly one does, and neither fails.
         for (int round = 0; round < 5; round++) {
-            Entry both = a.insert(draft(PunishmentType.MUTE, UUID.randomUUID(), "race"), List.of(), null)
+            Entry both = a.insert(draft(PunishmentType.MUTE, UUID.randomUUID(), "race"), List.of(), null, false)
                 .get(10, TimeUnit.SECONDS).entry();
-            var first = a.revoke(both.id(), removal, false);
-            var second = b.revoke(both.id(), removal, false);
+            var first = a.revoke(both.id(), removal, false, false);
+            var second = b.revoke(both.id(), removal, false, false);
             assertEquals(1, (first.get(10, TimeUnit.SECONDS) ? 1 : 0) + (second.get(10, TimeUnit.SECONDS) ? 1 : 0));
         }
 
         for (int i = 0; i < 25; i++) {
-            a.insert(draft(PunishmentType.KICK, steve, "kick " + i), List.of(), null).get(10, TimeUnit.SECONDS);
+            a.insert(draft(PunishmentType.KICK, steve, "kick " + i), List.of(), null, false).get(10, TimeUnit.SECONDS);
         }
         Store.Filter filter = Store.Filter.target(steve, null);
         long total = a.read((c, backend) -> Store.count(c, backend, filter)).get(10, TimeUnit.SECONDS);

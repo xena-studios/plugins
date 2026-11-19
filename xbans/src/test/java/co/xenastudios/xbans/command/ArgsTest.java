@@ -49,6 +49,13 @@ class ArgsTest {
     }
 
     @Test
+    void aDecimalLengthWithASpace() {
+        Args args = parse("Bob 1.5 days griefing");
+        assertEquals(Length.parse("36h"), args.length());
+        assertEquals("griefing", args.reason());
+    }
+
+    @Test
     void noLengthMeansNone() {
         Args args = parse("Bob griefing the spawn");
         assertNull(args.length());

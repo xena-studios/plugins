@@ -84,7 +84,7 @@ final class Api implements XBansApi, Module {
         String name = xbans.profiles().cached(request.target()).map(profile -> profile.name()).orElse(request.target().toString());
         Punisher.Request made = new Punisher.Request(request.type(), request.target(), name, null, request.ipBased(),
             Length.of(request.duration()), request.reason(), null, request.scope(), request.silent(), false,
-            request.staff(), request.staffName(), null, null, false, List.of());
+            request.staff(), request.staffName(), null, null, false, List.of(), false);
         return xbans.punisher().punish(made).handle((entry, failure) -> {
             if (failure != null) {
                 Refusal refusal = Refusal.of(failure);

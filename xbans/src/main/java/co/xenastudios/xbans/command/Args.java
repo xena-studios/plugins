@@ -102,8 +102,8 @@ public record Args(
         if (wantsLength && !words.isEmpty()) {
             String first = words.get(0);
             try {
-                // "5 days", typed with a space.
-                if (words.size() > 1 && first.chars().allMatch(Character::isDigit) && Length.isUnit(words.get(1))) {
+                // "5 days" or "1.5 hours", typed with a space.
+                if (words.size() > 1 && SPACED_AMOUNT.matcher(first).matches() && Length.isUnit(words.get(1))) {
                     length = Length.parse(first + words.get(1));
                     next = length == null ? 0 : 2;
                 } else {
@@ -134,5 +134,6 @@ public record Args(
         return word.length() <= 8 && LENGTHISH.matcher(word.toLowerCase(Locale.ROOT)).matches();
     }
 
+    private static final java.util.regex.Pattern SPACED_AMOUNT = java.util.regex.Pattern.compile("\\d+(\\.\\d+)?");
     private static final java.util.regex.Pattern LENGTHISH = java.util.regex.Pattern.compile("\\d[\\d.smhdwoy]*[smhdwoy][\\d.smhdwoy]*");
 }

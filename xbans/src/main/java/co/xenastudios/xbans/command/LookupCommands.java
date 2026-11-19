@@ -217,7 +217,11 @@ public final class LookupCommands {
         CommandSender sender = invocation.sender();
         String who = invocation.arg(0);
         int page = 1;
-        if (who != null && who.chars().allMatch(Character::isDigit) && who.length() < 7) {
+        // A lone number is a page of your own, unless it's the name of a player you may look up
+        // (names can be all digits), or the console asked, which has no warnings of its own.
+        if (who != null && invocation.arg(1) == null && who.chars().allMatch(Character::isDigit) && who.length() < 7
+            && sender instanceof Player && !(sender.hasPermission(WARNINGS_OTHERS)
+                && org.bukkit.Bukkit.getOfflinePlayerIfCached(who) != null)) {
             page = Integer.parseInt(who);
             who = null;
         } else if (invocation.arg(1) != null) {

@@ -92,7 +92,7 @@ class XBansTest {
     private void record(PunishmentType type, UUID target, String reason) {
         Punishment p = new Punishment(0, type, target, "Steve", false, reason, null, "Console", Instant.now(), null, "*",
             false, null, null);
-        plugin.store().insert(new Entry(p, null), List.of(), null).join();
+        plugin.store().insert(new Entry(p, null), List.of(), null, false).join();
     }
 
     @AfterEach
@@ -532,6 +532,44 @@ class XBansTest {
         assertTrue(ban(steve.getUniqueId()).punishment().isPermanent());
     }
 
+    @Test
+    void aTemplateOnABareIpUsesItsLengthAndReason() {
+        console("ipban 198.51.100.7 hacking");
+        await(() -> backend().active().ban(UUID.randomUUID(), "198.51.100.7", "server", System.currentTimeMillis()) != null);
+        Entry ban = backend().active().ban(UUID.randomUUID(), "198.51.100.7", "server", System.currentTimeMillis());
+        assertEquals("Hacking", ban.punishment().reason());
+        assertEquals(Duration.ofDays(7), Duration.between(ban.punishment().created(), ban.punishment().expires()));
+    }
+
+    @Test
+    void aTempbanCantReachATemplatesPermanentStep() {
+        steve.disconnect();
+        console("ban Steve hacking");
+        await(() -> ban(steve.getUniqueId()) != null);
+        console("ban Steve hacking");
+        await(() -> ban(steve.getUniqueId()).punishment().expires() != null
+            && Duration.between(ban(steve.getUniqueId()).punishment().created(), ban(steve.getUniqueId()).punishment().expires())
+                .equals(Duration.ofDays(30)));
+        Entry second = ban(steve.getUniqueId());
+        alex.addAttachment(plugin, "xbans.tempban", true);
+        alex.addAttachment(plugin, "xbans.template.hacking", true);
+        alex.performCommand("tempban Steve hacking");
+        awaitSaid(alex, "next step is permanent");
+        assertEquals(second.id(), ban(steve.getUniqueId()).id());
+    }
+
+    @Test
+    void extraSilentUnbansNeedThePermission() {
+        console("ban Alex griefing");
+        await(() -> ban(alex.getUniqueId()) != null);
+        steve.addAttachment(plugin, "xbans.unban", true);
+        steve.addAttachment(plugin, "xbans.unban.override", true);
+        steve.performCommand("unban Alex -S");
+        awaitSaid(steve, "can't use -S");
+        settle();
+        assertNotNull(ban(alex.getUniqueId()));
+    }
+
     // ---- Staff limits ----
 
     @Test
@@ -915,6 +953,17 @@ class XBansTest {
         settle();
         assertEquals(List.of(sharer.getUniqueId()),
             plugin.store().alts(steve.getUniqueId(), null).join().stream().map(Store.IpUse::id).toList());
+    }
+
+    @Test
+    void aNewAccountOnABannedPlayersIpIsReportedOnItsFirstJoin() throws Exception {
+        alex.addAttachment(plugin, "xbans.notify.alts", true);
+        console("ban Steve griefing");
+        await(() -> ban(steve.getUniqueId()) != null);
+        settle();
+        said(alex);
+        join("Fresh", "203.0.113.9");
+        assertTrue(anyContains(awaitSaid(alex, "shares an IP"), "Steve"));
     }
 
     // ---- The API ----

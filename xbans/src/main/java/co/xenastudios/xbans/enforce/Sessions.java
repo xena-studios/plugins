@@ -23,7 +23,7 @@ public final class Sessions {
     }
 
     /** Records the IP key a player joined from; returns how many online players are on it now. */
-    int joined(UUID player, String ip) {
+    synchronized int joined(UUID player, String ip) {
         if (ip == null) {
             return 0;
         }
@@ -37,7 +37,17 @@ public final class Sessions {
         return sharing.merge(ip, 1, Integer::sum);
     }
 
-    void left(UUID player) {
+    /**
+     * Keys every online player's IP again, as a newly opened database keys them: turning
+     * {@code ips.hash} or {@code ips.enabled} on or off with a reload changes every key.
+     */
+    public synchronized void rekey(Map<UUID, String> online) {
+        ips.clear();
+        sharing.clear();
+        online.forEach(this::joined);
+    }
+
+    synchronized void left(UUID player) {
         String ip = ips.remove(player);
         if (ip != null) {
             sharing.computeIfPresent(ip, (key, count) -> count <= 1 ? null : count - 1);

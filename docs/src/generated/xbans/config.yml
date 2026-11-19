@@ -112,6 +112,8 @@ messages:
   cant-lift: "<prefix><error>That was given by someone who outranks you.</error> <dark_gray>#<id>"
   # Over the sender's staff-limits. <max> is the longest they may give.
   over-limit: "<prefix><error>You can give at most <highlight><max></highlight>."
+  # /tempban or /tempmute with a template whose next step is permanent. <template> is its name.
+  temp-permanent: "<prefix><error>The <highlight><template></highlight> template's next step is permanent, so it needs /ban or /mute."
   # A template's permission is missing. <template> is its name.
   template-no-permission: "<prefix><error>You can't use the <highlight><template></highlight> template."
   # Choosing a server: needs xbans.scope.

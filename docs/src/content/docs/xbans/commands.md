@@ -129,7 +129,7 @@ Staff limits apply to everyone on the IP: if any account seen on it, or online o
 
 Operators don't get the first four by default, so an operator isn't held to a helper's limit, and isn't exempt. A player's weight and exemption are recorded when they join, so they count while they're offline too.
 
-**Lifting punishments.** The weight of whoever gives a punishment is recorded with it. With `staff-limits.weights` on, `/unban`, `/unmute` and `/unwarn` lift only punishments you gave yourself, or that were given by someone whose weight was no higher than yours, like LiteBans' `litebans.unban.own` but by weight. The console's weight is the highest, so a ban from the console (or from a plugin, or from a warnings action) needs `xbans.unban.override`. Imported punishments have no weight, so anyone with the command can lift them.
+**Lifting punishments.** The weight of whoever gives a punishment is recorded with it. With `staff-limits.weights` on, `/unban`, `/unmute` and `/unwarn` lift only punishments you gave yourself, or that were given by someone whose weight was no higher than yours, like LiteBans' `litebans.unban.own` but by weight. The console's weight is the highest, so a ban from the console (or from a plugin, or from a warnings action) needs `xbans.unban.override`. Imported punishments count as the console's: only whoever gave them (by uuid) and `xbans.unban.override` lift them.
 
 ```
 /lp group helper permission set xbans.weight.10 true

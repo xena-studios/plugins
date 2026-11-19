@@ -177,9 +177,10 @@ public final class Network {
         boolean replaced = payload.endsWith(Store.REPLACED);
         boolean silent = payload.endsWith(Store.SILENT);
         boolean quiet = payload.endsWith(Store.QUIET);
+        boolean extraSilent = payload.endsWith(Store.EXTRA_SILENT);
         long id;
         try {
-            id = Long.parseLong(replaced || silent || quiet ? payload.substring(0, payload.length() - 2) : payload);
+            id = Long.parseLong(replaced || silent || quiet || extraSilent ? payload.substring(0, payload.length() - 2) : payload);
         } catch (NumberFormatException e) {
             xbans.getLogger().warning("Another server sent a change xBans can't read: " + payload);
             return;
@@ -220,13 +221,13 @@ public final class Network {
             if (entry == null) {
                 backend.active().remove(id);
             } else {
-                xbans.punisher().applyRevoked(entry, false, silent || entry.punishment().silent(), false, !replaced, null);
+                xbans.punisher().applyRevoked(entry, false, silent || entry.punishment().silent(), extraSilent, !replaced, null);
             }
         } else if (entry != null && quiet) {
             backend.active().add(entry);
             xbans.punisher().enforce(entry);
         } else if (entry != null && entry.punishment().removal() == null) {
-            xbans.punisher().applyMade(entry, List.of(), false, false, null);
+            xbans.punisher().applyMade(entry, List.of(), false, extraSilent, null);
         }
     }
 

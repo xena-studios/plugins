@@ -19,7 +19,12 @@ import co.xenastudios.xbans.lookup.Texts;
 import co.xenastudios.xbans.model.Entry;
 import co.xenastudios.xbans.network.Network;
 import co.xenastudios.xbans.storage.Store;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import net.kyori.adventure.text.Component;
+import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
 
 /** xBans: bans, mutes and warnings, the LiteBans way. Not final: MockBukkit subclasses it in tests. */
@@ -56,6 +61,16 @@ public class XBans extends XenaPlugin<XBConfig> {
             network = new Network(this);
             store = new Store(tasks(), getLogger(), getDataFolder().toPath(), backend -> {
                 network.subscribe(backend);
+                Map<UUID, String> online = new HashMap<>();
+                boolean ips = config().ips().enabled();
+                for (Player player : getServer().getOnlinePlayers()) {
+                    InetSocketAddress socket = player.getAddress();
+                    String key = !ips || socket == null ? null : backend.keys().key(socket.getAddress());
+                    if (key != null) {
+                        online.put(player.getUniqueId(), key);
+                    }
+                }
+                sessions.rekey(online);
                 if (cursors != null) {
                     cursors.clear();
                 }

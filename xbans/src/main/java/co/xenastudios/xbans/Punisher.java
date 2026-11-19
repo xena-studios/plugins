@@ -55,11 +55,12 @@ public final class Punisher {
      *     any other, unless the sender has {@value Power#BYPASS_TEMPLATES}
      * @param online who was online when the command ran, read on its thread ({@link #online}),
      *     to hold the target and everyone on an IP to the sender's limits; empty without a power
+     * @param temporary from /tempban or /tempmute: a template step that's permanent is refused
      */
     public record Request(
         PunishmentType type, UUID target, String targetName, String ip, boolean ipBased, Length length, String reason,
         String template, String scope, boolean silent, boolean extraSilent, UUID staff, String staffName, Power power,
-        CommandSender sender, boolean templateLength, List<Online> online) {}
+        CommandSender sender, boolean templateLength, List<Online> online, boolean temporary) {}
 
     /** An online player as a staff limit sees them: their IP key, weight and exemption. */
     public record Online(UUID id, String name, String ip, int weight, boolean exempt) {}
@@ -165,7 +166,8 @@ public final class Punisher {
                 ? CompletableFuture.completedFuture(List.of()) : plugin.store().accountsOn(ip);
             // Off the server's threads, and outside any transaction: PunishEvent's listeners may call the API.
             return sharing.thenApplyAsync(accounts -> prepare(resolved, target, ip, accounts, first), async);
-        })).thenCompose(prepared -> plugin.store().insert(prepared.entry(), prepared.replaces(), prepared.replacement())
+        })).thenCompose(prepared -> plugin.store().insert(prepared.entry(), prepared.replaces(), prepared.replacement(),
+            request.extraSilent())
             .thenApply(stored -> {
                 applyMade(stored.entry(), prepared.replaces().stream().map(Entry::id).toList(), true,
                     request.extraSilent(), request.sender(), stored.warnings());
@@ -204,20 +206,22 @@ public final class Punisher {
             return CompletableFuture.completedFuture(request);
         }
         XBConfig.Template template = config().templates().get(request.template());
-        if (template == null || request.target() == null) {
+        if (template == null) {
             return CompletableFuture.completedFuture(request);
         }
         long since = System.currentTimeMillis() - template.expireLadder().millis();
-        return plugin.store().ladderStep(request.target(), request.template(), template.expireLadder().permanent() ? 0 : since)
-            .thenApply(step -> {
-                List<Length> ladder = template.ladder().isEmpty() ? List.of(Length.PERMANENT) : template.ladder();
-                Length length = request.length() != null ? request.length() : ladder.get(Math.min(step, ladder.size() - 1));
-                String reason = request.reason() != null ? request.reason() : template.reason();
-                return new Request(request.type(), request.target(), request.targetName(), request.ip(),
-                    request.ipBased() || template.ip(), length, reason, request.template(), request.scope(),
-                    request.silent() || template.silent(), request.extraSilent(), request.staff(), request.staffName(),
-                    request.power(), request.sender(), request.length() == null, request.online());
-            });
+        // A bare IP has no player whose history counts the step, so it starts the ladder.
+        CompletableFuture<Integer> steps = request.target() == null ? CompletableFuture.completedFuture(0)
+            : plugin.store().ladderStep(request.target(), request.template(), template.expireLadder().permanent() ? 0 : since);
+        return steps.thenApply(step -> {
+            List<Length> ladder = template.ladder().isEmpty() ? List.of(Length.PERMANENT) : template.ladder();
+            Length length = request.length() != null ? request.length() : ladder.get(Math.min(step, ladder.size() - 1));
+            String reason = request.reason() != null ? request.reason() : template.reason();
+            return new Request(request.type(), request.target(), request.targetName(), request.ip(),
+                request.ipBased() || template.ip(), length, reason, request.template(), request.scope(),
+                request.silent() || template.silent(), request.extraSilent(), request.staff(), request.staffName(),
+                request.power(), request.sender(), request.length() == null, request.online(), request.temporary());
+        });
     }
 
     /** A punishment checked and ready to store, with the bans or mutes it replaces. */
@@ -247,6 +251,10 @@ public final class Punisher {
         }
         if (length == null || type == PunishmentType.KICK) {
             length = Length.PERMANENT;
+        }
+        if (request.temporary() && length.permanent()) {
+            // /tempban with a template: its ladder's step here is permanent.
+            throw new Refusal(messages.tempPermanent(), Placeholders.text("template", String.valueOf(request.template())));
         }
         if (power != null && !(request.templateLength() && power.bypassTemplates())) {
             Length cap = power.cap(type);
@@ -519,7 +527,7 @@ public final class Punisher {
                 request.reason() == null ? "" : request.reason());
             List<CompletableFuture<Entry>> each = new ArrayList<>();
             for (Entry entry : allowed) {
-                each.add(plugin.store().revoke(entry.id(), removal, request.silent() || request.extraSilent())
+                each.add(plugin.store().revoke(entry.id(), removal, request.silent(), request.extraSilent())
                     .thenApply(done -> done ? entry.revoked(removal) : null));
             }
             return CompletableFuture.allOf(each.toArray(CompletableFuture[]::new)).thenApply(ignored -> {

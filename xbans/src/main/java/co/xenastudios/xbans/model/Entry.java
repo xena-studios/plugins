@@ -10,14 +10,14 @@ import java.time.Instant;
  *
  * @param ip the IP key, or null when it isn't known or the punishment isn't IP-based
  * @param staffWeight the weight of the staff member who made it, when they made it: who may
- *     lift it ({@link #CONSOLE} for the console and plugins, 0 for imports and staff without one)
+ *     lift it ({@link #CONSOLE} for the console, plugins and imports, 0 for staff without one)
  */
 public record Entry(Punishment punishment, String ip, int staffWeight) {
 
     /** The weight recorded for the console and plugins: higher than any staff member's. */
     public static final int CONSOLE = Integer.MAX_VALUE;
 
-    /** An entry with no recorded staff weight, as imports and tests make. */
+    /** An entry with no recorded staff weight, as tests make. */
     public Entry(Punishment punishment, String ip) {
         this(punishment, ip, 0);
     }

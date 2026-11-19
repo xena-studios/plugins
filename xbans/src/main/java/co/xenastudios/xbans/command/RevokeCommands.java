@@ -62,6 +62,10 @@ public final class RevokeCommands {
             config.messages().scopeNoPermission().send(sender);
             return;
         }
+        if (parsed.extraSilent() && !sender.hasPermission(PunishCommands.EXTRA_SILENT_PERMISSION)) {
+            config.messages().extraSilentNoPermission().send(sender);
+            return;
+        }
         boolean silent = parsed.silent() || config.punishing().silentByDefault() && !parsed.publicFlag();
         UUID staff = sender instanceof Player player ? player.getUniqueId() : null;
         co.xenastudios.xbans.Power power = co.xenastudios.xbans.Power.of(sender, config.staffLimits());

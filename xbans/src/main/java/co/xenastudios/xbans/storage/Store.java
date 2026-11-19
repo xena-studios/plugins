@@ -64,6 +64,8 @@ public final class Store {
     public static final String QUIET = "|q";
     /** After a revoked id in the feed: revoked silently. */
     public static final String SILENT = "|s";
+    /** After a punished or revoked id in the feed: extra silent (-S), so only the console is told. */
+    public static final String EXTRA_SILENT = "|S";
 
     /** What's open: the database, its change feed, what's in force, and how IPs are keyed. */
     public record Backend(Database database, ChangeFeed feed, Active active, IpKeys keys) {}
@@ -593,7 +595,7 @@ public final class Store {
      * @param replaces bans or mutes the new one covers and outlasts, or an empty list
      * @return the punishment with its id
      */
-    public CompletableFuture<Stored> insert(Entry draft, List<Entry> replaces, Removal replacedBy) {
+    public CompletableFuture<Stored> insert(Entry draft, List<Entry> replaces, Removal replacedBy, boolean extraSilent) {
         String server = origin;
         return write((c, b) -> {
             for (Entry replaced : replaces) {
@@ -615,7 +617,7 @@ public final class Store {
             for (Entry replaced : replaces) {
                 b.feed().publish(c, TOPIC_REVOKE, replaced.id() + REPLACED);
             }
-            b.feed().publish(c, TOPIC_PUNISH, Long.toString(id));
+            b.feed().publish(c, TOPIC_PUNISH, id + (extraSilent ? EXTRA_SILENT : ""));
             UUID target = draft.punishment().target();
             int warnings = draft.type() == PunishmentType.WARN && target != null ? activeWarnings(c, b, target).size() : 0;
             return new Stored(draft.withId(id), warnings);
@@ -627,12 +629,12 @@ public final class Store {
      *
      * @return false if it had been revoked already (on another server, say)
      */
-    public CompletableFuture<Boolean> revoke(long id, Removal removal, boolean silent) {
+    public CompletableFuture<Boolean> revoke(long id, Removal removal, boolean silent, boolean extraSilent) {
         return write((c, b) -> {
             if (!removal(c, b, id, removal)) {
                 return false;
             }
-            b.feed().publish(c, TOPIC_REVOKE, id + (silent ? SILENT : ""));
+            b.feed().publish(c, TOPIC_REVOKE, id + (extraSilent ? EXTRA_SILENT : silent ? SILENT : ""));
             return true;
         });
     }

@@ -142,6 +142,8 @@ public record XBConfig(
             "always revoke their own; xbans.unban.override revokes any. <player>, <expires>, <id>."})
         Message cantLift,
         @Comment("Over the sender's staff-limits. <max> is the longest they may give.") Message overLimit,
+        @Comment("/tempban or /tempmute with a template whose next step is permanent. <template> is its name.")
+        Message tempPermanent,
         @Comment("A template's permission is missing. <template> is its name.") Message templateNoPermission,
         @Comment("Choosing a server: needs xbans.scope.") Message scopeNoPermission,
         Message extraSilentNoPermission,
@@ -359,6 +361,8 @@ public record XBConfig(
             Message.of("<prefix><error><highlight><player></highlight> outranks you."),
             Message.of("<prefix><error>That was given by someone who outranks you.</error> <dark_gray>#<id>"),
             Message.of("<prefix><error>You can give at most <highlight><max></highlight>."),
+            Message.of("<prefix><error>The <highlight><template></highlight> template's next step is permanent, so it"
+                + " needs /ban or /mute."),
             Message.of("<prefix><error>You can't use the <highlight><template></highlight> template."),
             Message.of("<prefix><error>You can't choose the server."),
             Message.of("<prefix><error>You can't use -S."),

@@ -8,6 +8,7 @@ sidebar:
 
 xMoney is an economy plugin for Paper and Folia with Vault built in. A shop, jobs or vote plugin that pays money usually needs Vault and an economy plugin behind it; xMoney is both, so plugins written for Vault find it, and the money, without Vault installed.
 
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **One jar instead of two.** xMoney carries Vault's API and VaultUnlocked's, and answers both. Plugins that `depend` on Vault load and work as they always have, on Paper and Folia.
 - **No money goes missing unexplained.** Every change to every balance is a line in the ledger: who, how much, the balance after, and why ("ChestShop", "paid Alex", "given by Steve"). `/eco history` shows it.
 - **Amounts that add up.** Money is counted in whole numbers, not floating point, so 0.1 + 0.2 is exactly 0.30, and badly behaved plugins can't make or lose money with odd amounts.
@@ -36,7 +37,6 @@ Balances and the ledger are kept in SQLite out of the box, in `plugins/xMoney/mo
 
 ## What else it does
 
-- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
 - **You won't feel it running.** Every balance is in memory, so a shop asking about a player, online or not, never waits on the disk. Changes are saved by one background thread as they happen, with no timer. The only listener is for players joining.
 - **Every change applies on reload**, except `storage` and `network`, which take a restart.
 

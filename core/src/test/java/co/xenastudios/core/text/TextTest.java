@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -68,5 +69,22 @@ class TextTest {
         assertEquals("» x", plain(message.render()));
         Message.theme(new Theme("", TextStyle.NONE, TextStyle.NONE, TextStyle.NONE, TextStyle.NONE));
         assertEquals("x", plain(message.render()));
+    }
+
+    @Test
+    void aClickPlaceholderRunsTheCommandItHolds() {
+        Component sent = Message.of("<click:run_command:'<command>'><hover:show_text:'<command>'>[Confirm]</hover></click>")
+            .render(Placeholders.click("command", "/pay Steve 10 confirm"));
+        Component button = sent.children().isEmpty() ? sent : sent.children().getFirst();
+        ClickEvent click = button.clickEvent();
+        assertTrue(click != null && click.payload() instanceof ClickEvent.Payload.Text, String.valueOf(click));
+        assertEquals("/pay Steve 10 confirm", ((ClickEvent.Payload.Text) click.payload()).value());
+    }
+
+    @Test
+    void aClickPlaceholderCantAddFormatting() {
+        Component sent = Message.of("<click:run_command:'<command>'>x</click> <command>")
+            .render(Placeholders.click("command", "/msg <red>hi"));
+        assertEquals("x /msg <red>hi", plain(sent));
     }
 }

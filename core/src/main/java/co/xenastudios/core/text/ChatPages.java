@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.Modifying;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -90,11 +89,8 @@ public final class ChatPages {
             TagResolver.resolver("has_previous", page.hasPrevious() ? SHOWN : HIDDEN));
     }
 
-    // Inside a click's argument only pre-processed tags are filled in; an inserted one would
-    // run "<next>" itself. Escaped, so nothing in the command can add formatting.
     private static TagResolver command(String name, String command, int page) {
-        String filled = command.replace("{page}", Integer.toString(page));
-        return TagResolver.resolver(name, Tag.preProcessParsed(MiniMessage.miniMessage().escapeTags(filled)));
+        return Placeholders.click(name, command.replace("{page}", Integer.toString(page)));
     }
 
     /**

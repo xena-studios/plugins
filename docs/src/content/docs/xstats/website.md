@@ -5,7 +5,14 @@ sidebar:
   order: 5
 ---
 
-xStats can serve a stats website itself: player search, a page for every player with their head, stats, ranks and the last 30 days, leaderboards for each period, and server totals, in your server's name, logo and colours. It's plain HTML, CSS and JavaScript, about 21 KiB, shipped inside the jar.
+xStats can serve a stats website itself, in your server's name, logo and colours, dark or light, and made for phones too:
+
+- **An overview:** each stat's leaders for all time, this month, this week or today, and the server's totals.
+- **Leaderboards** with a podium for the top three, every period, and a box to find a player on the board.
+- **A page for every player:** their head, when they were last on, badges for their best places, a chart of the last 30 days for any stat kept per period, each stat with today's, this week's and this month's, and what other plugins add. Pages link by uuid, so they keep working when a player changes their name.
+- **Search** with suggestions as you type; `/` jumps to it.
+
+It's plain HTML, CSS and JavaScript, about 65 KiB, shipped inside the jar.
 
 It runs on Java's own web server, so there's nothing else to install, and it can't change anything: it only answers `GET` requests, has no admin pages and nothing to log in to.
 

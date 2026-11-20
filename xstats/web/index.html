@@ -4,37 +4,48 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark light">
   <title>Server stats</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
 <body>
+  <a class="skip" href="#view">Skip to the stats</a>
   <header class="bar">
-    <a class="brand" href="#/">
-      <img id="logo" alt="" hidden>
-      <span>
-        <span id="site-name">Server stats</span>
-        <span id="tagline" hidden></span>
-      </span>
-    </a>
-    <form id="search" role="search" autocomplete="off">
-      <label class="hidden" for="q">Find a player</label>
-      <input id="q" type="search" placeholder="Find a player" maxlength="16" spellcheck="false">
-      <ul id="suggest" role="listbox" hidden></ul>
-    </form>
+    <div class="bar-inner">
+      <a class="brand" href="#/">
+        <img id="logo" alt="" hidden>
+        <span class="brand-mark" id="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text">
+          <span id="site-name">Server stats</span>
+          <span id="tagline" hidden></span>
+        </span>
+      </a>
+      <nav class="tabs" aria-label="Pages">
+        <a href="#/" data-page="home">Overview</a>
+        <a href="#/top" data-page="top">Leaderboards</a>
+      </nav>
+      <form id="search" role="search" autocomplete="off">
+        <label class="hidden" for="q">Find a player</label>
+        <span class="search-icon" id="search-icon" aria-hidden="true"></span>
+        <input id="q" type="search" placeholder="Find a player" maxlength="16" spellcheck="false"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggest">
+        <kbd class="key" aria-hidden="true">/</kbd>
+        <ul id="suggest" role="listbox" aria-label="Players" hidden></ul>
+      </form>
+      <button id="theme" class="icon-button" type="button" aria-label="Switch to light mode"></button>
+    </div>
   </header>
-  <nav class="tabs" aria-label="Pages">
-    <a href="#/" data-page="home">Overview</a>
-    <a href="#/top" data-page="top">Leaderboards</a>
-  </nav>
-  <main id="view" aria-live="polite">
-    <p class="muted">Loading…</p>
-    <noscript><p>This page needs JavaScript to show the stats.</p></noscript>
+  <main id="view" tabindex="-1" aria-live="polite">
+    <p class="notice">Loading…</p>
+    <noscript><p class="notice">This page needs JavaScript to show the stats.</p></noscript>
   </main>
   <footer>
-    <span id="updated"></span>
-    <span>Stats by <a href="https://modrinth.com/plugin/xstats" rel="noopener">xStats</a></span>
+    <div class="footer-inner">
+      <span id="updated"></span>
+      <span>Stats by <a href="https://modrinth.com/plugin/xstats" rel="noopener">xStats</a></span>
+    </div>
   </footer>
 </body>
 </html>

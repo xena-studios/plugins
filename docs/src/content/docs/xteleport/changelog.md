@@ -19,7 +19,7 @@ The first release. Drop the jar in and start the server: homes and warps are kep
 
 ### TPA
 
-- `/tpa`, `/tpahere`, and `/tpaccept` and `/tpdeny` with buttons to click. Several requests can wait at once: answer the newest, or name a player. Asking the same player again before they answer doesn't send them another message.
+- `/tpa`, `/tpahere`, and `/tpaccept` and `/tpdeny` with buttons to click. Several requests can wait at once: answer the newest, or name a player. Asking the same player again before they answer doesn't send them another message. A request whose payer is on a cooldown or can't afford it isn't accepted: it stays, to accept again later.
 - `/tpacancel` takes back what you sent; `/tptoggle` stops requests, and is kept through restarts.
 - Players you can't see, such as vanished staff, can't be sent requests.
 
@@ -39,7 +39,7 @@ The first release. Drop the jar in and start the server: homes and warps are kep
 
 - A 3-second warmup that moving or taking damage cancels, counting down on the action bar.
 - Cooldowns and Vault costs per command. A cost is taken after the warmup and given back if the teleport fails.
-- A home, warp, spawn or TPA that would land a player in lava, inside blocks, over the void, outside the world border or more than `teleports.max-fall` blocks (3) above the ground is refused with a message. Water below is safe from any height.
+- A home, warp, spawn or TPA that would land a player in lava, inside blocks, over the void, outside the world border or more than `teleports.max-fall` blocks (3) above the ground is refused with a message. Water below is safe from any height, kelp and seagrass and waterlogged blocks included, and soul sand, mud, farmland and dirt paths are stood on, not in.
 - A home, warp, spawn or `/tptoggle` the database couldn't save is undone and the player is told to try again, rather than lost on restart.
 - Every teleport uses the command cause, so xUtilities' `/back` returns from it.
 

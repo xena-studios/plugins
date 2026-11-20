@@ -34,11 +34,6 @@ final class Replies {
         }));
     }
 
-    /** A command to click: see {@link Placeholders#click}. */
-    static TagResolver click(String name, String command) {
-        return Placeholders.click(name, command);
-    }
-
     /** {@code <world>}, {@code <x>}, {@code <y>} and {@code <z>}, in whole blocks. */
     static TagResolver where(String world, double x, double y, double z) {
         return TagResolver.resolver(

@@ -135,16 +135,32 @@ public final class Search {
         boolean contains(int x, int z) {
             return x >= minX && x <= maxX && z >= minZ && z <= maxZ;
         }
+
+        /** How far the furthest corner is from a point. */
+        double furthest(double x, double z) {
+            double dx = Math.max(Math.abs(minX - x), Math.abs(maxX - x));
+            double dz = Math.max(Math.abs(minZ - z), Math.abs(maxZ - z));
+            return Math.sqrt(dx * dx + dz * dz);
+        }
     }
 
+    // Points outside the border or on the End's main island drawn before giving up.
+    static final int MAX_MISSES = 1000;
+
     private void attempt(World world, Area area, Bounds bounds, boolean skipMainIsland, int attempt, CompletableFuture<Found> found) {
-        // Candidates the border or the main island rule out cost no chunk, but count.
+        // Candidates the border or the main island rule out cost no chunk and don't count as
+        // tries: with a border smaller than max-radius, most of the ring is outside it. Only
+        // the ring as far as the border's furthest corner is drawn from, and a bounded number
+        // of misses (cheap arithmetic) ends the search when the ring and border barely meet.
         int x = 0;
         int z = 0;
         int tries = attempt;
         boolean picked = false;
-        for (; tries <= area.attempts(); tries++) {
-            int[] point = pick(area, ThreadLocalRandom.current());
+        double reach = Math.min(area.maxRadius(), bounds.furthest(area.centerX(), area.centerZ()));
+        // The ring starts past the border: nowhere to draw from.
+        int draws = reach < area.minRadius() ? 0 : MAX_MISSES;
+        for (int misses = 0; misses < draws; misses++) {
+            int[] point = pick(area.minRadius(), reach, area.centerX(), area.centerZ(), ThreadLocalRandom.current());
             x = point[0];
             z = point[1];
             if (bounds.contains(x, z) && !(skipMainIsland && (long) x * x + (long) z * z < (long) MAIN_ISLAND * MAIN_ISLAND)) {
@@ -197,13 +213,15 @@ public final class Search {
 
     /** A point in the ring, evenly spread over its area, not bunched at the centre. */
     static int[] pick(Area area, java.util.Random random) {
-        double min = area.minRadius();
-        double max = area.maxRadius();
+        return pick(area.minRadius(), area.maxRadius(), area.centerX(), area.centerZ(), random);
+    }
+
+    static int[] pick(double min, double max, double centerX, double centerZ, java.util.Random random) {
         double radius = Math.sqrt(min * min + random.nextDouble() * (max * max - min * min));
         double angle = random.nextDouble() * Math.PI * 2;
         return new int[] {
-            (int) Math.floor(area.centerX() + radius * Math.cos(angle)),
-            (int) Math.floor(area.centerZ() + radius * Math.sin(angle))};
+            (int) Math.floor(centerX + radius * Math.cos(angle)),
+            (int) Math.floor(centerZ + radius * Math.sin(angle))};
     }
 
     /**

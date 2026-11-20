@@ -46,5 +46,12 @@ class SearchTest {
         assertTrue(bounds.contains(100, -50));
         assertTrue(!bounds.contains(101, 0));
         assertTrue(!bounds.contains(0, 51));
+        // The furthest a spot inside it can be from the centre, so a ring past it is never drawn from.
+        assertEquals(Math.hypot(100, 50), bounds.furthest(0, 0), 1e-9);
+        java.util.Random random = new java.util.Random(7);
+        for (int i = 0; i < 1000; i++) {
+            int[] point = Search.pick(30, bounds.furthest(0, 0), 0, 0, random);
+            assertTrue(Math.hypot(point[0], point[1]) <= Math.hypot(100, 50) + 2);
+        }
     }
 }

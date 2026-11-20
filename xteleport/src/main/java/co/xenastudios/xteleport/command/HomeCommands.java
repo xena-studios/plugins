@@ -360,7 +360,7 @@ public final class HomeCommands {
         for (Component line : ChatPages.lines(shown, entry -> messages().entry().chat(
             Placeholders.text("home", entry.name()),
             Replies.where(entry.world(), entry.x(), entry.y(), entry.z()),
-            Replies.click("command", prefix + entry.name())), messages().footer(), pageCommand)) {
+            Placeholders.click("command", prefix + entry.name())), messages().footer(), pageCommand)) {
             viewer.sendMessage(line);
         }
     }

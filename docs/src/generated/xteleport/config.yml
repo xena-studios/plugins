@@ -108,6 +108,9 @@ messages:
     accepted: "<prefix><highlight><player></highlight> <success>accepted</success> your request."
     # To whoever accepted.
     you-accepted: "<prefix><success>Accepted</success> <highlight><player></highlight>'s request."
+    # To whoever accepted, when whoever pays is on a cooldown or can't afford it (they're
+    # told which). The request stays, to accept again later. <player> asked.
+    not-ready: "<prefix><error><highlight><player></highlight> can't make that teleport yet. The request is still there."
     denied: "<prefix><highlight><player></highlight> <error>denied</error> your request."
     you-denied: "<prefix>Denied <highlight><player></highlight>'s request."
     # To whoever was asked, when the request is taken back.

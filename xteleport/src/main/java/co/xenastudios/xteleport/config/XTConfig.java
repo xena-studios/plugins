@@ -212,6 +212,10 @@ public record XTConfig(
         Message receivedHere,
         @Comment("To whoever asked.") Message accepted,
         @Comment("To whoever accepted.") Message youAccepted,
+        @Comment({
+            "To whoever accepted, when whoever pays is on a cooldown or can't afford it (they're",
+            "told which). The request stays, to accept again later. <player> asked."})
+        Message notReady,
         Message denied,
         Message youDenied,
         @Comment("To whoever was asked, when the request is taken back.") Message cancelled,
@@ -304,6 +308,7 @@ public record XTConfig(
                     + "<click:run_command:'<deny>'><hover:show_text:'<deny>'><error>[Deny]</error></hover></click>"),
                 Message.of("<prefix><highlight><player></highlight> <success>accepted</success> your request."),
                 Message.of("<prefix><success>Accepted</success> <highlight><player></highlight>'s request."),
+                Message.of("<prefix><error><highlight><player></highlight> can't make that teleport yet. The request is still there."),
                 Message.of("<prefix><highlight><player></highlight> <error>denied</error> your request."),
                 Message.of("<prefix>Denied <highlight><player></highlight>'s request."),
                 Message.of("<prefix><highlight><player></highlight> took back their request."),

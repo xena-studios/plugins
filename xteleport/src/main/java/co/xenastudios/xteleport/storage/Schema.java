@@ -20,8 +20,8 @@ final class Schema {
         SchemaStep.of(1, "homes, warps, the spawn and players' settings",
             "CREATE TABLE IF NOT EXISTS {p}homes (owner CHAR(36) NOT NULL, name_key VARCHAR(32) NOT NULL,"
                 + " name VARCHAR(32) NOT NULL, " + PLACE + ", PRIMARY KEY (owner, name_key)){table}",
-            "CREATE TABLE IF NOT EXISTS {p}warps (name_key VARCHAR(32) NOT NULL PRIMARY KEY, name VARCHAR(32) NOT NULL, "
-                + PLACE + "){table}",
+            "CREATE TABLE IF NOT EXISTS {p}warps (name_key VARCHAR(32) NOT NULL, name VARCHAR(32) NOT NULL, "
+                + PLACE + ", PRIMARY KEY (server, name_key)){table}",
             "CREATE TABLE IF NOT EXISTS {p}spawns (name_key VARCHAR(32) NOT NULL, name VARCHAR(32) NOT NULL, "
                 + PLACE + ", PRIMARY KEY (server, name_key)){table}",
             "CREATE TABLE IF NOT EXISTS {p}players (uuid CHAR(36) NOT NULL PRIMARY KEY, tpa_off INT NOT NULL DEFAULT 0){table}"));

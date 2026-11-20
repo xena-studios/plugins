@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Waterlogged;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -95,24 +96,41 @@ public final class Safety {
         }
         Block feet = world.getBlockAt(x, y, z);
         Block head = feet.getRelative(0, 1, 0);
-        if (harmful(feet) || harmful(head) || feet.getType().isOccluding() || head.getType().isOccluding()) {
+        if (harmful(feet) || harmful(head) || inside(feet, at.getY() - y) || head.getType().isOccluding()) {
             return false;
         }
         // From just under the feet, so a spot on a slab (y = 64.5) finds the slab itself.
         int top = (int) Math.floor(at.getY() - 0.01);
         for (int below = top; below >= world.getMinHeight(); below--) {
-            Material type = world.getBlockAt(x, below, z).getType();
+            Block block = world.getBlockAt(x, below, z);
+            Material type = block.getType();
             if (HURTS.contains(type)) {
                 return false;
             }
-            if (liquid(type)) {
-                return true; // Water: lava is in HURTS.
+            if (liquid(type) || UNDERWATER.contains(type) || block.getBlockData() instanceof Waterlogged wet && wet.isWaterlogged()) {
+                return true; // Water, kelp or anything waterlogged: lava is in HURTS.
             }
             if (type.isSolid() || Tag.CLIMBABLE.isTagged(type)) {
                 return top - below <= maxFall;
             }
         }
         return false;
+    }
+
+    // Full blocks that aren't full height: standing on one, the feet are in its block but above it.
+    private static final java.util.Map<Material, Double> SHORT = java.util.Map.of(
+        Material.SOUL_SAND, 0.875, Material.MUD, 0.875, Material.FARMLAND, 0.9375, Material.DIRT_PATH, 0.9375);
+
+    // Plants that only grow in water: a column of them is water to fall into.
+    private static final java.util.Set<Material> UNDERWATER = java.util.EnumSet.of(
+        Material.KELP, Material.KELP_PLANT, Material.SEAGRASS, Material.TALL_SEAGRASS);
+
+    // Whether the feet are inside the block they're in: a full block, below its top.
+    private static boolean inside(Block feet, double above) {
+        if (!feet.getType().isOccluding()) {
+            return false;
+        }
+        return above < SHORT.getOrDefault(feet.getType(), 1.0) - 0.001;
     }
 
     /** Water and lava, as blocks. Waterlogged blocks count by their own shape. */

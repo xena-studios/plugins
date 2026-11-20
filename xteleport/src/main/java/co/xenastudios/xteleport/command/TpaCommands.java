@@ -139,8 +139,8 @@ public final class TpaCommands {
             Placeholders.text("player", target.getName()), Placeholders.text("seconds", seconds));
         (here ? messages().receivedHere() : messages().received()).send(target,
             Placeholders.text("player", sender.getName()), Placeholders.text("seconds", seconds),
-            Replies.click("accept", "/tpaccept " + sender.getName()),
-            Replies.click("deny", "/tpdeny " + sender.getName()));
+            Placeholders.click("accept", "/tpaccept " + sender.getName()),
+            Placeholders.click("deny", "/tpdeny " + sender.getName()));
     }
 
     // Checked for safety like a home: the player gone to may be over lava or the End's void.
@@ -180,14 +180,23 @@ public final class TpaCommands {
             messages().denied().send(asker, Placeholders.text("player", player.getName()));
             return;
         }
-        messages().youAccepted().send(player, Placeholders.text("player", request.fromName()));
-        messages().accepted().send(asker, Placeholders.text("player", player.getName()));
         // /tpa: the asker comes here. /tpahere: this player goes to the asker. The asker pays.
         Player moving = request.here() ? player : asker;
         Player destination = request.here() ? asker : player;
         Teleporter.Trip trip = trip(request.here(), destination).paidBy(asker);
         Teleporter teleporter = plugin.teleporter();
-        teleporter.onPlayer(moving, () -> teleporter.teleport(moving, trip, () -> teleporter.whereIs(destination)), () -> {});
+        teleporter.onPlayer(moving, () -> {
+            // The cooldown and the cost first, on the moving player's thread: a teleport that
+            // can't happen isn't "accepted", and its request stays to accept again.
+            if (teleporter.precheck(moving, trip) != null) {
+                plugin.requests().add(player.getUniqueId(), request, expireMillis());
+                messages().notReady().send(player, Placeholders.text("player", request.fromName()));
+                return;
+            }
+            messages().youAccepted().send(player, Placeholders.text("player", request.fromName()));
+            messages().accepted().send(asker, Placeholders.text("player", player.getName()));
+            teleporter.teleport(moving, trip, () -> teleporter.whereIs(destination));
+        }, () -> {});
     }
 
     // The newest request still pending whose sender is online, or the named one's.

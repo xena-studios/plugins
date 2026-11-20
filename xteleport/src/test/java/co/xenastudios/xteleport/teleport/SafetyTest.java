@@ -66,6 +66,24 @@ class SafetyTest {
     }
 
     @Test
+    void onSoulSandOrMud() {
+        for (Material shorter : new Material[] {Material.SOUL_SAND, Material.MUD}) {
+            world.getBlockAt(0, 64, 0).setType(shorter);
+            assertTrue(safe(0.5, 64.875, 0.5), "standing on " + shorter + ", 2 pixels lower than a full block");
+            assertFalse(safe(0.5, 64, 0.5), "inside " + shorter);
+        }
+    }
+
+    @Test
+    void kelpIsWater() {
+        world.getBlockAt(0, 50, 0).setType(Material.STONE);
+        for (int y = 51; y < 64; y++) {
+            world.getBlockAt(0, y, 0).setType(y == 63 ? Material.KELP : Material.KELP_PLANT);
+        }
+        assertTrue(safe(0.5, 64, 0.5), "a kelp forest is water to fall into");
+    }
+
+    @Test
     void lavaAndFire() {
         world.getBlockAt(0, 63, 0).setType(Material.LAVA);
         assertFalse(safe(0.5, 64, 0.5));

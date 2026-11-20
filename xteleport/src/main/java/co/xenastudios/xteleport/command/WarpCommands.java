@@ -156,7 +156,7 @@ public final class WarpCommands {
         for (Component line : ChatPages.lines(shown, warp -> messages().entry().chat(
             Placeholders.text("warp", warp.name()),
             Replies.where(warp.world(), warp.x(), warp.y(), warp.z()),
-            Replies.click("command", "/warp " + warp.name())), messages().footer(), "/warps {page}")) {
+            Placeholders.click("command", "/warp " + warp.name())), messages().footer(), "/warps {page}")) {
             viewer.sendMessage(line);
         }
     }

@@ -79,6 +79,7 @@ public interface co.xenastudios.xstats.api.XStatsApi
   public abstract boolean isPrivate(java.util.UUID)
   public abstract void registerProfileSection(org.bukkit.plugin.Plugin, java.lang.String, java.lang.String, co.xenastudios.xstats.api.ProfileSectionProvider)
   public abstract co.xenastudios.xstats.api.CustomStat registerStat(org.bukkit.plugin.Plugin, java.lang.String, java.lang.String, co.xenastudios.xstats.api.StatUnit)
+  public abstract co.xenastudios.xstats.api.CustomStat registerStat(org.bukkit.plugin.Plugin, java.lang.String, java.lang.String, co.xenastudios.xstats.api.StatUnit, boolean)
   public abstract void unregisterProfileSection(org.bukkit.plugin.Plugin, java.lang.String)
 
 public final class co.xenastudios.xstats.api.event.LeaderboardChangeEvent extends org.bukkit.event.Event

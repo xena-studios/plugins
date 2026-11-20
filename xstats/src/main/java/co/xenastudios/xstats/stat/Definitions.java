@@ -42,9 +42,8 @@ public final class Definitions {
         return null;
     }
 
-    /** A stat registered through the API, kept across reloads. */
     /**
-     * A stat another plugin registered.
+     * A stat registered through the API, kept across reloads.
      *
      * @param latest a value set outright (a balance): on a network, the latest any server set
      */

@@ -16,6 +16,7 @@ xStats' tables are documented and kept stable, so you can build your own site or
 | `daily` | `player`, `stat`, `server`, `day`, `delta` | How much a stat went up on a day: only stats with periods, only days it changed. `day` is days since 1970-01-01, in `periods.timezone`. |
 | `monthly` | `player`, `stat`, `server`, `month`, `delta` | Daily rows older than `periods.keep-daily-days`, added up per month. `month` is `year * 12 + month - 1`. |
 | `boards` | `id`, `server`, `world`, `x`, `y`, `z`, `yaw`, `stat`, `period` | Leaderboards placed in the world. |
+| `sources` | `stat`, `server`, `source` | Which of Minecraft's counters a stat added up on each server, so a stat whose `source` changes starts again from the new counters' value. |
 | `meta` | `name`, `value` | The schema version, and whether the import ran on each server. |
 | `changes` | | Only in network mode: the core's [change feed](/xstats/networks/), pruned to ten minutes. |
 

@@ -17,6 +17,8 @@ import java.util.List;
  *       only on days it changed. {@code day} is days since 1970-01-01 in the config's time zone.</li>
  *   <li>{@code monthly}: daily rows older than {@code periods.keep-daily-days}, added up per
  *       month. {@code month} is {@code year * 12 + month - 1}.</li>
+ *   <li>{@code sources}: what each of Minecraft's counters a stat adds up was, on each server,
+ *       so a stat whose {@code source} changes starts from the new counter's value.</li>
  * </ul>
  */
 public final class Schema {
@@ -42,5 +44,8 @@ public final class Schema {
                 + " month INT NOT NULL, delta BIGINT NOT NULL, PRIMARY KEY (player, stat, server, month)){table}",
             "CREATE TABLE IF NOT EXISTS {p}boards (id {rowid}, server INT NOT NULL, world VARCHAR(64) NOT NULL,"
                 + " x DOUBLE NOT NULL, y DOUBLE NOT NULL, z DOUBLE NOT NULL, yaw FLOAT NOT NULL,"
-                + " stat VARCHAR(64) NOT NULL, period VARCHAR(16) NOT NULL){table}"));
+                + " stat VARCHAR(64) NOT NULL, period VARCHAR(16) NOT NULL){table}"),
+        SchemaStep.of(2, "the source each stat was read from",
+            "CREATE TABLE IF NOT EXISTS {p}sources (stat INT NOT NULL, server INT NOT NULL, source VARCHAR(2048) NOT NULL,"
+                + " PRIMARY KEY (stat, server)){table}"));
 }

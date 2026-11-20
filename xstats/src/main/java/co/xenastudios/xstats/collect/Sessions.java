@@ -26,7 +26,9 @@ public final class Sessions extends ListenerModule {
         this.reader = reader;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    // First, before other plugins' join listeners: a first-join reward that adds to a stat
+    // through the API finds the player already known, instead of being dropped.
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         Location look = player.getLocation();

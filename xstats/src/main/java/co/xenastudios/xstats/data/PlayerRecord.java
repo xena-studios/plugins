@@ -50,6 +50,10 @@ public final class PlayerRecord {
     float pitch;
     boolean looked;
     long lastSample;
+    /** When their values here were last read or set: a network's latest value is the one read last. */
+    long lastRead;
+    /** /stats private couldn't be saved at once: the next save writes it. */
+    boolean hidePending;
     volatile boolean online;
     long playMillis;
 

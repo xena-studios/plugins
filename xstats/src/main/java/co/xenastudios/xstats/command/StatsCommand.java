@@ -143,10 +143,8 @@ public final class StatsCommand {
         }
         String url = pageUrl(config, record);
         if (url != null) {
-            // Inside a click only pre-processed tags are filled in; the url can't hold a quote (pageUrl checks).
-            lines.add(messages.profileLink().chat(net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver("url",
-                net.kyori.adventure.text.minimessage.tag.Tag.preProcessParsed(
-                    net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().escapeTags(url)))));
+            // Inside a click, as core's click placeholder fills it; the url can't hold a quote (pageUrl checks).
+            lines.add(messages.profileLink().chat(Placeholders.click("url", url)));
         }
         return lines;
     }

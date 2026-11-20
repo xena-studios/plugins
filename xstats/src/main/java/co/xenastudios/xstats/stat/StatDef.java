@@ -40,15 +40,23 @@ public record StatDef(
     /** A PlaceholderAPI value, read with the rest and on quit. */
     public record Placeholder(String placeholder) implements Source {}
 
-    /** Set by another plugin through the API. */
-    public record Custom(String plugin) implements Source {}
+    /**
+     * Set by another plugin through the API.
+     *
+     * @param latest a value set outright, such as a balance, rather than a count
+     */
+    public record Custom(String plugin, boolean latest) implements Source {}
 
     public StatInfo info() {
         return new StatInfo(id, name, unit, decimals, periods, inGame, owner);
     }
 
-    /** Whether a value only ever grows, so a fall means its counter was reset. Placeholder values go up and down. */
+    /**
+     * Whether a value only ever grows, so a fall means its counter was reset, and a network
+     * adds every server's up. Placeholder values and other plugins' set values (a balance) go
+     * up and down, and a network takes the latest.
+     */
     public boolean counter() {
-        return !(source instanceof Placeholder);
+        return !(source instanceof Placeholder || source instanceof Custom custom && custom.latest());
     }
 }

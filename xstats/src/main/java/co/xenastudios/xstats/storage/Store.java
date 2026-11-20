@@ -38,10 +38,24 @@ public final class Store {
     // ---- what a save writes ----
 
     /** A player whose row is new or changed. {@code dbId} is 0 for a player not stored yet. */
-    public record PlayerRow(UUID uuid, int dbId, String name, long firstJoin, long lastSeen, boolean hidden, boolean excluded) {}
+    /**
+     * A player's row.
+     *
+     * @param writeHidden whether to write {@code hidden}: only when /stats private couldn't be
+     *     saved at once. Otherwise it's left as stored, so a save can't undo a change another
+     *     server made that hasn't reached this one yet.
+     */
+    public record PlayerRow(UUID uuid, int dbId, String name, long firstJoin, long lastSeen, boolean hidden, boolean excluded,
+                            boolean writeHidden) {}
 
     /** This server's all-time value of one stat for one player. {@code player} is an index into the save's players. */
-    public record TotalRow(int player, String stat, long value, long raw) {}
+    /**
+     * A player's value of a stat on this server.
+     *
+     * @param readAt when it was read, which decides the latest value on a network (a balance
+     *     read before another server's but saved after it isn't the latest); 0 for the save's time
+     */
+    public record TotalRow(int player, String stat, long value, long raw, long readAt) {}
 
     /** How much a stat went up today. */
     public record DailyRow(int player, String stat, long delta) {}
@@ -151,6 +165,62 @@ public final class Store {
         int id = dictionary(connection, database, "stats", stat);
         added.put(stat, id);
         return id;
+    }
+
+    /** What each stat of Minecraft's counters was last read from on this server, by stat name. */
+    public Map<String, String> sources() throws SQLException {
+        Map<String, String> found = new HashMap<>();
+        try (Connection connection = connect();
+             PreparedStatement query = connection.prepareStatement(sql(
+                 "SELECT s.name, x.source FROM {p}sources x JOIN {p}stats s ON s.id = x.stat WHERE x.server = ?"))) {
+            query.setInt(1, server);
+            try (ResultSet result = query.executeQuery()) {
+                while (result.next()) {
+                    found.put(result.getString(1), result.getString(2));
+                }
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Records the source a stat is read from now. If it had another one, every player's last
+     * reading of it on this server is marked {@code -2}: the next reading is the new
+     * counter's value, not a rise on the old one's.
+     */
+    public void source(String stat, String source, boolean changed) throws SQLException {
+        try (Connection connection = connect()) {
+            connection.setAutoCommit(false);
+            Map<String, Integer> added = new HashMap<>();
+            try {
+                int id = statId(connection, stat, added);
+                if (changed) {
+                    try (PreparedStatement rebase = connection.prepareStatement(sql(
+                        "UPDATE {p}totals SET raw = -2 WHERE stat = ? AND server = ? AND raw <> -1"))) {
+                        rebase.setInt(1, id);
+                        rebase.setInt(2, server);
+                        rebase.executeUpdate();
+                    }
+                }
+                try (PreparedStatement delete = connection.prepareStatement(sql("DELETE FROM {p}sources WHERE stat = ? AND server = ?"))) {
+                    delete.setInt(1, id);
+                    delete.setInt(2, server);
+                    delete.executeUpdate();
+                }
+                try (PreparedStatement insert = connection.prepareStatement(sql(
+                    "INSERT INTO {p}sources (stat, server, source) VALUES (?, ?, ?)"))) {
+                    insert.setInt(1, id);
+                    insert.setInt(2, server);
+                    insert.setString(3, source);
+                    insert.executeUpdate();
+                }
+                connection.commit();
+                statIds.putAll(added);
+            } catch (SQLException | RuntimeException e) {
+                connection.rollback();
+                throw e;
+            }
+        }
     }
 
     /** Stat names by database id, for reading rows back. */
@@ -275,7 +345,8 @@ public final class Store {
     private int[] players(Connection connection, List<PlayerRow> rows) throws SQLException {
         int[] ids = new int[rows.size()];
         try (PreparedStatement update = connection.prepareStatement(sql(
-            "UPDATE {p}players SET name = ?, name_lower = ?, first_join = ?, last_seen = ?, hidden = ?, excluded = ? WHERE id = ?"))) {
+            "UPDATE {p}players SET name = ?, name_lower = ?, first_join = ?, last_seen = ?,"
+                + " hidden = CASE WHEN ? = 1 THEN ? ELSE hidden END, excluded = ? WHERE id = ?"))) {
             for (int i = 0; i < rows.size(); i++) {
                 PlayerRow row = rows.get(i);
                 if (row.dbId() == 0) {
@@ -284,7 +355,7 @@ public final class Store {
                 }
                 ids[i] = row.dbId();
                 fill(update, row);
-                update.setInt(7, row.dbId());
+                update.setInt(8, row.dbId());
                 update.addBatch();
             }
             update.executeBatch();
@@ -297,8 +368,9 @@ public final class Store {
         statement.setString(2, row.name() == null ? null : row.name().toLowerCase(Locale.ROOT));
         statement.setLong(3, row.firstJoin());
         statement.setLong(4, row.lastSeen());
-        statement.setInt(5, row.hidden() ? 1 : 0);
-        statement.setInt(6, row.excluded() ? 1 : 0);
+        statement.setInt(5, row.writeHidden() ? 1 : 0);
+        statement.setInt(6, row.hidden() ? 1 : 0);
+        statement.setInt(7, row.excluded() ? 1 : 0);
     }
 
     /** A player's id, adding them if no server has yet. */
@@ -306,9 +378,10 @@ public final class Store {
         int existing = playerId(connection, row.uuid());
         if (existing > 0) {
             try (PreparedStatement update = connection.prepareStatement(sql(
-                "UPDATE {p}players SET name = ?, name_lower = ?, first_join = ?, last_seen = ?, hidden = ?, excluded = ? WHERE id = ?"))) {
+                "UPDATE {p}players SET name = ?, name_lower = ?, first_join = ?, last_seen = ?,"
+                + " hidden = CASE WHEN ? = 1 THEN ? ELSE hidden END, excluded = ? WHERE id = ?"))) {
                 fill(update, row);
-                update.setInt(7, existing);
+                update.setInt(8, existing);
                 update.executeUpdate();
             }
             return existing;
@@ -357,7 +430,7 @@ public final class Store {
                 statement.setInt(3, server);
                 statement.setLong(4, row.value());
                 statement.setLong(5, row.raw());
-                statement.setLong(6, save.at());
+                statement.setLong(6, row.readAt() > 0 ? row.readAt() : save.at());
                 statement.addBatch();
             }
             statement.executeBatch();
@@ -570,7 +643,9 @@ public final class Store {
             connection.setAutoCommit(false);
             Map<String, Integer> added = new HashMap<>();
             try (PreparedStatement insert = connection.prepareStatement(sql(database.dialect().insertIgnore()
-                + " INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)"))) {
+                + " INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)"));
+                 PreparedStatement raise = connection.prepareStatement(sql(
+                     "UPDATE {p}totals SET value = ? WHERE player = ? AND stat = ? AND server = ? AND value < ?"))) {
                 for (Imported player : players) {
                     int id = importPlayer(connection, player);
                     for (Map.Entry<String, Long> value : player.values().entrySet()) {
@@ -584,6 +659,21 @@ public final class Store {
                         insert.addBatch();
                     }
                     insert.executeBatch();
+                    // What xStats counts itself (playtime, sessions) from a player who joined
+                    // before the import: their row holds only what was counted since install,
+                    // and the file has all of it. The higher wins, so importing again adds nothing.
+                    for (Map.Entry<String, Long> value : player.values().entrySet()) {
+                        if (Boolean.TRUE.equals(player.counters().get(value.getKey()))) {
+                            continue;
+                        }
+                        raise.setLong(1, value.getValue());
+                        raise.setInt(2, id);
+                        raise.setInt(3, statId(connection, value.getKey(), added));
+                        raise.setInt(4, server);
+                        raise.setLong(5, value.getValue());
+                        raise.addBatch();
+                    }
+                    raise.executeBatch();
                 }
                 connection.commit();
                 statIds.putAll(added);
@@ -602,7 +692,7 @@ public final class Store {
         if (existing > 0) {
             return existing;
         }
-        return insertPlayer(connection, new PlayerRow(player.uuid(), 0, player.name(), 0, player.lastSeen(), false, false));
+        return insertPlayer(connection, new PlayerRow(player.uuid(), 0, player.name(), 0, player.lastSeen(), false, false, false));
     }
 
     private long totalRows(Connection connection) throws SQLException {

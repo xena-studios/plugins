@@ -70,6 +70,29 @@ final class Heads implements AutoCloseable {
         }
     }
 
+    // Heads the service wouldn't give lately, so a missing one isn't asked for on every view
+    // (each try can take up to the timeout). Bounded: the oldest go first.
+    private static final long FAILED_MS = 10 * 60_000;
+    private final Map<UUID, Long> failed = new java.util.LinkedHashMap<>(64, 0.75f, false) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<UUID, Long> eldest) {
+            return size() > 10_000;
+        }
+    };
+
+    private boolean failedLately(UUID player) {
+        synchronized (failed) {
+            Long at = failed.get(player);
+            return at != null && System.currentTimeMillis() - at < FAILED_MS;
+        }
+    }
+
+    private void failed(UUID player) {
+        synchronized (failed) {
+            failed.put(player, System.currentTimeMillis());
+        }
+    }
+
     /** The head, fetched if it isn't kept, or null if it couldn't be. Blocks: on a web thread only. */
     Response get(UUID player, String name) {
         Head head = kept(player);
@@ -77,6 +100,9 @@ final class Heads implements AutoCloseable {
             return head.response();
         }
         Response old = head == null ? null : head.response();
+        if (failedLately(player)) {
+            return old;
+        }
         if (waiting.incrementAndGet() > MAX_WAITING) {
             waiting.decrementAndGet();
             return old;
@@ -102,11 +128,13 @@ final class Heads implements AutoCloseable {
                 .replace("{size}", Integer.toString(SIZE));
             Response made = fetch(URI.create(url));
             if (made == null) {
+                failed(player);
                 return old;
             }
             keep(player, made);
             return made;
         } catch (IOException | IllegalArgumentException e) {
+            failed(player);
             return old;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

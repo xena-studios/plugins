@@ -43,7 +43,12 @@ public final class Definitions {
     }
 
     /** A stat registered through the API, kept across reloads. */
-    public record Registered(String id, String name, StatUnit unit, String plugin) {}
+    /**
+     * A stat another plugin registered.
+     *
+     * @param latest a value set outright (a balance): on a network, the latest any server set
+     */
+    public record Registered(String id, String name, StatUnit unit, String plugin, boolean latest) {}
 
     /**
      * The config's stats, then those other plugins registered. A stat with a problem is left
@@ -67,7 +72,7 @@ public final class Definitions {
                 continue;
             }
             stats.add(new StatDef(catalog.index(stat.id()), stat.id(), stat.name(), stat.unit(), 0, true, true, true,
-                stat.plugin(), new StatDef.Custom(stat.plugin())));
+                stat.plugin(), new StatDef.Custom(stat.plugin(), stat.latest())));
         }
         return stats;
     }

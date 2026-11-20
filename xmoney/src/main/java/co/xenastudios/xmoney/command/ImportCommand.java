@@ -96,7 +96,7 @@ public final class ImportCommand {
                             dryRun(messages, sender, bank, plan, command);
                         }
                         messages.overwrite().send(sender, Replies.text("source", plan.source()),
-                            Replies.text("count", String.format("%,d", checked.overwrites())),
+                            Replies.text("count", bank.format().count(checked.overwrites())),
                             Placeholders.click("command", command + " overwrite"));
                     });
                     return CompletableFuture.completedFuture(null);
@@ -115,8 +115,8 @@ public final class ImportCommand {
                     plugin.getLogger().info("Imported " + set + " balances from " + plan.source() + ", " + skipped + " skipped.");
                     plugin.tasks().sender(sender, () -> messages.done().send(sender,
                         Replies.text("source", plan.source()),
-                        Replies.text("count", String.format("%,d", set)),
-                        Replies.text("skipped", String.format("%,d", skipped))));
+                        Replies.text("count", bank.format().count(set)),
+                        Replies.text("skipped", bank.format().count(skipped))));
                 });
             })
             .whenComplete((ignored, error) -> {
@@ -141,9 +141,9 @@ public final class ImportCommand {
                                Importer.Plan plan, String command) {
         messages.dryRun().send(sender,
             Replies.text("source", plan.source()),
-            Replies.text("count", String.format("%,d", plan.lines().size())),
+            Replies.text("count", bank.format().count(plan.lines().size())),
             Replies.text("total", bank.format(plan.total())),
-            Replies.text("skipped", String.format("%,d", plan.skipped())),
+            Replies.text("skipped", bank.format().count(plan.skipped())),
             Placeholders.click("command", command));
     }
 }

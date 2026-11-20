@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 class FormatTest {
 
     final Format dollars = new Format(XMConfig.DEFAULTS.currency());
+    final Format euros = new Format(new XMConfig.CurrencySettings("euro", "euros", "€", 2, "{amount} {symbol}", ".", ",", List.of("k", "M", "B", "T")));
+    final Format whole = new Format(new XMConfig.CurrencySettings("gem", "gems", "", 0, "{amount} {name}", ",", "", List.of("k", "M", "B", "T")));
     final Format coins = new Format(new XMConfig.CurrencySettings("coin", "coins", "", 0, "{amount} {name}", ".", ",", List.of("k", "M", "B", "T")));
 
     @Test
@@ -48,6 +50,35 @@ class FormatTest {
         assertThrows(IllegalArgumentException.class, () -> dollars.parse("NaN"));
         assertThrows(IllegalArgumentException.class, () -> dollars.parse("1e5"));
         assertThrows(IllegalArgumentException.class, () -> dollars.parse("999999999999999999999"));
+    }
+
+    @Test
+    void theThousandsSeparatorOnlyCountsBetweenGroups() {
+        assertThrows(IllegalArgumentException.class, () -> dollars.parse("1,5"), "not $15");
+        assertThrows(IllegalArgumentException.class, () -> dollars.parse("2,50"), "not $250");
+        assertThrows(IllegalArgumentException.class, () -> dollars.parse("1,0000"));
+        assertEquals(1_234_567_5000L, dollars.parse("1,234,567.50"));
+    }
+
+    @Test
+    void commaDecimalsAndDotThousands() {
+        assertEquals(1500 * Money.ONE, euros.parse("1.500,00"));
+        assertEquals(1_5000L, euros.parse("1,5"));
+        assertEquals(1500 * Money.ONE, euros.parse("1,5k"));
+        assertThrows(IllegalArgumentException.class, () -> euros.parse("1500.00"), "a dot is grouping here");
+        // What /pay's confirm button sends is read back as the same amount.
+        for (long units : new long[] {1500 * Money.ONE, 1_2345_0000L, 5000, 0}) {
+            assertEquals(units, euros.parse(euros.typed(units)));
+            assertEquals(units, dollars.parse(dollars.typed(units)));
+        }
+    }
+
+    @Test
+    void aBlankDecimalSeparatorStillTakesAmounts() {
+        assertEquals(100 * Money.ONE, whole.parse("100"));
+        assertEquals(1000 * Money.ONE, whole.parse("1,000"));
+        assertEquals(100 * Money.ONE, whole.parse(whole.typed(100 * Money.ONE)));
+        assertEquals("1.2k", whole.shortForm(1200 * Money.ONE), "not 12k");
     }
 
     @Test

@@ -18,7 +18,7 @@ The first release. Remove Vault or VaultUnlocked, drop the jar in and start the 
 
 ### Money
 
-- `/balance`, `/pay` (asks to confirm above `confirm-above`), `/baltop`, and `/eco give|take|set|reset|history` for staff, for players online or offline.
+- `/balance`, `/pay` (asks to confirm at or above `confirm-above`), `/baltop`, and `/eco give|take|set|reset|history` for staff, for players online or offline.
 - Every change is in the ledger: when, how much, the balance after, and why, such as "ChestShop" or "paid Alex". `/eco history` shows it. Lines older than a year are deleted; balances never depend on them.
 - Amounts are whole numbers of ten-thousandths underneath, so nothing drifts. Other plugins' amounts keep four places whatever your currency's decimals, so a price paid in two parts costs what it would whole, and rounding past that never makes money. Odd amounts (NaN, negative, huge) are refused.
 - The currency's name, symbol, decimals and format are in the config, and other plugins show money that way too.

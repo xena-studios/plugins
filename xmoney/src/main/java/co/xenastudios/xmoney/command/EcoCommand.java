@@ -179,7 +179,7 @@ public final class EcoCommand {
                 messages.historyEmpty().send(sender, player);
                 return;
             }
-            messages.historyHeader().send(sender, player, Replies.text("count", String.format("%,d", found.total())));
+            messages.historyHeader().send(sender, player, Replies.text("count", plugin.bank().format().count(found.total())));
             ChatPages.Page<Store.Row> shown = ChatPages.of(found.rows(), found.total(), found.number(), MoneyService.HISTORY_PAGE);
             long now = System.currentTimeMillis();
             ChatPages.lines(shown, row -> line(plugin, messages, row, now), messages.historyFooter(),

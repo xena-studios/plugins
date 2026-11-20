@@ -17,7 +17,7 @@ Everyone can use these, unless you set a permission for them.
 | `/pay <player> <amount>` | Sends money to another player. Payments of `confirm-above` or more ask first, with a button. |
 | `/baltop [page]` (`/balancetop`, `/moneytop`) | The richest players, and all the money there is. |
 
-Amounts can be typed `250`, `1,000`, `12.5`, `1.5k` or `2m`. More decimals than the currency has are refused rather than rounded.
+Amounts can be typed `250`, `1,000`, `12.5`, `1.5k` or `2m`, with the currency's own separators (`1.000,50` where `,` marks the decimals). The thousands separator only counts between groups of three digits, so `1,5` is refused rather than read as 15, and more decimals than the currency has are refused rather than rounded.
 
 ## Staff
 

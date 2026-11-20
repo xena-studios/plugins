@@ -69,7 +69,7 @@ public final class PayCommand {
             }
             long confirmAbove = Money.units(BigDecimal.valueOf(settings.confirmAbove()), bank.decimals());
             if (confirmAbove > 0 && amount >= confirmAbove && !confirmed) {
-                String command = "/" + invocation.label() + " " + payee.name() + " " + bank.format().plain(amount) + " confirm";
+                String command = "/" + invocation.label() + " " + payee.name() + " " + bank.format().typed(amount) + " confirm";
                 messages.confirm().send(payer, Replies.text("amount", bank.format(amount)), Replies.text("player", payee.name()),
                     Placeholders.click("command", command));
                 return;

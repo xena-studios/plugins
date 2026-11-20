@@ -30,12 +30,12 @@ public final class StatusCommand {
                 invocation.sender().sendMessage(STATUS.chat(
                     Replies.text("storage", plugin.store().description()),
                     Replies.text("network", plugin.feed().on() ? ", shared with other servers (experimental)" : ""),
-                    Replies.text("accounts", String.format("%,d", accounts.size())),
+                    Replies.text("accounts", plugin.bank().format().count(accounts.size())),
                     Replies.text("total", plugin.bank().format(accounts.total())),
-                    Replies.text("written", String.format("%,d", writer.written())),
-                    Replies.text("waiting", String.format("%,d", writer.waiting())),
+                    Replies.text("written", plugin.bank().format().count(writer.written())),
+                    Replies.text("waiting", plugin.bank().format().count(writer.waiting())),
                     Replies.text("batch", size == 0 ? "none yet"
-                        : String.format("%,d changes in %.1f ms", size, writer.lastBatchNanos() / 1e6)),
+                        : String.format(java.util.Locale.ROOT, "%,d changes in %.1f ms", size, writer.lastBatchNanos() / 1e6)),
                     Replies.text("problem", writer.problem() == null ? "none" : writer.problem())));
             });
     }

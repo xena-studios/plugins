@@ -9,6 +9,7 @@ import co.xenastudios.core.command.Subcommands;
 import co.xenastudios.core.text.Durations;
 import co.xenastudios.core.text.Message;
 import co.xenastudios.core.text.Placeholders;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import co.xenastudios.xbackup.config.XBConfig;
 import co.xenastudios.xbackup.remote.RemoteConfig;
 import co.xenastudios.xbackup.restore.Restore;
@@ -93,8 +94,8 @@ public final class BackupCommand {
 
     // ---------------------------------------------------------------- replies
 
-    private static void say(CommandSender sender, String miniMessage) {
-        sender.sendMessage(LINE.chat(Placeholders.component("text", Message.of(miniMessage).render())));
+    private static void say(CommandSender sender, String miniMessage, TagResolver... placeholders) {
+        sender.sendMessage(LINE.chat(Placeholders.component("text", Message.of(miniMessage).render(placeholders))));
     }
 
     private static String escape(String text) {
@@ -281,10 +282,9 @@ public final class BackupCommand {
                 for (String example : plan.examples()) {
                     text.append("\n<gray>").append(escape(example)).append("</gray>");
                 }
-                String command = "/backup restore " + id + " " + String.join(" ", paths).strip() + " confirm";
-                text.append("\n<click:run_command:'").append(command.replace("  ", " ")).append("'><hover:show_text:'")
-                    .append(command.replace("  ", " ")).append("'><success>[Restore it]</success></hover></click>");
-                say(sender, text.toString());
+                String command = ("/backup restore " + id + " " + String.join(" ", paths).strip() + " confirm").replace("  ", " ");
+                text.append("\n<click:run_command:'<command>'><hover:show_text:'<command>'><success>[Restore it]</success></hover></click>");
+                say(sender, text.toString(), Placeholders.click("command", command));
             });
             return;
         }
@@ -343,7 +343,13 @@ public final class BackupCommand {
         }
         CommandSender sender = invocation.sender();
         if ("tidy".equalsIgnoreCase(invocation.arg(1))) {
-            tidy(engine, sender, name, "confirm".equalsIgnoreCase(invocation.arg(2)));
+            boolean confirm = "confirm".equalsIgnoreCase(invocation.arg(2));
+            // Tidying removes backups, maybe the only copies left: it takes /backup forget's permission too.
+            if (confirm && !sender.hasPermission("xbackup.forget")) {
+                say(sender, "<error>Removing a remote's backups needs xbackup.forget as well as xbackup.copy.</error>");
+                return;
+            }
+            tidy(engine, sender, name, confirm);
             return;
         }
         say(sender, "<gray>Copying to " + escape(name) + "...</gray>");
@@ -381,9 +387,9 @@ public final class BackupCommand {
             String command = "/backup copy " + name + " tidy confirm";
             text.append("<newline>Removing them frees about ").append(Sizes.format(tidy.bytes())).append(" there")
                 .append(tidy.keptPacks() == 0 ? "" : ", keeping " + tidy.keptPacks() + " packs backups here need")
-                .append(". They can't be restored after. <click:run_command:'").append(escape(command))
-                .append("'><hover:show_text:'").append(escape(command)).append("'><error>[Remove them]</error></hover></click>");
-            say(sender, text.toString());
+                .append(". They can't be restored after. <click:run_command:'<command>'><hover:show_text:'<command>'>"
+                    + "<error>[Remove them]</error></hover></click>");
+            say(sender, text.toString(), Placeholders.click("command", command));
         });
     }
 

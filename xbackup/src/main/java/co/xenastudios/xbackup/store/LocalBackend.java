@@ -53,15 +53,30 @@ public final class LocalBackend implements Backend {
     public void put(String name, Path file) throws IOException {
         Path target = resolve(name);
         Path source = file.toAbsolutePath().normalize();
+        Path copy = null;
         if (!source.startsWith(root.resolve(TMP))) {
             // Copy onto this disk first, so the final step is a rename.
-            Path copy = newTemp(".part");
-            Files.copy(source, copy, StandardCopyOption.REPLACE_EXISTING);
+            copy = newTemp(".part");
             source = copy;
         }
-        sync(source);
-        makeFolders(target.getParent());
-        move(source, target);
+        try {
+            if (copy != null) {
+                Files.copy(file.toAbsolutePath().normalize(), copy, StandardCopyOption.REPLACE_EXISTING);
+            }
+            sync(source);
+            makeFolders(target.getParent());
+            move(source, target);
+        } catch (IOException | RuntimeException e) {
+            // A disk that filled up mid-copy mustn't keep the partial copy, or it stays full.
+            if (copy != null) {
+                try {
+                    Files.deleteIfExists(copy);
+                } catch (IOException ignored) {
+                    // The next tidy of tmp/ takes it.
+                }
+            }
+            throw e;
+        }
         syncDirectory(target.getParent());
     }
 

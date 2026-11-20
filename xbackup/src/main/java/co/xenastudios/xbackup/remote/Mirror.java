@@ -60,6 +60,10 @@ public final class Mirror {
         throws IOException {
         Backend from = local.backend();
         checkSameRepository(from, to);
+        if (to instanceof co.xenastudios.xbackup.store.LocalBackend disk) {
+            // Partial copies a crash left: only this server writes to its remotes, one copy at a time.
+            disk.clearTemp();
+        }
         Map<String, Long> source = new HashMap<>();
         for (Backend.FileInfo file : from.list("")) {
             if (rank(file.name()) >= 0) {

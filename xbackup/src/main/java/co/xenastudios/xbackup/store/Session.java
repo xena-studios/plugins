@@ -47,6 +47,11 @@ public final class Session implements AutoCloseable {
     private final AtomicLong addedBlobs = new AtomicLong();
     private boolean closed;
 
+    /** How much free space must stay on the repository's disk. */
+    public long minFreeBytes() {
+        return options.minFreeBytes();
+    }
+
     Session(Repository repository, Index index, Options options) {
         this.repository = repository;
         this.index = index;

@@ -554,6 +554,8 @@ final class Scanner {
         String reason;
         if (databases == null) {
             reason = "SQLite isn't available to copy it safely";
+        } else if (!roomFor(size + Math.max(walSize, 0))) {
+            reason = "there isn't room on the disk to copy it and keep retention.min-free-space free";
         } else {
             Files.createDirectories(temp);
             Path copy = temp.resolve("db-" + java.util.UUID.randomUUID() + ".db");
@@ -585,6 +587,17 @@ final class Scanner {
     }
 
     // ---------------------------------------------------------------- helpers
+
+    // A database's copy is about its size, and goes in the temp folder: it mustn't take the
+    // disk under the free space the server needs, which is often the disk the world is on.
+    private boolean roomFor(long bytes) {
+        try {
+            Path at = Files.exists(temp) ? temp : temp.getParent();
+            return Files.getFileStore(at).getUsableSpace() - bytes >= session.minFreeBytes();
+        } catch (IOException e) {
+            return true; // Can't tell: the copy itself fails cleanly if the disk fills.
+        }
+    }
 
     private static int mode(Path file) {
         try {

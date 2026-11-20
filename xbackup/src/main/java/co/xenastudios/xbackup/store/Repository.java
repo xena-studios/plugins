@@ -275,6 +275,22 @@ public final class Repository implements AutoCloseable {
     }
 
     /**
+     * Drops damaged packs from the index (a check found them), so a backup stores their blobs
+     * again from the live files instead of reusing what can't be read back. Noted as
+     * {@value #LOST}, so a copy never removes them from a remote, which may hold them whole.
+     * Hold the exclusive lock.
+     */
+    public synchronized void dropDamagedPacks(Set<Hash> damaged) throws IOException {
+        if (damaged.isEmpty()) {
+            return;
+        }
+        Set<Hash> keep = new HashSet<>(index().packs());
+        keep.removeAll(damaged);
+        keepPacks(keep);
+        noteLost(damaged);
+    }
+
+    /**
      * Rewrites the index to list only these packs, from every entry of every index file (not
      * just each blob's first place: a blob in a pack that's gone may also be in one that's
      * there).

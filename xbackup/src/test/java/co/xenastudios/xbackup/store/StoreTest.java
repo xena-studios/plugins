@@ -112,6 +112,61 @@ class StoreTest {
     }
 
     @Test
+    void damagedDataIsStoredAgainNotReused() throws IOException {
+        byte[] data = new byte[100_000];
+        new Random(3).nextBytes(data);
+        Hash id;
+        try (Repository repository = open(); Session session = repository.session(Session.Options.DEFAULTS)) {
+            id = session.store(BlobType.DATA, data, true);
+            session.flush();
+        }
+        Path pack;
+        try (var walk = Files.walk(dir.resolve("repo/data"))) {
+            pack = walk.filter(Files::isRegularFile).findFirst().orElseThrow();
+        }
+        Fixtures.corrupt(pack, 5000);
+        try (Repository repository = open()) {
+            Maintenance.Report report = new Maintenance(repository, () -> false).check(1.0, null, new Random());
+            assertEquals(1, report.damaged().size());
+            repository.dropDamagedPacks(report.damaged());
+            assertTrue(repository.lost().containsAll(report.damaged()), "a remote keeps its copy");
+            // The next backup of the same data stores it again rather than pointing at the damaged pack
+            // (here into the same pack, as packs are named by their content: it's whole again).
+            try (Session session = repository.session(Session.Options.DEFAULTS)) {
+                session.store(BlobType.DATA, data, true);
+                assertEquals(1, session.addedBlobs());
+                session.flush();
+            }
+            assertArrayEquals(data, repository.readBlob(id));
+        }
+    }
+
+    @Test
+    void aDamagedPackNobodyStoresAgainIsKept() throws IOException {
+        byte[] data = new byte[100_000];
+        new Random(4).nextBytes(data);
+        try (Repository repository = open(); Session session = repository.session(Session.Options.DEFAULTS)) {
+            session.store(BlobType.DATA, data, true);
+            session.flush();
+        }
+        Path pack;
+        try (var walk = Files.walk(dir.resolve("repo/data"))) {
+            pack = walk.filter(Files::isRegularFile).findFirst().orElseThrow();
+        }
+        Fixtures.corrupt(pack, 5000);
+        try (Repository repository = open()) {
+            Maintenance.Report report = new Maintenance(repository, () -> false).check(1.0, null, new Random());
+            repository.dropDamagedPacks(report.damaged());
+            // Clean-up neither takes it back nor deletes it as collected, so a copy never
+            // removes the remote's whole one.
+            new Maintenance(repository, () -> false).collect(Session.Options.DEFAULTS, 0.3);
+            assertTrue(Files.exists(pack));
+            assertFalse(repository.collected().contains(report.damaged().iterator().next()));
+            assertFalse(repository.index().packs().contains(report.damaged().iterator().next()));
+        }
+    }
+
+    @Test
     void treesAndLayoutsEncodeExactly() throws IOException {
         Hash a = Hash.sha256(new byte[] {1});
         Hash b = Hash.sha256(new byte[] {2});

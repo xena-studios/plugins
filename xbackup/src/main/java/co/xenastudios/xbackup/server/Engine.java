@@ -299,6 +299,7 @@ public final class Engine {
         broadcast(plugin.config().messages().broadcastStart(), null);
         long started = System.nanoTime();
         try (Repository.Lock lock = repo.lock(true)) {
+            dropDamaged(repo);
             ensureSpace(repo, now);
             Backup.Plan plan = plan(now, reason);
             abandoned.set(false);
@@ -321,7 +322,15 @@ public final class Engine {
             for (String warning : snapshot.warnings()) {
                 logger.warning("Backup " + snapshot.id().shortHex() + ": " + warning);
             }
-            upkeep(repo, now, scheduled);
+            try {
+                upkeep(repo, now, scheduled);
+            } catch (IOException e) {
+                // The backup itself is saved: tidying failing (an unreadable old backup, say)
+                // mustn't call it failed, or stop it reaching the remotes, which are what's
+                // needed most when the repository here is damaged.
+                problem = "Backed up, but tidying old backups failed: " + describe(e);
+                logger.log(Level.WARNING, problem, e instanceof Session.NoSpaceException ? null : e);
+            }
             refresh();
             fireFinished(snapshot);
             broadcast(plugin.config().messages().broadcastDone(), Durations.format(Duration.ofNanos(System.nanoTime() - started)));
@@ -435,6 +444,26 @@ public final class Engine {
         return scoped;
     }
 
+    // Packs a check found damaged leave the index, so this backup stores their data again
+    // instead of reusing what can't be read back.
+    private void dropDamaged(Repository repo) throws IOException {
+        String pending = state.getProperty("damaged-packs", "");
+        if (pending.isEmpty()) {
+            return;
+        }
+        Set<Hash> packs = new java.util.HashSet<>();
+        for (String hex : pending.split(",")) {
+            if (Hash.isHex(hex)) {
+                packs.add(Hash.parse(hex));
+            }
+        }
+        repo.dropDamagedPacks(packs);
+        state.remove("damaged-packs");
+        saveState();
+        logger.warning("Storing again the data of " + packs.size() + " damaged pack" + (packs.size() == 1 ? "" : "s")
+            + " the last check found. Older backups that only it held may not restore in full; a remote may have it whole.");
+    }
+
     // Never start a backup that can't finish: make room first if the disk is short.
     private void ensureSpace(Repository repo, Settings now) throws IOException {
         long free = Files.getFileStore(now.repository()).getUsableSpace();
@@ -446,7 +475,7 @@ public final class Engine {
         logger.info("Only " + Sizes.format(free) + " free; removing old backups to make room before backing up.");
         Maintenance maintenance = new Maintenance(repo, stopping::get);
         maintenance.forget(now.retention(), now.maxSize(), ZoneId.systemDefault());
-        maintenance.collect(new Session.Options(now.level(), 16L << 20, 0), 0.3);
+        maintenance.collect(new Session.Options(now.level(), 16L << 20, now.minFree()), 0.3);
         state.setProperty("last-collect", Long.toString(System.currentTimeMillis()));
         saveState();
         free = Files.getFileStore(now.repository()).getUsableSpace();
@@ -468,7 +497,7 @@ public final class Engine {
         boolean overCap = now.maxSize() > 0 && repositoryBytes > now.maxSize();
         if (!forgotten.removed().isEmpty() && (System.currentTimeMillis() - lastCollect > DAY || overCap)) {
             progress("backing up", "giving back space");
-            Maintenance.Collected collected = maintenance.collect(new Session.Options(now.level(), 16L << 20, 0), 0.3);
+            Maintenance.Collected collected = maintenance.collect(new Session.Options(now.level(), 16L << 20, now.minFree()), 0.3);
             state.setProperty("last-collect", Long.toString(System.currentTimeMillis()));
             saveState();
             if (collected.bytesFreed() > 0) {
@@ -484,6 +513,13 @@ public final class Engine {
     }
 
     private void recordCheck(Maintenance.Report report) {
+        if (!report.damaged().isEmpty()) {
+            // Dropped by the next backup, which holds the lock to change the index.
+            Set<String> pending = new java.util.TreeSet<>(List.of(state.getProperty("damaged-packs", "").split(",")));
+            report.damaged().forEach(pack -> pending.add(pack.hex()));
+            pending.remove("");
+            state.setProperty("damaged-packs", String.join(",", pending));
+        }
         state.setProperty("last-verify", Long.toString(System.currentTimeMillis()));
         state.setProperty("last-verify-result", report.ok() ? "ok"
             : report.problems().size() + " problems: " + report.problems().get(0));
@@ -492,7 +528,8 @@ public final class Engine {
             logger.info("Checked " + report.packsChecked() + " of " + report.packsTotal() + " packs ("
                 + Sizes.format(report.bytesChecked()) + "): all good.");
         } else {
-            problem = "The last check found " + report.problems().size() + " problems. /backup verify full for details.";
+            problem = "The last check found " + report.problems().size() + " problems. /backup verify full for details."
+                + (report.damaged().isEmpty() ? "" : " The next backup stores the damaged data again from the live files.");
             for (String found : report.problems()) {
                 // Problems name files from the repository, which a remote may have written.
                 logger.warning("Check: " + found.replaceAll("\\R", "?").replaceAll("\\p{Cntrl}", "?"));
@@ -563,7 +600,7 @@ public final class Engine {
                 Settings now = settings;
                 Maintenance maintenance = new Maintenance(repo, stopping::get);
                 Maintenance.Forgotten forgotten = maintenance.forget(now.retention(), now.maxSize(), ZoneId.systemDefault());
-                Maintenance.Collected collected = maintenance.collect(new Session.Options(now.level(), 16L << 20, 0), 0.3);
+                Maintenance.Collected collected = maintenance.collect(new Session.Options(now.level(), 16L << 20, now.minFree()), 0.3);
                 state.setProperty("last-collect", Long.toString(System.currentTimeMillis()));
                 saveState();
                 refresh();

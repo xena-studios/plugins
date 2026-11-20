@@ -202,7 +202,8 @@ public final class Backup {
                 pauseMillis = pause.pause();
                 progress.accept("reading what changed during the pause");
                 Reference overlay = Reference.overlay(first.nodes, first.regions, pass1Start, previous);
-                second = new Scanner(session, overlay, true, root, worldSelection, Map.of(), plan.throttle(), null,
+                // Databases in a world folder are copied here, the strict pass, as the rest are later.
+                second = new Scanner(session, overlay, true, root, worldSelection, Map.of(), plan.throttle(), databases,
                     plan.temp(), cancelled);
                 for (String world : plan.worlds()) {
                     Tree.Node node = second.scan(root.resolve(world), world);

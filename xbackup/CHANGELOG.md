@@ -12,7 +12,7 @@ The first release. Drop the jar in and start the server: it backs up every hour 
 - Runs on an empty server too: Paper pauses one with nobody online, and backups carry on without waking it.
 - Autosave always goes back on, for exactly the worlds a backup turned off, however it ends.
 - SQLite databases are copied by SQLite itself, never as raw bytes, so a plugin writing to one meanwhile is fine.
-- Each backup reads back what it wrote before it counts, and a share of older data is checked every week.
+- Each backup reads back what it wrote before it counts, and a share of older data is checked every week. Data a check finds damaged is stored again by the next backup, from the live files, instead of being reused.
 - Retention by tiers (the newest few, then hourly, daily, weekly and monthly), pinned backups kept forever, an optional size cap, and free space always left on the disk. A backup that couldn't finish doesn't start.
 - Skips scheduled backups when nobody has been online since the last one.
 
@@ -28,7 +28,7 @@ The first release. Drop the jar in and start the server: it backs up every hour 
 
 - Copies of the repository to a second disk, S3 and S3-compatible storage (AWS, Cloudflare R2, Backblaze B2, Wasabi, MinIO and others), WebDAV, SFTP, FTP/FTPS, Google Drive, OneDrive and Dropbox, after every backup. Only new files are sent, and an interrupted copy resumes.
 - Restores straight from a remote, downloading only what the restore needs.
-- A copy only removes from a remote what retention, `/backup forget` or a clean-up removed here. Data that went missing here stays on the remote for good, and a damaged, emptied or rolled-back repository never deletes the remote's backups. `/backup copy <remote> tidy` lists what only the remote has, and removes it once you confirm.
+- A copy only removes from a remote what retention, `/backup forget` or a clean-up removed here. Data that went missing here stays on the remote for good, and a damaged, emptied or rolled-back repository never deletes the remote's backups. `/backup copy <remote> tidy` lists what only the remote has, and removes it once you confirm, which needs `xbackup.forget` too.
 - Passwords and secret keys go in `plugins/xBackup/secrets.yml`, never in `config.yml`. Only the server's user can read it, and it's never backed up or copied to a remote; nor are SFTP keys and cloud drive tokens. A password left in `config.yml` (from a pre-release build, say) is moved there when the config loads. The command-line restore reads `secrets.yml` itself, so no other file holds the passwords.
 - FTPS checks the server's certificate and host name, or a pinned fingerprint (`host-key`) for a self-signed one, and every data connection against the control connection's certificate and address.
 - Stalled transfers time out, uploads included, and uploads are checked under a temporary name before they take the real one.

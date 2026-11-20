@@ -200,6 +200,24 @@ class BackupTest {
     }
 
     @Test
+    void aDatabaseInAWorldFolderIsBackedUp() throws Exception {
+        Fixtures.server(server(), new Random(14));
+        Path db = server().resolve("world/claims.db");
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + db);
+             Statement statement = connection.createStatement()) {
+            statement.execute("PRAGMA journal_mode=WAL");
+            statement.execute("CREATE TABLE t (n INTEGER)");
+            statement.execute("INSERT INTO t VALUES (42)");
+            try (Repository repository = repository()) {
+                Backup.Result result = backup(repository, Backup.Pause.NONE);
+                Tree.Node node = Restore.find(repository, result.snapshot(), "world/claims.db");
+                assertNotNull(node, "not left out: " + result.snapshot().warnings());
+                assertEquals(Tree.Kind.SQLITE, node.kind());
+            }
+        }
+    }
+
+    @Test
     void forgettingAndCollectingKeepsWhatsLeftWhole() throws Exception {
         Random random = new Random(14);
         Fixtures.server(server(), random);

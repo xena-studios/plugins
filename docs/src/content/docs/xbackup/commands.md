@@ -40,7 +40,7 @@ A backup's id is the 8 characters `/backup list` shows; `latest` means the newes
 | `xbackup.prune` | Operators | `/backup prune` |
 | `xbackup.pin`, `xbackup.unpin` | Operators | Pinning and unpinning |
 | `xbackup.forget` | Operators | `/backup forget` |
-| `xbackup.copy` | Operators | `/backup copy` |
+| `xbackup.copy` | Operators | `/backup copy`. `tidy confirm`, which removes the remote's backups, needs `xbackup.forget` too. |
 | `xbackup.link` | Operators | `/backup link` |
 | `xbackup.repair` | Operators | `/backup repair` |
 | `xbackup.admin` | Operators | `/xbackup reload` and `/xbackup info` |

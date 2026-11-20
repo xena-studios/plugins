@@ -229,12 +229,18 @@ public final class Maintenance {
         boolean adopted = false;
         Set<Hash> unreadable = new HashSet<>();
         Set<Hash> indexedPacks = new HashSet<>(index.packs());
+        Set<Hash> lost = repository.lost();
         for (Backend.FileInfo file : repository.backend().list("data/")) {
             Hash pack = Pack.idOf(file.name());
             if (pack == null || indexedPacks.contains(pack)) {
                 continue;
             }
             checkCancelled();
+            if (lost.contains(pack) && !whole(file.name(), pack)) {
+                // Dropped as damaged: taken back only once it's whole again (put back from a remote).
+                unreadable.add(pack);
+                continue;
+            }
             List<PackEntry> entries;
             try {
                 entries = Pack.readFooter(repository.backend(), file.name(), file.size());
@@ -464,7 +470,8 @@ public final class Maintenance {
     // ---------------------------------------------------------------- checking
 
     /** What {@link #check} found. */
-    public record Report(int snapshots, int packsChecked, int packsTotal, long bytesChecked, List<String> problems) {
+    public record Report(int snapshots, int packsChecked, int packsTotal, long bytesChecked, List<String> problems,
+                         Set<Hash> damaged) {
         public boolean ok() {
             return problems.isEmpty();
         }
@@ -512,6 +519,9 @@ public final class Maintenance {
                 }
             }
         }
+        // Packs found damaged or missing: the next backup drops them from the index, so it
+        // stores their data again from the live files instead of pointing at what can't be read.
+        Set<Hash> damaged = new HashSet<>(missingPacks);
         for (Hash pack : missingPacks) {
             problems.add("Pack " + pack.shortHex() + " is listed in the index but missing.");
         }
@@ -536,12 +546,14 @@ public final class Maintenance {
                 data = in.readAllBytes();
             } catch (NoSuchFileException e) {
                 problems.add("Pack " + pack.shortHex() + " is missing.");
+                damaged.add(pack);
                 continue;
             }
             checked++;
             bytes += data.length;
             if (!Hash.sha256(data).equals(pack)) {
                 problems.add("Pack " + pack.shortHex() + " is damaged: its content doesn't match its name.");
+                damaged.add(pack);
                 continue;
             }
             List<PackEntry> footer;
@@ -549,6 +561,7 @@ public final class Maintenance {
                 footer = Pack.parseFooter(data, name);
             } catch (CorruptException e) {
                 problems.add(e.getMessage());
+                damaged.add(pack);
                 continue;
             }
             Map<Hash, PackEntry> byId = new HashMap<>();
@@ -560,16 +573,27 @@ public final class Maintenance {
                     Repository.unpack(entry, stored);
                 } catch (CorruptException e) {
                     problems.add("Pack " + pack.shortHex() + ": " + e.getMessage());
+                    damaged.add(pack);
                 }
             }
             for (PackEntry entry : indexed.getOrDefault(pack, List.of())) {
                 if (!entry.equals(byId.get(entry.id()))) {
                     problems.add("Pack " + pack.shortHex() + " doesn't hold blob " + entry.id().shortHex()
                         + " where the index says.");
+                    damaged.add(pack);
                 }
             }
         }
-        return new Report(snapshots.size(), checked, present.size(), bytes, problems);
+        return new Report(snapshots.size(), checked, present.size(), bytes, problems, Set.copyOf(damaged));
+    }
+
+    // Whether a pack's content still matches its name.
+    private boolean whole(String name, Hash pack) throws IOException {
+        try (InputStream in = repository.backend().get(name)) {
+            return Hash.sha256(in.readAllBytes()).equals(pack);
+        } catch (NoSuchFileException e) {
+            return false;
+        }
     }
 
     private void checkTree(Hash treeId, Index index, Set<Hash> missingPacks, Set<Hash> seen, List<String> problems)

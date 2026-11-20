@@ -74,7 +74,7 @@ class RewardsTest {
     void commandsNeverGetTheNetworksTextAsItCame() {
         Rewards rewards = rewards(new ArrayList<>());
         // A listed site: its name from the config.
-        assertEquals("Planet Minecraft", rewards.commandSite("planetminecraft.com"));
+        assertEquals("pmc", rewards.commandSite("planetminecraft.com"), "its key, one word, not \"Planet Minecraft\"");
         // An unlisted one: only letters, digits, dots, dashes and underscores survive.
         assertEquals("Some_List", rewards.commandSite("Some List"));
         assertEquals("x__op_Steve", rewards.commandSite("x; op Steve"));

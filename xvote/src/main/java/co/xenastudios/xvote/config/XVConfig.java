@@ -44,8 +44,9 @@ public record XVConfig(
         "a chance in percent. Items are written like /give: diamond 3, or",
         "diamond_sword[enchantments={sharpness:3}] 1. Items that don't fit wait for /vote",
         "claim. Commands, messages and broadcasts can use <player>, <uuid>, <site>, <total>",
-        "and <streak>; in commands, <site> of a site that isn't listed keeps only letters,",
-        "digits, . _ and -. custom lists reward types other plugins add, as",
+        "and <streak>; in commands, <site> is a listed site's key (planetminecraft), and one",
+        "that isn't listed keeps only letters, digits, . _ and -. custom lists reward types",
+        "other plugins add, as",
         "\"<type> <argument>\"."})
     Map<String, Reward> rewards,
     @Comment({

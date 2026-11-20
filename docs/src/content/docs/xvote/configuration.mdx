@@ -48,7 +48,7 @@ rewards:
 - `commands` run from the console, one after another.
 - `custom` lists reward types other plugins add, such as a crate key, as `"<type> <argument>"`.
 - Commands, messages and broadcasts can use `<player>`, `<uuid>`, `<site>`, `<total>` (the player's votes) and `<streak>`.
-- In `commands` and `custom`, `<site>` is a listed site's `name`. For a site that isn't listed, it's the name the list sent with anything but letters, digits, `.`, `_` and `-` made `_`, so a vote can't add arguments or commands of its own.
+- In `commands` and `custom`, `<site>` is a listed site's key, such as `planetminecraft`, so it's one word even when its `name` has spaces. For a site that isn't listed, it's the name the list sent with anything but letters, digits, `.`, `_` and `-` made `_`, so a vote can't add arguments or commands of its own.
 
 `triggers` say which rewards a vote earns, on top of its site's:
 

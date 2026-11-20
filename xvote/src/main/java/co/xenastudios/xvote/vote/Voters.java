@@ -65,6 +65,18 @@ public final class Voters {
         version.incrementAndGet();
     }
 
+    /**
+     * A player joined under a name: if someone else voted under it before, that was their old
+     * name, so it's no longer theirs. Their own row's name is brought up to date by the join.
+     */
+    public void joinedAs(UUID id, String name) {
+        String key = name.toLowerCase(Locale.ROOT);
+        UUID holder = byName.get(key);
+        if (holder != null && !holder.equals(id)) {
+            byName.remove(key, holder);
+        }
+    }
+
     /** Bumped whenever a leaderboard needs sorting again, for tests. */
     long version() {
         return version.get();

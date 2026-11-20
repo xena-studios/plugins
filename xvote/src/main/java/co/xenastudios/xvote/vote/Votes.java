@@ -242,8 +242,10 @@ public final class Votes {
     Resolved resolve(String name, String prefix) {
         for (String candidate : Names.lookups(name, prefix)) {
             UUID here = online.byName(candidate);
-            if (here != null) {
-                return new Resolved(here, online.name(here));
+            // Read once: a player quitting just now has no name any more, and isn't online.
+            String hereName = here == null ? null : online.name(here);
+            if (hereName != null) {
+                return new Resolved(here, hereName);
             }
             UUID voted = voters.byName(candidate);
             if (voted != null) {
@@ -286,7 +288,9 @@ public final class Votes {
             long count = before.votes() + 1;
             if (count >= settings.votes()) {
                 partyFrom = since;
-                after = new Ledger.PartyState(0, vote.receivedAt());
+                // The next round starts after this vote: its voter was rewarded by this party,
+                // and isn't again by the next unless they vote again.
+                after = new Ledger.PartyState(0, vote.receivedAt() + 1);
                 feed.publish(c, "party", "start:" + since);
             } else {
                 after = new Ledger.PartyState(count, since);
@@ -419,6 +423,7 @@ public final class Votes {
     /** A player joined: their unmatched votes become theirs, and everything unpaid is paid. */
     public CompletableFuture<Void> joined(UUID player, String name) {
         online.add(player, name);
+        voters.joinedAs(player, name);
         Set<String> keys = Names.matchKeys(name, config.get().counting().bedrockPrefix());
         long now = System.currentTimeMillis();
         return store.submit(c -> {
@@ -426,6 +431,7 @@ public final class Votes {
             if (matched > 0) {
                 feed.publish(c, "player", player.toString());
             }
+            ledger.rename(c, player, name);
             String claim = newClaim();
             List<Facts> unpaid = ledger.claimUnpaid(c, player, claim, now);
             Voter voter = ledger.voter(c, player, voters.periods(), now, siteWindow());
@@ -475,10 +481,11 @@ public final class Votes {
                 if (here == null && name != null && !prefix.isEmpty() && !name.startsWith(prefix)) {
                     here = online.byName(prefix + name);
                 }
-                if (here == null) {
+                String hereName = here == null ? null : online.name(here);
+                if (hereName == null) {
+                    // Not online here, or quit just now: matched when they next join.
                     return new Heard(null, null, List.of(), null, party);
                 }
-                String hereName = online.name(here);
                 if (ledger.match(c, here, hereName, Names.matchKeys(hereName, prefix), voters.periods()) > 0) {
                     feed.publish(c, "player", here.toString());
                 }

@@ -35,8 +35,8 @@ class PayoutTest {
         Payout.Context context = new Payout.Context(rewards.siteName(vote.site()), rewards.commandSite(vote.site()), 3, 1);
         assertEquals("eco give Steve 10 xop_Steve__give_Steve_diamond 3 1",
             Payout.fill("eco give <player> 10 <site> <total> <streak>", steve, context));
-        // A listed site's name from the config is used as it's written.
+        // A listed site is one word, its key, so it can't shift a command's arguments.
         Payout.Context listed = new Payout.Context("Planet Minecraft", rewards.commandSite("PlanetMinecraft.com"), 1, 1);
-        assertEquals("say Steve voted on Planet Minecraft", Payout.fill("say <player> voted on <site>", steve, listed));
+        assertEquals("crate key give Steve vote-pmc 1", Payout.fill("crate key give <player> vote-<site> 1", steve, listed));
     }
 }

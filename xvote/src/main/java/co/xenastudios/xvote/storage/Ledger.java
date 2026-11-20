@@ -307,6 +307,16 @@ public final class Ledger {
     }
 
     /** Every player who has voted, with their totals. Startup only. */
+    /** Keeps a voter's name current when they join under a new one, so votes for it find them. */
+    public void rename(Connection c, UUID player, String name) throws SQLException {
+        try (PreparedStatement update = c.prepareStatement(sql("UPDATE {p}voters SET name = ? WHERE uuid = ? AND name <> ?"))) {
+            update.setString(1, name);
+            update.setString(2, player.toString());
+            update.setString(3, name);
+            update.executeUpdate();
+        }
+    }
+
     public Map<UUID, Voter> loadAll(Connection c, Periods periods, long now, long siteWindowMs) throws SQLException {
         return load(c, periods, now, siteWindowMs, null);
     }

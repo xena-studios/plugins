@@ -30,7 +30,7 @@ The first release. Drop the jar in and start the server: votes are kept in SQLit
 
 ### Rewards
 
-- Money through Vault, items (held for `/vote claim` when they don't fit), console commands, messages, broadcasts and sounds, each with a chance. In commands, the `<site>` of a site that isn't listed keeps only letters, digits, `.`, `_` and `-`.
+- Money through Vault, items (held for `/vote claim` when they don't fit), console commands, messages, broadcasts and sounds, each with a chance. In commands, `<site>` is a listed site's key, and that of a site that isn't listed keeps only letters, digits, `.`, `_` and `-`.
 - Given on every vote, per site, on the first vote of the day, every Nth vote, at streak milestones and at vote totals.
 - A vote party every so many votes, for everyone online or everyone who voted.
 - Reminders on join, and every so many minutes if you want them.

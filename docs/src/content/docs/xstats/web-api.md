@@ -9,7 +9,7 @@ When the [website](/xstats/website/) is on, xStats serves a read-only JSON API b
 
 - **Versioned.** Every path starts with `/api/v1/`. A change that removes or renames a field comes as `/api/v2/`, with v1 kept alongside. New fields can be added to v1 at any time.
 - **Read-only.** `GET` and `HEAD` only. Anything else gets `405`.
-- **CORS** for the sites in `web.cors-origins` (any site by default).
+- **CORS** for the sites in `web.cors-origins` (any site by default). They can send `If-None-Match` and read `ETag` and `Retry-After`.
 - **Cached.** Responses carry `ETag` and `Cache-Control` headers and are gzipped when asked (the gzipped copy has its own `ETag`). Send `If-None-Match` to get a `304` when nothing changed. Leaderboards, their summaries and search are `no-cache`: keep them, but ask again each time, so a player who goes private drops out at once.
 - **Rate-limited** per visitor: `429` with `Retry-After` past `web.requests-per-minute`, five times that for heads.
 - **Errors** are JSON: `{"error": "Not found."}` with the status code.

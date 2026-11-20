@@ -65,7 +65,8 @@ class WebServerTest {
                     Thread.currentThread().interrupt();
                 }
             }
-            return who.equals("Steve") ? Response.json(200, "{\"name\":\"Steve\"}", 30) : Response.error(404, "No such player.");
+            return who.equals("Steve") || who.equals("+Bedrock") ? Response.json(200, "{\"name\":\"" + who + "\"}", 30)
+                : Response.error(404, "No such player.");
         }
 
         @Override
@@ -139,6 +140,21 @@ class WebServerTest {
         assertEquals(200, get(server, "/api/v1/player/Steve").statusCode());
         assertEquals(404, get(server, "/api/v1/player/Alex").statusCode());
         assertTrue(text(get(server, "/api/v1/")).contains("/api/v1/leaderboard/{stat}/{period}"));
+    }
+
+    @Test
+    void aBedrockNameWithAPlusIsFoundAsTheSiteSendsIt() throws Exception {
+        WebServer server = start(1000, 8, List.of("*"), List.of());
+        assertEquals("{\"name\":\"+Bedrock\"}", text(get(server, "/api/v1/player/%2BBedrock")));
+        assertEquals("{\"name\":\"+Bedrock\"}", text(get(server, "/api/v1/player/+Bedrock")));
+    }
+
+    @Test
+    void sitesElsewhereCanRevalidateAndReadTheLimit() throws Exception {
+        WebServer server = start(1000, 8, List.of("*"), List.of());
+        HttpResponse<byte[]> api = get(server, "/api/v1/server");
+        assertEquals("ETag, Retry-After", api.headers().firstValue("Access-Control-Expose-Headers").orElse(""));
+        assertEquals("If-None-Match", api.headers().firstValue("Access-Control-Allow-Headers").orElse(""));
     }
 
     @Test

@@ -55,6 +55,8 @@ public final class Import {
                     plugin.worker().execute(() -> {
                         try {
                             count[0] = engine.store().importRows(part.players());
+                            // In the same step, so no save between writes back the lower value it held.
+                            engine.raiseImported(part.players());
                         } catch (SQLException e) {
                             failed[0] = e;
                         }

@@ -64,6 +64,10 @@ public final class Engine {
     private volatile LastSave lastSave = new LastSave(0, 0, 0, null);
     /** Goes up each time someone is hidden or shown again, so pages made from boards know to leave them out. */
     private volatile int hiddenVersion;
+    /** A player's last reading of a stat whose source changed since: the next reading is its new value. */
+    static final long REBASE = -2;
+    /** What each stat of Minecraft's counters was read from, as stored; null until read. xStats' thread. */
+    private Map<String, String> knownSources;
     private Runnable onHiddenChanged = () -> { };
     private boolean namesChanged = true;
     /** The stats the last load read from the database. One added since has its saved values read before it's counted. */
@@ -386,6 +390,7 @@ public final class Engine {
                 return false;
             }
         }
+        checkSources(stats);
         Set<PlayerRecord> touched = new HashSet<>();
         // A player whose rows can't be read has their events kept, in order, for the next
         // save; everyone else's are applied and saved now.
@@ -450,6 +455,7 @@ public final class Engine {
                     player.rowChanged = true;
                 }
                 player.lastSeen = Math.max(player.lastSeen, sample.at());
+                player.lastRead = Math.max(player.lastRead, sample.at());
                 player.rowChanged = true;
                 for (StatDef stat : stats.stats()) {
                     int index = stat.index();
@@ -489,6 +495,7 @@ public final class Engine {
                     return null;
                 }
                 prepare(player, width);
+                player.lastRead = Math.max(player.lastRead, System.currentTimeMillis());
                 gauge(player, stat, set.first(), current, today, width);
                 if (set.value() != set.first() || set.rise() > 0) {
                     // Set again since: the last value, with the rises between counted as they happened.
@@ -522,6 +529,54 @@ public final class Engine {
         }
     }
 
+    /**
+     * Notices a stat whose source changed in the config (more of Minecraft's counters added
+     * up, or fewer): every player's last reading of it is marked, here and in the database,
+     * so the next reading is its new all-time value, not a rise or a drop from the old one.
+     */
+    private void checkSources(Catalog.Snapshot stats) {
+        if (knownSources == null) {
+            try {
+                knownSources = new HashMap<>(store.sources());
+            } catch (SQLException e) {
+                return; // Asked again at the next save.
+            }
+        }
+        for (StatDef stat : stats.stats()) {
+            if (!(stat.source() instanceof StatDef.Vanillas vanillas)) {
+                continue;
+            }
+            String source = fingerprint(vanillas);
+            String before = knownSources.get(stat.id());
+            if (source.equals(before)) {
+                continue;
+            }
+            boolean changed = before != null;
+            try {
+                store.source(stat.id(), source, changed);
+            } catch (SQLException e) {
+                logger.warning("Couldn't note the source of " + stat.id() + ": " + e.getMessage());
+                continue;
+            }
+            knownSources.put(stat.id(), source);
+            if (changed) {
+                int index = stat.index();
+                for (PlayerRecord player : players.values()) {
+                    if (player.localLoaded && index < player.raw.length && player.raw[index] >= 0) {
+                        player.raw[index] = REBASE;
+                    }
+                }
+                logger.info(stat.id() + "'s source changed: each player's next reading is its new all-time value.");
+            }
+        }
+    }
+
+    // The counters a stat adds up, in a fixed order.
+    static String fingerprint(StatDef.Vanillas vanillas) {
+        return vanillas.terms().stream().map(term -> term.category() + ":" + term.name()).sorted()
+            .collect(java.util.stream.Collectors.joining("+"));
+    }
+
     /** A reading of a counter (Minecraft's stats) or a gauge (a placeholder). */
     private void reading(PlayerRecord player, StatDef stat, long reading, Settings current, int today, int width) {
         int index = stat.index();
@@ -530,6 +585,17 @@ public final class Engine {
             return;
         }
         long last = player.raw[index];
+        if (last == REBASE) {
+            // The stat's source changed: Minecraft's own count from the new counters is its
+            // all-time value. None of it is today's, this week's or this month's.
+            long change = reading - player.local[index];
+            player.local[index] = reading;
+            player.values[index] += change;
+            player.raw[index] = reading;
+            player.changed.set(index);
+            changedSinceBoards.set(index);
+            return;
+        }
         if (last < 0) {
             // The first reading: what they had before xStats counted them is all time, not today.
             long rise = reading - player.local[index];
@@ -661,13 +727,13 @@ public final class Engine {
             int at = changed.size();
             changed.add(player);
             rows.add(new Store.PlayerRow(player.id, player.dbId, player.name, player.firstJoin, player.lastSeen,
-                player.hidden, player.excluded));
+                player.hidden, player.excluded, player.hidePending));
             for (StatDef stat : stats.stats()) {
                 int index = stat.index();
                 if (player.local != null && player.changed.get(index) && index < player.local.length) {
                     // The last reading: Minecraft's counter, or a placeholder's or another
                     // plugin's last value, so the first one after a restart isn't taken as new.
-                    totals.add(new Store.TotalRow(at, stat.id(), player.local[index], player.raw[index]));
+                    totals.add(new Store.TotalRow(at, stat.id(), player.local[index], player.raw[index], player.lastRead));
                 }
                 if (index < player.pendingDaily.length && player.pendingDaily[index] > 0 && stat.periods()) {
                     daily.add(new Store.DailyRow(at, stat.id(), player.pendingDaily[index]));
@@ -683,6 +749,7 @@ public final class Engine {
                 PlayerRecord player = changed.get(i);
                 player.dbId = ids[i];
                 player.rowChanged = false;
+                player.hidePending = false;
                 player.changed.clear();
                 Arrays.fill(player.pendingDaily, 0);
             }
@@ -772,12 +839,15 @@ public final class Engine {
         }
         if (player.dbId == 0 || store == null) {
             player.rowChanged = true;
+            player.hidePending = true;
             return;
         }
         try {
             store.hide(player.dbId, player.id, hidden, feed);
+            player.hidePending = false;
         } catch (SQLException e) {
             player.rowChanged = true;
+            player.hidePending = true;
             logger.warning("Couldn't save /stats private for " + player.name + " now; it's saved with the next save: " + e.getMessage());
         }
     }
@@ -808,6 +878,34 @@ public final class Engine {
     }
 
     /** After an import: read everything again, keeping what's in memory. On xStats' thread. */
+    /**
+     * After an import part: what xStats counts itself (playtime, sessions) is raised in memory
+     * to the file's value where that's higher, as the database row just was. On xStats' thread.
+     */
+    public void raiseImported(List<Store.Imported> imported) {
+        Catalog.Snapshot stats = catalog.snapshot();
+        for (Store.Imported entry : imported) {
+            PlayerRecord player = players.get(entry.uuid());
+            if (player == null || !player.localLoaded) {
+                continue; // Read from the database when they're next needed.
+            }
+            for (Map.Entry<String, Long> value : entry.values().entrySet()) {
+                StatDef stat = stats.byId().get(value.getKey());
+                if (stat == null || Boolean.TRUE.equals(entry.counters().get(value.getKey())) || stat.index() >= player.local.length) {
+                    continue;
+                }
+                int index = stat.index();
+                long rise = value.getValue() - player.local[index];
+                if (rise > 0) {
+                    player.local[index] += rise;
+                    player.values[index] += rise;
+                    player.changed.set(index);
+                    changedSinceBoards.set(index);
+                }
+            }
+        }
+    }
+
     public void afterImport() throws SQLException {
         for (PlayerRecord player : players.values()) {
             player.localLoaded = false;

@@ -244,13 +244,23 @@ public final class WebServer implements AutoCloseable {
             return source.search(parameter(query, "q"));
         }
         if (rest.startsWith("player/")) {
-            String who = rest.substring("player/".length());
-            return who.isEmpty() || who.length() > 36 ? null : source.profile(who);
+            String who = decoded(rest.substring("player/".length()));
+            return who == null || who.isEmpty() || who.length() > 36 ? null : source.profile(who);
         }
         if (rest.startsWith("head/")) {
             return head(rest.substring("head/".length()));
         }
         return source.page(path);
+    }
+
+    // A path segment as the site sends it, percent-encoded: "%2BSteve" is a Bedrock name with
+    // Floodgate's + prefix. A + itself stays a +, as in a path. Null if it's encoded wrong.
+    private static String decoded(String segment) {
+        try {
+            return java.net.URLDecoder.decode(segment.replace("+", "%2B"), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private Response head(String id) {
@@ -404,6 +414,9 @@ public final class WebServer implements AutoCloseable {
             headers.add("Vary", "Origin");
         }
         headers.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+        // So a site hosted elsewhere can send If-None-Match for a 304, and read the ETag and a 429's Retry-After.
+        headers.set("Access-Control-Allow-Headers", "If-None-Match");
+        headers.set("Access-Control-Expose-Headers", "ETag, Retry-After");
         headers.set("Access-Control-Max-Age", "86400");
     }
 

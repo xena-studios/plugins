@@ -132,6 +132,11 @@ final class Api implements XStatsApi, Module {
 
     @Override
     public CustomStat registerStat(Plugin plugin, String id, String displayName, StatUnit unit) {
+        return registerStat(plugin, id, displayName, unit, false);
+    }
+
+    @Override
+    public CustomStat registerStat(Plugin plugin, String id, String displayName, StatUnit unit, boolean latest) {
         Objects.requireNonNull(plugin, "plugin");
         Objects.requireNonNull(displayName, "displayName");
         Objects.requireNonNull(unit, "unit");
@@ -146,7 +151,7 @@ final class Api implements XStatsApi, Module {
         if (clash != null) {
             throw new IllegalArgumentException(key + ": " + clash);
         }
-        this.plugin.register(new Definitions.Registered(key, displayName, unit, plugin.getName()));
+        this.plugin.register(new Definitions.Registered(key, displayName, unit, plugin.getName(), latest));
         return new Custom(key);
     }
 

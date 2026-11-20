@@ -13,11 +13,11 @@ The first release. Drop the jar in and start the server: stats are kept in SQLit
 ### Stats
 
 - 14 stats out of the box: playtime, sessions, player kills, deaths, mobs killed, blocks mined, distance travelled, fish caught, jumps, damage dealt, animals bred, villager trades, items enchanted and raids won.
-- Any of Minecraft's own stats as a stat, named as `/scoreboard` names them, alone or added up: `mined:diamond_ore + mined:deepslate_diamond_ore`, `killed:*`.
+- Any of Minecraft's own stats as a stat, named as `/scoreboard` names them, alone or added up: `mined:diamond_ore + mined:deepslate_diamond_ore`, `killed:*`. Change what a stat adds up later and it starts again from the new total, none of it counted as today's.
 - Playtime that leaves out time a player didn't move their camera between two saves.
 - Any PlaceholderAPI value as a stat, read every save and when a player leaves: a balance, a jobs level. Colour codes are skipped, and `5 blocks` reads as 5.
 - Daily, weekly and monthly numbers for the stats you choose, in your time zone; days older than 90 are added into their month.
-- On first start, every player's history from `world/stats` (or `world/players/stats` on 26.x). `/xstats import` runs it again, never overwriting what's counted.
+- On first start, every player's history from `world/stats` (or `world/players/stats` on 26.x), playtime and sessions included for players who joined before it ran. `/xstats import` runs it again, never adding anything twice.
 
 ### For players
 

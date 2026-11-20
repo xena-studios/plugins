@@ -130,6 +130,26 @@ public interface XStatsApi {
     @NotNull CustomStat registerStat(@NotNull Plugin plugin, @NotNull String id, @NotNull String displayName, @NotNull StatUnit unit);
 
     /**
+     * Adds a stat of your own, as {@link #registerStat(Plugin, String, String, StatUnit)}
+     * does, saying whether it's a count or a value that's set.
+     *
+     * @param plugin your plugin
+     * @param id the stat's id within your plugin, as for the other {@code registerStat}
+     * @param displayName its name, as players see it, such as {@code Balance}
+     * @param unit what its numbers measure
+     * @param latest true for a value set outright, such as a balance: on a network of servers
+     *     sharing a database, it's the latest value any server set. False for a count, such as
+     *     votes, which on a network is every server's added up: what the other
+     *     {@code registerStat} gives
+     * @return the stat, to change players' values with
+     * @throws IllegalArgumentException if the id isn't valid, or the config already has a
+     *     stat with the full id
+     * @since 1.0.0
+     */
+    @NotNull CustomStat registerStat(@NotNull Plugin plugin, @NotNull String id, @NotNull String displayName, @NotNull StatUnit unit,
+                                     boolean latest);
+
+    /**
      * Adds a section to player profiles: on {@code /stats}, the website and the web API.
      * Sections show in the order they were registered, after the stats. Registering the
      * same id again replaces the section. Sections are dropped when their plugin is disabled.

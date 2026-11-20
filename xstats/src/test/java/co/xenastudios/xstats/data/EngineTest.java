@@ -11,6 +11,7 @@ import co.xenastudios.xstats.api.Period;
 import co.xenastudios.xstats.api.StatUnit;
 import co.xenastudios.xstats.stat.Catalog;
 import co.xenastudios.xstats.stat.StatDef;
+import co.xenastudios.xstats.stat.Vanilla;
 import co.xenastudios.xstats.storage.Store;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -272,7 +273,7 @@ class EngineTest {
     @Test
     void aStatRegisteredLateKeepsItsSavedValues() throws Exception {
         StatDef votes = new StatDef(catalog.index("votes"), "votes", "Votes", StatUnit.COUNT, 0, true, true, true, "xVote",
-            new StatDef.Custom("xVote"));
+            new StatDef.Custom("xVote", false));
         List<StatDef> without = catalog.snapshot().stats();
         List<StatDef> with = new java.util.ArrayList<>(without);
         with.add(votes);
@@ -434,7 +435,7 @@ class EngineTest {
     @Test
     void incrementsAfterAJoinArentAddedIntoOneBeforeIt() throws Exception {
         StatDef votes = new StatDef(catalog.index("votes"), "votes", "Votes", StatUnit.COUNT, 0, true, true, true, "xVote",
-            new StatDef.Custom("xVote"));
+            new StatDef.Custom("xVote", false));
         List<StatDef> with = new java.util.ArrayList<>(catalog.snapshot().stats());
         with.add(votes);
         catalog.set(with);
@@ -545,9 +546,104 @@ class EngineTest {
     }
 
     @Test
+    void aBalanceReadEarlierButSavedLaterIsntTheLatest() throws Exception {
+        long now = System.currentTimeMillis();
+        Engine survival = engine("survival", true);
+        Engine creative = engine("creative", true);
+        // Steve leaves survival with 100, read as he quits; creative reads 150 after that.
+        survival.queue(new Event.Sample(steve, "Steve", now, raw(balance, 100), 0, 0, false, true));
+        creative.queue(new Event.Sample(steve, "Steve", now + MINUTE, raw(balance, 150), 0, 0, false, false));
+        creative.save(now);
+        // Survival's save comes later, with the older reading.
+        survival.save(now);
+        creative.networkChanged();
+        creative.save(now);
+        assertEquals(150, value(creative, steve, balance, Period.ALL), "read last, not saved last");
+        assertEquals(150, value(engine("lobby", true), steve, balance, Period.ALL));
+    }
+
+    @Test
+    void aSetValueStatIsTheLatestOnANetwork() throws Exception {
+        StatDef coins = new StatDef(catalog.index("coins"), "coins", "Coins", StatUnit.COUNT, 0, false, true, true, "Shop",
+            new StatDef.Custom("Shop", true));
+        List<StatDef> with = new java.util.ArrayList<>(catalog.snapshot().stats());
+        with.add(coins);
+        catalog.set(with);
+        long now = System.currentTimeMillis();
+        Engine survival = engine("survival", true);
+        Engine creative = engine("creative", true);
+        survival.queue(sample(steve, "Steve", now, 0, 1, 0));
+        survival.queue(new Event.Set(steve, "coins", 100));
+        survival.save(now);
+        Thread.sleep(5);
+        creative.queue(sample(steve, "Steve", now, 0, 1, 0));
+        creative.queue(new Event.Set(steve, "coins", 150));
+        creative.save(now);
+        survival.networkChanged();
+        survival.save(now);
+        assertEquals(150, value(survival, steve, coins, Period.ALL), "the latest, not 250");
+    }
+
+    @Test
+    void aSaveDoesntUndoAHideAnotherServerMade() throws Exception {
+        long now = System.currentTimeMillis();
+        Engine survival = engine("survival", true);
+        Engine creative = engine("creative", true);
+        survival.queue(sample(steve, "Steve", now, 0, 1, 0));
+        survival.save(now);
+        creative.queue(sample(steve, "Steve", now, 0, 1, 0));
+        creative.save(now);
+        // Hidden on survival; creative hasn't heard yet, and saves him.
+        survival.hide(survival.player(steve), true);
+        creative.queue(sample(steve, "Steve", now + MINUTE, 0, 2, 0));
+        creative.save(now);
+        assertTrue(engine("lobby", true).player(steve).hidden(), "still private");
+    }
+
+    @Test
+    void aStatWhoseSourceChangedStartsFromTheNewCounter() throws Exception {
+        long now = System.currentTimeMillis();
+        Engine engine = engine("main", false);
+        engine.queue(sample(steve, "Steve", now, 0, 10, 0));
+        engine.queue(sample(steve, "Steve", now + MINUTE, 0, 12, 0));
+        engine.save(now);
+        assertEquals(2, value(engine, steve, kills, Period.DAILY));
+        // The owner adds deepslate to the stat: Minecraft's count from both is 500.
+        StatDef wider = new StatDef(kills.index(), "kills", "kills", StatUnit.COUNT, 0, true, true, true, "minecraft",
+            new StatDef.Vanillas(List.of(new Vanilla.Term(Vanilla.Category.MINED, "diamond_ore"),
+                new Vanilla.Term(Vanilla.Category.MINED, "deepslate_diamond_ore")), List.of()));
+        List<StatDef> changed = new java.util.ArrayList<>(catalog.snapshot().stats());
+        changed.set(changed.indexOf(kills), wider);
+        catalog.set(changed);
+        engine.queue(sample(steve, "Steve", now + 2 * MINUTE, 0, 500, 0));
+        engine.save(now);
+        assertEquals(500, value(engine, steve, kills, Period.ALL), "the new counter's value");
+        assertEquals(2, value(engine, steve, kills, Period.DAILY), "none of it today");
+        // Narrowed again later: all time follows it down, not taken as a restart.
+        catalog.set(catalog.snapshot().stats().stream().map(s -> s.id().equals("kills") ? kills : s).toList());
+        engine.queue(sample(steve, "Steve", now + 3 * MINUTE, 0, 40, 0));
+        engine.save(now);
+        assertEquals(40, value(engine, steve, kills, Period.ALL));
+        assertEquals(2, value(engine, steve, kills, Period.DAILY));
+        // And it's remembered across a restart: no second change is seen.
+        Engine again = engine("main", false);
+        again.queue(sample(steve, "Steve", now + 4 * MINUTE, 0, 41, 0));
+        again.save(now);
+        assertEquals(41, value(again, steve, kills, Period.ALL));
+        assertEquals(3, value(again, steve, kills, Period.DAILY));
+    }
+
+    long[] raw(StatDef stat, long value) {
+        long[] raw = new long[catalog.snapshot().width()];
+        Arrays.fill(raw, Event.Sample.NOT_READ);
+        raw[stat.index()] = value;
+        return raw;
+    }
+
+    @Test
     void aStatAddedInASaveThatFailedIsntRememberedAsStored() throws Exception {
         StatDef votes = new StatDef(catalog.index("votes"), "votes", "Votes", StatUnit.COUNT, 0, true, true, true, "xVote",
-            new StatDef.Custom("xVote"));
+            new StatDef.Custom("xVote", false));
         List<StatDef> with = new java.util.ArrayList<>(catalog.snapshot().stats());
         with.add(votes);
         catalog.set(with);

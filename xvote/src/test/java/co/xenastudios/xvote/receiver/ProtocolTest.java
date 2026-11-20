@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.Base64;
 import java.util.Map;
 import java.util.function.Function;
@@ -155,6 +156,24 @@ class ProtocolTest {
         assertThrows(ProtocolException.class, () -> Protocol.decodeV2("not json", "abc", TOKENS, 0));
         assertThrows(ProtocolException.class, () -> Protocol.decodeV2("{\"payload\":\"[1]\",\"signature\":\"x\"}", "abc", TOKENS, 0));
         assertThrows(ProtocolException.class, () -> Protocol.decodeV2("{\"payload\":\"{}\",\"signature\":\"!!\"}", "abc", TOKENS, 0));
+    }
+
+    @Test
+    void aSendersOwnChoicesCantUseUpTheWarnings() throws Exception {
+        // Made-up service names share one warning; a service with its own token is named.
+        ProtocolException made = assertThrows(ProtocolException.class,
+            () -> Protocol.decodeV2(nuVotifierV2("Made Up 1", "Alex", "0", "abc", "BadKey"), "abc", TOKENS, 0));
+        ProtocolException other = assertThrows(ProtocolException.class,
+            () -> Protocol.decodeV2(nuVotifierV2("Made Up 2", "Alex", "0", "abc", "BadKey"), "abc", TOKENS, 0));
+        assertEquals(made.logKey(), other.logKey());
+        ProtocolException own = assertThrows(ProtocolException.class,
+            () -> Protocol.decodeV2(nuVotifierV2("MinecraftServers.org", "Alex", "0", "abc", "BadKey"), "abc", TOKENS, 0));
+        assertEquals("v2-signature:MinecraftServers.org", own.logKey());
+        // v1 can't tell a list from a scanner: one warning for every sender.
+        KeyPair keys = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        ProtocolException one = assertThrows(ProtocolException.class, () -> Protocol.decodeV1(new byte[256], keys.getPrivate(), "198.51.100.1", 0));
+        ProtocolException two = assertThrows(ProtocolException.class, () -> Protocol.decodeV1(new byte[256], keys.getPrivate(), "198.51.100.2", 0));
+        assertEquals(one.logKey(), two.logKey());
     }
 
     private static void assertCause(String cause, String message, String challenge) {

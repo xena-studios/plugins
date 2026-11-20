@@ -90,7 +90,10 @@ public final class Protocol {
             plain = cipher.doFinal(block);
         } catch (GeneralSecurityException e) {
             String why = "Couldn't decrypt a v1 vote from " + from + ". Check the list has this server's public key (/xvote key).";
-            throw ProtocolException.vote("QuietException", why, "v1-decrypt:" + from, why);
+            // One key for every sender: v1 can't tell a list from a port scanner, so scanners
+            // mustn't use up the warnings a list's own mistakes get.
+            throw ProtocolException.vote("QuietException", why, "v1-decrypt", why
+                + " (Said once until the next reload; a port scanner can cause it too.)");
         }
         String[] fields = new String(plain, StandardCharsets.US_ASCII).split("\n");
         if (fields.length < 5) {
@@ -120,21 +123,24 @@ public final class Protocol {
             // As it may be logged: no line breaks or other control characters a sender could fake log lines with.
             String shown = IncomingVote.clean(service);
             String token = tokenFor.apply(service);
+            // A service with a token of its own is one the owner added, so its mistakes are
+            // logged by name; any other name is the sender's choice, so they share one warning.
+            boolean own = token != null;
             if (token == null) {
                 token = tokenFor.apply("default");
             }
             if (token == null) {
-                throw ProtocolException.vote("RuntimeException", "Unknown service '" + shown + "'", "v2-service:" + shown,
+                throw ProtocolException.vote("RuntimeException", "Unknown service '" + shown + "'", "v2-service",
                     "A v2 vote came from \"" + shown + "\", which has no token and there's no default one. Add one with /xvote token.");
             }
             byte[] signature;
             try {
                 signature = Base64.getDecoder().decode(string(outer, "signature"));
             } catch (IllegalArgumentException e) {
-                throw badSignature(shown);
+                throw badSignature(shown, own);
             }
             if (!MessageDigest.isEqual(hmac(token, payload), signature)) {
-                throw badSignature(shown);
+                throw badSignature(shown, own);
             }
             if (vote.has("uuid")) {
                 UUID.fromString(vote.get("uuid").getAsString());
@@ -153,8 +159,9 @@ public final class Protocol {
         }
     }
 
-    private static ProtocolException badSignature(String service) {
-        return ProtocolException.vote("CorruptedFrameException", "Signature is not valid (invalid token?)", "v2-signature:" + service,
+    private static ProtocolException badSignature(String service, boolean own) {
+        return ProtocolException.vote("CorruptedFrameException", "Signature is not valid (invalid token?)",
+            own ? "v2-signature:" + service : "v2-signature",
             "A v2 vote from \"" + service + "\" was signed with a different token. Give the list its token again (/xvote token).");
     }
 

@@ -159,13 +159,14 @@ public final class Rewards {
 
     /**
      * The name a console command or custom reward gets as {@code <site>}: a listed site's
-     * name from the config, or for an unlisted one the service name the list sent with
-     * everything but letters, digits, {@code .}, {@code _} and {@code -} made {@code _}, so
-     * nothing from the network can add arguments or another command.
+     * key in the config ({@code planetminecraft}, one word where its name may have spaces),
+     * or for an unlisted one the service name the list sent; either with everything but
+     * letters, digits, {@code .}, {@code _} and {@code -} made {@code _}, so nothing can add
+     * arguments or another command.
      */
     public String commandSite(String service) {
         Site site = site(service);
-        return site != null ? site.name() : safe(service);
+        return safe(site != null ? site.key() : service);
     }
 
     /** A service name from the network made safe to put in a command. */

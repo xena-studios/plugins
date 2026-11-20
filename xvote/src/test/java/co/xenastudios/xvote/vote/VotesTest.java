@@ -400,6 +400,33 @@ class VotesTest {
     }
 
     @Test
+    void thePlayerWhoseVoteStartedAPartyIsntInTheNextOne() throws Exception {
+        for (int i = 0; i < 6; i++) {
+            a.vote("Voter" + i, "List", NOON + i);
+        }
+        assertEquals(List.of(NOON, NOON + 3), a.parties, "the second round starts after the vote that ended the first");
+    }
+
+    @Test
+    void aNameTakenByANewPlayerIsTheirs() throws Exception {
+        // Steve votes as Bob, then renames to Rob; a new player takes the name Bob.
+        a.join(STEVE, "Bob");
+        a.vote("Bob", "One", NOON);
+        a.votes.quit(STEVE, "Bob");
+        a.join(STEVE, "Rob");
+        a.votes.quit(STEVE, "Rob");
+        a.join(NOTCH, "Bob");
+        a.votes.quit(NOTCH, "Bob");
+        serverKnows.put("bob", new Votes.Resolved(NOTCH, "Bob"));
+        a.paid.clear();
+        a.vote("Bob", "Two", NOON + DAY);
+        a.join(NOTCH, "Bob");
+        assertEquals(1, a.paid.size(), "the new Bob is paid");
+        assertEquals(1, a.votes.voters().get(STEVE).total(), "not added to the old Bob's");
+        assertEquals("Rob", a.votes.voters().get(STEVE).name());
+    }
+
+    @Test
     void leaderboardsAndAFreshLoadAgree() throws Exception {
         a.join(STEVE, "Steve");
         a.join(NOTCH, "Notch");

@@ -956,8 +956,11 @@ public final class Writer {
         }
         db.commit();
         cursor[0] = first + PRUNE_SLICE;
-        // The rest after whatever else is waiting, so a big prune never holds up payments.
-        queue.add(prune);
+        // The rest after whatever else is waiting, so a big prune never holds up payments. Not
+        // while stopping: the next start prunes again, and shutdown waits only for balances.
+        if (!stopping) {
+            queue.add(prune);
+        }
     }
 
     // ---- connection ----

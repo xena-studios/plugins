@@ -39,7 +39,7 @@ public final class BaltopCommand {
         int pages = ChatPages.pages(ranked, perPage);
         int number = Math.clamp(page, 1, pages);
         List<Accounts.Ranked> rows = accounts.top((number - 1) * perPage + 1, perPage);
-        messages.header().send(sender, Replies.text("total", bank.format(accounts.total())), Replies.text("count", String.format("%,d", ranked)));
+        messages.header().send(sender, Replies.text("total", bank.format(accounts.total())), Replies.text("count", bank.format().count(ranked)));
         ChatPages.Page<Accounts.Ranked> shown = ChatPages.of(rows, ranked, number, perPage);
         ChatPages.lines(shown, row -> messages.line().chat(Replies.text("rank", row.rank()), Replies.text("player", row.account().name()),
             Replies.text("balance", bank.format(row.balance()))), messages.footer(), "/" + label + " {page}").forEach(sender::sendMessage);

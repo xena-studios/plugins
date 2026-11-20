@@ -28,7 +28,11 @@ The first release. Drop the jar in and start the server: stats are kept in SQLit
 
 ### The website
 
-- A stats website served by xStats itself, off until you turn it on: search, player pages with heads, ranks and the last 30 days, leaderboards per period, and server totals, in your server's name, logo and colours. Bedrock players (through Floodgate) have pages too.
+- A stats website served by xStats itself, off until you turn it on, in your server's name, logo and colours, dark or light, and made for phones too:
+  - an overview with each stat's leaders for any period, and the server's totals;
+  - leaderboards with a podium for the top three, every period, and a box to find a player on the board;
+  - a page for every player: their head, when they were last on, badges for their best places, a chart of their last 30 days, each stat with today's, this week's and this month's, and what other plugins add. Bedrock players (through Floodgate) have pages too;
+  - search with suggestions, and `/` to jump to it.
 - A read-only, versioned JSON API, with CORS for sites hosted elsewhere, a limit per visitor, and caching.
 - Works behind a reverse proxy, Cloudflare or a Cloudflare Tunnel, counting each visitor by the address your proxy passes on in the one header you choose, so visitors can't pick their own.
 - Heads from mc-heads.net, any service you set, or fetched and kept by xStats so visitors never contact a third party.

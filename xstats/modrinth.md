@@ -27,7 +27,7 @@ Players want to see their stats and where they rank. Owners want leaderboards on
 - **Leaderboards by day, week, month and all time,** in `/leaderboard`, in placeholders and as boards in your world, with banned players and anyone you choose left out.
 - **PlaceholderAPI:** `%xstats_kills%`, `%xstats_kills_monthly%`, `%xstats_rank_kills_monthly%`, `%xstats_top_kills_monthly_1_name%`, for scoreboards, TAB and holograms.
 - **Boards in the world:** `/xstats board add kills monthly`, as Paper text displays, no hologram plugin needed.
-- **A stats website:** player search, a page for every player with their head, ranks and the last 30 days, leaderboards and server totals, in your server's name, logo and colours. It's read-only, with nothing to log in to, a limit per visitor, and tested setups behind a reverse proxy or a Cloudflare Tunnel.
+- **A stats website:** leaderboards with a podium for the top three, a page for every player with their best places and a chart of their last 30 days, server totals and search, in your server's name, logo and colours, dark or light, and made for phones. It's read-only, with nothing to log in to, a limit per visitor, and tested setups behind a reverse proxy or a Cloudflare Tunnel.
 - **Build your own:** a documented, versioned JSON API, and documented database tables.
 - **Networks:** several servers sharing MySQL, with network-wide leaderboards and one website.
 - **A developer API** for other plugins to add their own stats and profile sections.

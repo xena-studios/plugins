@@ -22,6 +22,8 @@ scripts/boot-test.sh --project paper --version 1.21.11 \
   --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/sandbox-0.0.0.jar
 ```
 
+On Paper, `boot-test.sh` then boots a second, empty server, waits for Paper to pause it, and runs every Xena plugin's `/<plugin> reload`. A paused server doesn't run the global region scheduler, so global work goes through the core's `Tasks`, which Paper keeps running.
+
 ## How it fits together
 
 | Folder | What it is |

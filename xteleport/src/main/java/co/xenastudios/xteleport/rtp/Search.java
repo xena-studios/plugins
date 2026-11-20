@@ -157,7 +157,9 @@ public final class Search {
         int tries = attempt;
         boolean picked = false;
         double reach = Math.min(area.maxRadius(), bounds.furthest(area.centerX(), area.centerZ()));
-        for (int misses = 0; reach >= area.minRadius() && misses < MAX_MISSES; misses++) {
+        // The ring starts past the border: nowhere to draw from.
+        int draws = reach < area.minRadius() ? 0 : MAX_MISSES;
+        for (int misses = 0; misses < draws; misses++) {
             int[] point = pick(area.minRadius(), reach, area.centerX(), area.centerZ(), ThreadLocalRandom.current());
             x = point[0];
             z = point[1];

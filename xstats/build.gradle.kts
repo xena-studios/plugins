@@ -25,8 +25,9 @@ paperPluginYaml {
 
 xena {
     // The shared core and bStats (about 75 KiB), the collector, leaderboards, the web
-    // server and its JSON, and the website itself (plain HTML, CSS and JS, about 40 KiB).
-    jarBudgetKb = 400
+    // server and its JSON, and the website itself (plain HTML, CSS and JS: about 64 KiB
+    // since its redesign in #105, 18 compressed). About 398 KiB, with ~50 KiB of room.
+    jarBudgetKb = 450
 }
 
 // The website is plain files in web/, with no build step of its own: the jar serves them

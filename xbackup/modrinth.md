@@ -57,8 +57,8 @@ Full setup, every setting, every remote and how to restore: **[plugins.xenastudi
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
-- **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. Its SQLite database is copied by SQLite itself, so a backup never holds a half-written block log.
-- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Its SQLite database and every plot's saved state, backed up with the rest of the server.
+- **[xRewind](https://plugins.xenastudios.co/xrewind/)**: Every change, logged. Any of it, undone. Its SQLite database is copied by SQLite itself, so a backup never holds a half-written block log.
+- **[xPlots](https://plugins.xenastudios.co/xplots/)**: Rentable plots, set up in a minute. Its SQLite database and every plot's saved state, backed up with the rest of the server.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

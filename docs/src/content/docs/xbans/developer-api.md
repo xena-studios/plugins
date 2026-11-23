@@ -86,7 +86,7 @@ xbans.punish(PunishRequest.of(PunishmentType.BAN, cheater.getUniqueId(), "Kill a
 A punishment made through the API is recorded, broadcast and enforced like one made by a staff command: the player is kicked or told, and network mode tells the other servers. None of the staff rules apply: a player with `xbans.exempt` or a weight can be punished, for any length, so your plugin decides who may punish whom. The future fails with an `IllegalStateException` saying why if it can't be made (for example, a shorter ban on someone already banned), or a `CancellationException` if a `PunishEvent` listener cancelled it.
 
 ```java
-xbans.revoke(player, PunishmentType.MUTE, null, "Discord", "Appeal accepted")
+xbans.revoke(id, PunishmentType.MUTE, null, "Discord", "Appeal accepted")
     .thenAccept(revoked -> revoked.ifPresent(mute -> getLogger().info("Unmuted #" + mute.id())));
 ```
 

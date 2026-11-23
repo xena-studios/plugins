@@ -60,7 +60,7 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xbans]
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
-- **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. See what a banned griefer broke or took, and roll it back.
+- **[xRewind](https://plugins.xenastudios.co/xrewind/)**: Every change, logged. Any of it, undone. See what a banned griefer broke or took, and roll it back.
 - **[xLimbo](https://modrinth.com/plugin/xlimbo)**: Never drop a player again. A fallback server for when your main one goes down. With xBans installed there too, it enforces the same bans.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**

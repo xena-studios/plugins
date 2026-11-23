@@ -114,8 +114,8 @@ public final class Bank {
      * commit (past {@code Writer#CHECKED_BUDGET_MS} it's refused, honestly, before the commit),
      * and up to 3 more for the commit. Only if the database goes away at the moment of the
      * commit does the caller wait until it answers again: whether it went through is never
-     * guessed. That's the case per-account leases (#66) remove, and why network mode is
-     * experimental.
+     * guessed. That's the case per-account leases would remove (designed in #66, not planned), and
+     * why network mode is experimental.
      */
     public Outcome await(CompletableFuture<Outcome> future, Account account) {
         if (future.isDone()) {

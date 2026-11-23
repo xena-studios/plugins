@@ -36,7 +36,10 @@ xbackup:
 # catalog:end
 core:
   - changed-files:
-      - any-glob-to-any-file: [core/**, build-logic/**]
+      - any-glob-to-any-file: [core/**, build-logic/**, gradle/**, "*.gradle.kts", gradle.properties, scripts/**]
+api:
+  - changed-files:
+      - any-glob-to-any-file: "*/api/**"
 documentation:
   - changed-files:
       - any-glob-to-any-file: [docs/**, "**/*.md"]

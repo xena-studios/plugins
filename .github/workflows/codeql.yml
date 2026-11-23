@@ -1,10 +1,11 @@
 name: CodeQL
 
 # Code scanning: the plugins' Java (traced through a real Gradle build, for the
-# most accurate dataflow), the workflows (they hold the Modrinth and Cloudflare
-# secrets), and the docs' scripts. Findings show on pull requests and in the
-# Security tab. Dependencies are Renovate's: it opens a fix PR as soon as one
-# has a known vulnerability.
+# most accurate dataflow), the workflows (they hold the Modrinth, Maven Central
+# and Cloudflare secrets), and the TypeScript and JavaScript: the docs, scripts/
+# and xStats' website. Findings show on pull requests and in the Security tab.
+# Dependencies are Renovate's: it opens a fix PR as soon as one has a known
+# vulnerability.
 on:
   push:
     branches: [main]
@@ -25,6 +26,8 @@ jobs:
   analyze:
     name: analyze (${{ matrix.language }})
     runs-on: ubuntu-26.04
+    # A hung build fails the job instead of holding a runner for six hours.
+    timeout-minutes: 30
     permissions:
       security-events: write
     strategy:

@@ -14,7 +14,8 @@
 //   1. adds the plugin to the brand repo (its `pnpm new-plugin`): a placeholder glyph, an
 //      accent clear of every other Xena accent, and its catalog entry, then builds its art;
 //   2. writes the module from scripts/new-plugin/template/: the plugin and its config, the
-//      api/ subproject, a test, boot checks, CHANGELOG, README, Modrinth page and docs pages;
+//      api/ subproject, a test, boot checks, CHANGELOG, README, Modrinth page and docs pages,
+//      and lists it in docs/src/data/modrinth.json until Modrinth approves it;
 //   3. copies the brand's art and catalog into the docs and rebuilds every list of plugins;
 //   4. writes the API's signatures and the docs' default config, then builds the plugin.
 // Then it prints what's left to write: everything marked TODO.
@@ -107,6 +108,15 @@ const copy = (from: string, to: string) => {
 copy(TEMPLATE, ROOT);
 console.log(`\nWrote ${written.length} files for ${display}.`);
 
+// Its Modrinth project waits for Modrinth's review after the first release, and its page is a
+// 404 to everyone else until then, so it starts on the list of plugins nothing may link there.
+const reviewFile = path.join(ROOT, "docs/src/data/modrinth.json");
+const review = JSON.parse(fs.readFileSync(reviewFile, "utf8"));
+if (!review.inReview.includes(id)) {
+  review.inReview.push(id);
+  fs.writeFileSync(reviewFile, JSON.stringify(review, null, 2) + "\n");
+}
+
 // 3. The docs: the brand's art and catalog, and every list of plugins.
 const docs = path.join(ROOT, "docs");
 run("node", ["scripts/sync-brand.ts"], docs, { BRAND_DIR: BRAND });
@@ -130,4 +140,7 @@ ${display} is set up${build ? " and builds" : ""}. What's left:
   - Reserve the Modrinth slug "${id}" (a draft project in the xena-studios organization), so
     nobody else takes it: the update checker reads that slug's versions.${slugTaken ? ` It's TAKEN by "${slugTaken}" now.` : ""}
   - A bStats id for bStatsId() before its first release.
+  - At its first release, its brand entry loses released: false. Once Modrinth approves its
+    project, take it off docs/src/data/modrinth.json, point its README's Download link at
+    Modrinth, and run node scripts/catalog.ts in docs/.
 Commit both repos' changes on their own branches.`);

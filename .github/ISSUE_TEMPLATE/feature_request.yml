@@ -1,5 +1,5 @@
 name: Feature request
-description: An idea for xUtilities, zChat, xLimbo or xRewind.
+description: An idea for one of the plugins, or for a new one.
 labels: [enhancement]
 body:
   - type: markdown
@@ -11,10 +11,19 @@ body:
     attributes:
       label: Plugin
       options:
+        # catalog:start: every plugin, from the brand catalog (pnpm catalog in docs/).
         - xUtilities
         - zChat
         - xLimbo
         - xRewind
+        - xPlots
+        - xTeleport
+        - xVote
+        - xBans
+        - xMoney
+        - xStats
+        - xBackup
+        # catalog:end
         - More than one
         - A new plugin
     validations:

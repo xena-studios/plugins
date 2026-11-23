@@ -17,20 +17,20 @@ The site (`docs/`, deployed as a static Cloudflare Worker; at plugins.xenastudio
 
 ## Positioning
 
-A family of small plugins that each do one job, built on one shared core: every setting applies on reload, configs carry forward on update, nothing runs in the background unless a feature needs it, databases are kept off the game threads, and every jar has a size budget the build enforces. Free and open source (GPL-3.0-only), every feature, no premium tier. Where a plugin replaces a popular one, it speaks its commands and imports its data; the other plugin is named only as compatibility, never in a headline.
+A family of small plugins that each do one job, built on one shared core: every setting applies on reload (apart from some plugins' database settings), configs carry forward on update, nothing runs in the background unless a feature needs it, databases are kept off the game threads, and every jar has a size budget the build enforces. Free and open source (GPL-3.0-only), every feature, no premium tier. Where a plugin replaces a popular one, it speaks its commands and imports its data; the other plugin is named only as compatibility, never in a headline.
 
 ## Operating Context
 
-- Owners arrive from Modrinth, search or a link, compare against the plugin they use today, download from Modrinth (downloads count there), and come back for setup and reference.
-- Each plugin has its own pages: overview, download (versions read from Modrinth's API at build time), commands, configuration, switching guides, developer API, changelog.
+- Owners arrive from Modrinth, search or a link, compare against the plugin they use today, download from Modrinth (downloads count there) or, while Modrinth is still reviewing the plugin, from its GitHub releases, and come back for setup and reference.
+- Each plugin has its own pages: overview, download (versions read at build time from Modrinth's API, or from the plugin's GitHub releases while Modrinth is still reviewing it), commands, configuration and changelog, plus switching guides and a developer API page where it has them.
 - Everything listing the plugins is generated from the brand repo's catalog (`docs/src/data/plugins.json` via `docs/scripts/catalog.ts`), so the site must keep working as plugins are added.
 
 ## Capabilities and Constraints
 
 - Starlight on Astro, static output, strict CSP (inline scripts are hashed by `docs/scripts/headers.ts`; fonts are self-hosted files). No server code.
 - Dark only today.
-- Eleven plugins: xUtilities, zChat, xLimbo, xRewind (released); xPlots, xTeleport, xVote, xBans, xMoney, xBackup, xStats (built, releasing). Categories: Players, Moderation, Economy, Server.
-- Unreleased plugins have no public Modrinth page: never link one.
+- Eleven plugins, all released: xUtilities, zChat, xLimbo, xRewind, xPlots, xTeleport, xVote, xBans, xMoney, xBackup, xStats. Categories: Players, Moderation, Economy, Server.
+- A plugin whose Modrinth project is still in Modrinth's review has no public Modrinth page (it's a 404 to everyone else), nor does an unreleased one: never link one. The plugins in review are listed in `docs/src/data/modrinth.json`, which `docs/scripts/catalog.ts` reads; until Modrinth approves one, its downloads come from its GitHub releases.
 
 ## Brand Commitments
 
@@ -38,8 +38,8 @@ Confirmed binding (owner, 2026-11-18): keep the plugin family brand from xena-st
 
 ## Evidence on Hand
 
-- Real numbers from the build: each plugin's jar budget (`jarBudgetKb`, largest 500 KB), which run on Folia (9 of 11), Modrinth version history and download sizes.
-- Brand assets: icons, banners and social cards in xena-studios/brand (`plugins/<id>/`), synced to `docs/src/assets/plugins/`.
+- Real numbers from the build: each plugin's jar budget (`jarBudgetKb`, largest 530 KB), which run on Folia (9 of 11), Modrinth version history and download sizes (the GitHub releases' for a plugin still in Modrinth's review).
+- Brand assets: icons, banners and social cards in xena-studios/brand (`plugins/<id>/`); `pnpm brand:sync` copies the icons to `docs/src/assets/plugins/` and the banners to `.github/assets/`.
 - No testimonials, customer logos, benchmarks beyond the docs' own measured pages (for example xBackup's performance page), or download counts are curated for the site: don't invent any.
 
 ## Product Principles

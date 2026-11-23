@@ -50,7 +50,7 @@ The default messages use only these, so a new look takes five lines. Messages yo
 
 Some messages take placeholders, also in angle brackets: `<player>`, `<seconds>`, `<server>` and so on. Each plugin's configuration page lists which placeholders each message accepts.
 
-A placeholder fills in text, never another tag's setting: `<click:run_command:'/msg <player>'>` runs `/msg <player>` as written. The update notice's `<url>` is the one exception, so `<click:open_url:'<url>'>` opens the new version's page.
+A placeholder fills in text, never another tag's setting: `<click:run_command:'/msg <player>'>` runs `/msg <player>` as written. The exceptions are the placeholders made for clicks, such as the update notice's `<url>` and a page footer's `<next>` and `<previous>`, so `<click:open_url:'<url>'>` opens the new version's page.
 
 ## Test a message
 

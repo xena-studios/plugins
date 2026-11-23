@@ -25,7 +25,7 @@ val pluginName = pluginProject.extensions.getByType<PaperPluginYaml>().name.get(
 
 // Every API project is named "api", and Gradle tells projects apart by group and name,
 // so each plugin's API has its own group. Otherwise a project using two plugins' APIs
-// (xPlots with xUtilities' and xRewind's) silently gets only one.
+// (the sandbox's consumer, with the sandbox's and xRewind's) silently gets only one.
 group = "co.xenastudios.${pluginProject.name}"
 version = pluginProject.version
 base.archivesName = artifact

@@ -4,8 +4,7 @@ plugins {
     id("xena.plugin")
 }
 
-// "xMoney" is a working name (#22). The name players and owners see is set here and in
-// XMoney.NAME; the module, packages and docs folder would follow in a rename.
+// The name players and owners see is set here and in XMoney.NAME.
 val pluginName = "xMoney"
 
 version = "1.0.0"
@@ -51,6 +50,6 @@ xena {
     // The shared core and bStats are about 120 KiB here (with the database layer, change
     // feed, profiles and chat pages) and Vault's API 35; the rest is the ledger and its
     // writer, both Vault economies, commands, imports, placeholders and the API. About
-    // 340 KiB, with ~60 KiB of room.
+    // 369 KiB, with ~30 KiB of room.
     jarBudgetKb = 400
 }

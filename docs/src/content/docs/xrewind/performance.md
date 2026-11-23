@@ -17,7 +17,7 @@ Logging you've turned off isn't listened for at all, so it costs nothing.
 
 One background thread turns names, worlds and block states into numbers, and writes up to 10,000 changes per transaction: every half second, or as soon as 2,000 are waiting. Each row is a handful of numbers, so the database stays small, and SQLite runs in WAL mode, so lookups never wait for it.
 
-If the database is slow or down, changes wait in memory: the console is warned at 100,000 waiting. Past a million, new changes are counted and dropped so the server never runs out of memory, and `/xr status` shows how many were missed. Nothing else is ever dropped: a write that fails is tried again.
+If the database is slow or down, changes wait in memory: the console is warned at 100,000 waiting. Past a million, new changes are counted and dropped so the server never runs out of memory, and `/xr status` shows how many were missed. A write that fails is tried again; only a change the database itself won't take is dropped, with a warning in the console, and counted as missed too.
 
 ## Lookups and rollbacks
 

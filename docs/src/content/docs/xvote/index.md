@@ -29,7 +29,7 @@ Votes are kept in SQLite out of the box, in `plugins/xVote/votes.db`, or in MySQ
 
 ## What else it does
 
-- **You won't feel it running.** Totals and leaderboards are kept in memory; the database is written on its own thread. Nothing repeats unless you turn on timed reminders.
+- **You won't feel it running.** Totals and leaderboards are kept in memory; the database is written on its own thread. On a single server, nothing repeats unless you turn on timed reminders; network mode adds one check every few seconds, off the server's threads.
 - **Every change applies on reload**, sites and rewards included. Only `storage` and `network` wait for a restart.
 
 ## Getting started

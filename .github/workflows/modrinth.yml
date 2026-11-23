@@ -16,10 +16,13 @@ concurrency: modrinth-pages
 jobs:
   sync:
     runs-on: ubuntu-26.04
+    # A hung build or upload fails the job instead of holding a runner for six hours.
+    timeout-minutes: 15
     environment: release
     steps:
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           fetch-depth: 0
       - id: plugins
         env:

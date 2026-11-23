@@ -12,7 +12,7 @@ Someone griefed spawn. Someone emptied the shared chest. Someone says they didn'
 
 - **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon. Automatic purges included.
 - **New Minecraft versions the same week.** xRewind uses only Paper's API, never the server's internals, so an update rarely breaks it.
-- **You won't feel it running.** Nothing touches the database on a game thread. Each change is queued as a few numbers and written in batches in the background, and logging you turn off isn't listened for at all.
+- **You won't feel it running.** Nothing touches the database on a game thread. Each change is queued as a small record and written in batches in the background, and logging you turn off isn't listened for at all.
 - **Rollback that doesn't freeze the server.** Each block's final state is worked out once, then applied a few milliseconds per tick (region by region on Folia). Preview a rollback before you apply it, and undo it after.
 - **Every change applies on reload**, even what's logged and where it's stored. No restarts.
 - **Paper and Folia.** One jar runs on Paper, Purpur and Folia.
@@ -59,8 +59,8 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xrewin
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
-- **[xBans](https://plugins.xenastudios.co/xbans/)** (coming soon): Bans, mutes and warnings. Nothing slips through. Found who griefed spawn? Ban them, with templates that go from a week to a month to permanent.
-- **[xBackup](https://plugins.xenastudios.co/xbackup/)** (coming soon): Backups that cost nothing. Restores you can trust. Backups of the whole server, with xRewind's SQLite database copied safely while it's being written.
+- **[xBans](https://plugins.xenastudios.co/xbans/)**: Bans, mutes and warnings. Nothing slips through. Found who griefed spawn? Ban them, with templates that go from a week to a month to permanent.
+- **[xBackup](https://plugins.xenastudios.co/xbackup/)**: Backups that cost nothing. Restores you can trust. Backups of the whole server, with xRewind's SQLite database copied safely while it's being written.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

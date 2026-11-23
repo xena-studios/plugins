@@ -65,8 +65,8 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xutili
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
+- **[xTeleport](https://plugins.xenastudios.co/xteleport/)**: Every teleport your server needs. Homes, TPA, warps and `/rtp` to go with xUtilities' `/back`, which takes players back from every xTeleport teleport.
 - **[zChat](https://modrinth.com/plugin/zchat)**: Format your chat. Keep it clean. Chat formats per rank and a filter, with messages themed the same way as xUtilities' own.
-- **[xTeleport](https://plugins.xenastudios.co/xteleport/)** (coming soon): Every teleport your server needs. Homes, TPA, warps and `/rtp` to go with xUtilities' `/back`, which takes players back from every xTeleport teleport.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

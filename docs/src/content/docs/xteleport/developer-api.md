@@ -83,9 +83,9 @@ The player gets xTeleport's warmup (moving or damage cancels it, with the countd
 | `homeLimit(player)` | memory | How many homes they may have. |
 | `warps()`, `warp(name)` | memory | The warps. |
 | `setWarp(name, location)`, `deleteWarp(name)` | future | Changes them; `warps()` shows it at once. |
+| `spawn()` | memory | Where `/spawn` goes. |
 
 A change that the database couldn't save completes its future exceptionally, and is undone in memory too, so `cachedHomes` and `warps()` never show what isn't saved. Handle it as you would any failure: tell whoever asked to try again.
-| `spawn()` | memory | Where `/spawn` goes. |
 
 `Home` and `Warp` are records with the world's name and the coordinates; `location()` gives a `Location` if the world is loaded.
 

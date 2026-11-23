@@ -59,7 +59,8 @@ jobs:
       contents: read
     outputs:
       newest: ${{ steps.newest.outputs.minecraft }}
-    # A real MariaDB, so xRewind's MySqlTest runs the same SQL its MySQL users do.
+    # A real MariaDB, so the MySQL tests (the core's change feed, xRewind, xVote, xBans,
+    # xMoney and xStats) run the same SQL their MySQL users do.
     services:
       mariadb:
         image: mariadb:11
@@ -110,7 +111,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.compile != ''
     runs-on: ubuntu-26.04
-    # A hung test or server fails the job instead of holding a runner for six hours.
+    # A hung build fails the job instead of holding a runner for six hours.
     timeout-minutes: 15
     permissions:
       contents: read

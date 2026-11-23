@@ -1,7 +1,9 @@
 // Builds every list of the plugins from one place, so a plugin is added once. The brand
 // repo's catalog (src/data/catalog.json, copied by `pnpm brand:sync`) gives each plugin's
-// name, words, category and colours; each plugin's build.gradle.kts gives its version and
-// whether it runs on Folia; an api/ folder means it has a developer API. From those:
+// name, words, category and colours, and whether it's released; each plugin's
+// build.gradle.kts gives its version and whether it runs on Folia; an api/ folder means it
+// has a developer API; src/data/modrinth.json lists the released plugins Modrinth is still
+// reviewing, whose Modrinth pages nothing may link yet. From those:
 //
 //   docs/src/data/plugins.json       what the docs site reads: sidebar, home, titles, footer
 //   docs/public/accents/<id>.css     each plugin's accent on its pages
@@ -9,10 +11,12 @@
 //   .github/labeler.yml              a label per plugin for pull requests
 //   .github/workflows/labels.yml     a label per plugin for bug reports
 //   .github/ISSUE_TEMPLATE/bug_report.yml   the plugin list and the /<plugin> info hint
+//   .github/ISSUE_TEMPLATE/feature_request.yml   the plugin list
 //   <plugin>/modrinth.md             "More from Xena Studios": the plugins that go with it
 //
 // Generated parts of hand-written files sit between "catalog:start" and "catalog:end"
-// markers; everything outside them is left alone.
+// markers; everything outside them is left alone. Both also report a README, Modrinth page or
+// docs page that links the Modrinth page of a plugin still in review, and the check fails on it.
 //
 //   pnpm catalog          # write them
 //   pnpm catalog:check    # fail if any is out of date (CI)
@@ -23,7 +27,9 @@ const DOCS = path.resolve(import.meta.dirname, "..");
 const ROOT = path.resolve(DOCS, "..");
 const check = process.argv.includes("--check");
 const MODRINTH = "https://modrinth.com/plugin";
-// The plugin site. Phase 5 of #80 moves it to plugins.xenastudios.co.
+const MODRINTH_ORG = "https://modrinth.com/organization/xena-studios";
+const RELEASES = "https://github.com/xena-studios/plugins/releases";
+// The plugin site.
 const SITE = "https://plugins.xenastudios.co";
 
 interface CatalogPlugin {
@@ -50,6 +56,14 @@ interface Catalog {
 const catalog: Catalog = JSON.parse(fs.readFileSync(path.join(DOCS, "src/data/catalog.json"), "utf8"));
 if (catalog.version !== 1) throw new Error(`src/data/catalog.json is version ${catalog.version}; this script reads version 1`);
 
+// Released plugins whose Modrinth project Modrinth hasn't approved yet: a project in review is
+// a 404 to everyone else, so it's linked nowhere, and it downloads from GitHub until then.
+const review: { inReview: string[] } = JSON.parse(fs.readFileSync(path.join(DOCS, "src/data/modrinth.json"), "utf8"));
+for (const id of review.inReview) {
+  if (!catalog.plugins.some((p) => p.id === id)) throw new Error(`src/data/modrinth.json: ${id} isn't in the catalog`);
+}
+const inReview = new Set(review.inReview);
+
 /** A plugin's facts from its own folder. */
 function facts(id: string) {
   const build = path.join(ROOT, id, "build.gradle.kts");
@@ -73,8 +87,9 @@ const plugins = catalog.plugins.map((p) => {
     ...p,
     ...f,
     docs: `/${p.id}/`,
-    // Only a released plugin has a public Modrinth page; a draft's link is a 404 for everyone else.
-    modrinth: p.released ? `${MODRINTH}/${p.id}` : null,
+    // Only a plugin Modrinth has approved has a public page there. A draft's, or one still in
+    // review, is a 404 for everyone else.
+    modrinth: p.released && !inReview.has(p.id) ? `${MODRINTH}/${p.id}` : null,
     maven: f.api ? `co.xenastudios.${p.id}:${p.id}-api` : null,
   };
 });
@@ -135,16 +150,22 @@ for (const category of catalog.categories) {
   if (!inCategory.length) continue;
   rows.push(`**${category}**`, "", "| | Plugin | | |", "|---|---|---|---|");
   for (const p of inCategory) {
-    const links = [`[Docs](${SITE}${p.docs})`, p.modrinth ? `[Modrinth](${p.modrinth})` : "Coming soon"].join(" · ");
-    rows.push(`| <img src="docs/src/assets/plugins/${p.id}.svg" width="40" alt=""> | **[${p.name}](${p.id})** | ${p.tagline} | ${links} |`);
+    // Its Modrinth page once Modrinth has approved it; until then its download page, which
+    // lists its GitHub releases.
+    const get = p.modrinth ? `[Modrinth](${p.modrinth})` : p.released ? `[Download](${SITE}${p.docs}download/)` : "Coming soon";
+    rows.push(`| <img src="docs/src/assets/plugins/${p.id}.svg" width="40" alt=""> | **[${p.name}](${p.id})** | ${p.tagline} | [Docs](${SITE}${p.docs}) · ${get} |`);
   }
   rows.push("");
 }
 const folia = plugins.filter((p) => p.folia).map((p) => p.name);
 const list = (names: string[]) => (names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`);
 const count = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"][plugins.length] ?? String(plugins.length);
+const onModrinth = plugins.filter((p) => p.modrinth).map((p) => p.name);
+const where = onModrinth.length === plugins.length
+  ? `Get them on [Modrinth](${MODRINTH_ORG})`
+  : `Download them from [GitHub](${RELEASES})${onModrinth.length ? `, and ${list(onModrinth)} from [Modrinth](${MODRINTH_ORG}) too` : ""}`;
 rows.push(
-  `All ${count} need Paper 1.21.11+ and Java 21+. ${list(folia)} also run on Folia. Get them on [Modrinth](https://modrinth.com/organization/xena-studios); the [docs](${SITE}) cover setup, commands, permissions and config.`,
+  `All ${count} need Paper 1.21.11+ and Java 21+. ${list(folia)} also run on Folia. ${where}; the [docs](${SITE}) cover setup, commands, permissions and config.`,
 );
 between("README.md", rows.join("\n"));
 
@@ -158,8 +179,9 @@ between(
   plugins.map((p) => `            ${p.name}) label=${p.id} ;;`).join("\n"),
 );
 
-// --- The bug report form ---
+// --- The bug report and feature request forms ---
 between(".github/ISSUE_TEMPLATE/bug_report.yml", plugins.map((p) => `        - ${p.name}`).join("\n"));
+between(".github/ISSUE_TEMPLATE/feature_request.yml", plugins.map((p) => `        - ${p.name}`).join("\n"));
 {
   const file = ".github/ISSUE_TEMPLATE/bug_report.yml";
   const text = outputs.get(file)!;
@@ -168,9 +190,10 @@ between(".github/ISSUE_TEMPLATE/bug_report.yml", plugins.map((p) => `        - $
 }
 
 // --- Modrinth pages: "More from Xena Studios", the plugins that go with this one ---
-// src/data/related.json says which, and why. A released one links to its Modrinth page; one
-// that isn't out yet links to its docs, marked coming soon (a draft's Modrinth page is a 404
-// for everyone else). Only pages with the markers (new-plugin's template has them).
+// src/data/related.json says which, and why. One on Modrinth links to its Modrinth page. One
+// Modrinth is still reviewing links to its docs, as does one that isn't out yet, marked coming
+// soon: their Modrinth pages are a 404 for everyone else. Only pages with the markers
+// (new-plugin's template has them).
 const related: Record<string, Record<string, string>> = JSON.parse(fs.readFileSync(path.join(DOCS, "src/data/related.json"), "utf8"));
 for (const [id, list] of Object.entries(related)) {
   if (id === "//") continue;
@@ -185,11 +208,9 @@ for (const p of plugins) {
   if (!fs.existsSync(full) || !/catalog:start/.test(fs.readFileSync(full, "utf8"))) continue;
   // Released ones first, each group in the order related.json gives. A plugin it doesn't list
   // yet (a new one) gets every other released plugin, with its blurb.
-  const why = related[p.id] ?? Object.fromEntries(plugins.filter((o) => o.id !== p.id && o.modrinth).map((o) => [o.id, o.blurb]));
-  const shown = Object.keys(why).map((id) => plugins.find((o) => o.id === id)!).sort((a, b) => Number(!a.modrinth) - Number(!b.modrinth));
-  const lines = shown.map((o) => o.modrinth
-    ? `- **[${o.name}](${o.modrinth})**: ${o.tagline} ${why[o.id]}`
-    : `- **[${o.name}](${SITE}${o.docs})** (coming soon): ${o.tagline} ${why[o.id]}`);
+  const why = related[p.id] ?? Object.fromEntries(plugins.filter((o) => o.id !== p.id && o.released).map((o) => [o.id, o.blurb]));
+  const shown = Object.keys(why).map((id) => plugins.find((o) => o.id === id)!).sort((a, b) => Number(!a.released) - Number(!b.released));
+  const lines = shown.map((o) => `- **[${o.name}](${o.modrinth ?? SITE + o.docs})**${o.released ? "" : " (coming soon)"}: ${o.tagline} ${why[o.id]}`);
   if (!lines.length) lines.push("- More are on the way.");
   between(file, [...lines, "", `Every plugin in the family: **[plugins.xenastudios.co](${SITE}/)**`].join("\n"));
 }
@@ -203,7 +224,8 @@ for (const p of plugins) {
     .replace(/^## Unreleased$/m, "## Unreleased\n\nIn the next release.");
   write(
     `docs/src/content/docs/${p.id}/changelog.md`,
-    `---\n# ${GENERATED} From ${p.id}/CHANGELOG.md.\ntitle: Changelog\ndescription: "What changed in each ${p.name} release."\nsidebar:\n  order: 90\n---\n\n${changelog.trimEnd()}\n`,
+    // Its Edit page link opens the changelog it's made from, not this generated copy.
+    `---\n# ${GENERATED} From ${p.id}/CHANGELOG.md.\ntitle: Changelog\ndescription: "What changed in each ${p.name} release."\neditUrl: https://github.com/xena-studios/plugins/edit/main/${p.id}/CHANGELOG.md\nsidebar:\n  order: 90\n---\n\n${changelog.trimEnd()}\n`,
   );
   write(
     `docs/src/content/docs/${p.id}/download.mdx`,
@@ -214,6 +236,34 @@ for (const p of plugins) {
   const text = outputs.get(overview) ?? fs.readFileSync(path.join(ROOT, overview), "utf8");
   const updated = text.replace(/^(Current version: \*\*)[^*]+(\*\*)/m, `$1${p.version}$2`);
   if (updated !== text) write(overview, updated);
+}
+
+// --- Nothing links a Modrinth page that's still in review: it's a 404 for everyone else ---
+// Checked in what this writes and in the hand-written pages: the README, each plugin's README
+// and Modrinth page (which may link its own project), the docs' pages and components, and
+// xStats' website, which owners serve to everyone.
+const reviewLinks: string[] = [];
+if (inReview.size) {
+  const link = new RegExp(`modrinth\\.com/(?:plugin|project)/(${[...inReview].join("|")})(?![a-z0-9-])`, "g");
+  const docsFiles = ["src/content", "src/components"].flatMap((dir) =>
+    fs.readdirSync(path.join(DOCS, dir), { recursive: true, encoding: "utf8" })
+      .filter((file) => /\.(md|mdx|astro)$/.test(file))
+      .map((file) => `docs/${dir}/${file.split(path.sep).join("/")}`));
+  const site = fs.readdirSync(path.join(ROOT, "xstats/web")).map((file) => `xstats/web/${file}`);
+  for (const file of ["README.md", ...plugins.flatMap((p) => [`${p.id}/README.md`, `${p.id}/modrinth.md`]), ...docsFiles, ...site]) {
+    let text = outputs.get(file);
+    if (text === undefined) {
+      try {
+        text = fs.readFileSync(path.join(ROOT, file), "utf8");
+      } catch {
+        continue;
+      }
+    }
+    for (const match of text.matchAll(link)) {
+      if (file === `${match[1]}/modrinth.md`) continue;
+      reviewLinks.push(`${file}:${text.slice(0, match.index).split("\n").length}: ${match[0]}`);
+    }
+  }
 }
 
 // --- Write, or check ---
@@ -240,6 +290,14 @@ for (const file of fs.readdirSync(path.join(DOCS, "public/accents"))) {
 }
 if (check && stale.length) {
   console.error(`Out of date (run pnpm catalog in docs/):\n  ${stale.join("\n  ")}`);
-  process.exit(1);
 }
+// Writing still succeeds, so release.ts and new-plugin.ts, which write and then commit, never
+// stop half-way; CI's check fails on it.
+if (reviewLinks.length) {
+  console.error(
+    `Links to Modrinth pages still in review, which are a 404 for everyone else (src/data/modrinth.json). ` +
+      `Link the plugin's docs or its download page (${SITE}/<id>/download/) instead:\n  ${reviewLinks.join("\n  ")}`,
+  );
+}
+if (check && (stale.length || reviewLinks.length)) process.exit(1);
 console.log(check ? `catalog: ${outputs.size} files up to date` : `catalog: wrote ${outputs.size} files`);

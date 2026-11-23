@@ -24,7 +24,7 @@ A rollback brings back what a broken block held: a chest's items, a sign's text.
 
 ## Commands
 
-`/xr inspect` to click blocks for their history, `/xr lookup` to search it with CoreProtect's parameters (`u:` `t:` `r:` `a:` `i:` `e:`), `/xr rollback` and `/xr restore` with the same parameters (and `#preview`), `/xr undo`, and `/xr status` to see that logging is keeping up. See [Commands](/xrewind/commands/).
+`/xr inspect` to click blocks for their history, `/xr lookup` to search it with CoreProtect's parameters (`u:` `t:` `r:` `a:` `i:` `e:` `w:`), `/xr rollback` and `/xr restore` with the same parameters (and `#preview`), `/xr undo`, and `/xr status` to see that logging is keeping up. See [Commands](/xrewind/commands/).
 
 ## Storage
 

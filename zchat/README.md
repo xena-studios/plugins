@@ -30,7 +30,7 @@ src/main/java/co/xenastudios/zchat/
   ZChat.java       the plugin: declares the config and, in setup, the features it turns on
   Api.java         the developer API's implementation, registered while the plugin is enabled
   chat/            the chat path: the listener, formats, the filter, mentions, anti-repeat
-  command/         /mutechat, /clearchat, /togglechat, and private messages (/msg, /reply, social spy)
+  command/         /mutechat, /clearchat, /togglechat, /filter, and private messages (/msg, /reply, social spy)
   config/          the config records; ZConfig carries a zChat 2 config forward
 boot-checks.txt    console commands CI runs on real Paper and Folia servers, and what each must log
 CHANGELOG.md       one section per release; the release workflow publishes it

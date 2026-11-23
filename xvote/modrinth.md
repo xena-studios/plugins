@@ -14,7 +14,7 @@ Vote rewards usually take two plugins: one to receive votes from server lists, a
 - **A Votifier built in.** Votifier v1 and v2, so every server list that sends Votifier votes works with xVote. It runs on its own threads, with limits per address, a deadline per connection and a cap on how many at once, so a flood or a slow connection can't touch your server.
 - **Every vote paid once.** Every vote is a row in a ledger, and a server takes a vote in the database before paying it. Offline players are paid when they join. A name that has never joined waits until it does, Bedrock prefix or not.
 - **Networks without a proxy plugin.** Share one MySQL database and a vote for a player on another backend is paid there, within seconds. Never twice, even when two servers try at once.
-- **You won't feel it running.** Totals and leaderboards live in memory, the database is written on its own thread, and nothing repeats unless you turn on timed reminders.
+- **You won't feel it running.** Totals and leaderboards live in memory, the database is written on its own thread, and on a single server nothing repeats unless you turn on timed reminders.
 - **Every change applies on reload**, sites and rewards included. Only storage and network settings wait for a restart.
 - **Paper and Folia.** One jar runs on Paper, Purpur and Folia.
 - **Easy to switch to.** It takes over NuVotifier's keys and tokens on its first start, so every list keeps working without you touching it, and imports every player's total from VotingPlugin or SuperbVote.
@@ -56,8 +56,8 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xvote]
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
-- **[xMoney](https://plugins.xenastudios.co/xmoney/)** (coming soon): The economy and Vault, in one plugin. Money rewards through Vault, with no Vault.jar installed.
-- **[xStats](https://plugins.xenastudios.co/xstats/)** (coming soon): Every player's stats, on your own website. Turn xVote's placeholders into daily, weekly and monthly leaderboards, and onto your stats website.
+- **[xMoney](https://plugins.xenastudios.co/xmoney/)**: The economy and Vault, in one plugin. Money rewards through Vault, with no Vault.jar installed.
+- **[xStats](https://plugins.xenastudios.co/xstats/)**: Every player's stats, on your own website. Turn xVote's placeholders into daily, weekly and monthly leaderboards, and onto your stats website.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

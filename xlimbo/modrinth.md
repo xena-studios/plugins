@@ -62,8 +62,8 @@ Velocity, BungeeCord, and keeping `/join` secure: **[plugins.xenastudios.co/xlim
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
+- **[xBans](https://plugins.xenastudios.co/xbans/)**: Bans, mutes and warnings. Nothing slips through. Install it on the limbo server too and it enforces the network's bans there, with nothing else to set up.
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. The everyday commands for the main server, in the same look.
-- **[xBans](https://plugins.xenastudios.co/xbans/)** (coming soon): Bans, mutes and warnings. Nothing slips through. Install it on the limbo server too and it enforces the network's bans there, with nothing else to set up.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

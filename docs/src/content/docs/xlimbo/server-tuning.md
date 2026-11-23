@@ -20,13 +20,13 @@ xLimbo sets view and simulation distance on its own world, but the server-wide v
 
 ## spigot.yml
 
-Lower the `entity-tracking-range` values and `merge-radius`, and keep `view-distance` in step with `server.properties`.
+Lower the `entity-activation-range` and `entity-tracking-range` values, and keep `view-distance` in step with `server.properties`.
 
 ## Paper
 
 In `config/paper-global.yml`, raise `chunk-loading-basic.player-max-chunk-send-rate` only if arrivals feel slow; void chunks are tiny, so sending them is cheap.
 
-In `config/paper-world-defaults.yml`, tighten entity activation ranges and keep `max-auto-save-chunks-per-tick` low. xLimbo keeps its world off disk anyway.
+In `config/paper-world-defaults.yml`, keep `max-auto-save-chunks-per-tick` low. xLimbo keeps its world off disk anyway.
 
 ## What xLimbo already does
 

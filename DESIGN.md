@@ -181,7 +181,7 @@ A deepslate family of violet-tinted near-blacks, one cool attribute blue, the to
 - **The plugin's accent** (no fixed value): on a plugin's pages, `public/accents/<id>.css` replaces the lavender with that plugin's colour. On the home inventory each slot and tooltip carries its own item's accent as `--item`. Values are the catalog's `accentText` (`src/data/plugins.json`, written by `scripts/catalog.ts` from xena-studios/brand). Where the brand colour is too dark for text on deepslate, the catalog carries a lighter text value (xBans uses a lighter red than its brand red); the horizon keeps the brand value.
 
 ### Secondary
-- **Attribute Blue** (`attribute`): the tooltip's attribute lines. Used for stats (version, platforms, jar budget, Developer API), feature titles in lore lists, and the download facts line. It marks measured facts and nothing else.
+- **Attribute Blue** (`attribute`): the tooltip's attribute lines. Used for stats (version, platforms, jar budget, Developer API), feature titles in lore lists, aside titles, and the download facts line. Beyond those titles, it marks measured facts and nothing else.
 
 ### Tertiary
 - **Tooltip Violet** (`tooltip-border-top` to `tooltip-border-bottom`): the item tooltip's 2px vertical gradient border, over `tooltip-ground` with a `tooltip-outline` ring outside it. Used on tooltips, asides and overview lore lists, nowhere else.
@@ -215,13 +215,13 @@ A deepslate family of violet-tinted near-blacks, one cool attribute blue, the to
 **Character:** Space Grotesk carries names and words in bold with tight negative tracking, like a GUI's item names; JetBrains Mono is the readout, used for stats and short labels, never for prose. Both are self-hosted.
 
 ### Hierarchy
-- **Display** (700, `clamp(2.4rem, 1.4rem + 3.4vw, 4.75rem)`, 0.98): the home page's one heading, beside the inventory.
+- **Display** (700, `clamp(2.4rem, 1.4rem + 3.4vw, 4.75rem)`, 0.98): the home page's one heading, above the inventory.
 - **Headline** (700, `clamp(2.25rem, 1.5rem + 2.6vw, 3.75rem)`, 1): a plugin overview's name, in the plugin's accent.
 - **Title** (700, `clamp(1.75rem, 1.3rem + 1.9vw, 2.75rem)`, 1.12, -0.02em): every other page's h1; h2 to h4 in the reading column share the weight and tracking, balanced.
 - **Item Name** (700, 1.375rem, -0.01em): the name at the top of a docked tooltip, in the item's accent; 1rem on the floating tooltip. The download page's version line is a larger cousin (`clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem)`).
 - **Lead** (400, `clamp(1.0625rem, 1rem + 0.35vw, 1.25rem)`, 1.6): the home pitch, in lore grey, held to 34ch.
 - **Body** (400, 1rem, Starlight's line height): the reading column, at Starlight's default measure, with pretty wrapping.
-- **Lore** (400, 0.9375rem, 1.55): tooltip lore and overview lore lines, in `lore`.
+- **Lore** (400, 0.9375rem, 1.55): tooltip lore, in `lore`. Overview lore lines use the same colour and line height at the body size.
 - **Button** (700, 0.9375rem, 1.2): every GUI button.
 - **Stat** (mono 400, 0.8125rem, 1.7, tabular figures): attribute lines in `attribute`.
 - **Label** (mono 400, 0.75rem, 0.14em, uppercase): sidebar group names, the "Plugins" site label, aside titles. Table headers use 500 at 0.12em; inventory row labels use 0.6875rem at 0.12em in `hint`.
@@ -274,8 +274,8 @@ Every panel, slot, button, tooltip, aside, code block, navigation item and table
 ### Buttons
 Raised GUI blocks that press in.
 - **Shape:** square (0px), 2px `edge` border, button bevel, at least 2.75rem tall.
-- **Primary:** filled with the page's accent (or the item's accent on the home tooltip), `on-accent` ink, bevel mixed from the accent. One per surface: Download, or the Modrinth link before a version exists.
-- **Secondary:** `panel` with `text`: How it works, Commands, Configuration, What's new, Modrinth.
+- **Primary:** filled with the page's accent (or the item's accent on the home tooltip), `on-accent` ink, bevel mixed from the accent. One per surface: Download, or the link to every version on GitHub when the download page has no version to show. On the download page, Download is the jar itself: from Modrinth, or from the plugin's GitHub release while it's still in Modrinth's review.
+- **Secondary:** `panel` with `text`: How it works, Commands, Configuration, What's new, and Modrinth or GitHub (wherever the download page's versions came from).
 - **Hover:** brightness 1.18 over 120ms. **Active:** presses 2px down with the bevel inverted (80ms). **Focus:** a 2px `text` outline, 2px offset. **Disabled:** desaturated and dimmed, not clickable.
 - Starlight's link buttons wear the same material.
 
@@ -292,7 +292,7 @@ The selling and handover surface.
 - **Material:** `tooltip-ground`, a 2px `tooltip-border-top` to `tooltip-border-bottom` gradient border, a 2px `tooltip-outline` ring outside it, and the tooltip float shadow.
 - **Content order:** name (in the item's accent), tagline in `text` 600, lore in `lore`, attribute lines in mono `attribute`, then actions (primary Download, secondary How it works). Unreleased items replace Download with a coming-soon line linking GitHub releases.
 - **Behaviour:** pointing at a slot shows a small floating tooltip (name and tagline) at the pointer, offset 18px right and 30px up, on fine pointers only. Click or focus chooses the slot and docks its full tooltip beside the chest; a second click opens the plugin's page. Without JavaScript each slot is a link and the first released plugin's tooltip is docked.
-- **Other uses:** the home page's reasons panel, the download page's latest-version panel, asides (title as an accent label), and overview lore lists.
+- **Other uses:** the home page's reasons panel, the download page's latest-version panel, asides (title as an attribute label), and overview lore lists.
 
 ### Overview lore
 A plugin overview opens with at most five lore lines in tooltip material: the first list on the page, flowing in two columns (`columns: 2 19rem`) on wide screens, each line in `lore` with its bold lead-in as an attribute line. Above it, the product header: the big slot, the name in the accent, the tagline, mono stats, and Download then Commands and Configuration.
@@ -314,10 +314,10 @@ The family's planet horizon, drawn at build time from the catalog. The rim is st
 - **Code blocks:** `code-ground`, square, a `rule` hairline, no shadow, JetBrains Mono for code and Space Grotesk for frame titles.
 - **Inline code:** sits in a small slot with the fine bevel.
 - **Tables:** `rule` hairlines; the header row is a GUI bar (panel with a 2px bevel top and bottom) in mono uppercase `lore`; body cells use tabular figures; a command or setting in the first column never breaks mid-name.
-- **Asides:** tooltip ground with a violet border (`tooltip-border-top` on top, `tooltip-border-bottom` elsewhere), title as an accent mono label.
+- **Asides:** tooltip ground with a violet border (`tooltip-border-top` on top, `tooltip-border-bottom` elsewhere), title as a mono label in `attribute`.
 
 ### Motion
-Short and functional, on one easing, `cubic-bezier(0.16, 1, 0.3, 1)`: buttons brighten in 120ms and press in 80ms; links change colour and underline in 160ms. The floating tooltip follows the pointer directly, with no animation. Under reduced motion every transition collapses to 1ms.
+Short and functional, on one easing, `cubic-bezier(0.16, 1, 0.3, 1)`: buttons brighten in 120ms and press in 80ms; links change colour and underline in 160ms. The one exception is the outbound arrow, which keeps xenastudios.co's nudge (1px up and right in 180ms, on that site's curve). The floating tooltip follows the pointer directly, with no animation. Under reduced motion every transition collapses to 1ms.
 
 ### Named Rules
 **The Five Lore Lines Rule.** An overview's opening lore list has at most five lines. More features belong in the page below it, not in the tooltip.
@@ -334,7 +334,7 @@ Short and functional, on one easing, `cubic-bezier(0.16, 1, 0.3, 1)`: buttons br
 - **Do** keep reading pages to a calm column inside the GUI frame.
 - **Do** drop the contents column, pager and edit line on home, overview and download pages.
 - **Do** open each overview with at most five lore lines in tooltip material.
-- **Do** set stats in mono `attribute` with tabular figures, and only stats that the build or Modrinth can back.
+- **Do** set stats in mono `attribute` with tabular figures, and only stats that the build, Modrinth or the plugin's GitHub releases can back.
 - **Do** render glyphs pixelated at a whole-slot scale.
 
 ### Don't:

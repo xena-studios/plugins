@@ -11,7 +11,7 @@ dependencyResolutionManagement {
         maven("https://repo.extendedclip.com/releases/") {
             content { includeGroup("me.clip") }
         }
-        // Vault's API and WorldGuard, which xPlots uses when they're installed.
+        // Vault's API, for the core's Vault hook.
         maven("https://jitpack.io") {
             content { includeGroup("com.github.MilkBowl") }
         }
@@ -19,6 +19,7 @@ dependencyResolutionManagement {
         maven("https://repo.codemc.io/repository/creatorfromhell/") {
             content { includeGroup("net.milkbowl.vault") }
         }
+        // WorldGuard and WorldEdit, which xPlots uses when they're installed.
         maven("https://maven.enginehub.org/repo/") {
             content {
                 includeGroupByRegex("com\\.sk89q.*")

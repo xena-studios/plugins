@@ -18,6 +18,9 @@ permissions: {}
 jobs:
   publish:
     runs-on: ubuntu-26.04
+    # A hung build or upload fails the job instead of holding a runner for six hours. Generous,
+    # since Maven Central can take a while to accept a release.
+    timeout-minutes: 60
     environment: release
     permissions:
       contents: read
@@ -120,6 +123,7 @@ jobs:
   github:
     needs: publish
     runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
@@ -148,6 +152,7 @@ jobs:
   docs:
     needs: github
     runs-on: ubuntu-26.04
+    timeout-minutes: 5
     permissions:
       actions: write
     steps:

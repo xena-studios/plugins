@@ -16,7 +16,7 @@ Players want to see their stats and where they rank. Owners want leaderboards on
 - **A website, built in.** No web host, no account. Or copy the same site to GitHub Pages or your own domain.
 - **You won't feel it running.** One save every five minutes is its only repeating task. It reads each player on their own thread, a few a tick, from the counters the server already keeps: no listeners for kills, blocks or movement. Leaderboards are worked out during the save and answered from memory.
 - **Private when players want.** `/stats private` takes a player off the website. No IP addresses are stored, and the site shows only the stats you choose.
-- **Every change applies on reload**, except where stats are stored. No restarts.
+- **Every change applies on reload**, except `storage`, `server-name` and `network`, which wait for a restart.
 - **Paper and Folia.** One jar runs on Paper, Purpur and Folia.
 
 ---
@@ -59,8 +59,8 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xstats
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
-- **[xVote](https://plugins.xenastudios.co/xvote/)** (coming soon): Votes in. Rewards out. Vote totals and streaks as placeholders, for xStats to rank by day, week and month.
-- **[xMoney](https://plugins.xenastudios.co/xmoney/)** (coming soon): The economy and Vault, in one plugin. Balances as placeholders, for a money leaderboard and a page on your stats website.
+- **[xVote](https://plugins.xenastudios.co/xvote/)**: Votes in. Rewards out. Vote totals and streaks as placeholders, for xStats to rank by day, week and month.
+- **[xMoney](https://plugins.xenastudios.co/xmoney/)**: The economy and Vault, in one plugin. Balances as placeholders, for a money leaderboard and a page on your stats website.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

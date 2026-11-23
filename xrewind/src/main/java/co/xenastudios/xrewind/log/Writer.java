@@ -17,7 +17,8 @@ import org.bukkit.inventory.ItemStack;
  * The one thread that writes the log: it takes entries off the {@link LogQueue} and
  * writes them in batches, each one transaction, every half second or as soon as a
  * batch is waiting. A batch that fails is kept and tried again, after a growing pause,
- * on a fresh connection; entries are only ever dropped by the queue's limit.
+ * on a fresh connection. Entries are dropped only by the queue's limit, or one at a time
+ * when the database won't take a row (see {@code isolate}).
  */
 public final class Writer implements Runnable {
 

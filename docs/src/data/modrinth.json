@@ -1,0 +1,13 @@
+{
+  "//": "Released plugins whose Modrinth project is still waiting for Modrinth's review. Until Modrinth approves one, its page there is a 404 to everyone else, so nothing links it: the README, the site and the other plugins' Modrinth pages send people to its docs and its download page, which lists its GitHub releases, and pnpm catalog:check fails on a link to it. When Modrinth approves one, take it off this list, point its README's Download link back at Modrinth, and run pnpm catalog. Read by scripts/catalog.ts; scripts/new-plugin.ts adds each new plugin.",
+  "inReview": [
+    "xrewind",
+    "xplots",
+    "xteleport",
+    "xvote",
+    "xbans",
+    "xmoney",
+    "xstats",
+    "xbackup"
+  ]
+}

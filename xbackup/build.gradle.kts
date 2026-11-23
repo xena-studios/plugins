@@ -22,9 +22,10 @@ paperPluginYaml {
 
 xena {
     // The shared core and bStats (about 75 KiB), plus the store engine, the backup scanner, restores
-    // and the command-line restore, and the S3, WebDAV, SFTP and FTP remotes (their libraries are
-    // downloaded when used, never shaded). About 390 KiB.
-    jarBudgetKb = 500
+    // and the command-line restore, and the S3, WebDAV, SFTP, FTP, Google Drive, OneDrive and Dropbox
+    // remotes (the SFTP and FTP libraries are downloaded when used, never shaded). About 482 KiB,
+    // with ~50 KiB of room.
+    jarBudgetKb = 530
 }
 
 tasks.shadowJar {

@@ -45,12 +45,13 @@ jobs:
             || { echo "docs=true" >> "$GITHUB_OUTPUT"; exit 0; }
           docs=false
           while read -r file; do
-            # The docs, the files scripts/catalog.ts reads (each plugin's build file and api/),
-            # and the ones it writes outside docs/.
+            # The docs, the files scripts/catalog.ts reads (each plugin's build file and api/,
+            # and the READMEs and xStats' website, which mustn't link a Modrinth page still in
+            # review), and the ones it writes outside docs/.
             case $file in
               docs/* | .github/workflows/docs.yml) docs=true ;;
-              */build.gradle.kts | */api/build.gradle.kts | */CHANGELOG.md | */modrinth.md) docs=true ;;
-              README.md | .github/labeler.yml | .github/workflows/labels.yml | .github/ISSUE_TEMPLATE/bug_report.yml) docs=true ;;
+              */build.gradle.kts | */api/build.gradle.kts | */CHANGELOG.md | */modrinth.md | */README.md | xstats/web/*) docs=true ;;
+              README.md | .github/labeler.yml | .github/workflows/labels.yml | .github/ISSUE_TEMPLATE/bug_report.yml | .github/ISSUE_TEMPLATE/feature_request.yml) docs=true ;;
             esac
           done <<< "$files"
           echo "docs=$docs" >> "$GITHUB_OUTPUT"
@@ -74,6 +75,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: docs/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      # Fails when a list of the plugins is out of date with the brand catalog and the build
+      # files (run pnpm catalog), or something links a Modrinth page that's still in review.
+      - run: pnpm catalog:check
       # Fails on a type error (astro check) or any broken internal link
       # (starlight-links-validator).
       - run: pnpm build

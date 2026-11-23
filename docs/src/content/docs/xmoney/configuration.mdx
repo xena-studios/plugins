@@ -21,6 +21,7 @@ The config is `plugins/xMoney/config.yml`, written on first start. Apply changes
 | `ledger` | How long ledger lines are kept: a year by default. |
 | `storage` | Where balances are kept: SQLite in the plugin's folder (`money.db`), or MySQL/MariaDB. |
 | `network` | Sharing balances between servers. |
+| `network-wait-ms` | On a network, the longest a withdrawal on a server thread, such as a shop's, waits for the database: see [Networks](#networks). |
 | `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
 
 ## Currency
@@ -53,7 +54,7 @@ Why it's experimental: a shop asks Vault on the server thread and needs an answe
 - Once the database has taken a payment up, the server waits for its answer, a few milliseconds normally. If the payment hasn't reached its commit within a second, it's undone and refused, with nothing taken; with one slow reply still to wait out, that's about 4 seconds at most. The commit itself waits at most 3 more. xMoney's own connection to the database gives up on connecting, or on any one reply, after 3 seconds, whatever `storage.mysql.properties` says, and while the database is away it tries again every 2 seconds.
 - If the database closed xMoney's connection while the server was quiet (MySQL's `wait_timeout`), the connection is checked and replaced before the next payment, not tried and failed.
 
-**If the database dies at the moment a withdrawal commits, the calling thread waits until the database answers again.** Whether the money was taken is never guessed: a payment reported as failed was never charged. On the main thread that can freeze the server, which is why network mode is experimental. Leases, planned for 1.1 ([#66](https://github.com/xena-studios/plugins/issues/66)), remove the case: each online player's balance is decided by the server they're on, in memory.
+**If the database dies at the moment a withdrawal commits, the calling thread waits until the database answers again.** Whether the money was taken is never guessed: a payment reported as failed was never charged. On the main thread that can freeze the server, which is why network mode is experimental. Leases ([#66](https://github.com/xena-studios/plugins/issues/66)) would remove the case: each online player's balance would be decided by the server they're on, in memory. They're designed, but not planned for a release.
 
 A burst of deposits (thousands in one moment, from a plugin paying everyone) is saved together, and a withdrawal that arrives meanwhile waits for that save; on a server thread it's refused after `network-wait-ms`, with nothing taken.
 

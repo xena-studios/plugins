@@ -6,12 +6,12 @@ xRewind is a block logger with rollback for Paper and Folia. When someone griefs
 
 - **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon. Automatic purges included.
 - **New Minecraft versions the same week.** Paper's API only, no server internals, so an update rarely breaks it.
-- **You won't feel it running.** Nothing touches the database on a game thread: changes are queued as a few numbers and written in batches.
+- **You won't feel it running.** Nothing touches the database on a game thread: changes are queued as small records and written in batches.
 - **Rollback that doesn't freeze the server.** Blocks are set a few milliseconds per tick, region by region on Folia. Preview it first, and undo it after.
 - **Easy to switch to.** CoreProtect's command syntax, and its history imported with `/xr import coreprotect`.
 - **Every change applies on reload**, even what's logged and where it's stored. No restarts.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xrewind)** · [Docs](https://plugins.xenastudios.co/xrewind/) · [Commands](https://plugins.xenastudios.co/xrewind/commands/) · [Switching from CoreProtect](https://plugins.xenastudios.co/xrewind/switching/) · [Developer API](https://plugins.xenastudios.co/xrewind/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download](https://plugins.xenastudios.co/xrewind/download/)** · [Docs](https://plugins.xenastudios.co/xrewind/) · [Commands](https://plugins.xenastudios.co/xrewind/commands/) · [Switching from CoreProtect](https://plugins.xenastudios.co/xrewind/switching/) · [Developer API](https://plugins.xenastudios.co/xrewind/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB.
 

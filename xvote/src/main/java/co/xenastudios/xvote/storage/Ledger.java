@@ -79,7 +79,8 @@ public final class Ledger {
             insert.setString(2, name);
             insert.setString(3, key(name));
             insert.setString(4, vote.site());
-            insert.setString(5, vote.address());
+            // Never the voter's address: xVote doesn't need it (Schema).
+            insert.setString(5, "");
             insert.setString(6, vote.timestamp());
             insert.setString(7, vote.source().name());
             insert.setLong(8, vote.receivedAt());

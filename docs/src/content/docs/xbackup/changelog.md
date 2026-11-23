@@ -7,6 +7,14 @@ sidebar:
   order: 90
 ---
 
+## Unreleased
+
+In the next release.
+
+### Fixed
+
+- While Modrinth is still reviewing xBackup, the update checker asks GitHub for its releases instead, so you hear about new versions either way. It sends GitHub only xBackup's version, as it does Modrinth.
+
 ## 1.0.0
 
 The first release. Drop the jar in and start the server: it backs up every hour into `plugins/xBackup/repository`, with nothing to set up. Run `/backup now`, then `/backup status`.

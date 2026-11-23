@@ -7,6 +7,15 @@ sidebar:
   order: 90
 ---
 
+## Unreleased
+
+In the next release.
+
+### Fixed
+
+- The config's comment on `currency.decimals` said amounts typed into commands are rounded to them. They're refused if they have more; the comment says so now. Your config gets the new comment on the next start.
+- While Modrinth is still reviewing xMoney, the update checker asks GitHub for its releases instead, so you hear about new versions either way. It sends GitHub only xMoney's version, as it does Modrinth.
+
 ## 1.0.0
 
 The first release. Remove Vault or VaultUnlocked, drop the jar in and start the server: xMoney is your economy and your Vault, with balances kept in SQLite in its own folder and nothing to set up. Coming from another economy plugin? Run `/xmoney import essentials`, `cmi` or `vault` before removing it.
@@ -29,6 +38,6 @@ The first release. Remove Vault or VaultUnlocked, drop the jar in and start the 
 
 - Imports from EssentialsX, CMI and any economy registered with Vault, each with a dry run first, and a second confirmation if it would undo changes made in xMoney since.
 - A name belongs to the player who joined with it last, and stays theirs after a restart: `/pay Steve` and other plugins' payments by name never reach a player who used to be called Steve.
-- Networks (experimental): servers sharing one MySQL or MariaDB database share balances, and can never spend the same money twice. A shop's purchase waits at most 50 ms for the database to take it up and a few seconds for its answer, and is refused with nothing taken if the database is slow or away. A purchase reported as failed was never charged, so if the database dies at the very moment one commits, the server waits until it answers again; leases in 1.1 (#66) remove that case.
+- Networks (experimental): servers sharing one MySQL or MariaDB database share balances, and can never spend the same money twice. A shop's purchase waits at most 50 ms for the database to take it up and a few seconds for its answer, and is refused with nothing taken if the database is slow or away. A purchase reported as failed was never charged, so if the database dies at the very moment one commits, the server waits until it answers again; per-player leases (#66) would remove that case, but they aren't planned.
 - PlaceholderAPI: `%xmoney_balance%` (and `_raw`, `_short`), and `%xmoney_top_<rank>_name%` and `_balance`.
 - A developer API for payments with a reason in the ledger, the top list and history, and two events.

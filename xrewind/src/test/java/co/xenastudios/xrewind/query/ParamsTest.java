@@ -44,6 +44,15 @@ class ParamsTest {
     }
 
     @Test
+    void itemsWorkAsCoreProtectsDo() {
+        // Who took diamonds from a chest: an item, matched against what went in or out.
+        Query query = Params.parse(List.of("a:-container", "i:diamond", "e:diamond_sword,Steve"));
+        assertEquals(List.of("diamond"), query.blocks());
+        assertEquals(List.of("diamond_sword"), query.excludedBlocks());
+        assertEquals(List.of("steve"), query.excludedUsers());
+    }
+
+    @Test
     void mistakesSayWhatsWrong() {
         for (String bad : new String[] {"x:1", "t:soon", "r:far", "a:dance", "i:notablock", "#loud", "stone", "u:"}) {
             IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> Params.parse(List.of(bad)), bad);

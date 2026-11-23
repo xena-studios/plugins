@@ -1,5 +1,13 @@
 # xPlots changelog
 
+## Unreleased
+
+### Fixed
+
+- `/xplots reload` from the console of an empty server now runs while Paper has paused it, instead of waiting for a player to join.
+- After `/xplots plot create`, the reply said the plot's sign is in the middle of its south edge. It's placed as the field's signs are, which is the left corner by default; the reply says so now.
+- While Modrinth is still reviewing xPlots, the update checker asks GitHub for its releases instead, so you hear about new versions either way. It sends GitHub only xPlots' version, as it does Modrinth.
+
 ## 1.0.1
 
 Replace the jar and restart. Your config gains two sign settings; everything else is kept.

@@ -7,6 +7,14 @@ sidebar:
   order: 90
 ---
 
+## Unreleased
+
+In the next release.
+
+### Fixed
+
+- While Modrinth is still reviewing xTeleport, the update checker asks GitHub for its releases instead, so you hear about new versions either way. It sends GitHub only xTeleport's version, as it does Modrinth.
+
 ## 1.0.0
 
 The first release. Drop the jar in and start the server: homes and warps are kept in SQLite in its own folder, with nothing to set up. Coming from EssentialsX? Run `/xteleport import essentials` to see what it would bring, then add `confirm`.

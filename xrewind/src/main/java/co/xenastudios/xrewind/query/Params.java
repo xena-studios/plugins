@@ -72,7 +72,7 @@ public final class Params {
                 }
                 case "e", "exclude" -> {
                     for (String item : list(value)) {
-                        // A block name excludes the block; anything else, the player or source.
+                        // A block or item name excludes it; anything else, the player or source.
                         if (Material.matchMaterial(item) != null && !item.startsWith("#")) {
                             excludedBlocks.add(block(item));
                         } else {
@@ -138,10 +138,12 @@ public final class Params {
         };
     }
 
+    // A block or an item: blocks match what was broken or placed, items what went in or out of
+    // a container, as CoreProtect's i: does (i:diamond with a:-container).
     private static String block(String name) {
         Material material = Material.matchMaterial(name);
-        if (material == null || !material.isBlock()) {
-            throw new IllegalArgumentException(name + " isn't a block.");
+        if (material == null || !(material.isBlock() || material.isItem())) {
+            throw new IllegalArgumentException(name + " isn't a block or an item.");
         }
         return material.getKey().getKey();
     }

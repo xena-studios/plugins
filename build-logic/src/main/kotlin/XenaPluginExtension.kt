@@ -10,4 +10,16 @@ abstract class XenaPluginExtension {
 
     /** The plugin's Modrinth project slug. Defaults to the module name. */
     abstract val modrinthId: Property<String>
+
+    /**
+     * The plugin's Hangar project slug, such as `xPlots`. Unset until the project exists on
+     * hangar.papermc.io; until then releases and page syncs skip Hangar.
+     */
+    abstract val hangarId: Property<String>
+
+    /**
+     * The plugin's voxel.shop resource id: the number at the end of its link. Unset until the
+     * resource exists; until then releases skip voxel.shop.
+     */
+    abstract val voxelId: Property<Int>
 }

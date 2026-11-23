@@ -1,7 +1,8 @@
-name: Modrinth pages
+name: Store pages
 
-# Publishes <plugin>/modrinth.md as the plugin's Modrinth project page when it
-# changes on main, or every page when run by hand. Releases publish it too.
+# Publishes <plugin>/modrinth.md as the plugin's Modrinth and Hangar project pages
+# when it changes on main, or every page when run by hand. Releases publish it too.
+# Hangar is skipped for a plugin with no Hangar project yet (xena.hangarId).
 on:
   push:
     branches: [main]
@@ -11,7 +12,7 @@ on:
 permissions:
   contents: read
 
-concurrency: modrinth-pages
+concurrency: store-pages
 
 jobs:
   sync:
@@ -34,7 +35,7 @@ jobs:
           else
             changed=$(printf '%s\n' ./*/modrinth.md | sed 's#^\./##')
           fi
-          tasks=$(for f in $changed; do printf ':%s:modrinthSyncBody ' "${f%/modrinth.md}"; done)
+          tasks=$(for f in $changed; do printf ':%s:modrinthSyncBody :%s:syncAllPagesToHangar ' "${f%/modrinth.md}" "${f%/modrinth.md}"; done)
           echo "tasks=$tasks" >> "$GITHUB_OUTPUT"
       - if: steps.plugins.outputs.tasks != ''
         uses: actions/setup-java@v6
@@ -52,3 +53,4 @@ jobs:
         env:
           TASKS: ${{ steps.plugins.outputs.tasks }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          HANGAR_API_TOKEN: ${{ secrets.HANGAR_API_TOKEN }}

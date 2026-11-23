@@ -7,6 +7,7 @@ dependencies {
     implementation(plugin(libs.plugins.resource.factory))
     implementation(plugin(libs.plugins.run.paper))
     implementation(plugin(libs.plugins.minotaur))
+    implementation(plugin(libs.plugins.hangar.publish))
     implementation(plugin(libs.plugins.maven.publish))
     // Reads each API's class files for its signature check.
     implementation(libs.asm.tree)

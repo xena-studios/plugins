@@ -59,8 +59,8 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xplots
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
-- **[xRewind](https://modrinth.com/plugin/xrewind)**: Every change, logged. Any of it, undone. See who placed or broke what on a plot, and put it back.
-- **[xMoney](https://plugins.xenastudios.co/xmoney/)** (coming soon): The economy and Vault, in one plugin. Rent paid through Vault, with no Vault.jar installed.
+- **[xMoney](https://plugins.xenastudios.co/xmoney/)**: The economy and Vault, in one plugin. Rent paid through Vault, with no Vault.jar installed.
+- **[xRewind](https://plugins.xenastudios.co/xrewind/)**: Every change, logged. Any of it, undone. See who placed or broke what on a plot, and put it back.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

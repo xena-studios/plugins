@@ -11,8 +11,8 @@ import java.util.List;
  * <ul>
  *   <li>{@code totals}: each player's all-time value of each stat on each server, the
  *       last reading of Minecraft's own counter ({@code raw}, -1 for stats that aren't one),
- *       and when the row was last written ({@code updated}, epoch milliseconds), so a gauge
- *       on a network is the latest any server wrote.</li>
+ *       and when the value was last read or set ({@code updated}, epoch milliseconds), so a
+ *       gauge on a network is the one read last.</li>
  *   <li>{@code daily}: how much a stat went up on a day, only for stats with periods and
  *       only on days it changed. {@code day} is days since 1970-01-01 in the config's time zone.</li>
  *   <li>{@code monthly}: daily rows older than {@code periods.keep-daily-days}, added up per

@@ -51,7 +51,7 @@ The receiver runs on its own threads and never touches the game. What it does wi
 
 **Behind a tunnel or proxy** (playit.gg, TCPShield, and the like), every list's votes arrive from the tunnel's address, so the limits per address count all your lists together. Raise `per-ip-connections` and `per-ip-per-minute`, or set both to `0`, and keep `max-connections` as the cap.
 
-A list's wrong token or key is logged once per list, not on every vote, until the next reload. Anything else that isn't a vote (port scanners send plenty) is logged once per kind, so it can't fill the console or hide a list's mistake. If accepting a connection ever fails, the receiver waits a moment and keeps trying; `/xvote status` says if it has stopped, and `/xvote reload` starts it again.
+A wrong token or key is logged once, not on every vote, until the next reload: once for each list with a token of its own, and once in all for the public key and the `default` token, since a port scanner can cause those too. Anything else that isn't a vote (port scanners send plenty) is logged once per kind, so it can't fill the console or hide a list's mistake. If accepting a connection ever fails, the receiver waits a moment and keeps trying; `/xvote status` says if it has stopped, and `/xvote reload` starts it again.
 
 ## Sites
 

@@ -20,6 +20,14 @@
       "enabled": false
     },
     {
+      "description": "xPlots compiles against the newest WorldGuard and WorldEdit built for Java 21 (xplots/build.gradle.kts). Later ones are Java 25 class files, which JDK 21 can't read, so they're bumped by hand when the build moves to Java 25.",
+      "matchPackageNames": [
+        "com.sk89q.worldguard:**",
+        "com.sk89q.worldedit:**"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Third-party actions run with the repo's secrets, so they're pinned to a commit (CodeQL flags tags, which can be moved); Renovate keeps the pins current. GitHub's own actions stay on tags.",
       "matchManagers": [
         "github-actions"
@@ -38,6 +46,15 @@
         "digest"
       ],
       "automerge": true
+    },
+    {
+      "description": "xBackup downloads these when an SFTP or FTP remote is used, and checks each jar against the SHA-256 in xbackup/src/main/java/co/xenastudios/xbackup/remote/Libraries.java, which LibrariesTest compares with this version. A bump needs the new hash too, so it gets its own pull request, merged by hand. Last, so it wins over the automerge rule above.",
+      "matchPackageNames": [
+        "com.github.mwiede:jsch",
+        "commons-net:commons-net"
+      ],
+      "groupName": "xBackup's downloaded libraries",
+      "automerge": false
     }
   ]
 }

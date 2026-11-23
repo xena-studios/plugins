@@ -7,6 +7,17 @@ dist/
 .idea/
 *.iml
 .vscode/
+# Eclipse JDT, which VS Code's Java extension writes into each Gradle project
+bin/
+.classpath
+.project
+.settings/
+.factorypath
+# Claude Code's own files for this clone
+.claude/settings.local.json
+.claude/worktrees/
+# A design tool's working state; DESIGN.md and PRODUCT.md are the record
+.impeccable/
 
 # Gradle
 .gradle/
@@ -15,3 +26,7 @@ build/
 # Paper servers for boot tests and runServer
 .cache/
 run/
+# JVM crash and heap dumps
+hs_err_pid*.log
+replay_pid*.log
+*.hprof

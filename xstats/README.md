@@ -10,9 +10,9 @@ xStats is player stats, leaderboards, placeholders and a stats website the serve
 - **Leaderboards per day, week, month and all time,** worked out during the save and answered from memory: `/leaderboard`, `%xstats_top_kills_monthly_1_name%`, Paper text display boards.
 - **A stats website, built in.** Search, profiles, leaderboards and totals in the server's own name, logo and colours, on Java's own HTTP server, with a documented JSON API. Or the same site as static files, hosted anywhere.
 - **You won't feel it running.** One save task, every five minutes, reading each player on their own thread, a few a tick.
-- **Every change applies on reload**, except where stats are stored. No restarts.
+- **Every change applies on reload**, except `storage`, `server-name` and `network`, which wait for a restart.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xstats)** · [Docs](https://plugins.xenastudios.co/xstats/) · [Commands](https://plugins.xenastudios.co/xstats/commands/) · [The website](https://plugins.xenastudios.co/xstats/website/) · [Developer API](https://plugins.xenastudios.co/xstats/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download](https://plugins.xenastudios.co/xstats/download/)** · [Docs](https://plugins.xenastudios.co/xstats/) · [Commands](https://plugins.xenastudios.co/xstats/commands/) · [The website](https://plugins.xenastudios.co/xstats/website/) · [Developer API](https://plugins.xenastudios.co/xstats/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. PlaceholderAPI is optional.
 

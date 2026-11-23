@@ -8,11 +8,11 @@ xVote receives votes from server lists and rewards players for them, in one jar 
 - **A Votifier built in.** v1 and v2, on its own threads, with limits per address, per connection and in total.
 - **Every vote paid once.** Every vote is a row; a server takes a vote in the database before paying it, so two servers sharing a database can't both pay it. Offline votes are paid on join.
 - **Rewards your way.** Money, items, commands, messages, broadcasts and sounds, on every vote, per site, first of the day, every Nth vote, streaks and totals, plus a vote party.
-- **You won't feel it running.** Totals and leaderboards in memory, the database on its own thread, nothing repeating unless timed reminders are on.
+- **You won't feel it running.** Totals and leaderboards in memory, the database on its own thread, nothing repeating on a single server unless timed reminders are on.
 - **Every change applies on reload**, all but storage and network settings. No restarts.
 - **Easy to switch to.** NuVotifier's keys and tokens taken over on first start, so no list needs changing, and totals imported from VotingPlugin and SuperbVote.
 
-**[Download on Modrinth](https://modrinth.com/plugin/xvote)** · [Docs](https://plugins.xenastudios.co/xvote/) · [Setting up](https://plugins.xenastudios.co/xvote/setting-up/) · [Commands](https://plugins.xenastudios.co/xvote/commands/) · [Switching](https://plugins.xenastudios.co/xvote/switching/) · [Developer API](https://plugins.xenastudios.co/xvote/developer-api/) · [Changelog](CHANGELOG.md)
+**[Download](https://plugins.xenastudios.co/xvote/download/)** · [Docs](https://plugins.xenastudios.co/xvote/) · [Setting up](https://plugins.xenastudios.co/xvote/setting-up/) · [Commands](https://plugins.xenastudios.co/xvote/commands/) · [Switching](https://plugins.xenastudios.co/xvote/switching/) · [Developer API](https://plugins.xenastudios.co/xvote/developer-api/) · [Changelog](CHANGELOG.md)
 
 Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQLite out of the box, or MySQL/MariaDB. Vault and PlaceholderAPI are optional.
 

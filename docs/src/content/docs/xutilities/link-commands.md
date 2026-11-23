@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-Link commands are commands you define in the config, with no code: each one sends the player a message, usually a clickable link. xUtilities ships three examples, `/discord`, `/store` and `/website`, pointing at `example.com` addresses. **Replace those URLs** before you go live.
+Link commands are commands you define in the config, with no code: each one sends the player a message, usually a clickable link. xUtilities ships three examples, `/discord`, `/store` and `/website`, pointing at placeholder addresses. **Replace those URLs** before you go live.
 
 They live under `info-commands` in `plugins/xUtilities/config.yml`. Each key becomes a command:
 

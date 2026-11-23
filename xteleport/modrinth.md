@@ -34,7 +34,7 @@ Players expect homes, TPA, warps, spawn and `/rtp`. Usually that means a big all
 
 ## What your staff get
 
-- **Limits by permission or group:** `xteleport.homes.<n>`, or `vip: 5` in the config for a LuckPerms group.
+- **Limits by permission or group:** `xteleport.homes.<n>`, or a LuckPerms group such as `vip` under `homes.limits` in the config.
 - **Cooldowns and Vault costs** per command, taken after the warmup and refunded if a teleport fails, with bypass permissions.
 - **Anyone's homes, online or not:** `/home Steve:base`, `/homes Steve`.
 - **Per-warp permissions**, spawn on first join, every join or respawn, and per-world RTP radii and permissions.
@@ -63,7 +63,7 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xtelep
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. `/back` and `/top`: `/back` takes players back from every xTeleport teleport.
-- **[xMoney](https://plugins.xenastudios.co/xmoney/)** (coming soon): The economy and Vault, in one plugin. Teleport costs through Vault, with no Vault.jar installed.
+- **[xMoney](https://plugins.xenastudios.co/xmoney/)**: The economy and Vault, in one plugin. Teleport costs through Vault, with no Vault.jar installed.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

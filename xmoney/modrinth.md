@@ -59,9 +59,9 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/xmoney
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
-- **[xPlots](https://modrinth.com/plugin/xplots)**: Rentable plots, set up in a minute. Plots players rent with xMoney, through Vault.
-- **[xVote](https://plugins.xenastudios.co/xvote/)** (coming soon): Votes in. Rewards out. Pays vote rewards into xMoney balances through Vault.
-- **[xTeleport](https://plugins.xenastudios.co/xteleport/)** (coming soon): Every teleport your server needs. Teleport costs, taken from xMoney balances through Vault.
+- **[xVote](https://plugins.xenastudios.co/xvote/)**: Votes in. Rewards out. Pays vote rewards into xMoney balances through Vault.
+- **[xPlots](https://plugins.xenastudios.co/xplots/)**: Rentable plots, set up in a minute. Plots players rent with xMoney, through Vault.
+- **[xTeleport](https://plugins.xenastudios.co/xteleport/)**: Every teleport your server needs. Teleport costs, taken from xMoney balances through Vault.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

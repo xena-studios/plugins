@@ -23,9 +23,13 @@ xStats gives players their stats, everyone leaderboards, and you placeholders an
 - **Nothing is lost to a crash** of Minecraft's own stats: xStats keeps the last reading of each counter, and the next reading makes up the difference. Playtime and placeholder stats lose at most one save's worth.
 - **The website** runs on Java's built-in web server, only while it's on, with a limit per visitor and the pages everyone sees made once per save.
 
+## Storage
+
+Stats are kept in SQLite out of the box, in `plugins/xStats/stats.db`, or in MySQL/MariaDB, in [documented tables](/xstats/database/). Several servers can share one MySQL database: see [Networks](/xstats/networks/).
+
 ## What else it does
 
-- **Every change applies on reload**, except where stats are stored. No restarts.
+- **Every change applies on reload**, except `storage`, `server-name` and `network`, which wait for a restart.
 
 ## Getting started
 

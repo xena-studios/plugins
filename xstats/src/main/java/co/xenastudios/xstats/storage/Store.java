@@ -255,7 +255,7 @@ public final class Store {
                         result.getLong(4), result.getLong(5), result.getInt(6) != 0, result.getInt(7) != 0));
                 }
             }
-            // On a network: every server's rows added up, and the one written last (by the
+            // On a network: every server's rows added up, and the one with the latest updated (by the
             // primary key's first two columns, so a lookup per player and stat, not a scan).
             String totalsSql = network
                 ? "SELECT t.player, t.stat, SUM(t.value), (SELECT l.value FROM {p}totals l"

@@ -74,8 +74,8 @@ Full setup, every setting and every permission: **[plugins.xenastudios.co/zchat]
 ## More from Xena Studios
 
 <!-- catalog:start: the other released plugins, from the brand catalog (pnpm catalog in docs/). -->
+- **[xBans](https://plugins.xenastudios.co/xbans/)**: Bans, mutes and warnings. Nothing slips through. Mutes that hold in chat and `/msg`, by every alias, with a history of who was muted and why.
 - **[xUtilities](https://modrinth.com/plugin/xutilities)**: Every command you need. None you don't. The everyday commands, `/fly`, `/heal` and `/back`, in the same look.
-- **[xBans](https://plugins.xenastudios.co/xbans/)** (coming soon): Bans, mutes and warnings. Nothing slips through. Mutes that hold in chat and `/msg`, by every alias, with a history of who was muted and why.
 
 Every plugin in the family: **[plugins.xenastudios.co](https://plugins.xenastudios.co/)**
 <!-- catalog:end -->

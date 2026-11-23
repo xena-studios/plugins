@@ -13,7 +13,7 @@ dependencies {
 }
 ```
 
-Until it's on Maven Central, build it from the [repo](https://github.com/xena-studios/plugins) with `./gradlew :xvote:api:publishToMavenLocal` and add `mavenLocal()`.
+It's on Maven Central, so `mavenCentral()` is all the repository you need, and its Javadoc is on [javadoc.io](https://javadoc.io/doc/co.xenastudios.xvote/xvote-api).
 
 ## Reading
 

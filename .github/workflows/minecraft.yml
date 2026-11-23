@@ -18,6 +18,8 @@ concurrency: minecraft
 jobs:
   check:
     runs-on: ubuntu-26.04
+    # A hung download fails the job instead of holding a runner for six hours.
+    timeout-minutes: 15
     permissions:
       contents: write
       pull-requests: write

@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        A plan the build follows, milestone by milestone. `node scripts/new-plugin.ts <id> <Name> <category>` does M0 (see CONTRIBUTING.md, "Adding a plugin").
+        A plan the build follows, milestone by milestone. `node scripts/new-plugin.ts <id> <Name> <category>` does most of M0 (see CONTRIBUTING.md, "Adding a plugin").
   - type: input
     id: name
     attributes:
@@ -42,7 +42,7 @@ body:
       label: Milestones
       description: Keep the standard ones and add the plugin's own between M1 and M5.
       value: |
-        - [ ] **M0: Scaffolding.** `node scripts/new-plugin.ts`: the module, config, API, docs pages, brand glyph and accent, a reserved Modrinth slug.
+        - [ ] **M0: Scaffolding.** `node scripts/new-plugin.ts`: the module, config, API, docs pages, brand glyph and accent. Then the Modrinth slug, reserved as a draft.
         - [ ] **M1:** the core feature, with tests.
         - [ ] **M2:**
         - [ ] **M3:**

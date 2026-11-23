@@ -1,10 +1,14 @@
 ---
 // A plugin's download page: its latest version first, then every version before it, read
-// from Modrinth's API when the site is built (a release redeploys the site, and it's
-// rebuilt daily). Downloads go through Modrinth's CDN, so they count on Modrinth; each
-// version links its GitHub release as a mirror. Before a plugin's first release, or if
-// Modrinth can't be reached, the page says so and links what there is instead.
+// when the site is built (a release redeploys the site, and it's rebuilt daily). For a plugin
+// on Modrinth they come from Modrinth's API and downloads go through Modrinth's CDN, so they
+// count on Modrinth; a version that's also a GitHub release links it as a mirror. A plugin Modrinth is
+// still reviewing (src/data/modrinth.json) has no public Modrinth page yet, so its versions
+// and jars come from its GitHub releases, as they do when Modrinth can't be reached. Before a
+// plugin's first release, or if neither can be reached, the page says so and links what there
+// is instead.
 import catalog from "../data/plugins.json" with { type: "json" };
+import { releases } from "../releases.ts";
 import External from "./External.astro";
 
 interface Props {
@@ -24,13 +28,33 @@ interface ModrinthVersion {
   loaders: string[];
   files: ModrinthFile[];
 }
+/** A version, from Modrinth or from GitHub. */
+interface Version {
+  number: string;
+  /** "release", or Modrinth's "beta" or "alpha", or GitHub's "pre-release". */
+  type: string;
+  date: string;
+  /** From Modrinth only: GitHub doesn't say. */
+  minecraft?: string;
+  loaders?: string;
+  file: { url: string; name: string; size: number };
+  github: string;
+}
 
 const { plugin: id } = Astro.props;
 const p = catalog.plugins.find((x) => x.id === id);
 if (!p) throw new Error(`Downloads: ${id} isn't in the catalog`);
 const repo = "https://github.com/xena-studios/plugins";
+const everyRelease = `${repo}/releases?q=${id}-v`;
 
-let versions: ModrinthVersion[] = [];
+// "1.21.11 to 26.3", from Modrinth's list (oldest first).
+const minecraft = (v: ModrinthVersion) =>
+  v.game_versions.length > 1 ? `${v.game_versions[0]} to ${v.game_versions.at(-1)}` : (v.game_versions[0] ?? "");
+const loaders = (v: ModrinthVersion) =>
+  v.loaders.map((l) => ({ paper: "Paper", folia: "Folia", purpur: "Purpur", spigot: "Spigot", bukkit: "Bukkit" })[l] ?? l).join(", ");
+
+let versions: Version[] = [];
+let from: "modrinth" | "github" | null = null;
 let unreachable = false;
 if (p.modrinth) {
   try {
@@ -38,64 +62,108 @@ if (p.modrinth) {
       headers: { "User-Agent": "xena-studios/plugins docs build (contact@xenastudios.co)" },
       signal: AbortSignal.timeout(15_000),
     });
-    if (answer.ok) versions = await answer.json();
-    else if (answer.status !== 404) unreachable = true;
+    if (answer.ok) {
+      versions = ((await answer.json()) as ModrinthVersion[]).flatMap((v) => {
+        const file = v.files.find((f) => f.primary) ?? v.files[0];
+        if (!file) return [];
+        return [{
+          number: v.version_number,
+          type: v.version_type,
+          date: v.date_published,
+          minecraft: minecraft(v),
+          loaders: loaders(v),
+          file: { url: file.url, name: file.filename, size: file.size },
+          github: `${repo}/releases/tag/${id}-v${v.version_number}`,
+        }];
+      });
+      if (versions.length) from = "modrinth";
+    } else if (answer.status !== 404) unreachable = true;
   } catch {
     unreachable = true;
   }
 }
-// Newest first, as Modrinth sends them; the latest is the newest full release.
-const latest = versions.find((v) => v.version_type === "release") ?? versions[0];
+// Not on Modrinth yet, or Modrinth couldn't say: its GitHub releases.
+if (!versions.length && p.released) {
+  const found = await releases(id);
+  if (found) {
+    unreachable = false;
+    versions = found.map((r) => ({
+      number: r.version,
+      type: r.prerelease ? "pre-release" : "release",
+      date: r.date,
+      file: r.jar,
+      github: r.page,
+    }));
+    if (versions.length) from = "github";
+  } else unreachable = true;
+}
+// Newest first, as both send them; the latest is the newest full release.
+const latest = versions.find((v) => v.type === "release") ?? versions[0];
+// Modrinth also has versions from before this repository (xUtilities 1.x, for one), which
+// were never GitHub releases: only the ones that are link their mirror. If GitHub can't say,
+// every version links it, as most are.
+const mirrored = from === "modrinth" ? await releases(id) : null;
+const hasMirror = (v: Version) => !mirrored || mirrored.some((r) => r.version === v.number);
 
-const file = (v: ModrinthVersion) => v.files.find((f) => f.primary) ?? v.files[0];
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const size = (bytes: number) => `${Math.round(bytes / 1024)} KiB`;
-// "1.21.11 to 26.3", from Modrinth's list (oldest first).
-const minecraft = (v: ModrinthVersion) =>
-  v.game_versions.length > 1 ? `${v.game_versions[0]} to ${v.game_versions.at(-1)}` : (v.game_versions[0] ?? "");
-const loaders = (v: ModrinthVersion) =>
-  v.loaders.map((l) => ({ paper: "Paper", folia: "Folia", purpur: "Purpur", spigot: "Spigot", bukkit: "Bukkit" })[l] ?? l).join(", ");
 // The changelog page's heading for a version ("## 2.1.0" becomes #210).
-const changes = (v: ModrinthVersion) => `/${id}/changelog/#${v.version_number.toLowerCase().replace(/[^a-z0-9-]/g, "")}`;
-const github = (v: ModrinthVersion) => `${repo}/releases/tag/${id}-v${v.version_number}`;
+const changes = (v: Version) => `/${id}/changelog/#${v.number.toLowerCase().replace(/[^a-z0-9-]/g, "")}`;
+const runsOn = p.folia ? "Paper, Purpur and Folia" : "Paper and Purpur";
+// The oldest Minecraft every plugin supports (gradle/libs.versions.toml), as on each overview.
+const facts = (v: Version) =>
+  from === "modrinth"
+    ? `Minecraft ${v.minecraft} · ${v.loaders} · ${date(v.date)}`
+    : `${runsOn} 1.21.11+ · ${date(v.date)}`;
 ---
 {
   latest ? (
     <div class="latest gui-tooltip not-content" style={`--item: ${p.accentText}`}>
       <p class="version">
-        {p.name} {latest.version_number}
+        {p.name} {latest.number}
       </p>
-      <p class="facts gui-stat">
-        Minecraft {minecraft(latest)} · {loaders(latest)} · {date(latest.date_published)}
-      </p>
+      <p class="facts gui-stat">{facts(latest)}</p>
       <p class="actions">
-        <a class="gui-button primary" href={file(latest).url} download>
-          Download {file(latest).filename} <span class="size">({size(file(latest).size)})</span>
+        <a class="gui-button primary" href={latest.file.url} download>
+          Download {latest.file.name} <span class="size">({size(latest.file.size)})</span>
         </a>
         <a class="gui-button" href={changes(latest)}>What's new</a>
-        <a class="gui-button" href={p.modrinth!}>
-          Modrinth
-          <External />
-        </a>
+        {from === "modrinth" ? (
+          <a class="gui-button" href={p.modrinth!}>
+            Modrinth
+            <External />
+          </a>
+        ) : (
+          <a class="gui-button" href={latest.github}>
+            GitHub
+            <External />
+          </a>
+        )}
       </p>
       <p class="needs">Needs Java 21 or newer. {p.folia ? "One jar runs on Paper, Purpur and Folia." : "Runs on Paper and Purpur."}</p>
     </div>
   ) : (
     <div class="latest gui-tooltip not-content" style={`--item: ${p.accentText}`}>
       <p class="facts">
-        {unreachable
-          ? "Modrinth couldn't be reached when this page was built."
-          : p.released
-            ? `${p.name}'s versions are on Modrinth.`
-            : `${p.name} isn't released yet. Its first version will be here and on Modrinth.`}
+        {!p.released
+          ? `${p.name} isn't released yet. Its first version will be here.`
+          : unreachable
+            ? `${p.name}'s versions couldn't be read when this page was built.`
+            : `${p.name}'s versions are on GitHub.`}
       </p>
-      {p.modrinth && (
+      {p.released && (
         <p class="actions">
-          <a class="gui-button primary" href={`${p.modrinth}/versions`}>
-            All versions on Modrinth
+          <a class="gui-button primary" href={everyRelease}>
+            Every version on GitHub
             <External />
           </a>
+          {p.modrinth && (
+            <a class="gui-button" href={`${p.modrinth}/versions`}>
+              Modrinth
+              <External />
+            </a>
+          )}
         </p>
       )}
     </div>
@@ -111,8 +179,8 @@ const github = (v: ModrinthVersion) => `${repo}/releases/tag/${id}-v${v.version_
           <tr>
             <th>Version</th>
             <th>Released</th>
-            <th>Minecraft</th>
-            <th>Runs on</th>
+            {from === "modrinth" && <th>Minecraft</th>}
+            {from === "modrinth" && <th>Runs on</th>}
             <th>Download</th>
           </tr>
         </thead>
@@ -120,24 +188,38 @@ const github = (v: ModrinthVersion) => `${repo}/releases/tag/${id}-v${v.version_
           {versions.map((v) => (
             <tr>
               <td>
-                <a href={changes(v)}>{v.version_number}</a>
-                {v.version_type !== "release" && <span class="type">{v.version_type}</span>}
+                <a href={changes(v)}>{v.number}</a>
+                {v.type !== "release" && <span class="type">{v.type}</span>}
               </td>
-              <td>{date(v.date_published)}</td>
-              <td>{minecraft(v)}</td>
-              <td>{loaders(v)}</td>
+              <td>{date(v.date)}</td>
+              {from === "modrinth" && <td>{v.minecraft}</td>}
+              {from === "modrinth" && <td>{v.loaders}</td>}
               <td>
-                <a href={file(v).url} download>
+                <a href={v.file.url} download>
                   .jar
-                </a>{" "}
-                · <a href={github(v)}>GitHub</a>
+                </a>
+                {from === "modrinth" && hasMirror(v) && (
+                  <>
+                    {" "}
+                    · <a href={v.github}>GitHub</a>
+                  </>
+                )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
       <p>
-        Every version is also a <a href={`${repo}/releases?q=${id}-v`}>GitHub release</a>, with the same jar. The <a href={`/${id}/changelog/`}>changelog</a> says what changed in each.
+        {from === "modrinth" ? (
+          <>
+            {versions.every(hasMirror) ? "Every version" : "Each version marked GitHub"} is also a <a href={everyRelease}>GitHub release</a>, with the same jar.
+          </>
+        ) : (
+          <>
+            Every version is a <a href={everyRelease}>GitHub release</a>.
+          </>
+        )}{" "}
+        The <a href={`/${id}/changelog/`}>changelog</a> says what changed in each.
       </p>
     </>
   )

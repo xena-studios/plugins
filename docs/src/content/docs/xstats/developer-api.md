@@ -97,4 +97,4 @@ Each of these will plug into xStats through the section and stat API above, on w
 | xTeleport | Homes set, random teleports |
 | zChat | Messages sent, mentions |
 
-They come in later releases, once those plugins' own APIs are out.
+They come in later releases.

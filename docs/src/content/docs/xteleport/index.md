@@ -15,7 +15,6 @@ xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, f
 - **No deaths on arrival.** A home, warp or TPA that would land a player in lava, inside blocks, over the void or high in the air is refused with a message. The spot is loaded in the background to check it, never on the server's thread.
 - **Easy to switch to.** EssentialsX's command names, so players keep typing what they know, and its homes, warps and spawn imported with one command. See [Switching from EssentialsX](/xteleport/switching/).
 
-
 ## How it works
 
 **Homes** belong to a player. Each player may have 3 by default; `xteleport.homes.<n>` permissions and the config's `homes.limits` raise it. With `homes.bed-home` on, `/home bed` goes to a player's bed or respawn anchor and doesn't count towards the limit.
@@ -28,7 +27,7 @@ xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, f
 
 **RTP** picks a spot in a ring around each world's centre, between `min-radius` and `max-radius`, inside the world border. It skips lava, water, leaves, powder snow and the void, and oceans unless you change `rtp.blocked-biomes`. The Nether is searched under its roof, and the End off its main island.
 
-## Lightweight
+## You won't feel it running
 
 - **Nothing repeats.** A warmup is a short check four times a second on the waiting player's own thread, and it ends with the warmup. Requests run out when they're next looked at, not on a timer.
 - **Listeners only for what's on.** The damage listener is only registered while someone is warming up, and the spawn listener only while a spawn option is on.

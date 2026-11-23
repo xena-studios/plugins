@@ -22,7 +22,7 @@ paperPluginYaml {
 
 xena {
     // The shared core and bStats (about 75 KiB), plus chat formats, the filter,
-    // mentions, anti-repeat and private messages. About 159 KiB, with ~50 KiB of room.
+    // mentions, anti-repeat and private messages. About 188 KiB, with ~20 KiB of room.
     jarBudgetKb = 210
 }
 

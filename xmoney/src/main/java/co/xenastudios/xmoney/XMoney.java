@@ -38,8 +38,8 @@ import org.bukkit.plugin.ServicePriority;
 public class XMoney extends XenaPlugin<XMConfig> {
 
     /**
-     * The plugin's name, as players and owners see it. "xMoney" is a working name (#22): a
-     * rename changes this, {@code pluginName} in build.gradle.kts, and the docs.
+     * The plugin's name, as players and owners see it. A rename changes this,
+     * {@code pluginName} in build.gradle.kts, and the docs.
      */
     public static final String NAME = "xMoney";
     /** Its lowercase id: the admin command, permission prefix and placeholder prefix. */

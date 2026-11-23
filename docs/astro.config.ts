@@ -80,7 +80,7 @@ export default defineConfig({
           label: "More from Xena Studios",
           items: [
             { label: "Raptor docs", link: "https://docs.raptorpanel.net" },
-            { label: "NeoSkript", link: "https://github.com/xena-studios/neoskript", badge: { text: "Soon", variant: "note" } },
+            { label: "NeoSkript", link: "https://neoskript.dev", badge: { text: "Beta", variant: "note" } },
             { label: "xenastudios.co", link: "https://xenastudios.co" },
           ],
         },

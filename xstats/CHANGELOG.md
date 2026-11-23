@@ -1,5 +1,11 @@
 # xStats changelog
 
+## Unreleased
+
+### Fixed
+
+- The website's "Stats by xStats" link opens xStats' docs, which stay up whatever happens to its Modrinth page.
+
 ## 1.0.0
 
 The first release. Drop the jar in and start the server: stats are kept in SQLite in its own folder, with nothing to set up, and every player's history is read from the world's stats files on first start.

@@ -218,10 +218,10 @@ for (const p of plugins) {
 }
 
 // --- Badges: where to get it, what it runs on, the docs ---
-// Xena's badges, from the brand repo (xena-studios/brand, badges/; its docs/badges.md has the
+// Xena's badges, from the brand repo's v1 releases through jsDelivr (badges/; its docs/badges.md has the
 // rules): each plugin's in its own accent, the family's in the studio's. Compact on GitHub,
 // cozy on Modrinth, and no Modrinth badge on the Modrinth page itself.
-const BADGES = "https://raw.githubusercontent.com/xena-studios/brand/main/badges";
+const BADGES = "https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges";
 type Style = "compact" | "cozy";
 type BadgeName = "modrinth" | "github" | "paper" | "purpur" | "folia" | "docs";
 const ALT: Record<BadgeName, string> = {

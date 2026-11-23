@@ -218,46 +218,46 @@ for (const p of plugins) {
 }
 
 // --- Badges: where to get it, what it runs on, the docs ---
-// Devin's Badges (CC0) from jsDelivr, pinned to its major version, and the ones it lacks (Folia,
-// docs) from the brand repo, drawn to match. The brand repo's docs/badges.md has the rules:
-// compact at 32px on GitHub, cozy at 48px on Modrinth, and no Modrinth badge on Modrinth.
-const LIBRARY = "https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets";
-const OURS = "https://raw.githubusercontent.com/xena-studios/brand/main/badges";
+// Xena's badges, from the brand repo (xena-studios/brand, badges/; its docs/badges.md has the
+// rules): each plugin's in its own accent, the family's in the studio's. Compact on GitHub,
+// cozy on Modrinth, and no Modrinth badge on the Modrinth page itself.
+const BADGES = "https://raw.githubusercontent.com/xena-studios/brand/main/badges";
 type Style = "compact" | "cozy";
-const BADGES = {
-  modrinth: { alt: "Available on Modrinth", src: (s: Style) => `${LIBRARY}/${s}/available/modrinth_vector.svg` },
-  github: { alt: "Available on GitHub", src: (s: Style) => `${LIBRARY}/${s}/available/github_vector.svg` },
-  paper: { alt: "Available for Paper", src: (s: Style) => `${LIBRARY}/${s}/supported/paper_vector.svg` },
-  purpur: { alt: "Available for Purpur", src: (s: Style) => `${LIBRARY}/${s}/supported/purpur_vector.svg` },
-  folia: { alt: "Available for Folia", src: (s: Style) => `${OURS}/${s}/supported/folia.svg` },
-  docs: { alt: "Read the Docs", src: (s: Style) => `${OURS}/${s}/documentation/docs.svg` },
+type BadgeName = "modrinth" | "github" | "paper" | "purpur" | "folia" | "docs";
+const ALT: Record<BadgeName, string> = {
+  modrinth: "Available on Modrinth",
+  github: "Available on GitHub",
+  paper: "Runs on Paper",
+  purpur: "Runs on Purpur",
+  folia: "Runs on Folia",
+  docs: "Read the Docs",
 };
 const HEIGHT: Record<Style, number> = { compact: 32, cozy: 48 };
-function badgeRow(style: Style, items: [keyof typeof BADGES, string | null][]) {
-  return items.map(([key, href]) => {
-    const b = BADGES[key];
-    const img = `<img alt="${b.alt}" height="${HEIGHT[style]}" src="${b.src(style)}">`;
+function badgeRow(theme: string, style: Style, items: [BadgeName, string | null][]) {
+  return items.map(([name, href]) => {
+    const img = `<img alt="${ALT[name]}" height="${HEIGHT[style]}" src="${BADGES}/${theme}/${style}/${name}.svg">`;
     return href ? `<a href="${href}">${img}</a>` : img;
   }).join("\n");
 }
-const runsOn = (p: { folia: boolean }): [keyof typeof BADGES, null][] =>
-  [["paper", null], ["purpur", null], ...(p.folia ? [["folia", null] as [keyof typeof BADGES, null]] : [])];
+const runsOn = (p: { folia: boolean }): [BadgeName, null][] => [["paper", null], ["purpur", null], ...(p.folia ? [["folia", null] as [BadgeName, null]] : [])];
 for (const p of plugins) {
+  const theme = `plugins/${p.id}`;
   // GitHub: where to get it (its Modrinth page once it's public, else its download page, which
   // lists its GitHub releases), what it runs on, the docs. Not out yet: no "get it" badge.
-  const get: [keyof typeof BADGES, string][] = p.modrinth ? [["modrinth", p.modrinth]] : p.released ? [["github", `${SITE}${p.docs}download/`]] : [];
-  between(`${p.id}/README.md`, badgeRow("compact", [...get, ...runsOn(p), ["docs", `${SITE}${p.docs}`]]), "badges");
+  const get: [BadgeName, string][] = p.modrinth ? [["modrinth", p.modrinth]] : p.released ? [["github", `${SITE}${p.docs}download/`]] : [];
+  between(`${p.id}/README.md`, badgeRow(theme, "compact", [...get, ...runsOn(p), ["docs", `${SITE}${p.docs}`]]), "badges");
   // Modrinth: what it runs on and the docs; the page itself is where to get it.
   const modrinthPage = `${p.id}/modrinth.md`;
   if (fs.existsSync(path.join(ROOT, modrinthPage))) {
-    between(modrinthPage, badgeRow("cozy", [...runsOn(p), ["docs", `${SITE}${p.docs}`]]), "badges");
+    between(modrinthPage, badgeRow(theme, "cozy", [...runsOn(p), ["docs", `${SITE}${p.docs}`]]), "badges");
   }
 }
-// The family: on Modrinth once any is, and the docs. Paper and Purpur only, as not all run on Folia.
+// The family, in the studio's colours: on Modrinth once any is, and the docs. Paper and
+// Purpur only, as not all run on Folia.
 between(
   "README.md",
-  badgeRow("compact", [
-    ...(onModrinth.length ? [["modrinth", MODRINTH_ORG] as [keyof typeof BADGES, string]] : [["github", RELEASES] as [keyof typeof BADGES, string]]),
+  badgeRow("xena", "compact", [
+    onModrinth.length ? ["modrinth", MODRINTH_ORG] : ["github", RELEASES],
     ["paper", null],
     ["purpur", null],
     ["docs", `${SITE}/`],

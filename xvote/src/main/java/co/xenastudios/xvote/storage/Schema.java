@@ -18,7 +18,9 @@ import java.util.List;
  * {@code /vote claim}. {@code state} keeps the vote party's count. Times are epoch
  * milliseconds; {@code last_day} is a day number in the configured time zone.
  *
- * <p>Until 1.0 is released, step 1 may still change; after, changes are new steps.
+ * <p>{@code address} is always empty: xVote never needed the voter's IP address, which a
+ * list sends with each vote, so since 1.0.1 it isn't kept (step 2 cleared those 1.0.0 kept).
+ * The event still carries it, for plugins that want it. Changes are new steps.
  */
 public final class Schema {
 
@@ -37,5 +39,6 @@ public final class Schema {
         "CREATE INDEX {p}held_player ON {p}held (uuid)",
         "CREATE TABLE {p}state (name VARCHAR(32) PRIMARY KEY, value BIGINT NOT NULL){table}",
         "INSERT INTO {p}state (name, value) VALUES ('party_votes', 0)",
-        "INSERT INTO {p}state (name, value) VALUES ('party_since', 0)"));
+        "INSERT INTO {p}state (name, value) VALUES ('party_since', 0)"),
+        SchemaStep.of(2, "voters' addresses aren't kept", "UPDATE {p}votes SET address = '' WHERE address <> ''"));
 }

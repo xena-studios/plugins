@@ -24,16 +24,22 @@ import org.bukkit.event.player.PlayerJoinEvent;
 /**
  * Asks Modrinth for the newest version at startup and every 24 hours, off the server
  * threads. It sends the plugin version (in the User-Agent), the platform and the
- * Minecraft version, and nothing else.
+ * Minecraft version, and nothing else. A project Modrinth is still reviewing is a 404 to
+ * everyone else, so then it asks GitHub for the plugin's releases instead (tags
+ * {@code <project>-v<version>}), sending only the plugin version, in the User-Agent.
  */
 final class UpdateChecker {
 
     private static final Duration PERIOD = Duration.ofHours(24);
+    // The newest 100: years of releases for every plugin together.
+    private static final String GITHUB_RELEASES = "https://api.github.com/repos/xena-studios/plugins/releases?per_page=100";
 
     private final XenaPlugin<?> plugin;
     private final String project;
     private final String current;
     private volatile String latest;
+    // Where latest was found: its notice links that release.
+    private volatile boolean latestOnGitHub;
     private String announced;
     private ScheduledTask task;
     private boolean enabled;
@@ -110,12 +116,18 @@ final class UpdateChecker {
                 .timeout(Duration.ofSeconds(20))
                 .build();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
+            String newest;
+            boolean onGitHub = response.statusCode() == 404;
+            if (response.statusCode() == 200) {
+                newest = newest(JsonParser.parseString(response.body()).getAsJsonArray());
+            } else if (onGitHub) {
+                newest = newestOnGitHub(http);
+            } else {
                 plugin.getLogger().fine("Update check got HTTP " + response.statusCode());
                 return;
             }
-            String newest = newest(JsonParser.parseString(response.body()).getAsJsonArray());
             if (newest != null && Versions.compare(newest, current) > 0) {
+                latestOnGitHub = onGitHub;
                 latest = newest;
                 if (!newest.equals(announced)) {
                     announced = newest;
@@ -153,12 +165,52 @@ final class UpdateChecker {
         return newest;
     }
 
+    // The newest of the plugin's GitHub releases, for a project Modrinth doesn't show yet.
+    private String newestOnGitHub(HttpClient http) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(GITHUB_RELEASES))
+            .header("User-Agent", "xena-studios/" + project + "/" + current + " (contact@xenastudios.co)")
+            .header("Accept", "application/vnd.github+json")
+            .timeout(Duration.ofSeconds(20))
+            .build();
+        HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            plugin.getLogger().fine("Update check got HTTP " + response.statusCode() + " from GitHub");
+            return null;
+        }
+        return newestRelease(JsonParser.parseString(response.body()).getAsJsonArray(), project, Versions.isPrerelease(current));
+    }
+
+    /**
+     * The newest version among GitHub releases tagged {@code <project>-v<version>}, skipping
+     * drafts, and pre-releases unless {@code betas}; null if there's none.
+     */
+    static String newestRelease(JsonArray releases, String project, boolean betas) {
+        String prefix = project + "-v";
+        String newest = null;
+        for (JsonElement element : releases) {
+            JsonObject release = element.getAsJsonObject();
+            String tag = release.get("tag_name").getAsString();
+            if (release.get("draft").getAsBoolean() || !tag.startsWith(prefix)) {
+                continue;
+            }
+            String number = tag.substring(prefix.length());
+            if (number.isEmpty() || !Character.isDigit(number.charAt(0))) {
+                continue;
+            }
+            if ((betas || !release.get("prerelease").getAsBoolean())
+                && (newest == null || Versions.compare(number, newest) > 0)) {
+                newest = number;
+            }
+        }
+        return newest;
+    }
+
     private Component notice(String version) {
         return plugin.config().updateChecker().message().chat(
             Placeholders.text("plugin", plugin.getName()),
             Placeholders.text("current", current),
             Placeholders.text("latest", version),
-            url(project, version));
+            latestOnGitHub ? gitHubUrl(project, version) : url(project, version));
     }
 
     /**
@@ -169,6 +221,12 @@ final class UpdateChecker {
     static TagResolver url(String project, String version) {
         return TagResolver.resolver("url", Tag.preProcessParsed(
             "https://modrinth.com/plugin/" + encode(project) + "/version/" + encode(version)));
+    }
+
+    /** The version's GitHub release as {@code <url>}, made as {@link #url} is. */
+    static TagResolver gitHubUrl(String project, String version) {
+        return TagResolver.resolver("url", Tag.preProcessParsed(
+            "https://github.com/xena-studios/plugins/releases/tag/" + encode(project + "-v" + version)));
     }
 
     private static String encode(String value) {

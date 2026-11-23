@@ -20,6 +20,15 @@ User-Agent: xena-studios/xutilities/2.0.0 (contact@xenastudios.co)
 
 That's the plugin and its version, the platform (`paper`, or `folia` on Folia) and the Minecraft version. Like any web request, it comes from your server's IP address; Modrinth's [privacy policy](https://modrinth.com/legal/privacy) covers what Modrinth does with it. Nothing about your players is sent. The other plugins send the same, with their own name in place of `xutilities`.
 
+While Modrinth is still reviewing a plugin, Modrinth answers that it doesn't know it, so the plugin asks GitHub for its releases instead (xRewind 1.1.1, xPlots 1.0.2, xTeleport, xVote, xBans, xMoney, xStats and xBackup 1.0.1, and later):
+
+```
+GET https://api.github.com/repos/xena-studios/plugins/releases?per_page=100
+User-Agent: xena-studios/xbans/1.0.1 (contact@xenastudios.co)
+```
+
+That's only the plugin and its version. GitHub's [privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement) covers what GitHub does with it.
+
 ## bStats
 
 xUtilities 2, zChat 3, xLimbo 2, xRewind, xPlots, xTeleport, xVote, xBans, xMoney, xBackup and xStats send **[bStats](https://bstats.org)**, anonymous usage statistics shared by thousands of plugins, on by default: a random server ID, player count, server software and version, Minecraft, Java and plugin versions, operating system, CPU cores, online mode, and country (worked out by bStats from the IP address, which bStats doesn't store). Turn it off for every plugin at once in `plugins/bStats/config.yml`. (zChat 1.x sent bStats too; zChat 2 and xLimbo 1 didn't.) The numbers are public: [xUtilities](https://bstats.org/plugin/bukkit/XenaUtilities/34866), [zChat](https://bstats.org/plugin/bukkit/zChat/21533), [xLimbo](https://bstats.org/plugin/bukkit/xLimbo/34867), [xRewind](https://bstats.org/plugin/bukkit/xRewind/35410), [xPlots](https://bstats.org/plugin/bukkit/xPlots/35419), [xTeleport](https://bstats.org/plugin/bukkit/XenaTeleport/35423), [xVote](https://bstats.org/plugin/bukkit/xVote/35422), [xBans](https://bstats.org/plugin/bukkit/xBans/35418), [xMoney](https://bstats.org/plugin/bukkit/xMoney/35421), [xBackup](https://bstats.org/plugin/bukkit/xBackup/35420) and [xStats](https://bstats.org/plugin/bukkit/xStats/35436) on bStats.
@@ -36,7 +45,7 @@ Players' heads on the site come from [mc-heads.net](https://mc-heads.net) (or th
 
 ## xVote's receiver
 
-xVote listens for votes from server lists, on port 8192 unless you change it, until you turn it off with `receiver.enabled: false`. Each vote carries the player's name, the list's name, the time and the voter's IP address as the list reports it, and xVote keeps votes in your own database.
+xVote listens for votes from server lists, on port 8192 unless you change it, until you turn it off with `receiver.enabled: false`. Each vote carries the player's name, the list's name, the time and the voter's IP address as the list reports it. xVote keeps votes in your own database without the address, which it passes only to plugins listening for votes (1.0.0 kept it; 1.0.1 clears it).
 
 ## xBackup's remotes
 

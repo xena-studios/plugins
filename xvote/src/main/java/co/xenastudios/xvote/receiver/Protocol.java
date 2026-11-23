@@ -131,7 +131,8 @@ public final class Protocol {
             }
             if (token == null) {
                 throw ProtocolException.vote("RuntimeException", "Unknown service '" + shown + "'", "v2-service",
-                    "A v2 vote came from \"" + shown + "\", which has no token and there's no default one. Add one with /xvote token.");
+                    "A v2 vote came from \"" + shown + "\", which has no token and there's no default one. Add one with /xvote token."
+                        + " (Said once until the next reload.)");
             }
             byte[] signature;
             try {
@@ -162,7 +163,9 @@ public final class Protocol {
     private static ProtocolException badSignature(String service, boolean own) {
         return ProtocolException.vote("CorruptedFrameException", "Signature is not valid (invalid token?)",
             own ? "v2-signature:" + service : "v2-signature",
-            "A v2 vote from \"" + service + "\" was signed with a different token. Give the list its token again (/xvote token).");
+            "A v2 vote from \"" + service + "\" was signed with a different token. Give the list its token again (/xvote token)."
+                + (own ? " (Further errors from this list are quiet until the next reload.)"
+                    : " (Said once until the next reload; a port scanner can cause it too.)"));
     }
 
     /** The HMAC-SHA256 of the payload's UTF-8 bytes, keyed with the token's UTF-8 bytes. */

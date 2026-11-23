@@ -7,6 +7,14 @@ sidebar:
   order: 90
 ---
 
+## Unreleased
+
+In the next release.
+
+### Fixed
+
+- While Modrinth is still reviewing xBans, the update checker asks GitHub for its releases instead, so you hear about new versions either way. It sends GitHub only xBans' version, as it does Modrinth.
+
 ## 1.0.0
 
 The first release. Drop the jar in and start the server: punishments are kept in SQLite in its own folder, with nothing to set up. Coming from LiteBans, EssentialsX or vanilla bans? `/xbans import <source>`.

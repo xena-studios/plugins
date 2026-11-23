@@ -1,5 +1,14 @@
 # xVote changelog
 
+## Unreleased
+
+### Fixed
+
+- xVote no longer keeps voters' IP addresses. Lists send one with each vote; xVote never used it, so it's left out of the database, and the ones 1.0.0 kept are cleared on the first start. Plugins listening for `VoteReceivedEvent` still get it.
+- `/xvote token` showed its usage as `[site]`; it takes the service name the list sends, as its reply and the docs say.
+- A wrong public key, an unknown service or a bad signature on the `default` token is logged once in all, and the message now says so, rather than "further errors from this list are quiet".
+- While Modrinth is still reviewing xVote, the update checker asks GitHub for its releases instead, so you hear about new versions either way. It sends GitHub only xVote's version, as it does Modrinth.
+
 ## 1.0.0
 
 The first release. Drop the jar in and start the server: votes are kept in SQLite in its own folder, with nothing to set up. Remove NuVotifier first; xVote takes over its keys, tokens and port.

@@ -7,6 +7,15 @@ sidebar:
   order: 90
 ---
 
+## Unreleased
+
+In the next release.
+
+### Fixed
+
+- `i:` and `e:` take items as well as blocks, as CoreProtect's do: `/xr lookup a:-container i:diamond` finds who took diamonds from a chest. Before, an item was refused as "isn't a block". The developer API's `Query.Builder.blocks` and `excludeBlocks` take items too.
+- While Modrinth is still reviewing xRewind, the update checker asks GitHub for its releases instead, so you hear about new versions either way. It sends GitHub only xRewind's version, as it does Modrinth.
+
 ## 1.1.0
 
 Replace the jar and restart. Your config is kept as it is.

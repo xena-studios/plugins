@@ -410,7 +410,8 @@ public final class Query {
         /**
          * Only changes to these blocks ({@code i:}).
          *
-         * @param materials blocks, not items
+         * @param materials blocks, matched against what was broken or placed, or items, matched
+         *     against what went in or out of a container
          * @return this builder
          * @since 1.1.0
          */
@@ -424,7 +425,8 @@ public final class Query {
         /**
          * Leaves out changes to these blocks ({@code e:}).
          *
-         * @param materials blocks, not items
+         * @param materials blocks, matched against what was broken or placed, or items, matched
+         *     against what went in or out of a container
          * @return this builder
          * @since 1.1.0
          */
@@ -462,8 +464,8 @@ public final class Query {
         }
 
         private static Material block(Material material) {
-            if (!material.isBlock()) {
-                throw new IllegalArgumentException(material + " isn't a block");
+            if (!material.isBlock() && !material.isItem()) {
+                throw new IllegalArgumentException(material + " isn't a block or an item");
             }
             return material;
         }

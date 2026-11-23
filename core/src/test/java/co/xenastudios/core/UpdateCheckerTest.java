@@ -1,9 +1,12 @@
 package co.xenastudios.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.xenastudios.core.text.Placeholders;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -48,5 +51,39 @@ class UpdateCheckerTest {
         assertEquals(ClickEvent.openUrl("https://modrinth.com/plugin/xutilities/version/2.1.0%27%3E%3Cred%3Ex"), click(notice));
         // Shown as written, so no tag took effect.
         assertTrue(PlainTextComponentSerializer.plainText().serialize(notice).startsWith("» xUtilities 2.1.0'><red>x is out"));
+    }
+
+    private static JsonArray releases(String... tags) {
+        StringBuilder json = new StringBuilder("[");
+        for (String tag : tags) {
+            // "!" marks a draft, "~" a pre-release.
+            boolean draft = tag.startsWith("!");
+            boolean pre = tag.startsWith("~");
+            String name = draft || pre ? tag.substring(1) : tag;
+            json.append(json.length() > 1 ? "," : "")
+                .append("{\"tag_name\":\"").append(name).append("\",\"draft\":").append(draft)
+                .append(",\"prerelease\":").append(pre).append('}');
+        }
+        return JsonParser.parseString(json.append(']').toString()).getAsJsonArray();
+    }
+
+    @Test
+    void gitHubGivesThePluginsNewestRelease() {
+        JsonArray list = releases("xbans-v1.0.0", "xbans-v1.0.10", "xbans-v1.0.2", "xvote-v9.0.0", "xbansplus-v5.0.0",
+            "!xbans-v2.0.0", "~xbans-v1.1.0-beta.1");
+        assertEquals("1.0.10", UpdateChecker.newestRelease(list, "xbans", false));
+        assertEquals("1.1.0-beta.1", UpdateChecker.newestRelease(list, "xbans", true));
+        assertNull(UpdateChecker.newestRelease(list, "xstats", false));
+        assertNull(UpdateChecker.newestRelease(releases("xbans-vnext"), "xbans", false));
+    }
+
+    @Test
+    void aGitHubNoticeLinksItsRelease() {
+        Component notice = UpdateCheckerSettings.DEFAULTS.message().chat(
+            Placeholders.text("plugin", "xBans"),
+            Placeholders.text("current", "1.0.0"),
+            Placeholders.text("latest", "1.0.1"),
+            UpdateChecker.gitHubUrl("xbans", "1.0.1"));
+        assertEquals(ClickEvent.openUrl("https://github.com/xena-studios/plugins/releases/tag/xbans-v1.0.1"), click(notice));
     }
 }

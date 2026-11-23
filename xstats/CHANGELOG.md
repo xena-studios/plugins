@@ -5,6 +5,7 @@
 ### Fixed
 
 - The website's "Stats by xStats" link opens xStats' docs, which stay up whatever happens to its Modrinth page.
+- While Modrinth is still reviewing xStats, the update checker asks GitHub for its releases instead, so you hear about new versions either way. It sends GitHub only xStats' version, as it does Modrinth.
 
 ## 1.0.0
 

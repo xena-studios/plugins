@@ -392,7 +392,7 @@ public final class AdminCommands {
             throw fail("<error>" + problem);
         }
         Plot plot = plugin.builder().createPlot(field, world, selection.box());
-        reply(inv.sender(), "<success>Made</success> <highlight>" + plot.id() + "</highlight>. Its sign is outside the middle of its south edge; "
+        reply(inv.sender(), "<success>Made</success> <highlight>" + plot.id() + "</highlight>. Its sign is outside its south edge, placed as the field's signs are; "
             + "sneak and right click with the wand to move it.");
     }
 

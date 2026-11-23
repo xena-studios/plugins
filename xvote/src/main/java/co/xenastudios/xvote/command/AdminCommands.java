@@ -38,7 +38,7 @@ public final class AdminCommands {
         return List.of(
             CommandSpec.named("status").permission(permission).usage("/xvote status").executes(commands::status),
             CommandSpec.named("key").permission(permission).usage("/xvote key").executes(commands::key),
-            CommandSpec.named("token").permission(permission).usage("/xvote token [site]").executes(commands::token),
+            CommandSpec.named("token").permission(permission).usage("/xvote token [service]").executes(commands::token),
             CommandSpec.named("import").permission(permission).usage("/xvote import <nuvotifier|votingplugin|superbvote>")
                 .completes((sender, args) -> args.length <= 1
                     ? Completions.matching(args.length == 0 ? "" : args[0], List.of("nuvotifier", "votingplugin", "superbvote")) : List.of())
@@ -119,7 +119,7 @@ public final class AdminCommands {
         }
     }
 
-    // ---- /xvote token [site] ----
+    // ---- /xvote token [service] ----
 
     private void token(Invocation inv) {
         CommandSender sender = inv.sender();

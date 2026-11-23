@@ -154,7 +154,7 @@ currency:
   plural: "dollars"
   symbol: "$"
   # Decimal places: 2 for cents, 0 for whole coins. At most 4. Amounts are shown with
-  # these, and amounts typed into commands rounded to them. Other plugins' amounts keep
+  # these, and amounts typed into commands may have at most this many. Other plugins' amounts keep
   # 4 places, so a payment split in two costs what it would whole. Lowering it later
   # keeps the parts of balances it no longer shows.
   decimals: 2

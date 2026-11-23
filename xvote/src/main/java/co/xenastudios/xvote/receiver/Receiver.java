@@ -38,8 +38,10 @@ import javax.net.ServerSocketFactory;
  * and tries again. Only {@link #close} ends it.
  *
  * <p>Errors are logged once and then kept quiet until the receiver is restarted by a
- * reload: a list's mistake (a wrong token or key) once per list, from a budget of its
- * own; anything else once per kind, without the address or names it carried.
+ * reload: a list's mistake (a wrong token) once per list with a token of its own, from a
+ * budget of its own; a wrong public key, a bad signature on the default token and an unknown
+ * service once each in all, since a scanner can send those; anything else once per kind,
+ * without the address or names it carried.
  */
 public final class Receiver implements AutoCloseable {
 
@@ -312,7 +314,7 @@ public final class Receiver implements AutoCloseable {
             }
         } catch (ProtocolException e) {
             if (e.voteError()) {
-                voteError(e.logKey(), "Refused a vote: " + e.logLine() + " (Further errors from this list are quiet until the next reload.)");
+                voteError(e.logKey(), "Refused a vote: " + e.logLine());
             } else {
                 noise(e.logKey(), Level.INFO, "Refused a connection that wasn't a well-formed vote: " + e.getMessage()
                     + " Scanners send these; if a list's votes go missing, check its settings. (Logged once until the next reload.)");

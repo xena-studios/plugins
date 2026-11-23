@@ -4,7 +4,7 @@ logged: Stats ready: 0 players in the SQLite database stats.db.
 # A new world has no stats folder yet, so the first-start import has nothing to read.
 logged: so there's no history to import.
 run: xstats info
-expect: xStats 1.0.0 on
+expect: xStats 1.0.1 on
 
 run: xstats reload
 expect: Reloaded xStats in

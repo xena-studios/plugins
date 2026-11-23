@@ -3,7 +3,7 @@
 # The database opens with the SQLite driver Paper and Folia ship, from a paper-plugin.
 logged: Loaded 0 bans and mutes in force from the SQLite database punishments.db, schema 1.
 run: xbans info
-expect: xBans 1.0.0 on
+expect: xBans 1.0.1 on
 
 # xBans' /ban takes over vanilla's, with LiteBans' flags and lengths.
 run: ban Steve -s 7d griefing the spawn

@@ -5,7 +5,7 @@
 logged: Loaded 0 accounts from the SQLite database money.db.
 logged: VAULT CONSUMER found xMoney
 run: xmoney info
-expect: xMoney 1.0.0 on
+expect: xMoney 1.0.1 on
 
 # A plugin.yml plugin that depends on Vault: Vault 1 and VaultUnlocked 2, from other
 # threads, for players who never joined, by name, and with NaN, negative and huge amounts.

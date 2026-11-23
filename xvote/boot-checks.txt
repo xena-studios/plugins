@@ -5,7 +5,7 @@ logged: Loaded 0 voters from the SQLite database votes.db.
 # own thread.
 logged: Listening for votes on 0.0.0.0:8192 (Votifier v1 and v2).
 run: xvote info
-expect: xVote 1.0.0 on
+expect: xVote 1.0.1 on
 run: xvote reload
 expect: Reloaded xVote in
 run: xvote status

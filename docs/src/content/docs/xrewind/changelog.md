@@ -7,9 +7,7 @@ sidebar:
   order: 90
 ---
 
-## Unreleased
-
-In the next release.
+## 1.1.1
 
 ### Fixed
 

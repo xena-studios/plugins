@@ -17,7 +17,7 @@ It's on Maven Central, so `mavenCentral()` is all the repository you need, and i
 
 ```kotlin
 dependencies {
-    compileOnly("co.xenastudios.xstats:xstats-api:1.0.0")
+    compileOnly("co.xenastudios.xstats:xstats-api:1.0.1")
 }
 ```
 
@@ -25,7 +25,7 @@ dependencies {
 <dependency>
     <groupId>co.xenastudios.xstats</groupId>
     <artifactId>xstats-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <scope>provided</scope>
 </dependency>
 ```

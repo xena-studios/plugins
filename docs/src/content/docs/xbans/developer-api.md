@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("co.xenastudios.xbans:xbans-api:1.0.0")
+    compileOnly("co.xenastudios.xbans:xbans-api:1.0.1")
 }
 ```
 
@@ -33,7 +33,7 @@ Maven:
 <dependency>
     <groupId>co.xenastudios.xbans</groupId>
     <artifactId>xbans-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <scope>provided</scope>
 </dependency>
 ```

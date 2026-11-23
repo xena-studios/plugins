@@ -17,7 +17,7 @@ It's on Maven Central, so `mavenCentral()` is all the repository you need, and i
 
 ```kotlin
 dependencies {
-    compileOnly("co.xenastudios.xmoney:xmoney-api:1.0.0")
+    compileOnly("co.xenastudios.xmoney:xmoney-api:1.0.1")
 }
 ```
 

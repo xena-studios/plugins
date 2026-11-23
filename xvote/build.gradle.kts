@@ -4,7 +4,7 @@ plugins {
     id("xena.plugin")
 }
 
-version = "1.0.0"
+version = "1.0.1"
 description = "Votes in. Rewards out."
 
 dependencies {

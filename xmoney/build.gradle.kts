@@ -7,7 +7,7 @@ plugins {
 // The name players and owners see is set here and in XMoney.NAME.
 val pluginName = "xMoney"
 
-version = "1.0.0"
+version = "1.0.1"
 description = "The economy, and Vault, in one plugin."
 
 dependencies {

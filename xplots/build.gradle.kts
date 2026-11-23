@@ -4,7 +4,7 @@ plugins {
     id("xena.plugin")
 }
 
-version = "1.0.1"
+version = "1.0.2"
 description = "Rentable plots, set up in a minute."
 
 dependencies {

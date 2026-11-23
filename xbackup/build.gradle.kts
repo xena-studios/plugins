@@ -2,7 +2,7 @@ plugins {
     id("xena.plugin")
 }
 
-version = "1.0.0"
+version = "1.0.1"
 description = "Incremental backups that cost almost nothing, and a restore you can trust."
 
 dependencies {

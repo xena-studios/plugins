@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("co.xenastudios.xrewind:xrewind-api:1.1.0")
+    compileOnly("co.xenastudios.xrewind:xrewind-api:1.1.1")
 }
 ```
 
@@ -33,7 +33,7 @@ Maven:
 <dependency>
     <groupId>co.xenastudios.xrewind</groupId>
     <artifactId>xrewind-api</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <scope>provided</scope>
 </dependency>
 ```

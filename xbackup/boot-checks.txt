@@ -2,7 +2,7 @@
 # and Folia (World#save(true) per region there), then a check, a staged restore and a clean-up.
 logged: Repository:
 run: xbackup info
-expect: xBackup 1.0.0 on
+expect: xBackup 1.0.1 on
 
 run: backup now boot test
 expect: Backed up

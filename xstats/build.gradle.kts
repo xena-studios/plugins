@@ -26,6 +26,8 @@ paperPluginYaml {
 xena {
     // hangar.papermc.io/xena-studios/xStats
     hangarId = "xStats"
+    // voxel.shop/product/10716
+    voxelId = 10716
     // The shared core and bStats (about 75 KiB), the collector, leaderboards, the web
     // server and its JSON, and the website itself (plain HTML, CSS and JS: about 64 KiB
     // since its redesign in #105, 18 compressed). About 398 KiB, with ~50 KiB of room.

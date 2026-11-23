@@ -41,11 +41,20 @@ object Stores {
         return exists("Hangar", get("${HANGAR_API}projects/${enc(project)}/versions/${enc(version)}", "Authorization" to jwt))
     }
 
-    fun voxelHas(resourceId: Int, version: String): Boolean {
+    enum class VoxelState { HAS_VERSION, MISSING_VERSION, AWAITING_APPROVAL }
+
+    fun voxelState(resourceId: Int, version: String): VoxelState {
         val response = get("${VOXEL_API}getResourceUpdates?resource_id=$resourceId&limit=50")
+        // A new resource is invisible to the API, and takes no updates, until voxel.shop's
+        // staff approve it.
+        if ("not yet been approved" in response.body()) return VoxelState.AWAITING_APPROVAL
         val body = voxelResponse(response)
         val updates = body["updates"] as? List<*> ?: emptyList<Any>()
-        return updates.any { (it as Map<*, *>)["version"]?.toString() == version }
+        return if (updates.any { (it as Map<*, *>)["version"]?.toString() == version }) {
+            VoxelState.HAS_VERSION
+        } else {
+            VoxelState.MISSING_VERSION
+        }
     }
 
     /** voxel.shop's `response` object, or a failure with its errors. */

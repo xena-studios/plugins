@@ -13,6 +13,8 @@ paperPluginYaml {
 xena {
     // hangar.papermc.io/xena-studios/xBans
     hangarId = "xBans"
+    // voxel.shop/product/10714
+    voxelId = 10714
     // The shared core and bStats are about 75 KiB; the rest is xBans' own: about 25
     // commands and their flags, the join and mute checks, history pages, alts and IPs,
     // templates, staff limits, network mode, the importers, and its API (shipped whole,

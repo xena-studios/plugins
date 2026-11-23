@@ -51,9 +51,16 @@ abstract class VoxelPublish : DefaultTask() {
     fun publish() {
         val id = resourceId.get()
         val version = version.get()
-        if (Stores.voxelHas(id, version)) {
-            logger.lifecycle("voxel.shop resource {} already has {}", id, version)
-            return
+        when (Stores.voxelState(id, version)) {
+            Stores.VoxelState.HAS_VERSION -> {
+                logger.lifecycle("voxel.shop resource {} already has {}", id, version)
+                return
+            }
+            Stores.VoxelState.AWAITING_APPROVAL -> {
+                logger.warn("voxel.shop resource {} is still waiting for approval, so {} isn't posted there", id, version)
+                return
+            }
+            Stores.VoxelState.MISSING_VERSION -> {}
         }
         val key = apiKey.orNull?.takeIf { it.isNotBlank() }
             ?: throw GradleException("VOXEL_API_KEY isn't set")

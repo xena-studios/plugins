@@ -33,6 +33,8 @@ paperPluginYaml {
 xena {
     // hangar.papermc.io/xena-studios/xPlots
     hangarId = "xPlots"
+    // voxel.shop/product/10711
+    voxelId = 10711
     // Paper only for 1.0: restoring plots and editing signs across Folia's regions adds
     // risk with little gain for box servers.
     folia = false

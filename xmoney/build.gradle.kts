@@ -49,6 +49,8 @@ tasks.shadowJar {
 xena {
     // hangar.papermc.io/xena-studios/xMoney
     hangarId = "xMoney"
+    // voxel.shop/product/10715
+    voxelId = 10715
     // The shared core and bStats are about 120 KiB here (with the database layer, change
     // feed, profiles and chat pages) and Vault's API 35; the rest is the ledger and its
     // writer, both Vault economies, commands, imports, placeholders and the API. About

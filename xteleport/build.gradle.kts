@@ -26,6 +26,8 @@ paperPluginYaml {
 }
 
 xena {
+    // hangar.papermc.io/xena-studios/xTeleport
+    hangarId = "xTeleport"
     // The shared core and bStats are about 75 KiB, the API about 15; the rest is homes,
     // TPA, warps, spawn, the RTP search, the teleport pipeline and the EssentialsX import.
     // About 292 KiB, with ~40 KiB of room.

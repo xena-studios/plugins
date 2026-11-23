@@ -11,6 +11,8 @@ paperPluginYaml {
 }
 
 xena {
+    // hangar.papermc.io/xena-studios/xRewind
+    hangarId = "xRewind"
     // The shared core and bStats are about 75 KiB; the rest is xRewind's own code: about
     // 25 listeners, the writer, lookups across five tables, rollbacks with contents and
     // undo, purges and the CoreProtect import. No database driver is shaded in: Paper and

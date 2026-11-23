@@ -21,6 +21,8 @@ paperPluginYaml {
 }
 
 xena {
+    // hangar.papermc.io/xena-studios/zChat
+    hangarId = "zChat"
     // The shared core and bStats (about 75 KiB), plus chat formats, the filter,
     // mentions, anti-repeat and private messages. About 188 KiB, with ~20 KiB of room.
     jarBudgetKb = 210

@@ -21,6 +21,8 @@ paperPluginYaml {
 }
 
 xena {
+    // hangar.papermc.io/xena-studios/xBackup
+    hangarId = "xBackup"
     // The shared core and bStats (about 75 KiB), plus the store engine, the backup scanner, restores
     // and the command-line restore, and the S3, WebDAV, SFTP, FTP, Google Drive, OneDrive and Dropbox
     // remotes (the SFTP and FTP libraries are downloaded when used, never shaded). About 482 KiB,

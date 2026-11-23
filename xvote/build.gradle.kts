@@ -26,6 +26,8 @@ paperPluginYaml {
 }
 
 xena {
+    // hangar.papermc.io/xena-studios/xVote
+    hangarId = "xVote"
     // The shared core and bStats (about 75 KiB), plus the Votifier receiver (both
     // protocols, keys, tokens, the NuVotifier import), the vote ledger and its network
     // claims, rewards, the vote party, commands, placeholders and the developer API. No

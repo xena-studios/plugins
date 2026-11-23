@@ -15,6 +15,8 @@ paperPluginYaml {
 }
 
 xena {
+    // hangar.papermc.io/xena-studios/xLimbo
+    hangarId = "xLimbo"
     // Folia can't create worlds, and a limbo has nothing to spread across regions.
     folia = false
     // The shared core and bStats (about 75 KiB), plus the world, the return queue with

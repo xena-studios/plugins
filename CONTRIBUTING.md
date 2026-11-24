@@ -42,10 +42,10 @@ On Paper, `boot-test.sh` then boots a second, empty server, waits for Paper to p
 | Folder | What it is |
 |---|---|
 | `core/` | Code every plugin shares, shaded into each jar; inside it, the rewrite's core (`core-common`, `core-api`, `core-jvm`, see [ROADMAP.md](ROADMAP.md), and `core-loader`, the Java shim and library loader) |
-| `build-logic/` | The Gradle conventions: `xena.plugin` for every plugin, `xena.api` for its developer API; `xena.kmp`, `xena.kmp-api` and `xena.kotlin-jvm` for the rewrite's Kotlin modules, `xena.java8` for its Java one, `xena.fetched-libraries` for jars that download libraries at runtime |
+| `build-logic/` | The Gradle conventions: `xena.plugin` for every plugin, `xena.api` for its developer API; `xena.kmp`, `xena.kmp-api` and `xena.kotlin-jvm` for the rewrite's Kotlin modules, `xena.java8` for its Java one, `xena.fetched-libraries` for jars that download libraries at runtime, `xena.r8` for a rewrite jar shrunk with R8 against its budget in `gradle/jar-budgets.txt` |
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
 | `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/`, `xteleport/`, `xvote/`, `xbans/`, `xmoney/`, `xbackup/`, `xstats/` | The plugins, each with its own README |
-| `scripts/` | `affected.sh`, `boot-test.sh`, `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `release.ts` |
+| `scripts/` | `affected.sh`, `boot-test.sh`, `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `new-rewrite-plugin.ts` (a plugin in the rewrite's layout), `release.ts` |
 | `docs/` | plugins.xenastudios.co |
 
 A plugin extends `XenaPlugin`. It declares its config as records (`ConfigSpec`), and in `setup` says which commands and modules that config turns on. The core does the rest: registering on startup and on every reload, carrying old configs forward, the theme, the update checker and bStats.
@@ -105,6 +105,14 @@ It warns if another project already has the id as its Modrinth slug: the update 
 What's left is marked TODO, and the script lists the files. Gradle finds the new folder on its own. In the brand repo, draw the glyph, write the headline, summary and blurb, rebuild, and open a pull request there; then `pnpm brand:sync` and `pnpm catalog` in `docs/` again. Add the plugin to [`docs/src/data/related.json`](docs/src/data/related.json), with the plugins it goes with and why, and add it to theirs: that's each Modrinth page's "More from Xena Studios". Until then its page lists every released plugin. Change the templates when the standard for every plugin changes, so the next one starts from it.
 
 The convention shades in the core, generates `paper-plugin.yml`, sets up Modrinth, and starts the jar budget at 150 KiB (`xena { jarBudgetKb = ... }`).
+
+**A plugin in the rewrite's layout** (ROADMAP.md, Architecture) starts from its own script, which writes the code only; the brand and docs steps above still apply:
+
+```sh
+node scripts/new-rewrite-plugin.ts xshop Shop    # <id> <Name> [--platforms] [--no-build]
+```
+
+It writes `xshop/api` (`xena.kmp-api`, its signatures committed in `xshop/api/api/`) and `xshop/common` (`xena.kmp`: a config, permissions and a `/xshop` command, with a test on the fake platform), writes the API's signatures and builds both on the JVM and wasmWasi. `--platforms` adds `xshop/bukkit` (the loader's Java shim, a Kotlin entry point, `plugin.yml`, R8 and a 150 KiB budget) and `xshop/fabric`, stubbed on `:core:platform-bukkit` and `:core:platform-fabric`; it refuses to build until those exist, since a project naming a missing one breaks every build. `settings.gradle.kts` includes the new folders on its own, and `scripts/affected.sh` builds only them when only they change. CI runs it end to end (`scaffold.yml`).
 
 ## Releasing
 

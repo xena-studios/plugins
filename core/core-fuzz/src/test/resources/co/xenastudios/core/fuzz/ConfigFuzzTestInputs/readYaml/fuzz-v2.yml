@@ -1,0 +1,16 @@
+config-version: 2
+name: "xFuzz"
+count: 3
+big: 1
+ratio: 2.5
+on: true
+wait: 1m 30s
+mode: fast
+words:
+  - a
+  - b
+numbers: [1, 2]
+messages:
+  welcome: "<green>Hi, <player>!"
+  limit: 5
+unknown: kept

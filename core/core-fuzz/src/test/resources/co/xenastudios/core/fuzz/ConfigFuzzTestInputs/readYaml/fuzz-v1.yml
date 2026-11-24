@@ -1,0 +1,4 @@
+config-version: 1
+old-count: 7
+welcome: "<gray>Hi."
+gone: true

@@ -80,6 +80,8 @@ include("core:core-loader", "core:core-loader:sandbox")
 // A sample plugin on the rewrite's core, never released: its tests run its commands on the
 // fake platform, and its reference manifest is the one the docs' components are checked with.
 include("core:core-testing:sample")
+// Fuzz tests for the rewrite's parsers (markup, config files), with Jazzer. Never shipped.
+include("core:core-fuzz")
 // A plugin that is never released: it boots the core on a real server in CI.
 include("sandbox")
 // Its API, and two plugins that use it, so CI checks that other plugins can use an API.

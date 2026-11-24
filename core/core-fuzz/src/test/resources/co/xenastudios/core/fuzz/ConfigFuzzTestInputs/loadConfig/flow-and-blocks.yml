@@ -1,0 +1,12 @@
+a: {b: {c: [1, {d: e}]}}
+text: |
+  line one
+  line two
+folded: >-
+  folded
+  text
+"quoted key": 'it''s quoted'
+? complex
+: value
+---
+second: document

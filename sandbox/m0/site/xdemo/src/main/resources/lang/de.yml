@@ -1,0 +1,5 @@
+# German. Keys not here fall back to English (lang/en.yml).
+balance.self: "<muted>Du hast <accent><coins></accent> Münzen."
+balance.other: "<muted><player> hat <accent><coins></accent> Münzen."
+pay.sent: "<success><coins> Münzen an <player> gesendet."
+pay.received: "<success><player> hat dir <coins> Münzen gesendet."

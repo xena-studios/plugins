@@ -1,0 +1,11 @@
+name: HelloCloud
+version: '${version}'
+main: co.xenastudios.m0.hellocloud.HelloCloudBootstrap
+api-version: '1.13'
+folia-supported: true
+description: M0 spike, Incendo Cloud 2 and Adventure from a Kotlin plugin, nothing shaded.
+# Checks provides: from Hello (and orders this plugin after it where the server knows the name).
+softdepend: [HelloProvided]
+libraries:
+  - org.jetbrains.kotlin:kotlin-stdlib:${kotlin}
+  - org.incendo:cloud-paper:${cloud}

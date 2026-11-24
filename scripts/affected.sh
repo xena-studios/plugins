@@ -42,17 +42,25 @@ done
 declare -A known=()
 for unit in "${units[@]}"; do known[$unit]=1; done
 
+# The build files in a folder that belong to the root build: not under build/ or
+# node_modules/, and not in a separate build of its own (a folder below with its own
+# settings.gradle.kts, like the spikes in sandbox/m0).
+buildfiles() {
+  local separate
+  separate=$(find "$1" -mindepth 2 -name settings.gradle.kts -not -path '*/build/*' -not -path '*/node_modules/*' -exec dirname {} \; | sed 's|$|/|')
+  find "$1" -name build.gradle.kts -not -path '*/build/*' -not -path '*/node_modules/*' |
+    { if [[ -n $separate ]]; then grep -vF "$separate" || true; else cat; fi; }
+}
+
 # The Gradle projects in a folder: it and each folder under it with a build file.
 projects() {
-  find "$1" -name build.gradle.kts -not -path '*/build/*' -not -path '*/node_modules/*' |
-    sed -e 's|/build.gradle.kts$||' -e 's|/|:|g' -e 's|^|:|' | sort
+  buildfiles "$1" | sed -e 's|/build.gradle.kts$||' -e 's|/|:|g' -e 's|^|:|' | sort
 }
 
 # uses[folder]: the other folders its builds name in project(":...").
 declare -A uses=()
 for unit in "${units[@]}"; do
-  uses[$unit]=$(find "$unit" -name build.gradle.kts -not -path '*/build/*' -not -path '*/node_modules/*' \
-    -exec grep -ohE 'project\(":[^"]+"\)' {} + |
+  uses[$unit]=$(buildfiles "$unit" | xargs grep -ohE 'project\(":[^"]+"\)' |
     sed -E 's/project\(":([^:"]+).*/\1/' | sort -u | grep -vxE "core|$unit" | tr '\n' ' ' || true)
 done
 

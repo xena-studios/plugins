@@ -1,0 +1,15 @@
+name: Hello
+version: '${version}'
+main: co.xenastudios.m0.hello.HelloBootstrap
+# Ignored before 1.13; stops 1.13+ from treating the plugin as legacy.
+api-version: '1.13'
+folia-supported: true
+description: M0 spike, a Kotlin plugin with the stdlib fetched, not shaded.
+# Spigot 1.16.5+ and Paper download these; older servers ignore the key and the bootstrap fetches them.
+libraries:
+  - org.jetbrains.kotlin:kotlin-stdlib:${kotlin}
+# Which server versions resolve another plugin's dependency on this name.
+provides: [HelloProvided]
+commands:
+  hello:
+    description: Runs Kotlin code and says where the stdlib came from.

@@ -1,0 +1,541 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Xena plugin reference manifest, format 1",
+  "$ref": "#/$defs/Manifest",
+  "$defs": {
+    "Manifest": {
+      "type": "object",
+      "description": "Everything the docs need about one plugin, generated from its code and build. Don't edit: run ./gradlew updateXenaManifest.",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "The JSON Schema this file follows."
+        },
+        "formatVersion": {
+          "const": 1,
+          "description": "The manifest format. The site refuses a version it doesn't know."
+        },
+        "plugin": {
+          "$ref": "#/$defs/PluginInfo"
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PlatformSupport"
+          },
+          "description": "Where the plugin runs, from its build."
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CommandDoc"
+          },
+          "description": "Every top-level command, with its subcommands. The core adds reload and debug under /<id>."
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PermissionDoc"
+          },
+          "description": "Every permission, with its default and children."
+        },
+        "config": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ConfigNodeDoc"
+          },
+          "description": "config.yml, top-level keys in file order."
+        },
+        "messages": {
+          "$ref": "#/$defs/MessagesDoc"
+        },
+        "placeholders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PlaceholderDoc"
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EventDoc"
+          },
+          "description": "The API's events."
+        }
+      },
+      "required": [
+        "$schema",
+        "formatVersion",
+        "plugin",
+        "platforms",
+        "commands",
+        "permissions",
+        "config",
+        "messages",
+        "placeholders",
+        "events"
+      ],
+      "additionalProperties": false
+    },
+    "PluginInfo": {
+      "type": "object",
+      "description": "The plugin itself.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Lowercase id: the folder, the docs path and the permission prefix."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name, such as xBans."
+        },
+        "version": {
+          "type": "string",
+          "description": "The version this manifest was built from."
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "version",
+        "description"
+      ],
+      "additionalProperties": false
+    },
+    "PlatformSupport": {
+      "type": "object",
+      "description": "One platform the plugin runs on, or will.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable id, such as paper."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name, such as Paper."
+        },
+        "kind": {
+          "enum": [
+            "server",
+            "proxy",
+            "library"
+          ]
+        },
+        "minVersion": {
+          "type": "string",
+          "description": "The oldest Minecraft (or proxy or API) version supported."
+        },
+        "maxVersion": {
+          "type": "string",
+          "description": "The newest, or latest."
+        },
+        "java": {
+          "type": "integer",
+          "description": "The Java version the server needs at least; absent where Java doesn't apply."
+        },
+        "status": {
+          "description": "release: shipped in this version. planned: on the roadmap for a later minor.",
+          "enum": [
+            "release",
+            "planned"
+          ]
+        },
+        "since": {
+          "type": "string",
+          "description": "The plugin version that added it."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "minVersion",
+        "maxVersion",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "CommandDoc": {
+      "type": "object",
+      "description": "A command or subcommand.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "The full command without the slash, such as xdemo give."
+        },
+        "usage": {
+          "type": "string",
+          "description": "The usage line, such as /xdemo give <player> <amount>."
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "permission": {
+          "type": "string",
+          "description": "The permission it needs; absent when everyone may use it."
+        },
+        "playerOnly": {
+          "type": "boolean",
+          "description": "Only players can run it, not the console."
+        },
+        "arguments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ArgumentDoc"
+          }
+        },
+        "builtIn": {
+          "type": "boolean",
+          "description": "Set by the core: every plugin has it (ROADMAP.md, Admin commands)."
+        },
+        "subcommands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CommandDoc"
+          }
+        }
+      },
+      "required": [
+        "path",
+        "usage",
+        "aliases",
+        "description",
+        "playerOnly",
+        "arguments",
+        "builtIn",
+        "subcommands"
+      ],
+      "additionalProperties": false
+    },
+    "ArgumentDoc": {
+      "type": "object",
+      "description": "One argument of a command.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "description": "player, integer, number, text, choice or duration."
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "For a choice: what it accepts."
+        },
+        "min": {
+          "type": "number",
+          "description": "For a number: the smallest it accepts."
+        },
+        "max": {
+          "type": "number",
+          "description": "For a number: the largest it accepts."
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "required",
+        "description",
+        "choices"
+      ],
+      "additionalProperties": false
+    },
+    "PermissionDoc": {
+      "type": "object",
+      "description": "A permission node.",
+      "properties": {
+        "node": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "default": {
+          "enum": [
+            "op",
+            "everyone",
+            "nobody",
+            "not-op"
+          ],
+          "description": "Who has it without a permissions plugin."
+        },
+        "children": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "Nodes it grants (true) or takes away (false)."
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The commands that need it, by path."
+        }
+      },
+      "required": [
+        "node",
+        "description",
+        "default",
+        "children",
+        "commands"
+      ],
+      "additionalProperties": false
+    },
+    "ConfigNodeDoc": {
+      "type": "object",
+      "description": "A key in config.yml: a section with children, or a setting.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Dotted path from the top, such as storage.type."
+        },
+        "type": {
+          "enum": [
+            "section",
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "list",
+            "duration",
+            "choice"
+          ]
+        },
+        "comment": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The comment written above it in the default file, one line per entry."
+        },
+        "default": {
+          "description": "The default value, for a setting."
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "For a choice: what it accepts."
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "reloadable": {
+          "type": "boolean",
+          "description": "Whether /<plugin> reload applies it; false means a restart."
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ConfigNodeDoc"
+          }
+        }
+      },
+      "required": [
+        "path",
+        "type",
+        "comment",
+        "choices",
+        "reloadable",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "MessagesDoc": {
+      "type": "object",
+      "description": "Messages and their translations.",
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "The English file every other language falls back to."
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MessageDoc"
+          }
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LanguageDoc"
+          },
+          "description": "Every language shipped, and how much of it is translated."
+        }
+      },
+      "required": [
+        "file",
+        "keys",
+        "languages"
+      ],
+      "additionalProperties": false
+    },
+    "MessageDoc": {
+      "type": "object",
+      "description": "One translation key.",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "default": {
+          "type": "string",
+          "description": "The English text, in the core's markup."
+        },
+        "placeholders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The tags it fills in, such as player."
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "default",
+        "placeholders",
+        "description"
+      ],
+      "additionalProperties": false
+    },
+    "LanguageDoc": {
+      "type": "object",
+      "description": "One shipped language.",
+      "properties": {
+        "tag": {
+          "type": "string",
+          "description": "BCP 47 tag, such as pt-BR."
+        },
+        "translated": {
+          "type": "integer"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Keys still in English."
+        }
+      },
+      "required": [
+        "tag",
+        "translated",
+        "total",
+        "missing"
+      ],
+      "additionalProperties": false
+    },
+    "PlaceholderDoc": {
+      "type": "object",
+      "description": "A placeholder other plugins can show.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Without the plugin's prefix, such as coins."
+        },
+        "description": {
+          "type": "string"
+        },
+        "example": {
+          "type": "string"
+        },
+        "forms": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "How to write it in each placeholder plugin."
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "example",
+        "forms"
+      ],
+      "additionalProperties": false
+    },
+    "EventDoc": {
+      "type": "object",
+      "description": "An API event.",
+      "properties": {
+        "className": {
+          "type": "string",
+          "description": "The class developers listen for."
+        },
+        "description": {
+          "type": "string"
+        },
+        "cancellable": {
+          "type": "boolean"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FieldDoc"
+          }
+        },
+        "since": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "className",
+        "description",
+        "cancellable",
+        "fields",
+        "since"
+      ],
+      "additionalProperties": false
+    },
+    "FieldDoc": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "description"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

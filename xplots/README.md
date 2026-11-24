@@ -1,4 +1,4 @@
-![xPlots by Xena Studios. A lime pixel signpost icon and the xPlots name over a stepped horizon in lime, with the headline "Rentable plots, set up in a minute."](../.github/assets/xplots-banner.png)
+![xPlots by Xena Studios. A lime pixel signpost icon and the xPlots name over a stepped horizon in lime, with the headline "Rentable plots, set up in a minute."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/plugins/xplots/banner.png)
 
 **Rentable plots, set up in a minute.**
 

@@ -1,4 +1,4 @@
-![Xena Studios plugins. The icons and names of all eleven plugins, from xUtilities to xBackup, over a stepped horizon in their accents, with "Small, fast plugins for Paper servers."](.github/assets/banner.png)
+![Xena Studios plugins. The icons and names of all eleven plugins, from xUtilities to xBackup, over a stepped horizon in their accents, with "Small, fast plugins for Paper servers."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/github/plugins-banner.png)
 
 **Small, fast plugins for Paper servers.**
 

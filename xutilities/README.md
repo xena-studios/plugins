@@ -1,4 +1,4 @@
-![xUtilities by Xena Studios. An amber pixel wrench icon and the xUtilities name over a stepped horizon in amber, with the headline "Every command you need. None you don't."](../.github/assets/xutilities-banner.png)
+![xUtilities by Xena Studios. An amber pixel wrench icon and the xUtilities name over a stepped horizon in amber, with the headline "Every command you need. None you don't."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/plugins/xutilities/banner.png)
 
 **Every command you need. None you don't.**
 

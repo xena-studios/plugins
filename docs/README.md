@@ -1,4 +1,4 @@
-![Xena Studios plugin docs. The plugins' icons and the title "Plugin docs" over a stepped horizon in their accents, with "Setup, commands and config for every Xena Studios plugin."](../.github/assets/docs-banner.png)
+![Xena Studios plugin docs. The plugins' icons and the title "Plugin docs" over a stepped horizon in their accents, with "Setup, commands and config for every Xena Studios plugin."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/github/plugin-docs-banner.png)
 
 **Setup, commands and config for every Xena Studios plugin.**
 
@@ -95,7 +95,7 @@ Write every page as it will be after the release: the new major's links as `/<pl
 
 The docs use the plugin family's brand: its tokens (`tokens/plugins.css`, copied to `src/styles/tokens.css`), deepslate, Space Grotesk with JetBrains Mono for code and labels, dark only, its game GUI (beveled panels, inset slots, item tooltips; `gui.css`), and each plugin's pages in its own accent with its icon beside the title. The home, download and not-found pages are laid out as the other Xena sites are (xenastudios.co's DESIGN.md: the `//` kicker, hairline rows, the horizon at the top and the bottom) in the same design system, and the home page's horizon is interactive, every plugin standing on its stretch of the rim. Every page has the same header, laid out as the other Xena sites': the XENA STUDIOS logo, then Plugins, Download, Guides, Developers, GitHub and search. Search is Pagefind's index behind Fumadocs' dialog, loaded the first time it opens.
 
-Logos, icons, the horizon, the favicon and the link preview come from [xena-studios/brand](https://github.com/xena-studios/brand). Don't redraw them here; run `pnpm brand:sync`. It expects the brand repo at `../../brand` (or set `BRAND_DIR`), and also refreshes the README banners in `.github/assets/` and the brand catalog in `src/data/catalog.json`, so run `pnpm catalog` after it.
+Logos, icons, the horizon, the favicon and the link preview come from [xena-studios/brand](https://github.com/xena-studios/brand). Don't redraw them here; run `pnpm brand:sync`. It expects the brand repo at `../../brand` (or set `BRAND_DIR`), and also refreshes the brand catalog in `src/data/catalog.json`, so run `pnpm catalog` after it. The READMEs' banners aren't copied: they link the brand's v1 release through jsDelivr.
 
 ## Deploying
 

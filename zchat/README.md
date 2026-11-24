@@ -1,4 +1,4 @@
-![zChat by Xena Studios. A green pixel chat bubble icon and the zChat name over a stepped horizon in green, with the headline "Format your chat. Keep it clean."](../.github/assets/zchat-banner.png)
+![zChat by Xena Studios. A green pixel chat bubble icon and the zChat name over a stepped horizon in green, with the headline "Format your chat. Keep it clean."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/plugins/zchat/banner.png)
 
 **Format your chat. Keep it clean.**
 

@@ -1,4 +1,4 @@
-![xBans by Xena Studios. A crimson pixel gavel icon and the xBans name over a stepped horizon in crimson, with the headline "Bans, mutes and warnings. Nothing slips through."](../.github/assets/xbans-banner.png)
+![xBans by Xena Studios. A crimson pixel gavel icon and the xBans name over a stepped horizon in crimson, with the headline "Bans, mutes and warnings. Nothing slips through."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/plugins/xbans/banner.png)
 
 **Bans, mutes and warnings. Nothing slips through.**
 

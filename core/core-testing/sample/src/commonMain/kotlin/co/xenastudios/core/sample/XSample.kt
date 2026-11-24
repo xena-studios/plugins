@@ -15,6 +15,7 @@ import co.xenastudios.core.common.admin.PlayerLookup
 import co.xenastudios.core.common.command.AdminCommands
 import co.xenastudios.core.common.command.ArgumentTypes
 import co.xenastudios.core.common.command.CommandDispatcher
+import co.xenastudios.core.common.command.CommandRegistrar
 import co.xenastudios.core.common.command.CommandTree
 import co.xenastudios.core.common.command.ModuleReloader
 import co.xenastudios.core.common.command.OnlinePlayers
@@ -110,7 +111,9 @@ public object SamplePermissions : PermissionSet("xsample") {
 
 /**
  * The plugin: its coins, its one module, and its commands and placeholders, built from its
- * config. [settings] gives the config, read again on every reload.
+ * config. [settings] gives the config, read again on every reload. On a real server,
+ * [registrar] puts the commands there, at [enable] and after every reload; the tests run the
+ * [dispatcher] directly.
  */
 public class XSample(
     private val platform: Platform,
@@ -120,6 +123,7 @@ public class XSample(
     importers: List<Importer<*>> = emptyList(),
     /** Who has played, by name, for `/xsample forget`: the family's player cache on a server. */
     lookup: PlayerLookup = PlayerLookup { pendingOf(null) },
+    private val registrar: CommandRegistrar? = null,
 ) {
     private var config: Config = settings()
     private val coins = HashMap<PlayerRef, Int>()
@@ -168,8 +172,9 @@ public class XSample(
             ),
         )
 
-    /** Turns the plugin on: its modules, as the config says. */
+    /** Turns the plugin on: its commands, and its modules as the config says. */
     public fun enable() {
+        syncCommands()
         modules.sync(wantedModules())
     }
 
@@ -224,7 +229,14 @@ public class XSample(
     private fun reloadFiles(): List<String> {
         config = settings()
         dispatcher = CommandDispatcher(commands(), platform.clock, platform.log)
-        return emptyList()
+        return syncCommands()
+    }
+
+    // Each warning (a name another plugin has) is also a problem the reload reports.
+    private fun syncCommands(): List<String> {
+        val warnings = registrar?.sync(dispatcher).orEmpty()
+        warnings.forEach { platform.log.warn(it) }
+        return warnings
     }
 
     private fun wantedModules(): Map<String, () -> Module> =

@@ -1,0 +1,15 @@
+# xSample on platform-bukkit, on any Bukkit-family server (scripts/boot-test.sh --checks).
+# The platform's own checks (schedulers, files, the event bridge, text) run at startup.
+logged: PLATFORM PASS
+# Commands registered at runtime, run from the console, answered through the server's text.
+run: xsample
+expect: Only players can use this command.
+run: xsample give Nobody 5
+expect: No player called Nobody is online.
+run: coins
+expect: Only players can use this command.
+run: xsample reload
+expect: Reloaded xSample: 1 module on.
+# The reload synced the same commands again; they still answer.
+run: xsample:pay Nobody 5
+expect: Only players can use this command.

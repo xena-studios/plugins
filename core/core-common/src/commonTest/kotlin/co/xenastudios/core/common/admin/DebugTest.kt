@@ -10,7 +10,6 @@ import co.xenastudios.core.common.command.CommandDispatcher
 import co.xenastudios.core.common.command.Reloader
 import co.xenastudios.core.common.command.commands
 import co.xenastudios.core.common.db.DbError
-import co.xenastudios.core.common.db.FakeDatabase
 import co.xenastudios.core.common.db.Row
 import co.xenastudios.core.common.db.SqlValue
 import co.xenastudios.core.common.module.Module
@@ -23,6 +22,7 @@ import co.xenastudios.core.common.platform.writeText
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.global
 import co.xenastudios.core.testing.FakeCommandSource
+import co.xenastudios.core.testing.FakeDatabase
 import co.xenastudios.core.testing.FakePlatform
 import kotlin.test.Test
 import kotlin.test.assertEquals

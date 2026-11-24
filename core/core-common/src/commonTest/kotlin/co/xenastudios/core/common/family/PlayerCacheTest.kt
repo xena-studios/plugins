@@ -205,4 +205,16 @@ class PlayerCacheTest {
         assertNotNull(cache[alex], "kept in memory once read")
         assertEquals(found, cache.lookup(alex).settled().ok())
     }
+
+    @Test
+    fun itIsTheAdminCommandsLookupAndPlayerData() {
+        val platform = FakePlatform()
+        val cache = cache(platform)
+        cache.joined(steve, "Steve", null)
+        assertEquals(steve, cache.asLookup().find("steve").settled())
+        assertNull(cache.asLookup().find("nobody").settled())
+        assertEquals(Outcome.Ok(1L), cache.asPlayerData().forget(steve).settled())
+        assertEquals(Outcome.Ok(0L), cache.asPlayerData().forget(steve).settled())
+        assertNull(cache[steve])
+    }
 }

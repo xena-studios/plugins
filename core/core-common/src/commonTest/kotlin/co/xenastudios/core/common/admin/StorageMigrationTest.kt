@@ -8,13 +8,13 @@ import co.xenastudios.core.common.db.Database
 import co.xenastudios.core.common.db.DatabaseSettings
 import co.xenastudios.core.common.db.DbError
 import co.xenastudios.core.common.db.Dialect
-import co.xenastudios.core.common.db.FakeDatabase
-import co.xenastudios.core.common.db.FakeSession
 import co.xenastudios.core.common.db.Migration
 import co.xenastudios.core.common.db.Row
 import co.xenastudios.core.common.db.SqlValue
 import co.xenastudios.core.common.db.Table
+import co.xenastudios.core.testing.FakeDatabase
 import co.xenastudios.core.testing.FakePlatform
+import co.xenastudios.core.testing.FakeSession
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

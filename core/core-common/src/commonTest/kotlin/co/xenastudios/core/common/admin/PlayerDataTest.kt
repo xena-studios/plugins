@@ -4,9 +4,9 @@ import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.api.pendingOf
 import co.xenastudios.core.common.Outcome
 import co.xenastudios.core.common.db.ColumnType
-import co.xenastudios.core.common.db.FakeDatabase
 import co.xenastudios.core.common.db.Table
-import co.xenastudios.core.common.db.settled
+import co.xenastudios.core.testing.FakeDatabase
+import co.xenastudios.core.testing.settled
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

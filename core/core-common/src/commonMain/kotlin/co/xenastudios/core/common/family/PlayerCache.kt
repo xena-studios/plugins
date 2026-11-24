@@ -8,6 +8,8 @@ import co.xenastudios.core.api.onSettled
 import co.xenastudios.core.api.pendingOf
 import co.xenastudios.core.api.resolve
 import co.xenastudios.core.common.Outcome
+import co.xenastudios.core.common.admin.PlayerData
+import co.xenastudios.core.common.admin.PlayerLookup
 import co.xenastudios.core.common.db.Column
 import co.xenastudios.core.common.db.ColumnType
 import co.xenastudios.core.common.db.Database
@@ -229,13 +231,26 @@ public class PlayerCache(
         }
     }
 
-    /** Forgets [player] (`/<plugin> forget`): from memory, and from where the cache is saved. */
-    public fun forget(player: PlayerRef) {
+    /**
+     * Forgets [player] (`/<plugin> forget`): from memory, and from where the cache is saved.
+     * Returns whether it knew them.
+     */
+    public fun forget(player: PlayerRef): Boolean {
         val key = player.uuid.toString()
-        val removed = players.remove(key) ?: return
+        val removed = players.remove(key) ?: return false
         decode(player, removed)?.let { names.remove(it.name.lowercase(), key) }
         markDirty(key)
+        return true
     }
+
+    /**
+     * The cache as the admin commands' [PlayerLookup]: `/<plugin> forget <name>` finds the player
+     * here, from memory or the shared database.
+     */
+    public fun asLookup(): PlayerLookup = PlayerLookup { name -> lookup(name).map { (it as? Outcome.Ok)?.value?.player } }
+
+    /** The cache as [PlayerData], for a plugin's `forget` to register: it forgets the player here too. */
+    public fun asPlayerData(): PlayerData = PlayerData { player -> pendingOf(Outcome.Ok(if (forget(player)) 1L else 0L)) }
 
     override fun clientLocale(player: PlayerRef): String? = (players[player.uuid.toString()] as? Array<*>)?.get(LANGUAGE) as? String
 

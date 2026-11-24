@@ -1,9 +1,9 @@
 name: CodeQL
 
-# Code scanning: the plugins' Java (traced through a real Gradle build, for the
-# most accurate dataflow), the workflows (they hold the Modrinth, Maven Central
-# and Cloudflare secrets), and the TypeScript and JavaScript: the docs, scripts/
-# and xStats' website. Findings show on pull requests and in the Security tab.
+# Code scanning: the plugins' Java and the rewrite's Kotlin (both traced through a
+# real Gradle build, for the most accurate dataflow), the workflows (they hold the
+# Modrinth, Maven Central and Cloudflare secrets), and the TypeScript and JavaScript:
+# the docs, scripts/ and xStats' website. Findings show on pull requests and in the Security tab.
 # Dependencies are Renovate's: it opens a fix PR as soon as one has a known
 # vulnerability.
 on:
@@ -61,10 +61,16 @@ jobs:
           config: |
             paths-ignore:
               - docs/src/generated
-      # CodeQL reads the code as javac compiles it, so every source file has to
-      # really compile here: no build cache, no daemon, every task rerun.
+      # CodeQL reads the code as javac and kotlinc compile it, so every source file has
+      # to really compile here: no build cache, no daemon, every task rerun, and Kotlin's
+      # compiler inside the traced build rather than in its own daemon. The Kotlin tasks
+      # are the JVM ones: compileKotlin (Kotlin/JVM modules) and compileKotlinJvm (the
+      # multiplatform ones); wasmWasi has no JVM code for CodeQL to read.
       - if: matrix.build-mode == 'manual'
-        run: ./gradlew --no-daemon --no-build-cache --no-configuration-cache --rerun-tasks compileJava compileTestJava
+        run: >-
+          ./gradlew --no-daemon --no-build-cache --no-configuration-cache --rerun-tasks
+          -Pkotlin.compiler.execution.strategy=in-process -Pkotlin.incremental=false
+          compileJava compileTestJava compileKotlin compileTestKotlin compileKotlinJvm compileTestKotlinJvm
       - uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}

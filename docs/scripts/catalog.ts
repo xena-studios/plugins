@@ -220,7 +220,10 @@ for (const p of plugins) {
 // --- Badges: where to get it, what it runs on, the docs ---
 // Xena's badges, from the brand repo's v1 releases through jsDelivr (badges/; its docs/badges.md has the
 // rules): each plugin's in its own accent, the family's in the studio's. Compact on GitHub,
-// cozy on Modrinth, and no Modrinth badge on the Modrinth page itself.
+// cozy on Modrinth, and no Modrinth badge on the Modrinth page itself. Modrinth shows images
+// from hosts it doesn't list (jsDelivr among them) through its wsrv.nl proxy, which turns an
+// SVG into a PNG at its 1x size, blurry on a sharp screen: so Modrinth gets the 2x PNGs,
+// GitHub the SVGs.
 const BADGES = "https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges";
 type Style = "compact" | "cozy";
 type BadgeName = "modrinth" | "github" | "paper" | "purpur" | "folia" | "docs";
@@ -233,9 +236,10 @@ const ALT: Record<BadgeName, string> = {
   docs: "Read the Docs",
 };
 const HEIGHT: Record<Style, number> = { compact: 32, cozy: 48 };
+const FORMAT: Record<Style, "svg" | "png"> = { compact: "svg", cozy: "png" };
 function badgeRow(theme: string, style: Style, items: [BadgeName, string | null][]) {
   return items.map(([name, href]) => {
-    const img = `<img alt="${ALT[name]}" height="${HEIGHT[style]}" src="${BADGES}/${theme}/${style}/${name}.svg">`;
+    const img = `<img alt="${ALT[name]}" height="${HEIGHT[style]}" src="${BADGES}/${theme}/${style}/${name}.${FORMAT[style]}">`;
     return href ? `<a href="${href}">${img}</a>` : img;
   }).join("\n");
 }

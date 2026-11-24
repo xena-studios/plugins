@@ -86,19 +86,19 @@ The floors are proposals; M0 confirms them. In the later minors, NeoForge brings
 
 **Fast.** Nothing blocks a game thread: disk and network work is off it, writes queue and go to the database in batches from one writer thread, reads come from memory. Work happens once, at load: configs become typed objects, messages are parsed once per language, permission results are cached per player until they change. Hot paths (every tick, event, chat message or block change) don't allocate what they can avoid, use the core's primitive maps, and leave early. No classpath scanning or reflection at startup. Every task goes through the core's `Scheduler`, so Folia's regions are always right.
 
-**Light.** No runtime dependency beyond the Kotlin stdlib. Optional libraries are fetched only when a feature uses them (the MySQL driver only with `storage: mysql`). A module that's off loads no classes, registers no listeners and runs no tasks. Every jar is shrunk with R8.
+**Light.** No runtime dependency beyond the Kotlin stdlib. Optional libraries are fetched only when a feature uses them (the MySQL driver only with `storage: mysql`). A module that's off loads no classes, registers no listeners and runs no tasks. Every jar is shrunk with R8 (a Sponge jar with the stdlib and Cloud went from 1,966 KB to 269 KB in M0), with keep rules for enums, type tokens, Cloud's service interfaces and listener parameter names, and renamed classes in a package of each plugin's own.
 
 **Robust.** Null-safety, and errors as typed results: no exception of ours reaches the server. A failing module turns itself off and says why; the rest of the plugin keeps running. A config that can't be read keeps the last good one. Files are written to a temporary file and renamed; database changes are transactions; migrations are versioned, so they can run again safely. Development builds throw on the wrong thread; release builds don't check. Parsers get property tests and fuzzing; a nightly soak test runs bots for hours; a chaos test cuts the database mid-run and checks nothing is lost.
 
-**Budgets** (fail the build when exceeded; numbers settled in M0):
+**Budgets** (fail the build when exceeded; measured on today's plugins in M0, `sandbox/m0/budgets`):
 
-| | |
-|---|---|
-| Idle game-thread cost | ~0 ms a tick |
-| Under bot load | under 0.5 ms a tick per plugin |
-| Startup | under 100 ms per plugin, once libraries are downloaded and Pumpkin has compiled the plugin (both first-run only) |
-| Heap after load | measured per plugin; more than 10% growth fails |
-| Jar size | per plugin, near today's |
+| | Budget | Today's worst |
+|---|---|---|
+| Startup | under 100 ms per plugin on the server thread (load + enable, median of 3 boots, family installed); 150 ms for the first plugin, which loads the Kotlin stdlib. First-run downloads and Pumpkin's first compile are separate. | 232 ms (xMoney, its database opened on the server thread) |
+| Idle | under 0.001 ms a tick per plugin, and under 0.5 ms of CPU a second on its own threads | 0.012 ms a tick; 3.5 ms a second (xBackup polling) |
+| Under load (10 bots) | under 0.05 ms a tick per plugin, 0.25 ms for the family; under 2 ms of CPU a second off-thread | 0.010 ms a tick (xLimbo) |
+| Heap after load | under 4 MB per plugin and 1.5 MB metaspace, worlds a plugin makes on purpose aside; then growth over 10% (or 0.5 MB) fails | 9.5 MB (xRewind's block-state table) |
+| Jar | Bukkit family: no bigger than today's jar; platforms that shade the stdlib: today's + 300 KB | 483 KB (xBackup) |
 
 ## Built once, in the core
 
@@ -160,7 +160,7 @@ Each subcommand has its own permission under `<plugin>.admin`.
 
 ## Site
 
-plugins.xenastudios.co stays Astro Starlight on Cloudflare. Generated from the code, and failing CI when stale: commands, permissions, config, messages, placeholders, events, and each plugin's platform and version table. Each plugin's page: overview, install tabs per platform, configuration, integrations, importers, FAQ, changelog. A download picker (platform and version, then the right jar and every store). For developers: Dokka at `/api/<plugin>/`, Gradle and Maven snippets at the latest version, Java and Kotlin guides, example add-ons. Today's docs and the rewrite's side by side until `maintenance` retires. A page of how complete each language is, and the support policy: which versions and platforms, for how long, and how fast security fixes ship. Search through Pagefind.
+plugins.xenastudios.co stays Astro Starlight on Cloudflare. A plugin declares its commands, permissions, config, messages, placeholders and events once, as the objects that run (M0, `sandbox/m0/site`); a Gradle task writes them to a manifest with a JSON Schema, committed to `docs/src/generated/<plugin>/` like today's config goldens, and the site validates and renders it. Generated from the code, and failing CI when stale: commands, permissions, config, messages, placeholders, events, and each plugin's platform and version table. Each plugin's page: overview, install tabs per platform, configuration, integrations, importers, FAQ, changelog. A download picker (platform and version, then the right jar and every store). For developers: Dokka at `/api/<plugin>/`, Gradle and Maven snippets at the latest version, Java and Kotlin guides, example add-ons. Today's docs and the rewrite's side by side until `maintenance` retires: `/<plugin>/` is always the newest major, the old one moves to `/<plugin>/v<old>/` with a version switch, rather than versioning the whole site at once. Dokka for each plugin's latest API only (Cloudflare's per-deploy file limit); older APIs stay on javadoc.io. A page of how complete each language is, and the support policy: which versions and platforms, for how long, and how fast security fixes ship. Search through Pagefind.
 
 ## Brand
 

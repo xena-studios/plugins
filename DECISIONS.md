@@ -390,5 +390,16 @@ The spike (#121) booted real servers for each risky part of the rewrite. Each pa
 - Plugins reach each other by sending bytes (`ipc.wit`), so APIs on Pumpkin are serialized requests and replies. Storage is files in the plugin's own folder: no SQL, no shared database, and xBackup can't see the server's worlds there.
 - A plugin is 290–520 KB of Wasm, about a Paper jar. It loads in 34–52 ms once Pumpkin has compiled it; the first compile takes about 2.7 s.
 
-Still open in M0: generating site pages from code, and measuring today's plugins for the budgets.
+**Budgets** (`sandbox/m0/budgets`). Today's 11 plugins, built from `maintenance`, on Paper 1.21.11, each alone and all together, measured with async-profiler, heap after full GCs, and 10 mineflayer bots for two minutes.
+- Nine of eleven never showed up on the server thread when idle. Under load the whole family cost 0.023–0.032 ms a tick; `/mspt` varies by ±0.4 ms between identical runs, so budgets are measured by profiling, per plugin, not by `/mspt`.
+- What fails the new budgets today: xMoney and xRewind open SQLite on the server thread (enable over 200 ms), xBackup and xMoney poll on their own threads while idle, and xRewind builds a 9.5 MB block-state table at startup. The rewrite's rules already remove the first two.
+- The roadmap's 0.5 ms a tick was about 50 times today's worst plugin, so the budget is 0.05 ms; the other numbers are in ROADMAP.md.
+- R8 keeps a shaded Sponge jar at 269 KB (from 1,966 KB), once its keep rules cover enums, type tokens, Cloud's service interfaces and listener parameter names. CraftBukkit 1.8.8 and 26.3 behave like Spigot.
+
+**Site** (`sandbox/m0/site`). A fake plugin declared its commands, permissions, config, messages, placeholders and events in a small Kotlin DSL; a Gradle task wrote a manifest and its JSON Schema; the check failed on a changed default (naming the file and line) and on a translation using a tag its message doesn't fill; the docs validated the manifest against the schema and rendered it with seven Starlight components, and `pnpm build` passed. So:
+- The DSL lives in `core-common`, the adapters register the same tree with Cloud or Pumpkin, and `plugin.yml`, `fabric.mod.json` and the rest are generated from it.
+- Manifests join the golden flow (`-PupdateGolden`), so `./gradlew check` gates them.
+- Old majors' docs move to `/<plugin>/v<old>/` rather than versioning the whole site, since plugins reach the rewrite one at a time. Dokka is published for each plugin's latest API only.
+
+M0 is done.
 

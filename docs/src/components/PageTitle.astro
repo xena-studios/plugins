@@ -5,8 +5,10 @@
 //   Download first, so the page opens like the plugin's own page rather than a doc.
 // - A plugin's other pages: its icon in a slot beside the title.
 // - Everything else: Starlight's title.
+// Under it, for a plugin whose docs cover more than one major, the version switch.
 import Default from "@astrojs/starlight/components/PageTitle.astro";
 import catalog from "../data/plugins.json" with { type: "json" };
+import VersionSwitch from "./plugin/VersionSwitch.astro";
 
 const route = Astro.locals.starlightRoute;
 const id = route.id;
@@ -64,6 +66,7 @@ const runsOn = plugin?.folia ? "Paper, Purpur and Folia" : "Paper and Purpur";
     <Default />
   )
 }
+<VersionSwitch />
 
 <style>
   .product {

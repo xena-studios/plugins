@@ -2,18 +2,20 @@
    Starlight, as docs.raptorpanel.net wears Raptor's: deepslate neutrals, Space
    Grotesk for words, JetBrains Mono for code and labels, dark only. Pages outside
    a plugin use the family's neutral accent; each plugin's pages swap in its own
-   (public/accents/, via src/routeData.ts). The frame is a game GUI (gui.css, DESIGN.md):
+   (public/accents/, via src/routeData.ts). The colours are the brand's tokens
+   (tokens.css, copied by pnpm brand:sync). The frame is a game GUI (gui.css, DESIGN.md):
    beveled panels, inset slots and item tooltips; the accent marks only a name, the
    chosen slot and the primary action. Focus rings are white. */
 @import "@fontsource-variable/space-grotesk";
 @import "@fontsource-variable/jetbrains-mono";
 
 :root {
-  --bg: #121116;
-  --raised: #1B1A21;
-  --rule: #2A2832;
-  --text: #F2F0F5;
-  --muted: #9C99A8;
+  /* The family's tokens (tokens.css, from the brand repo). */
+  --bg: var(--plugin-bg);
+  --raised: var(--plugin-raised);
+  --rule: var(--plugin-rule);
+  --text: var(--plugin-text);
+  --muted: var(--plugin-muted);
   /* The family's neutral accent: pale lavender, no plugin's colour. */
   --accent: #C9C2E0;
   --mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -102,24 +104,6 @@ a:hover {
   --sl-color-bg-nav: var(--gui-panel);
 }
 
-
-/* XENA STUDIOS (the endorsement), then which site this is, as a mono label. */
-.site-title {
-  gap: 0.875rem;
-}
-.site-title img {
-  height: 0.8125rem;
-  width: auto;
-}
-.site-title::after {
-  content: "Plugins";
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
 
 /* Sidebar: muted links, the current page in the accent on a faint tint, group
    names as mono labels. */

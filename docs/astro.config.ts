@@ -3,25 +3,33 @@
 // family's brand (xena-studios/brand), as docs.raptorpanel.net wears Raptor's:
 // deepslate, Space Grotesk, each plugin's pages in its accent with its icon by
 // the title, framed as a game GUI (src/styles/gui.css, DESIGN.md).
+import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
-// Every plugin, from the brand catalog (scripts/catalog.ts writes it).
-import catalog from "./src/data/plugins.json" with { type: "json" };
+// Every plugin with pages: the brand catalog's (scripts/catalog.ts writes it), and the core's
+// sample, which is built but hidden (src/data/versions.json).
+import { docsPlugins, hiddenIds } from "./src/plugins.ts";
+import { versionRedirects } from "./src/redirects.ts";
+
+const site = "https://plugins.xenastudios.co";
 
 export default defineConfig({
-  site: "https://plugins.xenastudios.co",
+  site,
   trailingSlash: "ignore",
+  // A plugin's old major moves to /<id>/v<old>/ when its rewrite ships: its pages the new
+  // major doesn't have redirect there, so no address breaks.
+  redirects: versionRedirects(docsPlugins),
   // Hashed build files go in /assets, not Astro's default /_astro.
   build: { inlineStylesheets: "never", assets: "assets" },
   // Fonts are files, not data: URLs, since the CSP's font-src is 'self'.
   vite: { build: { assetsInlineLimit: 0 } },
   integrations: [
+    // Starlight's own sitemap, less the hidden plugins' pages (Starlight adds none when this is here).
+    sitemap({ filter: (page) => !hiddenIds.some((id) => page.startsWith(`${site}/${id}/`)) }),
     starlight({
       title: "Xena Studios Plugins",
       description: "Docs for Xena Studios' plugins: small, fast plugins for Paper and Folia servers.",
-      // XENA STUDIOS, then "Plugins" as a mono label from theme.css.
-      logo: { dark: "./src/assets/xena-studios-dark.svg", light: "./src/assets/xena-studios-light.svg", replacesTitle: true },
       favicon: "/favicon.svg",
       // One link preview for every page (xena-studios/brand social/docs-og.png).
       head: [
@@ -31,7 +39,8 @@ export default defineConfig({
         { tag: "meta", attrs: { property: "og:image:alt", content: "XENA STUDIOS plugins over a planet horizon: small, fast plugins for Paper and Folia." } },
         { tag: "meta", attrs: { name: "twitter:image", content: "https://plugins.xenastudios.co/og.png" } },
       ],
-      customCss: ["./src/styles/gui.css", "./src/styles/theme.css"],
+      // The brand's tokens first: the GUI and theme build on them.
+      customCss: ["./src/styles/tokens.css", "./src/styles/gui.css", "./src/styles/theme.css"],
       // Code on the family's raised surface with a hairline.
       expressiveCode: {
         themes: ["github-dark-default"],
@@ -74,7 +83,8 @@ export default defineConfig({
       sidebar: [
         { label: "Start here", items: [{ autogenerate: { directory: "start" } }] },
         // One group per plugin; src/routeData.ts shows only the current one, or a link to each.
-        ...catalog.plugins.map((p) => ({ label: p.name, items: [{ autogenerate: { directory: p.id } }] })),
+        // A versioned plugin's v<old>/ folders are groups inside it, shown only on their own pages.
+        ...docsPlugins.map((p) => ({ label: p.name, items: [{ autogenerate: { directory: p.id } }] })),
         { label: "Developers", link: "/developers/" },
         {
           label: "More from Xena Studios",

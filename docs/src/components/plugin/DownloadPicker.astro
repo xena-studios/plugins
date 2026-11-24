@@ -1,0 +1,347 @@
+---
+// A rewritten plugin's downloads: pick your platform and Minecraft version, get the one jar
+// for it and every store that has it. Driven by data: the platforms and the Minecraft versions
+// each starts from come from the plugin's manifest (src/generated/<plugin>/manifest.json), the
+// jars and stores from its releases (src/data/releases/<plugin>.json).
+//
+// Without JavaScript it's the whole list: each platform's jars for the latest release, with
+// the Minecraft versions each runs on and its stores. The script only adds the two menus and
+// hides the rows that don't match.
+import { getEntry } from "astro:content";
+import type { Manifest } from "../reference/manifest";
+import External from "../External.astro";
+import { inRange, newestFirst, span } from "./minecraft";
+
+interface Props {
+  plugin: string;
+}
+const { plugin } = Astro.props;
+const manifestEntry = await getEntry("references", plugin);
+if (!manifestEntry) throw new Error(`DownloadPicker: ${plugin} has no manifest (src/generated/${plugin}/manifest.json)`);
+const manifest = manifestEntry.data as unknown as Manifest;
+const releasesEntry = await getEntry("releases", plugin);
+if (!releasesEntry) throw new Error(`DownloadPicker: ${plugin} has no releases (src/data/releases/${plugin}.json)`);
+const data = releasesEntry.data;
+if (data.plugin !== plugin) throw new Error(`src/data/releases/${plugin}.json says it's ${data.plugin}'s`);
+
+const name = manifest.plugin.name;
+const shipping = manifest.platforms.filter((p) => p.status === "release");
+const planned = manifest.platforms.filter((p) => p.status === "planned");
+const where = `src/data/releases/${plugin}.json`;
+for (const r of data.releases) {
+  for (const f of r.files) {
+    for (const id of f.platforms) {
+      if (!shipping.some((p) => p.id === id)) throw new Error(`${where}: ${r.version}'s ${f.name} is for ${id}, which ${name}'s manifest doesn't release on`);
+    }
+  }
+}
+const dates = data.releases.map((r) => r.date);
+if (dates.some((d, i) => i > 0 && d > dates[i - 1]!)) throw new Error(`${where}: releases must be newest first`);
+
+const stores = {
+  modrinth: "Modrinth",
+  hangar: "Hangar",
+  curseforge: "CurseForge",
+  voxel: "voxel.shop",
+  spigotmc: "SpigotMC",
+  builtbybit: "BuiltByBit",
+  github: "GitHub",
+} as const;
+
+const latest = data.releases.find((r) => r.channel === "release");
+// A beta or alpha newer than the latest release.
+const preview = data.releases[0] !== latest ? data.releases[0] : undefined;
+const earlier = data.releases.filter((r) => r !== latest && r !== preview);
+// The newest Minecraft version anything ships for: what "latest" means in the manifest.
+const newestMinecraft = newestFirst(data.releases.flatMap((r) => r.files.flatMap((f) => f.minecraft)))[0] ?? "";
+
+type Release = (typeof data.releases)[number];
+/** One row per platform and jar: the Minecraft versions it runs on there, and its stores. */
+const rowsOf = (release: Release) =>
+  shipping.flatMap((p) =>
+    release.files.flatMap((file) => {
+      if (!file.platforms.includes(p.id)) return [];
+      const minecraft = newestFirst(file.minecraft.filter((v) => inRange(v, p.minVersion, p.maxVersion, newestMinecraft)));
+      if (!minecraft.length) return [];
+      const at = release.stores.filter((s) => !s.platforms || s.platforms.includes(p.id));
+      return [{ platform: p, file, minecraft, stores: at }];
+    }),
+  );
+const rows = latest ? rowsOf(latest) : [];
+const platformOptions = shipping.filter((p) => rows.some((r) => r.platform.id === p.id));
+
+const size = (bytes: number) => `${Math.round(bytes / 1024)} KiB`;
+const date = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const java = (id: string) => shipping.find((p) => p.id === id)?.java;
+---
+<div class="picker not-content" data-picker>
+  {
+    latest ? (
+      <>
+        <div class="head">
+          <p class="version">{name} {latest.version}</p>
+          <p class="facts gui-stat">Released {date(latest.date)} · {shipping.map((p) => p.name).join(", ")}</p>
+        </div>
+        <div class="choose" data-picker-form hidden>
+          <label>
+            <span>Platform</span>
+            <select name="platform">
+              {platformOptions.map((p) => <option value={p.id}>{p.name}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Minecraft</span>
+            <select name="minecraft" />
+          </label>
+        </div>
+        <table class="jars">
+          <thead>
+            <tr>
+              <th>Platform</th>
+              <th>Minecraft</th>
+              <th>Download</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr data-platform={r.platform.id} data-minecraft={r.minecraft.join(" ")}>
+                <td>
+                  <strong>{r.platform.name}</strong>
+                  {java(r.platform.id) && <div class="hint">Java {java(r.platform.id)}+</div>}
+                </td>
+                <td>{span(r.minecraft)}</td>
+                <td>
+                  <a class="gui-button primary" href={r.file.url} download>
+                    {r.file.name} <span class="size">({size(r.file.size)})</span>
+                  </a>
+                  {r.stores.length > 0 && (
+                    <div class="stores">
+                      Also on{" "}
+                      {r.stores.map((s, i) => (
+                        <>
+                          {i > 0 && " · "}
+                          <a href={s.url}>
+                            {stores[s.store]}
+                            <External />
+                          </a>
+                        </>
+                      ))}
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p class="none" data-picker-none hidden>
+          {name} {latest.version} has no jar for that. Try another Minecraft version, or ask on GitHub.
+        </p>
+      </>
+    ) : (
+      <p class="facts">{name} isn't released yet. Its first version will be here.</p>
+    )
+  }
+  {planned.length > 0 && <p class="planned">Coming later: {planned.map((p) => p.name).join(", ")}.</p>}
+</div>
+
+{
+  preview && (
+    <p>
+      A {preview.channel} is out: <strong>{name} {preview.version}</strong>, from {date(preview.date)}.{" "}
+      {preview.files.map((f, i) => (
+        <>
+          {i > 0 && " · "}
+          <a href={f.url}>{f.name}</a>
+        </>
+      ))}
+    </p>
+  )
+}
+
+{
+  earlier.length > 0 && (
+    <details class="earlier">
+      <summary>Earlier versions</summary>
+      <ul>
+        {earlier.map((r) => (
+          <li>
+            <strong>{r.version}</strong> {r.channel !== "release" && <span class="hint">{r.channel}</span>} <span class="hint">{date(r.date)}</span>
+            <div>
+              {r.files.map((f, i) => (
+                <>
+                  {i > 0 && " · "}
+                  <a href={f.url}>{f.name}</a> <span class="hint">{span(f.minecraft)}</span>
+                </>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </details>
+  )
+}
+
+<script>
+  import { compareVersions } from "./minecraft";
+
+  for (const picker of document.querySelectorAll<HTMLElement>("[data-picker]")) {
+    const form = picker.querySelector<HTMLElement>("[data-picker-form]");
+    const platform = form?.querySelector<HTMLSelectElement>("select[name=platform]");
+    const minecraft = form?.querySelector<HTMLSelectElement>("select[name=minecraft]");
+    const none = picker.querySelector<HTMLElement>("[data-picker-none]");
+    if (!form || !platform || !minecraft || !none) continue;
+    const rows = [...picker.querySelectorAll<HTMLTableRowElement>("tr[data-platform]")];
+    const versions = (row: HTMLElement) => (row.dataset.minecraft ?? "").split(" ");
+
+    // The Minecraft versions the chosen platform has a jar for, newest first; the choice
+    // stays if the new platform has it too.
+    const fill = () => {
+      const keep = minecraft.value;
+      const list = [...new Set(rows.filter((r) => r.dataset.platform === platform.value).flatMap(versions))].sort((a, b) => compareVersions(b, a));
+      minecraft.replaceChildren(...list.map((v) => new Option(v, v)));
+      if (list.includes(keep)) minecraft.value = keep;
+    };
+    const show = () => {
+      let shown = 0;
+      for (const r of rows) {
+        r.hidden = !(r.dataset.platform === platform.value && versions(r).includes(minecraft.value));
+        if (!r.hidden) shown++;
+      }
+      none.hidden = shown > 0;
+    };
+    platform.addEventListener("change", () => {
+      fill();
+      show();
+    });
+    minecraft.addEventListener("change", show);
+    fill();
+    show();
+    form.hidden = false;
+  }
+</script>
+
+<style>
+  .picker {
+    display: grid;
+    gap: 1rem;
+    margin-block: 1.5rem 2rem;
+  }
+  .picker p {
+    margin: 0;
+  }
+  .version {
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    color: var(--sl-color-accent);
+  }
+  .facts {
+    margin-top: 0.4rem !important;
+    color: var(--gui-attribute);
+  }
+  .choose {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+  }
+  .choose[hidden] {
+    display: none;
+  }
+  .choose label {
+    display: grid;
+    gap: 0.3rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  select {
+    min-width: 11rem;
+    min-height: 2.5rem;
+    padding: 0 0.6rem;
+    font: inherit;
+    font-family: var(--sl-font);
+    font-size: 1rem;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--text);
+    background: var(--gui-slot);
+    border: var(--gui-px) solid var(--gui-edge);
+    border-radius: 0;
+  }
+  .jars {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .jars th,
+  .jars td {
+    padding: 0.6rem 0.75rem 0.6rem 0;
+    text-align: start;
+    vertical-align: top;
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+  .jars th {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .jars td:nth-child(2) {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .jars .gui-button {
+    overflow-wrap: anywhere;
+  }
+  .size {
+    font-weight: 500;
+    opacity: 0.7;
+  }
+  .stores {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--gui-hint);
+  }
+  .stores a {
+    color: var(--text);
+  }
+  .hint {
+    font-size: 0.875rem;
+    color: var(--gui-hint);
+  }
+  .none {
+    font-weight: 600;
+  }
+  .planned {
+    font-size: 0.875rem;
+    color: var(--gui-hint);
+  }
+  .earlier ul {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0;
+    list-style: none;
+  }
+  @media (max-width: 40rem) {
+    .jars thead {
+      display: none;
+    }
+    .jars tr {
+      display: grid;
+      gap: 0.25rem;
+      padding-block: 0.6rem;
+      border-bottom: 1px solid var(--sl-color-hairline);
+    }
+    .jars tr[hidden] {
+      display: none;
+    }
+    .jars td {
+      padding: 0;
+      border: 0;
+    }
+  }
+</style>

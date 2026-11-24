@@ -27,7 +27,7 @@ class BukkitCommandsTest {
     private val ran = mutableListOf<String>()
     private var refreshes = 0
     private lateinit var registrar: BukkitCommands
-    private val text = BukkitText.legacy(BukkitServer.detect({ false }, "1.8.8", "CraftBukkit", adventure = false))
+    private val text = BukkitText.legacy(BukkitServer.detect({ false }, "1.8.8", "CraftBukkit", adventure = false), FakeServer.server)
 
     @BeforeTest
     fun setUp() {

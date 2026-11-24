@@ -2,11 +2,13 @@ package co.xenastudios.core.bukkit
 
 import org.bukkit.Bukkit
 import org.bukkit.Server
+import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.command.SimpleCommandMap
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.PluginManager
 import org.bukkit.plugin.SimplePluginManager
+import org.bukkit.plugin.SimpleServicesManager
 import org.bukkit.scheduler.BukkitScheduler
 import java.lang.reflect.Proxy
 import java.util.UUID
@@ -44,6 +46,12 @@ internal object FakeServer {
     @Volatile var players: List<Player> = emptyList()
     lateinit var commandMap: SimpleCommandMap
     lateinit var pluginManager: SimplePluginManager
+    lateinit var services: SimpleServicesManager
+    val console: Inbox = Inbox()
+    private val consoleSender: ConsoleCommandSender = fake(
+        "CONSOLE",
+        mapOf("getName" to { _ -> "CONSOLE" }, "sendMessage" to { args -> console.received += args[0]!! }),
+    )
 
     val server: Server = fake(
         "Server",
@@ -62,6 +70,8 @@ internal object FakeServer {
             "getPlayer" to { args -> players.firstOrNull { it.uniqueId == args[0] as? UUID } },
             "getWorlds" to { _ -> emptyList<Any>() },
             "getWorld" to { _ -> null },
+            "getServicesManager" to { _ -> services },
+            "getConsoleSender" to { _ -> consoleSender },
         ),
     )
 
@@ -77,6 +87,8 @@ internal object FakeServer {
         players = emptyList()
         commandMap = SimpleCommandMap(server)
         pluginManager = SimplePluginManager(server, commandMap)
+        services = SimpleServicesManager()
+        console.received.clear()
     }
 
     /** A plugin called [name], enabled, on this server. */

@@ -4,11 +4,11 @@ import co.xenastudios.core.api.Location
 import co.xenastudios.core.api.WorldRef
 import co.xenastudios.core.testing.FakeCommandSource
 import org.bukkit.World
-import org.bukkit.command.CommandSender
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import org.bukkit.Location as BukkitLocation
 
@@ -47,11 +47,9 @@ class BukkitPlayersTest {
     }
 
     @Test
-    fun languagesComeFromTheClientAndTheConsoleHasNone() {
-        val console = fake<CommandSender>("CONSOLE", emptyMap())
-        val languages = BukkitLanguages.SpigotLanguages
-        assertEquals("de_de", languages.clientLocale(fakePlayer("Hans", locale = "de_de")))
-        assertNull(languages.clientLocale(console))
-        assertNull(BukkitLanguages.NoLanguages.clientLocale(fakePlayer("Steve")))
+    fun localesComeFromTheClientWhereTheServerSays() {
+        assertEquals("de_de", ClientLocales.Spigot.of(fakePlayer("Hans", locale = "de_de")))
+        assertNull(ClientLocales.None.of(fakePlayer("Steve")))
+        assertFalse(ClientLocales.Spigot.listen {}, "Spigot before 1.12 never says the locale changed")
     }
 }

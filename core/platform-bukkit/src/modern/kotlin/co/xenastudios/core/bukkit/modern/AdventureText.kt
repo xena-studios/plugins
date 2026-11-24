@@ -1,11 +1,11 @@
 package co.xenastudios.core.bukkit.modern
 
-import co.xenastudios.core.common.i18n.Delivery
 import co.xenastudios.core.common.text.TextRenderer
 import co.xenastudios.core.jvm.text.AdventureRenderer
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import org.bukkit.command.CommandSender
+import java.util.function.BiConsumer
 
 /**
  * Text on Paper and Folia from 1.16.5, and PandaSpigot: our components drawn to the server's own
@@ -16,5 +16,5 @@ import org.bukkit.command.CommandSender
 internal object AdventureText {
     val renderer: TextRenderer<Any> = AdventureRenderer
 
-    val delivery: Delivery<CommandSender, Any> = Delivery { target, text -> (target as Audience).sendMessage(text as Component) }
+    val send: BiConsumer<CommandSender, Any> = BiConsumer { target, text -> (target as Audience).sendMessage(text as Component) }
 }

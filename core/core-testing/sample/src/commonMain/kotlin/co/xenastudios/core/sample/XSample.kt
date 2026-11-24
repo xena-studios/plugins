@@ -6,7 +6,9 @@ import co.xenastudios.core.api.event.Event
 import co.xenastudios.core.api.event.EventType
 import co.xenastudios.core.api.pendingOf
 import co.xenastudios.core.common.Outcome
+import co.xenastudios.core.common.admin.AdminText
 import co.xenastudios.core.common.admin.Debug
+import co.xenastudios.core.common.admin.Dependency
 import co.xenastudios.core.common.admin.HealthChecks
 import co.xenastudios.core.common.admin.Importer
 import co.xenastudios.core.common.admin.Imports
@@ -124,6 +126,12 @@ public class XSample(
     /** Who has played, by name, for `/xsample forget`: the family's player cache on a server. */
     lookup: PlayerLookup = PlayerLookup { pendingOf(null) },
     private val registrar: CommandRegistrar? = null,
+    /** What the platform tells `/xsample debug`: the Java and server versions, and the plugins installed. */
+    about: () -> Map<String, String> = { emptyMap() },
+    /** The plugins it works with, installed or not, for `/xsample debug`; none by default. */
+    dependencies: (() -> List<Dependency>)? = null,
+    /** Draws the admin subcommands' replies in each reader's language; English by default. */
+    adminText: AdminText = AdminText.ENGLISH,
 ) {
     private var config: Config = settings()
     private val coins = HashMap<PlayerRef, Int>()
@@ -143,9 +151,14 @@ public class XSample(
     public val admin: AdminCommands = AdminCommands(
         "xsample", "xSample", platform,
         ModuleReloader(modules, reloadFiles = ::reloadFiles, wanted = ::wantedModules),
-        debug = Debug(platform, "xSample 1.0.0", listOf(HealthChecks.threading(platform), HealthChecks.modules(modules))),
+        debug = Debug(
+            platform, "xSample 1.0.0",
+            listOf(HealthChecks.threading(platform), HealthChecks.modules(modules)) + listOfNotNull(dependencies?.let(HealthChecks::dependencies)),
+            about = about,
+        ),
         imports = if (importers.isEmpty()) null else Imports(platform, importers),
         playerData = playerData,
+        text = adminText,
     )
 
     /** What runs commands; built again on reload, from the new config. */

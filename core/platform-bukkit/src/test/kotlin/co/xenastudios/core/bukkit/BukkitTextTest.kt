@@ -28,14 +28,14 @@ class BukkitTextTest {
 
     @Test
     fun eachServerGetsItsOwnText() {
-        assertEquals("BaseComponent", BukkitText.pick(server("1.8.8")).name)
-        assertEquals("legacy text", BukkitText.pick(server("1.8.8", emptySet())).name)
-        assertEquals("Adventure", BukkitText.pick(BukkitServer.detect({ false }, "1.21.11", "Paper", adventure = true)).name)
+        assertEquals("BaseComponent", BukkitText.pick(server("1.8.8"), FakeServer.server).name)
+        assertEquals("legacy text", BukkitText.pick(server("1.8.8", emptySet()), FakeServer.server).name)
+        assertEquals("Adventure", BukkitText.pick(BukkitServer.detect({ false }, "1.21.11", "Paper", adventure = true), FakeServer.server).name)
     }
 
     @Test
     fun spigotPlayersGetComponentsAndTheConsoleAString() {
-        val text = BukkitText.pick(server("1.8.8"))
+        val text = BukkitText.pick(server("1.8.8"), FakeServer.server)
         val players = Inbox()
         val consoles = Inbox()
         text.send(fakePlayer("Steve", players), gold)
@@ -47,26 +47,26 @@ class BukkitTextTest {
 
     @Test
     fun from121PlainMessagesGoAsStringsAndClickableOnesAsComponents() {
-        val renderer = BukkitText.pick(server("1.21.11")).renderer
+        val renderer = BukkitText.pick(server("1.21.11"), FakeServer.server).renderer
         val plain = renderer.draw(gold) as SpigotMessage
         assertNull(plain.components)
         assertEquals("§6Hello", plain.legacy)
         assertNotNull((renderer.draw(Component("See ", children = listOf(link))) as SpigotMessage).components)
 
         // Before 1.21 a component costs less than a string to send, so every message is one.
-        assertNotNull((BukkitText.pick(server("1.20.6")).renderer.draw(gold) as SpigotMessage).components)
+        assertNotNull((BukkitText.pick(server("1.20.6"), FakeServer.server).renderer.draw(gold) as SpigotMessage).components)
 
         val players = Inbox()
-        BukkitText.pick(server("1.21.11")).send(fakePlayer("Alex", players), gold)
+        BukkitText.pick(server("1.21.11"), FakeServer.server).send(fakePlayer("Alex", players), gold)
         assertEquals("§6Hello", players.received.single())
     }
 
     @Test
     fun hexColoursFrom116AndTheNearestNamedOneBefore() {
         val purple = Component("x", Style(color = TextColor(0x7C5CFF)))
-        assertEquals("§x§7§c§5§c§f§fx", (BukkitText.pick(server("1.16.5")).renderer.draw(purple) as SpigotMessage).legacy)
-        assertEquals("§9x", (BukkitText.pick(server("1.8.8")).renderer.draw(purple) as SpigotMessage).legacy)
-        assertEquals("§9x", BukkitText.pick(server("1.8.8", emptySet())).renderer.draw(purple))
+        assertEquals("§x§7§c§5§c§f§fx", (BukkitText.pick(server("1.16.5"), FakeServer.server).renderer.draw(purple) as SpigotMessage).legacy)
+        assertEquals("§9x", (BukkitText.pick(server("1.8.8"), FakeServer.server).renderer.draw(purple) as SpigotMessage).legacy)
+        assertEquals("§9x", BukkitText.pick(server("1.8.8", emptySet()), FakeServer.server).renderer.draw(purple))
     }
 
     @Test

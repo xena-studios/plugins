@@ -9,7 +9,7 @@ plugins {
 // reported. So is one found only in plugins' APIs (<plugin>/api): an API can't use the
 // core, by design, so the boilerplate every Bukkit event needs repeats there. The
 // sandbox is scaffolding for CI, so it's left out.
-val cpd: Configuration by configurations.creating
+val cpd: Configuration = configurations.create("cpd")
 
 dependencies {
     cpd(libs.pmd.cli)

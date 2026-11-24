@@ -40,10 +40,10 @@ paperPluginYaml {
 
 // A plugin with a public API (<plugin>/api, on the xena.api convention) ships it in
 // its jar, so other plugins find the API classes in the plugin they depend on.
-val api = findProject("${project.path}:api")
-if (api != null) {
+val apiPath = "${project.path}:api".takeIf { findProject(it) != null }
+if (apiPath != null) {
     dependencies {
-        implementation(api)
+        implementation(project(apiPath))
     }
 }
 
@@ -62,8 +62,8 @@ tasks.shadowJar {
     // Drop core classes the plugin never uses. The API stays whole, unrelocated:
     // other plugins use the parts this one doesn't.
     minimize {
-        if (api != null) {
-            exclude(project(api.path))
+        if (apiPath != null) {
+            exclude(project(apiPath))
         }
     }
 }

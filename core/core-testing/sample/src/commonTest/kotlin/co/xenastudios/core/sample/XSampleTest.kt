@@ -5,10 +5,17 @@ import co.xenastudios.core.common.command.CommandFeedback
 import co.xenastudios.core.common.command.CommandResult
 import co.xenastudios.core.common.command.CommandSource
 import co.xenastudios.core.common.command.OnlinePlayers
+import co.xenastudios.core.common.config.Configs
+import co.xenastudios.core.common.family.Family
+import co.xenastudios.core.common.i18n.LanguageChoice
+import co.xenastudios.core.common.i18n.LanguageTag
 import co.xenastudios.core.common.manifest.Manifest
 import co.xenastudios.core.common.manifest.PlatformInfo
+import co.xenastudios.core.common.platform.writeText
 import co.xenastudios.core.testing.FakeCommandSource
 import co.xenastudios.core.testing.FakePlatform
+import co.xenastudios.core.testing.TestYaml
+import co.xenastudios.core.testing.ok
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -72,6 +79,25 @@ class XSampleTest {
         assertEquals(151, plugin.balance(alex.player!!))
         assertEquals("151", plugin.placeholders.resolve("balance", alex.player))
         assertEquals("151", plugin.placeholders.resolve("richest", null))
+    }
+
+    @Test
+    fun aListenerCanStopAPayment() {
+        plugin.events.subscribe(CoinsPaidEvent.TYPE) { if (it.amount > 40) it.isCancelled = true }
+        assertIs<CommandResult.Failed>(run(steve, "pay alex 50"))
+        assertEquals(100, plugin.balance(steve.player!!))
+        assertEquals(CommandResult.Ran, run(steve, "pay alex 40"))
+    }
+
+    @Test
+    fun itTakesTheFamilysLookUnlessItsConfigSaysOtherwise() {
+        platform.family.folder.writeText(Family.FILE, "messages:\n  language: de\n")
+        val family = platform.family.family()
+        family.load()
+        val shared = family.look(SampleConfig.defaults, SampleConfig.messages)
+        assertEquals(LanguageChoice.Fixed(LanguageTag.of("de")), shared.languages.choice)
+        val own = Configs.load(SampleConfig, "messages:\n  language: auto\n", TestYaml).ok().config
+        assertEquals(LanguageChoice.Auto, family.look(own, SampleConfig.messages).languages.choice)
     }
 
     @Test

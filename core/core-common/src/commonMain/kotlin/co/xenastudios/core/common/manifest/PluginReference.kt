@@ -1,9 +1,15 @@
 package co.xenastudios.core.common.manifest
 
+import co.xenastudios.core.api.event.Cancellable
+import co.xenastudios.core.api.event.Event
+import co.xenastudios.core.api.event.EventType
 import co.xenastudios.core.common.command.CommandTree
 import co.xenastudios.core.common.config.ConfigSchema
 import co.xenastudios.core.common.permission.PermissionSet
+import co.xenastudios.core.common.i18n.MessageCatalog
 import co.xenastudios.core.common.placeholder.PlaceholderSet
+import kotlin.jvm.JvmName
+import kotlin.reflect.KClass
 
 /**
  * Everything a plugin declares that its docs describe: the same objects it runs on, gathered
@@ -28,11 +34,18 @@ public class PluginReference(
     public val config: ConfigSchema? = null,
     /** Its placeholders, if it has any. */
     public val placeholders: PlaceholderSet? = null,
-    /** Its messages, as the translations declare them; see [MessageInfo]. */
-    public val messages: List<MessageInfo> = emptyList(),
-    /** Its API's events; see [EventInfo]. */
+    /**
+     * Its messages: the catalog its `lang/` files hold, the core's among them, if it sends any.
+     * The manifest lists them ([messages]), and the build's `checkTranslations` checks each
+     * shipped translation against them.
+     */
+    public val catalog: MessageCatalog? = null,
+    /** Its API's events: [EventInfo.of] each event type. */
     public val events: List<EventInfo> = emptyList(),
 ) {
+    /** Its messages, as the manifest lists them. */
+    public val messages: List<MessageInfo> = catalog?.let(MessageInfo::of).orEmpty()
+
     init {
         val declared = HashSet<String>()
         for (set in permissions) {
@@ -64,21 +77,27 @@ public interface ManifestSource {
 }
 
 /**
- * One message, as the manifest lists it: its key, English text, comment and placeholders.
- * The translations' `MessageBundle` gives these for its messages; until it lands, a plugin
- * lists none.
+ * One message, as the manifest lists it: its key, English text, comment and placeholders, read
+ * from the plugin's [MessageCatalog] with [of], so the docs show what the plugin sends.
  */
 public data class MessageInfo(
     public val key: String,
     public val english: String,
     public val comment: List<String>,
     public val placeholders: List<String>,
-)
+) {
+    public companion object {
+        /** Every message of [catalog], in its files' order: the core's and the plugin's. */
+        public fun of(catalog: MessageCatalog): List<MessageInfo> =
+            catalog.messages.map { MessageInfo(it.key, it.english, it.comment, it.placeholders) }
+    }
+}
 
 /**
  * One event of a plugin's API, as the manifest lists it: its [key] (the `EventType`'s, such as
  * `xmoney:balance_changed`), the class developers listen for, and whether it can be cancelled.
- * Listed by hand until the API's events are read from its code (DECISIONS.md, M0).
+ * Read from the API's own event types with [of], so the key, the class and whether it's
+ * cancellable can't disagree with the code; the [description] and [since] are the docs' own.
  */
 public data class EventInfo(
     public val key: String,
@@ -86,7 +105,22 @@ public data class EventInfo(
     public val description: String,
     public val cancellable: Boolean,
     public val since: String? = null,
-)
+) {
+    public companion object {
+        /** [type]'s event, a pre-event listeners can cancel ([Cancellable]). */
+        @JvmName("ofCancellable")
+        public inline fun <reified E : Cancellable> of(type: EventType<E>, description: String, since: String? = null): EventInfo =
+            EventInfo(type.name, className(E::class), description, cancellable = true, since)
+
+        /** [type]'s event, which listeners hear but can't stop. */
+        public inline fun <reified E : Event> of(type: EventType<E>, description: String, since: String? = null): EventInfo =
+            EventInfo(type.name, className(E::class), description, cancellable = false, since)
+
+        /** The name developers import [type] by: its full name, where the platform knows it. */
+        @PublishedApi
+        internal fun className(type: KClass<*>): String = type.qualifiedName ?: type.simpleName ?: "?"
+    }
+}
 
 /** One platform a plugin runs on, or will, from its build. */
 public data class PlatformInfo(

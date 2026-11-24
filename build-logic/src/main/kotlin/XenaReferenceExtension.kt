@@ -1,3 +1,4 @@
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -20,6 +21,19 @@ abstract class XenaReferenceExtension {
 
     /** Where the committed manifests live: `docs/src/generated/` unless set. */
     abstract val docsDir: DirectoryProperty
+
+    /**
+     * The folders of the plugin's shipped translations, `lang/<tag>.yml`, which
+     * `checkTranslations` checks: `src/commonMain/resources/lang`, `src/jvmMain/resources/lang`
+     * and `src/main/resources/lang` unless set.
+     */
+    abstract val langDirs: ConfigurableFileCollection
+
+    /**
+     * Whether a translation may leave messages out (English fills in): `false`, so a release
+     * ships every message in every language it has. Set it while a language is being drafted.
+     */
+    abstract val allowMissingTranslations: Property<Boolean>
 
     /** The platforms, one line each (`id;name;kind;min;max;java;status;since`), from [platform]. */
     abstract val platforms: ListProperty<String>

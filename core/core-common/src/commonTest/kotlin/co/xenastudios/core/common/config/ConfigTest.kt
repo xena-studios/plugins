@@ -3,6 +3,7 @@ package co.xenastudios.core.common.config
 import co.xenastudios.core.common.Outcome
 import co.xenastudios.core.common.text.MarkupTag
 import co.xenastudios.core.common.text.Style
+import co.xenastudios.core.testing.TestYaml
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

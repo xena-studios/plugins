@@ -519,9 +519,13 @@ public class JdbcDatabase internal constructor(
             if (!Sql.validPrefix(settings.prefix)) {
                 return Outcome.Err(DbError(DbError.Kind.BAD_STATEMENT, "storage.table-prefix can only use lowercase letters, digits and _"))
             }
+            // The config's pool.readers, when it says, over the limits' own.
+            val pooled = settings.readers?.let {
+                JdbcLimits(limits.batch, limits.warnAt, limits.capacity, limits.closeWaitMillis, limits.maxBackoffMillis, it)
+            } ?: limits
             return when (settings.type) {
-                DatabaseSettings.Type.SQLITE -> openSqlite(settings, sqliteFile, drivers, log, name, limits, sqliteMinimum, wrap)
-                DatabaseSettings.Type.MYSQL -> openMySql(settings, drivers, log, name, limits, wrap)
+                DatabaseSettings.Type.SQLITE -> openSqlite(settings, sqliteFile, drivers, log, name, pooled, sqliteMinimum, wrap)
+                DatabaseSettings.Type.MYSQL -> openMySql(settings, drivers, log, name, pooled, wrap)
             }
         }
 

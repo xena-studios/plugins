@@ -116,15 +116,21 @@ public fun Database.migrate(migrations: List<Migration>): Pending<Outcome<Int, D
     session { Migrations.run(it, sql, migrations) }
 
 /**
- * Where a plugin keeps its data, as its `storage` config section says. The family can share
- * one database (the same MySQL, or one SQLite file in `plugins/Xena/`): each plugin's [prefix]
- * keeps its tables, and its schema version, apart.
+ * Where a plugin keeps its data, as its `storage` config section says
+ * ([co.xenastudios.core.common.family.StorageSection]). The family can share one database (the
+ * same MySQL, or one SQLite file in `plugins/Xena/`): each plugin's [prefix] keeps its tables,
+ * and its schema version, apart.
  */
 public data class DatabaseSettings(
     public val type: Type = Type.SQLITE,
     /** Before every table's name, such as `xbans_`. */
     public val prefix: String,
     public val mysql: MySql = MySql(),
+    /**
+     * How many connections read beside the writer, or `null` for the database's own choice
+     * (one on SQLite, two on MySQL): the `pool` section.
+     */
+    public val readers: Int? = null,
 ) {
     /** Which database. */
     public enum class Type {

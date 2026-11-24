@@ -1,6 +1,9 @@
 package co.xenastudios.core.sample
 
 import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.api.event.CancellableEvent
+import co.xenastudios.core.api.event.Event
+import co.xenastudios.core.api.event.EventType
 import co.xenastudios.core.api.pendingOf
 import co.xenastudios.core.common.Outcome
 import co.xenastudios.core.common.admin.Debug
@@ -20,8 +23,13 @@ import co.xenastudios.core.common.config.Config
 import co.xenastudios.core.common.config.ConfigKey
 import co.xenastudios.core.common.config.ConfigSchema
 import co.xenastudios.core.common.config.ConfigSection
+import co.xenastudios.core.common.event.SimpleEventBus
+import co.xenastudios.core.common.i18n.CoreMessages
+import co.xenastudios.core.common.i18n.MessageBundle
+import co.xenastudios.core.common.i18n.MessageCatalog
+import co.xenastudios.core.common.i18n.MessageKey
+import co.xenastudios.core.common.family.MessagesSection
 import co.xenastudios.core.common.manifest.EventInfo
-import co.xenastudios.core.common.manifest.MessageInfo
 import co.xenastudios.core.common.manifest.PluginReference
 import co.xenastudios.core.common.module.Module
 import co.xenastudios.core.common.module.ModuleContext
@@ -35,6 +43,7 @@ import co.xenastudios.core.common.platform.Platform
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.every
 import co.xenastudios.core.common.text.Component
+import kotlin.jvm.JvmField
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -47,6 +56,8 @@ import kotlin.time.Duration.Companion.seconds
 
 /** xSample's config. */
 public object SampleConfig : ConfigSchema(1, "xSample: the core's sample plugin. Never released.") {
+    /** Its look and language: the family's (`plugins/Xena/config.yml`) unless set here. */
+    public val messages: MessagesSection = MessagesSection(this)
     public val startingCoins: ConfigKey<Int> =
         int("starting-coins", 100, "Coins a player has before their first payment.", min = 0)
     public val payCooldown: ConfigKey<Duration> =
@@ -57,6 +68,35 @@ public object SampleConfig : ConfigSchema(1, "xSample: the core's sample plugin.
         public val enabled: ConfigKey<Boolean> = boolean("enabled", true, "Whether interest is paid.")
         public val percent: ConfigKey<Int> = int("percent", 1, "How much of each balance, in percent.", min = 0, max = 100)
         public val every: ConfigKey<Duration> = duration("every", 1.hours, "How often.", min = 1.minutes)
+    }
+}
+
+/** xSample's messages, which lang/de.yml translates (and `checkTranslations` checks). */
+public object SampleMessages : MessageBundle() {
+    public val paid: MessageKey = message(
+        "sample.paid", "<prefix>You paid <highlight><player></highlight> <amount> coins.",
+        "After /pay.",
+        placeholders = listOf("player", "amount"),
+    )
+    public val broke: MessageKey = message("sample.broke", "<prefix><error>You don't have <amount> coins.", placeholders = listOf("amount"))
+
+    /** Every message the sample's lang files hold: the core's, then its own. */
+    public val catalog: MessageCatalog = MessageCatalog.of(CoreMessages, this)
+}
+
+/** A player is about to pay another: cancel it to stop the payment. */
+public class CoinsPaidEvent(public val from: PlayerRef, public val to: PlayerRef, public val amount: Int) : CancellableEvent() {
+    public companion object {
+        @JvmField
+        public val TYPE: EventType<CoinsPaidEvent> = EventType.of("xsample:coins_paid")
+    }
+}
+
+/** Interest was paid on every balance. */
+public class InterestPaidEvent(public val percent: Int) : Event {
+    public companion object {
+        @JvmField
+        public val TYPE: EventType<InterestPaidEvent> = EventType.of("xsample:interest_paid")
     }
 }
 
@@ -83,6 +123,9 @@ public class XSample(
 ) {
     private var config: Config = settings()
     private val coins = HashMap<PlayerRef, Int>()
+
+    /** Its API's events. */
+    public val events: SimpleEventBus = SimpleEventBus(platform.log)
 
     /** The plugin's modules: interest, when the config wants it. */
     public val modules: ModuleSet = ModuleSet(platform)
@@ -118,8 +161,11 @@ public class XSample(
             dispatcher.tree, listOf(SamplePermissions, admin.permissions),
             config = SampleConfig,
             placeholders = placeholders,
-            messages = listOf(MessageInfo("sample.paid", "<prefix>You paid <player> <amount> coins.", listOf("After /xsample pay."), listOf("player", "amount"))),
-            events = listOf(EventInfo("xsample:coins_paid", "co.xenastudios.xsample.api.CoinsPaidEvent", "A player pays another.", cancellable = true, since = "1.0.0")),
+            catalog = SampleMessages.catalog,
+            events = listOf(
+                EventInfo.of(CoinsPaidEvent.TYPE, "A player is about to pay another.", since = "1.0.0"),
+                EventInfo.of(InterestPaidEvent.TYPE, "Interest was paid on every balance.", since = "1.0.0"),
+            ),
         )
 
     /** Turns the plugin on: its modules, as the config says. */
@@ -158,6 +204,7 @@ public class XSample(
                 val from = ctx.player
                 if (ctx[to] == from) ctx.fail(Component.text("You can't pay yourself."))
                 if (balance(from) < ctx[amount]) ctx.fail(Component.text("You don't have ${ctx[amount]} coins."))
+                if (events.fire(CoinsPaidEvent.TYPE, CoinsPaidEvent(from, ctx[to], ctx[amount])).isCancelled) ctx.fail(Component.text("The payment was stopped."))
                 add(from, -ctx[amount])
                 add(ctx[to], ctx[amount])
                 ctx.reply(Component.text("Paid ${ctx[amount]} coins."))
@@ -188,6 +235,7 @@ public class XSample(
             val percent = config[SampleConfig.interest.percent]
             context.scheduler.every(Where.Global, config[SampleConfig.interest.every]) {
                 withCoins { for (entry in entries) entry.setValue(entry.value + entry.value * percent / 100) }
+                events.fire(InterestPaidEvent.TYPE, InterestPaidEvent(percent))
             }
         }
     }

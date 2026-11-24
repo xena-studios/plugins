@@ -1,5 +1,6 @@
 package co.xenastudios.core.jvm.text
 
+import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.common.i18n.CoreMessages
 import co.xenastudios.core.common.i18n.LanguageSource
 import co.xenastudios.core.common.i18n.MessageCatalog
@@ -73,12 +74,12 @@ class AdventureRendererTest {
     @Test
     fun aMessageWithoutPlaceholdersIsDrawnOnceAndKept() {
         val drawer = MessageDrawer(Translations.of(MessageCatalog.of(CoreMessages, ShopMessages), emptyMap()), NoLocale, AdventureRenderer)
-        val first = assertNotNull(drawer.draw(Unit, ShopMessages.empty))
-        assertSame(first, drawer.draw(Unit, ShopMessages.empty))
+        val first = assertNotNull(drawer.draw(null, ShopMessages.empty))
+        assertSame(first, drawer.draw(null, ShopMessages.empty))
     }
 
-    private object NoLocale : LanguageSource<Unit> {
-        override fun clientLocale(viewer: Unit): String? = null
+    private object NoLocale : LanguageSource {
+        override fun clientLocale(player: PlayerRef): String? = null
     }
 }
 

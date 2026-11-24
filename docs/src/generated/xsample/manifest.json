@@ -277,6 +277,109 @@
     ],
     "entries": [
       {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
         "path": "starting-coins",
         "type": "integer",
         "comment": [
@@ -372,13 +475,420 @@
   ],
   "messages": [
     {
-      "key": "sample.paid",
-      "english": "<prefix>You paid <player> <amount> coins.",
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
       "comment": [
-        "After /xsample pay."
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
       ],
       "placeholders": [
         "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "sample.paid",
+      "english": "<prefix>You paid <highlight><player></highlight> <amount> coins.",
+      "comment": [
+        "After /pay."
+      ],
+      "placeholders": [
+        "player",
+        "amount"
+      ]
+    },
+    {
+      "key": "sample.broke",
+      "english": "<prefix><error>You don't have <amount> coins.",
+      "comment": [],
+      "placeholders": [
         "amount"
       ]
     }
@@ -386,9 +896,16 @@
   "events": [
     {
       "key": "xsample:coins_paid",
-      "className": "co.xenastudios.xsample.api.CoinsPaidEvent",
-      "description": "A player pays another.",
+      "className": "co.xenastudios.core.sample.CoinsPaidEvent",
+      "description": "A player is about to pay another.",
       "cancellable": true,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xsample:interest_paid",
+      "className": "co.xenastudios.core.sample.InterestPaidEvent",
+      "description": "Interest was paid on every balance.",
+      "cancellable": false,
       "since": "1.0.0"
     }
   ]

@@ -142,7 +142,7 @@ Loading writes the file back whenever it changes it (carrying it forward, adding
 
 ## Releases: the job that runs Gradle can't write to the repo (2026-11-17)
 
-`release.yml` is three jobs. **publish** checks the tag, builds, and publishes the plugin's API (if it has one) to Maven Central and the plugin to Modrinth with the `release` environment's secrets, but its `GITHUB_TOKEN` can only read. **github** has `contents: write` and runs no project code (no checkout, no Gradle): it uploads the jar and notes the first job built. **docs** runs no project code either: its one permission, `actions: write`, starts the Docs workflow, so the site shows the new version. So a build script, a Gradle plugin or a dependency can never push to the repo or rewrite a release. Workflows default to `permissions: {}` and each job asks for what it needs.
+`release.yml` is three jobs. **publish** checks the tag, builds, and publishes the plugin's API (if it has one) to Maven Central and the plugin to Modrinth, Hangar and voxel.shop with the `release` environment's secrets, but its `GITHUB_TOKEN` can only read. **github** has `contents: write` and runs no project code (no checkout, no Gradle): it uploads the jar and notes the first job built. **docs** runs no project code either: its one permission, `actions: write`, starts the Docs workflow, so the site shows the new version. So a build script, a Gradle plugin or a dependency can never push to the repo or rewrite a release. Workflows default to `permissions: {}` and each job asks for what it needs.
 
 ## Audit follow-ups: split words, vanish, reloads (2026-11-17)
 
@@ -341,3 +341,9 @@ xStats (issue #47) gives players their stats, everyone leaderboards, and owners 
 - **`/leaderboard`, not `/top`.** The issue asked for `/top`, but xUtilities has `/top` (to the highest block), and with both installed one would lose it with a warning. `/lb` is its alias; owners without xUtilities can add `top`.
 - **Family integrations** (xBans, xVote, xMoney, xPlots, xTeleport, zChat) aren't built yet (#42), though all but xPlots now have an API on `main`; profile sections and custom stats are the API they'll use.
 
+
+## More stores: Hangar and voxel.shop, published by the release (2026-11-23)
+
+Every plugin is a Paper plugin (`paper-plugin.yml`), so the stores worth listing on are the ones whose users run Paper. **Hangar** is PaperMC's own, and its official Gradle plugin publishes versions and syncs the page, which comes from `modrinth.md` like Modrinth's. **voxel.shop** (formerly Polymart) has a free API for new versions; ours is a small task in `build-logic` (`VoxelPublish`), with the Markdown changelog turned into the BBCode it shows (`BbCode`). Its API can't edit a resource's page, so that's kept by hand. Left out: **SpigotMC** has no upload API, and most of its users run Spigot, where the plugins don't load; **BuiltByBit**'s update API needs a paid Ultimate subscription, for a site built around paid plugins; **CurseForge/Bukkit** serves Bukkit servers.
+
+A plugin goes to Hangar or voxel.shop only once it has a project there (`xena.hangarId`, `xena.voxelId`), so a release before then still goes out everywhere else. With three stores in one job, a failure in a later one would make a rerun fail on the earlier one's duplicate, so each store first asks whether it already has the version (`Stores`) and skips it if so.

@@ -17,6 +17,7 @@ shadow = "9.6.1"
 resource-factory = "1.4.0"
 run-paper = "3.1.0"
 minotaur = "2.10.0"
+hangar-publish = "0.1.4"
 # Publishes each plugin's API to Maven Central through the Central Portal, as NeoSkript does.
 maven-publish = "0.37.0"
 # xBackup's SFTP and FTP remotes. Never shaded: xBackup downloads the jar the first time a
@@ -56,4 +57,5 @@ shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 resource-factory = { id = "xyz.jpenilla.resource-factory-paper-convention", version.ref = "resource-factory" }
 run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }
 minotaur = { id = "com.modrinth.minotaur", version.ref = "minotaur" }
+hangar-publish = { id = "io.papermc.hangar-publish-plugin", version.ref = "hangar-publish" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }

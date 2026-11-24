@@ -1,9 +1,11 @@
 name: Release
 
 # Push a tag named <module>-v<version>, such as xutilities-v2.0.0, to publish
-# that plugin to Modrinth and GitHub, and its API (if it has one) to Maven
-# Central. The version must match the module's build.gradle.kts, and
-# <module>/CHANGELOG.md must have a "## <version>" section.
+# that plugin to Modrinth, Hangar, voxel.shop and GitHub, and its API (if it has
+# one) to Maven Central. Hangar and voxel.shop are skipped for a plugin that has
+# no project there yet (xena.hangarId, xena.voxelId). The version must match the
+# module's build.gradle.kts, and <module>/CHANGELOG.md must have a "## <version>"
+# section.
 # `node scripts/release.ts --tag <pr-number>` pushes these once a release PR is merged
 # (CONTRIBUTING.md, "Releasing"). Last, the site is redeployed.
 on:
@@ -108,12 +110,27 @@ jobs:
             echo "$MODULE-api $VERSION is already on Maven Central"; exit 0
           fi
           ./gradlew ":$MODULE:api:publishAndReleaseToMavenCentral"
+      # Each store skips a version it already has, so a rerun after one fails picks up
+      # where it stopped.
       - name: Publish to Modrinth
         # The version, then the project page from <module>/modrinth.md.
         env:
           MODULE: ${{ steps.tag.outputs.module }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: ./gradlew ":$MODULE:modrinth" ":$MODULE:modrinthSyncBody"
+      - name: Publish to Hangar
+        # The version, then the project page, also from <module>/modrinth.md.
+        env:
+          MODULE: ${{ steps.tag.outputs.module }}
+          HANGAR_API_TOKEN: ${{ secrets.HANGAR_API_TOKEN }}
+        run: ./gradlew ":$MODULE:publishPluginPublicationToHangar" ":$MODULE:syncAllPagesToHangar"
+      - name: Publish to voxel.shop
+        # The version, with the changelog as its update post. voxel.shop's API can't edit
+        # the resource page, so that's kept by hand.
+        env:
+          MODULE: ${{ steps.tag.outputs.module }}
+          VOXEL_API_KEY: ${{ secrets.VOXEL_API_KEY }}
+        run: ./gradlew ":$MODULE:voxel"
       - uses: actions/upload-artifact@v7
         with:
           name: release

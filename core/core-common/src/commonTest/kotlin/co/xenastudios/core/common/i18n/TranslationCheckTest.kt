@@ -127,7 +127,7 @@ class MessageBundleTest {
         val two = TestBundle().apply { add("a", "y") }
         assertEquals("message a is in two bundles", runCatching { MessageCatalog.of(one, two) }.exceptionOrNull()?.message)
         val catalog = MessageCatalog.of(CoreMessages, HomesMessages)
-        assertEquals(1, catalog.slot(HomesMessages.set))
+        assertEquals(CoreMessages.messages.size, catalog.slot(HomesMessages.set))
         assertEquals(HomesMessages.set, catalog["homes.set"])
         assertEquals(-1, CATALOG.slot(CoreMessages.pagesFooter))
     }

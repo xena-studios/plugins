@@ -177,16 +177,21 @@ public class Sql(public val dialect: Dialect, public val prefix: String) {
     public fun delete(table: Table, where: Where): Statement =
         Statement("DELETE FROM ${name(table)} WHERE ${expand(where.sql)}", where.args)
 
-    /** `SELECT` [columns] (all of them by default) of the rows that match [where], in [order], at most [limit]. */
+    /**
+     * `SELECT` [columns] (all of them by default) of the rows that match [where], in [order], at
+     * most [limit], skipping the first [offset] (which needs a [limit], as MySQL's does).
+     */
     public fun select(
         table: Table,
         where: Where = Where.ALL,
         columns: List<Column<*>> = table.columns,
         order: List<Order> = emptyList(),
         limit: Int? = null,
+        offset: Long = 0,
     ): Statement {
+        require(offset == 0L || limit != null) { "an offset needs a limit" }
         val orderBy = if (order.isEmpty()) "" else " ORDER BY " + order.joinToString(", ") { it.sql }
-        val limited = if (limit == null) "" else " LIMIT $limit"
+        val limited = if (limit == null) "" else " LIMIT $limit" + if (offset > 0) " OFFSET $offset" else ""
         return Statement("SELECT ${columns.joinToString(", ") { it.name }} FROM ${name(table)} WHERE ${expand(where.sql)}$orderBy$limited", where.args)
     }
 

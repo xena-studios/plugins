@@ -1,8 +1,15 @@
 package co.xenastudios.core.sample
 
 import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.api.pendingOf
+import co.xenastudios.core.common.Outcome
+import co.xenastudios.core.common.admin.Debug
+import co.xenastudios.core.common.admin.HealthChecks
+import co.xenastudios.core.common.admin.Importer
+import co.xenastudios.core.common.admin.Imports
+import co.xenastudios.core.common.admin.PlayerDataRegistry
+import co.xenastudios.core.common.admin.PlayerLookup
 import co.xenastudios.core.common.command.AdminCommands
-import co.xenastudios.core.common.command.AdminSubcommand
 import co.xenastudios.core.common.command.ArgumentTypes
 import co.xenastudios.core.common.command.CommandDispatcher
 import co.xenastudios.core.common.command.CommandTree
@@ -69,6 +76,10 @@ public class XSample(
     private val platform: Platform,
     private val players: OnlinePlayers,
     private val settings: () -> Config = { SampleConfig.defaults },
+    /** Other plugins' coins it can import, for `/xsample import`; a real plugin ships its own. */
+    importers: List<Importer<*>> = emptyList(),
+    /** Who has played, by name, for `/xsample forget`: the family's player cache on a server. */
+    lookup: PlayerLookup = PlayerLookup { pendingOf(null) },
 ) {
     private var config: Config = settings()
     private val coins = HashMap<PlayerRef, Int>()
@@ -76,11 +87,18 @@ public class XSample(
     /** The plugin's modules: interest, when the config wants it. */
     public val modules: ModuleSet = ModuleSet(platform)
 
-    /** The admin subcommands, with `forget` since the plugin keeps player data. */
+    /** What it keeps per player, which `/xsample forget` deletes: the coins. */
+    public val playerData: PlayerDataRegistry = PlayerDataRegistry(lookup).apply {
+        register("coins") { player -> pendingOf(Outcome.Ok(if (withCoins { remove(player) } != null) 1L else 0L)) }
+    }
+
+    /** The admin subcommands: `forget`, since the plugin keeps player data, and `import` when it's given importers. */
     public val admin: AdminCommands = AdminCommands(
         "xsample", "xSample", platform,
         ModuleReloader(modules, reloadFiles = ::reloadFiles, wanted = ::wantedModules),
-        extra = setOf(AdminSubcommand.FORGET),
+        debug = Debug(platform, "xSample 1.0.0", listOf(HealthChecks.threading(platform), HealthChecks.modules(modules))),
+        imports = if (importers.isEmpty()) null else Imports(platform, importers),
+        playerData = playerData,
     )
 
     /** What runs commands; built again on reload, from the new config. */
@@ -111,6 +129,11 @@ public class XSample(
 
     /** A player's coins. */
     public fun balance(player: PlayerRef): Int = withCoins { get(player) } ?: config[SampleConfig.startingCoins]
+
+    /** Sets a player's coins, as an importer does: the same value twice changes nothing. */
+    public fun setBalance(player: PlayerRef, coins: Int) {
+        withCoins { put(player, coins) }
+    }
 
     private fun commands(): CommandTree = commands {
         root("xsample", "Shows your coins.", aliases = listOf("coins")) {

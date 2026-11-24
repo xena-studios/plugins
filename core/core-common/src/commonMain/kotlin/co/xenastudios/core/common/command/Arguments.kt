@@ -202,6 +202,22 @@ public object ArgumentTypes {
             if (valid.matches(input)) Outcome.Ok(input) else Outcome.Err(ArgumentError.Invalid("\"$input\" isn't a player's name."))
     }
 
+    /**
+     * A player's name ([playerName]) or UUID, with or without dashes: for commands about
+     * players who may never come back, whose name an owner may only have as a UUID from a log.
+     */
+    public val playerNameOrUuid: ArgumentType<String> = object : ArgumentType<String> {
+        private val uuid = Regex("[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}")
+
+        override val name: String get() = "player name or UUID"
+
+        override fun parse(input: String, source: CommandSource): Outcome<String, ArgumentError> =
+            if (uuid.matches(input)) Outcome.Ok(input) else when (val read = playerName.parse(input, source)) {
+                is Outcome.Ok -> read
+                is Outcome.Err -> Outcome.Err(ArgumentError.Invalid("\"$input\" isn't a player's name or UUID."))
+            }
+    }
+
     private fun <T> ranged(value: T, number: Double, min: Double?, max: Double?): Outcome<T, ArgumentError> = when {
         min != null && number < min -> Outcome.Err(ArgumentError.TooSmall(min))
         max != null && number > max -> Outcome.Err(ArgumentError.TooLarge(max))

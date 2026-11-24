@@ -1,0 +1,10 @@
+[
+  {"id": 1, "name": "Bukkit", "slug": "bukkit"},
+  {"id": 2, "name": "Java", "slug": "java"},
+  {"id": 615, "name": "Addons", "slug": "addons"},
+  {"id": 68441, "name": "Modloader", "slug": "modloader"},
+  {"id": 75125, "name": "Minecraft 1.20", "slug": "minecraft-1-20"},
+  {"id": 77784, "name": "Minecraft 1.21", "slug": "minecraft-1-21"},
+  {"id": 79620, "name": "Minecraft 26", "slug": "minecraft-26"},
+  {"id": 75208, "name": "Environment", "slug": "environment"}
+]

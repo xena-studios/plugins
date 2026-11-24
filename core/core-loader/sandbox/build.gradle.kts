@@ -1,3 +1,5 @@
+import co.xenastudios.gradle.ReleasePlatform
+
 plugins {
     id("xena.kotlin-jvm")
     id("xena.fetched-libraries")
@@ -5,6 +7,8 @@ plugins {
     // Shrinks LoaderSandbox.jar to build/r8/, against its budget in gradle/jar-budgets.txt;
     // its tests boot the shrunk jar (src/test).
     id("xena.r8")
+    // Never released, but the release pipeline's dry run builds it: M1's exit (ROADMAP.md).
+    id("xena.release")
 }
 
 version = "0.0.0"
@@ -63,4 +67,19 @@ tasks.test {
     val checks = layout.projectDirectory.file("boot-checks.txt")
     inputs.file(checks).withPropertyName("bootChecks").withPathSensitivity(PathSensitivity.NONE)
     systemProperty("xena.bootChecks", checks.asFile.path)
+}
+
+// What a release of it would publish, for the release workflow's dry run. No store has a
+// project for it, so a real release would skip all but GitHub and Modrinth.
+xenaRelease {
+    pluginId = "loadersandbox"
+    displayName = "LoaderSandbox"
+    folia = false
+    jar("bukkit") {
+        platform = ReleasePlatform.BUKKIT
+        // The R8-shrunk jar, the one its budget and boot tests check.
+        file = tasks.named<co.xenastudios.gradle.R8Shrink>("shrinkJar").flatMap { it.outputJar }
+        minecraft("1.8.8")
+        java = 8
+    }
 }

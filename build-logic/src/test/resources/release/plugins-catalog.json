@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "colors": {
+    "bg": "#121116",
+    "raised": "#1B1A21",
+    "rule": "#2A2832",
+    "text": "#F2F0F5",
+    "muted": "#9C99A8"
+  },
+  "categories": [
+    "Players",
+    "Moderation",
+    "Economy",
+    "Server"
+  ],
+  "plugins": [
+    {
+      "id": "xbans",
+      "name": "xBans",
+      "prefix": "x",
+      "category": "Moderation",
+      "tagline": "Bans, mutes and warnings. Nothing slips through.",
+      "headline": [
+        "Bans, mutes and warnings.",
+        "Nothing slips through."
+      ],
+      "blurb": "Checked from memory at every join and chat message, with templates, staff limits, alts and IP bans. Uses LiteBans' commands and imports its history.",
+      "summary": "Bans, mutes, warnings and kicks for Paper and Folia, free and open source. Checked from memory at every join and chat message, with templates, staff limits, alts and IP bans. Uses LiteBans' commands and imports its history.",
+      "released": true,
+      "accent": "#D70E3A",
+      "accentText": "#EB2F4A",
+      "accentLow": "#33101C",
+      "accentHigh": "#EB879D",
+      "icon": "plugins/xbans/icon.svg",
+      "banner": "plugins/xbans/banner.png"
+    }
+  ]
+}

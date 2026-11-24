@@ -150,6 +150,21 @@ if [[ $server == spigot ]]; then
     download "https://hub.spigotmc.org/jenkins/job/BuildTools/$tools/artifact/target/BuildTools.jar" "$work/BuildTools-$tools.jar" 256 ""
     echo "BuildTools $tools: SHA-256 $(shasum -a 256 "$work/BuildTools-$tools.jar" | cut -d' ' -f1)" >&2
     buildtools_java=${BUILDTOOLS_JAVA:+$BUILDTOOLS_JAVA/bin/}java
+    # BuildTools' Maven fetches hundreds of artifacts, and Maven Central answers GitHub's runners
+    # 429 when they ask too often, so it goes through Google's mirror of Central instead (the
+    # one the core's library loader uses). MAVEN_ARGS reaches the Maven BuildTools downloads.
+    cat >"$work/maven-settings.xml" <<'XML'
+<settings>
+  <mirrors>
+    <mirror>
+      <id>google-maven-central</id>
+      <mirrorOf>central</mirrorOf>
+      <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
+    </mirror>
+  </mirrors>
+</settings>
+XML
+    export MAVEN_ARGS="--settings $work/maven-settings.xml${MAVEN_ARGS:+ $MAVEN_ARGS}"
     echo "Building Spigot $version with BuildTools $tools on $("$buildtools_java" -version 2>&1 | head -1)" >&2
     (cd "$work" && "$buildtools_java" -jar "BuildTools-$tools.jar" --rev "$version" --compile spigot --output-dir "$work/out" >&2)
     mv "$work/out/spigot-$version.jar" "$file"

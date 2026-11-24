@@ -1,7 +1,9 @@
 package co.xenastudios.core.sample
 
 import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.common.command.CommandDispatcher
 import co.xenastudios.core.common.command.CommandFeedback
+import co.xenastudios.core.common.command.CommandRegistrar
 import co.xenastudios.core.common.command.CommandResult
 import co.xenastudios.core.common.command.CommandSource
 import co.xenastudios.core.common.command.OnlinePlayers
@@ -69,6 +71,28 @@ class XSampleTest {
         platform.scheduler.tick()
         assertEquals("Reloaded xSample: 1 module on.", console.replies.last())
         assertTrue(plugin.dispatcher !== before, "a reload builds the commands again, from the new config")
+    }
+
+    @Test
+    fun itsRegistrarHasTheCommandsThatRun() {
+        val synced = mutableListOf<CommandDispatcher>()
+        val registrar = object : CommandRegistrar {
+            override fun sync(dispatcher: CommandDispatcher): List<String> {
+                synced += dispatcher
+                return emptyList()
+            }
+
+            override fun clear() {
+                synced.clear()
+            }
+        }
+        val onServer = XSample(platform, players, registrar = registrar).apply { enable() }
+        assertEquals(listOf(onServer.dispatcher), synced)
+        onServer.dispatcher.dispatch(console, "xsample reload")
+        platform.scheduler.tick()
+        assertEquals(onServer.dispatcher, synced.last(), "a reload puts the rebuilt commands on the server")
+        onServer.disable()
+        assertEquals(emptyList(), synced)
     }
 
     @Test

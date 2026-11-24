@@ -11,11 +11,15 @@ import co.xenastudios.core.common.time.Durations
  *
  * An adapter registers each root of [CommandDispatcher.tree] under its name and aliases and
  * answers it with [CommandDispatcher.dispatch] and [CommandDispatcher.suggest], showing the
- * result through [CommandFeedback]. Two ways to do that:
+ * result through [CommandFeedback]. Three ways to do that:
  *
  * - **Directly**, as today's core does on Bukkit: one platform command per root that hands the
  *   whole line to the dispatcher. Enough where the server doesn't send clients a command tree.
- * - **Through Cloud 2** (Paper, Bukkit, Fabric, NeoForge, Velocity), so clients get the full
+ * - **Straight onto Brigadier** (Fabric): a literal per node, a string argument per argument
+ *   with our suggestions, every node running the whole line through the dispatcher. Minecraft
+ *   sends that tree to clients itself, so Cloud would add nothing but a jar pinned to one
+ *   Minecraft version (DECISIONS.md, "platform-fabric").
+ * - **Through Cloud 2** (Paper, Bukkit, NeoForge, Velocity), so clients get the full
  *   tree, with Brigadier's argument hints. The adapter walks the tree: every executable node
  *   becomes one `commandBuilder(root, aliases)` chain of `.literal(name, aliases)` for its
  *   path, then `.required` or `.optional` per argument with a parser that calls
@@ -23,8 +27,8 @@ import co.xenastudios.core.common.time.Durations
  *   that calls [ArgumentType.suggest]; `.permission(...)` with the node's permissions and
  *   `.senderType(player)` for [CommandNode.playerOnly]. Its handler hands the raw input back to
  *   [CommandDispatcher.dispatch], so hooks, errors and the result are ours, not Cloud's, and
- *   behave the same where there's no Cloud: Sponge 8+, and Fabric 1.20.1 if Cloud's beta falls
- *   short (DECISIONS.md, M0), get small bridges of their own, Pumpkin its own commands.
+ *   behave the same where there's no Cloud: Sponge 8+ gets a small bridge of its own
+ *   (DECISIONS.md, M0), Pumpkin its own commands.
  *   Cloud can't unregister on every platform, so a reload re-registers only what changed.
  *
  * Called on the global thread.

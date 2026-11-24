@@ -21,6 +21,8 @@
 # - A file in a plugin's folder means that folder's projects: the plugin, its API and
 #   whatever else is in there (xmoney's two consumers). So does its generated docs
 #   folder, docs/src/generated/<plugin>/, which its golden tests compare against.
+#   The manifest schema there, and the core's sample plugin's folder (xsample), mean the
+#   rewrite's modules, whose sample compares them.
 # - Then every folder whose build uses one of those projects, and so on: xRewind's API
 #   brings in the sandbox, whose consumer compiles against it. Those links are read from
 #   the build files' project(":...") lines, so a new plugin needs no edit here. The
@@ -90,6 +92,9 @@ if [[ $all == false ]]; then
         if [[ -f core/$module/build.gradle.kts ]]; then rewriteChanged=true; else all=true; fi ;;
       core/* | build-logic/* | gradle/* | scripts/* | gradle.properties | gradlew | gradlew.bat \
         | .github/workflows/plugins.yml) all=true ;;
+      # The rewrite's reference manifests that belong to no plugin yet: the schema, and the core's
+      # sample plugin's, which its checkXenaManifest compares.
+      docs/src/generated/manifest.schema.json | docs/src/generated/xsample/*) rewriteChanged=true ;;
       docs/src/generated/*)
         plugin=${file#docs/src/generated/}
         plugin=${plugin%%/*}

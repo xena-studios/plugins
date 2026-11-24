@@ -1,0 +1,171 @@
+package co.xenastudios.core.sample
+
+import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.common.command.AdminCommands
+import co.xenastudios.core.common.command.AdminSubcommand
+import co.xenastudios.core.common.command.ArgumentTypes
+import co.xenastudios.core.common.command.CommandDispatcher
+import co.xenastudios.core.common.command.CommandTree
+import co.xenastudios.core.common.command.ModuleReloader
+import co.xenastudios.core.common.command.OnlinePlayers
+import co.xenastudios.core.common.command.commands
+import co.xenastudios.core.common.config.Config
+import co.xenastudios.core.common.config.ConfigKey
+import co.xenastudios.core.common.config.ConfigSchema
+import co.xenastudios.core.common.config.ConfigSection
+import co.xenastudios.core.common.manifest.EventInfo
+import co.xenastudios.core.common.manifest.MessageInfo
+import co.xenastudios.core.common.manifest.PluginReference
+import co.xenastudios.core.common.module.Module
+import co.xenastudios.core.common.module.ModuleContext
+import co.xenastudios.core.common.module.ModuleSet
+import co.xenastudios.core.common.permission.Permission
+import co.xenastudios.core.common.permission.PermissionDefault
+import co.xenastudios.core.common.permission.PermissionSet
+import co.xenastudios.core.common.placeholder.PlaceholderSet
+import co.xenastudios.core.common.placeholder.placeholders
+import co.xenastudios.core.common.platform.Platform
+import co.xenastudios.core.common.scheduler.Where
+import co.xenastudios.core.common.scheduler.every
+import co.xenastudios.core.common.text.Component
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+
+// xSample: a small plugin on the rewrite's core, never released. It proves the command and
+// permission DSL, the admin subcommands and the reference manifest end to end, the way a real
+// plugin will use them: its tests run its commands on the fake platform, and its build writes
+// its manifest to docs/src/generated/xsample/ (no page shows it).
+
+/** xSample's config. */
+public object SampleConfig : ConfigSchema(1, "xSample: the core's sample plugin. Never released.") {
+    public val startingCoins: ConfigKey<Int> =
+        int("starting-coins", 100, "Coins a player has before their first payment.", min = 0)
+    public val payCooldown: ConfigKey<Duration> =
+        duration("pay-cooldown", 10.seconds, "How long a player waits between payments.", min = 1.seconds)
+    public val interest: Interest = Interest(this)
+
+    public class Interest(parent: SampleConfig) : ConfigSection(parent, "interest", "Coins paid on every balance now and then.") {
+        public val enabled: ConfigKey<Boolean> = boolean("enabled", true, "Whether interest is paid.")
+        public val percent: ConfigKey<Int> = int("percent", 1, "How much of each balance, in percent.", min = 0, max = 100)
+        public val every: ConfigKey<Duration> = duration("every", 1.hours, "How often.", min = 1.minutes)
+    }
+}
+
+/** xSample's permissions. */
+public object SamplePermissions : PermissionSet("xsample") {
+    public val pay: Permission = permission("pay", "Pay other players.", PermissionDefault.EVERYONE)
+    public val give: Permission = permission("give", "Give coins out of nowhere.")
+    public val noCooldown: Permission = permission("pay.no-cooldown", "Pay without waiting between payments.")
+    public val all: Permission = permission("*", "Everything in xSample but the admin subcommands.", children = grants(pay, give, noCooldown))
+}
+
+/**
+ * The plugin: its coins, its one module, and its commands and placeholders, built from its
+ * config. [settings] gives the config, read again on every reload.
+ */
+public class XSample(
+    private val platform: Platform,
+    private val players: OnlinePlayers,
+    private val settings: () -> Config = { SampleConfig.defaults },
+) {
+    private var config: Config = settings()
+    private val coins = HashMap<PlayerRef, Int>()
+
+    /** The plugin's modules: interest, when the config wants it. */
+    public val modules: ModuleSet = ModuleSet(platform)
+
+    /** The admin subcommands, with `forget` since the plugin keeps player data. */
+    public val admin: AdminCommands = AdminCommands(
+        "xsample", "xSample", platform,
+        ModuleReloader(modules, reloadFiles = ::reloadFiles, wanted = ::wantedModules),
+        extra = setOf(AdminSubcommand.FORGET),
+    )
+
+    /** What runs commands; built again on reload, from the new config. */
+    public var dispatcher: CommandDispatcher = CommandDispatcher(commands(), platform.clock, platform.log)
+        private set
+
+    /** The placeholders, which read the coins. */
+    public val placeholders: PlaceholderSet = placeholders("xsample") {
+        player("balance", "The player's balance.", "120") { balance(it).toString() }
+        global("richest", "The most coins anyone has.", "4,200") { withCoins { values.maxOrNull() }?.toString() }
+    }
+
+    /** What the docs show: built from the same objects the plugin runs on. */
+    public val reference: PluginReference
+        get() = PluginReference(
+            "xsample", "xSample", "The core's sample plugin, never released.",
+            dispatcher.tree, listOf(SamplePermissions, admin.permissions),
+            config = SampleConfig,
+            placeholders = placeholders,
+            messages = listOf(MessageInfo("sample.paid", "<prefix>You paid <player> <amount> coins.", listOf("After /xsample pay."), listOf("player", "amount"))),
+            events = listOf(EventInfo("xsample:coins_paid", "co.xenastudios.xsample.api.CoinsPaidEvent", "A player pays another.", cancellable = true, since = "1.0.0")),
+        )
+
+    /** Turns the plugin on: its modules, as the config says. */
+    public fun enable() {
+        modules.sync(wantedModules())
+    }
+
+    /** A player's coins. */
+    public fun balance(player: PlayerRef): Int = withCoins { get(player) } ?: config[SampleConfig.startingCoins]
+
+    private fun commands(): CommandTree = commands {
+        root("xsample", "Shows your coins.", aliases = listOf("coins")) {
+            playerOnly()
+            executes { ctx -> ctx.reply(Component.text("You have ${balance(ctx.player)} coins.")) }
+            literal("give", "Gives a player coins.", permission = SamplePermissions.give) {
+                val to = argument("player", ArgumentTypes.player(players), "Who gets them.")
+                val amount = argument("amount", ArgumentTypes.integer(min = 1, max = 1_000_000), "How many coins.")
+                executes { ctx ->
+                    add(ctx[to], ctx[amount])
+                    ctx.reply(Component.text("Gave ${ctx[amount]} coins."))
+                }
+            }
+            mount(admin)
+        }
+        root("pay", "Pays another player.", permission = SamplePermissions.pay) {
+            playerOnly()
+            val to = argument("player", ArgumentTypes.player(players), "Who to pay.")
+            val amount = argument("amount", ArgumentTypes.integer(min = 1), "How many coins.")
+            cooldown(config[SampleConfig.payCooldown], bypass = SamplePermissions.noCooldown)
+            executes { ctx ->
+                val from = ctx.player
+                if (ctx[to] == from) ctx.fail(Component.text("You can't pay yourself."))
+                if (balance(from) < ctx[amount]) ctx.fail(Component.text("You don't have ${ctx[amount]} coins."))
+                add(from, -ctx[amount])
+                add(ctx[to], ctx[amount])
+                ctx.reply(Component.text("Paid ${ctx[amount]} coins."))
+            }
+        }
+    }
+
+    private fun add(player: PlayerRef, amount: Int) {
+        val start = balance(player)
+        withCoins { put(player, start + amount) }
+    }
+
+    // The sample's tests run everything on one thread. A real plugin keeps balances where any
+    // region's thread can read them (ROADMAP.md, Fast), and writes them from one.
+    private inline fun <T> withCoins(block: HashMap<PlayerRef, Int>.() -> T): T = coins.block()
+
+    private fun reloadFiles(): List<String> {
+        config = settings()
+        dispatcher = CommandDispatcher(commands(), platform.clock, platform.log)
+        return emptyList()
+    }
+
+    private fun wantedModules(): Map<String, () -> Module> =
+        if (config[SampleConfig.interest.enabled]) mapOf("interest" to { Interest() }) else emptyMap()
+
+    private inner class Interest : Module {
+        override fun enable(context: ModuleContext) {
+            val percent = config[SampleConfig.interest.percent]
+            context.scheduler.every(Where.Global, config[SampleConfig.interest.every]) {
+                withCoins { for (entry in entries) entry.setValue(entry.value + entry.value * percent / 100) }
+            }
+        }
+    }
+}

@@ -17,6 +17,10 @@ dependencies {
     shade(project(":core:core-loader"))
     // Downloaded by the server (libraries:) or by the loader, never shaded.
     fetched(libs.kotlin.stdlib) { isTransitive = false }
+    // The JDBC drivers the core fetches when a server has none (core-jvm's DriverLibrary): pinned
+    // here so gradle/library-pins.txt holds their hashes, and listed for the loader to find.
+    onDemand(libs.sqlite.jdbc) { isTransitive = false }
+    onDemand(libs.mysql.connector) { isTransitive = false }
 }
 
 tasks.processResources {

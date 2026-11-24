@@ -191,6 +191,12 @@ public class XSample(
         modules.sync(wantedModules())
     }
 
+    /** Turns the plugin off, as the server stops: its modules, then its commands. */
+    public fun disable() {
+        modules.clear()
+        registrar?.clear()
+    }
+
     /** A player's coins. */
     public fun balance(player: PlayerRef): Int = withCoins { get(player) } ?: config[SampleConfig.startingCoins]
 

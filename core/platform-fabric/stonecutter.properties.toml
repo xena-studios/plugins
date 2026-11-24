@@ -1,0 +1,26 @@
+# What each Minecraft line builds against. The versions themselves are in settings.gradle.kts.
+deps.fabric_loader = "0.20.1"
+# The oldest loader a mod accepts: below what it builds against, since it uses nothing new, so
+# Quilt (which stands in as Fabric Loader 0.19.5) loads it too. Fabric API asks for what it needs.
+mod.loader_compat = ">=0.16.0"
+# fabric-language-kotlin brings the Kotlin stdlib to the server (DECISIONS.md, M0); its Kotlin
+# must be the rewrite's (gradle/libs.versions.toml), or a mod would call a stdlib it lacks.
+deps.flk = "1.14.2+kotlin.2.4.21"
+loomx.loom_version = "1.19.4"
+
+["1.20.1"]
+mod.mc_compat = "~1.20.1"
+deps.fabric_api = "0.92.12+1.20.1"
+# LuckPerms and other permission mods answer through it; jar-in-jar, so owners install nothing.
+# Each line's release names the Minecraft it needs.
+deps.permissions = "0.3.3"
+
+["1.21.11"]
+mod.mc_compat = "~1.21.11"
+deps.fabric_api = "0.141.6+1.21.11"
+deps.permissions = "0.6.1"
+
+["26.3"]
+mod.mc_compat = "~26.3"
+deps.fabric_api = "0.167.0+26.3"
+deps.permissions = "0.7.0"

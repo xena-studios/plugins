@@ -19,7 +19,9 @@
 #   in project(":core:..."). Today's plugins don't, so a change there skips their tests and
 #   boots.
 # - A file in a plugin's folder means that folder's projects: the plugin, its API and
-#   whatever else is in there (xmoney's two consumers). So does its generated docs
+#   whatever else is in there (xmoney's two consumers, or a rewritten plugin's api, common
+#   and platform folders; those skip the newest-API compile and the Paper boot, which are
+#   for today's Java plugins). So does its generated docs
 #   folder, docs/src/generated/<plugin>/, which its golden tests compare against.
 #   The manifest schema there, and the core's sample plugin's folder (xsample), mean the
 #   rewrite's modules, whose sample compares them.
@@ -39,14 +41,18 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # The folders holding plugins (and the sandbox): top-level ones with a Gradle build,
-# other than the two everything is built on.
+# other than the two everything is built on, and plugins in the rewrite's layout
+# (<plugin>/api, common and a folder per platform, with no build at the top).
 units=()
-for file in */build.gradle.kts; do
+declare -A known=() kmp=()
+for file in */build.gradle.kts */common/build.gradle.kts; do
+  [[ -f $file ]] || continue
   unit=${file%%/*}
-  [[ $unit == core || $unit == build-logic ]] || units+=("$unit")
+  [[ $unit == core || $unit == build-logic || -n ${known[$unit]:-} ]] && continue
+  units+=("$unit")
+  known[$unit]=1
+  [[ $file == */common/build.gradle.kts && ! -f $unit/build.gradle.kts ]] && kmp[$unit]=1
 done
-declare -A known=()
-for unit in "${units[@]}"; do known[$unit]=1; done
 
 # The build files in a folder that belong to the root build: not under build/ or
 # node_modules/, and not in a separate build of its own (a folder below with its own
@@ -157,9 +163,13 @@ for unit in "${units[@]}"; do
     tested+=("$unit")
     for project in $(projects "$unit"); do
       tasks+=("$project:build")
-      compile+=("$project:compileJava")
+      # The newest-API compile is for today's Java plugins on Paper's API.
+      [[ -n ${kmp[$unit]:-} ]] || compile+=("$project:compileJava")
     done
-    if [[ $unit == xmoney ]]; then
+    if [[ -n ${kmp[$unit]:-} ]]; then
+      # The rewrite's plugins aren't in the Paper boot yet: their jars and checks are per platform.
+      :
+    elif [[ $unit == xmoney ]]; then
       xmoney=true
     elif [[ -f $unit/boot-checks.txt ]]; then
       checks+=("$unit/boot-checks.txt")

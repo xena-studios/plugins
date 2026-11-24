@@ -1,0 +1,26 @@
+---
+title: xSample
+description: "xSample, the core's sample plugin: the page structure every rewritten plugin's docs follow. Never released."
+pagefind: false
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import { LinkCard, CardGrid } from "@astrojs/starlight/components";
+import Reference from "../../../components/reference/Reference.astro";
+
+xSample is the core's sample plugin. It's never released: its pages prove the structure every rewritten plugin's docs follow, built from its manifest (`src/generated/xsample/manifest.json`) the way theirs will be. Nothing links here and search engines are told to skip it.
+
+An overview says what the plugin does for a server in a few lines, then where it runs.
+
+## Where it runs
+
+<Reference plugin="xsample" show="platforms" />
+
+<CardGrid>
+  <LinkCard title="Install" href="/xsample/install/" description="The steps for your platform." />
+  <LinkCard title="Download" href="/xsample/download/" description="The jar for your platform and Minecraft version, and every store." />
+  <LinkCard title="Commands" href="/xsample/commands/" description="Every command, its arguments and permission." />
+  <LinkCard title="Configuration" href="/xsample/configuration/" description="Every setting in config.yml." />
+</CardGrid>

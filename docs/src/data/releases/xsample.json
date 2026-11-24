@@ -1,0 +1,336 @@
+{
+  "//": "A fixture: the core's sample plugin is never released, so every address here is on example.com. A rewritten plugin's file is written by its release, newest first; content.config.ts checks its shape and the download picker checks each jar's platforms against the plugin's manifest.",
+  "plugin": "xsample",
+  "releases": [
+    {
+      "version": "1.1.0-beta.1",
+      "date": "2026-11-20",
+      "channel": "beta",
+      "files": [
+        {
+          "name": "xsample-1.1.0-beta.1-bukkit.jar",
+          "url": "https://example.com/xsample/1.1.0-beta.1/xsample-1.1.0-beta.1-bukkit.jar",
+          "size": 412330,
+          "platforms": [
+            "paper",
+            "folia"
+          ],
+          "minecraft": [
+            "1.8.8",
+            "1.9.4",
+            "1.10.2",
+            "1.11.2",
+            "1.12.2",
+            "1.13.2",
+            "1.14.4",
+            "1.15.2",
+            "1.16.5",
+            "1.17.1",
+            "1.18.2",
+            "1.19.4",
+            "1.20.1",
+            "1.20.4",
+            "1.20.6",
+            "1.21.1",
+            "1.21.4",
+            "1.21.8",
+            "1.21.10",
+            "1.21.11",
+            "26.1",
+            "26.2",
+            "26.3"
+          ]
+        },
+        {
+          "name": "xsample-1.1.0-beta.1-fabric-1.20.1.jar",
+          "url": "https://example.com/xsample/1.1.0-beta.1/xsample-1.1.0-beta.1-fabric-1.20.1.jar",
+          "size": 198211,
+          "platforms": [
+            "fabric"
+          ],
+          "minecraft": [
+            "1.20.1"
+          ]
+        },
+        {
+          "name": "xsample-1.1.0-beta.1-fabric-1.21.11.jar",
+          "url": "https://example.com/xsample/1.1.0-beta.1/xsample-1.1.0-beta.1-fabric-1.21.11.jar",
+          "size": 201904,
+          "platforms": [
+            "fabric"
+          ],
+          "minecraft": [
+            "1.21.11"
+          ]
+        },
+        {
+          "name": "xsample-1.1.0-beta.1-fabric-26.3.jar",
+          "url": "https://example.com/xsample/1.1.0-beta.1/xsample-1.1.0-beta.1-fabric-26.3.jar",
+          "size": 203117,
+          "platforms": [
+            "fabric"
+          ],
+          "minecraft": [
+            "26.1",
+            "26.2",
+            "26.3"
+          ]
+        }
+      ],
+      "stores": [
+        {
+          "store": "modrinth",
+          "url": "https://example.com/xsample/modrinth"
+        },
+        {
+          "store": "hangar",
+          "url": "https://example.com/xsample/hangar",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "curseforge",
+          "url": "https://example.com/xsample/curseforge"
+        },
+        {
+          "store": "voxel",
+          "url": "https://example.com/xsample/voxel",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "spigotmc",
+          "url": "https://example.com/xsample/spigotmc",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "builtbybit",
+          "url": "https://example.com/xsample/builtbybit",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "github",
+          "url": "https://example.com/xsample/github/1.1.0-beta.1"
+        }
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-11-10",
+      "channel": "release",
+      "files": [
+        {
+          "name": "xsample-1.0.0-bukkit.jar",
+          "url": "https://example.com/xsample/1.0.0/xsample-1.0.0-bukkit.jar",
+          "size": 412330,
+          "platforms": [
+            "paper",
+            "folia"
+          ],
+          "minecraft": [
+            "1.8.8",
+            "1.9.4",
+            "1.10.2",
+            "1.11.2",
+            "1.12.2",
+            "1.13.2",
+            "1.14.4",
+            "1.15.2",
+            "1.16.5",
+            "1.17.1",
+            "1.18.2",
+            "1.19.4",
+            "1.20.1",
+            "1.20.4",
+            "1.20.6",
+            "1.21.1",
+            "1.21.4",
+            "1.21.8",
+            "1.21.10",
+            "1.21.11",
+            "26.1",
+            "26.2",
+            "26.3"
+          ]
+        },
+        {
+          "name": "xsample-1.0.0-fabric-1.20.1.jar",
+          "url": "https://example.com/xsample/1.0.0/xsample-1.0.0-fabric-1.20.1.jar",
+          "size": 198211,
+          "platforms": [
+            "fabric"
+          ],
+          "minecraft": [
+            "1.20.1"
+          ]
+        },
+        {
+          "name": "xsample-1.0.0-fabric-1.21.11.jar",
+          "url": "https://example.com/xsample/1.0.0/xsample-1.0.0-fabric-1.21.11.jar",
+          "size": 201904,
+          "platforms": [
+            "fabric"
+          ],
+          "minecraft": [
+            "1.21.11"
+          ]
+        },
+        {
+          "name": "xsample-1.0.0-fabric-26.3.jar",
+          "url": "https://example.com/xsample/1.0.0/xsample-1.0.0-fabric-26.3.jar",
+          "size": 203117,
+          "platforms": [
+            "fabric"
+          ],
+          "minecraft": [
+            "26.1",
+            "26.2",
+            "26.3"
+          ]
+        }
+      ],
+      "stores": [
+        {
+          "store": "modrinth",
+          "url": "https://example.com/xsample/modrinth"
+        },
+        {
+          "store": "hangar",
+          "url": "https://example.com/xsample/hangar",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "curseforge",
+          "url": "https://example.com/xsample/curseforge"
+        },
+        {
+          "store": "voxel",
+          "url": "https://example.com/xsample/voxel",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "spigotmc",
+          "url": "https://example.com/xsample/spigotmc",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "builtbybit",
+          "url": "https://example.com/xsample/builtbybit",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "github",
+          "url": "https://example.com/xsample/github/1.0.0"
+        }
+      ]
+    },
+    {
+      "version": "0.9.0",
+      "date": "2026-10-01",
+      "channel": "release",
+      "files": [
+        {
+          "name": "xsample-0.9.0-bukkit.jar",
+          "url": "https://example.com/xsample/0.9.0/xsample-0.9.0-bukkit.jar",
+          "size": 412330,
+          "platforms": [
+            "paper",
+            "folia"
+          ],
+          "minecraft": [
+            "1.8.8",
+            "1.9.4",
+            "1.10.2",
+            "1.11.2",
+            "1.12.2",
+            "1.13.2",
+            "1.14.4",
+            "1.15.2",
+            "1.16.5",
+            "1.17.1",
+            "1.18.2",
+            "1.19.4",
+            "1.20.1",
+            "1.20.4",
+            "1.20.6",
+            "1.21.1",
+            "1.21.4",
+            "1.21.8",
+            "1.21.10",
+            "1.21.11",
+            "26.1",
+            "26.2"
+          ]
+        }
+      ],
+      "stores": [
+        {
+          "store": "modrinth",
+          "url": "https://example.com/xsample/modrinth"
+        },
+        {
+          "store": "hangar",
+          "url": "https://example.com/xsample/hangar",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "curseforge",
+          "url": "https://example.com/xsample/curseforge"
+        },
+        {
+          "store": "voxel",
+          "url": "https://example.com/xsample/voxel",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "spigotmc",
+          "url": "https://example.com/xsample/spigotmc",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "builtbybit",
+          "url": "https://example.com/xsample/builtbybit",
+          "platforms": [
+            "paper",
+            "folia"
+          ]
+        },
+        {
+          "store": "github",
+          "url": "https://example.com/xsample/github/0.9.0"
+        }
+      ]
+    }
+  ]
+}

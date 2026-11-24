@@ -1,9 +1,9 @@
 ---
-// The site header: one GUI bar. XENA STUDIOS and "Plugins" on the left, the site's own
-// navigation beside it, then search and the source on the right. Starlight's mobile menu
-// button sits outside this component, so on narrow screens the navigation moves there.
+// The site header: one GUI bar. The family's name on the left (XENA is the footer's alone:
+// the brand puts the studio on a product's own site only there), the site's own navigation
+// beside it, then search and the source on the right. Starlight's mobile menu button sits
+// outside this component, so on narrow screens the navigation moves there.
 import Search from "@astrojs/starlight/components/Search.astro";
-import SiteTitle from "@astrojs/starlight/components/SiteTitle.astro";
 import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
 import catalog from "../data/plugins.json" with { type: "json" };
 
@@ -17,7 +17,7 @@ const links = [
 ---
 <div class="xena-header">
   <div class="title">
-    <SiteTitle />
+    <a class="family" href="/"><span class="family-name">Plugins</span><span class="family-label">Docs</span></a>
   </div>
   <nav class="site-nav" aria-label="Site">
     <ul>
@@ -49,6 +49,30 @@ const links = [
     display: flex;
     flex: none;
     min-width: 0;
+  }
+  /* The family's name as a plugin's is set: Space Grotesk Bold, the first letter in the accent. */
+  .family {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .family-name {
+    display: inline-block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .family-name::first-letter {
+    color: var(--sl-color-accent);
+  }
+  .family-label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
   .site-nav ul {
     display: flex;

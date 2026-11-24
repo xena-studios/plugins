@@ -16,9 +16,9 @@ if (!fs.existsSync(path.join(BRAND, "tokens/plugins-catalog.json"))) {
 }
 
 // [from (in brand), to (relative to docs/)]
+// XENA is the footer's alone (the brand's docs/xena.md: on a product's own site the studio
+// appears only there), so the header's XENA STUDIOS logos aren't copied.
 const files = [
-  ["logo/xena-studios.svg", "src/assets/xena-studios-dark.svg"],
-  ["logo/xena-studios-black.svg", "src/assets/xena-studios-light.svg"],
   ["logo/xena.svg", "src/assets/xena.svg"],
   ["avatar/favicon.svg", "public/favicon.svg"],
   ["plugins/horizon.svg", "src/assets/horizon.svg"],
@@ -42,4 +42,13 @@ for (const [from, to] of files) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.copyFileSync(path.join(BRAND, from), dest);
 }
-console.log(`synced ${files.length} files from ${BRAND}; run pnpm catalog to rebuild the lists`);
+
+// The family's colour tokens, which theme.css and gui.css build on, with a note on where they're from.
+const tokens = fs.readFileSync(path.join(BRAND, "tokens/plugins.css"), "utf8");
+fs.writeFileSync(
+  path.join(ROOT, "src/styles/tokens.css"),
+  "/* The plugin family's colour tokens, copied from xena-studios/brand (tokens/plugins.css) by\n" +
+    "   pnpm brand:sync: don't edit by hand. theme.css and gui.css build on them. */\n" +
+    tokens,
+);
+console.log(`synced ${files.length + 1} files from ${BRAND}; run pnpm catalog to rebuild the lists`);

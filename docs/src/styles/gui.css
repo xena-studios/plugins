@@ -6,8 +6,8 @@
    family's lavender elsewhere, marks only a name, the selected slot and the primary action. */
 
 :root {
-  --gui-ground: #121116;
-  --gui-panel: #1B1A21;
+  --gui-ground: var(--plugin-bg);
+  --gui-panel: var(--plugin-raised);
   --gui-panel-hi: #46434F;
   --gui-panel-lo: #08070B;
   --gui-slot: #0E0D12;

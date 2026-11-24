@@ -1,0 +1,6 @@
+{
+  "//": "Plugins whose docs have more than one major. /<id>/ is always the newest major; each older one's pages live in src/content/docs/<id>/v<major>/, frozen but for fixes from the maintenance branch, with a version switch by every title (src/plugins.ts). Add a plugin here, and move its pages into v<old>/, in the pull request that ships its rewrite: astro.config.ts then redirects every page of the old major that the new one doesn't have. A plugin that isn't in the brand catalog needs a name; hidden keeps it out of navigation, search, the sitemap and search engines (xsample, the core's sample plugin, which proves the pages and is never released).",
+  "plugins": [
+    { "id": "xsample", "name": "xSample", "hidden": true, "newest": 1, "older": [0] }
+  ]
+}

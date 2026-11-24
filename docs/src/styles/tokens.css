@@ -1,0 +1,20 @@
+/* The plugin family's colour tokens, copied from xena-studios/brand (tokens/plugins.css) by
+   pnpm brand:sync: don't edit by hand. theme.css and gui.css build on them. */
+:root {
+  --plugin-bg: #121116;
+  --plugin-raised: #1B1A21;
+  --plugin-rule: #2A2832;
+  --plugin-text: #F2F0F5;
+  --plugin-muted: #9C99A8;
+  --plugin-xutilities: #F5B83D;
+  --plugin-zchat: #5EE08A;
+  --plugin-xlimbo: #B48CFF;
+  --plugin-xrewind: #3DD6C6;
+  --plugin-xplots: #A9D750;
+  --plugin-xteleport: #CE41E3;
+  --plugin-xvote: #4D7BFD;
+  --plugin-xbans: #D70E3A;
+  --plugin-xmoney: #10AC79;
+  --plugin-xstats: #3EC407;
+  --plugin-xbackup: #9EEDFD;
+}

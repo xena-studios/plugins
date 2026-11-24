@@ -83,16 +83,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       # Compiles, runs the tests, and fails any jar over its size budget: `build` for
       # everything, or only the changed plugins' builds, the jars their boot tests need,
-      # and the root's, whose copy-paste check always reads every module.
+      # and the root's, whose copy-paste check always reads every module. The rewrite's
+      # modules in core/ build with everything, or alone when only they changed; their
+      # wasmWasi tests run on the Node that Kotlin's Gradle plugin pins and downloads
+      # (cached with Gradle's dependencies).
       - run: ./gradlew $TASKS
         env:
           TASKS: ${{ needs.changes.outputs.tasks }}
           XR_MYSQL: 127.0.0.1:3306:xr:root:ci
-      - uses: actions/upload-artifact@v7
+      # For the boot tests, when any run: a change to the rewrite's modules alone builds no jar.
+      - if: needs.changes.outputs.checks != '' || needs.changes.outputs.xmoney == 'true'
+        uses: actions/upload-artifact@v7
         with:
           name: jars
-          # Plugin jars only: core and build-logic are libraries, and -plain
-          # jars lack the core.
+          # Plugin jars only: core (and the rewrite's modules in it) and build-logic
+          # are libraries, and -plain jars lack the core.
           path: |
             */build/libs/*.jar
             sandbox/consumer/build/libs/*.jar

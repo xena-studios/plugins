@@ -30,6 +30,10 @@ jsch = "2.28.8"
 commons-net = "3.13.0"
 # The copy-paste detector the root build runs across modules.
 pmd = "7.29.0"
+# YAML for the rewrite's configs on the JVM (core-jvm's config package): the parser kaml is
+# built on, which is Java 8 bytecode where kaml is 11. No wasmWasi build yet
+# (krzema12/snakeyaml-engine-kmp#523), so core-common takes a reader instead.
+snakeyaml-engine-kmp = "5.0.0"
 # Reads each API's class files for its signature check (build-logic), as NeoSkript does.
 asm = "9.11.1"
 
@@ -54,6 +58,7 @@ jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }
 commons-net = { module = "commons-net:commons-net", version.ref = "commons-net" }
 pmd-cli = { module = "net.sourceforge.pmd:pmd-cli", version.ref = "pmd" }
 pmd-java = { module = "net.sourceforge.pmd:pmd-java", version.ref = "pmd" }
+snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.ref = "snakeyaml-engine-kmp" }
 # Applied by the rewrite's conventions in build-logic (xena.kmp, xena.kotlin-jvm).
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 

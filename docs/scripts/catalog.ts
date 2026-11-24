@@ -13,9 +13,10 @@
 //   .github/ISSUE_TEMPLATE/bug_report.yml   the plugin list and the /<plugin> info hint
 //   .github/ISSUE_TEMPLATE/feature_request.yml   the plugin list
 //   <plugin>/modrinth.md             "More from Xena Studios": the plugins that go with it
+//   README.md, <plugin>/README.md, <plugin>/modrinth.md   the badge row under the tagline
 //
 // Generated parts of hand-written files sit between "catalog:start" and "catalog:end"
-// markers; everything outside them is left alone. Both also report a README, Modrinth page or
+// markers (the badge rows between "badges:start" and "badges:end"); everything outside them is left alone. Both also report a README, Modrinth page or
 // docs page that links the Modrinth page of a plugin still in review, and the check fails on it.
 //
 //   pnpm catalog          # write them
@@ -106,13 +107,14 @@ for (const dir of fs.readdirSync(ROOT)) {
 const outputs = new Map<string, string>();
 const write = (file: string, text: string) => outputs.set(file, text);
 
-/** [file] with the lines between its catalog:start and catalog:end markers replaced by [body]. */
-function between(file: string, body: string) {
+/** [file] with the lines between its `<marker>:start` and `<marker>:end` markers replaced by [body]. */
+function between(file: string, body: string, marker = "catalog") {
   const full = path.join(ROOT, file);
-  const text = fs.readFileSync(full, "utf8");
-  const start = text.match(/^.*catalog:start.*$/m);
-  const end = text.match(/^.*catalog:end.*$/m);
-  if (!start || !end || start.index! > end.index!) throw new Error(`${file}: no catalog:start / catalog:end markers`);
+  // A file may have both kinds of markers: start from what this run has already written to it.
+  const text = outputs.get(file) ?? fs.readFileSync(full, "utf8");
+  const start = text.match(new RegExp(`^.*${marker}:start.*$`, "m"));
+  const end = text.match(new RegExp(`^.*${marker}:end.*$`, "m"));
+  if (!start || !end || start.index! > end.index!) throw new Error(`${file}: no ${marker}:start / ${marker}:end markers`);
   const head = text.slice(0, start.index! + start[0].length);
   const tail = text.slice(end.index!);
   write(file, `${head}\n${body}${body.endsWith("\n") ? "" : "\n"}${tail}`);
@@ -214,6 +216,58 @@ for (const p of plugins) {
   if (!lines.length) lines.push("- More are on the way.");
   between(file, [...lines, "", `Every plugin in the family: **[plugins.xenastudios.co](${SITE}/)**`].join("\n"));
 }
+
+// --- Badges: where to get it, what it runs on, the docs ---
+// Xena's badges, from the brand repo's v1 releases through jsDelivr (badges/; its docs/badges.md has the
+// rules): each plugin's in its own accent, the family's in the studio's. Compact on GitHub,
+// cozy on Modrinth, and no Modrinth badge on the Modrinth page itself. Modrinth shows images
+// from hosts it doesn't list (jsDelivr among them) through its wsrv.nl proxy, which turns an
+// SVG into a PNG at its 1x size, blurry on a sharp screen: so Modrinth gets the 2x PNGs,
+// GitHub the SVGs.
+const BADGES = "https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges";
+type Style = "compact" | "cozy";
+type BadgeName = "modrinth" | "github" | "paper" | "purpur" | "folia" | "docs";
+const ALT: Record<BadgeName, string> = {
+  modrinth: "Available on Modrinth",
+  github: "Available on GitHub",
+  paper: "Runs on Paper",
+  purpur: "Runs on Purpur",
+  folia: "Runs on Folia",
+  docs: "Read the Docs",
+};
+const HEIGHT: Record<Style, number> = { compact: 32, cozy: 48 };
+const FORMAT: Record<Style, "svg" | "png"> = { compact: "svg", cozy: "png" };
+function badgeRow(theme: string, style: Style, items: [BadgeName, string | null][]) {
+  return items.map(([name, href]) => {
+    const img = `<img alt="${ALT[name]}" height="${HEIGHT[style]}" src="${BADGES}/${theme}/${style}/${name}.${FORMAT[style]}">`;
+    return href ? `<a href="${href}">${img}</a>` : img;
+  }).join("\n");
+}
+const runsOn = (p: { folia: boolean }): [BadgeName, null][] => [["paper", null], ["purpur", null], ...(p.folia ? [["folia", null] as [BadgeName, null]] : [])];
+for (const p of plugins) {
+  const theme = `plugins/${p.id}`;
+  // GitHub: where to get it (its Modrinth page once it's public, else its download page, which
+  // lists its GitHub releases), what it runs on, the docs. Not out yet: no "get it" badge.
+  const get: [BadgeName, string][] = p.modrinth ? [["modrinth", p.modrinth]] : p.released ? [["github", `${SITE}${p.docs}download/`]] : [];
+  between(`${p.id}/README.md`, badgeRow(theme, "compact", [...get, ...runsOn(p), ["docs", `${SITE}${p.docs}`]]), "badges");
+  // Modrinth: what it runs on and the docs; the page itself is where to get it.
+  const modrinthPage = `${p.id}/modrinth.md`;
+  if (fs.existsSync(path.join(ROOT, modrinthPage))) {
+    between(modrinthPage, badgeRow(theme, "cozy", [...runsOn(p), ["docs", `${SITE}${p.docs}`]]), "badges");
+  }
+}
+// The family, in the studio's colours: on Modrinth once any is, and the docs. Paper and
+// Purpur only, as not all run on Folia.
+between(
+  "README.md",
+  badgeRow("xena", "compact", [
+    onModrinth.length ? ["modrinth", MODRINTH_ORG] : ["github", RELEASES],
+    ["paper", null],
+    ["purpur", null],
+    ["docs", `${SITE}/`],
+  ]),
+  "badges",
+);
 
 // --- Each plugin's changelog and download pages, and its current version ---
 const GENERATED = "Generated by docs/scripts/catalog.ts: don't edit by hand.";

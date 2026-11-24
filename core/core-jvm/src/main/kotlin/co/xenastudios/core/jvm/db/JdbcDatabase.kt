@@ -1,0 +1,689 @@
+package co.xenastudios.core.jvm.db
+
+import co.xenastudios.core.api.Pending
+import co.xenastudios.core.api.newPending
+import co.xenastudios.core.api.pendingOf
+import co.xenastudios.core.api.resolve
+import co.xenastudios.core.common.Outcome
+import co.xenastudios.core.common.db.Database
+import co.xenastudios.core.common.db.DatabaseSettings
+import co.xenastudios.core.common.db.DbError
+import co.xenastudios.core.common.db.Dialect
+import co.xenastudios.core.common.db.Migrations
+import co.xenastudios.core.common.db.Sql
+import co.xenastudios.core.common.db.SqlSession
+import co.xenastudios.core.common.db.SqlVersion
+import co.xenastudios.core.common.db.Statement
+import co.xenastudios.core.common.db.eq
+import co.xenastudios.core.common.db.executeAll
+import co.xenastudios.core.common.db.values
+import co.xenastudios.core.common.platform.Log
+import java.nio.file.Files
+import java.nio.file.Path
+import java.security.SecureRandom
+import java.sql.Connection
+import java.sql.Driver
+import java.sql.SQLException
+import java.util.Properties
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
+
+/**
+ * The limits of a [JdbcDatabase]'s writer and readers. The defaults are today's plugins'
+ * (DECISIONS.md, "xRewind's write path").
+ */
+public class JdbcLimits(
+    /** Most writes in one transaction. */
+    public val batch: Int = 1_000,
+    /** Writes waiting at which the console is warned that the database is falling behind. */
+    public val warnAt: Int = 100_000,
+    /** Writes waiting past which new ones are refused ([DbError.Kind.OVERLOADED]) rather than run the server out of memory. */
+    public val capacity: Int = 1_000_000,
+    /** How long [JdbcDatabase.close] waits for a database that's down before failing what's left. */
+    public val closeWaitMillis: Long = 10_000,
+    /** The longest pause between tries while the database is down. */
+    public val maxBackoffMillis: Long = 30_000,
+    /** Reader threads, each with its own connection; `null` for one on SQLite and two on MySQL. */
+    public val readers: Int? = null,
+) {
+    init {
+        require(batch >= 1 && warnAt >= 1 && capacity >= warnAt) { "batch and warnAt are positive, capacity at least warnAt" }
+    }
+}
+
+/**
+ * A [Database] on JDBC: SQLite in the plugin's folder (or the family's), or MySQL/MariaDB.
+ *
+ * **One writer thread, one connection.** Writes are queued ([write]) and the writer runs
+ * everything waiting as one transaction, consecutive statements with the same SQL as one JDBC
+ * batch (MySQL's `rewriteBatchedStatements` turns those into one multi-row insert). Each
+ * transaction also sets this writer's row in `{prefix}meta` to the batch's number, so when a
+ * commit's answer is lost (the connection died as it committed) the writer reads that row on a
+ * new connection to learn whether it landed, rather than run it twice or report it lost. A batch
+ * that fails because the database went away is kept and retried, after a pause that grows to
+ * [JdbcLimits.maxBackoffMillis], with one line to the console when it goes and one when it's
+ * back. A batch the database refuses is split, and only the write at fault fails.
+ *
+ * **Readers beside it**, on threads of their own, each keeping one connection: one on SQLite,
+ * whose WAL lets a reader and the writer work at once, two on MySQL. That is the whole pool: no
+ * HikariCP (about 160 KB, and a pool's checkout and validation for what's a handful of threads
+ * that each own one connection). A reader idle for a minute closes its connection and ends.
+ *
+ * Open it with [open], off the server's threads.
+ */
+public class JdbcDatabase internal constructor(
+    override val dialect: Dialect,
+    prefix: String,
+    override val description: String,
+    private val connector: () -> Connection,
+    private val log: Log,
+    private val limits: JdbcLimits,
+    name: String,
+) : Database {
+    override val sql: Sql = Sql(dialect, prefix)
+
+    private val queue = LinkedBlockingQueue<Job>()
+    private val dropped = AtomicLong()
+    private val marker = "writer:" + randomId()
+
+    @Volatile
+    private var accepting = true
+
+    @Volatile
+    private var warned = false
+
+    private val closed = newPending<Unit>()
+    private val writer = Thread({ runWriter() }, "$name database writer").apply { isDaemon = true }
+    private val readerConnection = ThreadLocal<ReaderConnection>()
+    private val readerThreads = limits.readers ?: if (dialect.shared) 2 else 1
+    private val readers = ThreadPoolExecutor(
+        readerThreads, readerThreads, 60, TimeUnit.SECONDS, LinkedBlockingQueue(),
+    ) { task ->
+        Thread({
+            try {
+                task.run()
+            } finally {
+                readerConnection.get()?.close()
+                readerConnection.remove()
+            }
+        }, "$name database reader").apply { isDaemon = true }
+    }.apply { allowCoreThreadTimeOut(true) }
+
+    // The writer's own: only its thread touches these.
+    private var connection: JdbcSession? = null
+    private var sequence = 0L
+    private var down: DbError? = null
+    private var backoff = 0L
+    private var deadline = Long.MAX_VALUE
+
+    /** How many writes are waiting for the writer. */
+    public val waiting: Int get() = queue.size
+
+    /** How many writes were refused because too many were waiting, since it opened. */
+    public val refused: Long get() = dropped.get()
+
+    /** Whether the writer can reach the database right now. */
+    public val available: Boolean get() = down == null
+
+    override fun write(statements: List<Statement>): Pending<Outcome<Unit, DbError>> {
+        val done = newPending<Outcome<Unit, DbError>>()
+        enqueue(Write(statements, done))
+        return done
+    }
+
+    override fun <T> transaction(work: (SqlSession) -> Outcome<T, DbError>): Pending<Outcome<T, DbError>> {
+        val done = newPending<Outcome<T, DbError>>()
+        enqueue(Work(work, done, transactional = true))
+        return done
+    }
+
+    override fun <T> session(work: (SqlSession) -> Outcome<T, DbError>): Pending<Outcome<T, DbError>> {
+        val done = newPending<Outcome<T, DbError>>()
+        enqueue(Work(work, done, transactional = false))
+        return done
+    }
+
+    override fun <T> read(work: (SqlSession) -> Outcome<T, DbError>): Pending<Outcome<T, DbError>> {
+        val done = newPending<Outcome<T, DbError>>()
+        if (!accepting) return pendingOf(Outcome.Err(CLOSED))
+        try {
+            readers.execute { done.resolve(runRead(work)) }
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            done.resolve(Outcome.Err(CLOSED))
+        }
+        return done
+    }
+
+    override fun close(): Pending<Unit> {
+        synchronized(this) {
+            if (accepting) {
+                accepting = false
+                queue.add(Stop)
+                readers.shutdown()
+            }
+        }
+        return closed
+    }
+
+    internal fun start(): JdbcDatabase = apply { writer.start() }
+
+    private fun enqueue(job: Job) {
+        if (!accepting) return job.fail(CLOSED)
+        val size = queue.size
+        if (size >= limits.capacity) {
+            if (dropped.getAndIncrement() == 0L || !warned) {
+                warned = true
+                log.warn("$size writes are waiting for $description, so new ones are refused until it catches up.")
+            }
+            return job.fail(DbError(DbError.Kind.OVERLOADED, "$size writes are already waiting for $description"))
+        }
+        if (size + 1 >= limits.warnAt && !warned) {
+            warned = true
+            log.warn("${size + 1} writes are waiting for $description. Is it down, or too slow for this server?")
+        }
+        queue.add(job)
+    }
+
+    private fun runWriter() {
+        try {
+            while (true) {
+                val job = queue.take()
+                if (job === Stop) break
+                if (warned && queue.size < limits.warnAt / 2) warned = false
+                val jobs = arrayListOf(job)
+                if (job is Write) {
+                    while (jobs.size < limits.batch) {
+                        jobs += queue.peek() as? Write ?: break
+                        queue.poll()
+                    }
+                }
+                try {
+                    when (job) {
+                        is Write -> runBatch(jobs.map { it as Write })
+                        is Work<*> -> runWork(job)
+                        else -> Unit
+                    }
+                } catch (e: RuntimeException) {
+                    // A bug of ours: say so, and keep the writer for everything else.
+                    log.error("The database writer failed", e)
+                    jobs.forEach { it.fail(DbError(DbError.Kind.OTHER, "the writer failed: $e")) }
+                    connection?.let { closeQuietly(it.connection) }
+                    connection = null
+                }
+            }
+        } finally {
+            var left = queue.poll()
+            while (left != null) {
+                left.fail(CLOSED)
+                left = queue.poll()
+            }
+            connection?.let { session ->
+                try {
+                    session.execute(sql.delete(Migrations.Meta, Migrations.Meta.key eq marker))
+                    Unit
+                } finally {
+                    closeQuietly(session.connection)
+                }
+            }
+            connection = null
+            closed.resolve(Unit)
+        }
+    }
+
+    /** Commits [batch] as one transaction, or settles each write with why it can't be. */
+    private fun runBatch(batch: List<Write>) {
+        var busy = 0
+        while (true) {
+            val session = writerSession() ?: if (stopping()) return batch.forEach { it.fail(CLOSED) } else continue
+            val number = ++sequence
+            val error = commit(session, number) { session.executeBatched(batch.flatMap { it.statements }) }
+            if (error == null) {
+                batch.forEach { it.done.resolve(OK) }
+                return
+            }
+            when {
+                error === LANDED -> {
+                    batch.forEach { it.done.resolve(OK) }
+                    return
+                }
+                lost(session, error) -> continue
+                error.kind == DbError.Kind.BUSY && ++busy < 5 -> pause(50L * busy)
+                batch.size == 1 -> {
+                    log.warn("$description refused a write, which is dropped: ${error.detail}")
+                    batch.single().fail(error)
+                    return
+                }
+                // The database refused something in the batch: find which, and keep the rest.
+                else -> return batch.forEach { runBatch(listOf(it)) }
+            }
+        }
+    }
+
+    private fun <T> runWork(job: Work<T>) {
+        var busy = 0
+        while (true) {
+            val session = writerSession() ?: if (stopping()) return job.fail(CLOSED) else continue
+            if (!job.transactional) {
+                val result = JdbcSession.contain { job.work(session) }
+                if (result is Outcome.Err && result.error.kind == DbError.Kind.UNAVAILABLE && lost(session, result.error)) continue
+                job.done.resolve(result)
+                return
+            }
+            val number = ++sequence
+            var result: Outcome<T, DbError>? = null
+            val error = commit(session, number) {
+                val ran = JdbcSession.contain { job.work(session) }
+                result = ran
+                if (ran is Outcome.Err) throw Refused(ran.error)
+            }
+            when {
+                error == null || error === LANDED -> {
+                    job.done.resolve(result!!)
+                    return
+                }
+                lost(session, error) -> continue
+                error.kind == DbError.Kind.BUSY && ++busy < 5 -> pause(50L * busy)
+                else -> {
+                    job.done.resolve(Outcome.Err(error))
+                    return
+                }
+            }
+        }
+    }
+
+    /**
+     * Runs [work] and this writer's marker update in one transaction and commits it. Returns
+     * `null` if it committed, [LANDED] if the commit's answer was lost but the marker shows it
+     * landed, or why it didn't.
+     */
+    private inline fun commit(session: JdbcSession, number: Long, work: () -> Unit): DbError? {
+        val connection = session.connection
+        var committing = false
+        try {
+            connection.autoCommit = false
+            work()
+            val marked = session.executeAll(markerRow(number.toString()))
+            if (marked is Outcome.Err) return marked.error.also { session.rollbackQuietly() }
+            committing = true
+            connection.commit()
+            connection.autoCommit = true
+            return null
+        } catch (e: Refused) {
+            session.rollbackQuietly()
+            restoreAutoCommit(connection)
+            return e.error
+        } catch (e: SQLException) {
+            val error = JdbcSession.errorOf(e, dialect)
+            session.rollbackQuietly()
+            restoreAutoCommit(connection)
+            if (committing) {
+                // The commit was sent, and its answer lost: the marker says whether it landed.
+                closeQuietly(connection)
+                this.connection = null
+                return if (landed(number)) LANDED else error.copy(kind = DbError.Kind.UNAVAILABLE)
+            }
+            return error
+        }
+    }
+
+    /** Whether batch [number] committed, read on a new connection; waits for the database as long as it takes, or until closing. */
+    private fun landed(number: Long): Boolean {
+        while (true) {
+            val session = writerSession() ?: if (stopping()) return false else continue
+            when (val read = session.query(sql.select(Migrations.Meta, Migrations.Meta.key eq marker, listOf(Migrations.Meta.value)))) {
+                is Outcome.Ok -> return read.value.firstOrNull()?.get(Migrations.Meta.value) == number.toString()
+                is Outcome.Err -> if (!lost(session, read.error)) return false
+            }
+        }
+    }
+
+    /**
+     * Whether [error] means the connection is gone, rather than the statement refused. If so,
+     * it's closed, the database is marked down, and the writer pauses before the next try.
+     */
+    private fun lost(session: JdbcSession, error: DbError): Boolean {
+        val gone = error.kind == DbError.Kind.UNAVAILABLE || !valid(session.connection)
+        if (!gone) return false
+        closeQuietly(session.connection)
+        connection = null
+        wentDown(error)
+        return true
+    }
+
+    /** The writer's connection, opened if it has none; `null` (after a pause) if the database can't be reached. */
+    private fun writerSession(): JdbcSession? {
+        connection?.let { return it }
+        if (stopping()) return null
+        return try {
+            val opened = JdbcSession(connector(), dialect)
+            connection = opened
+            down?.let { log.info("$description is back; ${queue.size + 1} writes waiting are going through.") }
+            down = null
+            backoff = 0
+            opened
+        } catch (e: SQLException) {
+            wentDown(JdbcSession.errorOf(e, dialect).copy(kind = DbError.Kind.UNAVAILABLE))
+            null
+        }
+    }
+
+    /**
+     * Marks the database down and pauses before the next try: not at all the first time (a
+     * connection MySQL closed, or a restart, usually reconnects at once), then from 250 ms,
+     * doubling to [JdbcLimits.maxBackoffMillis].
+     */
+    private fun wentDown(error: DbError) {
+        if (down == null) {
+            log.warn("Lost $description (${error.detail}). Writes wait and are tried again until it's back.")
+        }
+        down = error
+        if (backoff > 0) pause(backoff)
+        backoff = if (backoff == 0L) minOf(250, limits.maxBackoffMillis) else minOf(backoff * 2, limits.maxBackoffMillis)
+    }
+
+    /** Whether the writer should give up on the database: closing, and past the wait. */
+    private fun stopping(): Boolean {
+        if (accepting) return false
+        if (deadline == Long.MAX_VALUE) deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(limits.closeWaitMillis)
+        return down != null && System.nanoTime() > deadline
+    }
+
+    private fun pause(millis: Long) {
+        val until = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis)
+        while (System.nanoTime() < until) {
+            if (!accepting && down != null && stopping()) return
+            try {
+                Thread.sleep(minOf(50, TimeUnit.NANOSECONDS.toMillis(until - System.nanoTime()) + 1))
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return
+            }
+        }
+    }
+
+    /** This writer's row in the meta table, set to [value]: the number of the batch being committed. */
+    private fun markerRow(value: String): List<Statement> = sql.upsert(values(Migrations.Meta) {
+        it[Migrations.Meta.key] = marker
+        it[Migrations.Meta.value] = value
+    })
+
+    private fun <T> runRead(work: (SqlSession) -> Outcome<T, DbError>): Outcome<T, DbError> {
+        repeat(2) { attempt ->
+            val reader = try {
+                readerConnection.get()?.takeIf { it.usable() } ?: ReaderConnection(connector(), dialect).also { readerConnection.set(it) }
+            } catch (e: SQLException) {
+                return Outcome.Err(JdbcSession.errorOf(e, dialect).copy(kind = DbError.Kind.UNAVAILABLE))
+            }
+            val result = JdbcSession.contain { work(reader.session) }
+            reader.used()
+            if (result is Outcome.Err && attempt == 0 && (result.error.kind == DbError.Kind.UNAVAILABLE || !valid(reader.session.connection))) {
+                reader.close()
+                readerConnection.remove()
+                return@repeat
+            }
+            return result
+        }
+        return Outcome.Err(DbError(DbError.Kind.UNAVAILABLE, "$description couldn't be read"))
+    }
+
+    /** A reader thread's connection, checked before use once it's been idle a while (MySQL closes idle ones). */
+    private inner class ReaderConnection(connection: Connection, dialect: Dialect) {
+        val session = JdbcSession(connection, dialect)
+        private var lastUsed = System.nanoTime()
+
+        init {
+            // Readers never write: on SQLite, say so, so a write by mistake fails here (3.8+).
+            if (dialect is Dialect.Sqlite) {
+                try {
+                    connection.createStatement().use { it.execute("PRAGMA query_only = 1") }
+                } catch (e: SQLException) {
+                    // Older SQLite: the convention will have to do.
+                }
+            }
+        }
+
+        fun usable(): Boolean =
+            System.nanoTime() - lastUsed < TimeUnit.SECONDS.toNanos(30) || valid(session.connection).also { if (!it) close() }
+
+        fun used() {
+            lastUsed = System.nanoTime()
+        }
+
+        fun close() = closeQuietly(session.connection)
+    }
+
+    private sealed class Job {
+        abstract fun fail(error: DbError)
+    }
+
+    private class Write(val statements: List<Statement>, val done: Pending<Outcome<Unit, DbError>>) : Job() {
+        override fun fail(error: DbError) {
+            done.resolve(Outcome.Err(error))
+        }
+    }
+
+    private class Work<T>(
+        val work: (SqlSession) -> Outcome<T, DbError>,
+        val done: Pending<Outcome<T, DbError>>,
+        val transactional: Boolean,
+    ) : Job() {
+        override fun fail(error: DbError) {
+            done.resolve(Outcome.Err(error))
+        }
+    }
+
+    private object Stop : Job() {
+        override fun fail(error: DbError) = Unit
+    }
+
+    /** Work that returned an error, carried out of the transaction to roll it back. */
+    private class Refused(val error: DbError) : RuntimeException(null, null, false, false)
+
+    public companion object {
+        private val OK: Outcome<Unit, DbError> = Outcome.Ok(Unit)
+        private val CLOSED = DbError(DbError.Kind.CLOSED, "the database is closed")
+        private val LANDED = DbError(DbError.Kind.OTHER, "committed")
+
+        /**
+         * Opens the database [settings] describe, checks it can be reached, sets SQLite up for
+         * one writer and many readers, and starts the writer. Waits for the database: call it off
+         * the server's threads. Nothing is migrated: that's the plugin's [Migrations], next.
+         *
+         * @param sqliteFile where the SQLite file is, for [DatabaseSettings.Type.SQLITE]: the
+         *     plugin's folder, or `plugins/Xena/` for the family's shared one
+         * @param name the plugin's name, for its threads
+         */
+        @JvmStatic
+        @JvmOverloads
+        public fun open(
+            settings: DatabaseSettings,
+            sqliteFile: Path,
+            drivers: Drivers,
+            log: Log,
+            name: String = "Xena",
+            limits: JdbcLimits = JdbcLimits(),
+        ): Outcome<JdbcDatabase, DbError> = openWith(settings, sqliteFile, drivers, log, name, limits, Dialect.Sqlite.MINIMUM)
+
+        internal fun openWith(
+            settings: DatabaseSettings,
+            sqliteFile: Path,
+            drivers: Drivers,
+            log: Log,
+            name: String,
+            limits: JdbcLimits,
+            sqliteMinimum: SqlVersion,
+            wrap: (() -> Connection) -> () -> Connection = { it },
+        ): Outcome<JdbcDatabase, DbError> {
+            if (!Sql.validPrefix(settings.prefix)) {
+                return Outcome.Err(DbError(DbError.Kind.BAD_STATEMENT, "storage.table-prefix can only use lowercase letters, digits and _"))
+            }
+            return when (settings.type) {
+                DatabaseSettings.Type.SQLITE -> openSqlite(settings, sqliteFile, drivers, log, name, limits, sqliteMinimum, wrap)
+                DatabaseSettings.Type.MYSQL -> openMySql(settings, drivers, log, name, limits, wrap)
+            }
+        }
+
+        private fun openSqlite(
+            settings: DatabaseSettings, file: Path, drivers: Drivers, log: Log, name: String, limits: JdbcLimits,
+            minimum: SqlVersion, wrap: (() -> Connection) -> () -> Connection,
+        ): Outcome<JdbcDatabase, DbError> {
+            try {
+                Files.createDirectories(file.toAbsolutePath().parent)
+            } catch (e: java.io.IOException) {
+                return Outcome.Err(DbError(DbError.Kind.UNAVAILABLE, "couldn't make the folder for $file: $e"))
+            }
+            val url = "jdbc:sqlite:" + file.toAbsolutePath()
+            val reasons = ArrayList<String>()
+            for (candidate in drivers.sqlite()) {
+                val found = when (candidate) {
+                    is Outcome.Ok -> candidate.value
+                    is Outcome.Err -> {
+                        reasons += candidate.error.detail
+                        continue
+                    }
+                }
+                val connector = wrap { sqliteConnection(found.driver, url) }
+                val version = try {
+                    connector().use { connection ->
+                        val version = connection.createStatement().use { s ->
+                            s.executeQuery("SELECT sqlite_version()").use { if (it.next()) SqlVersion.parse(it.getString(1)) else null }
+                        } ?: SqlVersion(0, 0, 0)
+                        if (version >= minimum) {
+                            connection.createStatement().use {
+                                // Lets purges give space back bit by bit. Only takes effect on a new
+                                // file, and only before the switch to WAL writes its header.
+                                it.execute("PRAGMA auto_vacuum = INCREMENTAL")
+                                // Readers don't wait for the writer, nor the writer for readers.
+                                it.execute("PRAGMA journal_mode = WAL")
+                            }
+                        }
+                        version
+                    }
+                } catch (e: SQLException) {
+                    return Outcome.Err(DbError(DbError.Kind.UNAVAILABLE, "couldn't open the SQLite database ${file.fileName}: ${e.message}"))
+                }
+                if (version < minimum) {
+                    reasons += "${found.source} SQLite is $version, older than $minimum"
+                    continue
+                }
+                val database = JdbcDatabase(Dialect.Sqlite(version), settings.prefix, "the SQLite database ${file.fileName}",
+                    connector, log, limits, name)
+                return prepare(database, "SQLite $version (${found.source} driver)", log)
+            }
+            return Outcome.Err(DbError(DbError.Kind.NO_DRIVER, "no SQLite driver could be used" +
+                (if (reasons.isEmpty()) "; this server has none, so install sqlite-jdbc ${DriverLibrary.SQLITE.coordinates.substringAfterLast(':')} or newer" else ": " + reasons.joinToString("; "))))
+        }
+
+        private fun openMySql(
+            settings: DatabaseSettings, drivers: Drivers, log: Log, name: String, limits: JdbcLimits,
+            wrap: (() -> Connection) -> () -> Connection,
+        ): Outcome<JdbcDatabase, DbError> {
+            val mysql = settings.mysql
+            val extra = mysql.properties.trim()
+            val url = "jdbc:mysql://${mysql.host}:${mysql.port}/${mysql.database}" +
+                // Batched inserts as one statement: many times faster for a writer.
+                "?rewriteBatchedStatements=true&characterEncoding=utf8" + (if (extra.isEmpty()) "" else "&$extra")
+            val properties = Properties()
+            properties.setProperty("user", mysql.username)
+            properties.setProperty("password", mysql.password)
+            // Without these a connection whose packets are dropped waits forever, and so does the
+            // writer. Ten seconds to connect; five minutes for one reply, since purges run long.
+            // An owner's own value in storage.mysql.properties wins.
+            defaultTo(properties, extra, "connectTimeout", "10000")
+            defaultTo(properties, extra, "socketTimeout", "300000")
+            val description = "MySQL at ${mysql.host}:${mysql.port}/${mysql.database}"
+            val reasons = ArrayList<String>()
+            for (candidate in drivers.mysql()) {
+                val found = when (candidate) {
+                    is Outcome.Ok -> candidate.value
+                    is Outcome.Err -> {
+                        reasons += candidate.error.detail
+                        continue
+                    }
+                }
+                val connector = wrap {
+                    found.driver.connect(url, properties) ?: throw SQLException("the MySQL driver doesn't accept $url")
+                }
+                try {
+                    connector().close()
+                } catch (e: SQLException) {
+                    return Outcome.Err(DbError(DbError.Kind.UNAVAILABLE, "couldn't connect to $description: ${e.message}"))
+                }
+                return prepare(JdbcDatabase(Dialect.MySql, settings.prefix, description, connector, log, limits, name),
+                    "MySQL (${found.source} driver)", log)
+            }
+            return Outcome.Err(DbError(DbError.Kind.NO_DRIVER, "no MySQL driver could be used" +
+                (if (reasons.isEmpty()) "; this server has none, so install mysql-connector-j" else ": " + reasons.joinToString("; "))))
+        }
+
+        private fun sqliteConnection(driver: Driver, url: String): Connection {
+            val connection = driver.connect(url, Properties()) ?: throw SQLException("the SQLite driver doesn't accept $url")
+            try {
+                connection.createStatement().use {
+                    // Wait up to 5 seconds for another writer (the family sharing one file).
+                    it.execute("PRAGMA busy_timeout = 5000")
+                    // Safe with WAL: a power cut can lose the last moments, never corrupt the file.
+                    it.execute("PRAGMA synchronous = NORMAL")
+                }
+            } catch (e: SQLException) {
+                closeQuietly(connection)
+                throw e
+            }
+            return connection
+        }
+
+        /** Makes the meta table and this writer's row in it, then starts the writer. */
+        internal fun prepare(database: JdbcDatabase, what: String, log: Log): Outcome<JdbcDatabase, DbError> {
+            val ready = try {
+                database.connector().use { connection ->
+                    val session = JdbcSession(connection, database.dialect)
+                    for (statement in database.sql.createTable(Migrations.Meta)) {
+                        val made = session.execute(statement)
+                        if (made is Outcome.Err && made.error.kind != DbError.Kind.ALREADY_EXISTS) return@use made
+                    }
+                    session.executeAll(database.markerRow("0"))
+                }
+            } catch (e: SQLException) {
+                Outcome.Err(JdbcSession.errorOf(e, database.dialect))
+            }
+            if (ready is Outcome.Err) return ready
+            log.info("Using ${database.description}: $what.")
+            return Outcome.Ok(database.start())
+        }
+
+        /** Sets [key] unless the owner's extra connection settings already do. */
+        internal fun defaultTo(properties: Properties, owner: String, key: String, value: String) {
+            if (owner.split('&').none { it.trim().startsWith("$key=", ignoreCase = true) }) properties.setProperty(key, value)
+        }
+
+        private fun valid(connection: Connection): Boolean = try {
+            !connection.isClosed && connection.isValid(2)
+        } catch (e: SQLException) {
+            false
+        }
+
+        private fun restoreAutoCommit(connection: Connection) {
+            try {
+                if (!connection.isClosed) connection.autoCommit = true
+            } catch (e: SQLException) {
+                // A broken connection; it's replaced.
+            }
+        }
+
+        private fun closeQuietly(connection: Connection) {
+            try {
+                connection.close()
+            } catch (e: SQLException) {
+                // Closing a broken connection: nothing to do.
+            }
+        }
+
+        private fun randomId(): String {
+            val bytes = ByteArray(8)
+            SecureRandom().nextBytes(bytes)
+            return bytes.joinToString("") { (it.toInt() and 0xFF).toString(16).padStart(2, '0') }
+        }
+    }
+}

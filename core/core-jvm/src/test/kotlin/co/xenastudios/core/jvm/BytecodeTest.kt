@@ -1,7 +1,12 @@
 package co.xenastudios.core.jvm
 
 import co.xenastudios.core.api.CoreApi
+import co.xenastudios.core.api.Location
+import co.xenastudios.core.api.event.EventBus
 import co.xenastudios.core.common.Outcome
+import co.xenastudios.core.common.event.SimpleEventBus
+import co.xenastudios.core.common.module.ModuleSet
+import co.xenastudios.core.common.scheduler.Scheduler
 import co.xenastudios.core.common.text.Markup
 import co.xenastudios.core.common.time.Durations
 import kotlin.reflect.KClass
@@ -17,7 +22,10 @@ class BytecodeTest {
 
     @Test
     fun everyModuleIsJava8Bytecode() {
-        for (type in listOf(JvmCore::class, CoreApi::class, Outcome::class, Markup::class, Durations::class)) {
+        for (type in listOf(
+            JvmCore::class, CoreApi::class, Location::class, EventBus::class,
+            Outcome::class, Markup::class, Durations::class, SimpleEventBus::class, ModuleSet::class, Scheduler::class,
+        )) {
             assertEquals(JvmCore.CLASS_FILE_MAJOR, major(type), "class file version of ${type.qualifiedName}")
         }
     }

@@ -46,8 +46,9 @@ rootProject.name = "xena-plugins"
 // Shared code, shaded into every plugin.
 include("core")
 // The rewrite's core (ROADMAP.md), beside today's until each plugin's rewrite replaces it:
-// shared logic for the JVM and wasmWasi, what plugin APIs share, and the JVM's side.
-include("core:core-common", "core:core-api", "core:core-jvm")
+// shared logic for the JVM and wasmWasi, what plugin APIs share, the JVM's side, and the fake
+// platform tests run on.
+include("core:core-common", "core:core-api", "core:core-jvm", "core:core-testing")
 // The library loader and the Java shim a plugin's main class extends (Java only: it runs
 // before the Kotlin stdlib is loaded), and a never-released plugin on it for boot tests.
 include("core:core-loader", "core:core-loader:sandbox")

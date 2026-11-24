@@ -3,3 +3,130 @@ public final class co/xenastudios/core/api/CoreApi {
 	public static final field LEVEL I
 }
 
+public final class co/xenastudios/core/api/Location {
+	public fun <init> (Lco/xenastudios/core/api/WorldRef;DDD)V
+	public fun <init> (Lco/xenastudios/core/api/WorldRef;DDDF)V
+	public fun <init> (Lco/xenastudios/core/api/WorldRef;DDDFF)V
+	public synthetic fun <init> (Lco/xenastudios/core/api/WorldRef;DDDFFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun distanceSquared (Lco/xenastudios/core/api/Location;)D
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun facing (FF)Lco/xenastudios/core/api/Location;
+	public final fun getBlockX ()I
+	public final fun getBlockY ()I
+	public final fun getBlockZ ()I
+	public final fun getChunkX ()I
+	public final fun getChunkZ ()I
+	public final fun getPitch ()F
+	public final fun getWorld ()Lco/xenastudios/core/api/WorldRef;
+	public final fun getX ()D
+	public final fun getY ()D
+	public final fun getYaw ()F
+	public final fun getZ ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/core/api/PendingKt {
+	public static final synthetic fun map (Ljava/util/concurrent/CompletableFuture;Lkotlin/jvm/functions/Function1;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class co/xenastudios/core/api/Pending_jvmKt {
+	public static final synthetic fun isSettled (Ljava/util/concurrent/CompletableFuture;)Z
+	public static final synthetic fun newPending ()Ljava/util/concurrent/CompletableFuture;
+	public static final synthetic fun onSettled (Ljava/util/concurrent/CompletableFuture;Lkotlin/jvm/functions/Function2;)V
+	public static final synthetic fun pendingFailure (Ljava/lang/Throwable;)Ljava/util/concurrent/CompletableFuture;
+	public static final synthetic fun pendingOf (Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+	public static final synthetic fun reject (Ljava/util/concurrent/CompletableFuture;Ljava/lang/Throwable;)Z
+	public static final synthetic fun resolve (Ljava/util/concurrent/CompletableFuture;Ljava/lang/Object;)Z
+}
+
+public final class co/xenastudios/core/api/PlayerRef {
+	public static final field Companion Lco/xenastudios/core/api/PlayerRef$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getUuid ()Lkotlin/uuid/Uuid;
+	public fun hashCode ()I
+	public static final fun of (Lkotlin/uuid/Uuid;)Lco/xenastudios/core/api/PlayerRef;
+	public static final fun parseOrNull (Ljava/lang/String;)Lco/xenastudios/core/api/PlayerRef;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/core/api/PlayerRef$Companion {
+	public final fun of (Lkotlin/uuid/Uuid;)Lco/xenastudios/core/api/PlayerRef;
+	public final fun parseOrNull (Ljava/lang/String;)Lco/xenastudios/core/api/PlayerRef;
+}
+
+public final class co/xenastudios/core/api/PlayerRefs {
+	public static final fun javaUuid (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/UUID;
+	public static final fun of (Ljava/util/UUID;)Lco/xenastudios/core/api/PlayerRef;
+}
+
+public final class co/xenastudios/core/api/WorldRef {
+	public static final field Companion Lco/xenastudios/core/api/WorldRef$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static final fun of (Ljava/lang/String;)Lco/xenastudios/core/api/WorldRef;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/core/api/WorldRef$Companion {
+	public final fun of (Ljava/lang/String;)Lco/xenastudios/core/api/WorldRef;
+}
+
+public abstract interface class co/xenastudios/core/api/event/Cancellable : co/xenastudios/core/api/event/Event {
+	public abstract fun isCancelled ()Z
+	public abstract fun setCancelled (Z)V
+}
+
+public abstract class co/xenastudios/core/api/event/CancellableEvent : co/xenastudios/core/api/event/Cancellable {
+	public fun <init> ()V
+	public fun isCancelled ()Z
+	public fun setCancelled (Z)V
+}
+
+public abstract interface class co/xenastudios/core/api/event/Event {
+}
+
+public abstract interface class co/xenastudios/core/api/event/EventBus {
+	public fun subscribe (Lco/xenastudios/core/api/event/EventType;Lco/xenastudios/core/api/event/EventListener;)Lco/xenastudios/core/api/event/Subscription;
+	public fun subscribe (Lco/xenastudios/core/api/event/EventType;Lco/xenastudios/core/api/event/EventPriority;Lco/xenastudios/core/api/event/EventListener;)Lco/xenastudios/core/api/event/Subscription;
+	public abstract fun subscribe (Lco/xenastudios/core/api/event/EventType;Lco/xenastudios/core/api/event/EventPriority;ZLco/xenastudios/core/api/event/EventListener;)Lco/xenastudios/core/api/event/Subscription;
+}
+
+public final class co/xenastudios/core/api/event/EventBus$DefaultImpls {
+	public static fun subscribe (Lco/xenastudios/core/api/event/EventBus;Lco/xenastudios/core/api/event/EventType;Lco/xenastudios/core/api/event/EventListener;)Lco/xenastudios/core/api/event/Subscription;
+	public static fun subscribe (Lco/xenastudios/core/api/event/EventBus;Lco/xenastudios/core/api/event/EventType;Lco/xenastudios/core/api/event/EventPriority;Lco/xenastudios/core/api/event/EventListener;)Lco/xenastudios/core/api/event/Subscription;
+}
+
+public abstract interface class co/xenastudios/core/api/event/EventListener {
+	public abstract fun on (Lco/xenastudios/core/api/event/Event;)V
+}
+
+public final class co/xenastudios/core/api/event/EventPriority : java/lang/Enum {
+	public static final field HIGH Lco/xenastudios/core/api/event/EventPriority;
+	public static final field HIGHEST Lco/xenastudios/core/api/event/EventPriority;
+	public static final field LOW Lco/xenastudios/core/api/event/EventPriority;
+	public static final field LOWEST Lco/xenastudios/core/api/event/EventPriority;
+	public static final field MONITOR Lco/xenastudios/core/api/event/EventPriority;
+	public static final field NORMAL Lco/xenastudios/core/api/event/EventPriority;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/core/api/event/EventPriority;
+	public static fun values ()[Lco/xenastudios/core/api/event/EventPriority;
+}
+
+public final class co/xenastudios/core/api/event/EventType {
+	public static final field Companion Lco/xenastudios/core/api/event/EventType$Companion;
+	public final fun getName ()Ljava/lang/String;
+	public static final fun of (Ljava/lang/String;)Lco/xenastudios/core/api/event/EventType;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/core/api/event/EventType$Companion {
+	public final fun of (Ljava/lang/String;)Lco/xenastudios/core/api/event/EventType;
+}
+
+public abstract interface class co/xenastudios/core/api/event/Subscription {
+	public abstract fun cancel ()V
+	public abstract fun isActive ()Z
+}
+

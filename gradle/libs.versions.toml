@@ -35,7 +35,9 @@ commons-net = "3.13.0"
 pmd = "7.29.0"
 # YAML for the rewrite's configs on the JVM (core-jvm's config package): the parser kaml is
 # built on, which is Java 8 bytecode where kaml is 11. No wasmWasi build yet
-# (krzema12/snakeyaml-engine-kmp#523), so core-common takes a reader instead.
+# (krzema12/snakeyaml-engine-kmp#523), so core-common takes a reader instead. Plugins download
+# it with okio and urlencoder at startup, pinned in gradle/library-pins.txt: a bump runs the
+# build with -PupdatePins.
 snakeyaml-engine-kmp = "5.0.0"
 # Reads each API's class files for its signature check (build-logic), as NeoSkript does.
 asm = "9.11.1"
@@ -52,6 +54,9 @@ r8 = "9.5.33"
 # Fuzzes the rewrite's parsers on the JVM (core/core-fuzz): JUnit fuzz tests, which replay
 # their committed corpus in every test run and fuzz with JAZZER_FUZZ=1.
 jazzer = "0.30.0"
+# JMH, for the core's hot paths (core/core-benchmarks), run without a Gradle plugin: the
+# plugins for it warn about Gradle 10 deprecations.
+jmh = "1.37"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -75,6 +80,9 @@ commons-net = { module = "commons-net:commons-net", version.ref = "commons-net" 
 pmd-cli = { module = "net.sourceforge.pmd:pmd-cli", version.ref = "pmd" }
 pmd-java = { module = "net.sourceforge.pmd:pmd-java", version.ref = "pmd" }
 snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.ref = "snakeyaml-engine-kmp" }
+# The same parser's JVM jar, which a plugin's jar names to be downloaded (xena.fetched-libraries,
+# plugin.yml's libraries:) with what it needs (okio, urlencoder) rather than shading them.
+snakeyaml-engine-kmp-jvm = { module = "it.krzeminski:snakeyaml-engine-kmp-jvm", version.ref = "snakeyaml-engine-kmp" }
 adventure-api = { module = "net.kyori:adventure-api", version.ref = "adventure-api" }
 bungeecord-chat = { module = "net.md-5:bungeecord-chat", version.ref = "bungeecord-chat" }
 jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
@@ -84,6 +92,8 @@ jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "j
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 spigot-api-floor = { module = "org.spigotmc:spigot-api", version.ref = "spigot-floor" }
 r8 = { module = "com.android.tools:r8", version.ref = "r8" }
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator-bytecode = { module = "org.openjdk.jmh:jmh-generator-bytecode", version.ref = "jmh" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 [plugins]

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Boots xSample on one Bukkit-family server with its boot checks (boot-checks.txt): the
 # platform's own checks at startup, console commands, and a clean stop. For CI's boot matrix
-# and by hand, after ./gradlew :core:core-testing:sample:bukkit:assemble.
+# and by hand, after ./gradlew :core:core-testing:sample:bukkit:assemble. It boots the jar R8
+# shrank (build/r8/), as a release ships; XSAMPLE_JAR=<jar> boots another, such as Shadow's
+# unshrunk build/libs/XSample.jar.
 #
 #   core/core-testing/sample/bukkit/boot.sh paper|folia [version] [--java <JDK home>]
 #   core/core-testing/sample/bukkit/boot.sh <server.jar> --java <JDK home>
@@ -14,7 +16,7 @@ set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../../../.." && pwd)
-jar="$here/build/libs/XSample.jar"
+jar=${XSAMPLE_JAR:-$here/build/r8/XSample.jar}
 [[ -f $jar ]] || { echo "no $jar: run ./gradlew :core:core-testing:sample:bukkit:assemble first" >&2; exit 2; }
 (($#)) || { sed -n '2,12p' "$0" >&2; exit 2; }
 

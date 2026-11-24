@@ -1,5 +1,9 @@
 plugins {
     id("dev.kikugie.stonecutter")
+    // The root build's conventions the sandbox applies, loaded once here: they bring the Kotlin
+    // Gradle plugin with them, which every node must share rather than load again.
+    id("xena.r8") apply false
+    id("xena.fetched-libraries") apply false
 }
 
 // The version the source's comments are switched to for the IDE. Committed as the newest, so

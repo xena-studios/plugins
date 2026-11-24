@@ -9,6 +9,7 @@ import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.every
 import co.xenastudios.core.jvm.config.JvmYaml
 import co.xenastudios.core.jvm.family.JvmFamilyBoard
+import co.xenastudios.core.jvm.platform.FolderStorage
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.server.level.ServerPlayer
@@ -38,7 +39,7 @@ import kotlin.time.Duration.Companion.seconds
 public class FabricFamily internal constructor(private val platform: FabricPlatform) {
 
     /** The family's folder, `config/xena/`, and its settings. */
-    public val family: Family = Family(FileStorage(FabricLoader.getInstance().configDir.resolve(FOLDER)), board(platform), JvmYaml)
+    public val family: Family = Family(FolderStorage(FabricLoader.getInstance().configDir.resolve(FOLDER)), board(platform), JvmYaml)
 
     /** What loading `config/xena/config.yml` found as the mod started. */
     public val loaded: FamilyLoad = family.load()

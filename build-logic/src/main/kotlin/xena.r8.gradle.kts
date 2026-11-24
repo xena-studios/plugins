@@ -58,13 +58,17 @@ val shrinkJar = tasks.register<R8Shrink>("shrinkJar") {
     generatedRules.set(layout.buildDirectory.file("r8/generated.pro"))
 }
 
-val ownPath: String = path
+// A build of its own inside the repo (core/platform-fabric) sets xena.repoRoot to the repo's
+// root, for gradle/jar-budgets.txt, and xena.projectPrefix to its folder's project path, so its
+// jars' lines read like the root build's (:core:platform-fabric:sandbox:1.21.11).
+val repoRoot: Directory = isolated.rootProject.projectDirectory.dir(providers.gradleProperty("xena.repoRoot").getOrElse("."))
+val ownPath: String = providers.gradleProperty("xena.projectPrefix").getOrElse("") + path
 
 val checkJarBudget = tasks.register<JarBudget>("checkJarBudget") {
     group = "verification"
     description = "Fails if the shrunk jar is over its budget in gradle/jar-budgets.txt."
     jar.set(shrinkJar.flatMap { it.outputJar })
-    budgets.set(isolated.rootProject.projectDirectory.file("gradle/jar-budgets.txt"))
+    budgets.set(repoRoot.file("gradle/jar-budgets.txt"))
     projectPath.set(ownPath)
 }
 

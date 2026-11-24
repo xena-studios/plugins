@@ -1,0 +1,52 @@
+---
+// Every translation key with its English text and the tags it fills in, then how complete each
+// shipped language is: the roadmap's language page, from the same data.
+import { type Language, type Message, num } from "./manifest";
+
+interface Props {
+  file: string;
+  keys: Message[];
+  languages: Language[];
+}
+const { file, keys, languages } = Astro.props;
+const names = new Intl.DisplayNames(["en"], { type: "language" });
+---
+<p>English is <code>{file}</code>; every other language falls back to it, key by key.</p>
+<table class="ref-messages">
+  <thead>
+    <tr><th>Key</th><th>English</th><th>Fills in</th></tr>
+  </thead>
+  <tbody>
+    {keys.map((m) => (
+      <tr>
+        <td><code>{m.key}</code><div class="ref-hint">{m.description}</div></td>
+        <td><code>{m.default}</code></td>
+        <td>{m.placeholders.map((p, i) => <>{i > 0 && " "}<code>{`<${p}>`}</code></>)}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+<table class="ref-languages">
+  <thead>
+    <tr><th>Language</th><th>Translated</th><th>Still in English</th></tr>
+  </thead>
+  <tbody>
+    {languages.map((l) => (
+      <tr>
+        <td>{names.of(l.tag)} <code>{l.tag}</code></td>
+        <td>
+          <meter min="0" max={l.total} value={l.translated} /> {num(l.translated)} of {num(l.total)}
+        </td>
+        <td>{l.missing.length ? l.missing.map((k, i) => <>{i > 0 && ", "}<code>{k}</code></>) : "none"}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  meter {
+    inline-size: 5rem;
+    vertical-align: middle;
+    accent-color: var(--sl-color-accent);
+  }
+</style>

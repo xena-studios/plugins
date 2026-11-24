@@ -1,0 +1,24 @@
+# Coins a player has on their first join.
+starting-coins: 100
+
+# The most one /pay can send. 0 for no limit.
+max-pay: 10000
+
+# Where balances are kept.
+storage:
+  # sqlite: a file in the plugin's folder. mysql: MySQL or MariaDB.
+  type: "sqlite"
+  # For mysql only.
+  host: "localhost"
+  port: 3306
+
+# Payments between players.
+pay:
+  # How long a player waits between payments.
+  cooldown: "5s"
+  # Worlds where /pay is refused.
+  blocked-worlds:
+    - "event_world"
+
+# Checks Modrinth for a new version once a day.
+update-checker: true

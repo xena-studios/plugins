@@ -1,0 +1,30 @@
+---
+// The API's events, for developers: what fires, whether it can be cancelled, what it carries.
+import type { ApiEvent } from "./manifest";
+
+interface Props {
+  events: ApiEvent[];
+}
+const short = (c: string) => c.slice(c.lastIndexOf(".") + 1);
+---
+<table class="ref-events">
+  <thead>
+    <tr><th>Event</th><th>When</th><th>Fields</th></tr>
+  </thead>
+  <tbody>
+    {Astro.props.events.map((e) => (
+      <tr>
+        <td>
+          <code title={e.className}>{short(e.className)}</code>
+          <div class="ref-hint">{e.cancellable ? "cancellable, " : ""}since {e.since}</div>
+        </td>
+        <td>{e.description}</td>
+        <td>
+          {e.fields.map((f) => (
+            <div><code>{f.name}: {f.type}</code> <span class="ref-hint">{f.description}</span></div>
+          ))}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>

@@ -1,0 +1,540 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xdemo",
+    "name": "xDemo",
+    "version": "2.0.0",
+    "description": "A fake coins plugin for the M0 site spike."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "spigot",
+      "name": "Spigot",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "velocity",
+      "name": "Velocity",
+      "kind": "proxy",
+      "minVersion": "3.3",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "neoforge",
+      "name": "NeoForge",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "planned"
+    },
+    {
+      "id": "sponge",
+      "name": "Sponge",
+      "kind": "server",
+      "minVersion": "API 8",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "id": "pumpkin",
+      "name": "Pumpkin",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "coins",
+      "usage": "/coins [player]",
+      "aliases": [
+        "bal",
+        "balance"
+      ],
+      "description": "Shows your coins, or another player's.",
+      "permission": "xdemo.coins",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "description": "Whose coins to show. Needs xdemo.coins.others.",
+          "choices": []
+        }
+      ],
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "pay",
+      "usage": "/pay <player> <amount>",
+      "aliases": [],
+      "description": "Sends coins to another player.",
+      "permission": "xdemo.pay",
+      "playerOnly": true,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": true,
+          "description": "Who to pay.",
+          "choices": []
+        },
+        {
+          "name": "amount",
+          "type": "integer",
+          "required": true,
+          "description": "How many coins, up to max-pay.",
+          "choices": [],
+          "min": 1.0
+        }
+      ],
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "xdemo",
+      "usage": "/xdemo",
+      "aliases": [],
+      "description": "xDemo's admin commands.",
+      "playerOnly": false,
+      "arguments": [],
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xdemo give",
+          "usage": "/xdemo give <player> <amount>",
+          "aliases": [],
+          "description": "Gives a player coins.",
+          "permission": "xdemo.admin.give",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player",
+              "required": true,
+              "description": "Who to give coins to.",
+              "choices": []
+            },
+            {
+              "name": "amount",
+              "type": "integer",
+              "required": true,
+              "description": "How many.",
+              "choices": [],
+              "min": 1.0,
+              "max": 1000000.0
+            }
+          ],
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xdemo reload",
+          "usage": "/xdemo reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files.",
+          "permission": "xdemo.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xdemo debug",
+          "usage": "/xdemo debug",
+          "aliases": [],
+          "description": "Checks the database and dependencies, then prints a paste link for support.",
+          "permission": "xdemo.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xdemo.coins",
+      "description": "See your own coins.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "coins"
+      ]
+    },
+    {
+      "node": "xdemo.coins.others",
+      "description": "See another player's coins.",
+      "default": "op",
+      "children": {
+        "xdemo.coins": true
+      },
+      "commands": []
+    },
+    {
+      "node": "xdemo.pay",
+      "description": "Send coins to another player.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "pay"
+      ]
+    },
+    {
+      "node": "xdemo.admin.give",
+      "description": "Give coins with /xdemo give.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xdemo give"
+      ]
+    },
+    {
+      "node": "xdemo.admin.reload",
+      "description": "Use /xdemo reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xdemo reload"
+      ]
+    },
+    {
+      "node": "xdemo.admin.debug",
+      "description": "Use /xdemo debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xdemo debug"
+      ]
+    },
+    {
+      "node": "xdemo.admin",
+      "description": "Every admin subcommand.",
+      "default": "op",
+      "children": {
+        "xdemo.admin.reload": true,
+        "xdemo.admin.debug": true
+      },
+      "commands": []
+    }
+  ],
+  "config": [
+    {
+      "path": "starting-coins",
+      "type": "integer",
+      "comment": [
+        "Coins a player has on their first join."
+      ],
+      "default": 100,
+      "choices": [],
+      "min": 0.0,
+      "reloadable": true,
+      "children": []
+    },
+    {
+      "path": "max-pay",
+      "type": "integer",
+      "comment": [
+        "The most one /pay can send. 0 for no limit."
+      ],
+      "default": 10000,
+      "choices": [],
+      "min": 0.0,
+      "reloadable": true,
+      "children": []
+    },
+    {
+      "path": "storage",
+      "type": "section",
+      "comment": [
+        "Where balances are kept."
+      ],
+      "choices": [],
+      "reloadable": true,
+      "children": [
+        {
+          "path": "storage.type",
+          "type": "choice",
+          "comment": [
+            "sqlite: a file in the plugin's folder. mysql: MySQL or MariaDB."
+          ],
+          "default": "sqlite",
+          "choices": [
+            "sqlite",
+            "mysql"
+          ],
+          "reloadable": false,
+          "children": []
+        },
+        {
+          "path": "storage.host",
+          "type": "string",
+          "comment": [
+            "For mysql only."
+          ],
+          "default": "localhost",
+          "choices": [],
+          "reloadable": false,
+          "children": []
+        },
+        {
+          "path": "storage.port",
+          "type": "integer",
+          "comment": [],
+          "default": 3306,
+          "choices": [],
+          "min": 1.0,
+          "max": 65535.0,
+          "reloadable": false,
+          "children": []
+        }
+      ]
+    },
+    {
+      "path": "pay",
+      "type": "section",
+      "comment": [
+        "Payments between players."
+      ],
+      "choices": [],
+      "reloadable": true,
+      "children": [
+        {
+          "path": "pay.cooldown",
+          "type": "duration",
+          "comment": [
+            "How long a player waits between payments."
+          ],
+          "default": "5s",
+          "choices": [],
+          "reloadable": true,
+          "children": []
+        },
+        {
+          "path": "pay.blocked-worlds",
+          "type": "list",
+          "comment": [
+            "Worlds where /pay is refused."
+          ],
+          "default": [
+            "event_world"
+          ],
+          "choices": [],
+          "reloadable": true,
+          "children": []
+        }
+      ]
+    },
+    {
+      "path": "update-checker",
+      "type": "boolean",
+      "comment": [
+        "Checks Modrinth for a new version once a day."
+      ],
+      "default": true,
+      "choices": [],
+      "reloadable": true,
+      "children": []
+    }
+  ],
+  "messages": {
+    "file": "lang/en.yml",
+    "keys": [
+      {
+        "key": "balance.self",
+        "default": "<muted>You have <accent><coins></accent> coins.",
+        "placeholders": [
+          "coins"
+        ],
+        "description": "The reply to /coins."
+      },
+      {
+        "key": "balance.other",
+        "default": "<muted><player> has <accent><coins></accent> coins.",
+        "placeholders": [
+          "player",
+          "coins"
+        ],
+        "description": "The reply to /coins <player>."
+      },
+      {
+        "key": "pay.sent",
+        "default": "<success>Sent <coins> coins to <player>.",
+        "placeholders": [
+          "coins",
+          "player"
+        ],
+        "description": "To the payer."
+      },
+      {
+        "key": "pay.received",
+        "default": "<success><player> sent you <coins> coins.",
+        "placeholders": [
+          "player",
+          "coins"
+        ],
+        "description": "To the player paid."
+      },
+      {
+        "key": "pay.cooldown",
+        "default": "<error>Wait <time> before paying again.",
+        "placeholders": [
+          "time"
+        ],
+        "description": "When /pay is on cooldown."
+      },
+      {
+        "key": "admin.given",
+        "default": "<success>Gave <coins> coins to <player>.",
+        "placeholders": [
+          "coins",
+          "player"
+        ],
+        "description": "The reply to /xdemo give."
+      }
+    ],
+    "languages": [
+      {
+        "tag": "de",
+        "translated": 4,
+        "total": 6,
+        "missing": [
+          "pay.cooldown",
+          "admin.given"
+        ]
+      },
+      {
+        "tag": "pt-BR",
+        "translated": 1,
+        "total": 6,
+        "missing": [
+          "balance.other",
+          "pay.sent",
+          "pay.received",
+          "pay.cooldown",
+          "admin.given"
+        ]
+      }
+    ]
+  },
+  "placeholders": [
+    {
+      "id": "coins",
+      "description": "The player's coins, formatted for their language.",
+      "example": "1,250",
+      "forms": {
+        "PlaceholderAPI": "%xdemo_coins%",
+        "MiniPlaceholders": "<xdemo_coins>",
+        "Text Placeholder API": "%xdemo:coins%"
+      }
+    },
+    {
+      "id": "rank",
+      "description": "The player's place on the coins leaderboard.",
+      "example": "3",
+      "forms": {
+        "PlaceholderAPI": "%xdemo_rank%",
+        "MiniPlaceholders": "<xdemo_rank>",
+        "Text Placeholder API": "%xdemo:rank%"
+      }
+    }
+  ],
+  "events": [
+    {
+      "className": "co.xenastudios.xdemo.api.event.CoinsChangeEvent",
+      "description": "Before a player's coins change. Cancel it to stop the change.",
+      "cancellable": true,
+      "fields": [
+        {
+          "name": "player",
+          "type": "PlayerRef",
+          "description": "Whose coins change."
+        },
+        {
+          "name": "from",
+          "type": "Long",
+          "description": "The balance before."
+        },
+        {
+          "name": "to",
+          "type": "Long",
+          "description": "The balance after; settable."
+        },
+        {
+          "name": "cause",
+          "type": "ChangeCause",
+          "description": "PAY, ADMIN or API."
+        }
+      ],
+      "since": "2.0.0"
+    },
+    {
+      "className": "co.xenastudios.xdemo.api.event.PaymentEvent",
+      "description": "After a payment between two players went through.",
+      "cancellable": false,
+      "fields": [
+        {
+          "name": "from",
+          "type": "PlayerRef",
+          "description": "Who paid."
+        },
+        {
+          "name": "to",
+          "type": "PlayerRef",
+          "description": "Who was paid."
+        },
+        {
+          "name": "amount",
+          "type": "Long",
+          "description": "How many coins."
+        }
+      ],
+      "since": "2.0.0"
+    }
+  ]
+}

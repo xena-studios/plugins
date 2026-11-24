@@ -7,6 +7,10 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         maven("https://repo.papermc.io/repository/maven-public/")
+        // R8, which shrinks the rewrite's jars (xena.r8): only on Google's repository.
+        google {
+            content { includeModule("com.android.tools", "r8") }
+        }
         // PlaceholderAPI, which zChat uses when it's installed.
         maven("https://repo.extendedclip.com/releases/") {
             content { includeGroup("me.clip") }
@@ -43,6 +47,27 @@ dependencyResolutionManagement {
 
 rootProject.name = "xena-plugins"
 
+// The build cache: the local one always (gradle.properties), which CI keeps between runs with
+// setup-gradle's cache. A remote one is used only when XENA_BUILD_CACHE_URL names one, as an HTTP
+// build cache (a Develocity node or bazel-remote): there's no server yet (DECISIONS.md). Builds
+// read from it; one with XENA_BUILD_CACHE_PUSH=true (CI on main) writes to it too.
+buildCache {
+    val url = providers.environmentVariable("XENA_BUILD_CACHE_URL")
+    if (url.isPresent) {
+        remote<HttpBuildCache> {
+            setUrl(url.get())
+            isPush = providers.environmentVariable("XENA_BUILD_CACHE_PUSH").orNull == "true"
+            val user = providers.environmentVariable("XENA_BUILD_CACHE_USER")
+            if (user.isPresent) {
+                credentials {
+                    username = user.get()
+                    password = providers.environmentVariable("XENA_BUILD_CACHE_PASSWORD").orNull
+                }
+            }
+        }
+    }
+}
+
 // Shared code, shaded into every plugin.
 include("core")
 // The rewrite's core (ROADMAP.md), beside today's until each plugin's rewrite replaces it:
@@ -68,8 +93,19 @@ rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" }
 // Never released: a plugin.yml plugin using Vault's APIs and a Paper plugin using the core's
 // Vault hook, so CI checks that xMoney stands in for Vault on real servers.
 include("xmoney:vault-consumer", "xmoney:hook-consumer")
+// A plugin in the rewrite's layout (<plugin>/api, common and one folder per platform, from
+// scripts/new-rewrite-plugin.ts): every folder in it with a build file. A rewritten plugin's
+// folder has common/; today's have their build at the top.
+fun isRewrite(dir: java.io.File) = dir.resolve("common/build.gradle.kts").isFile && !dir.resolve("build.gradle.kts").isFile
+rootDir.listFiles { file -> file.isDirectory && isRewrite(file) }
+    ?.sortedBy { it.name }
+    ?.forEach { plugin ->
+        plugin.listFiles { module -> module.resolve("build.gradle.kts").isFile }
+            ?.sortedBy { it.name }
+            ?.forEach { include("${plugin.name}:${it.name}") }
+    }
 // Each plugin's developer API (<plugin>/api, on the xena.api convention), wherever one
 // exists, so a plugin adding an API doesn't need a line here. The sandbox lists its own.
-rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" && file.resolve("api/build.gradle.kts").isFile }
+rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" && !isRewrite(file) && file.resolve("api/build.gradle.kts").isFile }
     ?.sortedBy { it.name }
     ?.forEach { include("${it.name}:api") }

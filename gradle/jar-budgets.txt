@@ -1,0 +1,16 @@
+# Size budgets for the rewrite's jars, as R8 leaves them (the xena.r8 convention's
+# checkJarBudget, part of `check`): one jar a line, "<Gradle project path> <KiB>", and why
+# beside any that isn't the rule. A jar with no line fails the build.
+#
+# The rule (ROADMAP.md, "Fast, robust, light"): a Bukkit-family jar is no bigger than the
+# plugin's 1.x jar; where the stdlib is shaded (Sponge, and Fabric without
+# fabric-language-kotlin), the 1.x jar + 300 KiB. The 1.x jars, measured in M0
+# (sandbox/m0/budgets/RESULTS.md), are each plugin's limit when its rewrite lands:
+#   xbackup 483, xbans 349, xlimbo 185, xmoney 369, xplots 290, xrewind 327, xstats 399,
+#   xteleport 293, xutilities 163, xvote 320, zchat 189
+# Today's (1.x) jars keep their own budgets in their build files (jarBudgetKb).
+
+# The loader's boot-test plugin: the shim, the loader and a Kotlin entry point, no core.
+# 28 KiB shrunk (35 KiB before R8); its budget leaves room for the loader to grow, not for a library
+# shaded in by mistake.
+:core:core-loader:sandbox 40

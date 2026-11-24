@@ -46,6 +46,9 @@ asm = "9.11.1"
 # renderer to what 1.8 has (DECISIONS.md).
 adventure-api = "4.7.0"
 bungeecord-chat = "1.16-R0.4"
+# Shrinks the rewrite's jars (xena.r8), the version M0 proved on the spike jars. From Google's
+# Maven repository, which settings.gradle.kts lists for it alone.
+r8 = "9.5.33"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -76,6 +79,7 @@ bungeecord-chat = { module = "net.md-5:bungeecord-chat", version.ref = "bungeeco
 # pinned by SHA-256 in gradle/library-pins.txt.
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 spigot-api-floor = { module = "org.spigotmc:spigot-api", version.ref = "spigot-floor" }
+r8 = { module = "com.android.tools:r8", version.ref = "r8" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 [plugins]

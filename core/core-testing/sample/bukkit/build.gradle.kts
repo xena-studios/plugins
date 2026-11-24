@@ -24,6 +24,10 @@ dependencies {
     for (module in listOf(":core:core-testing:sample", ":core:platform-bukkit", ":core:core-jvm", ":core:core-common", ":core:core-api", ":core:core-loader")) {
         shade(project(module)) { isTransitive = false }
     }
+    // bStats (BukkitPlatform.metrics), with its base library, relocated below: bStats refuses
+    // to run in its own package, so every plugin carries its own copy.
+    shade(libs.bstats.bukkit)
+    compileOnly(libs.bstats.bukkit)
     // Downloaded by the server (libraries:) or by the loader, never shaded.
     fetched(libs.kotlin.stdlib) { isTransitive = false }
     // The YAML parser the family's and lang files are read with (core-jvm's JvmYaml), with the
@@ -53,6 +57,7 @@ tasks.shadowJar {
     archiveFileName = "XSample.jar"
     configurations = listOf(shadeClasspath.get())
     relocate("co.xenastudios.core", "co.xenastudios.xsample.core")
+    relocate("org.bstats", "co.xenastudios.xsample.bstats")
     exclude("META-INF/*.kotlin_module", "META-INF/maven/**")
     // Bukkit API only: Paper doesn't need to remap the jar at startup.
     manifest.attributes("paperweight-mappings-namespace" to "mojang")

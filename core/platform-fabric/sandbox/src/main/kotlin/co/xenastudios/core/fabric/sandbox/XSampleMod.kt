@@ -3,6 +3,7 @@ package co.xenastudios.core.fabric.sandbox
 import co.xenastudios.core.common.admin.AdminText
 import co.xenastudios.core.common.i18n.Translations
 import co.xenastudios.core.fabric.FabricPlatform
+import co.xenastudios.core.sample.SampleConfig
 import co.xenastudios.core.sample.SampleMessages
 import co.xenastudios.core.sample.SamplePermissions
 import co.xenastudios.core.sample.XSample
@@ -36,6 +37,9 @@ public object XSampleMod : ModInitializer {
         )
         platform.permissions.sync(SamplePermissions.permissions + sample.admin.permissions.permissions)
         sample.enable()
+        // The update checker, as every plugin has it (xSample isn't on Modrinth, so it finds
+        // nothing). bStats has no Fabric platform, so there's no metrics call here.
+        platform.checkUpdates("xsample", sample.admin.updates, SampleConfig.updates.settings(SampleConfig.defaults)) { translations }
         ServerLifecycleEvents.SERVER_STOPPING.register { _ -> sample.disable() }
         platform.log.info("Enabled on ${platform.name} (Kotlin ${KotlinVersion.CURRENT})")
     }

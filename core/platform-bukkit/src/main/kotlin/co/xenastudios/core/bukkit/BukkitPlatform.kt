@@ -6,6 +6,10 @@ import co.xenastudios.core.common.admin.Dependency
 import co.xenastudios.core.common.command.CommandSource
 import co.xenastudios.core.common.family.Family
 import co.xenastudios.core.common.family.PlayerCache
+import co.xenastudios.core.common.i18n.Translations
+import co.xenastudios.core.common.permission.Permission
+import co.xenastudios.core.common.update.UpdateChecker
+import co.xenastudios.core.common.update.UpdateSettings
 import co.xenastudios.core.jvm.config.JvmYaml
 import co.xenastudios.core.jvm.db.DriverFetcher
 import co.xenastudios.core.jvm.db.OnDemandDriverFetcher
@@ -38,8 +42,9 @@ import org.bukkit.plugin.Plugin
  * Besides the [Platform], what a Bukkit plugin registers through: [commands] on Bukkit's
  * command map, [permissions] in its plugin manager, [events] bridged to Bukkit's, [players]
  * for the `player` argument, the [family] and its player cache ([record]), and what the admin
- * subcommands ask of a platform ([locale], [dependency], [about], [driverFetcher]). [close]
- * undoes all of it as the plugin is disabled.
+ * subcommands ask of a platform ([locale], [dependency], [about], [driverFetcher]), and the
+ * update checker and bStats ([checkUpdates], [metrics]). [close] undoes all of it as the plugin
+ * is disabled.
  */
 public class BukkitPlatform private constructor(
     /** The plugin it's for. */
@@ -105,6 +110,47 @@ public class BukkitPlatform private constructor(
         recording = BukkitFamily.record(plugin, cache, locales, scheduler)
     }
 
+    @Volatile
+    private var updates: AutoCloseable? = null
+
+    @Volatile
+    private var bStats: AutoCloseable? = null
+
+    /**
+     * Starts the update checker for the plugin's Modrinth [project] (ROADMAP.md, Updates): asks
+     * once now and then once a day, off the server's threads, for the newest release on
+     * [settings]' channel for this Minecraft version and Modrinth [loader] (`bukkit`; `paper` for a Paper-only plugin); says so in the console and to
+     * players with [permission] (the admin commands' `updates`, `<plugin>.admin.update`) as they
+     * join, each in their language from [translations] (read at each notice, so a reload's
+     * files apply). Call the checker's `apply` with the config's `UpdatesSection` on every
+     * reload; [close] stops it. Calling this again replaces the last one.
+     */
+    @JvmOverloads
+    public fun checkUpdates(
+        project: String,
+        permission: Permission,
+        settings: UpdateSettings,
+        loader: String = "bukkit",
+        translations: () -> Translations,
+    ): UpdateChecker {
+        val (checker, stop) = BukkitUpdates.start(this, project, permission.node, settings, translations, loader)
+        updates?.close()
+        updates = stop
+        return checker
+    }
+
+    /**
+     * Turns bStats on for the plugin under its bStats [serviceId] (bstats.org's plugin id), on
+     * Bukkit only: bStats has no Fabric platform. The plugin's jar carries bstats-bukkit,
+     * relocated into its own package; owners turn bStats off for every plugin at once in
+     * `plugins/bStats/config.yml`, which bStats reads itself. Never with `-Dxena.offline=true`.
+     * [close] shuts it down.
+     */
+    public fun metrics(serviceId: Int) {
+        bStats?.close()
+        bStats = BukkitUpdates.metrics(this, serviceId)
+    }
+
     /** The locale [player]'s client sent (`de_de`), if they're online and the server says. */
     public fun locale(player: PlayerRef): String? = player.online(plugin.server)?.let(locales::of)
 
@@ -148,6 +194,10 @@ public class BukkitPlatform private constructor(
      * finish what's running. Disable the plugin's modules first, which may still schedule work.
      */
     public fun close() {
+        updates?.close()
+        updates = null
+        bStats?.close()
+        bStats = null
         events.close()
         commands.clear()
         permissions.sync(emptyList())

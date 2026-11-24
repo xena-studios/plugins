@@ -73,7 +73,7 @@ class AdminCommandsTest {
         assertEquals(listOf("reload", "debug", "import", "forget"), root.children.map { it.name })
         assertTrue(root.children.all { it.builtIn })
         assertEquals(
-            listOf("xtest.admin", "xtest.admin.reload", "xtest.admin.debug", "xtest.admin.import", "xtest.admin.forget"),
+            listOf("xtest.admin", "xtest.admin.reload", "xtest.admin.debug", "xtest.admin.import", "xtest.admin.forget", "xtest.admin.update"),
             admin.permissions.permissions.map { it.node },
         )
         assertEquals(admin.permissions.permissions.drop(1).associate { it.node to true }, admin.admin.children)

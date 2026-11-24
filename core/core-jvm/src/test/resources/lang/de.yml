@@ -1,6 +1,7 @@
 # A test fixture: German for ShopMessages and the core's messages. Real translations ship
 # with each plugin.
 core.pages.footer: "<gray>Seite <page> von <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Zurück</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Weiter »</highlight></hover></click></has_next>"
+core.update.available: "<prefix><plugin> <highlight><latest></highlight> ist erschienen (du hast <current>): <click:open_url:'<url>'><hover:show_text:'Downloadseite öffnen'><highlight><underlined><url></underlined></highlight></hover></click>"
 core.debug.checking: "<prefix>Prüfe <highlight><plugin></highlight>..."
 core.debug.database.ok: "<success>✔</success> Datenbank: <highlight><database></highlight> hat in <millis> ms geantwortet."
 core.debug.database.failed: "<error>✘</error> Datenbank: <highlight><database></highlight> ist nicht erreichbar: <reason>"

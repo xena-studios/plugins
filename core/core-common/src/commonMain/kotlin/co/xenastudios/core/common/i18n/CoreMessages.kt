@@ -4,8 +4,8 @@ import co.xenastudios.core.common.text.Placeholder
 
 /**
  * The core's own messages, in every plugin's `lang/` files beside the plugin's own (put it
- * first in the plugin's [MessageCatalog]): the chat pages' footer and the admin subcommands'
- * replies. More come as the core's features do: reload, errors, the update notice.
+ * first in the plugin's [MessageCatalog]): the chat pages' footer, the admin subcommands'
+ * replies and the update notice. More come as the core's features do: reload, errors.
  */
 public object CoreMessages : MessageBundle() {
 
@@ -19,6 +19,16 @@ public object CoreMessages : MessageBundle() {
         "<previous> and <next> are the list's command for those pages; what's inside",
         "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page.",
         placeholders = listOf("page", "pages", "previous", "next", "has_previous", "has_next"),
+    )
+
+    /** A newer version is out: see [co.xenastudios.core.common.update.UpdateChecker]. */
+    public val updateAvailable: MessageKey = message(
+        "core.update.available",
+        "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): " +
+            "<click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page.",
+        placeholders = listOf("plugin", "current", "latest", "url"),
     )
 
     // /<plugin> debug: one line per health check, then where the report went.

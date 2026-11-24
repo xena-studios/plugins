@@ -46,6 +46,7 @@ import co.xenastudios.core.common.platform.Platform
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.every
 import co.xenastudios.core.common.text.Component
+import co.xenastudios.core.common.update.UpdatesSection
 import kotlin.jvm.JvmField
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -66,6 +67,8 @@ public object SampleConfig : ConfigSchema(1, "xSample: the core's sample plugin.
     public val payCooldown: ConfigKey<Duration> =
         duration("pay-cooldown", 10.seconds, "How long a player waits between payments.", min = 1.seconds)
     public val interest: Interest = Interest(this)
+    /** The update checker's switch and channel, which every plugin's config has. */
+    public val updates: UpdatesSection = UpdatesSection(this)
 
     public class Interest(parent: SampleConfig) : ConfigSection(parent, "interest", "Coins paid on every balance now and then.") {
         public val enabled: ConfigKey<Boolean> = boolean("enabled", true, "Whether interest is paid.")

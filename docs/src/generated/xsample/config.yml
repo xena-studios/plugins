@@ -43,3 +43,12 @@ interest:
   percent: 1
   # How often.
   every: "1h"
+
+# Telling you when a newer version is out: in the console, and to players with
+# <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
+# sending only the plugin's version, the platform and the Minecraft version.
+updates:
+  # Whether to ask at all.
+  check: true
+  # Which releases to hear of: release, beta (betas and releases) or alpha (everything).
+  channel: "release"

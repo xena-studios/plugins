@@ -1,0 +1,7 @@
+# bStats off for the boot tests (boot.sh seeds every server with this): xSample and xTwin
+# start it, so its classes load relocated, and nothing is sent.
+enabled: false
+serverUuid: 00000000-0000-0000-0000-000000000000
+logFailedRequests: false
+logSentData: false
+logResponseStatusText: false

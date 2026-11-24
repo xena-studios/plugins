@@ -17,11 +17,12 @@
 
 # xSample on Bukkit (core/core-testing/sample/bukkit): every part of the core a plugin can use
 # (admin subcommands, the family, the player cache, i18n, config), with the stdlib and the YAML
-# parser downloaded. 476 KiB shrunk (2,113 KiB before, with the parser shaded and no R8). Never
+# parser downloaded. 476 KiB shrunk (2,113 KiB before, with the parser shaded and no R8); 515 KiB
+# with the update checker (16 KiB), bStats relocated (9 KiB) and their Bukkit side (6 KiB). Never
 # released, so no 1.x jar to stay under; the line keeps the core's shrunk size from creeping.
-:core:core-testing:sample:bukkit 500
+:core:core-testing:sample:bukkit 540
 # xTwin on Bukkit, the family test's second plugin: the same core with fewer of its parts.
-# 387 KiB shrunk. Never released.
+# 387 KiB shrunk, 400 KiB with its own bStats. Never released.
 :core:core-testing:twin:bukkit 420
 
 # xSample on Fabric (core/platform-fabric/sandbox, its own build), one jar a Minecraft line:

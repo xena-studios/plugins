@@ -229,12 +229,13 @@
     },
     {
       "node": "xsample.admin",
-      "description": "Every admin subcommand of xSample.",
+      "description": "Every admin subcommand of xSample, and its update notices.",
       "default": "op",
       "children": {
         "xsample.admin.reload": true,
         "xsample.admin.debug": true,
-        "xsample.admin.forget": true
+        "xsample.admin.forget": true,
+        "xsample.admin.update": true
       },
       "commands": [],
       "builtIn": true
@@ -267,6 +268,14 @@
       "commands": [
         "xsample forget"
       ],
+      "builtIn": true
+    },
+    {
+      "node": "xsample.admin.update",
+      "description": "Hear about newer versions of xSample when joining.",
+      "default": "op",
+      "children": {},
+      "commands": [],
       "builtIn": true
     }
   ],
@@ -446,6 +455,44 @@
             "entries": []
           }
         ]
+      },
+      {
+        "path": "updates",
+        "type": "section",
+        "comment": [
+          "Telling you when a newer version is out: in the console, and to players with",
+          "<plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,",
+          "sending only the plugin's version, the platform and the Minecraft version."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "updates.check",
+            "type": "boolean",
+            "comment": [
+              "Whether to ask at all."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "updates.channel",
+            "type": "enum",
+            "comment": [
+              "Which releases to hear of: release, beta (betas and releases) or alpha (everything)."
+            ],
+            "default": "release",
+            "defaultText": "\"release\"",
+            "choices": [
+              "release",
+              "beta",
+              "alpha"
+            ],
+            "entries": []
+          }
+        ]
       }
     ]
   },
@@ -489,6 +536,20 @@
         "next",
         "has_previous",
         "has_next"
+      ]
+    },
+    {
+      "key": "core.update.available",
+      "english": "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+      "comment": [
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page."
+      ],
+      "placeholders": [
+        "plugin",
+        "current",
+        "latest",
+        "url"
       ]
     },
     {

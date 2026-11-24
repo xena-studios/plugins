@@ -22,6 +22,9 @@ dependencies {
     for (module in listOf(":core:core-testing:twin", ":core:platform-bukkit", ":core:core-jvm", ":core:core-common", ":core:core-api", ":core:core-loader")) {
         shade(project(module)) { isTransitive = false }
     }
+    // Its own bStats, relocated as its core is: the family test boots two copies side by side.
+    shade(libs.bstats.bukkit)
+    compileOnly(libs.bstats.bukkit)
     fetched(libs.kotlin.stdlib) { isTransitive = false }
     // Downloaded, as xSample's: on servers before 1.16.5 the two plugins share one copy.
     fetched(libs.snakeyaml.engine.kmp.jvm) {
@@ -45,6 +48,7 @@ tasks.shadowJar {
     archiveFileName = "XTwin.jar"
     configurations = listOf(shadeClasspath.get())
     relocate("co.xenastudios.core", "co.xenastudios.xtwin.core")
+    relocate("org.bstats", "co.xenastudios.xtwin.bstats")
     exclude("META-INF/*.kotlin_module", "META-INF/maven/**")
     manifest.attributes("paperweight-mappings-namespace" to "mojang")
 }

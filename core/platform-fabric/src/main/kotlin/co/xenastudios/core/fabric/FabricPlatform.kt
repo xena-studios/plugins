@@ -3,7 +3,19 @@ package co.xenastudios.core.fabric
 import co.xenastudios.core.api.event.Event
 import co.xenastudios.core.api.event.EventBus
 import co.xenastudios.core.api.event.EventType
+import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.api.event.Subscription
 import co.xenastudios.core.common.command.CommandSource
+import co.xenastudios.core.common.i18n.MessageKey
+import co.xenastudios.core.common.i18n.Translations
+import co.xenastudios.core.common.permission.Permission
+import co.xenastudios.core.common.scheduler.Where
+import co.xenastudios.core.common.text.Placeholder
+import co.xenastudios.core.common.update.ModrinthReleases
+import co.xenastudios.core.common.update.UpdateChecker
+import co.xenastudios.core.common.update.UpdateNotices
+import co.xenastudios.core.common.update.UpdateSettings
+import co.xenastudios.core.jvm.update.JvmHttp
 import co.xenastudios.core.common.event.SimpleEventBus
 import co.xenastudios.core.common.platform.Capability
 import co.xenastudios.core.common.platform.Clock
@@ -166,11 +178,59 @@ public class FabricPlatform(
         return if (libraries.pinned().isEmpty()) null else OnDemandDriverFetcher(libraries)
     }
 
+    @Volatile
+    private var updates: Pair<UpdateChecker, Subscription>? = null
+
+    /**
+     * Starts the update checker for the mod's Modrinth [project] (ROADMAP.md, Updates), as
+     * platform-bukkit's `checkUpdates` does: once now and then once a day, off the server
+     * thread, for the newest release on [settings]' channel for this Minecraft line; said in the
+     * console (once the server runs) and to players with [permission] as they join, each in
+     * their language from [translations]. The running version is the mod's own, from its
+     * `fabric.mod.json`. Call the checker's `apply` on every reload; it stops with the server.
+     *
+     * bStats has no Fabric platform (bstats.org lists Bukkit, BungeeCord, Sponge and Velocity,
+     * and its base library needs a platform id the site knows), so Fabric has no `metrics`.
+     */
+    public fun checkUpdates(
+        project: String,
+        permission: Permission,
+        settings: UpdateSettings,
+        translations: () -> Translations,
+    ): UpdateChecker {
+        val loader = FabricLoader.getInstance()
+        val current = loader.getModContainer(modId).map { it.metadata.version.friendlyString }.orElse("0")
+        val minecraft = loader.getModContainer("minecraft").map { it.metadata.version.friendlyString }.orElse("?")
+        val node = permission.node
+        val notices = object : UpdateNotices {
+            override fun send(viewer: PlayerRef?, message: MessageKey, placeholders: Map<String, Placeholder>) {
+                // Minecraft sends from the server thread; a check that finishes before the server
+                // starts waits for its first tick.
+                scheduler.run(Where.Global) {
+                    val messages = translations()
+                    val language = messages.languageFor(viewer?.let { family.players.clientLocale(it) })
+                    messages.render(message, language, placeholders)?.let { delivery.deliver(viewer, MinecraftRenderer.draw(it)) }
+                }
+            }
+
+            override fun mayKnow(player: PlayerRef): Boolean =
+                running?.player(player)?.let { permissions.has(it, node) } == true
+        }
+        val checker = UpdateChecker(this, displayName, current, ModrinthReleases(project, "fabric", minecraft, current, JvmHttp()), notices)
+        val joins = bus.subscribe(PlayerJoinEvent.TYPE) { event -> checker.joined(event.player) }
+        updates?.let { (old, subscription) -> subscription.cancel(); old.close() }
+        updates = checker to joins
+        checker.apply(settings)
+        return checker
+    }
+
     init {
         ServerLifecycleEvents.SERVER_STARTING.register { server -> running = server }
         ServerLifecycleEvents.SERVER_STARTED.register { _ -> fire(ServerStartedEvent.TYPE) { ServerStartedEvent() } }
         ServerLifecycleEvents.SERVER_STOPPING.register { _ -> fire(ServerStoppingEvent.TYPE) { ServerStoppingEvent() } }
         ServerLifecycleEvents.SERVER_STOPPED.register { _ ->
+            updates?.let { (checker, subscription) -> subscription.cancel(); checker.close() }
+            updates = null
             // After every plugin's own SERVER_STOPPING, so a plugin's last saves still run.
             scheduler.close(wait = 10.seconds)
             running = null

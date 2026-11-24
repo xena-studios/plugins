@@ -5,11 +5,13 @@ import co.xenastudios.core.common.admin.AdminText
 import co.xenastudios.core.common.family.PlayerCache
 import co.xenastudios.core.common.family.PlayerStore
 import co.xenastudios.core.common.i18n.LanguageTag
+import co.xenastudios.core.common.i18n.Translations
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.now
 import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.core.loader.PluginEntry
 import co.xenastudios.core.sample.SampleMessages
+import co.xenastudios.core.sample.SampleConfig
 import co.xenastudios.core.sample.SamplePermissions
 import co.xenastudios.core.sample.XSample
 import org.bukkit.plugin.java.JavaPlugin
@@ -31,6 +33,10 @@ public class XSampleBukkit(private val plugin: JavaPlugin) : PluginEntry {
     // English until the lang files are read, off the server thread.
     @Volatile
     private var adminText: AdminText = AdminText.ENGLISH
+
+    // The same, for the update notice.
+    @Volatile
+    private var translations: Translations = Translations.of(SampleMessages.catalog, emptyMap())
 
     override fun enable() {
         val started = System.nanoTime()
@@ -61,8 +67,16 @@ public class XSampleBukkit(private val plugin: JavaPlugin) : PluginEntry {
             val shipped = LangFolder.shipped(plugin.javaClass.classLoader, listOf(LanguageTag.of("de")))
             val look = family.look
             val translations = LangFolder(plugin.dataFolder.toPath(), SampleMessages.catalog, shipped).load(look.languages, look.theme).translations
+            this.translations = translations
             adminText = AdminText.of(translations, platform::locale)
         }
+        // The update checker, as every plugin has it: xSample isn't on Modrinth, so it finds
+        // nothing (GitHub has no xsample tags either), but it asks on every real server it boots
+        // on, Java 8 and Spigot 1.8.8 among them. And bStats, carried relocated in the jar, only
+        // when -Dxsample.bstats names an id: boot.sh does, with plugins/bStats/config.yml
+        // turning bStats off, so it starts and nothing is sent.
+        platform.checkUpdates("xsample", sample.admin.updates, SampleConfig.updates.settings(SampleConfig.defaults)) { translations }
+        Integer.getInteger("xsample.bstats")?.let(platform::metrics)
         val millis = (System.nanoTime() - started) / 1_000_000
         platform.log.info("xSample on ${platform.name}: ${platform.threading} threading, text as ${platform.text}, enabled in $millis ms")
         PlatformCheck(plugin, platform, cache).start()

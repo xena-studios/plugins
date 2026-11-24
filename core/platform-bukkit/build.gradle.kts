@@ -28,6 +28,9 @@ dependencies {
     // compiles against nothing newer. Servers bring their own.
     compileOnly(libs.spigot.api.floor) { isTransitive = false }
     compileOnly(libs.bungeecord.chat)
+    // bStats, which each plugin's jar carries relocated into its own package (BukkitUpdates):
+    // bStats refuses to run under its own.
+    compileOnly(libs.bstats.bukkit)
     "modernImplementation"(project(":core:core-jvm"))
     "modernCompileOnly"(libs.paper.api)
     implementation(modern.output)

@@ -33,6 +33,8 @@ case "$1" in
   *) echo "the first argument is paper, folia or a server jar, not $1" >&2; exit 2 ;;
 esac
 
-# Old Spigot waits 20 seconds over its age without this; newer servers ignore it.
+# Old Spigot waits 20 seconds over its age without this; newer servers ignore it. bStats starts
+# (xSample's and xTwin's, under a made-up id) with plugins/bStats/config.yml turning it off.
 exec "$root/scripts/boot-test.sh" "${server[@]}" --jvm -DIReallyKnowWhatIAmDoingISwear=true \
+  --jvm -Dxsample.bstats=1 --jvm -Dxtwin.bstats=1 --seed "$here/boot-seed" \
   --checks "$here/boot-checks.txt" "$@" "$jar"

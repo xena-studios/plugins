@@ -117,6 +117,8 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       - run: ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble
       - uses: actions/upload-artifact@v7
         with:
@@ -147,6 +149,8 @@ jobs:
             21
             25
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       # Loom's Minecraft jars, mappings and remapped mods, set up for every line while the build
       # is configured: minutes cold. Keyed on what decides them.
       - uses: actions/cache@v6

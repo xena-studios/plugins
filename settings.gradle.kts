@@ -77,11 +77,15 @@ include("core:core-common", "core:core-api", "core:core-jvm", "core:core-testing
 // The library loader and the Java shim a plugin's main class extends (Java only: it runs
 // before the Kotlin stdlib is loaded), and a never-released plugin on it for boot tests.
 include("core:core-loader", "core:core-loader:sandbox")
+// The rewrite's platform on Bukkit, 1.8.8 to latest, with Paper's and Folia's paths.
+include("core:platform-bukkit")
 // A sample plugin on the rewrite's core, never released: its tests run its commands on the
 // fake platform, and its reference manifest is the one the docs' components are checked with.
 include("core:core-testing:sample")
 // Fuzz tests for the rewrite's parsers (markup, config files), with Jazzer. Never shipped.
 include("core:core-fuzz")
+// xSample as a Bukkit plugin on platform-bukkit and the loader's shim, for boot tests.
+include("core:core-testing:sample:bukkit")
 // A plugin that is never released: it boots the core on a real server in CI.
 include("sandbox")
 // Its API, and two plugins that use it, so CI checks that other plugins can use an API.

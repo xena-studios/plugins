@@ -1,0 +1,2 @@
+# Brazilian Portuguese. Keys not here fall back to English (lang/en.yml).
+balance.self: "<muted>Você tem <accent><coins></accent> moedas."

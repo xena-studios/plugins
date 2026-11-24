@@ -6,7 +6,141 @@
 // - Show declarations: true
 
 // Library unique name: <co.xenastudios.core:core-api>
+final enum class co.xenastudios.core.api.event/EventPriority : kotlin/Enum<co.xenastudios.core.api.event/EventPriority> { // co.xenastudios.core.api.event/EventPriority|null[0]
+    enum entry HIGH // co.xenastudios.core.api.event/EventPriority.HIGH|null[0]
+    enum entry HIGHEST // co.xenastudios.core.api.event/EventPriority.HIGHEST|null[0]
+    enum entry LOW // co.xenastudios.core.api.event/EventPriority.LOW|null[0]
+    enum entry LOWEST // co.xenastudios.core.api.event/EventPriority.LOWEST|null[0]
+    enum entry MONITOR // co.xenastudios.core.api.event/EventPriority.MONITOR|null[0]
+    enum entry NORMAL // co.xenastudios.core.api.event/EventPriority.NORMAL|null[0]
+
+    final val entries // co.xenastudios.core.api.event/EventPriority.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.core.api.event/EventPriority> // co.xenastudios.core.api.event/EventPriority.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.core.api.event/EventPriority // co.xenastudios.core.api.event/EventPriority.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.core.api.event/EventPriority> // co.xenastudios.core.api.event/EventPriority.values|values#static(){}[0]
+}
+
+abstract fun interface <#A: co.xenastudios.core.api.event/Event> co.xenastudios.core.api.event/EventListener { // co.xenastudios.core.api.event/EventListener|null[0]
+    abstract fun on(#A) // co.xenastudios.core.api.event/EventListener.on|on(1:0){}[0]
+}
+
+abstract interface co.xenastudios.core.api.event/Cancellable : co.xenastudios.core.api.event/Event { // co.xenastudios.core.api.event/Cancellable|null[0]
+    abstract var isCancelled // co.xenastudios.core.api.event/Cancellable.isCancelled|{}isCancelled[0]
+        abstract fun <get-isCancelled>(): kotlin/Boolean // co.xenastudios.core.api.event/Cancellable.isCancelled.<get-isCancelled>|<get-isCancelled>(){}[0]
+        abstract fun <set-isCancelled>(kotlin/Boolean) // co.xenastudios.core.api.event/Cancellable.isCancelled.<set-isCancelled>|<set-isCancelled>(kotlin.Boolean){}[0]
+}
+
+abstract interface co.xenastudios.core.api.event/Event // co.xenastudios.core.api.event/Event|null[0]
+
+abstract interface co.xenastudios.core.api.event/EventBus { // co.xenastudios.core.api.event/EventBus|null[0]
+    abstract fun <#A1: co.xenastudios.core.api.event/Event> subscribe(co.xenastudios.core.api.event/EventType<#A1>, co.xenastudios.core.api.event/EventPriority, kotlin/Boolean, co.xenastudios.core.api.event/EventListener<in #A1>): co.xenastudios.core.api.event/Subscription // co.xenastudios.core.api.event/EventBus.subscribe|subscribe(co.xenastudios.core.api.event.EventType<0:0>;co.xenastudios.core.api.event.EventPriority;kotlin.Boolean;co.xenastudios.core.api.event.EventListener<in|0:0>){0§<co.xenastudios.core.api.event.Event>}[0]
+    open fun <#A1: co.xenastudios.core.api.event/Event> subscribe(co.xenastudios.core.api.event/EventType<#A1>, co.xenastudios.core.api.event/EventListener<in #A1>): co.xenastudios.core.api.event/Subscription // co.xenastudios.core.api.event/EventBus.subscribe|subscribe(co.xenastudios.core.api.event.EventType<0:0>;co.xenastudios.core.api.event.EventListener<in|0:0>){0§<co.xenastudios.core.api.event.Event>}[0]
+    open fun <#A1: co.xenastudios.core.api.event/Event> subscribe(co.xenastudios.core.api.event/EventType<#A1>, co.xenastudios.core.api.event/EventPriority, co.xenastudios.core.api.event/EventListener<in #A1>): co.xenastudios.core.api.event/Subscription // co.xenastudios.core.api.event/EventBus.subscribe|subscribe(co.xenastudios.core.api.event.EventType<0:0>;co.xenastudios.core.api.event.EventPriority;co.xenastudios.core.api.event.EventListener<in|0:0>){0§<co.xenastudios.core.api.event.Event>}[0]
+}
+
+abstract interface co.xenastudios.core.api.event/Subscription { // co.xenastudios.core.api.event/Subscription|null[0]
+    abstract val isActive // co.xenastudios.core.api.event/Subscription.isActive|{}isActive[0]
+        abstract fun <get-isActive>(): kotlin/Boolean // co.xenastudios.core.api.event/Subscription.isActive.<get-isActive>|<get-isActive>(){}[0]
+
+    abstract fun cancel() // co.xenastudios.core.api.event/Subscription.cancel|cancel(){}[0]
+}
+
+abstract class co.xenastudios.core.api.event/CancellableEvent : co.xenastudios.core.api.event/Cancellable { // co.xenastudios.core.api.event/CancellableEvent|null[0]
+    constructor <init>() // co.xenastudios.core.api.event/CancellableEvent.<init>|<init>(){}[0]
+
+    open var isCancelled // co.xenastudios.core.api.event/CancellableEvent.isCancelled|{}isCancelled[0]
+        open fun <get-isCancelled>(): kotlin/Boolean // co.xenastudios.core.api.event/CancellableEvent.isCancelled.<get-isCancelled>|<get-isCancelled>(){}[0]
+        open fun <set-isCancelled>(kotlin/Boolean) // co.xenastudios.core.api.event/CancellableEvent.isCancelled.<set-isCancelled>|<set-isCancelled>(kotlin.Boolean){}[0]
+}
+
+final class <#A: co.xenastudios.core.api.event/Event> co.xenastudios.core.api.event/EventType { // co.xenastudios.core.api.event/EventType|null[0]
+    final val name // co.xenastudios.core.api.event/EventType.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.core.api.event/EventType.name.<get-name>|<get-name>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.core.api.event/EventType.toString|toString(){}[0]
+
+    final object Companion { // co.xenastudios.core.api.event/EventType.Companion|null[0]
+        final fun <#A2: co.xenastudios.core.api.event/Event> of(kotlin/String): co.xenastudios.core.api.event/EventType<#A2> // co.xenastudios.core.api.event/EventType.Companion.of|of(kotlin.String){0§<co.xenastudios.core.api.event.Event>}[0]
+    }
+}
+
+final class co.xenastudios.core.api/Location { // co.xenastudios.core.api/Location|null[0]
+    constructor <init>(co.xenastudios.core.api/WorldRef, kotlin/Double, kotlin/Double, kotlin/Double, kotlin/Float = ..., kotlin/Float = ...) // co.xenastudios.core.api/Location.<init>|<init>(co.xenastudios.core.api.WorldRef;kotlin.Double;kotlin.Double;kotlin.Double;kotlin.Float;kotlin.Float){}[0]
+
+    final val blockX // co.xenastudios.core.api/Location.blockX|{}blockX[0]
+        final fun <get-blockX>(): kotlin/Int // co.xenastudios.core.api/Location.blockX.<get-blockX>|<get-blockX>(){}[0]
+    final val blockY // co.xenastudios.core.api/Location.blockY|{}blockY[0]
+        final fun <get-blockY>(): kotlin/Int // co.xenastudios.core.api/Location.blockY.<get-blockY>|<get-blockY>(){}[0]
+    final val blockZ // co.xenastudios.core.api/Location.blockZ|{}blockZ[0]
+        final fun <get-blockZ>(): kotlin/Int // co.xenastudios.core.api/Location.blockZ.<get-blockZ>|<get-blockZ>(){}[0]
+    final val chunkX // co.xenastudios.core.api/Location.chunkX|{}chunkX[0]
+        final fun <get-chunkX>(): kotlin/Int // co.xenastudios.core.api/Location.chunkX.<get-chunkX>|<get-chunkX>(){}[0]
+    final val chunkZ // co.xenastudios.core.api/Location.chunkZ|{}chunkZ[0]
+        final fun <get-chunkZ>(): kotlin/Int // co.xenastudios.core.api/Location.chunkZ.<get-chunkZ>|<get-chunkZ>(){}[0]
+    final val pitch // co.xenastudios.core.api/Location.pitch|{}pitch[0]
+        final fun <get-pitch>(): kotlin/Float // co.xenastudios.core.api/Location.pitch.<get-pitch>|<get-pitch>(){}[0]
+    final val world // co.xenastudios.core.api/Location.world|{}world[0]
+        final fun <get-world>(): co.xenastudios.core.api/WorldRef // co.xenastudios.core.api/Location.world.<get-world>|<get-world>(){}[0]
+    final val x // co.xenastudios.core.api/Location.x|{}x[0]
+        final fun <get-x>(): kotlin/Double // co.xenastudios.core.api/Location.x.<get-x>|<get-x>(){}[0]
+    final val y // co.xenastudios.core.api/Location.y|{}y[0]
+        final fun <get-y>(): kotlin/Double // co.xenastudios.core.api/Location.y.<get-y>|<get-y>(){}[0]
+    final val yaw // co.xenastudios.core.api/Location.yaw|{}yaw[0]
+        final fun <get-yaw>(): kotlin/Float // co.xenastudios.core.api/Location.yaw.<get-yaw>|<get-yaw>(){}[0]
+    final val z // co.xenastudios.core.api/Location.z|{}z[0]
+        final fun <get-z>(): kotlin/Double // co.xenastudios.core.api/Location.z.<get-z>|<get-z>(){}[0]
+
+    final fun distanceSquared(co.xenastudios.core.api/Location): kotlin/Double // co.xenastudios.core.api/Location.distanceSquared|distanceSquared(co.xenastudios.core.api.Location){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.core.api/Location.equals|equals(kotlin.Any?){}[0]
+    final fun facing(kotlin/Float, kotlin/Float): co.xenastudios.core.api/Location // co.xenastudios.core.api/Location.facing|facing(kotlin.Float;kotlin.Float){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.core.api/Location.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.core.api/Location.toString|toString(){}[0]
+}
+
+final class co.xenastudios.core.api/PlayerRef { // co.xenastudios.core.api/PlayerRef|null[0]
+    final val uuid // co.xenastudios.core.api/PlayerRef.uuid|{}uuid[0]
+        final fun <get-uuid>(): kotlin.uuid/Uuid // co.xenastudios.core.api/PlayerRef.uuid.<get-uuid>|<get-uuid>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.core.api/PlayerRef.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.core.api/PlayerRef.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.core.api/PlayerRef.toString|toString(){}[0]
+
+    final object Companion { // co.xenastudios.core.api/PlayerRef.Companion|null[0]
+        final fun of(kotlin.uuid/Uuid): co.xenastudios.core.api/PlayerRef // co.xenastudios.core.api/PlayerRef.Companion.of|of(kotlin.uuid.Uuid){}[0]
+        final fun parseOrNull(kotlin/String): co.xenastudios.core.api/PlayerRef? // co.xenastudios.core.api/PlayerRef.Companion.parseOrNull|parseOrNull(kotlin.String){}[0]
+    }
+}
+
+final class co.xenastudios.core.api/WorldRef { // co.xenastudios.core.api/WorldRef|null[0]
+    final val name // co.xenastudios.core.api/WorldRef.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.core.api/WorldRef.name.<get-name>|<get-name>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.core.api/WorldRef.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.core.api/WorldRef.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.core.api/WorldRef.toString|toString(){}[0]
+
+    final object Companion { // co.xenastudios.core.api/WorldRef.Companion|null[0]
+        final fun of(kotlin/String): co.xenastudios.core.api/WorldRef // co.xenastudios.core.api/WorldRef.Companion.of|of(kotlin.String){}[0]
+    }
+}
+
+open class <#A: kotlin/Any?> co.xenastudios.core.api/Pending { // co.xenastudios.core.api/Pending|null[0]
+    open fun toString(): kotlin/String // co.xenastudios.core.api/Pending.toString|toString(){}[0]
+}
+
 final object co.xenastudios.core.api/CoreApi { // co.xenastudios.core.api/CoreApi|null[0]
     final const val LEVEL // co.xenastudios.core.api/CoreApi.LEVEL|{}LEVEL[0]
         final fun <get-LEVEL>(): kotlin/Int // co.xenastudios.core.api/CoreApi.LEVEL.<get-LEVEL>|<get-LEVEL>(){}[0]
 }
+
+final val co.xenastudios.core.api/isSettled // co.xenastudios.core.api/isSettled|@co.xenastudios.core.api.Pending<*>{}isSettled[0]
+    final fun (co.xenastudios.core.api/Pending<*>).<get-isSettled>(): kotlin/Boolean // co.xenastudios.core.api/isSettled.<get-isSettled>|<get-isSettled>@co.xenastudios.core.api.Pending<*>(){}[0]
+
+final fun <#A: kotlin/Any?, #B: kotlin/Any?> (co.xenastudios.core.api/Pending<#A>).co.xenastudios.core.api/map(kotlin/Function1<#A, #B>): co.xenastudios.core.api/Pending<#B> // co.xenastudios.core.api/map|map@co.xenastudios.core.api.Pending<0:0>(kotlin.Function1<0:0,0:1>){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (co.xenastudios.core.api/Pending<#A>).co.xenastudios.core.api/onSettled(kotlin/Function2<#A?, kotlin/Throwable?, kotlin/Unit>) // co.xenastudios.core.api/onSettled|onSettled@co.xenastudios.core.api.Pending<0:0>(kotlin.Function2<0:0?,kotlin.Throwable?,kotlin.Unit>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (co.xenastudios.core.api/Pending<#A>).co.xenastudios.core.api/reject(kotlin/Throwable): kotlin/Boolean // co.xenastudios.core.api/reject|reject@co.xenastudios.core.api.Pending<0:0>(kotlin.Throwable){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (co.xenastudios.core.api/Pending<#A>).co.xenastudios.core.api/resolve(#A): kotlin/Boolean // co.xenastudios.core.api/resolve|resolve@co.xenastudios.core.api.Pending<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> co.xenastudios.core.api/newPending(): co.xenastudios.core.api/Pending<#A> // co.xenastudios.core.api/newPending|newPending(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> co.xenastudios.core.api/pendingFailure(kotlin/Throwable): co.xenastudios.core.api/Pending<#A> // co.xenastudios.core.api/pendingFailure|pendingFailure(kotlin.Throwable){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> co.xenastudios.core.api/pendingOf(#A): co.xenastudios.core.api/Pending<#A> // co.xenastudios.core.api/pendingOf|pendingOf(0:0){0§<kotlin.Any?>}[0]

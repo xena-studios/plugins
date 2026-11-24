@@ -35,9 +35,10 @@ Not planned: 1.7.10, Legacy Fabric (1.8.9), native Rust ports, a web config edit
 
 ```
 core/
-  core-common        KMP: config schema, i18n, markup, SQL, formatters, event bus. Nothing from java.*
+  core-common        KMP: config schema, i18n, markup, SQL, formatters, event bus, the Platform interfaces. Nothing from java.*
   core-jvm           Adventure bridge, JDBC, library loader, Cloud, importers
   core-api           what plugin APIs share: player refs by UUID, Location, events
+  core-testing       KMP: a fake platform with virtual time, for every plugin's tests
   platform-bukkit    1.8.8 → latest, with Paper and Folia paths picked once at startup
   platform-fabric    server-side, one jar per Minecraft line through Stonecutter
   platform-neoforge  likewise

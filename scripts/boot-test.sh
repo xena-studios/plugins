@@ -30,6 +30,10 @@
 # boot-tested on Spigot 1.8.8 and 1.16.5 this way); its steps run unless they're marked
 # "paper " or "folia ", and there's no paused boot. --java picks the JDK (a JDK home: Spigot
 # 1.8.8 on Java 8, 1.16.5 on 16), and --jvm passes a flag to it.
+#
+# --seed copies a folder's contents into the server's folder before each boot, for files a
+# server wants before its first start: Leaf's loader writes config/leaf-loader.yml and stops
+# on a first start, so its boot is seeded with scripts/boot-seeds/leaf.
 set -euo pipefail
 
 project=paper
@@ -37,6 +41,7 @@ version=1.21.11
 server_jar=""
 java_home=""
 jvm=()
+seeds=()
 steps=()
 jars=()
 while (($#)); do
@@ -46,6 +51,7 @@ while (($#)); do
     --server) server_jar=$(cd "$(dirname "$2")" && pwd)/$(basename "$2"); project=local; shift 2 ;;
     --java) java_home=$2; shift 2 ;;
     --jvm) jvm+=("$2"); shift 2 ;;
+    --seed) seeds+=("$(cd "$2" && pwd)"); shift 2 ;;
     --run) steps+=("run: $2"); shift 2 ;;
     --expect) steps+=("expect: $2"); shift 2 ;;
     --logged) steps+=("logged: $2"); shift 2 ;;
@@ -146,6 +152,7 @@ boot() {
     ln -s "$cache/$project-$version/$shared" "$dir/$shared"
   done
   cp "${installed[@]}" "$dir/plugins/"
+  for seed in "${seeds[@]+"${seeds[@]}"}"; do cp -R "$seed/." "$dir/"; done
   echo "eula=true" >"$dir/eula.txt"
   # A port under Linux's ephemeral range (32768 and up), which outgoing connections such
   # as downloads draw from, so the server never finds its port already taken.

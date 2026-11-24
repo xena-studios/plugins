@@ -1,0 +1,333 @@
+name: Boot
+
+# The rewrite's boot matrix (ROADMAP.md, "Build, CI and releases"): xSample, the core's sample
+# plugin, on real servers of every platform it ships for, and the family test, xSample and
+# xTwin on one server. The Plugins workflow boots today's plugins; this one boots the rewrite.
+#
+# Per pull request, the platforms it touches (scripts/affected.sh's `boot`: a change in core/
+# or the samples) at their floor and newest: Spigot 1.8.8 and Paper for Bukkit, the oldest and
+# newest lines for Fabric, with the family test on the newest of each and Spigot 1.8.8. The
+# whole matrix nightly and by hand. Pull requests always run, so `boot-ok` always reports.
+on:
+  pull_request:
+  schedule:
+    # Nightly. It also keeps the server caches warm for pull requests, which can read the
+    # default branch's caches.
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+# Each job asks for what it needs, and none can write.
+permissions: {}
+
+# With pipefail, so a script piped to tee fails its step.
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  # A new push to a pull request cancels the run it replaces.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Which cells run: every one, or a pull request's platforms at their floor and newest.
+  changes:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      bukkit: ${{ steps.matrix.outputs.bukkit }}
+      fabric: ${{ steps.matrix.outputs.fabric }}
+    steps:
+      - uses: actions/checkout@v7
+      # As the Plugins workflow: the changed files from the files API, everything if that fails.
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ $GITHUB_EVENT_NAME != pull_request ]]; then scripts/affected.sh --all | tee -a "$GITHUB_OUTPUT"; exit 0; fi
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
+            --jq '.[] | .filename, (.previous_filename // empty)') \
+            || { scripts/affected.sh --all | tee -a "$GITHUB_OUTPUT"; exit 0; }
+          scripts/affected.sh <<< "$files" | tee -a "$GITHUB_OUTPUT"
+      # The matrix, one cell per server. A cell's `pr` puts it in pull requests' runs, `family`
+      # adds the family test, and `allow-failure` lets it fail without failing the run, for a
+      # server with no stable download. A fork's version is its own newest unless given.
+      - id: matrix
+        env:
+          BOOT: ${{ steps.check.outputs.boot }}
+          FULL: ${{ github.event_name != 'pull_request' }}
+        run: |
+          # The newest Minecraft CI boots (scripts/new-minecraft.sh moves it), and Fabric's
+          # oldest and newest lines, from platform-fabric's Stonecutter versions.
+          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
+          read -r -a lines <<< "$(sed -n 's/^ *versions(\(.*\))/\1/p' core/platform-fabric/settings.gradle.kts | tr -d '",')"
+          fabric_oldest=${lines[0]} fabric_newest=${lines[-1]}
+          java_for() { case $1 in 1.20 | 1.20.[1-4]) echo 17 ;; 1.*) echo 21 ;; *) echo 25 ;; esac; }
+          # Forks boot with the jar of the platform they come from. ShreddedPaper and Canvas are
+          # Folia's (`regions`: the core must take Folia's path). Canvas has no stable download:
+          # its API (api.canvasmc.io) has been down, and its Jenkins builds carry no checksums
+          # (scripts/server-jar.sh), so it may fail alone. Waterfall isn't here: it boots the
+          # BungeeCord adapter, which comes with the proxies (ROADMAP.md, after M1).
+          bukkit=$(jq -nc --arg newest "$newest" '[
+            {id: "paper", name: "Paper \($newest)", server: "paper", version: $newest, pr: true, family: true},
+            {id: "folia", name: "Folia \($newest)", server: "folia", version: $newest},
+            {id: "spigot-1.8.8", name: "Spigot 1.8.8", server: "spigot", version: "1.8.8", buildtools: 8, pr: true, family: true},
+            {id: "spigot-1.13.2", name: "Spigot 1.13.2", server: "spigot", version: "1.13.2", buildtools: 8},
+            {id: "spigot-1.16.5", name: "Spigot 1.16.5", server: "spigot", version: "1.16.5", buildtools: 8},
+            {id: "spigot", name: "Spigot \($newest)", server: "spigot", version: $newest, buildtools: 25},
+            {id: "pandaspigot", name: "PandaSpigot 1.8.8", server: "pandaspigot", version: "1.8.8"},
+            {id: "leaf", name: "Leaf", server: "leaf", seed: "scripts/boot-seeds/leaf"},
+            {id: "leaves", name: "Leaves", server: "leaves"},
+            {id: "shreddedpaper", name: "ShreddedPaper", server: "shreddedpaper", regions: true},
+            {id: "canvas", name: "Canvas", server: "canvas", regions: true, "allow-failure": true}
+          ] | map({version: "", buildtools: 0, pr: false, family: false, seed: "", regions: false, "allow-failure": false} + .)')
+          # Quilt runs the newest line's Fabric jar through its own loader and installer.
+          fabric=$(jq -nc --arg oldest "$fabric_oldest" --arg newest "$fabric_newest" \
+            --argjson oldJava "$(java_for "$fabric_oldest")" --argjson newJava "$(java_for "$fabric_newest")" '[
+            {id: "fabric-\($oldest)", name: "Fabric \($oldest)", loader: "fabric", version: $oldest, java: $oldJava, pr: true},
+            {id: "fabric-\($newest)", name: "Fabric \($newest)", loader: "fabric", version: $newest, java: $newJava, pr: true, family: true},
+            {id: "quilt-\($newest)", name: "Quilt \($newest)", loader: "quilt", version: $newest, java: $newJava}
+          ] | map({pr: false, family: false, "allow-failure": false} + .)')
+          # A pull request runs its platforms' `pr` cells; nightly and by hand, all of them.
+          pick() {
+            if [[ $FULL == true ]]; then echo "$2"
+            elif [[ " $BOOT " == *" $1 "* ]]; then jq -c 'map(select(.pr))' <<< "$2"
+            else echo "[]"
+            fi
+          }
+          echo "bukkit=$(pick bukkit "$bukkit")" | tee -a "$GITHUB_OUTPUT"
+          echo "fabric=$(pick fabric "$fabric")" | tee -a "$GITHUB_OUTPUT"
+
+  # xSample's and xTwin's Bukkit jars, once for every Bukkit cell.
+  build-bukkit:
+    needs: changes
+    if: needs.changes.outputs.bukkit != '[]'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      - run: ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bukkit-jars
+          # Kept at their paths under core/core-testing, where boot.sh looks.
+          path: |
+            core/core-testing/sample/bukkit/build/libs/XSample.jar
+            core/core-testing/twin/bukkit/build/libs/XTwin.jar
+          if-no-files-found: error
+
+  # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
+  # Plugins workflow don't configure): its tests, and xSample's and xTwin's jar for every line.
+  build-fabric:
+    needs: changes
+    if: needs.changes.outputs.fabric != '[]'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      # Java 25 runs Gradle; the 1.20.1 and 1.21.11 lines compile on 17 and 21 through toolchains.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+            25
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      # Loom's Minecraft jars, mappings and remapped mods, set up for every line while the build
+      # is configured: minutes cold. Keyed on what decides them.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.gradle/caches/fabric-loom
+          key: fabric-loom-${{ hashFiles('core/platform-fabric/settings.gradle.kts', 'core/platform-fabric/stonecutter.properties.toml') }}
+          restore-keys: fabric-loom-
+      - run: ./gradlew -p core/platform-fabric build collect
+      - uses: actions/upload-artifact@v7
+        with:
+          name: fabric-jars
+          path: core/platform-fabric/build/libs/*.jar
+          if-no-files-found: error
+
+  bukkit:
+    needs: [changes, build-bukkit]
+    if: needs.changes.outputs.bukkit != '[]'
+    runs-on: ubuntu-26.04
+    # A cold BuildTools run takes minutes; a hung server fails the job instead of holding a
+    # runner for six hours.
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    continue-on-error: ${{ matrix.cell.allow-failure }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.changes.outputs.bukkit) }}
+    name: boot (${{ matrix.cell.name }})
+    env:
+      SERVER: ${{ matrix.cell.server }}
+      VERSION: ${{ matrix.cell.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: bukkit-jars
+          path: core/core-testing
+      # What will boot, for the cache key: Paper's and Folia's newest build of the version,
+      # which boot-test.sh downloads, or scripts/server-jar.sh's version, build and Java.
+      - id: server
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ $SERVER == paper || $SERVER == folia ]]; then
+            build=$(curl -fsS "https://fill.papermc.io/v3/projects/$SERVER/versions/$VERSION/builds/latest" | jq -r .id)
+            printf 'version=%s\nbuild=%s\njava=25\n' "$VERSION" "$build" | tee -a "$GITHUB_OUTPUT"
+          else
+            # No version: the fork's own newest.
+            scripts/server-jar.sh --resolve "$SERVER" ${VERSION:+"$VERSION"} | tee -a "$GITHUB_OUTPUT"
+          fi
+      # Server jars (Spigot's built by BuildTools), Mojang's jar and the libraries they fetch.
+      - id: cache
+        uses: actions/cache@v6
+        with:
+          path: .cache/servers
+          key: servers-${{ matrix.cell.server }}-${{ steps.server.outputs.version }}-${{ steps.server.outputs.build }}
+          restore-keys: servers-${{ matrix.cell.server }}-${{ steps.server.outputs.version }}-
+      # BuildTools' own Java, only when the jar isn't cached: 8 for 1.8.8 to 1.16.5.
+      - id: buildtools
+        if: matrix.cell.server == 'spigot' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.cell.buildtools }}
+      - id: jar
+        if: matrix.cell.server != 'paper' && matrix.cell.server != 'folia'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILDTOOLS_JAVA: ${{ steps.buildtools.outputs.path }}
+          RESOLVED: ${{ steps.server.outputs.version }}
+        run: scripts/server-jar.sh "$SERVER" "$RESOLVED" | tee -a "$GITHUB_OUTPUT"
+      # The newest Java the server accepts: 8 for 1.8.8, 11 for 1.13.2, 16 for 1.16.5.
+      - id: java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ steps.server.outputs.java }}
+      # xSample alone: its platform checks, console commands and a clean stop.
+      - name: boot xSample
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+          SEED: ${{ matrix.cell.seed }}
+          REGIONS: ${{ matrix.cell.regions }}
+        run: |
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          args=()
+          [[ -z $SEED ]] || args+=(--seed "$SEED")
+          # Folia's forks must take Folia's path, not the main thread's.
+          [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
+      # The family test: xTwin beside xSample, each with its own relocated core, seeing one
+      # board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt).
+      - name: family test
+        if: matrix.cell.family
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" \
+            --checks core/core-testing/twin/family-checks.txt core/core-testing/twin/bukkit/build/libs/XTwin.jar
+      # Performance budgets plug in here (#122): startup from the boots' logs, a BotMark load
+      # with a Spark profile, against ROADMAP.md's budgets, on the cells that measure them.
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: boot-logs-${{ matrix.cell.id }}
+          path: build/boot/*/console.log
+          if-no-files-found: ignore
+
+  fabric:
+    needs: [changes, build-fabric]
+    if: needs.changes.outputs.fabric != '[]'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    continue-on-error: ${{ matrix.cell.allow-failure }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.changes.outputs.fabric) }}
+    name: boot (${{ matrix.cell.name }})
+    env:
+      LOADER: ${{ matrix.cell.loader }}
+      VERSION: ${{ matrix.cell.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: fabric-jars
+          path: core/platform-fabric/build/libs
+      # The launcher, Fabric API, fabric-language-kotlin, Mojang's jar and the libraries:
+      # keyed on the versions platform-fabric builds against.
+      - uses: actions/cache@v6
+        with:
+          path: .cache/fabric
+          key: fabric-${{ matrix.cell.loader }}-${{ matrix.cell.version }}-${{ hashFiles('core/platform-fabric/stonecutter.properties.toml') }}
+          restore-keys: fabric-${{ matrix.cell.loader }}-${{ matrix.cell.version }}-
+      - id: java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.cell.java }}
+      - name: boot xSample
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks core/platform-fabric/sandbox/boot-checks.txt \
+            core/platform-fabric/build/libs/xsample-fabric-*+"$VERSION".jar
+      - name: family test
+        if: matrix.cell.family
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks core/platform-fabric/sandbox/boot-checks.txt --checks core/core-testing/twin/family-checks.txt \
+            core/platform-fabric/build/libs/xsample-fabric-*+"$VERSION".jar core/platform-fabric/build/libs/xtwin-fabric-*+"$VERSION".jar
+      # Performance budgets plug in here (#122), as in the Bukkit job.
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: boot-logs-${{ matrix.cell.id }}
+          path: build/boot/*/console.log
+          if-no-files-found: ignore
+
+  # The one check to require: passes when every job above passed, was skipped because nothing
+  # it covers changed, or failed in a cell allowed to fail; fails when any other failed.
+  boot-ok:
+    needs: [changes, build-bukkit, build-fabric, bukkit, fabric]
+    if: always()
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "ok"

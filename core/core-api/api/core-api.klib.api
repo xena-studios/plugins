@@ -1,0 +1,12 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios.core:core-api>
+final object co.xenastudios.core.api/CoreApi { // co.xenastudios.core.api/CoreApi|null[0]
+    final const val LEVEL // co.xenastudios.core.api/CoreApi.LEVEL|{}LEVEL[0]
+        final fun <get-LEVEL>(): kotlin/Int // co.xenastudios.core.api/CoreApi.LEVEL.<get-LEVEL>|<get-LEVEL>(){}[0]
+}

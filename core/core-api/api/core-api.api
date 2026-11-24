@@ -1,0 +1,5 @@
+public final class co/xenastudios/core/api/CoreApi {
+	public static final field INSTANCE Lco/xenastudios/core/api/CoreApi;
+	public static final field LEVEL I
+}
+

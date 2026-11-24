@@ -48,6 +48,14 @@
       "automerge": true
     },
     {
+      "description": "The rewrite's Kotlin (gradle/libs.versions.toml). Servers before 1.15 share the first Xena plugin's stdlib, so every plugin moves to a new Kotlin together, by hand (DECISIONS.md).",
+      "matchPackageNames": [
+        "org.jetbrains.kotlin:**",
+        "org.jetbrains.kotlin.**"
+      ],
+      "automerge": false
+    },
+    {
       "description": "xBackup downloads these when an SFTP or FTP remote is used, and checks each jar against the SHA-256 in xbackup/src/main/java/co/xenastudios/xbackup/remote/Libraries.java, which LibrariesTest compares with this version. A bump needs the new hash too, so it gets its own pull request, merged by hand. Last, so it wins over the automerge rule above.",
       "matchPackageNames": [
         "com.github.mwiede:jsch",

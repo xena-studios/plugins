@@ -12,8 +12,12 @@
 #   xmoney   true when xMoney's own boots run
 #
 # The rules:
-# - Anything everything is built on (core/, build-logic/, gradle/, the root build files,
-#   gradle.properties, the wrapper, scripts/, this workflow) means everything.
+# - Anything everything is built on (today's core, build-logic/, gradle/, the root build
+#   files, gradle.properties, the wrapper, scripts/, this workflow) means everything.
+# - A file in one of the rewrite's modules inside core/ (core/core-common and the others with
+#   a build file of their own) means those modules, and every folder whose build names one
+#   in project(":core:..."). Today's plugins don't, so a change there skips their tests and
+#   boots.
 # - A file in a plugin's folder means that folder's projects: the plugin, its API and
 #   whatever else is in there (xmoney's two consumers). So does its generated docs
 #   folder, docs/src/generated/<plugin>/, which its golden tests compare against.
@@ -58,14 +62,20 @@ projects() {
 }
 
 # uses[folder]: the other folders its builds name in project(":...").
-declare -A uses=()
+# rewriteUsers[folder]: set if its builds use one of the rewrite's modules in core/.
+declare -A uses=() rewriteUsers=()
 for unit in "${units[@]}"; do
   uses[$unit]=$(buildfiles "$unit" | xargs grep -ohE 'project\(":[^"]+"\)' |
     sed -E 's/project\(":([^:"]+).*/\1/' | sort -u | grep -vxE "core|$unit" | tr '\n' ' ' || true)
+  if buildfiles "$unit" | xargs grep -qE 'project\(":core:' 2>/dev/null; then rewriteUsers[$unit]=1; fi
 done
+
+# The rewrite's modules: each folder in core/ with its own build file (core/core-common, ...).
+rewrite=$(projects core | grep -vx ':core' || true)
 
 all=false
 [[ ${1:-} == --all ]] && all=true
+rewriteChanged=false
 declare -A changed=()
 if [[ $all == false ]]; then
   while IFS= read -r file; do
@@ -73,6 +83,11 @@ if [[ $all == false ]]; then
     top=${file%%/*}
     case $file in
       *.md) ;;
+      # One of the rewrite's modules, if that folder has a build file; today's core otherwise.
+      core/*/*)
+        module=${file#core/}
+        module=${module%%/*}
+        if [[ -f core/$module/build.gradle.kts ]]; then rewriteChanged=true; else all=true; fi ;;
       core/* | build-logic/* | gradle/* | scripts/* | gradle.properties | gradlew | gradlew.bat \
         | .github/workflows/plugins.yml) all=true ;;
       docs/src/generated/*)
@@ -99,6 +114,11 @@ if [[ $all == true ]]; then
   echo "checks=${checks[*]}"
   echo "xmoney=true"
   exit 0
+fi
+
+# Every folder using the rewrite's modules, when one of them changed.
+if [[ $rewriteChanged == true ]]; then
+  for unit in "${!rewriteUsers[@]}"; do changed[$unit]=1; done
 fi
 
 # The changed folders, and every folder using one, until none is left to add.
@@ -143,8 +163,14 @@ for unit in "${units[@]}"; do
     for project in $(projects "$unit"); do tasks+=("$project:assemble"); done
   fi
 done
-# The root's build: the copy-paste check, which reads every module however few changed.
-((${#tasks[@]})) && tasks=(":build" "${tasks[@]}")
+# The root's build: the copy-paste check, which reads every plugin's Java however few
+# changed. The rewrite's modules are Kotlin, which it doesn't read.
+((${#tested[@]})) && tasks=(":build" "${tasks[@]}")
+# The rewrite's modules: compiled for the JVM and wasmWasi, tested on both (Node for
+# wasmWasi, which Kotlin's Gradle plugin fetches), and their ABI checked.
+if [[ $rewriteChanged == true ]]; then
+  for project in $rewrite; do tasks+=("$project:build"); done
+fi
 
 echo "units=${tested[*]}"
 echo "tasks=${tasks[*]}"

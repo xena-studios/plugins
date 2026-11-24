@@ -19,6 +19,14 @@ dependencyResolutionManagement {
         maven("https://repo.codemc.io/repository/creatorfromhell/") {
             content { includeGroup("net.milkbowl.vault") }
         }
+        // Node.js, which runs the rewrite's wasmWasi tests (xena.kmp). Kotlin's Gradle plugin
+        // picks the version; only its distributions come from here.
+        ivy("https://nodejs.org/dist") {
+            name = "Node.js"
+            patternLayout { artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]") }
+            metadataSources { artifact() }
+            content { includeModule("org.nodejs", "node") }
+        }
         // WorldGuard and WorldEdit, which xPlots uses when they're installed.
         maven("https://maven.enginehub.org/repo/") {
             content {
@@ -33,6 +41,9 @@ rootProject.name = "xena-plugins"
 
 // Shared code, shaded into every plugin.
 include("core")
+// The rewrite's core (ROADMAP.md), beside today's until each plugin's rewrite replaces it:
+// shared logic for the JVM and wasmWasi, what plugin APIs share, and the JVM's side.
+include("core:core-common", "core:core-api", "core:core-jvm")
 // A plugin that is never released: it boots the core on a real server in CI.
 include("sandbox")
 // Its API, and two plugins that use it, so CI checks that other plugins can use an API.

@@ -39,6 +39,7 @@ Why the plugins are built the way they are, oldest first.
 | [More stores: Hangar and voxel.shop, published by the release](#more-stores-hangar-and-voxelshop-published-by-the-release-2026-11-23) | 2026-11-23 |
 | [The rewrite: every platform, in Kotlin, one plugin at a time](#the-rewrite-every-platform-in-kotlin-one-plugin-at-a-time-2026-11-23) | 2026-11-23 |
 | [M0: Java 8 bytecode, each server's own text, and Pumpkin waits on upstream](#m0-java-8-bytecode-each-servers-own-text-and-pumpkin-waits-on-upstream-2026-11-24) | 2026-11-24 |
+| [The rewrite grows inside today's repo, module by module](#the-rewrite-grows-inside-todays-repo-module-by-module-2026-11-24) | 2026-11-24 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -403,3 +404,15 @@ The spike (#121) booted real servers for each risky part of the rewrite. Each pa
 
 M0 is done.
 
+## The rewrite grows inside today's repo, module by module (2026-11-24)
+
+M1 starts the rewrite's build (#122). Where its code lives, and the first rules it sets:
+
+- **Today's Java stays on `main` until each plugin's rewrite replaces it, in place.** The Java core stays the `:core` project; the rewrite's core modules are subprojects inside its folder: `core/core-common` (KMP, `jvm` and `wasmWasi`), `core/core-api` (KMP) and `core/core-jvm` (Kotlin/JVM), with the `platform-*` modules beside them later. So the layout in ROADMAP.md is reached without moving anything twice, and nothing today's plugins build, test, boot or document changes: no plugin depends on the new modules, and their conventions (`xena.kmp`, `xena.kmp-api`, `xena.kotlin-jvm`) are separate from `xena.java`.
+- **One Kotlin version, in `gradle/libs.versions.toml`:** 2.4.21, the newest M0 booted on Spigot. Every Xena plugin moves to a new one together.
+- **Warnings are errors, and every public declaration is explicit** (Kotlin's explicit API mode). The JVM targets are Java 8 class files compiled against Java 8's API (`-Xjdk-release=1.8`); a test in `core-jvm` reads the class files to make sure.
+- **Kotlin's own ABI validation for APIs,** with the signatures committed in `<module>/api/` and checked by `check`, for the JVM and the `wasmWasi` klib at once (`./gradlew <module>:updateKotlinAbi` after a deliberate change). It's marked experimental, but it replaces a separate plugin and does what the Java APIs' `apiDump` does.
+- **Errors are `Outcome<T, E>`,** an `Ok` or an `Err` with a typed error. Not `Result`, so it never shadows Kotlin's `Result`, whose error is always a `Throwable`.
+- **Durations** read everything today's plugins read, plus spaces, `ms`, `mo` and `y`; `write` is exact, so a config read back keeps its value, where today's codec rounded to two units.
+- **Markup is parsed once and rendered per send.** The theme's tags (`<highlight>`, `<prefix>`, ...) are given to the parser, since the theme changes only on reload; placeholders (`<player>`, and `<has_next>...</has_next>` shown or not) are filled in when it's rendered, inside clicks and hovers too, and text placeholders can't add styles. A tag it doesn't know, or a placeholder it isn't given, stays as text, as in MiniMessage. In a gradient, a part with its own colour keeps it.
+- **CI:** a pull request that only changes the rewrite's modules builds and tests just those, on the JVM and on `wasmWasi` (with the Node Kotlin's Gradle plugin pins, from a repository in `settings.gradle.kts`), and skips today's plugins' tests and boots; one that changes today's core still checks everything.

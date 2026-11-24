@@ -18,6 +18,7 @@ Needs JDK 21 or newer, plus JDK 25 to build against the newest Paper or boot-tes
 ./gradlew test -PupdateGolden     # rewrite docs/src/generated/ after changing a default config
 ./gradlew compileJava -Pxena.newestPaper=<paper-api version>   # build against the newest Paper
 ./gradlew :<plugin>:api:apiDump   # after a deliberate API change: rewrite <plugin>/api/<plugin>-api.api
+./gradlew :core:core-api:updateKotlinAbi   # the same for a Kotlin API module of the rewrite
 scripts/boot-test.sh --project paper --version 1.21.11 \
   --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/sandbox-0.0.0.jar
 ```
@@ -28,8 +29,8 @@ On Paper, `boot-test.sh` then boots a second, empty server, waits for Paper to p
 
 | Folder | What it is |
 |---|---|
-| `core/` | Code every plugin shares, shaded into each jar |
-| `build-logic/` | The Gradle conventions: `xena.plugin` for every plugin, `xena.api` for its developer API |
+| `core/` | Code every plugin shares, shaded into each jar; inside it, the rewrite's core (`core-common`, `core-api`, `core-jvm`, see [ROADMAP.md](ROADMAP.md)) |
+| `build-logic/` | The Gradle conventions: `xena.plugin` for every plugin, `xena.api` for its developer API; `xena.kmp`, `xena.kmp-api` and `xena.kotlin-jvm` for the rewrite's Kotlin modules |
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
 | `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/`, `xteleport/`, `xvote/`, `xbans/`, `xmoney/`, `xbackup/`, `xstats/` | The plugins, each with its own README |
 | `scripts/` | `affected.sh`, `boot-test.sh`, `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `release.ts` |
@@ -68,7 +69,7 @@ These keep the plugins fast and dependable on a busy server. A change that break
 3. Add a line to the plugin's `CHANGELOG.md` under `## Unreleased`. Write it for server owners: what changed for them, not how.
 4. Run `./gradlew build` and open the PR.
 
-CI builds, tests, boot-tests on Paper and Folia, compiles against the newest Paper, and runs CodeQL. `main` requires `plugins-ok` and `docs-ok`. Each workflow skips what a change doesn't touch, so a docs-only PR doesn't wait for boot tests. On a PR, the plugins workflow builds, tests and boots only the plugins it changes and any that use them (`sandbox` uses xRewind's API, for example); a change to the core, `build-logic/`, `gradle/`, the root build files, `scripts/` or the workflow itself checks everything, as every push to `main` does. To see what a PR would run: `git diff --name-only main | scripts/affected.sh`, with bash 4 or newer (macOS's own is 3.2). PRs and issues get labelled by plugin automatically.
+CI builds, tests, boot-tests on Paper and Folia, compiles against the newest Paper, and runs CodeQL. `main` requires `plugins-ok` and `docs-ok`. Each workflow skips what a change doesn't touch, so a docs-only PR doesn't wait for boot tests. On a PR, the plugins workflow builds, tests and boots only the plugins it changes and any that use them (`sandbox` uses xRewind's API, for example); a change to the core, `build-logic/`, `gradle/`, the root build files, `scripts/` or the workflow itself checks everything, as every push to `main` does. A change only to the rewrite's modules in `core/` builds and tests just those (on the JVM and on `wasmWasi`) and whatever uses them. To see what a PR would run: `git diff --name-only main | scripts/affected.sh`, with bash 4 or newer (macOS's own is 3.2). PRs and issues get labelled by plugin automatically.
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org) with the plugin as scope, or `core` for shared code: `fix(zchat): keep the reply target through a reload`, `feat(xlimbo): ...`, `docs: ...`, `build: ...`.
 

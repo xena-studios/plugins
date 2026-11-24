@@ -54,6 +54,7 @@ core/
   bukkit/ fabric/ neoforge/ forge/ sponge/ velocity/ pumpkin/ vine/ minestom/ hytale/   thin adapters
 ```
 
+- Until a plugin's rewrite replaces it, today's Java stays on `main` beside the rewrite: the Java core is `core/` itself (the `:core` project), with the modules above as subprojects in its folder, and each plugin's Java stays in its folder until its milestone rewrites it in place.
 - `common` never imports `java.*` or a platform. CI builds the `wasmWasi` target from the first commit, so it can't creep in.
 - Plugins reach each other only through their APIs. Each plugin relocates its own copy of the core, as now.
 - A platform picks its implementations once, at startup, never per call.

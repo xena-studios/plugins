@@ -1,0 +1,1 @@
+ <click:run_command:'<command>'><hover:show_text:'<world> <x> <y> <z>'><highlight><home></highlight></hover></click> <dark_gray><world></dark_gray>

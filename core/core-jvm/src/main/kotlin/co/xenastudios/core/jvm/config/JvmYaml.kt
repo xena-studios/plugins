@@ -19,7 +19,8 @@ import it.krzeminski.snakeyaml.engine.kmp.nodes.Tag
  * Java 8 floor can't load, and its serialization layer isn't used (DECISIONS.md).
  *
  * Anchors and aliases are allowed, up to 100 aliases, since owners may use them and Bukkit's
- * own YAML reads them. A key twice in one section is an error, as YAML 1.2 says.
+ * own YAML reads them. A key twice in one section is an error, as YAML 1.2 says, and so is
+ * nesting deeper than the parser can follow (thousands of `[`).
  */
 public object JvmYaml : YamlReader {
 
@@ -44,6 +45,11 @@ public object JvmYaml : YamlReader {
     } catch (e: RuntimeException) {
         // The parser's other exceptions (too many aliases, too long): still "not valid YAML".
         Outcome.Err(YamlSyntaxError(e.message ?: e.toString(), 0))
+    } catch (e: StackOverflowError) {
+        // The parser recurses once per level of nesting and has no limit of its own, so ten
+        // thousand `{a: ` overflowed the stack (found by fuzzing, core/core-fuzz). The stack has
+        // unwound by here, and nothing outside the parser was changed.
+        Outcome.Err(YamlSyntaxError("nested too deep to read", 0))
     }
 
     private fun line(node: Node): Int = (node.startMark?.line ?: -1) + 1

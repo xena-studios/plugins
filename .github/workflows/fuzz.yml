@@ -1,0 +1,52 @@
+name: Fuzz
+
+# Fuzzes the rewrite's parsers with Jazzer (core/core-fuzz): the markup, and the config files'
+# YAML reader and loader. A pull request that touches the core fuzzes each for a few seconds,
+# beside the Plugins workflow, which already replays the committed corpus in `build`; every
+# night, each runs for ten minutes. A crash fails the run and is uploaded: commit it into the
+# corpus (core/core-fuzz/src/test/resources/...) with the fix, so `build` replays it for good.
+on:
+  pull_request:
+    paths: ["core/**", "build-logic/**", "gradle/**", "settings.gradle.kts", "gradle.properties", ".github/workflows/fuzz.yml"]
+  schedule:
+    - cron: "41 3 * * *"
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: How long to fuzz each target, such as 30s or 15m.
+        default: 10m
+
+permissions: {}
+
+concurrency:
+  # A new push to a pull request cancels the run it replaces.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-26.04
+    # Four targets at once, each for the duration, plus the build.
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 15 || 45 }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Fuzz
+        env:
+          DURATION: ${{ github.event_name == 'pull_request' && '10s' || inputs.duration || '10m' }}
+        run: ./gradlew :core:core-fuzz:fuzz -Pfuzz.duration="$DURATION" --continue
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fuzz-findings
+          path: |
+            core/core-fuzz/src/test/resources/**/crash-*
+            core/core-fuzz/src/test/resources/**/timeout-*
+            core/core-fuzz/build/reports/tests/
+          if-no-files-found: ignore

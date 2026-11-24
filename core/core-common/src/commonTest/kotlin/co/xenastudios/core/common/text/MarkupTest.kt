@@ -317,4 +317,29 @@ class MarkupTest {
             assertTrue(c.all().all { it.text.length <= input.length + "Steve".length + 2 }, input)
         }
     }
+
+    // Found by fuzzing (core/core-fuzz): rendering is recursive, so ten thousand open tags
+    // overflowed the stack. Past MAX_NESTING, tags stay as text.
+    @Test
+    fun deepNestingStaysTextInsteadOfOverflowing() {
+        for (open in listOf("<b>", "<gradient:red:blue>", "<red>", "<hover:show_text:'x'>")) {
+            val input = open.repeat(10_000) + "x"
+            val c = Markup.parse(input, theme).render()
+            assertEquals(open.repeat(10_000 - Markup.MAX_NESTING) + "x", c.plain(), open)
+            LegacyRenderer(hex = true).draw(c)
+        }
+        // Placeholders are filled in at any depth (a message may well have more than 50), and
+        // one that isn't given shows as written.
+        val slots = "<player>".repeat(10_000) + "x"
+        assertEquals(slots, Markup.parse(slots).render().plain())
+        assertEquals("Steve".repeat(10_000) + "x", Markup.parse(slots).render("player" to text("Steve")).plain())
+        val sections = "<s>".repeat(10_000) + "x" + "</s>".repeat(10_000)
+        assertEquals(
+            "x" + "</s>".repeat(10_000 - Markup.MAX_NESTING),
+            Markup.parse(sections).render("s" to Placeholder.section(true)).plain(),
+        )
+        // Up to the limit, every tag still applies.
+        val bold = Markup.parse("<b>".repeat(Markup.MAX_NESTING) + "x").render()
+        assertEquals(listOf("x" to Style(bold = true)), bold.runs())
+    }
 }

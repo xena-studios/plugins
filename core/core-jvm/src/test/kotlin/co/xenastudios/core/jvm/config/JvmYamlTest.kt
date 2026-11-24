@@ -94,4 +94,13 @@ class JvmYamlTest {
         assertIs<Outcome.Err<YamlSyntaxError>>(JvmYaml.read(bomb))
         assertIs<Outcome.Err<YamlSyntaxError>>(JvmYaml.read("a: &a [*a]\n"))
     }
+
+    // Found by fuzzing (core/core-fuzz): the parser recurses once per level, with no limit.
+    @Test
+    fun aFileNestedTooDeepIsRefusedNotThrown() {
+        val deep = assertIs<Outcome.Err<YamlSyntaxError>>(JvmYaml.read("{a: ".repeat(100_000) + "1" + "}".repeat(100_000))).error
+        assertEquals("nested too deep to read", deep.message)
+        assertIs<Outcome.Err<YamlSyntaxError>>(JvmYaml.read("[".repeat(100_000)))
+        assertIs<Outcome.Err<*>>(Configs.load(ShopConfig, "a: " + "[".repeat(100_000), JvmYaml))
+    }
 }

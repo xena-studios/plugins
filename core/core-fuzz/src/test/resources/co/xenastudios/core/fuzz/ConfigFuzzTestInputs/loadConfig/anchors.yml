@@ -1,0 +1,5 @@
+base: &base
+  a: 1
+  b: [x, y]
+copy: *base
+list: [*base, *base]

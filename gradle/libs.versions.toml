@@ -49,6 +49,9 @@ bungeecord-chat = "1.16-R0.4"
 # Shrinks the rewrite's jars (xena.r8), the version M0 proved on the spike jars. From Google's
 # Maven repository, which settings.gradle.kts lists for it alone.
 r8 = "9.5.33"
+# Fuzzes the rewrite's parsers on the JVM (core/core-fuzz): JUnit fuzz tests, which replay
+# their committed corpus in every test run and fuzz with JAZZER_FUZZ=1.
+jazzer = "0.30.0"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -74,6 +77,7 @@ pmd-java = { module = "net.sourceforge.pmd:pmd-java", version.ref = "pmd" }
 snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.ref = "snakeyaml-engine-kmp" }
 adventure-api = { module = "net.kyori:adventure-api", version.ref = "adventure-api" }
 bungeecord-chat = { module = "net.md-5:bungeecord-chat", version.ref = "bungeecord-chat" }
+jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
 # Applied by the rewrite's conventions in build-logic (xena.kmp, xena.kotlin-jvm).
 # The stdlib the rewrite's plugins download at runtime instead of shading (xena.fetched-libraries),
 # pinned by SHA-256 in gradle/library-pins.txt.

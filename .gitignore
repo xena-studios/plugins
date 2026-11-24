@@ -26,6 +26,8 @@ build/
 # Paper servers for boot tests and runServer
 .cache/
 run/
+# Inputs Jazzer finds while fuzzing (core/core-fuzz); crashes go next to the committed corpus
+.cifuzz-corpus/
 # JVM crash and heap dumps
 hs_err_pid*.log
 replay_pid*.log

@@ -1,0 +1,6 @@
+count: lots
+ratio: -1
+wait: forever
+mode: [a]
+numbers: [1, x, 3]
+messages: just text

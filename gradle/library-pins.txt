@@ -3,5 +3,8 @@
 # here: after a deliberate version bump, run the build with -PupdatePins and commit this file.
 
 com.mysql:mysql-connector-j:9.2.0 7e9941bbdcca244d878ea95bfff788fd9ba6a65af757f24be6c632930d61c7ed
+com.squareup.okio:okio-jvm:3.18.2 681fed549d1d2c63710f42c9eab433d642c71af778babd67035c50f8c425aaff
+it.krzeminski:snakeyaml-engine-kmp-jvm:5.0.0 506718c275eef4118fc589f95004066079bf72b872850cd8bd89bb6fc08dec1e
+net.thauvin.erik.urlencoder:urlencoder-lib-jvm:1.6.0 8d0fd2aeb48d19dc49c563ebc00f274947e45f716c107535c12ead63decd688d
 org.jetbrains.kotlin:kotlin-stdlib:2.4.21 bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3
 org.xerial:sqlite-jdbc:3.49.1.0 5c8609d2ca341deb8c6f71778974b5ba4995c7d32d7c7c89d9392a3e72c39291

@@ -29,7 +29,9 @@ public object JvmYaml : YamlReader {
     // Deeper than any config; stops a recursive alias (`a: &a [*a]`) from looping.
     private const val MAX_DEPTH = 64
 
-    private val settings = LoadSettings(maxAliasesForCollections = 100)
+    // Made by the first read, which is off the server thread: the platform names JvmYaml as it
+    // starts, and the parser's settings load its schema and resolver classes.
+    private val settings by lazy { LoadSettings(maxAliasesForCollections = 100) }
 
     private class Failure(message: String, val line: Int, val column: Int = 0) : Exception(message)
 

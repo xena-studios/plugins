@@ -45,7 +45,8 @@ fun pinned(name: String, what: String, configuration: Provider<out Configuration
             }
         })
         jars.from(artifacts.map { it.artifactFiles })
-        pins.set(isolated.rootProject.projectDirectory.file("gradle/library-pins.txt"))
+        // The repo's, also from a build of its own inside it (xena.repoRoot, as xena.r8 reads it).
+        pins.set(isolated.rootProject.projectDirectory.dir(providers.gradleProperty("xena.repoRoot").getOrElse(".")).file("gradle/library-pins.txt"))
         update.set(providers.gradleProperty("updatePins").map { true }.orElse(false))
         resource.set(listed)
         output.set(layout.buildDirectory.dir("generated/$name"))

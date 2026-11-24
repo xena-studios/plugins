@@ -14,3 +14,19 @@
 # 28 KiB shrunk (35 KiB before R8); its budget leaves room for the loader to grow, not for a library
 # shaded in by mistake.
 :core:core-loader:sandbox 40
+
+# xSample on Bukkit (core/core-testing/sample/bukkit): every part of the core a plugin can use
+# (admin subcommands, the family, the player cache, i18n, config), with the stdlib and the YAML
+# parser downloaded. 476 KiB shrunk (2,113 KiB before, with the parser shaded and no R8). Never
+# released, so no 1.x jar to stay under; the line keeps the core's shrunk size from creeping.
+:core:core-testing:sample:bukkit 500
+# xTwin on Bukkit, the family test's second plugin: the same core with fewer of its parts.
+# 387 KiB shrunk. Never released.
+:core:core-testing:twin:bukkit 420
+
+# xSample on Fabric (core/platform-fabric/sandbox, its own build), one jar a Minecraft line:
+# the adapter and the core, with fabric-language-kotlin's stdlib and the YAML parser downloaded.
+# 398-412 KiB shrunk before Loom remaps it (2,038-2,090 KiB before, unshrunk with the parser).
+:core:platform-fabric:sandbox:1.20.1 430
+:core:platform-fabric:sandbox:1.21.11 430
+:core:platform-fabric:sandbox:26.3 440

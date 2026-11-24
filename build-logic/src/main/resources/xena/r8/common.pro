@@ -16,9 +16,18 @@
 # The core's loader makes a plugin's Kotlin entry point by name (BukkitBootstrap.entryPoint()),
 # relocated into each plugin's package, and the platform makes the shim (plugin.yml's main).
 -keep class * implements **.loader.PluginEntry { public <init>(...); }
+# The shim asks whether an entry point has a load() of its own, by name.
+-keep interface **.loader.PluginEntry { *; }
+-keepclassmembers class * implements **.loader.PluginEntry { public void load(); }
 -keep class * extends **.loader.bukkit.BukkitBootstrap { <init>(); }
 -keep class * extends org.bukkit.plugin.java.JavaPlugin { <init>(); }
 -keepclassmembers class * implements org.bukkit.event.Listener { @org.bukkit.event.EventHandler <methods>; }
+# Bukkit events keep their names, since other plugins and Skript listen to them by class, and
+# their static getHandlerList(), which Bukkit finds by reflection when a listener registers.
+-keep class * extends org.bukkit.event.Event {
+    public static org.bukkit.event.HandlerList getHandlerList();
+    public *;
+}
 
 # Enums stay enums: libraries (Cloud, Guice, EnumMap/EnumSet) reach their constants by
 # reflection, which R8's enum unboxing would break ("class ... not an enum").

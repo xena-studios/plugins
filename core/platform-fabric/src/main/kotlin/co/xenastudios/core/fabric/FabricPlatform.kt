@@ -13,7 +13,7 @@ import co.xenastudios.core.common.platform.SystemClock
 import co.xenastudios.core.common.platform.Threading
 import co.xenastudios.core.jvm.db.DriverFetcher
 import co.xenastudios.core.jvm.db.OnDemandDriverFetcher
-import co.xenastudios.core.loader.LibraryCache
+import co.xenastudios.core.jvm.platform.FolderStorage
 import co.xenastudios.core.loader.OnDemandLibraries
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
@@ -40,7 +40,7 @@ import kotlin.uuid.toJavaUuid
  *   API, on the core's bus [events].
  * - **Commands and permissions:** [commands] on Brigadier, [permissions] through
  *   fabric-permissions-api with ops as the fallback.
- * - **Files:** `config/<modId>/`, Fabric's place for a mod's settings.
+ * - **Files:** `config/<modId>/`, Fabric's place for a mod's settings, as core-jvm's [FolderStorage].
  * - **Console:** SLF4J, under the plugin's [displayName].
  *
  * One server per process, as a dedicated server is: once the server has stopped, the scheduler
@@ -62,6 +62,12 @@ public class FabricPlatform(
 
     override val log: Log = Slf4jLog(displayName)
 
+    // The YAML parser and the other libraries the mod downloads rather than carries, before
+    // anything here reads a file with them.
+    init {
+        FabricLibraries.load(modId, log)
+    }
+
     override val name: String = run {
         val loader = if (FabricLoader.getInstance().isModLoaded("quilt_loader")) "Quilt" else "Fabric"
         val minecraft = FabricLoader.getInstance().getModContainer("minecraft").map { it.metadata.version.friendlyString }.orElse("?")
@@ -75,7 +81,7 @@ public class FabricPlatform(
 
     override val clock: Clock get() = SystemClock
 
-    override val storage: FileStorage = FileStorage(FabricLoader.getInstance().configDir.resolve(modId))
+    override val storage: FolderStorage = FolderStorage(FabricLoader.getInstance().configDir.resolve(modId))
 
     // Under Loom's runServer, or with -Dxena.development=true on a real server.
     override val development: Boolean =
@@ -148,14 +154,9 @@ public class FabricPlatform(
      * needs one; `null` when the jar pins none.
      */
     public fun drivers(modJar: ClassLoader): DriverFetcher? {
-        // -Dxena.libraries.mirror, as on Bukkit; a file for it (Bukkit's libraries.yml) can come
-        // when an owner needs one, since a mod's server can usually take a JVM flag.
-        val mirror = System.getProperty("xena.libraries.mirror")?.takeIf { it.isNotBlank() }
-        val cache = LibraryCache(
-            FabricLoader.getInstance().configDir.resolve(FabricFamily.FOLDER).resolve("libraries"),
-            if (mirror != null) listOf(mirror) else LibraryCache.DEFAULT_MIRRORS,
-            "Set a Maven mirror with -Dxena.libraries.mirror=<url>, or put the jar in config/xena/libraries/ by hand.",
-        )
+        // -Dxena.libraries.mirror, as on Bukkit (FabricLibraries); a file for it (Bukkit's
+        // libraries.yml) can come when an owner needs one, since a mod's server can usually take a JVM flag.
+        val cache = FabricLibraries.cache()
         val libraries = try {
             OnDemandLibraries.read(modJar, cache)
         } catch (e: java.io.IOException) {

@@ -6,6 +6,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id("dev.kikugie.loom-back-compat")
     kotlin("jvm")
+    // The YAML parser downloaded at startup rather than carried (FabricLibraries), pinned in
+    // the repo's gradle/library-pins.txt, and the JDBC drivers listed for the driver fetcher.
+    id("xena.fetched-libraries")
+    // The mod's classes shrunk by R8 before Loom remaps them, against the jar's line in
+    // gradle/jar-budgets.txt.
+    id("xena.r8")
 }
 
 version = "1.0.0+${sc.current.version}"
@@ -20,15 +26,23 @@ val requiredJava: JavaVersion = when {
 
 repositories {
     mavenCentral()
+    // R8, only on Google's repository.
+    google {
+        content { includeModule("com.android.tools", "r8") }
+    }
 }
 
 // What goes inside the mod's jar, as classes: the adapter, the core and xSample. A plugin
 // carries its own core, as on Bukkit; Fabric's jar-in-jar would keep only the newest copy
 // among every mod that has one. The Kotlin stdlib stays out: fabric-language-kotlin has it.
+// So does the YAML parser, with okio and urlencoder: they're downloaded (fetched, below).
 val bundle = configurations.dependencyScope("bundle")
 val bundleClasspath = configurations.resolvable("bundleClasspath") {
     extendsFrom(bundle.get())
     exclude(group = "org.jetbrains.kotlin")
+    exclude(group = "it.krzeminski")
+    exclude(group = "com.squareup.okio")
+    exclude(group = "net.thauvin.erik.urlencoder")
     attributes {
         attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
@@ -63,6 +77,26 @@ dependencies {
     "bundle"(adapter) { isTransitive = false }
     "bundle"("co.xenastudios.core:sample")
     "bundle"("co.xenastudios.core:core-jvm")
+
+    // Downloaded into config/xena/libraries/ as the mod starts (the adapter's FabricLibraries),
+    // as the Bukkit jar's libraries are: 870 KiB the jar doesn't carry.
+    fetched(libs.snakeyaml.engine.kmp.jvm) {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains")
+    }
+    // The JDBC drivers the core fetches when a database needs one (FabricPlatform.drivers).
+    onDemand(libs.sqlite.jdbc) { isTransitive = false }
+    onDemand(libs.mysql.connector) { isTransitive = false }
+}
+
+xenaR8 {
+    // xSample's own package, as on Bukkit; the default from this node's path (:sandbox:26.3)
+    // isn't a package name.
+    packageName = "co.xenastudios.xsample.r8"
+    // Mojang's names: the jar is shrunk before Loom remaps it, against Minecraft, Fabric's
+    // and the stdlib's named jars, and the libraries downloaded at runtime. Not what's bundled.
+    libraries.setFrom(configurations.compileClasspath.map { it.minus(bundleClasspath.get()) }, configurations.named("fetchedJars"))
+    rules.setFrom(fileTree("../../r8") { include("*.pro") })
 }
 
 java {
@@ -106,12 +140,21 @@ tasks {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 
-    // The mod's jar for this version in build/libs of the build, for the boot script: remapped
-    // below 26.1, the plain jar on 26.1 and later.
+    // The shrunk jar is the one remapped, below 26.1, and the one shipped on 26.1 and later.
+    matching { it.name == "remapJar" }.configureEach {
+        (this as net.fabricmc.loom.task.RemapJarTask).inputFile.set(named<co.xenastudios.gradle.R8Shrink>("shrinkJar").flatMap { it.outputJar })
+    }
+
+    // The mod's jar for this version in build/libs of the build, for the boot script: shrunk,
+    // then remapped below 26.1.
     register<Copy>("collect") {
         group = "build"
         description = "Copies this version's mod jar to the build's build/libs."
-        from(loomx.modJar.flatMap { it.archiveFile })
+        if (sc.current.parsed >= "26.1") {
+            from(named<co.xenastudios.gradle.R8Shrink>("shrinkJar").flatMap { it.outputJar })
+        } else {
+            from(loomx.modJar.flatMap { it.archiveFile })
+        }
         into(rootProject.layout.buildDirectory.dir("libs"))
     }
 }

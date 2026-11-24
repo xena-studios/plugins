@@ -8,6 +8,9 @@
 // repositories to its projects, which the root build forbids. The core's modules come from the
 // root build, included below, so they're built from source here too.
 pluginManagement {
+    // The root build's conventions, for xena.r8 (R8 and the jar budget) and xena.fetched-libraries
+    // (the YAML parser's pins) on the sandbox's jars.
+    includeBuild("../../build-logic")
     // The rewrite's Kotlin and Shadow versions, from the root build's catalog, so the two never differ.
     val catalog = file("../../gradle/libs.versions.toml").readLines()
     fun version(name: String) = catalog.first { it.startsWith("$name = ") }.substringAfter('"').substringBefore('"')
@@ -48,6 +51,15 @@ stonecutter {
 }
 
 rootProject.name = "platform-fabric"
+
+// The root build's catalog, which build-logic's conventions read (R8's version among them).
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            from(files("../../gradle/libs.versions.toml"))
+        }
+    }
+}
 
 // The repo's own build, for the core's modules: Gradle builds them from source when a version
 // node needs them, so a change to the core is seen here at once.

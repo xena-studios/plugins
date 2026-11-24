@@ -1,19 +1,32 @@
-package co.xenastudios.core.common.db
+package co.xenastudios.core.testing
 
 import co.xenastudios.core.api.Pending
 import co.xenastudios.core.api.onSettled
 import co.xenastudios.core.api.pendingOf
 import co.xenastudios.core.common.Outcome
-import kotlin.test.fail
+import co.xenastudios.core.common.db.Database
+import co.xenastudios.core.common.db.DbError
+import co.xenastudios.core.common.db.Dialect
+import co.xenastudios.core.common.db.Row
+import co.xenastudios.core.common.db.Sql
+import co.xenastudios.core.common.db.SqlSession
+import co.xenastudios.core.common.db.SqlValue
+import co.xenastudios.core.common.db.Statement
+import co.xenastudios.core.common.db.executeAll
 
 /**
- * A database for common tests, on the JVM and Wasm: it runs nothing, records every statement,
- * and answers each with what [answer] says (one changed row, no rows, by default).
+ * A database session for tests, on the JVM and Wasm: it runs nothing, records every statement
+ * in [log], and answers each with what [answer] says (one changed row, no rows, by default).
+ * Set [answer] to return rows for a query, or an error to test what a plugin does when the
+ * database says no.
  */
-class FakeSession(override val dialect: Dialect = Dialect.Sqlite.CURRENT) : SqlSession {
+public class FakeSession(override val dialect: Dialect = Dialect.Sqlite.CURRENT) : SqlSession {
     /** Every statement run, in order, with `BEGIN`, `COMMIT` and `ROLLBACK` around transactions. */
-    val log = ArrayList<String>()
-    var answer: (Statement) -> Outcome<List<Row>, DbError> = { Outcome.Ok(emptyList()) }
+    public val log: MutableList<String> = ArrayList()
+
+    /** What each statement gets back. */
+    public var answer: (Statement) -> Outcome<List<Row>, DbError> = { Outcome.Ok(emptyList()) }
+
     private var inTransaction = false
 
     override fun execute(statement: Statement): Outcome<Int, DbError> {
@@ -48,8 +61,13 @@ class FakeSession(override val dialect: Dialect = Dialect.Sqlite.CURRENT) : SqlS
     }
 }
 
-/** A [Database] that runs everything at once on a [FakeSession]. */
-class FakeDatabase(val session: FakeSession = FakeSession(), prefix: String = "test_") : Database {
+/**
+ * A [Database] for a plugin's tests that runs everything at once, on the test's thread, on a
+ * [FakeSession]: every [Pending] it returns has already settled. For what a plugin sends the
+ * database and what it does with the answer; the SQL itself is tested on real databases in
+ * core-jvm.
+ */
+public class FakeDatabase(public val session: FakeSession = FakeSession(), prefix: String = "test_") : Database {
     override val dialect: Dialect get() = session.dialect
     override val sql: Sql = Sql(session.dialect, prefix)
     override val description: String = "the fake database"
@@ -73,7 +91,7 @@ class FakeDatabase(val session: FakeSession = FakeSession(), prefix: String = "t
 }
 
 /** The value it settled with; fails the test if it hasn't settled, or failed. */
-fun <T> Pending<T>.settled(): T {
+public fun <T> Pending<T>.settled(): T {
     var settled = false
     var result: T? = null
     var failure: Throwable? = null
@@ -82,17 +100,17 @@ fun <T> Pending<T>.settled(): T {
         result = value
         failure = error
     }
-    if (!settled) fail("it hasn't settled")
+    if (!settled) throw AssertionError("it hasn't settled")
     failure?.let { throw it }
     @Suppress("UNCHECKED_CAST")
     return result as T
 }
 
 /** The value of an [Outcome.Ok]; fails the test with the error otherwise. */
-fun <T> Outcome<T, DbError>.ok(): T = when (this) {
+public fun <T, E> Outcome<T, E>.ok(): T = when (this) {
     is Outcome.Ok -> value
-    is Outcome.Err -> fail("expected a value, got $error")
+    is Outcome.Err -> throw AssertionError("expected a value, got $error")
 }
 
-/** One row with these columns and values. */
-fun row(vararg pairs: Pair<String, SqlValue>): Row = Row(pairs.map { it.first }, pairs.map { it.second })
+/** One row with these columns and values, as a query would return it. */
+public fun row(vararg pairs: Pair<String, SqlValue>): Row = Row(pairs.map { it.first }, pairs.map { it.second })

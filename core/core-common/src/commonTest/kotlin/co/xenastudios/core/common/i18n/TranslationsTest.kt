@@ -1,7 +1,8 @@
 package co.xenastudios.core.common.i18n
 
+import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.common.Outcome
-import co.xenastudios.core.common.config.TestYaml
+import co.xenastudios.core.testing.TestYaml
 import co.xenastudios.core.common.text.Component
 import co.xenastudios.core.common.text.PlainRenderer
 import co.xenastudios.core.common.text.Placeholder
@@ -15,6 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.uuid.Uuid
 
 class TranslationsTest {
 
@@ -144,20 +146,31 @@ class TranslationsTest {
         }
     }
 
-    private class Viewer(val name: String, val locale: String?)
+    // Players by name, each with the locale their client sent, and the names back for the
+    // tests' messages; "console" is the console, which has no reference.
+    private val locales = HashMap<PlayerRef, String?>()
+    private val names = HashMap<PlayerRef?, String>().apply { put(null, "console") }
 
-    private object Locales : LanguageSource<Viewer> {
-        override fun clientLocale(viewer: Viewer): String? = viewer.locale
+    private fun viewer(name: String, locale: String?): PlayerRef? {
+        if (name == "console") return null
+        val player = PlayerRef.of(Uuid.fromLongs(name.hashCode().toLong(), name.length.toLong()))
+        locales[player] = locale
+        names[player] = name
+        return player
+    }
+
+    private val clients = object : LanguageSource {
+        override fun clientLocale(player: PlayerRef): String? = locales[player]
     }
 
     @Test
     fun aMessageWithNoPlaceholdersIsDrawnOncePerLanguage() {
         val renderer = Counting()
-        val drawer = MessageDrawer(translations(), Locales, renderer)
-        val a = Viewer("a", "de_de")
+        val drawer = MessageDrawer(translations(), clients, renderer)
+        val a = viewer("a", "de_de")
         val first = drawer.draw(a, HomesMessages.none)
         assertSame(first, drawer.draw(a, HomesMessages.none))
-        assertSame(first, drawer.draw(Viewer("b", "de_at"), HomesMessages.none))
+        assertSame(first, drawer.draw(viewer("b", "de_at"), HomesMessages.none))
         assertEquals(1, renderer.draws)
         assertNull(drawer.draw(a, HomesMessages.hidden))
         assertNull(drawer.draw(a, HomesMessages.hidden))
@@ -167,16 +180,16 @@ class TranslationsTest {
     @Test
     fun aBroadcastIsDrawnOncePerLanguageAndTheConsoleGetsTheDefault() {
         val renderer = Counting()
-        val drawer = MessageDrawer(translations(LanguageSettings(default = DE)), Locales, renderer)
+        val drawer = MessageDrawer(translations(LanguageSettings(default = DE)), clients, renderer)
         val viewers = listOf(
-            Viewer("en1", "en_us"), Viewer("de1", "de_de"), Viewer("en2", "en_gb"),
-            Viewer("pt", "pt_br"), Viewer("de2", "de_ch"), Viewer("console", null),
+            viewer("en1", "en_us"), viewer("de1", "de_de"), viewer("en2", "en_gb"),
+            viewer("pt", "pt_br"), viewer("de2", "de_ch"), null,
         )
         val sent = mutableListOf<Pair<String, String>>()
         val draws = drawer.broadcast(
             viewers, HomesMessages.list,
             LanguagePlaceholders { language -> mapOf("count" to Placeholder.text(language.formats.number(12345))) },
-        ) { viewer, text -> sent += viewer.name to text }
+        ) { viewer, text -> sent += names.getValue(viewer) to text }
         assertEquals(3, draws, "en, de (with the console) and pt-BR")
         assertEquals(3, renderer.draws)
         assertEquals(
@@ -194,19 +207,19 @@ class TranslationsTest {
 
     @Test
     fun aBlankBroadcastSendsNothing() {
-        val drawer = MessageDrawer(translations(), Locales, PlainRenderer)
+        val drawer = MessageDrawer(translations(), clients, PlainRenderer)
         var sent = 0
-        drawer.broadcast(listOf(Viewer("a", "en_us")), HomesMessages.hidden, emptyMap()) { _, _ -> sent++ }
+        drawer.broadcast(listOf(viewer("a", "en_us")), HomesMessages.hidden, emptyMap()) { _, _ -> sent++ }
         assertEquals(0, sent)
-        assertEquals(false, drawer.send(Viewer("a", "en_us"), HomesMessages.hidden, emptyMap()) { _, _ -> sent++ })
+        assertEquals(false, drawer.send(viewer("a", "en_us"), HomesMessages.hidden, emptyMap()) { _, _ -> sent++ })
     }
 
     @Test
     fun placeholdersAreFilledInsideAClick() {
-        val drawer = MessageDrawer(translations(), Locales, object : TextRenderer<Component> {
+        val drawer = MessageDrawer(translations(), clients, object : TextRenderer<Component> {
             override fun draw(component: Component): Component = component
         })
-        val drawn = assertNotNull(drawer.draw(Viewer("a", "de_de"), HomesMessages.teleport, mapOf("name" to Placeholder.text("Base"))))
+        val drawn = assertNotNull(drawer.draw(viewer("a", "de_de"), HomesMessages.teleport, mapOf("name" to Placeholder.text("Base"))))
         assertTrue("/home Base" in drawn.toString(), drawn.toString())
     }
 }

@@ -3,6 +3,32 @@
 # Managed by the plugin, to carry your settings forward on updates. Don't edit it.
 config-version: 1
 
+# How this plugin's messages look, and the language they're in. shared uses the
+# setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is
+# this plugin's own.
+messages:
+  # The language players see messages in: auto for each player's own (their client's
+  # language setting), or one language for everyone, such as de or pt-BR.
+  language: "shared"
+  # The language of the console, and of players whose language has no file in lang/.
+  default-language: "shared"
+
+  # The look every message shares, used in messages as tags: <prefix>, <highlight>,
+  # <success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,
+  # italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>.
+  theme:
+    # <prefix> starts the default messages. Make it your server's name, such as
+    # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+    prefix: "shared"
+    # The colour of message text that has no tag of its own.
+    base: "shared"
+    # <highlight>: names and values, such as a player or a speed.
+    highlight: "shared"
+    # <success>: something turned on or done.
+    success: "shared"
+    # <error>: something refused or turned off.
+    error: "shared"
+
 # Coins a player has before their first payment.
 starting-coins: 100
 

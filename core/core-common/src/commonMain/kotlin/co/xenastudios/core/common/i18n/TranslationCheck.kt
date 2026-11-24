@@ -5,8 +5,9 @@ import co.xenastudios.core.common.config.YamlReader
 
 /**
  * The check CI runs on every translation a plugin ships, against its English messages: a
- * broken translation fails the build, not a server. Each plugin's tests call [verify] on its
- * `lang/<tag>.yml` resources (a Gradle task will run it later). It finds:
+ * broken translation fails the build, not a server. The build's `checkTranslations` task runs
+ * [check] on every `lang/<tag>.yml` a plugin ships (`core-jvm`'s `TranslationCheckMain`), and a
+ * plugin's tests can call [verify] too. It finds:
  * - [TranslationIssue.Kind.MISSING]: a message the translation doesn't have;
  * - [TranslationIssue.Kind.UNKNOWN_KEY]: a key no message has, also in `former`;
  * - [TranslationIssue.Kind.FOREIGN_TAG]: a tag the English message doesn't fill in: a

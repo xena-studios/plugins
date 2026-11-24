@@ -1,0 +1,6 @@
+core.pages.footer: "<gray>Seite <page> von <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Zurück</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Weiter »</highlight></hover></click></has_next>"
+sample.paid: "<prefix>Du hast <highlight><player></highlight> <amount> Münzen gezahlt."
+sample.broke: "<prefix><error>Du hast keine <amount> Münzen."
+translation:
+  name: "Deutsch"
+  machine-drafted: true

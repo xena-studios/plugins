@@ -1,10 +1,16 @@
 package co.xenastudios.core.common.manifest
 
+import co.xenastudios.core.api.event.CancellableEvent
+import co.xenastudios.core.api.event.Event
+import co.xenastudios.core.api.event.EventType
 import co.xenastudios.core.common.command.AdminCommands
 import co.xenastudios.core.common.command.ArgumentTypes
 import co.xenastudios.core.common.command.Reloader
 import co.xenastudios.core.common.command.commands
 import co.xenastudios.core.common.config.HomesConfig
+import co.xenastudios.core.common.i18n.MessageBundle
+import co.xenastudios.core.common.i18n.MessageCatalog
+import co.xenastudios.core.common.i18n.MessageKey
 import co.xenastudios.core.common.permission.Permission
 import co.xenastudios.core.common.permission.PermissionDefault
 import co.xenastudios.core.common.permission.PermissionSet
@@ -15,6 +21,22 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
+
+object HomeMessages : MessageBundle() {
+    val set: MessageKey = message("homes.set", "Home <name> set.", "When a home is set.", placeholders = listOf("name"))
+}
+
+class HomeSetEvent : CancellableEvent() {
+    companion object {
+        val TYPE: EventType<HomeSetEvent> = EventType.of("xhomes:home_set")
+    }
+}
+
+class HomeGoneEvent : Event {
+    companion object {
+        val TYPE: EventType<HomeGoneEvent> = EventType.of("xhomes:home_gone")
+    }
+}
 
 class ManifestTest {
 
@@ -41,8 +63,8 @@ class ManifestTest {
         "xhomes", "xHomes", "Homes for players.", tree, listOf(Perms, admin.permissions),
         config = HomesConfig,
         placeholders = placeholders("xhomes") { player("count", "How many homes you have.", "3") { "3" } },
-        messages = listOf(MessageInfo("homes.set", "Home <name> set.", listOf("When a home is set."), listOf("name"))),
-        events = listOf(EventInfo("xhomes:home_set", "co.xenastudios.xhomes.api.HomeSetEvent", "A home is set.", cancellable = true)),
+        catalog = MessageCatalog.of(HomeMessages),
+        events = listOf(EventInfo.of(HomeSetEvent.TYPE, "A home is set."), EventInfo.of(HomeGoneEvent.TYPE, "A home was deleted.", since = "2.1.0")),
     )
     private val paper = PlatformInfo("paper", "Paper", PlatformInfo.Kind.SERVER, "1.8.8", "latest", 8, PlatformInfo.Status.RELEASE, "2.0.0")
     private val manifest = ManifestFormat.manifest(reference, "2.0.0", listOf(paper))
@@ -76,8 +98,16 @@ class ManifestTest {
         assertEquals("%xhomes_count%", forms.str("PlaceholderAPI"))
         assertEquals("<xhomes_count>", forms.str("MiniPlaceholders"))
         assertEquals("%xhomes:count%", forms.str("Text Placeholder API"))
-        assertEquals("homes.set", manifest.arr("messages").single().str("key"))
-        assertEquals("xhomes:home_set", manifest.arr("events").single().str("key"))
+        val message = manifest.arr("messages").single()
+        assertEquals("homes.set", message.str("key"))
+        assertEquals("Home <name> set.", message.str("english"))
+        assertEquals(listOf("name"), message.arr("placeholders").map { (it as Json.Str).value })
+        val (setEvent, gone) = manifest.arr("events")
+        assertEquals("xhomes:home_set", setEvent.str("key"))
+        assertTrue(setEvent.str("className")!!.endsWith("HomeSetEvent"), "read from the event's class")
+        assertEquals(true, ((setEvent as Json.Obj)["cancellable"] as Json.Bool).value, "a pre-event, which listeners can cancel")
+        assertEquals(false, ((gone as Json.Obj)["cancellable"] as Json.Bool).value)
+        assertEquals("2.1.0", gone.str("since"))
         assertEquals("1.8.8", manifest.arr("platforms").single().str("minVersion"))
     }
 

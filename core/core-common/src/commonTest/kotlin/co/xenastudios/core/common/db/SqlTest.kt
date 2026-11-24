@@ -1,5 +1,6 @@
 package co.xenastudios.core.common.db
 
+import co.xenastudios.core.testing.row
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

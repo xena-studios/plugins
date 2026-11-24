@@ -1,7 +1,7 @@
 package co.xenastudios.core.common.i18n
 
 import co.xenastudios.core.common.Outcome
-import co.xenastudios.core.common.config.TestYaml
+import co.xenastudios.core.testing.TestYaml
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

@@ -1,15 +1,18 @@
-package co.xenastudios.core.common.config
+package co.xenastudios.core.testing
 
 import co.xenastudios.core.common.Outcome
+import co.xenastudios.core.common.config.YamlNode
+import co.xenastudios.core.common.config.YamlReader
+import co.xenastudios.core.common.config.YamlSyntaxError
 
 /**
- * A YAML reader for these tests only, so they run on wasmWasi, where no YAML library is
- * published yet. It reads the block style configs are written in: `key: value`, nested sections,
+ * A YAML reader for tests, so a plugin's config and language files are read the same on
+ * wasmWasi, where no YAML library is published yet, as on the JVM. It reads the block style configs are written in: `key: value`, nested sections,
  * `- item` lists, `[a, b]` and `{}`, quoted and plain scalars, and comments. It isn't the
  * reader plugins use: on the JVM that's snakeyaml-engine-kmp (`core-jvm`'s `JvmYaml`), whose
  * tests read the same kind of files with it.
  */
-object TestYaml : YamlReader {
+public object TestYaml : YamlReader {
 
     private class Line(val number: Int, val indent: Int, val text: String)
 

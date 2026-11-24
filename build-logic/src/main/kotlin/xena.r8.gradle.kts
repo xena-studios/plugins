@@ -32,6 +32,7 @@ val xenaR8 = extensions.create<XenaR8Extension>("xenaR8").apply {
         "co.xenastudios." + path.split(':').filter { it.isNotEmpty() }.joinToString(".") { it.replace("-", "").lowercase() } + ".r8",
     )
     rules.convention(fileTree("r8") { include("*.pro") })
+    startupClasses.convention(files("startup-classes.txt"))
 }
 
 plugins.withId("com.gradleup.shadow") {
@@ -48,6 +49,7 @@ val shrinkJar = tasks.register<R8Shrink>("shrinkJar") {
     libraries.from(xenaR8.libraries)
     rules.from(xenaR8.rules)
     packageName.set(xenaR8.packageName)
+    startupClasses.from(xenaR8.startupClasses)
     // R8 runs on, and reads java.* from, the JDK running the build.
     launcher.set(javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(JavaVersion.current().majorVersion))

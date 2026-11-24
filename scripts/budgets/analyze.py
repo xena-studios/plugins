@@ -9,7 +9,8 @@ measurement can't be read.
 How each number is read (as M0 did, sandbox/m0/budgets/analyze.py):
 - startup: Paper's "[<plugin>] Loading N libraries" line to the first line after its "Loaded
   library" lines (the server resolving libraries:, then making the plugin's class loader and
-  main class, on the server thread at every boot), plus the onLoad and
+  main class, on the server thread at every boot), or for a paper-plugin.yml plugin its
+  loader's time handing Paper its libraries (the shim logs it), plus the onLoad and
   onEnable times the core's shim logs with -Dxena.startupTimes=true; for a plugin without the
   shim, its "Loading server plugin" and "Enabling" lines to the next line logged by anything
   else. The median of the timed boots (every boot but the first, which creates the world).
@@ -57,10 +58,14 @@ def startup(path, names):
             end = next((u for u, _, later in lines[i + 1:] if not later.startswith(f"[{m.group(1)}] Loaded library")), t)
             result[m.group(1)]["libraries"] += end - t
             continue
-        m = re.match(r"Startup times: onLoad ([\d.]+) ms, onEnable ([\d.]+) ms", msg)
+        m = re.match(r"Startup times: (?:loader ([\d.]+) ms, )?onLoad ([\d.]+) ms, onEnable ([\d.]+) ms", msg)
         if m and logger in result:
-            result[logger]["load"] = float(m.group(1))
-            result[logger]["enable"] = float(m.group(2))
+            # A paper-plugin.yml plugin's loader handing Paper its libraries, which Paper logs
+            # no line for. (Its class loader and main class aren't in it: about 5 ms, DECISIONS.md.)
+            if m.group(1) is not None:
+                result[logger]["libraries"] += float(m.group(1))
+            result[logger]["load"] = float(m.group(2))
+            result[logger]["enable"] = float(m.group(3))
             result[logger]["shim"] = True
             continue
         m = re.match(r"(Loading server plugin|Enabling) (\S+) v", msg)

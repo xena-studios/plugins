@@ -50,7 +50,7 @@ tasks.processResources {
         "libraries" to fetchedCoordinates.get().joinToString("") { "\n  - $it" },
     )
     inputs.properties(props)
-    filesMatching("plugin.yml") { expand(props) }
+    filesMatching(listOf("plugin.yml", "paper-plugin.yml")) { expand(props) }
 }
 
 tasks.shadowJar {

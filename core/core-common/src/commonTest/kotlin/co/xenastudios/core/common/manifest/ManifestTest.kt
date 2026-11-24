@@ -89,7 +89,7 @@ class ManifestTest {
         assertEquals(true, ((reload as Json.Obj)["builtIn"] as Json.Bool).value)
 
         val permissions = manifest.arr("permissions").map { it.str("node") }
-        assertEquals(listOf("xhomes.set", "xhomes.fast", "xhomes.stray", "xhomes.admin", "xhomes.admin.reload", "xhomes.admin.debug"), permissions)
+        assertEquals(listOf("xhomes.set", "xhomes.fast", "xhomes.stray", "xhomes.admin", "xhomes.admin.reload", "xhomes.admin.debug", "xhomes.admin.update"), permissions)
         val setPermission = manifest.arr("permissions")[0]
         assertEquals(listOf("xhomes set"), setPermission.arr("commands").map { (it as Json.Str).value })
         assertEquals("everyone", setPermission.str("default"))

@@ -56,8 +56,8 @@ public enum class AdminSubcommand(
  * The admin subcommands, built once in the core, that each plugin mounts under its own root
  * command ([CommandBuilder.mount]): `/<plugin> reload` and `/<plugin> debug` always, and
  * `import`, `migrate` and `forget` when the plugin gives what they run on. Each needs
- * `<plugin>.admin.<subcommand>`, and `<plugin>.admin` grants them all; [permissions] declares
- * them, so a plugin lists it beside its own permissions.
+ * `<plugin>.admin.<subcommand>`, and `<plugin>.admin` grants them all, and [updates], the update
+ * notices; [permissions] declares them, so a plugin lists it beside its own permissions.
  *
  * - `reload` runs [reloader] on the global thread, on the next tick (outside the command,
  *   since a reload registers commands again), and tells whoever asked how it went.
@@ -106,15 +106,26 @@ public class AdminCommands(
 
     private val bySubcommand: Map<AdminSubcommand, Permission>
 
+    /**
+     * `<plugin>.admin.update`: told about a newer version as they join (the core's
+     * [co.xenastudios.core.common.update.UpdateChecker]). Granted by [admin], not a subcommand.
+     */
+    public val updates: Permission
+
     init {
         val nodes = subcommands.associateWith { "$pluginId.admin.${it.word}" }
-        admin = declared.declare("$pluginId.admin", "Every admin subcommand of $pluginName.", PermissionDefault.OP, nodes.values.associateWith { true }, builtIn = true)
+        val update = "$pluginId.admin.update"
+        admin = declared.declare(
+            "$pluginId.admin", "Every admin subcommand of $pluginName, and its update notices.", PermissionDefault.OP,
+            (nodes.values + update).associateWith { true }, builtIn = true,
+        )
         bySubcommand = subcommands.associateWith { sub ->
             declared.declare(nodes.getValue(sub), "Use /$pluginId ${sub.word}.", PermissionDefault.OP, emptyMap(), builtIn = true)
         }
+        updates = declared.declare(update, "Hear about newer versions of $pluginName when joining.", PermissionDefault.OP, emptyMap(), builtIn = true)
     }
 
-    /** The admin permissions: `<plugin>.admin`, then one per subcommand. */
+    /** The admin permissions: `<plugin>.admin`, one per subcommand, then `<plugin>.admin.update`. */
     public val permissions: PermissionSet get() = declared
 
     /** The permission [subcommand] needs. */

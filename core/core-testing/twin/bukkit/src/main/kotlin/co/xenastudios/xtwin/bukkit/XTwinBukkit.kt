@@ -30,6 +30,8 @@ public class XTwinBukkit(private val plugin: JavaPlugin) : PluginEntry {
         this.twin = twin
         platform.permissions.sync(twin.admin.permissions.permissions)
         platform.scheduler.now(Where.Global) { twin.enable() }
+        // bStats beside xSample's, each relocated into its plugin (boot.sh turns it off).
+        Integer.getInteger("xtwin.bstats")?.let(platform::metrics)
         platform.scheduler.run(Where.Async) {
             family.load().error?.let { platform.log.warn(it.message) }
             cache.load()

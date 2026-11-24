@@ -1,0 +1,38 @@
+---
+// Where the plugin runs: from its build (xenaReference { platform(...) }), not from a page.
+import { Badge } from "@astrojs/starlight/components";
+import type { Platform } from "./manifest";
+import "./reference.css";
+
+interface Props {
+  platforms: Platform[];
+}
+const { platforms } = Astro.props;
+const kinds = { server: "Server", proxy: "Proxy", library: "Library" } as const;
+const versions = (p: Platform) =>
+  p.minVersion === p.maxVersion ? p.minVersion : p.maxVersion === "latest" ? `${p.minVersion} and newer` : `${p.minVersion} to ${p.maxVersion}`;
+---
+<table class="ref-platforms">
+  <thead>
+    <tr><th>Platform</th><th>Versions</th><th>Java</th><th>Since</th></tr>
+  </thead>
+  <tbody>
+    {platforms.map((p) => (
+      <tr class:list={[{ planned: p.status === "planned" }]}>
+        <td>
+          <strong>{p.name}</strong>
+          {p.kind !== "server" && <span class="ref-hint"> {kinds[p.kind]}</span>}
+        </td>
+        <td>{versions(p)}</td>
+        <td>{p.java ? `${p.java}+` : "n/a"}</td>
+        <td>{p.status === "release" ? p.since : <Badge text="Planned" variant="note" />}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  .planned td:not(:last-child) {
+    color: var(--muted);
+  }
+</style>

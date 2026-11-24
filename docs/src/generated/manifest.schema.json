@@ -1,0 +1,539 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Xena plugin reference manifest, format 1",
+  "$ref": "#/$defs/Manifest",
+  "$defs": {
+    "Manifest": {
+      "type": "object",
+      "description": "Everything the docs show about one plugin, generated from its code and build. Don't edit it: run ./gradlew updateXenaManifest.",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "The JSON Schema this file follows."
+        },
+        "formatVersion": {
+          "const": 1,
+          "description": "The manifest's format. The site refuses one it doesn't know."
+        },
+        "plugin": {
+          "$ref": "#/$defs/Plugin",
+          "description": "The plugin itself."
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Platform"
+          },
+          "description": "Where it runs, from its build."
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "description": "Its commands, each with its subcommands."
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Permission"
+          },
+          "description": "Its permissions, in the order it declares them."
+        },
+        "config": {
+          "$ref": "#/$defs/Config",
+          "description": "Its config.yml; absent if it has none."
+        },
+        "placeholders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Placeholder"
+          },
+          "description": "Its placeholders."
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Message"
+          },
+          "description": "Its messages."
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Event"
+          },
+          "description": "Its API's events."
+        }
+      },
+      "required": [
+        "$schema",
+        "formatVersion",
+        "plugin",
+        "platforms",
+        "commands",
+        "permissions",
+        "placeholders",
+        "messages",
+        "events"
+      ],
+      "additionalProperties": false
+    },
+    "Plugin": {
+      "type": "object",
+      "description": "The plugin itself.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Lower-case id: its folder, its docs path and its permissions' prefix."
+        },
+        "name": {
+          "type": "string",
+          "description": "Its name, such as xHomes."
+        },
+        "version": {
+          "type": "string",
+          "description": "The version this manifest was written from."
+        },
+        "description": {
+          "type": "string",
+          "description": "One line on what it does."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "version",
+        "description"
+      ],
+      "additionalProperties": false
+    },
+    "Platform": {
+      "type": "object",
+      "description": "One platform the plugin runs on, or will.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable id, such as paper."
+        },
+        "name": {
+          "type": "string",
+          "description": "As people read it, such as Paper."
+        },
+        "kind": {
+          "enum": [
+            "server",
+            "proxy",
+            "library"
+          ],
+          "description": "What runs it."
+        },
+        "minVersion": {
+          "type": "string",
+          "description": "The oldest Minecraft (or proxy or API) version supported."
+        },
+        "maxVersion": {
+          "type": "string",
+          "description": "The newest, or latest."
+        },
+        "java": {
+          "type": "integer",
+          "description": "The Java the server needs at least; absent where Java doesn't apply."
+        },
+        "status": {
+          "enum": [
+            "release",
+            "planned"
+          ],
+          "description": "release: out in this version. planned: on the roadmap."
+        },
+        "since": {
+          "type": "string",
+          "description": "The plugin version that added it."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "minVersion",
+        "maxVersion",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "Command": {
+      "type": "object",
+      "description": "A command or subcommand.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "The words from the root, without the slash, such as xhomes set."
+        },
+        "usage": {
+          "type": "string",
+          "description": "How to type it, such as /xhomes set <name>."
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Other names it answers to."
+        },
+        "description": {
+          "type": "string",
+          "description": "What it does."
+        },
+        "permission": {
+          "type": "string",
+          "description": "The permission it needs on top of its parents'; absent if theirs are enough."
+        },
+        "playerOnly": {
+          "type": "boolean",
+          "description": "Only players can run it, not the console."
+        },
+        "arguments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Argument"
+          },
+          "description": "What it takes after its name, in order."
+        },
+        "executable": {
+          "type": "boolean",
+          "description": "Typing it does something; false for a command that only holds subcommands."
+        },
+        "cooldown": {
+          "type": "string",
+          "description": "How long a player waits between uses, as the configs write durations."
+        },
+        "cooldownBypass": {
+          "type": "string",
+          "description": "The permission that skips the cooldown."
+        },
+        "confirm": {
+          "type": "boolean",
+          "description": "It runs only when typed twice."
+        },
+        "builtIn": {
+          "type": "boolean",
+          "description": "The core gives it to every plugin (ROADMAP.md, Admin commands)."
+        },
+        "subcommands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "description": "The commands under it."
+        }
+      },
+      "required": [
+        "path",
+        "usage",
+        "aliases",
+        "description",
+        "playerOnly",
+        "arguments",
+        "executable",
+        "confirm",
+        "builtIn",
+        "subcommands"
+      ],
+      "additionalProperties": false
+    },
+    "Argument": {
+      "type": "object",
+      "description": "One argument of a command.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Its name in the usage."
+        },
+        "type": {
+          "type": "string",
+          "description": "What it takes: word, text, integer, number, boolean, choice, duration, player, player name, or a plugin's own."
+        },
+        "required": {
+          "type": "boolean",
+          "description": "It must be given."
+        },
+        "greedy": {
+          "type": "boolean",
+          "description": "It takes the rest of the line, spaces and all."
+        },
+        "description": {
+          "type": "string",
+          "description": "What it's for."
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The words it takes, if it takes only some."
+        },
+        "min": {
+          "type": "number",
+          "description": "The smallest number it takes (for a duration, in seconds)."
+        },
+        "max": {
+          "type": "number",
+          "description": "The largest number it takes (for a duration, in seconds)."
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "required",
+        "greedy",
+        "description",
+        "choices"
+      ],
+      "additionalProperties": false
+    },
+    "Permission": {
+      "type": "object",
+      "description": "A permission node.",
+      "properties": {
+        "node": {
+          "type": "string",
+          "description": "The node, such as xhomes.set."
+        },
+        "description": {
+          "type": "string",
+          "description": "What having it allows."
+        },
+        "default": {
+          "enum": [
+            "op",
+            "everyone",
+            "nobody",
+            "not-op"
+          ],
+          "description": "Who has it without a permissions plugin."
+        },
+        "children": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "Nodes it grants (true) or takes away (false)."
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The commands that need it, by path."
+        },
+        "builtIn": {
+          "type": "boolean",
+          "description": "The core declares it for every plugin."
+        }
+      },
+      "required": [
+        "node",
+        "description",
+        "default",
+        "children",
+        "commands",
+        "builtIn"
+      ],
+      "additionalProperties": false
+    },
+    "Config": {
+      "type": "object",
+      "description": "config.yml, from the plugin's config schema.",
+      "properties": {
+        "version": {
+          "type": "integer",
+          "description": "The config version, which the file's own version: key carries."
+        },
+        "header": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The lines at the top of the file."
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ConfigEntry"
+          },
+          "description": "The top-level sections and settings, in file order."
+        }
+      },
+      "required": [
+        "version",
+        "header",
+        "entries"
+      ],
+      "additionalProperties": false
+    },
+    "ConfigEntry": {
+      "type": "object",
+      "description": "A section of config.yml, or a setting.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Keys joined with dots, such as storage.type."
+        },
+        "type": {
+          "type": "string",
+          "description": "section, or the setting's type: string, integer, number, boolean, duration, markup, enum, list<...>."
+        },
+        "comment": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The comment above it in the default file, a line each."
+        },
+        "default": {
+          "description": "A setting's default value."
+        },
+        "defaultText": {
+          "type": "string",
+          "description": "A setting's default, as the file writes it."
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The values a setting takes, if it takes only some."
+        },
+        "min": {
+          "type": "number",
+          "description": "The smallest number a setting takes."
+        },
+        "max": {
+          "type": "number",
+          "description": "The largest number a setting takes."
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ConfigEntry"
+          },
+          "description": "A section's sections and settings."
+        }
+      },
+      "required": [
+        "path",
+        "type",
+        "comment",
+        "choices",
+        "entries"
+      ],
+      "additionalProperties": false
+    },
+    "Placeholder": {
+      "type": "object",
+      "description": "A placeholder other plugins can show.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Its name within the plugin, such as balance."
+        },
+        "description": {
+          "type": "string",
+          "description": "What it shows."
+        },
+        "example": {
+          "type": "string",
+          "description": "What it might show."
+        },
+        "needsPlayer": {
+          "type": "boolean",
+          "description": "It has a value only for a player."
+        },
+        "forms": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "How each placeholder plugin writes it, by plugin."
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "example",
+        "needsPlayer",
+        "forms"
+      ],
+      "additionalProperties": false
+    },
+    "Message": {
+      "type": "object",
+      "description": "A message, in English, which each language's file translates.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Its key in every language's file, such as homes.set."
+        },
+        "english": {
+          "type": "string",
+          "description": "Its English text, in the core's markup."
+        },
+        "comment": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The comment above it in each file."
+        },
+        "placeholders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The tags it fills in when sent, such as name for <name>."
+        }
+      },
+      "required": [
+        "key",
+        "english",
+        "comment",
+        "placeholders"
+      ],
+      "additionalProperties": false
+    },
+    "Event": {
+      "type": "object",
+      "description": "An event of the plugin's API.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Its event type's key, such as xmoney:balance_changed."
+        },
+        "className": {
+          "type": "string",
+          "description": "The class developers listen for."
+        },
+        "description": {
+          "type": "string",
+          "description": "When it fires."
+        },
+        "cancellable": {
+          "type": "boolean",
+          "description": "Listeners can cancel it."
+        },
+        "since": {
+          "type": "string",
+          "description": "The API version that added it."
+        }
+      },
+      "required": [
+        "key",
+        "className",
+        "description",
+        "cancellable"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,19 @@
+# xSample: the core's sample plugin. Never released.
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# Coins a player has before their first payment.
+starting-coins: 100
+
+# How long a player waits between payments.
+pay-cooldown: "10s"
+
+# Coins paid on every balance now and then.
+interest:
+  # Whether interest is paid.
+  enabled: true
+  # How much of each balance, in percent.
+  percent: 1
+  # How often.
+  every: "1h"

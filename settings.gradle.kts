@@ -52,6 +52,9 @@ include("core:core-common", "core:core-api", "core:core-jvm", "core:core-testing
 // The library loader and the Java shim a plugin's main class extends (Java only: it runs
 // before the Kotlin stdlib is loaded), and a never-released plugin on it for boot tests.
 include("core:core-loader", "core:core-loader:sandbox")
+// A sample plugin on the rewrite's core, never released: its tests run its commands on the
+// fake platform, and its reference manifest is the one the docs' components are checked with.
+include("core:core-testing:sample")
 // A plugin that is never released: it boots the core on a real server in CI.
 include("sandbox")
 // Its API, and two plugins that use it, so CI checks that other plugins can use an API.

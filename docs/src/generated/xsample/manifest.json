@@ -1,0 +1,395 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xsample",
+    "name": "xSample",
+    "version": "1.0.0",
+    "description": "The core's sample plugin, never released."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "velocity",
+      "name": "Velocity",
+      "kind": "proxy",
+      "minVersion": "3.3",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "planned"
+    },
+    {
+      "id": "pumpkin",
+      "name": "Pumpkin",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "xsample",
+      "usage": "/xsample [give|reload|debug|forget]",
+      "aliases": [
+        "coins"
+      ],
+      "description": "Shows your coins.",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xsample give",
+          "usage": "/xsample give <player> <amount>",
+          "aliases": [],
+          "description": "Gives a player coins.",
+          "permission": "xsample.give",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player",
+              "required": true,
+              "greedy": false,
+              "description": "Who gets them.",
+              "choices": []
+            },
+            {
+              "name": "amount",
+              "type": "integer",
+              "required": true,
+              "greedy": false,
+              "description": "How many coins.",
+              "choices": [],
+              "min": 1,
+              "max": 1000000
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xsample reload",
+          "usage": "/xsample reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "xsample.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xsample debug",
+          "usage": "/xsample debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "xsample.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xsample forget",
+          "usage": "/xsample forget <player>",
+          "aliases": [],
+          "description": "Deletes everything kept about one player.",
+          "permission": "xsample.admin.forget",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player name",
+              "required": true,
+              "greedy": false,
+              "description": "The player whose data is deleted, online or not.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": true,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "pay",
+      "usage": "/pay <player> <amount>",
+      "aliases": [],
+      "description": "Pays another player.",
+      "permission": "xsample.pay",
+      "playerOnly": true,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": true,
+          "greedy": false,
+          "description": "Who to pay.",
+          "choices": []
+        },
+        {
+          "name": "amount",
+          "type": "integer",
+          "required": true,
+          "greedy": false,
+          "description": "How many coins.",
+          "choices": [],
+          "min": 1
+        }
+      ],
+      "executable": true,
+      "cooldown": "10s",
+      "cooldownBypass": "xsample.pay.no-cooldown",
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xsample.pay",
+      "description": "Pay other players.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "pay"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xsample.give",
+      "description": "Give coins out of nowhere.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xsample give"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xsample.pay.no-cooldown",
+      "description": "Pay without waiting between payments.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xsample.*",
+      "description": "Everything in xSample but the admin subcommands.",
+      "default": "op",
+      "children": {
+        "xsample.pay": true,
+        "xsample.give": true,
+        "xsample.pay.no-cooldown": true
+      },
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xsample.admin",
+      "description": "Every admin subcommand of xSample.",
+      "default": "op",
+      "children": {
+        "xsample.admin.reload": true,
+        "xsample.admin.debug": true,
+        "xsample.admin.forget": true
+      },
+      "commands": [],
+      "builtIn": true
+    },
+    {
+      "node": "xsample.admin.reload",
+      "description": "Use /xsample reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xsample reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xsample.admin.debug",
+      "description": "Use /xsample debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xsample debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xsample.admin.forget",
+      "description": "Use /xsample forget.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xsample forget"
+      ],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 1,
+    "header": [
+      "xSample: the core's sample plugin. Never released."
+    ],
+    "entries": [
+      {
+        "path": "starting-coins",
+        "type": "integer",
+        "comment": [
+          "Coins a player has before their first payment."
+        ],
+        "default": 100,
+        "defaultText": "100",
+        "choices": [],
+        "min": 0,
+        "entries": []
+      },
+      {
+        "path": "pay-cooldown",
+        "type": "duration",
+        "comment": [
+          "How long a player waits between payments."
+        ],
+        "default": "10s",
+        "defaultText": "\"10s\"",
+        "choices": [],
+        "entries": []
+      },
+      {
+        "path": "interest",
+        "type": "section",
+        "comment": [
+          "Coins paid on every balance now and then."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "interest.enabled",
+            "type": "boolean",
+            "comment": [
+              "Whether interest is paid."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "interest.percent",
+            "type": "integer",
+            "comment": [
+              "How much of each balance, in percent."
+            ],
+            "default": 1,
+            "defaultText": "1",
+            "choices": [],
+            "min": 0,
+            "max": 100,
+            "entries": []
+          },
+          {
+            "path": "interest.every",
+            "type": "duration",
+            "comment": [
+              "How often."
+            ],
+            "default": "1h",
+            "defaultText": "\"1h\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [
+    {
+      "name": "balance",
+      "description": "The player's balance.",
+      "example": "120",
+      "needsPlayer": true,
+      "forms": {
+        "PlaceholderAPI": "%xsample_balance%",
+        "MiniPlaceholders": "<xsample_balance>",
+        "Text Placeholder API": "%xsample:balance%"
+      }
+    },
+    {
+      "name": "richest",
+      "description": "The most coins anyone has.",
+      "example": "4,200",
+      "needsPlayer": false,
+      "forms": {
+        "PlaceholderAPI": "%xsample_richest%",
+        "MiniPlaceholders": "<xsample_richest>",
+        "Text Placeholder API": "%xsample:richest%"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "key": "sample.paid",
+      "english": "<prefix>You paid <player> <amount> coins.",
+      "comment": [
+        "After /xsample pay."
+      ],
+      "placeholders": [
+        "player",
+        "amount"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "key": "xsample:coins_paid",
+      "className": "co.xenastudios.xsample.api.CoinsPaidEvent",
+      "description": "A player pays another.",
+      "cancellable": true,
+      "since": "1.0.0"
+    }
+  ]
+}

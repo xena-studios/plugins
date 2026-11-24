@@ -1,0 +1,5 @@
+# The SHA-256 of every library the rewrite's plugins download at runtime (xena.fetched-libraries).
+# A server checks each download against these, so the build fails when a jar it resolves isn't
+# here: after a deliberate version bump, run the build with -PupdatePins and commit this file.
+
+org.jetbrains.kotlin:kotlin-stdlib:2.4.21 bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3

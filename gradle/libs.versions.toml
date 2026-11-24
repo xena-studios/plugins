@@ -2,6 +2,9 @@
 # The rewrite's Kotlin, for every Xena plugin at once: servers before 1.15 share the first
 # plugin's stdlib, so the family moves together (DECISIONS.md, M0).
 kotlin = "2.4.21"
+# The oldest Bukkit the rewrite runs on: the core's Java shim compiles against it, so it uses
+# nothing newer (core/core-loader).
+spigot-floor = "1.8.8-R0.1-SNAPSHOT"
 # The oldest Paper every plugin supports. Raising it is a breaking change for server owners.
 paper = "1.21.11-R0.1-SNAPSHOT"
 junit = "6.1.3"
@@ -60,6 +63,10 @@ pmd-cli = { module = "net.sourceforge.pmd:pmd-cli", version.ref = "pmd" }
 pmd-java = { module = "net.sourceforge.pmd:pmd-java", version.ref = "pmd" }
 snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.ref = "snakeyaml-engine-kmp" }
 # Applied by the rewrite's conventions in build-logic (xena.kmp, xena.kotlin-jvm).
+# The stdlib the rewrite's plugins download at runtime instead of shading (xena.fetched-libraries),
+# pinned by SHA-256 in gradle/library-pins.txt.
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+spigot-api-floor = { module = "org.spigotmc:spigot-api", version.ref = "spigot-floor" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 [plugins]

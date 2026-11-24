@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "Xena M0 spike",
+  "description": "Server-side Kotlin mod: one Cloud command, one Adventure message.",
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.spike.XenaSpike" }
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": "*"
+  }
+}

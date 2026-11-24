@@ -2,4 +2,6 @@
 # A server checks each download against these, so the build fails when a jar it resolves isn't
 # here: after a deliberate version bump, run the build with -PupdatePins and commit this file.
 
+com.mysql:mysql-connector-j:9.2.0 7e9941bbdcca244d878ea95bfff788fd9ba6a65af757f24be6c632930d61c7ed
 org.jetbrains.kotlin:kotlin-stdlib:2.4.21 bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3
+org.xerial:sqlite-jdbc:3.49.1.0 5c8609d2ca341deb8c6f71778974b5ba4995c7d32d7c7c89d9392a3e72c39291

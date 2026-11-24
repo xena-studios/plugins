@@ -2,13 +2,16 @@ package co.xenastudios.core.jvm.db
 
 import co.xenastudios.core.common.Outcome
 import co.xenastudios.core.common.db.DbError
+import co.xenastudios.core.loader.LibraryException
+import co.xenastudios.core.loader.OnDemandLibraries
 import java.net.URLClassLoader
 import java.nio.file.Path
 import java.sql.Driver
 
 /**
  * A JDBC driver the core can use when the server has none, or an old one: what to download, and
- * the class to load from it. No driver is shaded into a plugin (DECISIONS.md, "A shared database
+ * the class to load from it. The versions are the ones pinned in gradle/library-pins.txt
+ * (`DriverPinsTest` keeps them the same). No driver is shaded into a plugin (DECISIONS.md, "A shared database
  * layer, with no drivers shaded in"): Paper and Folia ship both, Spigot ships old ones, and the
  * rest are fetched once for the family.
  */
@@ -27,13 +30,31 @@ public enum class DriverLibrary(
 
 /**
  * Downloads a [DriverLibrary] and returns where its jar is, checked against the hash pinned at
- * build time: the seam for the core's library loader (`core-loader`, #143), whose cache in
- * `plugins/Xena/libraries/` does exactly this for the Kotlin stdlib. Each platform's adapter
- * passes one built on it; until then [Drivers.serverOnly] has none, and a server without a driver
- * is told which one to install.
+ * build time. Each platform's adapter passes an [OnDemandDriverFetcher], built on the core's
+ * library loader (`core-loader`), whose cache in `plugins/Xena/libraries/` keeps one copy for
+ * the family; [Drivers.serverOnly] has none, and a server without a driver is told which one
+ * to install.
  */
 public fun interface DriverFetcher {
     public fun fetch(library: DriverLibrary): Outcome<Path, DbError>
+}
+
+/**
+ * A [DriverFetcher] on the plugin's on-demand libraries: the drivers its build pinned
+ * (`onDemand` in the xena.fetched-libraries convention, hashes in gradle/library-pins.txt),
+ * downloaded into the family's shared cache the first time a server without one opens a
+ * database, and checked against the pin every time. The pinned version is the one fetched,
+ * whatever [DriverLibrary.coordinates] says, so a bump needs only the build changed.
+ */
+public class OnDemandDriverFetcher(private val libraries: OnDemandLibraries) : DriverFetcher {
+    override fun fetch(library: DriverLibrary): Outcome<Path, DbError> {
+        val (group, artifact) = library.coordinates.split(':')
+        return try {
+            Outcome.Ok(libraries.fetch(group, artifact))
+        } catch (e: LibraryException) {
+            Outcome.Err(DbError(DbError.Kind.NO_DRIVER, e.message ?: "couldn't download ${library.coordinates}"))
+        }
+    }
 }
 
 /**

@@ -18,7 +18,8 @@ import org.gradle.work.DisableCachingByDefault
 
 /**
  * Writes `META-INF/xena/libraries.txt`, the list the core's loader downloads from (each jar
- * with the SHA-256 it must have and a class to check for), after checking every jar against
+ * with the SHA-256 it must have and a class to check for), or [resource]'s other list, after
+ * checking every jar against
  * `gradle/library-pins.txt`. A jar with no pin or another hash fails the build, naming it;
  * `-PupdatePins` writes the hashes Gradle resolved into the pins file instead, for a deliberate
  * bump. Applied by the xena.fetched-libraries convention.
@@ -41,10 +42,15 @@ abstract class PinnedLibraries : DefaultTask() {
     @get:Input
     abstract val update: Property<Boolean>
 
+    /** The list's path in the jar: the startup libraries', or `META-INF/xena/on-demand-libraries.txt`. */
+    @get:Input
+    abstract val resource: Property<String>
+
     @get:OutputDirectory
     abstract val output: DirectoryProperty
 
     init {
+        resource.convention("META-INF/xena/libraries.txt")
         // Rewriting the pins must happen even when nothing else changed.
         outputs.upToDateWhen { !update.get() }
     }
@@ -74,7 +80,7 @@ abstract class PinnedLibraries : DefaultTask() {
             }
         }
         val manifest = LibraryPins.manifest(resolved.map { (jar, file) -> jar to LibraryPins.probe(file) })
-        output.get().asFile.resolve("META-INF/xena/libraries.txt").apply { parentFile.mkdirs() }.writeText(manifest)
+        output.get().asFile.resolve(resource.get()).apply { parentFile.mkdirs() }.writeText(manifest)
     }
 
     private companion object {

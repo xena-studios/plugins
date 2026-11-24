@@ -1,0 +1,5 @@
+/* What the reference components share: the small grey line under a cell's main text. */
+.ref-hint {
+  color: var(--gui-hint);
+  font-size: var(--sl-text-sm);
+}

@@ -19,9 +19,21 @@ Needs JDK 21 or newer, plus JDK 25 to build against the newest Paper or boot-tes
 ./gradlew compileJava -Pxena.newestPaper=<paper-api version>   # build against the newest Paper
 ./gradlew :<plugin>:api:apiDump   # after a deliberate API change: rewrite <plugin>/api/<plugin>-api.api
 ./gradlew :core:core-api:updateKotlinAbi   # the same for a Kotlin API module of the rewrite
+./gradlew build -PupdatePins      # after bumping a library downloaded at runtime: rewrite gradle/library-pins.txt
 scripts/boot-test.sh --project paper --version 1.21.11 \
   --run "sandbox selftest" --expect "SELFTEST PASS" sandbox/build/libs/sandbox-0.0.0.jar
 ```
+
+The rewrite's loader (`core/core-loader`) is boot-tested on servers that can't be downloaded, with a jar from [BuildTools](https://www.spigotmc.org/wiki/buildtools/) and the JDK that server needs:
+
+```sh
+./gradlew :core:core-loader:sandbox:assemble
+scripts/boot-test.sh --server spigot-1.8.8.jar --java <JDK 8 home> --jvm -DIReallyKnowWhatIAmDoingISwear=true \
+  --checks core/core-loader/sandbox/boot-checks.txt --logged "through URLClassLoader.addURL" \
+  core/core-loader/sandbox/build/libs/LoaderSandbox.jar
+```
+
+`--logged` checks how the stdlib got there: `through URLClassLoader.addURL` on Java 8, `through the JDK's trusted lookup` on 9 and later (Spigot 1.8.8 on 17), `Loaded library` where the server reads `libraries:` (Spigot 1.16.5 on Java 16, Paper). `-DIReallyKnowWhatIAmDoingISwear` skips old Spigot's 20-second wait over its age.
 
 On Paper, `boot-test.sh` then boots a second, empty server, waits for Paper to pause it, and runs every Xena plugin's `/<plugin> reload`. A paused server doesn't run the global region scheduler, so global work goes through the core's `Tasks`, which Paper keeps running.
 
@@ -29,8 +41,8 @@ On Paper, `boot-test.sh` then boots a second, empty server, waits for Paper to p
 
 | Folder | What it is |
 |---|---|
-| `core/` | Code every plugin shares, shaded into each jar; inside it, the rewrite's core (`core-common`, `core-api`, `core-jvm`, see [ROADMAP.md](ROADMAP.md)) |
-| `build-logic/` | The Gradle conventions: `xena.plugin` for every plugin, `xena.api` for its developer API; `xena.kmp`, `xena.kmp-api` and `xena.kotlin-jvm` for the rewrite's Kotlin modules |
+| `core/` | Code every plugin shares, shaded into each jar; inside it, the rewrite's core (`core-common`, `core-api`, `core-jvm`, see [ROADMAP.md](ROADMAP.md), and `core-loader`, the Java shim and library loader) |
+| `build-logic/` | The Gradle conventions: `xena.plugin` for every plugin, `xena.api` for its developer API; `xena.kmp`, `xena.kmp-api` and `xena.kotlin-jvm` for the rewrite's Kotlin modules, `xena.java8` for its Java one, `xena.fetched-libraries` for jars that download libraries at runtime |
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
 | `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/`, `xteleport/`, `xvote/`, `xbans/`, `xmoney/`, `xbackup/`, `xstats/` | The plugins, each with its own README |
 | `scripts/` | `affected.sh`, `boot-test.sh`, `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `release.ts` |
@@ -115,5 +127,5 @@ Each plugin's Modrinth and Hangar page is its `modrinth.md`. [`modrinth.yml`](.g
 
 ## Updates
 
-- **Dependencies:** [Renovate](https://docs.renovatebot.com) opens PRs on Monday mornings ([`renovate.json`](renovate.json), on top of the [org settings](https://github.com/xena-studios/.github/blob/main/renovate-config.json)). Minor and patch updates come in one PR that merges itself once CI passes; majors wait for review. WorldGuard and WorldEdit stay on the newest builds for Java 21, and xBackup's downloaded libraries (pinned by SHA-256) get a PR of their own, merged by hand. The minimum Paper in `gradle/libs.versions.toml` is never bumped automatically, because raising it drops servers.
+- **Dependencies:** [Renovate](https://docs.renovatebot.com) opens PRs on Monday mornings ([`renovate.json`](renovate.json), on top of the [org settings](https://github.com/xena-studios/.github/blob/main/renovate-config.json)). Minor and patch updates come in one PR that merges itself once CI passes; majors wait for review. WorldGuard and WorldEdit stay on the newest builds for Java 21, and xBackup's downloaded libraries (pinned by SHA-256) get a PR of their own, merged by hand. So does the rewrite's Kotlin, whose stdlib is downloaded too: its PR fails until `./gradlew build -PupdatePins` has updated `gradle/library-pins.txt`. The minimum Paper in `gradle/libs.versions.toml` is never bumped automatically, because raising it drops servers.
 - **New Minecraft versions:** [`minecraft.yml`](.github/workflows/minecraft.yml) runs on Mondays, or by hand (**Actions → New Minecraft → Run workflow**). When Paper has a stable build of a newer version, it opens a PR that adds it to `xena.gameVersions` and moves the boot tests and newest-API compile onto it. Merge it if the checks pass; Modrinth lists the new version from each plugin's next release.

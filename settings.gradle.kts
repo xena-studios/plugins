@@ -27,6 +27,10 @@ dependencyResolutionManagement {
             metadataSources { artifact() }
             content { includeModule("org.nodejs", "node") }
         }
+        // Spigot's API at the rewrite's floor (1.8.8), for the core's Java shim.
+        maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") {
+            content { includeModule("org.spigotmc", "spigot-api") }
+        }
         // WorldGuard and WorldEdit, which xPlots uses when they're installed.
         maven("https://maven.enginehub.org/repo/") {
             content {
@@ -44,6 +48,9 @@ include("core")
 // The rewrite's core (ROADMAP.md), beside today's until each plugin's rewrite replaces it:
 // shared logic for the JVM and wasmWasi, what plugin APIs share, and the JVM's side.
 include("core:core-common", "core:core-api", "core:core-jvm")
+// The library loader and the Java shim a plugin's main class extends (Java only: it runs
+// before the Kotlin stdlib is loaded), and a never-released plugin on it for boot tests.
+include("core:core-loader", "core:core-loader:sandbox")
 // A plugin that is never released: it boots the core on a real server in CI.
 include("sandbox")
 // Its API, and two plugins that use it, so CI checks that other plugins can use an API.

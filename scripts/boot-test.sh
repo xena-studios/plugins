@@ -4,7 +4,9 @@
 # output never appeared, or the server didn't start and stop cleanly.
 #
 #   scripts/boot-test.sh [--project paper|folia] [--version 1.21.11] \
-#     [--checks file]... [--run "console command"]... [--expect "log text"]... plugin.jar...
+#     [--checks file]... [--run "console command"]... [--expect "log text"]... \
+#     [--logged "log text"]... plugin.jar...
+#   scripts/boot-test.sh --server spigot-1.8.8.jar [--java <JDK home>] [--jvm -Dflag]... ...
 #
 # Steps run in order. Each --expect waits for text logged after the --run before
 # it. A checks file holds the same steps, one per line: "run: <command>",
@@ -22,18 +24,31 @@
 # expects it to finish (#67, #69). Folia never pauses.
 #
 # Server jars, Mojang's jar and libraries are cached in .cache/servers/.
+#
+# --server boots a server jar you already have instead of downloading Paper's, such as
+# Spigot or CraftBukkit from BuildTools, which can't be downloaded (the core's loader is
+# boot-tested on Spigot 1.8.8 and 1.16.5 this way); its steps run unless they're marked
+# "paper " or "folia ", and there's no paused boot. --java picks the JDK (a JDK home: Spigot
+# 1.8.8 on Java 8, 1.16.5 on 16), and --jvm passes a flag to it.
 set -euo pipefail
 
 project=paper
 version=1.21.11
+server_jar=""
+java_home=""
+jvm=()
 steps=()
 jars=()
 while (($#)); do
   case "$1" in
     --project) project=$2; shift 2 ;;
     --version) version=$2; shift 2 ;;
+    --server) server_jar=$(cd "$(dirname "$2")" && pwd)/$(basename "$2"); project=local; shift 2 ;;
+    --java) java_home=$2; shift 2 ;;
+    --jvm) jvm+=("$2"); shift 2 ;;
     --run) steps+=("run: $2"); shift 2 ;;
     --expect) steps+=("expect: $2"); shift 2 ;;
+    --logged) steps+=("logged: $2"); shift 2 ;;
     --allow) steps+=("allow: $2"); shift 2 ;;
     --checks)
       while IFS= read -r line || [[ -n $line ]]; do
@@ -48,20 +63,31 @@ done
 
 root=$(cd "$(dirname "$0")/.." && pwd)
 cache="$root/.cache/servers"
+java=${java_home:+$java_home/bin/}java
+# Paper's flag; servers before 1.9 only take vanilla's argument.
+nogui=--nogui
+[[ -z $server_jar ]] || nogui=nogui
+mkdir -p "$cache"
+
+if [[ -n $server_jar ]]; then
+  [[ -f $server_jar ]] || { echo "no server jar at $server_jar" >&2; exit 2; }
+  version=$(basename "$server_jar" .jar)
+fi
 base="$root/build/boot/$project-$version"
 
 # ---- the server jar, verified against Paper's checksum ----
-mkdir -p "$cache"
-build=$(curl -fsS "https://fill.papermc.io/v3/projects/$project/versions/$version/builds/latest")
-url=$(grep -o '"url":"[^"]*"' <<<"$build" | head -1 | cut -d'"' -f4)
-sha=$(grep -o '"sha256":"[^"]*"' <<<"$build" | head -1 | cut -d'"' -f4)
-server_jar="$cache/${url##*/}"
-if [[ ! -f $server_jar ]]; then
-  echo "Downloading ${url##*/}"
-  curl -fsSL -o "$server_jar.part" "$url"
-  mv "$server_jar.part" "$server_jar"
+if [[ -z $server_jar ]]; then
+  build=$(curl -fsS "https://fill.papermc.io/v3/projects/$project/versions/$version/builds/latest")
+  url=$(grep -o '"url":"[^"]*"' <<<"$build" | head -1 | cut -d'"' -f4)
+  sha=$(grep -o '"sha256":"[^"]*"' <<<"$build" | head -1 | cut -d'"' -f4)
+  server_jar="$cache/${url##*/}"
+  if [[ ! -f $server_jar ]]; then
+    echo "Downloading ${url##*/}"
+    curl -fsSL -o "$server_jar.part" "$url"
+    mv "$server_jar.part" "$server_jar"
+  fi
+  echo "$sha  $server_jar" | shasum -a 256 -c - >/dev/null
 fi
-echo "$sha  $server_jar" | shasum -a 256 -c - >/dev/null
 
 # ---- the plugins ----
 # Our plugins' names, to spot their warnings in the log. Folia gets only the
@@ -137,7 +163,7 @@ ${2:+pause-when-empty-seconds=$2}
 EOF
 
   mkfifo "$dir/stdin"
-  (cd "$dir" && exec java -Xms512M -Xmx1G -jar "$server_jar" --nogui <stdin >"$log" 2>&1) &
+  (cd "$dir" && exec "$java" -Xms512M -Xmx1G ${jvm[@]+"${jvm[@]}"} -jar "$server_jar" "$nogui" <stdin >"$log" 2>&1) &
   pid=$!
   exec 3>"$dir/stdin"
 
@@ -176,11 +202,13 @@ EOF
   for text in "${allowed[@]+"${allowed[@]}"}"; do
     grep -qF -- "$text" "$log" || fail "an allowed error or warning never appeared: \"$text\""
   done
-  errors=$(unexpected "$(grep -E '^\[[0-9:]+ ERROR\]' "$log" || true)")
+  # "[12:00:00 ERROR]: ", or "[12:00:00] [Server thread/ERROR]: " on Spigot 1.13 to 1.16.
+  level='^\[[0-9:]+(\] \[[^]]*/| )'
+  errors=$(unexpected "$(grep -E "${level}ERROR\]" "$log" || true)")
   [[ -z $errors ]] || fail "the log has errors:"$'\n'"$errors"
-  warnings=$(unexpected "$(grep -E "^\[[0-9:]+ WARN\]: \[($ours)\]" "$log" || true)")
+  warnings=$(unexpected "$(grep -E "${level}WARN\]: \[($ours)\]" "$log" || true)")
   [[ -z $warnings ]] || fail "our plugins logged warnings:"$'\n'"$warnings"
-  grep -E "^\[[0-9:]+ INFO\]: \[($ours)\]" "$log" || true
+  grep -E "${level}INFO\]: \[($ours)\]" "$log" || true
 }
 
 # Drops lines an "allow:" step expects; each of those must have been logged.

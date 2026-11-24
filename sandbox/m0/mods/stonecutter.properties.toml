@@ -1,0 +1,27 @@
+mod.id = "xenaspike"
+mod.version = "0.0.1"
+
+deps.fabric_loader = "0.20.1"
+# fabric-language-kotlin provides the Kotlin stdlib at runtime; its Kotlin must match ours.
+deps.flk = "1.14.2+kotlin.2.4.21"
+loomx.loom_version = "1.19-SNAPSHOT"
+
+["1.20.1"]
+mod.mc_compat = "~1.20.1"
+deps.fabric_api = "0.92.12+1.20.1"
+# The last adventure-platform-fabric for 1.20/1.20.1.
+deps.adventure = "5.9.0"
+# No Cloud 2 build targets 1.20.1: beta.1 was built for 1.20.4 but declares ">1.18.2".
+deps.cloud = "2.0.0-beta.1"
+
+["1.21.11"]
+mod.mc_compat = "~1.21.11"
+deps.fabric_api = "0.141.6+1.21.11"
+deps.adventure = "6.8.0"
+deps.cloud = "2.0.0-beta.15"
+
+["26.3"]
+mod.mc_compat = "~26.3"
+deps.fabric_api = "0.167.0+26.3"
+deps.adventure = "7.2.0"
+deps.cloud = "2.1.0"

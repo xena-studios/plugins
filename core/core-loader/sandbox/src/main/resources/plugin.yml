@@ -1,0 +1,12 @@
+name: LoaderSandbox
+version: '${version}'
+main: co.xenastudios.loadersandbox.LoaderSandboxBootstrap
+# Ignored before 1.13; stops 1.13+ from treating the plugin as legacy.
+api-version: '1.13'
+description: A Kotlin plugin on the core's Java shim, for boot tests. Never released.
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+commands:
+  loadersandbox:
+    description: Runs Kotlin code and says where the stdlib came from.

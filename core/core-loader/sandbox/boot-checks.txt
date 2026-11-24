@@ -1,0 +1,6 @@
+# The Kotlin entry point loaded through the core's Java shim, on any Bukkit-family server.
+# Each server's own way of providing the stdlib is checked with --expect (see CONTRIBUTING.md).
+logged: Kotlin entry point loaded
+run: loadersandbox b A
+expect: LOADER PASS kotlin=2.4.21
+expect: squares=[1, 4, 9, 16, 25] args=[A,b]

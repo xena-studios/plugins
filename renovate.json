@@ -28,6 +28,13 @@
       "enabled": false
     },
     {
+      "description": "The oldest Bukkit API the rewrite runs on (spigot-floor in gradle/libs.versions.toml), which the core's Java shim compiles against so it uses nothing newer. It's the floor, never bumped.",
+      "matchPackageNames": [
+        "org.spigotmc:spigot-api"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Third-party actions run with the repo's secrets, so they're pinned to a commit (CodeQL flags tags, which can be moved); Renovate keeps the pins current. GitHub's own actions stay on tags.",
       "matchManagers": [
         "github-actions"
@@ -48,7 +55,7 @@
       "automerge": true
     },
     {
-      "description": "The rewrite's Kotlin (gradle/libs.versions.toml). Servers before 1.15 share the first Xena plugin's stdlib, so every plugin moves to a new Kotlin together, by hand (DECISIONS.md).",
+      "description": "The rewrite's Kotlin (gradle/libs.versions.toml). Servers before 1.15 share the first Xena plugin's stdlib, so every plugin moves to a new Kotlin together, by hand (DECISIONS.md). The stdlib is downloaded at runtime and checked against its SHA-256 in gradle/library-pins.txt, so the build fails until the bump also updates that (-PupdatePins).",
       "matchPackageNames": [
         "org.jetbrains.kotlin:**",
         "org.jetbrains.kotlin.**"

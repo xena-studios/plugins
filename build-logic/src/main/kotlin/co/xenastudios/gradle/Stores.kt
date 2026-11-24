@@ -27,9 +27,12 @@ object Stores {
     fun modrinthHas(project: String, version: String, token: String): Boolean =
         exists("Modrinth", get("${MODRINTH_API}project/${enc(project)}/version/${enc(version)}", "Authorization" to token))
 
-    fun hangarHas(project: String, version: String, apiKey: String): Boolean {
-        // Hangar trades the API key for a short-lived token; with it, a project still waiting
-        // for approval is visible too.
+    fun hangarHas(project: String, version: String, apiKey: String): Boolean =
+        // With the short-lived token, a project still waiting for approval is visible too.
+        exists("Hangar", get("${HANGAR_API}projects/${enc(project)}/versions/${enc(version)}", "Authorization" to hangarJwt(apiKey)))
+
+    /** Hangar trades the API key for a short-lived token, which its other calls take. */
+    fun hangarJwt(apiKey: String): String {
         val auth = send(
             HttpRequest.newBuilder(URI("${HANGAR_API}authenticate?apiKey=${enc(apiKey)}"))
                 .POST(HttpRequest.BodyPublishers.noBody()),
@@ -37,8 +40,7 @@ object Stores {
         if (auth.statusCode() != 200) {
             throw GradleException("Hangar refused the API key (HTTP ${auth.statusCode()}): ${auth.body()}")
         }
-        val jwt = (JsonSlurper().parseText(auth.body()) as Map<*, *>)["token"] as String
-        return exists("Hangar", get("${HANGAR_API}projects/${enc(project)}/versions/${enc(version)}", "Authorization" to jwt))
+        return (JsonSlurper().parseText(auth.body()) as Map<*, *>)["token"] as String
     }
 
     enum class VoxelState { HAS_VERSION, MISSING_VERSION, AWAITING_APPROVAL }

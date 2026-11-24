@@ -1,0 +1,17 @@
+[
+  {"id": 14417, "gameVersionTypeID": 1, "name": "1.21.11", "slug": "1-21-11"},
+  {"id": 14390, "gameVersionTypeID": 1, "name": "1.21.10", "slug": "1-21-10"},
+  {"id": 11700, "gameVersionTypeID": 1, "name": "1.20.6", "slug": "1-20-6"},
+  {"id": 4545, "gameVersionTypeID": 1, "name": "1.8.8", "slug": "1-8-8"},
+  {"id": 14406, "gameVersionTypeID": 77784, "name": "1.21.11", "slug": "1-21-11"},
+  {"id": 14380, "gameVersionTypeID": 77784, "name": "1.21.10", "slug": "1-21-10"},
+  {"id": 9990, "gameVersionTypeID": 75125, "name": "1.20.1", "slug": "1-20-1"},
+  {"id": 14900, "gameVersionTypeID": 79620, "name": "26.3", "slug": "26-3"},
+  {"id": 7499, "gameVersionTypeID": 68441, "name": "Fabric", "slug": "fabric"},
+  {"id": 7498, "gameVersionTypeID": 68441, "name": "Forge", "slug": "forge"},
+  {"id": 10150, "gameVersionTypeID": 68441, "name": "NeoForge", "slug": "neoforge"},
+  {"id": 9638, "gameVersionTypeID": 75208, "name": "Client", "slug": "client"},
+  {"id": 9639, "gameVersionTypeID": 75208, "name": "Server", "slug": "server"},
+  {"id": 8326, "gameVersionTypeID": 2, "name": "Java 17", "slug": "java-17"},
+  {"id": 11135, "gameVersionTypeID": 2, "name": "Java 21", "slug": "java-21"}
+]

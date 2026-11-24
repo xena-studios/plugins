@@ -1,40 +1,61 @@
 name: Release
 
-# Push a tag named <module>-v<version>, such as xutilities-v2.0.0, to publish
-# that plugin to Modrinth, Hangar, voxel.shop and GitHub, and its API (if it has
-# one) to Maven Central. Hangar and voxel.shop are skipped for a plugin that has
-# no project there yet (xena.hangarId, xena.voxelId). The version must match the
-# module's build.gradle.kts, and <module>/CHANGELOG.md must have a "## <version>"
-# section.
-# `node scripts/release.ts --tag <pr-number>` pushes these once a release PR is merged
-# (CONTRIBUTING.md, "Releasing"). Last, the site is redeployed.
+# The rewrite's release (ROADMAP.md, "Build, CI and releases"). Push a tag named
+# <plugin>-v<version> on main, such as xbans-v2.0.0, to publish every jar that plugin's
+# build declares (xenaRelease in build-logic's xena.release) to GitHub Releases, Modrinth,
+# Hangar, voxel.shop and CurseForge, with checksums and build attestations, and to write the
+# SpigotMC and BuiltByBit update posts to paste. A store the plugin has no project on yet is
+# skipped. The version must match the plugin's build, and its CHANGELOG.md must have a
+# "## <version>" section.
+#
+# Run it by hand for a dry run: everything but the uploads, from the branch it's run on, with
+# each store's request printed in the run's summary. The tag needn't exist. Unticking
+# "dry-run" releases an existing tag again, as its push would.
+#
+# Today's plugins release from `maintenance`: a tag on a commit there runs that branch's own
+# copy of this file.
 on:
   push:
     tags: ["*-v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "<plugin>-v<version>, such as loadersandbox-v0.0.0"
+        required: true
+        type: string
+      dry-run:
+        description: "Send nothing: print what each store would get"
+        type: boolean
+        default: true
 
-# Nothing by default; each job asks for what it needs. The job that builds (and so
-# runs the project's own Gradle scripts) can only read the repo; the job that can
-# write to it runs no project code.
+# Nothing by default; each job asks for what it needs. The jobs that run the project's own
+# Gradle scripts can only read the repo, and each store's job gets only its own token; the
+# jobs that can write (the GitHub release, the attestations) run no project code.
 permissions: {}
 
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-26.04
-    # A hung build or upload fails the job instead of holding a runner for six hours. Generous,
-    # since Maven Central can take a while to accept a release.
-    timeout-minutes: 60
-    environment: release
+    timeout-minutes: 30
     permissions:
       contents: read
     outputs:
-      module: ${{ steps.tag.outputs.module }}
-      version: ${{ steps.tag.outputs.version }}
+      project: ${{ steps.tag.outputs.project }}
+      dir: ${{ steps.tag.outputs.dir }}
+      tag: ${{ steps.tag.outputs.tag }}
+      sha: ${{ steps.tag.outputs.sha }}
+      dry-run: ${{ steps.tag.outputs.dry-run }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-          # All of main, to check the tag is on it.
+          # All of main, to check the tag is on it. A dispatched real release checks out its tag.
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry-run && format('refs/tags/{0}', inputs.tag) || '' }}
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -44,124 +65,219 @@ jobs:
           cache-read-only: true
       - name: Read the tag
         id: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
         run: |
-          tag=${GITHUB_REF_NAME}
-          module=${tag%-v*}
+          tag=${INPUT_TAG:-$GITHUB_REF_NAME}
+          dry_run=$([[ $INPUT_DRY_RUN == true ]] && echo true || echo false)
+          plugin=${tag%-v*}
           version=${tag##*-v}
-          [[ $module =~ ^[a-z0-9-]+$ && $version =~ ^[0-9A-Za-z.+-]+$ ]] \
-            || { echo "::error::$tag isn't <module>-v<version>"; exit 1; }
-          [[ -f $module/build.gradle.kts && $module != core && $module != sandbox ]] \
-            || { echo "::error::$module isn't a releasable plugin"; exit 1; }
-          built=$(./gradlew -q ":$module:properties" --property version | sed -n 's/^version: //p')
+          [[ $tag =~ ^[a-z0-9-]+-v[0-9A-Za-z.+-]+$ ]] \
+            || { echo "::error::$tag isn't <plugin>-v<version>"; exit 1; }
+          # Each project on xena.release prints "<plugin> <path> <version> <release folder>".
+          info=$(./gradlew -q releaseInfo)
+          read -r _ project built dir <<<"$(awk -v p="$plugin" '$1 == p' <<<"$info")"
+          [[ -n $project ]] \
+            || { echo "::error::no project on main releases $plugin (xena.release); today's plugins release from maintenance"; exit 1; }
           [[ $built == "$version" ]] \
-            || { echo "::error::the tag says $version but $module/build.gradle.kts says $built"; exit 1; }
+            || { echo "::error::the tag says $version but $project's build says $built"; exit 1; }
           # Only what's been reviewed and merged is released: a tag on a branch's commit isn't.
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
-            || { echo "::error::$tag isn't on main; release from a merged commit"; exit 1; }
-          echo "module=$module" >>"$GITHUB_OUTPUT"
-          echo "version=$version" >>"$GITHUB_OUTPUT"
-      - name: Read the changelog
-        env:
-          MODULE: ${{ steps.tag.outputs.module }}
-          VERSION: ${{ steps.tag.outputs.version }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/release"
-          scripts/changelog.sh "$MODULE/CHANGELOG.md" "$VERSION" >"$RUNNER_TEMP/release/changelog.md"
-          # For the Modrinth version's changelog. A random delimiter, so no line of the
-          # changelog can end the value early and set other variables.
-          delimiter="CHANGELOG_$(openssl rand -hex 16)"
+          if [[ $dry_run == false ]]; then
+            git merge-base --is-ancestor HEAD origin/main \
+              || { echo "::error::$tag isn't on main; release from a merged commit"; exit 1; }
+          fi
           {
-            echo "CHANGELOG<<$delimiter"
-            cat "$RUNNER_TEMP/release/changelog.md"
-            echo "$delimiter"
-          } >>"$GITHUB_ENV"
-      - name: Build
+            echo "tag=$tag"
+            echo "project=$project"
+            echo "dir=$dir"
+            echo "sha=$(git rev-parse HEAD)"
+            echo "dry-run=$dry_run"
+          } >>"$GITHUB_OUTPUT"
+      - name: Build every jar
+        # The jars, SHA256SUMS, release.json, the changelog section and the update posts, in
+        # the project's build/release. Reads the brand catalog for the store listing.
         env:
-          MODULE: ${{ steps.tag.outputs.module }}
-          VERSION: ${{ steps.tag.outputs.version }}
-        run: |
-          ./gradlew ":$MODULE:build"
-          jar="$MODULE/build/libs/$MODULE-$VERSION.jar"
-          cp "$jar" "$RUNNER_TEMP/release/"
-          # Titled with the plugin's own name, such as "xUtilities 2.0.0", from its descriptor.
-          echo "$(unzip -p "$jar" paper-plugin.yml | sed -n 's/^name: //p') $VERSION" >"$RUNNER_TEMP/release/title.txt"
-      - name: Publish the API to Maven Central
-        # As co.xenastudios.<module>:<module>-api, signed, through the Central Portal, and
-        # released straight away: the tag is the decision. First, so a POM or signature
-        # Central refuses stops the release before anything is public. A rerun skips it
-        # once that version is on Central (that takes up to about 30 minutes).
+          PROJECT: ${{ steps.tag.outputs.project }}
+          DRY_RUN: ${{ steps.tag.outputs.dry-run }}
+        run: ./gradlew "$PROJECT:releaseAssemble" -Pxena.release.dryRun="$DRY_RUN"
+      - name: Summarize
         env:
-          MODULE: ${{ steps.tag.outputs.module }}
-          VERSION: ${{ steps.tag.outputs.version }}
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          DIR: ${{ steps.tag.outputs.dir }}
         run: |
-          if [[ ! -f $MODULE/api/build.gradle.kts ]]; then
-            echo "$MODULE has no API"; exit 0
-          fi
-          for secret in mavenCentralUsername mavenCentralPassword signingInMemoryKey signingInMemoryKeyPassword; do
-            var="ORG_GRADLE_PROJECT_$secret"
-            [[ -n ${!var} ]] || { echo "::error::the release environment is missing the secret for $secret"; exit 1; }
+          cat "$DIR/summary.md" >>"$GITHUB_STEP_SUMMARY"
+          for post in "$DIR"/*-update.txt; do
+            [[ -f $post ]] || continue
+            { echo; echo '```text'; cat "$post"; echo '```'; } >>"$GITHUB_STEP_SUMMARY"
           done
-          url="https://repo1.maven.org/maven2/co/xenastudios/$MODULE/$MODULE-api/$VERSION/$MODULE-api-$VERSION.pom"
-          if curl -sfI "$url" >/dev/null; then
-            echo "$MODULE-api $VERSION is already on Maven Central"; exit 0
-          fi
-          ./gradlew ":$MODULE:api:publishAndReleaseToMavenCentral"
-      # Each store skips a version it already has, so a rerun after one fails picks up
-      # where it stopped.
-      - name: Publish to Modrinth
-        # The version, then the project page from <module>/modrinth.md.
-        env:
-          MODULE: ${{ steps.tag.outputs.module }}
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-        run: ./gradlew ":$MODULE:modrinth" ":$MODULE:modrinthSyncBody"
-      - name: Publish to Hangar
-        # The version, then the project page, also from <module>/modrinth.md.
-        env:
-          MODULE: ${{ steps.tag.outputs.module }}
-          HANGAR_API_TOKEN: ${{ secrets.HANGAR_API_TOKEN }}
-        run: ./gradlew ":$MODULE:publishPluginPublicationToHangar" ":$MODULE:syncAllPagesToHangar"
-      - name: Publish to voxel.shop
-        # The version, with the changelog as its update post. voxel.shop's API can't edit
-        # the resource page, so that's kept by hand.
-        env:
-          MODULE: ${{ steps.tag.outputs.module }}
-          VOXEL_API_KEY: ${{ secrets.VOXEL_API_KEY }}
-        run: ./gradlew ":$MODULE:voxel"
       - uses: actions/upload-artifact@v7
         with:
           name: release
-          path: ${{ runner.temp }}/release/
-          retention-days: 7
+          path: ${{ steps.tag.outputs.dir }}/
+          if-no-files-found: error
+          retention-days: 30
 
+  # SLSA build provenance for every jar, from the bytes the build job made.
+  attest:
+    needs: build
+    if: needs.build.outputs.dry-run == 'false'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      attestations: write
+    steps:
+      # No checkout: this job only signs what the build job made.
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: release
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: release/*.jar
+
+  # One job per store, each with only its own token, so a store that fails can be rerun alone
+  # (re-run failed jobs) and a build script can't reach the other stores' tokens. Each store
+  # task first asks whether the store has the version already, except CurseForge, which
+  # can't say.
+  stores:
+    needs: [build, attest]
+    if: needs.build.outputs.dry-run == 'false'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    environment: release
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        store: [modrinth, hangar, voxel, curseforge-bukkit, curseforge-mods, curseforge-hytale]
+        include:
+          - { store: modrinth, task: releaseModrinth }
+          - { store: hangar, task: releaseHangar }
+          - { store: voxel, task: releaseVoxel }
+          - { store: curseforge-bukkit, task: releaseCurseForgeBukkit }
+          - { store: curseforge-mods, task: releaseCurseForgeMods }
+          - { store: curseforge-hytale, task: releaseCurseForgeHytale }
+    env:
+      MODRINTH_TOKEN: ${{ matrix.store == 'modrinth' && secrets.MODRINTH_TOKEN || '' }}
+      HANGAR_API_TOKEN: ${{ matrix.store == 'hangar' && secrets.HANGAR_API_TOKEN || '' }}
+      VOXEL_API_KEY: ${{ matrix.store == 'voxel' && secrets.VOXEL_API_KEY || '' }}
+      CURSEFORGE_TOKEN: ${{ startsWith(matrix.store, 'curseforge-') && secrets.CURSEFORGE_TOKEN || '' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ needs.build.outputs.sha }}
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: true
+      # The jars the build job checksummed and attested, where the store tasks read them.
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: ${{ needs.build.outputs.dir }}
+      - name: Check the jars
+        working-directory: ${{ needs.build.outputs.dir }}
+        run: sha256sum -c SHA256SUMS
+      - name: Publish to ${{ matrix.store }}
+        env:
+          PROJECT: ${{ needs.build.outputs.project }}
+          TASK: ${{ matrix.task }}
+        run: ./gradlew "$PROJECT:$TASK"
+
+  # A dry run: every store's task, sending nothing and with no token, each printing the
+  # request it would send. No environment, so it needs no approval.
+  dry-run:
+    needs: build
+    if: needs.build.outputs.dry-run == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ needs.build.outputs.sha }}
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: ${{ needs.build.outputs.dir }}
+      - name: Check the jars
+        working-directory: ${{ needs.build.outputs.dir }}
+        run: sha256sum -c SHA256SUMS
+      - name: Publish, sending nothing
+        env:
+          PROJECT: ${{ needs.build.outputs.project }}
+        run: ./gradlew "$PROJECT:releasePublish" -Pxena.release.dryRun=true
+      - name: Summarize
+        env:
+          DIR: ${{ needs.build.outputs.dir }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          {
+            echo "## Dry run of $TAG: nothing was sent"
+            echo
+            echo "GitHub Releases would get a release $TAG with:"
+            echo
+            for file in "$DIR"/*.jar "$DIR"/SHA256SUMS "$DIR"/*-update.txt; do
+              if [[ -f $file ]]; then echo "- ${file##*/}"; fi
+            done
+            for report in "$DIR"/dry-run/*.txt; do
+              echo
+              echo '```text'
+              cat "$report"
+              echo '```'
+            done
+          } >>"$GITHUB_STEP_SUMMARY"
+
+  # The GitHub release: every jar, the checksums and the update posts. Runs no project code
+  # (no checkout, no Gradle), so it's the only job that can write to the repo.
   github:
-    needs: publish
+    needs: [build, attest]
+    if: needs.build.outputs.dry-run == 'false'
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
-      # No checkout: this job only uploads what the publish job built.
       - uses: actions/download-artifact@v8
         with:
           name: release
           path: release
       - name: Publish to GitHub
+        working-directory: release
         env:
           GH_TOKEN: ${{ github.token }}
-          MODULE: ${{ needs.publish.outputs.module }}
-          VERSION: ${{ needs.publish.outputs.version }}
+          TAG: ${{ needs.build.outputs.tag }}
         run: |
+          sha256sum -c SHA256SUMS
+          files=(*.jar SHA256SUMS)
+          for post in *-update.txt; do if [[ -f $post ]]; then files+=("$post"); fi; done
+          # A rerun replaces the files of a release the first run created.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber "${files[@]}"
+            exit 0
+          fi
           prerelease=()
-          [[ $VERSION == *-* ]] && prerelease=(--prerelease)
-          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-            --title "$(cat release/title.txt)" \
-            --notes-file release/changelog.md \
+          [[ $(jq -r .type release.json) != release ]] && prerelease=(--prerelease)
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "$(cat title.txt)" \
+            --notes-file changelog.md \
             "${prerelease[@]}" \
-            "release/$MODULE-$VERSION.jar"
+            "${files[@]}"
 
   # Redeploys the plugin site once the release is out, so its version info is current.
   # Only starts the Docs workflow: no checkout and no project code, and the one

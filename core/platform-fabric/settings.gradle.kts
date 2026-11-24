@@ -15,7 +15,9 @@ pluginManagement {
     val catalog = file("../../gradle/libs.versions.toml").readLines()
     fun version(name: String) = catalog.first { it.startsWith("$name = ") }.substringAfter('"').substringBefore('"')
     repositories {
-        mavenCentral()
+        // Google's mirror of Maven Central in Central's place, as in the root build (its
+        // settings.gradle.kts); the plugin portal sends on to Central what the mirror lacks.
+        maven("https://maven-central.storage-download.googleapis.com/maven2/") { name = "MavenCentralMirror" }
         gradlePluginPortal()
         maven("https://maven.fabricmc.net/") { name = "Fabric" }
         maven("https://maven.kikugie.dev/releases") { name = "KikuGie" }
@@ -51,6 +53,23 @@ stonecutter {
 }
 
 rootProject.name = "platform-fabric"
+
+// Google's mirror of Maven Central in place of Central for every project here, as in the root
+// build. Not ahead of every repository: Gradle takes a module's files from the repository that
+// had its metadata, and Mojang's libraries repository (which Loom adds before Central) has
+// classifiers Central lacks for modules both list, such as LWJGL's natives-macos-patch. So each
+// Central that Loom or a build script adds reads the mirror instead, and Central itself goes
+// last, for anything the mirror hasn't caught up with yet.
+gradle.lifecycle.beforeProject {
+    repositories.withType<MavenArtifactRepository>().configureEach {
+        if (url.toString().trimEnd('/') == "https://repo.maven.apache.org/maven2") {
+            url = uri("https://maven-central.storage-download.googleapis.com/maven2/")
+        }
+    }
+}
+gradle.lifecycle.afterProject {
+    repositories.maven("https://repo1.maven.org/maven2/") { name = "MavenCentralFallback" }
+}
 
 // The root build's catalog, which build-logic's conventions read (R8's version among them).
 dependencyResolutionManagement {

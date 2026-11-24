@@ -7,7 +7,7 @@ name: Plugins
 # main and runs by hand check everything.
 on:
   push:
-    branches: [main, "1.x"]
+    branches: [main, "maintenance"]
     paths: ["**", "!docs/**", "docs/src/generated/**", "!**.md", "!.github/workflows/docs.yml"]
   pull_request:
   workflow_dispatch:

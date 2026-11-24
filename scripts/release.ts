@@ -22,9 +22,9 @@
 // branch but doesn't push it or open the pull request.
 //
 // The second, after the pull request is merged, reads each plugin's version and
-// changelog at the merge commit on 1.x, checks the Plugins workflow passed on exactly
+// changelog at the merge commit on maintenance, checks the Plugins workflow passed on exactly
 // that commit, and pushes an annotated <plugin>-v<version> tag for each, one at a time.
-// Given plugin ids instead of a pull request number, it tags 1.x's latest commit.
+// Given plugin ids instead of a pull request number, it tags maintenance's latest commit.
 //
 // Only node: built-ins, so it runs with plain Node 24 (which runs TypeScript), git and gh.
 import { execFileSync } from "node:child_process";
@@ -130,7 +130,7 @@ function requireClean() {
 
 function fetchOrigin() {
   try {
-    git("fetch", "--quiet", "--tags", "origin", "1.x");
+    git("fetch", "--quiet", "--tags", "origin", "maintenance");
   } catch (e: any) {
     console.warn(`release: couldn't fetch from origin, so the tags may be out of date: ${e.message}`);
   }
@@ -269,7 +269,7 @@ function release(args: string[], dryRun: boolean, push: boolean) {
   }
   if (problems.length) fail(...problems, "nothing was changed");
   if (plans.every((p) => !p.edits.length)) {
-    fail("nothing needs changing, so there's no pull request to open; tag 1.x as it is:", `node scripts/release.ts --tag ${ids.join(" ")}`);
+    fail("nothing needs changing, so there's no pull request to open; tag maintenance as it is:", `node scripts/release.ts --tag ${ids.join(" ")}`);
   }
 
   const title = `release: ${list(plans.map((p) => `${p.plugin.name} ${p.to}`))}`;
@@ -287,8 +287,8 @@ function release(args: string[], dryRun: boolean, push: boolean) {
 
   if (push) {
     const head = git("rev-parse", "HEAD");
-    const base = git("rev-parse", "origin/1.x");
-    if (head !== base) fail(`HEAD (${head.slice(0, 7)}) isn't origin/1.x (${base.slice(0, 7)}); release from the latest 1.x: git switch --detach origin/1.x`);
+    const base = git("rev-parse", "origin/maintenance");
+    if (head !== base) fail(`HEAD (${head.slice(0, 7)}) isn't origin/maintenance (${base.slice(0, 7)}); release from the latest maintenance: git switch --detach origin/maintenance`);
     if (git("ls-remote", "--heads", "origin", branch)) fail(`origin already has a ${branch} branch`);
   }
   if (git("branch", "--list", branch)) fail(`there's already a ${branch} branch here; delete it first`);
@@ -317,7 +317,7 @@ function release(args: string[], dryRun: boolean, push: boolean) {
   const body = [
     `Releases ${list(plans.map((p) => `${p.plugin.name} ${p.to}`))}.`,
     "",
-    "Once this is merged and 1.x's Plugins workflow has passed on the merge commit, tag it:",
+    "Once this is merged and maintenance's Plugins workflow has passed on the merge commit, tag it:",
     "",
     "```sh",
     `node scripts/release.ts --tag <this pull request's number>`,
@@ -325,7 +325,7 @@ function release(args: string[], dryRun: boolean, push: boolean) {
     "",
     ...plans.flatMap((p) => [`## ${p.plugin.name} ${p.to}`, "", p.notes.replace(/^(#+) /gm, "#$1 "), ""]),
   ].join("\n");
-  const url = run("gh", ["pr", "create", "--base", "1.x", "--head", branch, "--title", title, "--body-file", "-"], body);
+  const url = run("gh", ["pr", "create", "--base", "maintenance", "--head", branch, "--title", title, "--body-file", "-"], body);
   console.log(`opened ${url}`);
 }
 
@@ -365,17 +365,17 @@ function tag(args: string[], dryRun: boolean) {
     const number = args[0].replace("#", "");
     const pr = JSON.parse(run("gh", ["pr", "view", number, "--json", "state,mergeCommit,headRefName,baseRefName,url"]));
     if (pr.state !== "MERGED") fail(`${pr.url} is ${pr.state.toLowerCase()}, not merged`);
-    if (pr.baseRefName !== "1.x") fail(`${pr.url} was merged into ${pr.baseRefName}, not 1.x`);
+    if (pr.baseRefName !== "maintenance") fail(`${pr.url} was merged into ${pr.baseRefName}, not maintenance`);
     sha = pr.mergeCommit.oid;
     ids = releasedPlugins(pr.headRefName, sha);
   } else {
-    sha = git("rev-parse", "origin/1.x");
+    sha = git("rev-parse", "origin/maintenance");
     ids = args;
   }
   try {
-    git("merge-base", "--is-ancestor", sha, "origin/1.x");
+    git("merge-base", "--is-ancestor", sha, "origin/maintenance");
   } catch {
-    fail(`${sha.slice(0, 7)} isn't on 1.x`);
+    fail(`${sha.slice(0, 7)} isn't on maintenance`);
   }
 
   const problems: string[] = [];
@@ -396,12 +396,12 @@ function tag(args: string[], dryRun: boolean) {
     tags.push({ name, message: `${plugin.name} ${version}` });
   }
 
-  // Releases can't be taken back from Maven Central, so only from a commit 1.x's checks passed on.
+  // Releases can't be taken back from Maven Central, so only from a commit maintenance's checks passed on.
   const runs: { headSha: string; status: string; conclusion: string; url: string }[] = JSON.parse(
-    run("gh", ["run", "list", "--branch", "1.x", "--workflow", "Plugins", "--limit", "100", "--json", "headSha,status,conclusion,url"]),
+    run("gh", ["run", "list", "--branch", "maintenance", "--workflow", "Plugins", "--limit", "100", "--json", "headSha,status,conclusion,url"]),
   );
   const ci = runs.find((r) => r.headSha === sha);
-  if (!ci) problems.push(`the Plugins workflow hasn't run on ${sha.slice(0, 7)}; run it with: gh workflow run plugins.yml --ref 1.x`);
+  if (!ci) problems.push(`the Plugins workflow hasn't run on ${sha.slice(0, 7)}; run it with: gh workflow run plugins.yml --ref maintenance`);
   else if (ci.status !== "completed") problems.push(`the Plugins workflow is still ${ci.status.replace("_", " ")} on ${sha.slice(0, 7)}: ${ci.url}`);
   else if (ci.conclusion !== "success") problems.push(`the Plugins workflow ended in ${ci.conclusion} on ${sha.slice(0, 7)}: ${ci.url}`);
   if (problems.length) fail(...problems, "no tags were pushed");

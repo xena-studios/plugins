@@ -86,6 +86,8 @@ include("core:core-testing:sample")
 include("core:core-fuzz")
 // xSample as a Bukkit plugin on platform-bukkit and the loader's shim, for boot tests.
 include("core:core-testing:sample:bukkit")
+// xTwin, a second plugin on its own relocated core, booted beside xSample in the family test.
+include("core:core-testing:twin", "core:core-testing:twin:bukkit")
 // A plugin that is never released: it boots the core on a real server in CI.
 include("sandbox")
 // Its API, and two plugins that use it, so CI checks that other plugins can use an API.

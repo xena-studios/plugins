@@ -8,9 +8,9 @@
 // repositories to its projects, which the root build forbids. The core's modules come from the
 // root build, included below, so they're built from source here too.
 pluginManagement {
-    // The rewrite's one Kotlin version, from the root build's catalog, so the two never differ.
-    val kotlinVersion = file("../../gradle/libs.versions.toml").readLines()
-        .first { it.startsWith("kotlin = ") }.substringAfter('"').substringBefore('"')
+    // The rewrite's Kotlin and Shadow versions, from the root build's catalog, so the two never differ.
+    val catalog = file("../../gradle/libs.versions.toml").readLines()
+    fun version(name: String) = catalog.first { it.startsWith("$name = ") }.substringAfter('"').substringBefore('"')
     repositories {
         mavenCentral()
         gradlePluginPortal()
@@ -18,7 +18,9 @@ pluginManagement {
         maven("https://maven.kikugie.dev/releases") { name = "KikuGie" }
     }
     plugins {
-        kotlin("jvm") version kotlinVersion
+        kotlin("jvm") version version("kotlin")
+        // The family test's second mod relocates its core with it, as the Bukkit jars do.
+        id("com.gradleup.shadow") version version("shadow")
     }
 }
 
@@ -40,6 +42,8 @@ stonecutter {
         vcsVersion = "26.3"
         // xSample as a Fabric mod on this adapter, never released: a node per line, like these.
         branch("sandbox")
+        // xTwin, a second mod on its own relocated core, booted beside xSample in the family test.
+        branch("twin")
     }
 }
 
@@ -54,5 +58,6 @@ includeBuild("../..") {
             substitute(module("co.xenastudios.core:$module")).using(project(":core:$module"))
         }
         substitute(module("co.xenastudios.core:sample")).using(project(":core:core-testing:sample"))
+        substitute(module("co.xenastudios.core:twin")).using(project(":core:core-testing:twin"))
     }
 }

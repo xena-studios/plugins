@@ -45,6 +45,14 @@ core/core-testing/sample/bukkit/boot.sh folia 26.3 --java <JDK 25 home>
 core/core-testing/sample/bukkit/boot.sh spigot-1.8.8.jar --java <JDK 8 home>
 ```
 
+The Boot workflow runs these on every server the rewrite ships for, and on Fabric through `scripts/boot-fabric.sh`: per PR the touched platforms at their floor and newest, the whole matrix nightly. `scripts/server-jar.sh` gets the servers it boots with a jar: Spigot through BuildTools (`BUILDTOOLS_JAVA` is the JDK it runs on), and PandaSpigot, Leaf, Leaves, ShreddedPaper and Canvas from their own downloads. The family test boots xSample beside xTwin (`core/core-testing/twin`), a second plugin with its own relocated core, and checks they share the family's board, player cache and folder:
+
+```sh
+./gradlew :core:core-testing:twin:bukkit:assemble
+core/core-testing/sample/bukkit/boot.sh "$(scripts/server-jar.sh spigot 1.8.8 | sed -n 's/^jar=//p')" --java <JDK 8 home> \
+  --checks core/core-testing/twin/family-checks.txt core/core-testing/twin/bukkit/build/libs/XTwin.jar
+```
+
 ## How it fits together
 
 | Folder | What it is |
@@ -53,7 +61,7 @@ core/core-testing/sample/bukkit/boot.sh spigot-1.8.8.jar --java <JDK 8 home>
 | `build-logic/` | The Gradle conventions: `xena.plugin` for every plugin, `xena.api` for its developer API; `xena.kmp`, `xena.kmp-api` and `xena.kotlin-jvm` for the rewrite's Kotlin modules, `xena.java8` for its Java one, `xena.fetched-libraries` for jars that download libraries at runtime, `xena.r8` for a rewrite jar shrunk with R8 against its budget in `gradle/jar-budgets.txt` |
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
 | `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/`, `xteleport/`, `xvote/`, `xbans/`, `xmoney/`, `xbackup/`, `xstats/` | The plugins, each with its own README |
-| `scripts/` | `affected.sh`, `boot-test.sh`, `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `new-rewrite-plugin.ts` (a plugin in the rewrite's layout), `release.ts` |
+| `scripts/` | `affected.sh`, `boot-test.sh`, `boot-fabric.sh`, `server-jar.sh` (Spigot from BuildTools, and the forks' jars), `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `new-rewrite-plugin.ts` (a plugin in the rewrite's layout), `release.ts` |
 | `docs/` | plugins.xenastudios.co |
 
 A plugin extends `XenaPlugin`. It declares its config as records (`ConfigSpec`), and in `setup` says which commands and modules that config turns on. The core does the rest: registering on startup and on every reload, carrying old configs forward, the theme, the update checker and bStats.
@@ -89,7 +97,7 @@ These keep the plugins fast and dependable on a busy server. A change that break
 3. Add a line to the plugin's `CHANGELOG.md` under `## Unreleased`. Write it for server owners: what changed for them, not how.
 4. Run `./gradlew build` and open the PR.
 
-CI builds, tests, boot-tests on Paper and Folia, compiles against the newest Paper, and runs CodeQL. `main` requires `plugins-ok` and `docs-ok`. Each workflow skips what a change doesn't touch, so a docs-only PR doesn't wait for boot tests. On a PR, the plugins workflow builds, tests and boots only the plugins it changes and any that use them (`sandbox` uses xRewind's API, for example); a change to the core, `build-logic/`, `gradle/`, the root build files, `scripts/` or the workflow itself checks everything, as every push to `main` does. A change only to the rewrite's modules in `core/` builds and tests just those (on the JVM and on `wasmWasi`) and whatever uses them. To see what a PR would run: `git diff --name-only main | scripts/affected.sh`, with bash 4 or newer (macOS's own is 3.2). PRs and issues get labelled by plugin automatically.
+CI builds, tests, boot-tests on Paper and Folia, compiles against the newest Paper, and runs CodeQL. `main` requires `plugins-ok` and `docs-ok`, and `boot-ok` (the rewrite's boot matrix) once it's added. Each workflow skips what a change doesn't touch, so a docs-only PR doesn't wait for boot tests. On a PR, the plugins workflow builds, tests and boots only the plugins it changes and any that use them (`sandbox` uses xRewind's API, for example); a change to the core, `build-logic/`, `gradle/`, the root build files, `scripts/` or the workflow itself checks everything, as every push to `main` does. A change only to the rewrite's modules in `core/` builds and tests just those (on the JVM and on `wasmWasi`) and whatever uses them. To see what a PR would run: `git diff --name-only main | scripts/affected.sh`, with bash 4 or newer (macOS's own is 3.2). PRs and issues get labelled by plugin automatically.
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org) with the plugin as scope, or `core` for shared code: `fix(zchat): keep the reply target through a reload`, `feat(xlimbo): ...`, `docs: ...`, `build: ...`.
 

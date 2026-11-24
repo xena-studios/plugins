@@ -10,6 +10,8 @@
 #   compile  Gradle tasks for the newest-API compile; empty to skip it
 #   checks   boot-checks files the main boot runs; empty to skip it
 #   xmoney   true when xMoney's own boots run
+#   boot     the rewrite's platforms the Boot workflow boots xSample on, space-separated
+#            (bukkit, fabric); empty to skip them
 #
 # The rules:
 # - Anything everything is built on (today's core, build-logic/, gradle/, the root build
@@ -30,6 +32,10 @@
 #   the build files' project(":...") lines, so a new plugin needs no edit here. The
 #   conventions' own links (every plugin on :core and its own API) need none: the core
 #   means everything, and a plugin's API is in its folder.
+# - The rewrite's boot matrix (the Boot workflow) boots a platform when its adapter, the sample
+#   plugins' code for it, or anything under them changed: core/platform-fabric/ means Fabric;
+#   core/platform-bukkit/, the loader and the samples' bukkit/ folders mean Bukkit; any other
+#   module in core/ means both, as does everything, and the Boot workflow itself.
 # - Markdown, the rest of the docs and the other workflows mean nothing.
 # - Anything else, such as a new top-level folder, means everything: unsure is never
 #   skipped.
@@ -84,6 +90,7 @@ rewrite=$(projects core | grep -vx ':core' || true)
 all=false
 [[ ${1:-} == --all ]] && all=true
 rewriteChanged=false
+bootBukkit=false bootFabric=false
 declare -A changed=()
 if [[ $all == false ]]; then
   while IFS= read -r file; do
@@ -95,7 +102,12 @@ if [[ $all == false ]]; then
       core/*/*)
         module=${file#core/}
         module=${module%%/*}
-        if [[ -f core/$module/build.gradle.kts ]]; then rewriteChanged=true; else all=true; fi ;;
+        if [[ -f core/$module/build.gradle.kts ]]; then rewriteChanged=true; else all=true; fi
+        case $file in
+          core/platform-fabric/*) bootFabric=true ;;
+          core/platform-bukkit/* | core/core-loader/* | core/core-testing/*/bukkit/*) bootBukkit=true ;;
+          *) bootBukkit=true bootFabric=true ;;
+        esac ;;
       core/* | build-logic/* | gradle/* | scripts/* | gradle.properties | gradlew | gradlew.bat \
         | .github/workflows/plugins.yml) all=true ;;
       # The rewrite's reference manifests that belong to no plugin yet: the schema, and the core's
@@ -105,6 +117,7 @@ if [[ $all == false ]]; then
         plugin=${file#docs/src/generated/}
         plugin=${plugin%%/*}
         if [[ -n ${known[$plugin]:-} ]]; then changed[$plugin]=1; else all=true; fi ;;
+      .github/workflows/boot.yml) bootBukkit=true bootFabric=true ;;
       docs/* | .github/* | LICENSE | renovate.json | .gitignore) ;;
       # A plugin's folder. Anything else, the root *.gradle.kts files among it, is everything.
       *)
@@ -124,6 +137,7 @@ if [[ $all == true ]]; then
   echo "compile=compileJava"
   echo "checks=${checks[*]}"
   echo "xmoney=true"
+  echo "boot=bukkit fabric"
   exit 0
 fi
 
@@ -192,3 +206,7 @@ echo "tasks=${tasks[*]}"
 echo "compile=${compile[*]}"
 echo "checks=${checks[*]}"
 echo "xmoney=$xmoney"
+boot=()
+[[ $bootBukkit == false ]] || boot+=(bukkit)
+[[ $bootFabric == false ]] || boot+=(fabric)
+echo "boot=${boot[*]}"

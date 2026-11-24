@@ -1,0 +1,20 @@
+# The family test: xSample and xTwin on one server, each with its own relocated core, after
+# xSample's own checks (scripts/boot-test.sh or scripts/boot-fabric.sh, two --checks files).
+# xTwin recorded a made-up offline player in its player cache as it started.
+logged: Recorded FamilyProbe in the family's player cache
+# The family's files are where both look, and the platform's registry holds one board.
+run: xtwin family
+expect: FAMILY PASS
+# xSample's own copy of the cache finds the player xTwin recorded: one board between them.
+# `forget` asks to be typed again to confirm.
+run: xsample forget FamilyProbe
+run: xsample forget FamilyProbe
+expect: Forgot FamilyProbe.
+# xTwin forgets the player, which deletes them from the family's cache: one record.
+run: xtwin forget FamilyProbe
+run: xtwin forget FamilyProbe
+expect: Records deleted: 1.
+# And xSample no longer finds them.
+run: xsample forget FamilyProbe
+run: xsample forget FamilyProbe
+expect: No player called FamilyProbe has played here.

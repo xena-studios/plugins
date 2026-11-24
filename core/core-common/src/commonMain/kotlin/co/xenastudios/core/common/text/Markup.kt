@@ -21,7 +21,9 @@ import kotlin.concurrent.Volatile
  *
  * Every tag closes with `</name>` or `</>`, or at the end. `\<` is a `<` that starts no tag.
  * A tag it doesn't know stays as text, as in MiniMessage, so a typo shows up instead of
- * vanishing; so does a placeholder [render] isn't given. Parsing and rendering never throw.
+ * vanishing; so does a placeholder [render] isn't given, and a tag that would be open inside
+ * more than 50 others (a placeholder there is still filled in, but can't hold a part shown or
+ * not). Parsing and rendering never throw.
  */
 public class Markup private constructor(
     /** The markup as written. */
@@ -51,6 +53,11 @@ public class Markup private constructor(
 
         // How deep hovers can nest inside hovers. Real messages use one level.
         private const val MAX_DEPTH = 4
+
+        // How many tags can be open at once. Rendering walks the tree recursively, so without a
+        // limit, a message of ten thousand <b>s overflowed the stack (found by fuzzing,
+        // core/core-fuzz). Real messages nest a handful deep.
+        internal const val MAX_NESTING = 50
 
         /**
          * Parses [input], with the caller's own [tags] (by name, in lower case) besides the
@@ -268,13 +275,17 @@ public class Markup private constructor(
                     continue
                 }
                 val action = open(tag, raw, depth)
-                if (action == null) {
+                // Past MAX_NESTING, a tag stays as text, and a placeholder is only a value.
+                val deep = action is Opened.Push && stack.size > MAX_NESTING
+                if (action == null || (deep && action.frame.kind != Kind.SLOT)) {
                     text.append(raw)
                     continue
                 }
                 flush()
                 when (action) {
-                    is Opened.Push -> stack.addLast(action.frame)
+                    is Opened.Push ->
+                        if (deep) stack.last().children += Node.Slot(action.frame.name, raw, "", null)
+                        else stack.addLast(action.frame)
                     is Opened.Add -> stack.last().children += action.node
                     Opened.Reset -> while (stack.size > 1) closeTop(stack, explicit = false)
                 }

@@ -37,6 +37,14 @@ scripts/boot-test.sh --server spigot-1.8.8.jar --java <JDK 8 home> --jvm -DIReal
 
 On Paper, `boot-test.sh` then boots a second, empty server, waits for Paper to pause it, and runs every Xena plugin's `/<plugin> reload`. A paused server doesn't run the global region scheduler, so global work goes through the core's `Tasks`, which Paper keeps running.
 
+The rewrite's Bukkit platform (`core/platform-bukkit`) is boot-tested with xSample built as a Bukkit plugin on it. Its checks run the platform's own (schedulers, files, the event bridge) at startup, then console commands; `boot.sh` passes them, and `runServer` or `runFolia` starts a server with it in `core/core-testing/sample/bukkit/run/`:
+
+```sh
+./gradlew :core:core-testing:sample:bukkit:assemble
+core/core-testing/sample/bukkit/boot.sh folia 26.3 --java <JDK 25 home>
+core/core-testing/sample/bukkit/boot.sh spigot-1.8.8.jar --java <JDK 8 home>
+```
+
 ## How it fits together
 
 | Folder | What it is |

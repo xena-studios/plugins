@@ -1,0 +1,175 @@
+package co.xenastudios.core.bukkit
+
+import co.xenastudios.core.bukkit.modern.FoliaScheduler
+import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.common.admin.Dependency
+import co.xenastudios.core.common.command.CommandSource
+import co.xenastudios.core.common.family.Family
+import co.xenastudios.core.common.family.PlayerCache
+import co.xenastudios.core.jvm.config.JvmYaml
+import co.xenastudios.core.jvm.db.DriverFetcher
+import co.xenastudios.core.jvm.db.OnDemandDriverFetcher
+import co.xenastudios.core.loader.bukkit.BukkitBootstrap
+import kotlin.concurrent.Volatile
+import co.xenastudios.core.common.command.OnlinePlayers
+import co.xenastudios.core.common.permission.PermissionRegistrar
+import co.xenastudios.core.common.platform.Capability
+import co.xenastudios.core.common.platform.Clock
+import co.xenastudios.core.common.platform.Log
+import co.xenastudios.core.common.platform.Platform
+import co.xenastudios.core.common.platform.Storage
+import co.xenastudios.core.common.platform.SystemClock
+import co.xenastudios.core.common.platform.Threading
+import co.xenastudios.core.common.scheduler.Scheduler
+import co.xenastudios.core.jvm.platform.FolderStorage
+import org.bukkit.plugin.Plugin
+
+/**
+ * The core's [Platform] on a Bukkit-family server, from Spigot 1.8.8 to the newest Paper and
+ * Folia: made once in the plugin's `enable` with [create], which looks at the server once
+ * ([BukkitServer]) and picks every path from that, never per call (ROADMAP.md, Architecture).
+ *
+ * | | Folia | Paper | Spigot | CraftBukkit |
+ * |---|---|---|---|---|
+ * | [scheduler] | Folia's region, entity, global and async schedulers | Bukkit's, async on threads of its own | the same | the same |
+ * | [text] | Adventure | Adventure from 1.16.5, then Spigot's | `BaseComponent[]` | `§` strings |
+ * | [locale] | the client's, and its changes from 1.12 | the same | the same; before 1.12, `spigot().getLocale()` | from 1.12 |
+ *
+ * Besides the [Platform], what a Bukkit plugin registers through: [commands] on Bukkit's
+ * command map, [permissions] in its plugin manager, [events] bridged to Bukkit's, [players]
+ * for the `player` argument, the [family] and its player cache ([record]), and what the admin
+ * subcommands ask of a platform ([locale], [dependency], [about], [driverFetcher]). [close]
+ * undoes all of it as the plugin is disabled.
+ */
+public class BukkitPlatform private constructor(
+    /** The plugin it's for. */
+    public val plugin: Plugin,
+    /** What the server is and has, found at startup. */
+    public val server: BukkitServer,
+    override val development: Boolean,
+) : Platform {
+
+    override val name: String = server.toString()
+
+    override val threading: Threading = if (server.flavor == BukkitServer.Flavor.FOLIA) Threading.REGIONS else Threading.MAIN_THREAD
+
+    override val capabilities: Set<Capability> = setOf(Capability.NATIVE_EVENTS, Capability.SQL, Capability.SHARED_API)
+
+    override val log: Log = JulLog(plugin.logger)
+
+    override val clock: Clock = SystemClock
+
+    /** `plugins/<Plugin>/`. */
+    override val storage: Storage = FolderStorage(plugin.dataFolder.toPath())
+
+    private val main: MainThreadScheduler? =
+        if (threading == Threading.REGIONS) null else MainThreadScheduler(plugin, BukkitPlayers.entities(plugin.server, server), AsyncExecutor(plugin.name, log))
+
+    override val scheduler: Scheduler = main ?: folia()
+
+    /** How messages reach players and the console here. */
+    public val text: BukkitText = BukkitText.pick(server, plugin.server)
+
+    private val locales: ClientLocales = ClientLocales.pick(server, plugin, scheduler)
+
+    /** The online players each command source can see, for the `player` argument. */
+    public val players: OnlinePlayers = BukkitPlayers(plugin.server)
+
+    /** The plugin's commands, on Bukkit's command map. */
+    public val commands: BukkitCommands = BukkitCommands.create(plugin, plugin.server, text, log, refreshes = server.atLeast(1, 13))
+
+    /** The plugin's permissions, in Bukkit's plugin manager. */
+    public val permissions: PermissionRegistrar = BukkitPermissions(plugin.server.pluginManager)
+
+    /** The plugin's events, fired as Bukkit events too. */
+    public val events: BukkitEvents = BukkitEvents(plugin.server)
+
+    /**
+     * The family: `plugins/Xena/` and the board the Xena plugins on this server share, found
+     * in Bukkit's `ServicesManager` (or put there, by the first plugin) and registered by this
+     * one too, so it outlives whichever plugin is disabled first. Load it off the server's
+     * threads ([Family.load]).
+     */
+    public val family: Family = Family(FolderStorage(plugin.dataFolder.toPath().resolveSibling(FAMILY_FOLDER)), BukkitFamily.board(plugin), JvmYaml)
+
+    @Volatile
+    private var recording: AutoCloseable? = null
+
+    /**
+     * Records each join, quit and client language change in [cache], the family's player cache,
+     * from now until [close], and the players online now. Messages then read each player's
+     * language from the cache, which is a `LanguageSource`.
+     */
+    public fun record(cache: PlayerCache) {
+        recording?.close()
+        recording = BukkitFamily.record(plugin, cache, locales, scheduler)
+    }
+
+    /** The locale [player]'s client sent (`de_de`), if they're online and the server says. */
+    public fun locale(player: PlayerRef): String? = player.online(plugin.server)?.let(locales::of)
+
+    /** The locale of whoever ran a command: a player's client's, `null` for the console. For `AdminText.of`. */
+    public fun locale(source: CommandSource): String? = source.player?.let(::locale)
+
+    /** Whether the plugin called [name] is installed and on, for `/<plugin> debug`'s dependencies check. */
+    @JvmOverloads
+    public fun dependency(name: String, required: Boolean = false): Dependency =
+        Dependency(name, plugin.server.pluginManager.getPlugin(name)?.isEnabled == true, required)
+
+    /**
+     * The debug report's lines about the server: the Java running it, the server's own version
+     * line and Bukkit's, the platform's picks, and the other plugins installed.
+     */
+    public fun about(): Map<String, String> {
+        val bukkit = plugin.server
+        return linkedMapOf(
+            "Java" to "${System.getProperty("java.version")} (${System.getProperty("java.vendor")})",
+            "Server" to bukkit.version,
+            "Bukkit API" to bukkit.bukkitVersion,
+            "Text" to text.name,
+            "Plugins" to bukkit.pluginManager.plugins.joinToString(", ") { "${it.name} ${it.description.version}" + if (it.isEnabled) "" else " (off)" },
+        )
+    }
+
+    /**
+     * Fetches the JDBC drivers the plugin's jar pins (`onDemand`) into the family's shared
+     * library cache when a server has none: for `Drivers`. `null` if the plugin's main class
+     * isn't the core's shim. Reads the loader's settings, so call it at startup or off the
+     * server's threads.
+     */
+    public fun driverFetcher(): DriverFetcher? = (plugin as? BukkitBootstrap)?.let { OnDemandDriverFetcher(it.onDemandLibraries()) }
+
+    // Its own function, so only Folia loads the class that calls Folia's API.
+    private fun folia(): Scheduler = FoliaScheduler(plugin, log)
+
+    /**
+     * Undoes what was registered here, as the plugin is disabled: its commands, permissions
+     * and event bridges, its waiting tasks, and its async threads, which get five seconds to
+     * finish what's running. Disable the plugin's modules first, which may still schedule work.
+     */
+    public fun close() {
+        events.close()
+        commands.clear()
+        permissions.sync(emptyList())
+        recording?.close()
+        recording = null
+        locales.close()
+        main?.close()
+        (scheduler as? AutoCloseable)?.close()
+    }
+
+    public companion object {
+        // The family's folder, beside each plugin's own.
+        private const val FAMILY_FOLDER = "Xena"
+
+        /**
+         * The platform for [plugin], from what its server is. A [development] build checks
+         * threads (`checkThread`) and throws where code would break on Folia; release builds
+         * don't (DECISIONS.md, "The platform layer").
+         */
+        @JvmStatic
+        @JvmOverloads
+        public fun create(plugin: Plugin, development: Boolean = false): BukkitPlatform =
+            BukkitPlatform(plugin, BukkitServer.detect(plugin.server), development)
+    }
+}

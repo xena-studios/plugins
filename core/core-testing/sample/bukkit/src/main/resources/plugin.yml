@@ -1,0 +1,11 @@
+name: xSample
+version: '${version}'
+main: co.xenastudios.xsample.bukkit.XSampleBootstrap
+# Ignored before 1.13; stops 1.13+ from treating the plugin as legacy.
+api-version: '1.13'
+folia-supported: true
+description: The core's sample plugin on Bukkit, for boot tests. Never released.
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+# No commands or permissions: the platform registers them at runtime, from the plugin's code.

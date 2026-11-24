@@ -6,6 +6,7 @@ import co.xenastudios.core.loader.Library;
 import co.xenastudios.core.loader.LibraryCache;
 import co.xenastudios.core.loader.LibraryException;
 import co.xenastudios.core.loader.Manifest;
+import co.xenastudios.core.loader.OnDemandLibraries;
 import co.xenastudios.core.loader.PluginEntry;
 import co.xenastudios.core.loader.Strategy;
 import java.io.File;
@@ -116,16 +117,33 @@ public abstract class BukkitBootstrap extends JavaPlugin {
         List<Library> libraries = Manifest.read(own);
         ClassLoader loader = own;
         if (!libraries.isEmpty()) {
-            File shared = new File(getDataFolder().getParentFile(), SHARED);
-            YamlConfiguration settings = settings(new File(shared, SETTINGS));
-            String help = "If this server can't reach Maven Central, set mirror: in " + new File(shared, SETTINGS)
-                + " to a Maven repository it can reach.";
-            LibraryCache cache = new LibraryCache(new File(shared, "libraries").toPath(), mirrors(settings), help);
-            loader = Libraries.load(libraries, own, getFile().toURI().toURL(), cache, running, strategy(settings),
+            YamlConfiguration settings = settings(new File(shared(), SETTINGS));
+            loader = Libraries.load(libraries, own, getFile().toURI().toURL(), cache(settings), running, strategy(settings),
                 getLogger()).loader();
             checkKotlin(libraries, loader);
         }
         return construct(Class.forName(entryPoint(), true, loader));
+    }
+
+    /**
+     * The libraries the plugin fetches only when a feature needs one (its JDBC drivers), from its
+     * jar's {@value OnDemandLibraries#RESOURCE}, in the family's shared cache with the owner's
+     * mirror settings: for the Kotlin side, which can't reach the cache otherwise. Reads the
+     * settings file, so call it off the server's threads, or once at startup.
+     */
+    public final OnDemandLibraries onDemandLibraries() throws IOException {
+        return OnDemandLibraries.read(getClass().getClassLoader(), cache(settings(new File(shared(), SETTINGS))));
+    }
+
+    /** {@code plugins/Xena/}, the family's folder, beside the plugin's own. */
+    private File shared() {
+        return new File(getDataFolder().getParentFile(), SHARED);
+    }
+
+    private LibraryCache cache(YamlConfiguration settings) {
+        String help = "If this server can't reach Maven Central, set mirror: in " + new File(shared(), SETTINGS)
+            + " to a Maven repository it can reach.";
+        return new LibraryCache(new File(shared(), "libraries").toPath(), mirrors(settings), help);
     }
 
     /** The Java the plugin's Kotlin classes were compiled for, from the entry point's class file. */

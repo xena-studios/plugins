@@ -8,10 +8,10 @@
 // repositories to its projects, which the root build forbids. The core's modules come from the
 // root build, included below, so they're built from source here too.
 pluginManagement {
-    // The root build's conventions, for xena.r8 (R8 and the jar budget) and xena.fetched-libraries
-    // (the YAML parser's pins) on the sandbox's jars.
+    // The root build's conventions, for xena.fabric-mod: how every Xena mod's jar is packaged
+    // (its core relocated, R8 and the jar budget, the YAML parser's pins).
     includeBuild("../../build-logic")
-    // The rewrite's Kotlin and Shadow versions, from the root build's catalog, so the two never differ.
+    // The rewrite's Kotlin version, from the root build's catalog, so the two never differ.
     val catalog = file("../../gradle/libs.versions.toml").readLines()
     fun version(name: String) = catalog.first { it.startsWith("$name = ") }.substringAfter('"').substringBefore('"')
     repositories {
@@ -24,8 +24,6 @@ pluginManagement {
     }
     plugins {
         kotlin("jvm") version version("kotlin")
-        // The family test's second mod relocates its core with it, as the Bukkit jars do.
-        id("com.gradleup.shadow") version version("shadow")
     }
 }
 

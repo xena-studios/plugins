@@ -31,3 +31,8 @@
 :core:platform-fabric:sandbox:1.20.1 430
 :core:platform-fabric:sandbox:1.21.11 430
 :core:platform-fabric:sandbox:26.3 440
+# xTwin on Fabric, the family test's second mod, packaged as every mod is (xena.fabric-mod):
+# its core relocated to co.xenastudios.xtwin.core, then shrunk. Never released.
+:core:platform-fabric:twin:1.20.1 420
+:core:platform-fabric:twin:1.21.11 420
+:core:platform-fabric:twin:26.3 430

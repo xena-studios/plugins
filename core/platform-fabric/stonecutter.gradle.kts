@@ -4,6 +4,7 @@ plugins {
     // Gradle plugin with them, which every node must share rather than load again.
     id("xena.r8") apply false
     id("xena.fetched-libraries") apply false
+    id("xena.fabric-mod") apply false
 }
 
 // The version the source's comments are switched to for the IDE. Committed as the newest, so

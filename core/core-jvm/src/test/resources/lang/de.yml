@@ -1,0 +1,10 @@
+# A test fixture: German for ShopMessages and the core's messages. Real translations ship
+# with each plugin.
+core.pages.footer: "<gray>Seite <page> von <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Zurück</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Weiter »</highlight></hover></click></has_next>"
+shop.bought: "<prefix>Du hast <highlight><item></highlight> für <highlight><price></highlight> gekauft."
+shop.empty: "<error>Der Laden ist leer."
+translation:
+  name: "Deutsch"
+  machine-drafted: true
+  former:
+    shop.empty: "<error>Laden leer."

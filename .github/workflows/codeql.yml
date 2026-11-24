@@ -8,7 +8,7 @@ name: CodeQL
 # vulnerability.
 on:
   push:
-    branches: [main]
+    branches: [main, "maintenance"]
   pull_request:
   schedule:
     # Weekly, for new queries against unchanged code.

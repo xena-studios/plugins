@@ -80,8 +80,14 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
+      # Caches Gradle's dependencies, its build cache and, with the GRADLE_ENCRYPTION_KEY secret,
+      # the configuration cache (encrypted, since it can hold the build's environment), saved
+      # from main and read by pull requests. There's no remote build cache yet (DECISIONS.md).
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-      # Compiles, runs the tests, and fails any jar over its size budget: `build` for
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      # Compiles, runs the tests, and fails any jar over its size budget (today's plugins'
+      # in their build files, the rewrite's R8-shrunk jars in gradle/jar-budgets.txt): `build` for
       # everything, or only the changed plugins' builds, the jars their boot tests need,
       # and the root's, whose copy-paste check always reads every module. The rewrite's
       # modules in core/ build with everything, or alone when only they changed; their
@@ -127,6 +133,8 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       # The build scripts/new-minecraft.sh keeps in gradle.properties, for every module
       # or only the changed plugins'.
       - run: ./gradlew $COMPILE -Pxena.newestPaper="$(sed -n 's/^xena\.ciNewestPaperApi=//p' gradle.properties)"

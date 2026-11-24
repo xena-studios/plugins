@@ -1,0 +1,48 @@
+name: Scaffold
+
+# Runs scripts/new-rewrite-plugin.ts end to end, the way a new plugin starts, and fails if
+# the skeleton it writes doesn't build and pass its tests on the JVM and wasmWasi: a change to
+# the core, the conventions or the script itself can't leave it broken. Without --platforms
+# until core/platform-bukkit and core/platform-fabric exist.
+on:
+  pull_request:
+    paths: ["core/**", "build-logic/**", "gradle/**", "settings.gradle.kts", "gradle.properties", "scripts/new-rewrite-plugin.ts", "scripts/affected.sh", ".github/workflows/scaffold.yml"]
+  push:
+    branches: [main]
+    paths: ["core/**", "build-logic/**", "gradle/**", "settings.gradle.kts", "gradle.properties", "scripts/new-rewrite-plugin.ts", "scripts/affected.sh", ".github/workflows/scaffold.yml"]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  # A new push to a pull request cancels the run it replaces.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: true
+      # Writes xscaffold/, its API's signatures, then builds and tests it.
+      - run: node scripts/new-rewrite-plugin.ts xscaffold Scaffold
+      # And the Plugins workflow builds only it when only it changed.
+      - name: affected.sh picks up the new plugin
+        run: |
+          out=$(printf 'xscaffold/common/src/commonMain/kotlin/X.kt\n' | scripts/affected.sh)
+          echo "$out"
+          grep -qx 'tasks=:build :xscaffold:api:build :xscaffold:common:build' <<< "$out"
+          grep -qx 'compile=' <<< "$out"

@@ -19,6 +19,14 @@ dependencyResolutionManagement {
         maven("https://repo.codemc.io/repository/creatorfromhell/") {
             content { includeGroup("net.milkbowl.vault") }
         }
+        // Node.js, which runs the rewrite's wasmWasi tests (xena.kmp). Kotlin's Gradle plugin
+        // picks the version; only its distributions come from here.
+        ivy("https://nodejs.org/dist") {
+            name = "Node.js"
+            patternLayout { artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]") }
+            metadataSources { artifact() }
+            content { includeModule("org.nodejs", "node") }
+        }
         // WorldGuard and WorldEdit, which xPlots uses when they're installed.
         maven("https://maven.enginehub.org/repo/") {
             content {

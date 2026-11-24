@@ -352,13 +352,13 @@ A plugin goes to Hangar or voxel.shop only once it has a project there (`xena.ha
 
 ## The rewrite: every platform, in Kotlin, one plugin at a time (2026-11-23)
 
-Every plugin is rewritten again so it runs on Spigot, CraftBukkit and Bukkit down to 1.8.8, Fabric, NeoForge, Sponge, Velocity and BungeeCord, Pumpkin and Hytale, as well as Paper and Folia, translated, with the speed and jar sizes it has today. [ROADMAP.md](ROADMAP.md) is the plan; this is why it's shaped that way.
+Every plugin is rewritten again so it runs on Spigot, CraftBukkit and Bukkit down to 1.8.8, Fabric, NeoForge, Forge 1.20.1, Sponge, Velocity and BungeeCord, Pumpkin and Vine, Minestom and Hytale, as well as Paper and Folia, translated, with the speed and jar sizes it has today. [ROADMAP.md](ROADMAP.md) is the plan; this is why it's shaped that way.
 
 - **Kotlin, and its logic multiplatform.** Pumpkin's plugins are WebAssembly components, and its Kotlin API is Kotlin/Wasm: code that runs there can't use a Java library or `java.*`. So each plugin's logic is Kotlin Multiplatform, built for the JVM and `wasmWasi`, and only thin adapters touch a platform. Kotlin on the JVM is as fast as Java, and null-safety removes a class of crashes. The cost is the stdlib, which is fetched or installed, not shaded, so jars stay their size. Without Pumpkin, adding a platform layer to the Java core (#118's plan) would have been cheaper; with it, one codebase for every platform needs this.
 - **Our own markup, not MiniMessage, in `common`.** MiniMessage is JVM-only. A small parser for the subset we use draws to Adventure on the JVM and to Pumpkin's text there, and keeps the parse-once cache in shared code.
 - **Today's versions move to `maintenance`.** A rewrite on a side branch for months rots; `main` is the rewrite, and fixes to today's versions are released from `maintenance` until each new major has been out a month.
-- **A major ships on four platforms.** Paper, Folia, Spigot and Fabric (plus a proxy for network features); NeoForge, Sponge, Pumpkin and Hytale follow as minors. Fourteen plugins on eight platforms at once wouldn't ship.
-- **Stores change with the platforms.** Spigot users can now run the plugins, so SpigotMC gets listings, downloading from GitHub since it has no upload API. BuiltByBit's update API still needs its paid Ultimate plan, so it's a free listing the same way. CurseForge takes the Bukkit, Fabric, NeoForge and Hytale jars through its API.
+- **A major ships on four platforms.** Paper, Folia, Spigot and Fabric (plus a proxy for network features); NeoForge, Forge, Sponge, Pumpkin, Vine, Minestom and Hytale follow as minors, in waves. Fourteen plugins on twelve platforms at once wouldn't ship.
+- **Stores change with the platforms.** Spigot users can now run the plugins, so SpigotMC gets listings, downloading from GitHub since it has no upload API. BuiltByBit's update API still needs its paid Ultimate plan, so it's a free listing the same way. CurseForge takes the Bukkit, Fabric, NeoForge, Forge and Hytale jars through its API.
 - **The release needs an approval.** With more stores and tokens, the `release` environment now waits for a maintainer to approve each run.
 - **Translations (#117) are built in from the start,** in the core, rather than moved into each plugin after.
 

@@ -4,7 +4,7 @@ Every plugin is rewritten once more, so the same plugin runs on every server sof
 
 ## Goals
 
-- **Every server it makes sense on:** Paper, Folia and their forks; Spigot, CraftBukkit and Bukkit down to 1.8.8; Fabric and NeoForge (server-side, players install nothing); Sponge; Velocity and BungeeCord for network features; Pumpkin; Hytale.
+- **Every server it makes sense on:** Paper, Folia and their forks; Spigot, CraftBukkit and Bukkit down to 1.8.8; Fabric, NeoForge and Forge 1.20.1 (server-side, players install nothing); Sponge; Velocity and BungeeCord for network features; Pumpkin and its proxy Vine; Minestom, as libraries; Hytale.
 - **Fast, robust and light** on all of them, with budgets CI enforces. Paper keeps today's speed and jar sizes.
 - **Translated**, each player in their own language.
 - **Good developer APIs**, the same on every platform.
@@ -12,6 +12,8 @@ Every plugin is rewritten once more, so the same plugin runs on every server sof
 - **One site**, plugins.xenastudios.co, its reference pages generated from the code.
 - **One release** publishes every jar to every store.
 - **One plugin at a time:** each is finished and released before the next starts.
+
+Boot-tested with no code of their own: Quilt, PandaSpigot, Leaf, Leaves, Canvas, ShreddedPaper and Waterfall. Best effort, not in CI: hybrid servers (Arclight, Mohist, Youer, Ketting). To revisit after Hytale: Bedrock servers (PowerNukkitX or Allay).
 
 Not planned: 1.7.10, Legacy Fabric (1.8.9), native Rust ports, a web config editor, paid tiers. Every feature stays free.
 
@@ -26,7 +28,7 @@ Not planned: 1.7.10, Legacy Fabric (1.8.9), native Rust ports, a web config edit
 | Kotlin stdlib | Never shaded where it can be fetched: `plugin.yml` `libraries:` on Spigot 1.16.5+, the core's loader (SHA-256 pinned) below that, `fabric-language-kotlin` on Fabric, KotlinForForge on NeoForge. A shrunk copy elsewhere. |
 | Text | Our own MiniMessage-style markup in `common`, drawn to Adventure on the JVM and to Pumpkin's text on Pumpkin. |
 | Commands | Incendo Cloud 2 on the JVM; Pumpkin's commands on Pumpkin. |
-| What a major needs | Paper, Folia, Spigot (down to the plugin's floor) and Fabric, plus a proxy where the plugin has network features. NeoForge, Sponge, Pumpkin and Hytale follow as minors. |
+| What a major needs | Paper, Folia, Spigot (down to the plugin's floor) and Fabric, plus a proxy where the plugin has network features. NeoForge, Forge 1.20.1, Sponge, Pumpkin, Vine, Minestom and Hytale follow as minors. |
 | Dropping a platform | Under 1% of bStats installs for six months, announced a major ahead. |
 
 ## Architecture
@@ -39,14 +41,17 @@ core/
   platform-bukkit    1.8.8 → latest, with Paper and Folia paths picked once at startup
   platform-fabric    server-side, several versions through Stonecutter
   platform-neoforge  likewise
+  platform-forge     1.20.1 only
   platform-sponge    API 8+
   platform-velocity, platform-bungee
   platform-pumpkin   Kotlin/Wasm, on pumpkin-api-kt
+  platform-vine      Kotlin/Wasm, Pumpkin's proxy
+  platform-minestom  plugins shipped as libraries
   platform-hytale    the Java 25 server API
 <plugin>/
   api/      the public API, platform-neutral
   common/   KMP: all the plugin's logic
-  bukkit/ fabric/ neoforge/ sponge/ velocity/ pumpkin/ hytale/   thin adapters
+  bukkit/ fabric/ neoforge/ forge/ sponge/ velocity/ pumpkin/ vine/ minestom/ hytale/   thin adapters
 ```
 
 - `common` never imports `java.*` or a platform. CI builds the `wasmWasi` target from the first commit, so it can't creep in.
@@ -73,7 +78,7 @@ core/
 | xLimits 1.0 (#111) | 1.13 | Paper, Folia, Spigot, Fabric | NeoForge |
 | xLimbo 3.0 | Paper 1.21.11 | Paper only, by design | A Velocity companion |
 
-The floors are proposals; M0 confirms them.
+The floors are proposals; M0 confirms them. In the later minors, NeoForge brings Forge 1.20.1 with it (M16), every plugin with a proxy part gets Vine with Pumpkin (M17), and the plugins that make sense without vanilla mechanics get Minestom (M18).
 
 ## Fast, robust, light
 
@@ -134,7 +139,7 @@ Each subcommand has its own permission under `<plugin>.admin`.
 ## Build, CI and releases
 
 - **Build.** Gradle's configuration cache and build cache, with a remote cache in CI; only affected plugins and platforms build. A normal PR's CI under 3 minutes.
-- **Tests.** `kotlin.test` on the JVM and Wasm; a fake platform for command logic; boot tests on real servers: Paper and Folia latest; Spigot 1.8.8, 1.13.2, 1.16.5 and latest; Fabric and NeoForge oldest and latest; Sponge; Velocity and BungeeCord; Pumpkin. Per PR, the affected plugins at their floor and the newest; the full matrix nightly and before a release.
+- **Tests.** `kotlin.test` on the JVM and Wasm; a fake platform for command logic; boot tests on real servers: Paper and Folia latest; Spigot 1.8.8, 1.13.2, 1.16.5 and latest; Fabric and NeoForge oldest and latest; Forge 1.20.1; Sponge; Velocity and BungeeCord; Pumpkin and Vine. Boot tests only, with the jar of the platform they come from: Quilt, PandaSpigot (1.8.8), Leaf, Leaves, Canvas, ShreddedPaper, Waterfall. Per PR, the affected plugins at their floor and the newest; the full matrix nightly and before a release.
 - **Performance.** JMH for hot paths; a BotMark load and a Spark profile in the boot tests; the budgets above.
 - **Security.** Build attestations (SLSA provenance) and checksums for every jar; fuzzing for the markup, config, vote receiver and xStats' site; CodeQL for Kotlin; store tokens in the `release` environment, which now needs an approval.
 - **Releases.** One tag per plugin (`xbans-v2.0.0`); one workflow builds every jar and publishes:
@@ -145,10 +150,11 @@ Each subcommand has its own permission under `<plugin>.admin`.
 | Modrinth | every JVM jar, with its loaders and versions | automatic |
 | Hangar | Paper, Velocity | automatic |
 | voxel.shop | Bukkit family | automatic |
-| CurseForge | Bukkit (dev.bukkit), Fabric, NeoForge, Hytale | automatic |
+| CurseForge | Bukkit (dev.bukkit), Fabric, NeoForge, Forge, Hytale | automatic |
+| Maven Central | Minestom modules | automatic |
 | SpigotMC | Bukkit family | no upload API: the listing downloads from GitHub, and the release writes the update post to paste |
 | BuiltByBit | Bukkit family | its update API needs the paid Ultimate plan: a free listing that downloads from GitHub, unless we take Ultimate |
-| Pumpkin | the Wasm build | its package manager or marketplace, once it's ready |
+| Pumpkin | the Wasm builds, Pumpkin and Vine | its package manager or marketplace, once it's ready |
 
 ## Site
 
@@ -191,10 +197,13 @@ Each one meets its exit before the next starts.
 | M14 | xLimits 1.0 (#111) | xRewind's block and entity hooks |
 | M15 | xLimbo 3.0 | Paper only: core, translations, pipeline |
 
-**M16: NeoForge and Sponge.** The two platforms, then each plugin as a minor.
-**M17: Pumpkin.** Once its plugin ABI is stable: `platform-pumpkin`, then each plugin as a minor.
-**M18: Hytale.** Experimental: `platform-hytale`, then the plugins that fit, on CurseForge.
-**M19: Retire `maintenance`.** Once every major has been out about a month.
+**M16: NeoForge, Forge 1.20.1 and Sponge.** The three platforms, then each plugin as a minor. Forge is 1.20.1 only, where Forge modpack servers stay.
+**M17: Pumpkin and Vine.** Once Pumpkin's plugin ABI is stable: `platform-pumpkin`, then each plugin as a minor; `platform-vine` for the proxy parts of zChat, xBans, xVote and xStats.
+**M18: Minestom.** Minestom has no plugin loader, so each plugin ships as libraries a Minestom server adds and starts.
+**M19: Hytale.** Experimental: `platform-hytale`, then the plugins that fit, on CurseForge.
+**M20: Retire `maintenance`.** Once every major has been out about a month.
+
+After M19, revisit Bedrock servers (PowerNukkitX or Allay).
 
 ### What each plugin's milestone delivers
 
@@ -213,8 +222,8 @@ Each one meets its exit before the next starts.
 
 ## Risks
 
-- **Scope.** Fourteen plugins on up to eight platforms. That's why a major needs four platforms and the rest come later in waves.
+- **Scope.** Fourteen plugins on up to twelve platforms. That's why a major needs four platforms and the rest come later in waves.
 - **The pilot reshapes the core.** M3 doesn't start until M2 is released.
-- **Pumpkin and Hytale are still moving.** They're late waves of their own, so neither can block a release.
+- **Pumpkin, Vine and Hytale are still moving.** They're late waves of their own, so neither can block a release.
 - **Kotlin/Wasm limits `common`.** Enforced from the first commit.
 - **Build time** grows with each plugin and platform. CI has a budget for it.

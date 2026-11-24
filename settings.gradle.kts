@@ -1,11 +1,21 @@
 pluginManagement {
     includeBuild("build-logic")
+    repositories {
+        // Google's mirror of Maven Central first, then the plugin portal (Gradle's default):
+        // the portal sends most plugins' dependencies on to Central.
+        maven("https://maven-central.storage-download.googleapis.com/maven2/") { name = "MavenCentralMirror" }
+        gradlePluginPortal()
+    }
 }
 
 dependencyResolutionManagement {
     repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
     repositories {
-        mavenCentral()
+        // Google's mirror of Maven Central in Central's place: Central answers GitHub's runners
+        // 429 when they ask too often (twice on 2026-11-24), and BuildTools already goes through
+        // the mirror (scripts/server-jar.sh). Central itself is the last repository, for anything
+        // the mirror hasn't caught up with yet.
+        maven("https://maven-central.storage-download.googleapis.com/maven2/") { name = "MavenCentralMirror" }
         maven("https://repo.papermc.io/repository/maven-public/")
         // R8, which shrinks the rewrite's jars (xena.r8): only on Google's repository.
         google {
@@ -42,6 +52,7 @@ dependencyResolutionManagement {
                 includeGroupByRegex("org\\.enginehub.*")
             }
         }
+        mavenCentral()
     }
 }
 

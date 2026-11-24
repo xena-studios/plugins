@@ -56,6 +56,7 @@ Why the plugins are built the way they are, oldest first.
 | [One release workflow: every jar built once, attested, then each store alone](#one-release-workflow-every-jar-built-once-attested-then-each-store-alone-2026-11-24) | 2026-11-24 |
 | [The boot matrix: every server the rewrite ships for, forks from their own downloads, and a second plugin for the family](#the-boot-matrix-every-server-the-rewrite-ships-for-forks-from-their-own-downloads-and-a-second-plugin-for-the-family-2026-11-24) | 2026-11-24 |
 | [Budgets: the YAML parser downloaded, R8 on the sample jars, the stdlib loaded off the server thread](#budgets-the-yaml-parser-downloaded-r8-on-the-sample-jars-the-stdlib-loaded-off-the-server-thread-2026-11-24) | 2026-11-24 |
+| [Gradle reads Maven Central through Google's mirror](#gradle-reads-maven-central-through-googles-mirror-2026-11-24) | 2026-11-24 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -663,3 +664,10 @@ The budgets in ROADMAP.md ("Fast, robust, light") measured and enforced for the 
 - **In the Boot workflow** (`.github/workflows/boot.yml`): `build-bukkit` checks both R8 jars' budgets and uploads them from `build/r8/`, where `boot.sh` looks; `build-fabric`'s `build` already checks the sandbox's. A `budgets` job runs `check.sh` on the newest Paper without players for every pull request that touches Bukkit (a few minutes, beside the boots), and nightly also the BotMark load on Paper 1.21.11, the newest Minecraft mineflayer speaks. A `benchmarks` job runs `checkBenchmarks`. Both feed `boot-ok`. Startup is `--report-only` there: over its budget it's a warning in the job summary, not a failure, until the packaging work above brings it under 150 ms; heap, metaspace, idle, load and the jar sizes fail the job. Paper 26.3 on Java 25 measured 197 ms locally.
 - **`boot.sh` boots the shrunk jar** (`build/r8/XSample.jar`; `XSAMPLE_JAR` picks another). Booted after these changes: Paper 26.3 and Spigot 1.8.8 (Java 8, the loader downloading all four libraries), each alone and with xTwin in the family test; Fabric 26.3 alone and with xTwin; Fabric 1.20.1 and Quilt 26.3; and Paper 1.21.11 and 26.3 through the budget check.
 
+## Gradle reads Maven Central through Google's mirror (2026-11-24)
+
+Maven Central answered GitHub's runners 429 twice on 2026-11-24 (#162). BuildTools already went through Google's mirror of Central (`maven-central.storage-download.googleapis.com`, the boot matrix entry); Gradle now does too.
+
+- **The root build** lists the mirror where Central was, and Central last, for anything the mirror hasn't caught up with yet. Its `pluginManagement` and build-logic's repositories list the mirror before the plugin portal (Gradle's default), which sends most plugins' dependencies on to Central and so is the fallback there.
+- **The Fabric build** can't put the mirror first: Gradle takes a module's files from the repository that had its metadata, and Loom adds Mojang's libraries repository before Central because it has classifiers Central lacks for modules both list (LWJGL's `natives-macos-patch`). With the mirror first, LWJGL's POM came from the mirror and the patch jar wasn't found. So `core/platform-fabric/settings.gradle.kts` points every Central a project adds (Loom's and the build scripts') at the mirror before the project's script runs, and adds Central at the end of each project's repositories.
+- **Nothing else changes:** the mirror serves Central's files byte for byte, so `gradle/library-pins.txt` and the loader's pins match, and a local build works the same (the mirror is public, and a 404 there moves on). With `--refresh-dependencies` both builds resolved everything from the mirror; Central was asked only for the plugin markers it never had.

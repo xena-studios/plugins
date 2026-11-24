@@ -1,16 +1,23 @@
 # Every rewrite jar R8 shrinks (the xena.r8 convention), from what M0 learned on the spike
 # jars (sandbox/m0/budgets/RESULTS.md). The task adds rules for the jar's own plugin.yml,
-# fabric.mod.json and services, and -repackageclasses into the plugin's own package; a
-# project's r8/*.pro come after this.
+# fabric.mod.json and services, for the core types the plugin's API exposes, and
+# -repackageclasses into the plugin's own package; a project's r8/*.pro come after this.
+# R8 runs in full mode (its default), which already changes access where that helps.
 
-# Stack traces stay readable with the mapping file; generic signatures and annotations stay
-# for the platform's reflection (Guice, Cloud's type tokens, @EventHandler, @Listener).
--keepattributes SourceFile,LineNumberTable,Signature,*Annotation*,InnerClasses,EnclosingMethod,Exceptions
+# Stack traces stay readable with the mapping file kept for each release (retrace): line
+# numbers stay, and every class's source file is one shared name, "SourceFile". Generic
+# signatures and the annotations the JVM reads stay for the platform's reflection
+# (@EventHandler, type tokens); the compile-time ones (@NotNull and the like) go.
+-keepattributes SourceFile,LineNumberTable,Signature,RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations,AnnotationDefault,InnerClasses,EnclosingMethod,Exceptions
 -renamesourcefileattribute SourceFile
 
-# A plugin's public API (a package named api) keeps its names and members for other
-# plugins, and its Kotlin metadata for Kotlin callers.
--keep public class co.xenastudios.**.api.** { public protected *; }
+# A plugin's public API (a package named api, outside its relocated core) keeps its names
+# and members for other plugins, and its Kotlin metadata for Kotlin callers. The core's own
+# api packages, relocated into every plugin, aren't anyone's API but as far as the plugin's
+# API exposes them: R8Shrink keeps exactly those types (PlayerRef, EventBus...), the rest is
+# shrunk and renamed like any other class. Kotlin metadata stays only on what a rule keeps:
+# nothing reads it at runtime (no kotlin-reflect).
+-keep public class !**.core.**,co.xenastudios.**.api.** { public protected *; }
 -keep class kotlin.Metadata { *; }
 
 # The core's loader makes a plugin's Kotlin entry point by name (BukkitBootstrap.entryPoint()),
@@ -29,12 +36,10 @@
     public *;
 }
 
-# Enums stay enums: libraries (Cloud, Guice, EnumMap/EnumSet) reach their constants by
-# reflection, which R8's enum unboxing would break ("class ... not an enum").
--keepclassmembers enum * {
-    public static **[] values();
-    public static ** valueOf(java.lang.String);
-}
+# Enums: no rule. R8 unboxes an enum only when nothing can see it's an object (passed to
+# EnumMap, a library or reflection, it stays one), and the rewrite reaches none by reflection.
+# A plugin using a library that does (Cloud, Guice) keeps them in its own r8/*.pro:
+#   -keepclassmembers enum * { public static **[] values(); public static ** valueOf(java.lang.String); }
 
 # Type tokens (geantyref, which Cloud uses; Gson's and Guice's too) read their generic
 # superclass: R8 keeps a Signature only on classes a rule keeps, so keep the subclasses.

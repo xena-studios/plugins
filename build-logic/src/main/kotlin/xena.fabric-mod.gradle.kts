@@ -19,7 +19,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 //    class loader, so two Xena mods carrying the core under its own names would share one copy
 //    (whichever loaded first), as on Bukkit before each plugin relocated its own.
 // 3. `shrinkJar` (xena.r8): R8 on the relocated jar, against Minecraft's, Fabric's and the
-//    stdlib's named jars and the downloaded libraries, renamed classes in `co.xenastudios.<id>.r8`,
+//    stdlib's named jars and the downloaded libraries, renamed classes in the package `<id>`,
 //    with the jar's line in gradle/jar-budgets.txt.
 // 4. `remapJar` (Loom, below 26.1): the shrunk jar to intermediary names. From 26.1, Minecraft
 //    isn't obfuscated and the shrunk jar ships as it is.
@@ -79,7 +79,7 @@ val relocateJar = tasks.register<ShadowJar>("relocateJar") {
 val fetchedJars = configurations.named("fetchedJars")
 the<XenaR8Extension>().apply {
     inputJar.setFrom(relocateJar)
-    packageName.convention(mod.id.map { "co.xenastudios.$it.r8" })
+    packageName.convention(mod.id)
     // What the server has beside the jar: Minecraft, Fabric and the stdlib (in Mojang's names,
     // since R8 runs before Loom remaps) and the libraries downloaded at runtime. Not what's bundled.
     libraries.setFrom(configurations.named("compileClasspath").map { it.minus(bundleClasspath.get()) }, fetchedJars)

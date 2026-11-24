@@ -27,10 +27,8 @@ dependencies {
 val xenaR8 = extensions.create<XenaR8Extension>("xenaR8").apply {
     inputJar.convention(tasks.named<Jar>("jar").flatMap { it.archiveFile })
     libraries.convention(configurations.named("compileClasspath"))
-    // :xbans:bukkit -> co.xenastudios.xbans.bukkit.r8: unique in the family, by construction.
-    packageName.convention(
-        "co.xenastudios." + path.split(':').filter { it.isNotEmpty() }.joinToString(".") { it.replace("-", "").lowercase() } + ".r8",
-    )
+    // :xbans:bukkit -> xbans, the plugin's id: see XenaR8Extension.packageName.
+    packageName.convention(path.split(':').first { it.isNotEmpty() }.replace("-", "").lowercase())
     rules.convention(fileTree("r8") { include("*.pro") })
     startupClasses.convention(files("startup-classes.txt"))
 }

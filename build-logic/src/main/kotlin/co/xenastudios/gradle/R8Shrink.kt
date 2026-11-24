@@ -2,6 +2,8 @@ package co.xenastudios.gradle
 
 import groovy.json.JsonSlurper
 import java.io.File
+import java.util.zip.CRC32
+import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -36,12 +38,16 @@ import org.gradle.process.ExecOperations
  *   which the server makes by name;
  * - every entry point in `fabric.mod.json` (`main`, `server`, `client` and the rest);
  * - every service in `META-INF/services/`, and the interface it's for;
+ * - the core's api types the plugin's own API exposes ([exposedCoreApi]), which keep their names
+ *   and members like the API itself (common.pro keeps the API but not the relocated core's);
  * - `-repackageclasses` into [packageName]: Bukkit's `PluginClassLoader` looks classes up in a
  *   cache every plugin shares, so two jars must never both have `a.a`.
  *
- * R8 carries the jar's other files over; Maven's pom files and Kotlin's `.kotlin_builtins`
- * (read only by kotlin-reflect) are then dropped. The mapping file stays with the build, for
- * stack traces (`retrace`).
+ * R8 carries the jar's other files over; Maven's pom files and Kotlin's `.kotlin_builtins` and
+ * `.kotlin_module` files (read only by kotlin-reflect and the compiler) are then dropped. R8's
+ * marker (a ~190-byte `~~R8{...}` string in every class's constant pool, which nothing reads at
+ * runtime) is emptied, and the jar is written at the strongest deflate level. The mapping file
+ * stays with the build, for stack traces (`retrace`).
  *
  * [startupClasses], when given, is the list of classes the plugin loads as it starts, in their
  * own names (recorded on a real server by `scripts/budgets/check.sh --record-startup`): it goes
@@ -98,7 +104,7 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
         val input = inputJar.singleFile
         val generated = generatedRules.get().asFile
         generated.parentFile.mkdirs()
-        generated.writeText(entryPointRules(input) + "-repackageclasses ${packageName.get()}\n")
+        generated.writeText(entryPointRules(input) + exposedCoreApi(input) + "-repackageclasses ${packageName.get()}\n")
         val common = File(temporaryDir, "common.pro")
         common.writeText(
             R8Shrink::class.java.getResourceAsStream("/xena/r8/common.pro")?.use { it.readBytes().decodeToString() }
@@ -164,6 +170,35 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
     }
 
     /**
+     * Keep rules for the relocated core's api types (`co.xenastudios.<plugin>.core.api`) that the
+     * plugin's own API (`api` packages outside the core, kept by common.pro) names, and those
+     * these name in turn: another plugin calling the API sees them, so they keep their names and
+     * members. Read from each class's constant pool, so a type the API only uses inside a method
+     * is kept too, which costs a little and never breaks a caller.
+     */
+    private fun exposedCoreApi(jar: File): String {
+        val classRef = Regex("""co/xenastudios/[\w/$]+""")
+        val isApi = Regex("""(^|/)api/""")
+        ZipFile(jar).use { zip ->
+            val classes = zip.entries().asSequence().map { it.name }.filter { it.endsWith(".class") }
+                .map { it.removeSuffix(".class") }.toHashSet()
+            fun refs(name: String): List<String> {
+                val bytes = zip.getInputStream(zip.getEntry("$name.class")).use { it.readBytes() }
+                return classRef.findAll(String(bytes, Charsets.ISO_8859_1)).map { it.value }.filter { it in classes }.toList()
+            }
+            val ownApi = classes.filter { isApi.containsMatchIn(it) && "/core/" !in it }
+            val exposed = sortedSetOf<String>()
+            val queue = ArrayDeque(ownApi.flatMap(::refs))
+            while (queue.isNotEmpty()) {
+                val name = queue.removeFirst()
+                if ("/core/" !in name || !isApi.containsMatchIn(name.substringAfter("/core/")) || !exposed.add(name)) continue
+                queue += refs(name)
+            }
+            return exposed.joinToString("") { "# exposed by the plugin's API\n-keep public class ${it.replace('/', '.')} { public protected *; }\n" }
+        }
+    }
+
+    /**
      * [startupClasses] in the shrunk jar's names, or `null` when there's no list. Classes of the
      * jar's own (`co.xenastudios.`) must be in the shrunk jar; the rest are the libraries', the
      * stdlib's, which R8 never sees, so they keep their names.
@@ -197,28 +232,62 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
     }
 
     private fun copyWithout(from: File, to: File, startup: String?) {
+        val deflater = Deflater(Deflater.BEST_COMPRESSION, true)
         ZipFile(from).use { zip ->
             ZipOutputStream(to.outputStream().buffered()).use { out ->
+                out.setLevel(Deflater.BEST_COMPRESSION)
                 val entries = zip.entries().asSequence().map { it.name }.filter { it != STARTUP_CLASSES }.toMutableList()
                 if (startup != null) entries += STARTUP_CLASSES
                 for (name in entries.sorted()) {
-                    if (name.startsWith("META-INF/maven/") || name.endsWith(".kotlin_builtins")) continue
-                    // Fixed times, so the same input gives the same jar.
-                    out.putNextEntry(ZipEntry(name).apply { time = FIXED_TIME })
-                    if (name == STARTUP_CLASSES && startup != null) {
-                        out.write(startup.toByteArray())
+                    if (name.startsWith("META-INF/maven/") || name.endsWith(".kotlin_builtins") || name.endsWith(".kotlin_module")) continue
+                    var bytes = if (name == STARTUP_CLASSES && startup != null) {
+                        startup.toByteArray()
                     } else {
-                        zip.getInputStream(zip.getEntry(name)).use { it.copyTo(out) }
+                        zip.getInputStream(zip.getEntry(name)).use { it.readBytes() }
                     }
+                    if (name.endsWith(".class")) bytes = withoutMarker(bytes)
+                    // Sizes and CRC up front, so no data descriptor follows each entry (16 bytes
+                    // each); fixed times, so the same input gives the same jar.
+                    val entry = ZipEntry(name).apply {
+                        time = FIXED_TIME
+                        size = bytes.size.toLong()
+                        crc = CRC32().apply { update(bytes) }.value
+                        compressedSize = deflatedSize(deflater, bytes)
+                    }
+                    out.putNextEntry(entry)
+                    out.write(bytes)
                     out.closeEntry()
                 }
             }
         }
+        deflater.end()
+    }
+
+    private fun deflatedSize(deflater: Deflater, bytes: ByteArray): Long {
+        deflater.reset()
+        deflater.setInput(bytes)
+        deflater.finish()
+        val buffer = ByteArray(8192)
+        var size = 0L
+        while (!deflater.finished()) size += deflater.deflate(buffer)
+        return size
     }
 
     companion object {
         /** Where the startup list goes in the jar, which the shim reads (core-loader's BukkitBootstrap). */
         const val STARTUP_CLASSES = "META-INF/xena/startup-classes.txt"
+
+        /**
+         * [bytes] with R8's marker emptied: R8 writes it as constant #1 of every class, a
+         * `~~R8{"backend":"cf",...}` string nothing reads. Emptied rather than removed, so no
+         * index in the class changes.
+         */
+        internal fun withoutMarker(bytes: ByteArray): ByteArray {
+            if (bytes.size < 17 || bytes[10] != 1.toByte()) return bytes
+            val length = ((bytes[11].toInt() and 0xff) shl 8) or (bytes[12].toInt() and 0xff)
+            if (String(bytes, 13, minOf(4, length), Charsets.ISO_8859_1) != "~~R8") return bytes
+            return bytes.copyOfRange(0, 11) + byteArrayOf(0, 0) + bytes.copyOfRange(13 + length, bytes.size)
+        }
 
         // 1980-02-01, as Gradle's reproducible archives use.
         const val FIXED_TIME = 318_211_200_000L

@@ -63,6 +63,6 @@ dependencies {
 }
 
 xenaR8 {
-    packageName = "co.xenastudios.xtwin.r8"
+    packageName = "xtwin"
     libraries.from(configurations.named("fetchedJars"), serverApiClasspath)
 }

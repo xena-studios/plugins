@@ -15,7 +15,12 @@ abstract class XenaR8Extension {
      */
     abstract val libraries: ConfigurableFileCollection
 
-    /** The package R8 moves renamed classes to, of the plugin's own: from the project's path unless set. */
+    /**
+     * The package R8 moves renamed classes to, of the plugin's own: the plugin's id (`xbans`),
+     * the first name of the project's path unless set. Short, since every class name and
+     * descriptor in the jar carries it (`co.xenastudios.xutilities.r8` cost xUtilities 33 KB), and
+     * unique on a server: Bukkit and Fabric load one plugin of a name, and the id is ours.
+     */
     abstract val packageName: Property<String>
 
     /** The project's own keep rules, after the shared ones: the `.pro` files in its `r8` folder unless set. */

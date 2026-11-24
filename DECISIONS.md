@@ -61,6 +61,7 @@ Why the plugins are built the way they are, oldest first.
 | [Fabric jars relocate their core: one convention, relocation then R8 then Loom](#fabric-jars-relocate-their-core-one-convention-relocation-then-r8-then-loom-2026-11-24) | 2026-11-24 |
 | [A real client in the boot tests: one mineflayer bot on Spigot 1.8.8 and Paper 1.21.11](#a-real-client-in-the-boot-tests-one-mineflayer-bot-on-spigot-188-and-paper-12111-2026-11-24) | 2026-11-24 |
 | [Startup under budget: Paper gets the libraries from our loader, and the startup classes load ahead](#startup-under-budget-paper-gets-the-libraries-from-our-loader-and-the-startup-classes-load-ahead-2026-11-24) | 2026-11-24 |
+| [Smaller jars: R8's marker stripped, a short package, keep rules only where something reads them](#smaller-jars-r8s-marker-stripped-a-short-package-keep-rules-only-where-something-reads-them-2026-11-24) | 2026-11-24 |
 
 ## One minimum version: Paper 1.21.11, Java 21 (2026-10-21)
 
@@ -733,3 +734,30 @@ The first plugin's startup was 271 ms against its 150 ms budget (282 on CI), the
 - **What the number counts.** On Paper with `paper-plugin.yml` there's no `libraries:` line to time, so the loader logs its own time (`-Dxena.startupTimes=true`, through the shim's `Startup times` line: `loader 9.5 ms`), most of it hashing the cached jars against their pins. Paper making the plugin's class loader and loading its main class isn't in it: about 8 ms of CPU in a profile, which no log line bounds. Even counted, startup is under the 100 ms a plugin after the first gets.
 - **The Boot workflow fails on startup again** (`--report-only` is gone from the `budgets` job). Booted after these changes: Paper 26.3 with the family test (xSample as a Paper plugin, xTwin with `plugin.yml`), Folia 26.3, and Spigot 1.8.8 on Java 8 with the family test, where the shim downloads the libraries and preloads the same list.
 - **For each plugin:** a `paper-plugin.yml` naming `co.xenastudios.<plugin>.core.loader.paper.PaperLibraryLoader` (the relocated name; R8 keeps it, from the file), `api-version: '1.19'`, `folia-supported`, and the `dependencies` Paper plugins declare; and a recorded `startup-classes.txt` beside its build file.
+
+## Smaller jars: R8's marker stripped, a short package, keep rules only where something reads them (2026-11-24)
+
+ROADMAP.md says a rewritten plugin's jar is no bigger than today's. xUtilities 3.0's Bukkit jar was 574 KiB after R8 (2.x: 163 KiB), xSample's 521 KiB. Measured what the bytes are, then cut what nothing needs, in build-logic so every plugin gets it.
+
+- **What a shrunk jar is made of.** In xUtilities' jar, three quarters of the class bytes were constant pools, not code (108 KB of bytecode in 1 MB of classes): class names and method descriptors, every one carrying the package R8 moved classes to, and in each of the 415 classes a 186-byte string R8 writes and nothing reads. Each class is compressed on its own, so none of that repetition compresses away. Kotlin metadata was already only on kept classes, and data-class methods, `$default` methods and lambdas were small.
+- **R8's marker is emptied** (`R8Shrink.withoutMarker`). R8 puts `~~R8{"backend":"cf",...,"pg-map-id":...}` as constant #1 of every class it writes, for tools to tell which R8 built it; the mapping file kept per release already says that. It has no switch, so `shrinkJar` empties the string (keeping it, at zero length, so no index moves): 11% of xUtilities' jar.
+- **Renamed classes go to a package named for the plugin, `xutilities`, not `co.xenastudios.xutilities.r8`.** Every class name and descriptor carries it: 6.5% of xUtilities' jar. It stays unique where it must, Bukkit's shared class cache and Fabric's one class loader: a server loads one plugin of a name, and the id is ours. The default is the project path's first name (`:xbans:bukkit`: `xbans`), and `xena.fabric-mod`'s the mod id. The budget check's profile and heap counts read a plugin's packages from its jar (`analyze.py`), so they still count every class of its own.
+- **The relocated core's api packages are no longer kept whole.** `co.xenastudios.**.api.**` matched each plugin's copy of the core's API too, which no other plugin can call. common.pro keeps a plugin's own API (`api` packages outside its core), and `shrinkJar` adds keep rules for exactly the core types that API names, read from the API classes' constant pools and followed through those types (xUtilities: `PlayerRef`, `Location`, `WorldRef` and the event types; xSample, with no API: none).
+- **No keep rule for enums.** R8 unboxes an enum only where nothing can see it's an object (EnumMap, a library, reflection), and the rewrite reaches no enum by reflection; the rule was for Cloud and Guice, which only today's plugins use. A plugin that brings such a library adds the rule to its own `r8/*.pro` (the line is in common.pro's comment).
+- **Only the annotations the JVM reads are kept** (`RuntimeVisible*`, `AnnotationDefault`), not the compile-time ones (`@NotNull`).
+- **Kept as they were: line numbers and one source file name** (`SourceFile`, which the attribute's own name already puts in every constant pool). Without the attribute the JVM prints `Unknown Source` and no line, and `retrace` needs both. R8 already runs in full mode, which changes access on its own: `-allowaccessmodification` changed nothing.
+- **The jar is written at deflate's strongest level, sizes up front.** Java's `ZipOutputStream` adds a 16-byte data descriptor after every entry whose sizes it doesn't know; `shrinkJar` now computes them first. Level 9 itself gains 0.1%.
+- **Tried and not taken.** Removing Kotlin's null-check calls (`-assumenosideeffects` on `Intrinsics`): under 0.3%, and a null from Java would fail later and further from its cause. The seven lang drafts in one entry instead of seven: 6 KB, and LangFiles would read them differently. Leaving the shaded modules out of R8's library jars (xUtilities' own modules were in both): no change in size. Making the database layer lazy: R8 already drops what a plugin doesn't reach (the import and migrate paths are stubs in xUtilities' jar); what's left, `Table`, `ColumnType` and `SqlValue`, is how the family's player cache describes its file, which xUtilities uses.
+- **Sizes** (KiB, the shrunk jar before and after; Fabric's before Loom remaps it):
+
+| Jar | Before | After | |
+|---|--:|--:|--:|
+| xSample, Bukkit | 521.0 | 417.5 | -20% |
+| xTwin, Bukkit | 400.8 | 310.9 | -22% |
+| xSample, Fabric 1.20.1 / 1.21.11 / 26.3 | 431.3 / 432.3 / 445.4 | 332.1 / 333.0 / 346.1 | -23% |
+| xTwin, Fabric 1.20.1 / 1.21.11 / 26.3 | 358.1 / 360.3 / 373.4 | 268.6 / 269.7 / 282.8 | -25% |
+| xUtilities 3.0, Bukkit (#167, built locally) | 573.6 | 477.3 | -17% |
+| xUtilities 3.0, Fabric 1.20.1 / 1.21.11 / 26.3 (#167) | 527.7 / 528.6 / 541.8 | 437.9 / 439.0 / 452.2 | -17% |
+
+  The lines in `gradle/jar-budgets.txt` are the new sizes plus about 10%. xUtilities is still three times its 2.x jar: what's left is the core's code, which a plugin gets whole as far as it uses it.
+- **Checked:** `./gradlew build` (ABI, jar budgets, JarBootTest on the shrunk jar), `./gradlew -p core/platform-fabric build`, the family test on Paper 26.3, Spigot 1.8.8 (Java 8) and Fabric 26.3, and the runtime budgets on Paper 26.3 and 1.21.11, where startup is the same as before (xSample 41.0 and 71.1 ms against 40.7 and 71.0 ms with the old jar on the same machine). xSample's startup list still maps (594 of its 595 classes are in the jar; one R8 now merges away).

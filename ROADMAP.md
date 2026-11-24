@@ -1,6 +1,6 @@
 # Roadmap: the rewrite
 
-Every plugin is rewritten once more, so the same plugin runs on every server software it reasonably can, in every player's language, with the same speed and size it has on Paper today. Tracked in the [rewrite tracking issue](https://github.com/xena-studios/plugins/issues?q=label%3Arewrite+label%3Amilestone), one milestone at a time; why each choice was made goes in [DECISIONS.md](DECISIONS.md) as it's settled.
+Every plugin is rewritten once more, so the same plugin runs on every server software it reasonably can, in every player's language, with the same speed and size it has on Paper today. Tracked in #120, one milestone at a time; why each choice was made goes in [DECISIONS.md](DECISIONS.md) as it's settled.
 
 ## Goals
 

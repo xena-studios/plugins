@@ -227,3 +227,7 @@ So per plugin, plain routes:
 8. **Exclude generated-only routes from the sitemap** if any stay hidden. Starlight's sitemap lists
    `/spike/manifest/xdemo/` today even though it's `noindex`. That's harmless for a spike, wrong for
    a real page.
+
+## Where the docs side lives
+
+The docs components, the hidden route and the generated files are kept in `sandbox/m0/site/docs/` (paths relative to `docs/`, with `content.config.ts.patch` for the collection), not in `docs/` itself, so the spike route never deploys to plugins.xenastudios.co. To build them as they were proven, check out commit `7872059` on the `spike/m0-site` branch. M1 builds the real components inside each plugin's pages.

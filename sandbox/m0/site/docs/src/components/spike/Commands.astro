@@ -1,0 +1,61 @@
+---
+// Every command and subcommand, with its arguments, aliases and permission, from the
+// plugin's command tree: the one the server registers. The permission sits under the usage,
+// so the table fits the reading column.
+import { Badge } from "@astrojs/starlight/components";
+import { type Argument, type Command, flatten, num } from "./manifest";
+
+interface Props {
+  commands: Command[];
+}
+const rows = flatten(Astro.props.commands).filter((c) => c.arguments.length || c.subcommands.length === 0);
+const range = (a: Argument) =>
+  a.min != null && a.max != null ? `${num(a.min)} to ${num(a.max)}` : a.min != null ? `at least ${num(a.min)}` : a.max != null ? `up to ${num(a.max)}` : "";
+---
+<table class="ref-commands">
+  <thead>
+    <tr><th>Command</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    {rows.map((c) => (
+      <tr>
+        <td>
+          <code>{c.usage}</code>
+          {c.aliases.length > 0 && <div class="ref-hint">also {c.aliases.map((a, i) => <>{i > 0 && ", "}<code>/{a}</code></>)}</div>}
+          <div class="ref-hint">{c.permission ? <code>{c.permission}</code> : "no permission needed"}</div>
+        </td>
+        <td>
+          {c.description}
+          {c.playerOnly && <> <Badge text="Players only" variant="default" /></>}
+          {c.builtIn && <> <Badge text="Every plugin" variant="note" /></>}
+          {c.arguments.length > 0 && (
+            <dl class="ref-args">
+              {c.arguments.map((a) => (
+                <>
+                  <dt><code>{a.required ? `<${a.name}>` : `[${a.name}]`}</code></dt>
+                  <dd>
+                    {a.description} <span class="ref-hint">{[a.type, range(a), a.choices.join(" | "), a.required ? "" : "optional"].filter(Boolean).join(", ")}</span>
+                  </dd>
+                </>
+              ))}
+            </dl>
+          )}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  .ref-args {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 0.75rem;
+    margin-top: 0.5rem;
+    font-size: var(--sl-text-sm);
+  }
+  .ref-args dt,
+  .ref-args dd {
+    margin: 0;
+  }
+</style>

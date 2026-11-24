@@ -1,0 +1,81 @@
+---
+// M0 spike (sandbox/m0/site): a plugin's reference, rendered from the manifest its build
+// writes (src/generated/<plugin>/manifest.json). Hidden: not in the sidebar, not indexed.
+// In M1 these components go on each plugin's own pages instead (commands, permissions,
+// configuration), and this route goes away.
+import { Code } from "@astrojs/starlight/components";
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { getCollection } from "astro:content";
+import Commands from "../../../components/spike/Commands.astro";
+import Config from "../../../components/spike/Config.astro";
+import Events from "../../../components/spike/Events.astro";
+import type { Manifest } from "../../../components/spike/manifest";
+import Messages from "../../../components/spike/Messages.astro";
+import Permissions from "../../../components/spike/Permissions.astro";
+import Placeholders from "../../../components/spike/Placeholders.astro";
+import Platforms from "../../../components/spike/Platforms.astro";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("references");
+  return entries.map((e) => ({ params: { plugin: e.id }, props: { manifest: e.data as Manifest } }));
+}
+
+const { manifest } = Astro.props;
+const { plugin } = manifest;
+const configs = import.meta.glob<string>("../../../generated/*/config.yml", { query: "?raw", import: "default", eager: true });
+const yaml = configs[`../../../generated/${plugin.id}/config.yml`];
+const sections = [
+  ["platforms", "Platforms"],
+  ["commands", "Commands"],
+  ["permissions", "Permissions"],
+  ["configuration", "Configuration"],
+  ["messages", "Messages and translations"],
+  ["placeholders", "Placeholders"],
+  ["events", "API events"],
+] as const;
+---
+<StarlightPage
+  frontmatter={{
+    title: `${plugin.name} ${plugin.version} reference`,
+    description: `Generated from ${plugin.name}'s code: ${plugin.description}`,
+    editUrl: false,
+    lastUpdated: false,
+    pagefind: false,
+    head: [{ tag: "meta", attrs: { name: "robots", content: "noindex" } }],
+  }}
+  headings={sections.map(([slug, text]) => ({ depth: 2, slug, text }))}
+>
+  <p>
+    Every table on this page is generated from {plugin.name}'s code by <code>./gradlew xenaManifest</code>, and CI fails
+    when the committed copy is out of date. Don't edit it here: change the plugin.
+  </p>
+
+  <h2 id="platforms">Platforms</h2>
+  <Platforms platforms={manifest.platforms} />
+
+  <h2 id="commands">Commands</h2>
+  <Commands commands={manifest.commands} />
+
+  <h2 id="permissions">Permissions</h2>
+  <Permissions permissions={manifest.permissions} />
+
+  <h2 id="configuration">Configuration</h2>
+  <Config config={manifest.config} />
+  {yaml && <Code code={yaml} lang="yaml" title={`plugins/${plugin.name}/config.yml`} />}
+
+  <h2 id="messages">Messages and translations</h2>
+  <Messages {...manifest.messages} />
+
+  <h2 id="placeholders">Placeholders</h2>
+  <Placeholders placeholders={manifest.placeholders} />
+
+  <h2 id="events">API events</h2>
+  <Events events={manifest.events} />
+</StarlightPage>
+
+<style is:global>
+  .ref-hint {
+    color: var(--gui-hint);
+    font-size: var(--sl-text-sm);
+  }
+</style>

@@ -1,0 +1,44 @@
+---
+// config.yml key by key, from the plugin's typed config declarations: type, default, range,
+// and whether /<plugin> reload applies it. The default file itself is shown below the table.
+import { Badge } from "@astrojs/starlight/components";
+import { type ConfigNode, num } from "./manifest";
+
+interface Props {
+  config: ConfigNode[];
+}
+const flat = (nodes: ConfigNode[]): ConfigNode[] => nodes.flatMap((n) => [n, ...flat(n.children)]);
+const value = (v: unknown) => (Array.isArray(v) ? (v.length ? v.join(", ") : "none") : String(v));
+const range = (n: ConfigNode) =>
+  n.min != null && n.max != null ? `${num(n.min)} to ${num(n.max)}` : n.min != null ? `at least ${num(n.min)}` : n.max != null ? `up to ${num(n.max)}` : "";
+---
+<table class="ref-config">
+  <thead>
+    <tr><th>Key</th><th>Default</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    {flat(Astro.props.config).map((n) =>
+      n.type === "section" ? (
+        <tr class="ref-section">
+          <td colspan="3"><code>{n.path}</code> <span class="ref-hint">{n.comment.join(" ")}</span></td>
+        </tr>
+      ) : (
+        <tr>
+          <td><code>{n.path}</code></td>
+          <td><code>{value(n.default)}</code></td>
+          <td>
+            {n.comment.join(" ")}
+            {!n.reloadable && <> <Badge text="Restart" variant="caution" /></>}
+            <div class="ref-hint">{[n.type, range(n), n.choices.join(" | ")].filter(Boolean).join(", ")}</div>
+          </td>
+        </tr>
+      ),
+    )}
+  </tbody>
+</table>
+
+<style>
+  .ref-section td {
+    background: var(--gui-slot);
+  }
+</style>

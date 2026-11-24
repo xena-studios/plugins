@@ -1,0 +1,22 @@
+diff --git a/docs/src/content.config.ts b/docs/src/content.config.ts
+index 7fbcf2c..ffbf07f 100644
+--- a/docs/src/content.config.ts
++++ b/docs/src/content.config.ts
+@@ -1,7 +1,17 @@
+ import { defineCollection } from "astro:content";
++import { glob } from "astro/loaders";
++import { z } from "astro/zod";
+ import { docsLoader } from "@astrojs/starlight/loaders";
+ import { docsSchema } from "@astrojs/starlight/schema";
++// M0 spike (sandbox/m0/site): the manifest's JSON Schema, written by the same Kotlin build as
++// the manifests, so a manifest this site can't read fails the build here.
++import manifestSchema from "./generated/manifest.schema.json" with { type: "json" };
+ 
+ export const collections = {
+   docs: defineCollection({ loader: docsLoader(), schema: docsSchema() }),
++  // Each plugin's reference manifest (src/generated/<plugin>/manifest.json), by plugin id.
++  references: defineCollection({
++    loader: glob({ pattern: "*/manifest.json", base: "./src/generated", generateId: ({ entry }) => entry.split("/")[0]! }),
++    schema: z.fromJSONSchema(manifestSchema as Parameters<typeof z.fromJSONSchema>[0]),
++  }),
+ };

@@ -1,0 +1,69 @@
+# xUtilities on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks,
+# through boot.sh): every command family, answered by the core's dispatcher and drawn from
+# lang/en.yml.
+logged: xUtilities 3.0.0-alpha.1 on
+run: xutilities info
+expect: xUtilities 3.0.0-alpha.1 on
+run: xu
+expect: commands on
+
+# Ours replaces vanilla /clear and /gamemode, which say "No player was found".
+run: clear Nobody
+expect: No player called Nobody is online.
+run: gamemode creative Nobody
+expect: No player called Nobody is online.
+run: creative Nobody
+expect: No player called Nobody is online.
+run: gm 9
+expect: isn't one of survival, creative, adventure, spectator.
+
+# Each family: player changes, travel, menus, links.
+run: fly
+expect: Only players can use this command.
+run: speed 5 Nobody
+expect: No player called Nobody is online.
+run: speed 11
+expect: Speed must be from 1 to 10.
+run: setrotation 400 0
+expect: 400 is more than 360.
+run: ping Nobody
+expect: No player called Nobody is online.
+run: heal Nobody
+expect: No player called Nobody is online.
+run: feed Nobody
+expect: No player called Nobody is online.
+run: repair all Nobody
+expect: No player called Nobody is online.
+run: top
+expect: Only players can use this command.
+run: back
+expect: Only players can use this command.
+run: enderchest Nobody
+expect: Only players can use this command.
+run: anvil
+expect: Only players can use this command.
+run: craft
+expect: Only players can use this command.
+run: trash
+expect: Only players can use this command.
+run: discord
+expect: Join our Discord: discord.gg/example
+
+# Reloading re-registers the commands while the server runs: /back's listener is the one module.
+run: xu reload
+expect: Reloaded xUtilities: 1 module on.
+run: clear Nobody
+expect: No player called Nobody is online.
+run: xutilities:heal Nobody
+expect: No player called Nobody is online.
+
+# The health checks, and the report written to debug/ (boot.sh turns the upload off).
+run: xutilities debug
+expect: Threads: tasks run where they should
+expect: Debug report saved as debug/debug-
+
+# A datapack reload rebuilds the server's command tree; ours must survive it. Folia has no /reload.
+paper run: minecraft:reload
+paper expect: advancements
+paper run: clear Nobody
+paper expect: No player called Nobody is online.

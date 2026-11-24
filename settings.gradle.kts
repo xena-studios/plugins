@@ -121,7 +121,8 @@ fun isRewrite(dir: java.io.File) = dir.resolve("common/build.gradle.kts").isFile
 rootDir.listFiles { file -> file.isDirectory && isRewrite(file) }
     ?.sortedBy { it.name }
     ?.forEach { plugin ->
-        plugin.listFiles { module -> module.resolve("build.gradle.kts").isFile }
+        // fabric/ is a branch of core/platform-fabric's own build (Loom), never this one's.
+        plugin.listFiles { module -> module.resolve("build.gradle.kts").isFile && module.name != "fabric" }
             ?.sortedBy { it.name }
             ?.forEach { include("${plugin.name}:${it.name}") }
     }

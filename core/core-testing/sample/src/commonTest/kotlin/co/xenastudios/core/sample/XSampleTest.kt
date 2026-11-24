@@ -69,7 +69,7 @@ class XSampleTest {
         val before = plugin.dispatcher
         assertEquals(CommandResult.Ran, run(console, "xsample reload"))
         platform.scheduler.tick()
-        assertEquals("Reloaded xSample: 1 module on.", console.replies.last())
+        assertEquals("» Reloaded xSample: 1 module on.", console.replies.last())
         assertTrue(plugin.dispatcher !== before, "a reload builds the commands again, from the new config")
     }
 

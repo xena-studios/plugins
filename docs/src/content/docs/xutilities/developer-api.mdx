@@ -1,0 +1,57 @@
+---
+title: Developer API
+description: "Build on xUtilities: read, set and clear where /back takes a player, check which commands are on, and listen to /back's events, on every platform."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xUtilities' API is the same on Paper, Folia, Spigot and Fabric: players are by UUID, and every method answers from memory, on any thread, at once. Get it with `XUtilities.api()` once xUtilities is enabled (add it to your plugin's `depend`, or `softdepend` and check `XUtilities.isEnabled()` first). On Bukkit it's also in the services manager, as `XUtilitiesApi`.
+
+:::caution[Not on Maven Central yet]
+3.0's API isn't published while 3.0 is in alpha. Its coordinates will be `co.xenastudios.xutilities:xutilities-api:3.0.0`; until then, compile against the plugin's jar. The [2.x API](/xutilities/v2/developer-api/) is on Maven Central as `2.1.0`.
+:::
+
+## `/back`
+
+```java
+XUtilitiesApi api = XUtilities.api();
+PlayerRef player = PlayerRefs.of(bukkitPlayer.getUniqueId());
+
+if (api.isBackEnabled()) {
+    Location spot = api.getBackLocation(player);   // null if there's none
+    api.setBackLocation(player, new Location(WorldRef.of("world"), 0.5, 64, 0.5));
+    api.clearBackLocation(player);
+}
+```
+
+`setBackLocation` is for a teleport xUtilities doesn't hear about: on Bukkit, one without the `COMMAND`, `PLUGIN` or `UNKNOWN` cause; on Fabric, which has no teleport event, every teleport your mod makes. It returns `false` while `/back` is off or the player isn't online, and doesn't fire `BackRecordEvent`: you decided. The spot is forgotten when the player leaves.
+
+`isCommandEnabled(label)` says whether xUtilities has a command on under that name or alias: one of its commands, a [link command](/xutilities/link-commands/), or `/xutilities` itself (and `/xu`). A leading `/`, the `xutilities:` prefix and upper case are fine.
+
+## Events
+
+Both are cancellable, fired on the player's thread (the main thread, or the player's region on Folia), and made only when something listens.
+
+```java
+api.getEvents().subscribe(BackRecordEvent.TYPE, event -> {
+    if (inMinigame(event.getPlayer())) event.setCancelled(true);   // /back won't return into it
+});
+```
+
+On Bukkit, each is also fired as a Bukkit event, for plugins and Skript scripts that listen the Bukkit way: `co.xenastudios.xutilities.api.bukkit.BukkitBackRecordEvent` and `BukkitBackTeleportEvent`, with Bukkit's `Player` and `Location`. Cancelling either cancels xUtilities' own.
+
+<Reference plugin="xutilities" show="events" />
+
+## From 2.x
+
+| 2.x | 3.0 |
+| --- | --- |
+| `XUtilitiesApi.get()` | `XUtilities.api()` |
+| `getBackLocation(Player)`: `Optional<Location>` | `getBackLocation(PlayerRef)`: the core's `Location`, or `null` |
+| `setBackLocation(Player, Location)`, `clearBackLocation(Player)` | the same, by `PlayerRef` and the core's `Location` |
+| `isBackEnabled()`, `isCommandEnabled(String)` | the same |
+| Bukkit events `co.xenastudios.xutilities.api.event.BackRecordEvent`, `BackTeleportEvent` | `api.getEvents()`, with `BackRecordEvent.TYPE` and `BackTeleportEvent.TYPE`; on Bukkit also `co.xenastudios.xutilities.api.bukkit.BukkitBackRecordEvent` and `BukkitBackTeleportEvent` |
+
+Inside xUtilities' jar, the core's types the API uses (`PlayerRef`, `Location`, `EventBus`) are relocated with its own copy of the core, as every Xena plugin's are, so two plugins' cores never clash. The published API will carry the same names.

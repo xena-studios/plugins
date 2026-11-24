@@ -1,0 +1,67 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+abstract interface co.xenastudios.xutilities.api/XUtilitiesApi { // co.xenastudios.xutilities.api/XUtilitiesApi|null[0]
+    abstract val events // co.xenastudios.xutilities.api/XUtilitiesApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xutilities.api/XUtilitiesApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.xutilities.api/XUtilitiesApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xutilities.api/XUtilitiesApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun clearBackLocation(co.xenastudios.core.api/PlayerRef) // co.xenastudios.xutilities.api/XUtilitiesApi.clearBackLocation|clearBackLocation(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun getBackLocation(co.xenastudios.core.api/PlayerRef): co.xenastudios.core.api/Location? // co.xenastudios.xutilities.api/XUtilitiesApi.getBackLocation|getBackLocation(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun isBackEnabled(): kotlin/Boolean // co.xenastudios.xutilities.api/XUtilitiesApi.isBackEnabled|isBackEnabled(){}[0]
+    abstract fun isCommandEnabled(kotlin/String): kotlin/Boolean // co.xenastudios.xutilities.api/XUtilitiesApi.isCommandEnabled|isCommandEnabled(kotlin.String){}[0]
+    abstract fun setBackLocation(co.xenastudios.core.api/PlayerRef, co.xenastudios.core.api/Location): kotlin/Boolean // co.xenastudios.xutilities.api/XUtilitiesApi.setBackLocation|setBackLocation(co.xenastudios.core.api.PlayerRef;co.xenastudios.core.api.Location){}[0]
+}
+
+final class co.xenastudios.xutilities.api.event/BackRecordEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xutilities.api.event/BackRecordEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.core.api/Location, co.xenastudios.xutilities.api.event/BackRecordEvent.Reason) // co.xenastudios.xutilities.api.event/BackRecordEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.core.api.Location;co.xenastudios.xutilities.api.event.BackRecordEvent.Reason){}[0]
+
+    final val location // co.xenastudios.xutilities.api.event/BackRecordEvent.location|{}location[0]
+        final fun <get-location>(): co.xenastudios.core.api/Location // co.xenastudios.xutilities.api.event/BackRecordEvent.location.<get-location>|<get-location>(){}[0]
+    final val player // co.xenastudios.xutilities.api.event/BackRecordEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xutilities.api.event/BackRecordEvent.player.<get-player>|<get-player>(){}[0]
+    final val reason // co.xenastudios.xutilities.api.event/BackRecordEvent.reason|{}reason[0]
+        final fun <get-reason>(): co.xenastudios.xutilities.api.event/BackRecordEvent.Reason // co.xenastudios.xutilities.api.event/BackRecordEvent.reason.<get-reason>|<get-reason>(){}[0]
+
+    final enum class Reason : kotlin/Enum<co.xenastudios.xutilities.api.event/BackRecordEvent.Reason> { // co.xenastudios.xutilities.api.event/BackRecordEvent.Reason|null[0]
+        enum entry DEATH // co.xenastudios.xutilities.api.event/BackRecordEvent.Reason.DEATH|null[0]
+        enum entry TELEPORT // co.xenastudios.xutilities.api.event/BackRecordEvent.Reason.TELEPORT|null[0]
+
+        final val entries // co.xenastudios.xutilities.api.event/BackRecordEvent.Reason.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xutilities.api.event/BackRecordEvent.Reason> // co.xenastudios.xutilities.api.event/BackRecordEvent.Reason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): co.xenastudios.xutilities.api.event/BackRecordEvent.Reason // co.xenastudios.xutilities.api.event/BackRecordEvent.Reason.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<co.xenastudios.xutilities.api.event/BackRecordEvent.Reason> // co.xenastudios.xutilities.api.event/BackRecordEvent.Reason.values|values#static(){}[0]
+    }
+
+    final object Companion { // co.xenastudios.xutilities.api.event/BackRecordEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xutilities.api.event/BackRecordEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xutilities.api.event/BackRecordEvent> // co.xenastudios.xutilities.api.event/BackRecordEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xutilities.api.event/BackTeleportEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xutilities.api.event/BackTeleportEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.core.api/Location) // co.xenastudios.xutilities.api.event/BackTeleportEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.core.api.Location){}[0]
+
+    final val destination // co.xenastudios.xutilities.api.event/BackTeleportEvent.destination|{}destination[0]
+        final fun <get-destination>(): co.xenastudios.core.api/Location // co.xenastudios.xutilities.api.event/BackTeleportEvent.destination.<get-destination>|<get-destination>(){}[0]
+    final val player // co.xenastudios.xutilities.api.event/BackTeleportEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xutilities.api.event/BackTeleportEvent.player.<get-player>|<get-player>(){}[0]
+
+    final object Companion { // co.xenastudios.xutilities.api.event/BackTeleportEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xutilities.api.event/BackTeleportEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xutilities.api.event/BackTeleportEvent> // co.xenastudios.xutilities.api.event/BackTeleportEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final object co.xenastudios.xutilities.api/XUtilities { // co.xenastudios.xutilities.api/XUtilities|null[0]
+    final fun api(): co.xenastudios.xutilities.api/XUtilitiesApi // co.xenastudios.xutilities.api/XUtilities.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xutilities.api/XUtilities.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xutilities.api/XUtilitiesApi?) // co.xenastudios.xutilities.api/XUtilities.register|register(co.xenastudios.xutilities.api.XUtilitiesApi?){}[0]
+}

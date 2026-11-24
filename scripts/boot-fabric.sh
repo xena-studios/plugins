@@ -157,7 +157,8 @@ spawn-protection=0
 EOF
 
 mkfifo "$base/stdin"
-(cd "$base" && exec "$java" -Xms512M -Xmx1G -jar "$launcher" nogui <stdin >"$log" 2>&1) &
+# Debug reports stay in the server's folder: a boot test never uploads one.
+(cd "$base" && exec "$java" -Xms512M -Xmx1G -Dxena.debug.paste=false -jar "$launcher" nogui <stdin >"$log" 2>&1) &
 pid=$!
 exec 3>"$base/stdin"
 

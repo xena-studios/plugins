@@ -10,8 +10,8 @@
 #   compile  Gradle tasks for the newest-API compile; empty to skip it
 #   checks   boot-checks files the main boot runs; empty to skip it
 #   xmoney   true when xMoney's own boots run
-#   boot     the rewrite's platforms the Boot workflow boots xSample on, space-separated
-#            (bukkit, fabric); empty to skip them
+#   boot     the rewrite's platforms the Boot workflow boots xSample and the rewritten plugins
+#            (xUtilities) on, space-separated (bukkit, fabric); empty to skip them
 #
 # The rules:
 # - Anything everything is built on (today's core, build-logic/, gradle/, the root build
@@ -37,7 +37,8 @@
 #   conventions' own links (every plugin on :core and its own API) need none: the core
 #   means everything, and a plugin's API is in its folder.
 # - The rewrite's boot matrix (the Boot workflow) boots a platform when its adapter, the sample
-#   plugins' code for it, or anything under them changed: core/platform-fabric/ means Fabric;
+#   plugins' code for it, a rewritten plugin's code for it (<plugin>/bukkit/, <plugin>/fabric/;
+#   its common/ and api/ mean both), or anything under them changed: core/platform-fabric/ means Fabric;
 #   core/platform-bukkit/, the loader and the samples' bukkit/ folders mean Bukkit; any other
 #   module in core/ means both, as does everything, and the Boot workflow itself.
 # - Markdown (DECISIONS.md and decisions/ among it), scripts/decisions.ts, the rest of the docs
@@ -112,9 +113,12 @@ done
 # The build files in a folder that belong to the root build: not under build/ or
 # node_modules/, and not in a separate build of its own (a folder below with its own
 # settings.gradle.kts, like the spikes in sandbox/m0).
+# A rewritten plugin's fabric/ is a branch of core/platform-fabric's own build, not this one's.
 buildfiles() {
   local separate
   separate=$(find "$1" -mindepth 2 -name settings.gradle.kts -not -path '*/build/*' -not -path '*/node_modules/*' -exec dirname {} \; | sed 's|$|/|')
+  [[ -z ${kmp[$1]:-} || ! -d $1/fabric ]] || separate+=$'\n'"$1/fabric/"
+  separate=$(sed '/^$/d' <<<"$separate")
   find "$1" -name build.gradle.kts -not -path '*/build/*' -not -path '*/node_modules/*' |
     { if [[ -n $separate ]]; then grep -vF "$separate" || true; else cat; fi; }
 }
@@ -182,8 +186,22 @@ if [[ $all == false ]]; then
       .github/workflows/boot.yml) bootBukkit=true bootFabric=true ;;
       docs/* | .github/* | LICENSE | renovate.json | .gitignore) ;;
       # A plugin's folder. Anything else, the root *.gradle.kts files among it, is everything.
+      # A rewritten plugin boots in the Boot workflow: its bukkit/ on Bukkit, its fabric/ on
+      # Fabric, the rest (common/, api/, its lang files) on both.
       *)
-        if [[ $file == */* && -n ${known[$top]:-} ]]; then changed[$top]=1; else all=true; fi ;;
+        if [[ $file == */* && -n ${known[$top]:-} ]]; then
+          changed[$top]=1
+          if [[ -n ${kmp[$top]:-} ]]; then
+            case $file in
+              */bukkit/*) bootBukkit=true ;;
+              */fabric/*) bootFabric=true ;;
+              *.md) ;;
+              *) bootBukkit=true bootFabric=true ;;
+            esac
+          fi
+        else
+          all=true
+        fi ;;
     esac
   done
 fi

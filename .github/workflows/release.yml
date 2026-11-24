@@ -56,10 +56,14 @@ jobs:
           # All of main, to check the tag is on it. A dispatched real release checks out its tag.
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry-run && format('refs/tags/{0}', inputs.tag) || '' }}
+      # Java 25 runs Gradle; platform-fabric's 1.20.1 and 1.21.11 lines compile on 17 and 21.
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 25
+          java-version: |
+            17
+            21
+            25
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-read-only: true
@@ -94,6 +98,23 @@ jobs:
             echo "sha=$(git rev-parse HEAD)"
             echo "dry-run=$dry_run"
           } >>"$GITHUB_OUTPUT"
+      # A plugin with Fabric jars has them built by platform-fabric's own build (DECISIONS.md,
+      # "platform-fabric"), which the root build's releaseAssemble then reads from its build/libs.
+      - uses: actions/cache/restore@v6
+        with:
+          path: ~/.gradle/caches/fabric-loom
+          key: fabric-loom-${{ hashFiles('core/platform-fabric/settings.gradle.kts', 'core/platform-fabric/stonecutter.properties.toml') }}
+          restore-keys: fabric-loom-
+      - name: Build the Fabric jars
+        env:
+          DIR: ${{ steps.tag.outputs.dir }}
+        run: |
+          project_dir=${DIR%/build/release}
+          if grep -q 'ReleasePlatform.FABRIC' "$project_dir/build.gradle.kts"; then
+            ./gradlew -p core/platform-fabric collect
+          else
+            echo "No Fabric jars in $project_dir's release"
+          fi
       - name: Build every jar
         # The jars, SHA256SUMS, release.json, the changelog section and the update posts, in
         # the project's build/release. Reads the brand catalog for the store listing.

@@ -1,0 +1,3574 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xutilities",
+    "name": "xUtilities",
+    "version": "unspecified",
+    "description": "Every command you need. None you don't."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "3.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "3.0.0"
+    },
+    {
+      "id": "spigot",
+      "name": "Spigot",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "3.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "3.0.0"
+    },
+    {
+      "id": "neoforge",
+      "name": "NeoForge",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "id": "sponge",
+      "name": "Sponge",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    },
+    {
+      "id": "pumpkin",
+      "name": "Pumpkin",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "xutilities",
+      "usage": "/xutilities [info|reload|debug]",
+      "aliases": [
+        "xu"
+      ],
+      "description": "Shows xUtilities' version, and holds its admin subcommands.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xutilities info",
+          "usage": "/xutilities info",
+          "aliases": [],
+          "description": "Shows xUtilities' version and how many commands are on.",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xutilities reload",
+          "usage": "/xutilities reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "xutilities.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xutilities debug",
+          "usage": "/xutilities debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "xutilities.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "survival",
+      "usage": "/survival [player]",
+      "aliases": [
+        "gms",
+        "gm0"
+      ],
+      "description": "Switch to survival mode.",
+      "permission": "xutilities.command.survival",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "creative",
+      "usage": "/creative [player]",
+      "aliases": [
+        "gmc",
+        "gm1"
+      ],
+      "description": "Switch to creative mode.",
+      "permission": "xutilities.command.creative",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "adventure",
+      "usage": "/adventure [player]",
+      "aliases": [
+        "gma",
+        "gm2"
+      ],
+      "description": "Switch to adventure mode.",
+      "permission": "xutilities.command.adventure",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "spectator",
+      "usage": "/spectator [player]",
+      "aliases": [
+        "gmsp",
+        "gm3"
+      ],
+      "description": "Switch to spectator mode.",
+      "permission": "xutilities.command.spectator",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "gamemode",
+      "usage": "/gamemode <mode> [player]",
+      "aliases": [
+        "gm"
+      ],
+      "description": "Switch gamemode.",
+      "permission": "xutilities.command.gamemode",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "mode",
+          "type": "gamemode",
+          "required": true,
+          "greedy": false,
+          "description": "The gamemode: a name, a number or an alias such as gmc.",
+          "choices": [
+            "survival",
+            "creative",
+            "adventure",
+            "spectator"
+          ]
+        },
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "fly",
+      "usage": "/fly [player]",
+      "aliases": [
+        "flight",
+        "togglefly",
+        "toggleflymode"
+      ],
+      "description": "Turn flight on or off.",
+      "permission": "xutilities.command.fly",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "speed",
+      "usage": "/speed <speed> [player]",
+      "aliases": [
+        "setspeed"
+      ],
+      "description": "Set your fly or walk speed.",
+      "permission": "xutilities.command.speed",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "speed",
+          "type": "number",
+          "required": true,
+          "greedy": false,
+          "description": "From 1 to 10: 1 is slow, 2 is walking, 10 is fastest.",
+          "choices": [],
+          "min": 1,
+          "max": 10
+        },
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "top",
+      "usage": "/top",
+      "aliases": [],
+      "description": "Teleport to the highest block above you.",
+      "permission": "xutilities.command.top",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "setrotation",
+      "usage": "/setrotation <yaw> <pitch> [player]",
+      "aliases": [],
+      "description": "Set which way a player faces.",
+      "permission": "xutilities.command.setrotation",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "yaw",
+          "type": "number",
+          "required": true,
+          "greedy": false,
+          "description": "Degrees around: 0 is south, 90 west.",
+          "choices": [],
+          "min": -360,
+          "max": 360
+        },
+        {
+          "name": "pitch",
+          "type": "number",
+          "required": true,
+          "greedy": false,
+          "description": "Degrees up or down: -90 is straight up.",
+          "choices": [],
+          "min": -90,
+          "max": 90
+        },
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to turn, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "ping",
+      "usage": "/ping [player]",
+      "aliases": [],
+      "description": "Show network latency.",
+      "permission": "xutilities.command.ping",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "Whose ping, if not yours.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "back",
+      "usage": "/back",
+      "aliases": [],
+      "description": "Go back to where you were before your last teleport, or where you died.",
+      "permission": "xutilities.command.back",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "heal",
+      "usage": "/heal [player]",
+      "aliases": [],
+      "description": "Restore health.",
+      "permission": "xutilities.command.heal",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "feed",
+      "usage": "/feed [player]",
+      "aliases": [],
+      "description": "Restore hunger.",
+      "permission": "xutilities.command.feed",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "repair",
+      "usage": "/repair [all] [player]",
+      "aliases": [
+        "fix"
+      ],
+      "description": "Repair the held item, or with all, the whole inventory.",
+      "permission": "xutilities.command.repair",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "all",
+          "type": "all or player",
+          "required": false,
+          "greedy": false,
+          "description": "all for the whole inventory, or a player.",
+          "choices": []
+        },
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player whose gear, after all.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "clear",
+      "usage": "/clear [player]",
+      "aliases": [
+        "clearinventory",
+        "ci"
+      ],
+      "description": "Empty an inventory.",
+      "permission": "xutilities.command.clear",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "The player to change, if not you.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "enderchest",
+      "usage": "/enderchest [player]",
+      "aliases": [
+        "ec",
+        "ender"
+      ],
+      "description": "Open your Ender Chest, or another player's.",
+      "permission": "xutilities.command.enderchest",
+      "playerOnly": true,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": false,
+          "greedy": false,
+          "description": "Whose Ender Chest, if not yours.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "anvil",
+      "usage": "/anvil",
+      "aliases": [],
+      "description": "Open an anvil.",
+      "permission": "xutilities.command.anvil",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "craft",
+      "usage": "/craft",
+      "aliases": [
+        "workbench",
+        "wb"
+      ],
+      "description": "Open a crafting table.",
+      "permission": "xutilities.command.craft",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "grinder",
+      "usage": "/grinder",
+      "aliases": [
+        "grindstone"
+      ],
+      "description": "Open a grindstone.",
+      "permission": "xutilities.command.grinder",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "loom",
+      "usage": "/loom",
+      "aliases": [],
+      "description": "Open a loom.",
+      "permission": "xutilities.command.loom",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "smith",
+      "usage": "/smith",
+      "aliases": [
+        "smithingtable",
+        "smithtable"
+      ],
+      "description": "Open a smithing table.",
+      "permission": "xutilities.command.smith",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "stonecutter",
+      "usage": "/stonecutter",
+      "aliases": [],
+      "description": "Open a stonecutter.",
+      "permission": "xutilities.command.stonecutter",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "cartography",
+      "usage": "/cartography",
+      "aliases": [
+        "cartographytable"
+      ],
+      "description": "Open a cartography table.",
+      "permission": "xutilities.command.cartography",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "trash",
+      "usage": "/trash",
+      "aliases": [
+        "disposal"
+      ],
+      "description": "Open a menu that deletes what's left in it.",
+      "permission": "xutilities.command.trash",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "discord",
+      "usage": "/discord",
+      "aliases": [],
+      "description": "Show the discord link.",
+      "permission": "xutilities.command.discord",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "store",
+      "usage": "/store",
+      "aliases": [],
+      "description": "Show the store link.",
+      "permission": "xutilities.command.store",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "website",
+      "usage": "/website",
+      "aliases": [],
+      "description": "Show the website link.",
+      "permission": "xutilities.command.website",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xutilities.command.survival",
+      "description": "Use /survival.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "survival"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.survival.others",
+      "description": "Use /survival on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.creative",
+      "description": "Use /creative.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "creative"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.creative.others",
+      "description": "Use /creative on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.adventure",
+      "description": "Use /adventure.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "adventure"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.adventure.others",
+      "description": "Use /adventure on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.spectator",
+      "description": "Use /spectator.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "spectator"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.spectator.others",
+      "description": "Use /spectator on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.gamemode",
+      "description": "Use /gamemode.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "gamemode"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.gamemode.others",
+      "description": "Use /gamemode on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.fly.others",
+      "description": "Use /fly on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.fly",
+      "description": "Use /fly.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "fly"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.speed",
+      "description": "Use /speed.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "speed"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.speed.others",
+      "description": "Use /speed on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.top",
+      "description": "Use /top.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "top"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.setrotation",
+      "description": "Use /setrotation.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "setrotation"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.setrotation.others",
+      "description": "Use /setrotation on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.ping",
+      "description": "Use /ping.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "ping"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.ping.others",
+      "description": "Use /ping on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.back",
+      "description": "Use /back.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "back"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.heal.others",
+      "description": "Use /heal on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.heal",
+      "description": "Use /heal.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "heal"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.feed.others",
+      "description": "Use /feed on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.feed",
+      "description": "Use /feed.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "feed"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.repair",
+      "description": "Use /repair.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "repair"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.repair.others",
+      "description": "Use /repair on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.clear.others",
+      "description": "Use /clear on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.clear",
+      "description": "Use /clear.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "clear"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.enderchest",
+      "description": "Use /enderchest.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "enderchest"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.enderchest.others",
+      "description": "Use /enderchest on other players.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.anvil",
+      "description": "Use /anvil.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "anvil"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.craft",
+      "description": "Use /craft.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "craft"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.grinder",
+      "description": "Use /grinder.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "grinder"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.loom",
+      "description": "Use /loom.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "loom"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.smith",
+      "description": "Use /smith.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "smith"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.stonecutter",
+      "description": "Use /stonecutter.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "stonecutter"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.cartography",
+      "description": "Use /cartography.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "cartography"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.trash",
+      "description": "Use /trash.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "trash"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.discord",
+      "description": "Use /discord.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "discord"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.store",
+      "description": "Use /store.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "store"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.command.website",
+      "description": "Use /website.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "website"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xutilities.admin",
+      "description": "Every admin subcommand of xUtilities.",
+      "default": "op",
+      "children": {
+        "xutilities.admin.reload": true,
+        "xutilities.admin.debug": true
+      },
+      "commands": [],
+      "builtIn": true
+    },
+    {
+      "node": "xutilities.admin.reload",
+      "description": "Use /xutilities reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xutilities reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xutilities.admin.debug",
+      "description": "Use /xutilities debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xutilities debug"
+      ],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 3,
+    "header": [
+      "xUtilities: every command you need. None you don't.",
+      "Docs: https://plugins.xenastudios.co/xutilities/configuration/",
+      "",
+      "Apply changes with /xutilities reload (or /xu reload). Everything applies, even turning",
+      "commands on or off. A bad value falls back to its default with a warning in the console;",
+      "xUtilities never stops over config. The messages are in lang/: one file per language."
+    ],
+    "entries": [
+      {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "commands",
+        "type": "section",
+        "comment": [
+          "Every command has the same settings:",
+          "  enabled            false removes the command entirely",
+          "  aliases            other names for it",
+          "  permission         needed to use it; blank (\"\") lets anyone",
+          "  permission-others  needed to use it on another player, on commands with a [player] form",
+          "When one player changes another, the changed player gets the -self message too.",
+          "The messages are in lang/<language>.yml."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "commands.survival",
+            "type": "section",
+            "comment": [
+              "/survival [player]"
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.survival.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.survival.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "gms",
+                  "gm0"
+                ],
+                "defaultText": "[\"gms\", \"gm0\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.survival.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.survival",
+                "defaultText": "\"xutilities.command.survival\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.survival.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.survival.others",
+                "defaultText": "\"xutilities.command.survival.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.creative",
+            "type": "section",
+            "comment": [
+              "/creative [player]"
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.creative.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.creative.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "gmc",
+                  "gm1"
+                ],
+                "defaultText": "[\"gmc\", \"gm1\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.creative.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.creative",
+                "defaultText": "\"xutilities.command.creative\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.creative.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.creative.others",
+                "defaultText": "\"xutilities.command.creative.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.adventure",
+            "type": "section",
+            "comment": [
+              "/adventure [player]"
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.adventure.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.adventure.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "gma",
+                  "gm2"
+                ],
+                "defaultText": "[\"gma\", \"gm2\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.adventure.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.adventure",
+                "defaultText": "\"xutilities.command.adventure\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.adventure.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.adventure.others",
+                "defaultText": "\"xutilities.command.adventure.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.spectator",
+            "type": "section",
+            "comment": [
+              "/spectator [player]"
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.spectator.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.spectator.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "gmsp",
+                  "gm3"
+                ],
+                "defaultText": "[\"gmsp\", \"gm3\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.spectator.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.spectator",
+                "defaultText": "\"xutilities.command.spectator\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.spectator.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.spectator.others",
+                "defaultText": "\"xutilities.command.spectator.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.gamemode",
+            "type": "section",
+            "comment": [
+              "/gamemode <mode> [player]. Offers the modes whose own command is on, and needs",
+              "that command's permission too. <mode> can be a name, a number or an alias such as gmc."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.gamemode.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.gamemode.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "gm"
+                ],
+                "defaultText": "[\"gm\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.gamemode.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.gamemode",
+                "defaultText": "\"xutilities.command.gamemode\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.gamemode.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.gamemode.others",
+                "defaultText": "\"xutilities.command.gamemode.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.fly",
+            "type": "section",
+            "comment": [
+              "/fly [player]: turns flight on or off."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.fly.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.fly.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "flight",
+                  "togglefly",
+                  "toggleflymode"
+                ],
+                "defaultText": "[\"flight\", \"togglefly\", \"toggleflymode\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.fly.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.fly",
+                "defaultText": "\"xutilities.command.fly\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.fly.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.fly.others",
+                "defaultText": "\"xutilities.command.fly.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.speed",
+            "type": "section",
+            "comment": [
+              "/speed <speed> [player]: fly speed while flying, walk speed otherwise. min and max bound",
+              "what it accepts, on a 1 to 10 scale (Minecraft's 0.1 to 1.0; walking is 2 by default)."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.speed.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.speed.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "setspeed"
+                ],
+                "defaultText": "[\"setspeed\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.speed.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.speed",
+                "defaultText": "\"xutilities.command.speed\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.speed.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.speed.others",
+                "defaultText": "\"xutilities.command.speed.others\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.speed.min",
+                "type": "integer",
+                "comment": [],
+                "default": 1,
+                "defaultText": "1",
+                "choices": [],
+                "min": 1,
+                "max": 10,
+                "entries": []
+              },
+              {
+                "path": "commands.speed.max",
+                "type": "integer",
+                "comment": [],
+                "default": 10,
+                "defaultText": "10",
+                "choices": [],
+                "min": 1,
+                "max": 10,
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.top",
+            "type": "section",
+            "comment": [
+              "/top: teleports you to the highest block above you, or in the Nether, the highest below the roof."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.top.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.top.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.top.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.top",
+                "defaultText": "\"xutilities.command.top\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.setrotation",
+            "type": "section",
+            "comment": [
+              "/setrotation <yaw> <pitch> [player]: sets which way a player faces."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.setrotation.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.setrotation.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.setrotation.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.setrotation",
+                "defaultText": "\"xutilities.command.setrotation\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.setrotation.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.setrotation.others",
+                "defaultText": "\"xutilities.command.setrotation.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.ping",
+            "type": "section",
+            "comment": [
+              "/ping [player]: network latency in milliseconds. Everyone has it by default."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.ping.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.ping.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.ping.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.ping",
+                "defaultText": "\"xutilities.command.ping\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.ping.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.ping.others",
+                "defaultText": "\"xutilities.command.ping.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.back",
+            "type": "section",
+            "comment": [
+              "/back: returns you to where you were before your last teleport, or where you died."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.back.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.back.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.back.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.back",
+                "defaultText": "\"xutilities.command.back\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.heal",
+            "type": "section",
+            "comment": [
+              "/heal [player]: restores health, and these extras."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.heal.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.heal.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.heal.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.heal",
+                "defaultText": "\"xutilities.command.heal\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.heal.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.heal.others",
+                "defaultText": "\"xutilities.command.heal.others\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.heal.restore-hunger",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.heal.extinguish-fire",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.heal.clear-negative-effects",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.feed",
+            "type": "section",
+            "comment": [
+              "/feed [player]: restores hunger."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.feed.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.feed.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.feed.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.feed",
+                "defaultText": "\"xutilities.command.feed\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.feed.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.feed.others",
+                "defaultText": "\"xutilities.command.feed.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.repair",
+            "type": "section",
+            "comment": [
+              "/repair [all] [player]: repairs the held item, or with all, the whole inventory."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.repair.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.repair.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "fix"
+                ],
+                "defaultText": "[\"fix\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.repair.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.repair",
+                "defaultText": "\"xutilities.command.repair\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.repair.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.repair.others",
+                "defaultText": "\"xutilities.command.repair.others\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.clear",
+            "type": "section",
+            "comment": [
+              "/clear [player]: empties the inventory. include-armor: false keeps armour and the off-hand."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.clear.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.clear.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "clearinventory",
+                  "ci"
+                ],
+                "defaultText": "[\"clearinventory\", \"ci\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.clear.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.clear",
+                "defaultText": "\"xutilities.command.clear\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.clear.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.clear.others",
+                "defaultText": "\"xutilities.command.clear.others\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.clear.include-armor",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.enderchest",
+            "type": "section",
+            "comment": [
+              "/enderchest [player]: opens your Ender Chest, or another player's. sound plays as it opens."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.enderchest.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.enderchest.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "ec",
+                  "ender"
+                ],
+                "defaultText": "[\"ec\", \"ender\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.enderchest.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.enderchest",
+                "defaultText": "\"xutilities.command.enderchest\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.enderchest.permission-others",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.enderchest.others",
+                "defaultText": "\"xutilities.command.enderchest.others\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.enderchest.sound",
+                "type": "sound",
+                "comment": [],
+                "default": "block.ender_chest.open 0.5",
+                "defaultText": "\"block.ender_chest.open 0.5\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.anvil",
+            "type": "section",
+            "comment": [
+              "Workstation menus: open the real menu without the block. sound is played when it opens;",
+              "leave it blank for none. A sound is its Minecraft name, optionally followed by a volume",
+              "(0 to 10) and pitch (0.5 to 2): \"block.anvil.use 0.5 1.2\". Where a server can't open a",
+              "menu (an anvil on Spigot before 1.21, say), the command says so."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.anvil.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.anvil.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.anvil.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.anvil",
+                "defaultText": "\"xutilities.command.anvil\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.anvil.sound",
+                "type": "sound",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.craft",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.craft.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.craft.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "workbench",
+                  "wb"
+                ],
+                "defaultText": "[\"workbench\", \"wb\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.craft.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.craft",
+                "defaultText": "\"xutilities.command.craft\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.craft.sound",
+                "type": "sound",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.grinder",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.grinder.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.grinder.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "grindstone"
+                ],
+                "defaultText": "[\"grindstone\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.grinder.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.grinder",
+                "defaultText": "\"xutilities.command.grinder\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.grinder.sound",
+                "type": "sound",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.loom",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.loom.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.loom.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.loom.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.loom",
+                "defaultText": "\"xutilities.command.loom\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.loom.sound",
+                "type": "sound",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.smith",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.smith.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.smith.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "smithingtable",
+                  "smithtable"
+                ],
+                "defaultText": "[\"smithingtable\", \"smithtable\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.smith.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.smith",
+                "defaultText": "\"xutilities.command.smith\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.smith.sound",
+                "type": "sound",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.stonecutter",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.stonecutter.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.stonecutter.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.stonecutter.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.stonecutter",
+                "defaultText": "\"xutilities.command.stonecutter\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.stonecutter.sound",
+                "type": "sound",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.cartography",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.cartography.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.cartography.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "cartographytable"
+                ],
+                "defaultText": "[\"cartographytable\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.cartography.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.cartography",
+                "defaultText": "\"xutilities.command.cartography\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.cartography.sound",
+                "type": "sound",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.trash",
+            "type": "section",
+            "comment": [
+              "/trash: an empty menu whose contents are deleted when it closes."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.trash.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.trash.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "disposal"
+                ],
+                "defaultText": "[\"disposal\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.trash.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xutilities.command.trash",
+                "defaultText": "\"xutilities.command.trash\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.trash.sound",
+                "type": "sound",
+                "comment": [],
+                "default": "block.barrel.open 0.5",
+                "defaultText": "\"block.barrel.open 0.5\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "info-commands",
+        "type": "link commands",
+        "comment": [
+          "Commands you write yourself. Each key becomes a command that sends its message, usually",
+          "a clickable link. Add one, such as vote:, and reload to get /vote. permission is optional:",
+          "it defaults to xutilities.command.<name>, which everyone has. A name or alias that clashes",
+          "with one of the commands above is skipped. The message is in the same markup as lang/.",
+          "Replace the example links!"
+        ],
+        "default": {
+          "discord": {
+            "enabled": "true",
+            "aliases": [],
+            "permission": "xutilities.command.discord",
+            "message": "<prefix>Join our Discord: <click:open_url:'https://discord.gg/example'><hover:show_text:'<gray>Click to open'><highlight><underlined>discord.gg/example"
+          },
+          "store": {
+            "enabled": "true",
+            "aliases": [],
+            "permission": "xutilities.command.store",
+            "message": "<prefix>Visit our store: <click:open_url:'https://store.example.com'><hover:show_text:'<gray>Click to open'><highlight><underlined>store.example.com"
+          },
+          "website": {
+            "enabled": "true",
+            "aliases": [],
+            "permission": "xutilities.command.website",
+            "message": "<prefix>Visit our website: <click:open_url:'https://example.com'><hover:show_text:'<gray>Click to open'><highlight><underlined>example.com"
+          }
+        },
+        "defaultText": "{discord: {enabled: true, aliases: [], permission: \"xutilities.command.discord\", message: \"<prefix>Join our Discord: <click:open_url:'https://discord.gg/example'><hover:show_text:'<gray>Click to open'><highlight><underlined>discord.gg/example\"}, store: {enabled: true, aliases: [], permission: \"xutilities.command.store\", message: \"<prefix>Visit our store: <click:open_url:'https://store.example.com'><hover:show_text:'<gray>Click to open'><highlight><underlined>store.example.com\"}, website: {enabled: true, aliases: [], permission: \"xutilities.command.website\", message: \"<prefix>Visit our website: <click:open_url:'https://example.com'><hover:show_text:'<gray>Click to open'><highlight><underlined>example.com\"}}",
+        "choices": [],
+        "entries": []
+      },
+      {
+        "path": "update-checker",
+        "type": "section",
+        "comment": [
+          "Tells you when a new version is out."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "update-checker.enabled",
+            "type": "boolean",
+            "comment": [
+              "Ask Modrinth for the newest version at startup and every 24 hours. It sends only the",
+              "plugin version, the platform and the Minecraft version."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [],
+  "messages": [
+    {
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
+      ],
+      "placeholders": [
+        "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "core.reload.done",
+      "english": "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+      "comment": [
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise."
+      ],
+      "placeholders": [
+        "plugin",
+        "count",
+        "has_one",
+        "has_many"
+      ]
+    },
+    {
+      "key": "core.reload.problem",
+      "english": "<gold>!</gold> Problem: <problem>",
+      "comment": [
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too."
+      ],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "core.reload.module-off",
+      "english": "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+      "comment": [
+        "/<plugin> reload: a module that failed, and why, in English."
+      ],
+      "placeholders": [
+        "module",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.reload.failed",
+      "english": "<prefix><error>Reloading <plugin> failed; the console has the details.",
+      "comment": [
+        "/<plugin> reload: something went wrong; the settings from before are still in use."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.command.unknown",
+      "english": "<prefix><error>Unknown command.",
+      "comment": [
+        "Rare: a command that went away as it was typed."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.no-permission",
+      "english": "<prefix><error>You don't have permission to do that.",
+      "comment": [
+        "The sender lacks the command's permission."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.players-only",
+      "english": "<prefix><error>Only players can use this command.",
+      "comment": [
+        "The console or a command block ran a command only players can use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.usage",
+      "english": "<prefix><error>Usage:</error> <usage>",
+      "comment": [
+        "The command was typed with missing or extra words. <usage> is how to type it."
+      ],
+      "placeholders": [
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.unknown-player",
+      "english": "<prefix><error>No player called <highlight><player></highlight> is online.",
+      "comment": [
+        "No player the sender can see is online by the name typed (<player>)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.command.not-a-number",
+      "english": "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+      "comment": [
+        "A number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-an-integer",
+      "english": "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+      "comment": [
+        "A whole number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-small",
+      "english": "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+      "comment": [
+        "A number below the least the command takes (<min>)."
+      ],
+      "placeholders": [
+        "input",
+        "min",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-large",
+      "english": "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+      "comment": [
+        "A number above the most the command takes (<max>)."
+      ],
+      "placeholders": [
+        "input",
+        "max",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-a-choice",
+      "english": "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+      "comment": [
+        "A word that isn't one of those the command takes (<choices>, comma-separated)."
+      ],
+      "placeholders": [
+        "input",
+        "choices",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.invalid",
+      "english": "<prefix><error><reason></error> Usage: <usage>",
+      "comment": [
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.cooldown",
+      "english": "<prefix><error>You can use that again in <time>.",
+      "comment": [
+        "The command has a cooldown. <time> is how long is left."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.confirm",
+      "english": "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+      "comment": [
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is."
+      ],
+      "placeholders": [
+        "line",
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.error",
+      "english": "<prefix><error>Something went wrong running that command; the console has the details.",
+      "comment": [
+        "The command hit an error. The console has what happened."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "info",
+      "english": "<prefix>xUtilities <highlight><version></highlight> on <platform>, with <commands> commands on. <gray>/xutilities reload | debug",
+      "comment": [
+        "/xutilities (or /xu) on its own."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "commands"
+      ]
+    },
+    {
+      "key": "state.enabled",
+      "english": "enabled",
+      "comment": [
+        "The word for <state> when flight turns on."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "state.disabled",
+      "english": "disabled",
+      "comment": [
+        "The word for <state> when flight turns off."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "mode.survival",
+      "english": "survival",
+      "comment": [
+        "The word for <mode>: survival."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "mode.creative",
+      "english": "creative",
+      "comment": [
+        "The word for <mode>: creative."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "mode.adventure",
+      "english": "adventure",
+      "comment": [
+        "The word for <mode>: adventure."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "mode.spectator",
+      "english": "spectator",
+      "comment": [
+        "The word for <mode>: spectator."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "survival.self",
+      "english": "<prefix>Your gamemode is now <highlight><mode></highlight>.",
+      "comment": [
+        "/survival, to the player whose gamemode changed. <mode> is mode.survival."
+      ],
+      "placeholders": [
+        "mode"
+      ]
+    },
+    {
+      "key": "survival.others",
+      "english": "<prefix>Set <highlight><player></highlight>'s gamemode to <highlight><mode></highlight>.",
+      "comment": [
+        "/survival <player>, to whoever changed it."
+      ],
+      "placeholders": [
+        "player",
+        "mode"
+      ]
+    },
+    {
+      "key": "creative.self",
+      "english": "<prefix>Your gamemode is now <highlight><mode></highlight>.",
+      "comment": [
+        "/creative, to the player whose gamemode changed. <mode> is mode.creative."
+      ],
+      "placeholders": [
+        "mode"
+      ]
+    },
+    {
+      "key": "creative.others",
+      "english": "<prefix>Set <highlight><player></highlight>'s gamemode to <highlight><mode></highlight>.",
+      "comment": [
+        "/creative <player>, to whoever changed it."
+      ],
+      "placeholders": [
+        "player",
+        "mode"
+      ]
+    },
+    {
+      "key": "adventure.self",
+      "english": "<prefix>Your gamemode is now <highlight><mode></highlight>.",
+      "comment": [
+        "/adventure, to the player whose gamemode changed. <mode> is mode.adventure."
+      ],
+      "placeholders": [
+        "mode"
+      ]
+    },
+    {
+      "key": "adventure.others",
+      "english": "<prefix>Set <highlight><player></highlight>'s gamemode to <highlight><mode></highlight>.",
+      "comment": [
+        "/adventure <player>, to whoever changed it."
+      ],
+      "placeholders": [
+        "player",
+        "mode"
+      ]
+    },
+    {
+      "key": "spectator.self",
+      "english": "<prefix>Your gamemode is now <highlight><mode></highlight>.",
+      "comment": [
+        "/spectator, to the player whose gamemode changed. <mode> is mode.spectator."
+      ],
+      "placeholders": [
+        "mode"
+      ]
+    },
+    {
+      "key": "spectator.others",
+      "english": "<prefix>Set <highlight><player></highlight>'s gamemode to <highlight><mode></highlight>.",
+      "comment": [
+        "/spectator <player>, to whoever changed it."
+      ],
+      "placeholders": [
+        "player",
+        "mode"
+      ]
+    },
+    {
+      "key": "fly.on-self",
+      "english": "<prefix>Flight <success><state></success>.",
+      "comment": [
+        "/fly turned flight on. <state> is state.enabled."
+      ],
+      "placeholders": [
+        "state"
+      ]
+    },
+    {
+      "key": "fly.off-self",
+      "english": "<prefix>Flight <error><state></error>.",
+      "comment": [
+        "/fly turned flight off. <state> is state.disabled."
+      ],
+      "placeholders": [
+        "state"
+      ]
+    },
+    {
+      "key": "fly.on-others",
+      "english": "<prefix>Flight <success><state></success> for <highlight><player></highlight>.",
+      "comment": [
+        "To whoever turned another player's flight on."
+      ],
+      "placeholders": [
+        "state",
+        "player"
+      ]
+    },
+    {
+      "key": "fly.off-others",
+      "english": "<prefix>Flight <error><state></error> for <highlight><player></highlight>.",
+      "comment": [
+        "To whoever turned another player's flight off."
+      ],
+      "placeholders": [
+        "state",
+        "player"
+      ]
+    },
+    {
+      "key": "speed.self",
+      "english": "<prefix>Your <type> speed is now <highlight><speed></highlight>.",
+      "comment": [
+        "/speed. <type> is speed.flying or speed.walking."
+      ],
+      "placeholders": [
+        "type",
+        "speed"
+      ]
+    },
+    {
+      "key": "speed.others",
+      "english": "<prefix>Set <highlight><player></highlight>'s <type> speed to <highlight><speed></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "type",
+        "speed"
+      ]
+    },
+    {
+      "key": "speed.invalid",
+      "english": "<prefix><error>Speed must be from <min> to <max>.",
+      "comment": [
+        "/speed with a number outside commands.speed's min and max."
+      ],
+      "placeholders": [
+        "min",
+        "max"
+      ]
+    },
+    {
+      "key": "speed.flying",
+      "english": "flying",
+      "comment": [
+        "The word for <type> while flying."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "speed.walking",
+      "english": "walking",
+      "comment": [
+        "The word for <type> otherwise."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "top.done",
+      "english": "<prefix>Teleported to the top.",
+      "comment": [
+        "/top took the player up."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "top.unsafe",
+      "english": "<prefix><error>There's no safe block to stand on here.",
+      "comment": [
+        "/top found nowhere safe."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "setrotation.self",
+      "english": "<prefix>Now facing yaw <highlight><yaw></highlight>, pitch <highlight><pitch></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "yaw",
+        "pitch"
+      ]
+    },
+    {
+      "key": "setrotation.others",
+      "english": "<prefix><highlight><player></highlight> is now facing yaw <highlight><yaw></highlight>, pitch <highlight><pitch></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "yaw",
+        "pitch"
+      ]
+    },
+    {
+      "key": "ping.self",
+      "english": "<prefix>Your ping is <highlight><ping>ms</highlight>.",
+      "comment": [],
+      "placeholders": [
+        "ping"
+      ]
+    },
+    {
+      "key": "ping.others",
+      "english": "<prefix><highlight><player></highlight>'s ping is <highlight><ping>ms</highlight>.",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "ping"
+      ]
+    },
+    {
+      "key": "back.done",
+      "english": "<prefix>Teleported back to your previous location.",
+      "comment": [
+        "/back took the player back."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "back.none",
+      "english": "<prefix><error>You have nowhere to go back to.",
+      "comment": [
+        "/back with nothing to go back to."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "heal.self",
+      "english": "<prefix>You've been <success>healed</success>.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "heal.others",
+      "english": "<prefix><success>Healed</success> <highlight><player></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "feed.self",
+      "english": "<prefix>You've been <success>fed</success>.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "feed.others",
+      "english": "<prefix><success>Fed</success> <highlight><player></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "repair.self",
+      "english": "<prefix>Your gear has been <success>repaired</success>.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "repair.others",
+      "english": "<prefix><success>Repaired</success> <highlight><player></highlight>'s gear.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "repair.nothing",
+      "english": "<prefix><error>Nothing needs repairing.",
+      "comment": [
+        "/repair found nothing damaged."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "clear.self",
+      "english": "<prefix>Your inventory has been <success>cleared</success>.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "clear.others",
+      "english": "<prefix><success>Cleared</success> <highlight><player></highlight>'s inventory.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "enderchest.others",
+      "english": "<prefix>Opened <highlight><player></highlight>'s ender chest.",
+      "comment": [
+        "/enderchest <player>, to whoever opened it."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "enderchest.too-far",
+      "english": "<prefix><error><highlight><player></highlight> is too far away to open their ender chest.",
+      "comment": [
+        "Folia only: the other player is in another region, so their chest can't be shared safely."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "anvil.opened",
+      "english": "",
+      "comment": [
+        "Sent as /anvil's menu opens; blank sends nothing."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "craft.opened",
+      "english": "",
+      "comment": [
+        "Sent as /craft's menu opens; blank sends nothing."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "grinder.opened",
+      "english": "",
+      "comment": [
+        "Sent as /grinder's menu opens; blank sends nothing."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "loom.opened",
+      "english": "",
+      "comment": [
+        "Sent as /loom's menu opens; blank sends nothing."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "smith.opened",
+      "english": "",
+      "comment": [
+        "Sent as /smith's menu opens; blank sends nothing."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "stonecutter.opened",
+      "english": "",
+      "comment": [
+        "Sent as /stonecutter's menu opens; blank sends nothing."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "cartography.opened",
+      "english": "",
+      "comment": [
+        "Sent as /cartography's menu opens; blank sends nothing."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "menu.unavailable",
+      "english": "<prefix><error>/<command> can't open its menu on this server: it needs <needs>.",
+      "comment": [
+        "A workstation this server can't open without its block. <needs> says what would, in English."
+      ],
+      "placeholders": [
+        "command",
+        "needs"
+      ]
+    },
+    {
+      "key": "trash.title",
+      "english": "Disposal",
+      "comment": [
+        "/trash's menu title."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "trash.opened",
+      "english": "",
+      "comment": [
+        "Sent as /trash opens; blank sends nothing."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "unavailable",
+      "english": "<prefix><error>/<command> isn't available on this server: it needs <needs>.",
+      "comment": [
+        "A command this server can't do, such as /ping before 1.17 on Spigot. <needs> is in English."
+      ],
+      "placeholders": [
+        "command",
+        "needs"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "key": "xutilities:back_record",
+      "className": "co.xenastudios.xutilities.api.event.BackRecordEvent",
+      "description": "A spot is about to be saved as where /back takes a player. Cancel it to keep the old one.",
+      "cancellable": true,
+      "since": "3.0.0"
+    },
+    {
+      "key": "xutilities:back_teleport",
+      "className": "co.xenastudios.xutilities.api.event.BackTeleportEvent",
+      "description": "A player used /back and is about to be teleported. Cancel it to keep them where they are.",
+      "cancellable": true,
+      "since": "3.0.0"
+    }
+  ]
+}

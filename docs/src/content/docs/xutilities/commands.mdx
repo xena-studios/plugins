@@ -1,0 +1,21 @@
+---
+title: Commands
+description: "Every xUtilities command: its arguments, aliases and permission."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`<angle brackets>` are required, `[square brackets]` optional. Aliases are the defaults; change them in the [config](/xutilities/configuration/), where every command can also be turned off or given another permission. A player without a command's permission doesn't see it in tab completion.
+
+- **`[player]`** acts on someone else, and needs the command's `-others` permission too. The player changed is told, with the message they'd get doing it themselves.
+- **`/gamemode <mode>`** takes a name, a number, a first letter (`sp` for spectator) or a mode command's alias (`gmc`), and needs that mode's own permission as well as `/gamemode`'s.
+- **`/speed`** is 1 to 10 (walking is 2): fly speed while flying, walk speed otherwise.
+- **`/top`** won't put you on lava, fire, magma, cactus and similar blocks, or on the Nether's roof.
+- **`/back`** returns you to where you were before your last teleport by a command or plugin, or where you died. Spots are kept in memory only, and forgotten when you leave.
+- **Workstations** (`/anvil`, `/craft`, `/grinder`, `/loom`, `/smith`, `/stonecutter`, `/cartography`) open the real menu with no block. Where a server can't, the command says what it needs: see [where it runs](/xutilities/#where-it-runs).
+- **`/clear` and `/gamemode`** replace Minecraft's own, and give them back when turned off. A command another plugin already has is left to it, with a console warning; ours stays reachable as `/xutilities:<name>`.
+- **Link commands** (`/discord`, `/store`, `/website` and any you add) are everyone's by default: see [Link commands](/xutilities/link-commands/).
+
+<Reference plugin="xutilities" show="commands" />

@@ -1,8 +1,9 @@
 name: Boot
 
 # The rewrite's boot matrix (ROADMAP.md, "Build, CI and releases"): xSample, the core's sample
-# plugin, on real servers of every platform it ships for, and the family test, xSample and
-# xTwin on one server. The Plugins workflow boots today's plugins; this one boots the rewrite.
+# plugin, and each rewritten plugin (xUtilities) on real servers of every platform they ship
+# for, and the family test, xSample, xTwin and xUtilities on one server. The Plugins workflow
+# boots today's plugins; this one boots the rewrite.
 #
 # Per pull request, the platforms it touches (scripts/affected.sh's `boot`: a change in core/
 # or the samples) at their floor and newest: Spigot 1.8.8 and Paper for Bukkit, the oldest and
@@ -105,7 +106,7 @@ jobs:
           echo "bukkit=$(pick bukkit "$bukkit")" | tee -a "$GITHUB_OUTPUT"
           echo "fabric=$(pick fabric "$fabric")" | tee -a "$GITHUB_OUTPUT"
 
-  # xSample's and xTwin's Bukkit jars, once for every Bukkit cell.
+  # xSample's, xTwin's and xUtilities' Bukkit jars, once for every Bukkit cell.
   build-bukkit:
     needs: changes
     if: needs.changes.outputs.bukkit != '[]'
@@ -125,15 +126,16 @@ jobs:
       # assemble shrinks each jar with R8 (build/r8/); checkJarBudget fails one over its line in
       # gradle/jar-budgets.txt.
       - run: >-
-          ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble
-          :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget
+          ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble :xutilities:bukkit:assemble
+          :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: bukkit-jars
-          # The R8 jars, kept at their paths under core/core-testing, where boot.sh looks.
+          # The R8 jars, kept at their paths from the repo's root, where each boot.sh looks.
           path: |
             core/core-testing/sample/bukkit/build/r8/XSample.jar
             core/core-testing/twin/bukkit/build/r8/XTwin.jar
+            xutilities/bukkit/build/r8/xUtilities.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -195,7 +197,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: bukkit-jars
-          path: core/core-testing
+          path: .
       # What will boot, for the cache key: Paper's and Folia's newest build of the version,
       # which boot-test.sh downloads, or scripts/server-jar.sh's version, build and Java.
       - id: server
@@ -265,8 +267,22 @@ jobs:
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks core/core-testing/sample/bukkit/client-checks.txt)
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
-      # The family test: xTwin beside xSample, each with its own relocated core, seeing one
-      # board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt).
+      # xUtilities alone: every command family from the console, a reload and debug.
+      - name: boot xUtilities
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+          SEED: ${{ matrix.cell.seed }}
+          REGIONS: ${{ matrix.cell.regions }}
+        run: |
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          args=()
+          [[ -z $SEED ]] || args+=(--seed "$SEED")
+          [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          xutilities/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
+      # The family test: xTwin and xUtilities beside xSample, each with its own relocated core,
+      # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),
+      # and each answering its own commands.
       - name: family test
         if: matrix.cell.family
         env:
@@ -274,8 +290,9 @@ jobs:
           JAVA: ${{ steps.java.outputs.path }}
         run: |
           if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
-          core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" \
-            --checks core/core-testing/twin/family-checks.txt core/core-testing/twin/bukkit/build/r8/XTwin.jar
+          core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
+            --checks core/core-testing/twin/family-checks.txt --checks xutilities/bukkit/boot-checks.txt \
+            core/core-testing/twin/bukkit/build/r8/XTwin.jar xutilities/bukkit/build/r8/xUtilities.jar
       # The runtime budgets are the `budgets` job's, on a server of their own: a boot test's
       # server is shared with its checks, which would skew the numbers.
       - if: failure()
@@ -326,6 +343,13 @@ jobs:
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks core/platform-fabric/sandbox/boot-checks.txt \
             core/platform-fabric/build/libs/xsample-fabric-*+"$VERSION".jar
+      - name: boot xUtilities
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks xutilities/fabric/boot-checks.txt \
+            core/platform-fabric/build/libs/xutilities-fabric-*+"$VERSION".jar
       - name: family test
         if: matrix.cell.family
         env:
@@ -333,7 +357,9 @@ jobs:
         run: |
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks core/platform-fabric/sandbox/boot-checks.txt --checks core/core-testing/twin/family-checks.txt \
-            core/platform-fabric/build/libs/xsample-fabric-*+"$VERSION".jar core/platform-fabric/build/libs/xtwin-fabric-*+"$VERSION".jar
+            --checks xutilities/fabric/boot-checks.txt \
+            core/platform-fabric/build/libs/xsample-fabric-*+"$VERSION".jar core/platform-fabric/build/libs/xtwin-fabric-*+"$VERSION".jar \
+            core/platform-fabric/build/libs/xutilities-fabric-*+"$VERSION".jar
       # Fabric's runtime budgets aren't measured yet; its jars' sizes are checked in
       # build-fabric (gradle/jar-budgets.txt).
       - if: failure()
@@ -364,7 +390,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: bukkit-jars
-          path: core/core-testing
+          path: .
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -392,6 +418,13 @@ jobs:
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
             --out build/budgets/newest \
             core/core-testing/sample/bukkit/build/r8/XSample.jar
+      # xUtilities, the first rewritten plugin, measured the same way, its startup only reported.
+      - name: runtime budgets, xUtilities (newest Paper)
+        run: |
+          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
+          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
+            --report-only startup-first-ms,startup-ms --out build/budgets/xutilities \
+            xutilities/bukkit/build/r8/xUtilities.jar
       - name: BotMark load (Paper 1.21.11, 10 bots)
         if: github.event_name != 'pull_request'
         run: |

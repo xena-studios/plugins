@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "xutilities",
+  "version": "${version}",
+  "name": "xUtilities",
+  "description": "Every command you need. None you don't. Server-side: players install nothing.",
+  "authors": ["Xena Studios"],
+  "contact": {
+    "homepage": "https://plugins.xenastudios.co/xutilities/",
+    "sources": "https://github.com/xena-studios/plugins",
+    "issues": "https://github.com/xena-studios/plugins/issues"
+  },
+  "license": "GPL-3.0-only",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.xutilities.fabric.XUtilitiesMod" }
+    ]
+  },
+  "depends": {
+    "fabricloader": "${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${flk}"
+  }
+}

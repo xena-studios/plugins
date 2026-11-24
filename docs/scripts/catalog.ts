@@ -1,7 +1,7 @@
 // Builds every list of the plugins from one place, so a plugin is added once. The brand
 // repo's catalog (src/data/catalog.json, copied by `pnpm brand:sync`) gives each plugin's
 // name, words, category and colours, and whether it's released; each plugin's
-// build.gradle.kts gives its version and whether it runs on Folia; an api/ folder means it
+// build.gradle.kts (a rewritten plugin's bukkit/build.gradle.kts) gives its version and whether it runs on Folia; an api/ folder means it
 // has a developer API; src/data/modrinth.json lists the released plugins Modrinth is still
 // reviewing, whose Modrinth pages nothing may link yet. From those:
 //
@@ -65,20 +65,32 @@ for (const id of review.inReview) {
 }
 const inReview = new Set(review.inReview);
 
+/** Whether a plugin is in the rewrite's layout (<id>/api, common and a folder per platform). */
+const isRewritten = (id: string) =>
+  fs.existsSync(path.join(ROOT, id, "common/build.gradle.kts")) && !fs.existsSync(path.join(ROOT, id, "build.gradle.kts"));
+
 /** A plugin's facts from its own folder. */
 function facts(id: string) {
-  const build = path.join(ROOT, id, "build.gradle.kts");
-  if (!fs.existsSync(build)) throw new Error(`${id} is in the brand catalog but has no ${id}/build.gradle.kts`);
+  // A rewritten plugin's version and Folia switch are in its Bukkit jar's build (its xenaRelease),
+  // and its jar budget in gradle/jar-budgets.txt.
+  const rewritten = isRewritten(id);
+  const file = rewritten ? `${id}/bukkit/build.gradle.kts` : `${id}/build.gradle.kts`;
+  const build = path.join(ROOT, file);
+  if (!fs.existsSync(build)) throw new Error(`${id} is in the brand catalog but has no ${file}`);
   const text = fs.readFileSync(build, "utf8");
   const version = text.match(/^version = "([^"]+)"/m)?.[1];
-  if (!version) throw new Error(`${id}/build.gradle.kts: no version = "..." line`);
+  if (!version) throw new Error(`${file}: no version = "..." line`);
+  const budgets = rewritten ? fs.readFileSync(path.join(ROOT, "gradle/jar-budgets.txt"), "utf8") : "";
   return {
     version,
     // xena.folia is on unless the plugin turns it off.
     folia: !/^\s*folia = false/m.test(text),
     // The most its jar may weigh: the build fails over it.
-    jarBudgetKb: Number(text.match(/jarBudgetKb = (\d+)/)?.[1] ?? 150),
+    jarBudgetKb: rewritten
+      ? Number(budgets.match(new RegExp(`^:${id}:bukkit (\\d+)`, "m"))?.[1] ?? 150)
+      : Number(text.match(/jarBudgetKb = (\d+)/)?.[1] ?? 150),
     api: fs.existsSync(path.join(ROOT, id, "api/build.gradle.kts")),
+    rewritten,
   };
 }
 
@@ -281,12 +293,15 @@ for (const p of plugins) {
     // Its Edit page link opens the changelog it's made from, not this generated copy.
     `---\n# ${GENERATED} From ${p.id}/CHANGELOG.md.\ntitle: Changelog\ndescription: "What changed in each ${p.name} release."\neditUrl: https://github.com/xena-studios/plugins/edit/main/${p.id}/CHANGELOG.md\nsidebar:\n  order: 90\n---\n\n${changelog.trimEnd()}\n`,
   );
-  write(
+  // A rewritten plugin's download page is its own: the picker, from its manifest and releases.
+  if (!p.rewritten) write(
     `docs/src/content/docs/${p.id}/download.mdx`,
     `---\n# ${GENERATED}\ntitle: Download\ndescription: "Download ${p.name}: the latest version and every one before it, with the Minecraft versions each supports."\nsidebar:\n  order: 1.5\n---\n\nimport Downloads from "../../../components/Downloads.astro";\n\n<Downloads plugin="${p.id}" />\n`,
   );
   // The overview's "Current version: **x.y.z**" follows the build file.
-  const overview = `docs/src/content/docs/${p.id}/index.md`;
+  const overview = fs.existsSync(path.join(ROOT, `docs/src/content/docs/${p.id}/index.mdx`))
+    ? `docs/src/content/docs/${p.id}/index.mdx`
+    : `docs/src/content/docs/${p.id}/index.md`;
   const text = outputs.get(overview) ?? fs.readFileSync(path.join(ROOT, overview), "utf8");
   const updated = text.replace(/^(Current version: \*\*)[^*]+(\*\*)/m, `$1${p.version}$2`);
   if (updated !== text) write(overview, updated);

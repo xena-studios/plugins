@@ -12,6 +12,7 @@ import org.bukkit.Server
 import org.bukkit.command.Command
 import org.bukkit.command.CommandMap
 import org.bukkit.command.CommandSender
+import org.bukkit.command.PluginIdentifiableCommand
 import org.bukkit.command.SimpleCommandMap
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
@@ -23,7 +24,9 @@ import kotlin.concurrent.Volatile
  * (DECISIONS.md, "Commands are registered at runtime"), so none are in `plugin.yml`: one Bukkit
  * command per root of the tree, under its name and aliases and `<plugin>:<name>`, that hands
  * the whole line to the [CommandDispatcher] and completes it with the same. Each root carries its
- * permission, so 1.13+ clients aren't sent commands they can't use.
+ * permission, so 1.13+ clients aren't sent commands they can't use. A command of the server's
+ * own by the same name (vanilla `/gamemode`, Bukkit's `/version`) gives way to ours and comes
+ * back when ours is turned off, as today's core does; another plugin's is never replaced.
  *
  * Bukkit's command map is reached the one way every version allows: `getCommandMap()` on the
  * server object, and its map of names (`getKnownCommands()` from 1.13, the field before) to
@@ -31,7 +34,7 @@ import kotlin.concurrent.Volatile
  * the tree they send clients (`syncCommands`); at startup the server does that itself, once
  * every plugin is enabled.
  *
- * Results are shown in [feedback], English until the translations take over.
+ * Results are shown in [feedback]: English, or the plugin's lang files once it sets [CommandFeedback.of].
  */
 public class BukkitCommands internal constructor(
     private val plugin: Plugin,
@@ -48,6 +51,9 @@ public class BukkitCommands internal constructor(
 
     private val prefix = plugin.name.lowercase()
     private val registered = LinkedHashMap<String, Root>()
+
+    // The server's own commands ours took a label from, to give back when ours goes.
+    private val displaced = HashMap<String, Command>()
     private var synced = false
 
     override fun sync(dispatcher: CommandDispatcher): List<String> = synchronized(this) {
@@ -69,6 +75,15 @@ public class BukkitCommands internal constructor(
                 continue
             }
             val fresh = Root(node, dispatcher)
+            // The server's own command of a name (vanilla /gamemode, Bukkit's /version) gives way
+            // to ours, and comes back when ours goes; another plugin's never does.
+            for (label in listOf(name) + node.aliases) {
+                val existing = known[label] ?: continue
+                if (existing !is PluginIdentifiableCommand && existing !is Root) {
+                    displaced.putIfAbsent(label, existing)
+                    known.remove(label)
+                }
+            }
             if (!map.register(name, prefix, fresh)) warnings += "/$name is another plugin's, so ${plugin.name}'s is /$prefix:$name"
             for (alias in node.aliases) {
                 if (known[alias] !== fresh) warnings += "/$alias is another plugin's, so ${plugin.name}'s is /$prefix:$alias"
@@ -92,6 +107,14 @@ public class BukkitCommands internal constructor(
         // Key by key: Paper's map forwards to Brigadier, and its entry views may not remove.
         for (label in known.filterValues { it === root }.keys) known.remove(label)
         root.unregister(map)
+        // A server command ours displaced comes back once no command of ours holds its label.
+        for (label in root.labels) {
+            val server = displaced[label] ?: continue
+            if (!known.containsKey(label)) {
+                known[label] = server
+                displaced.remove(label)
+            }
+        }
     }
 
     private fun refreshClients() {
@@ -124,6 +147,9 @@ public class BukkitCommands internal constructor(
             permission = node.permission?.node
         }
 
+        /** Its name and aliases, as registered. */
+        val labels: List<String> = listOf(node.name) + node.aliases
+
         // What Bukkit was given: a root whose name, aliases or permission changed is registered again.
         fun sameShape(other: CommandNode): Boolean =
             other.aliases == node.aliases && other.permission?.node == node.permission?.node && other.description == node.description
@@ -131,7 +157,7 @@ public class BukkitCommands internal constructor(
         override fun execute(sender: CommandSender, label: String, args: Array<out String>): Boolean {
             val source = Source(sender)
             val result = dispatcher.dispatch(source, line(label, args))
-            feedback.message(result)?.let(source::reply)
+            feedback.message(result, source)?.let(source::reply)
             return true
         }
 

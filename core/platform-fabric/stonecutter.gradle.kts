@@ -20,4 +20,8 @@ stonecutter parameters {
     constants["permission_sets"] = current.parsed >= "1.21.11"
     // 1.20.2 moved a player's client options, the language among them, into ClientInformation.
     constants["client_information"] = current.parsed >= "1.20.2"
+    // 1.20.5 made a mob effect a registry holder on its instance.
+    constants["effect_holders"] = current.parsed >= "1.20.5"
+    // 1.21.2 gave teleportTo a set of relative parts, and a player's level() its server type.
+    constants["modern_teleport"] = current.parsed >= "1.21.2"
 }

@@ -5,11 +5,11 @@ sidebar:
   order: 1
 ---
 
-Every plugin runs on **Paper** and forks of it such as **Purpur**, with **Java 21 or newer**. Paper 26.x itself needs Java 25, so that's what a 26.x server runs on. None of the plugins needs another plugin, except that xPlots takes rent through [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin unless you set it to take an item instead, and xVote pays money rewards through Vault when you give any. xMoney is both of those: it's an economy plugin with Vault built in, so it replaces Vault rather than running beside it.
+Every plugin runs on **Paper** and forks of it such as **Purpur**, with **Java 21 or newer**, except xUtilities 3.0, the first plugin of the rewrite, which runs much further: see [its platforms](/xutilities/#where-it-runs). Paper 26.x itself needs Java 25, so that's what a 26.x server runs on. None of the plugins needs another plugin, except that xPlots takes rent through [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin unless you set it to take an item instead, and xVote pays money rewards through Vault when you give any. xMoney is both of those: it's an economy plugin with Vault built in, so it replaces Vault rather than running beside it.
 
 | Plugin | Paper | Folia | Java |
 | --- | --- | --- | --- |
-| [xUtilities](/xutilities/) | 1.21.11 or newer | Yes | 21 or newer |
+| [xUtilities](/xutilities/) 3.0 | 1.8.8 or newer, and Spigot, CraftBukkit and Fabric | Yes | 8 or newer (Fabric: Minecraft's) |
 | [zChat](/zchat/) | 1.21.11 or newer | Yes | 21 or newer |
 | [xLimbo](/xlimbo/) | 1.21.11 or newer | No | 21 or newer |
 | [xRewind](/xrewind/) | 1.21.11 or newer | Yes | 21 or newer |
@@ -21,7 +21,7 @@ Every plugin runs on **Paper** and forks of it such as **Purpur**, with **Java 2
 | [xBackup](/xbackup/) | 1.21.11 or newer | Yes | 21 or newer |
 | [xStats](/xstats/) | 1.21.11 or newer | Yes | 21 or newer |
 
-Spigot and CraftBukkit aren't supported: the plugins rely on APIs only Paper has.
+Spigot and CraftBukkit aren't supported by the others yet: they rely on APIs only Paper has. Each plugin's rewrite brings them, and Fabric, as xUtilities 3.0 has.
 
 **Folia** runs the same xUtilities, zChat, xRewind, xTeleport, xVote, xBans, xMoney, xBackup and xStats jars as Paper. There's nothing to configure: they make every change to a player on the region that owns that player. xLimbo doesn't run on Folia: Folia can't create worlds, and a fallback server has nothing for Folia to spread across threads. xPlots doesn't run on Folia either, for now: putting plots back and editing their signs across Folia's regions adds risk with little gain for the box servers it's made for.
 

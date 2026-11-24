@@ -28,6 +28,7 @@ import co.xenastudios.core.common.platform.Platform
 import co.xenastudios.core.common.scheduler.async
 import co.xenastudios.core.common.scheduler.global
 import co.xenastudios.core.common.text.Component
+import co.xenastudios.core.common.text.Placeholder
 
 /** The admin subcommands the core gives every plugin (ROADMAP.md, "Admin commands"). */
 public enum class AdminSubcommand(
@@ -173,7 +174,17 @@ public class AdminCommands(
                 platform.log.error("Reloading $pluginName failed", e)
                 null
             }
-            source.reply(report?.english(pluginName) ?: Component.text("Reloading $pluginName failed; the console has the details."))
+            if (report == null) {
+                reply(source, CoreMessages.reloadFailed, "plugin" to pluginName)
+                return@global
+            }
+            val count = report.on.size
+            reply(
+                source, CoreMessages.reloadDone, "plugin" to pluginName, "count" to count,
+                "has_one" to Placeholder.section(count == 1), "has_many" to Placeholder.section(count != 1),
+            )
+            report.problems.forEach { reply(source, CoreMessages.reloadProblem, "problem" to it) }
+            report.failed.forEach { (key, failure) -> reply(source, CoreMessages.reloadModuleOff, "module" to key, "reason" to failure.reason) }
         }
     }
 
@@ -320,7 +331,7 @@ public class ReloadReport(
     public val on: List<String>,
     public val failed: Map<String, ModuleStatus.Failed>,
 ) {
-    /** The report in English, until the translations' messages take over. */
+    /** The report in English, as plain lines; `/<plugin> reload` draws it from the lang files ([CoreMessages.reloadDone]). */
     public fun english(pluginName: String): Component {
         val lines = mutableListOf("Reloaded $pluginName: ${on.size} ${if (on.size == 1) "module" else "modules"} on.")
         problems.forEach { lines += "Problem: $it" }

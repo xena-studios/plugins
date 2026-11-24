@@ -10,6 +10,8 @@ import co.xenastudios.core.testing.RecordingLog
 import co.xenastudios.core.common.platform.SystemClock
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
+import org.bukkit.command.PluginIdentifiableCommand
+import org.bukkit.plugin.Plugin
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -113,13 +115,27 @@ class BukkitCommandsTest {
 
     @Test
     fun aNameAnotherPluginHasIsAWarningAndThePrefixStillWorks() {
-        val other = object : Command("coins") {
+        val other = object : Command("coins"), PluginIdentifiableCommand {
             override fun execute(sender: CommandSender, label: String, args: Array<out String>) = true
+            override fun getPlugin(): Plugin = FakeServer.plugin()
         }
         FakeServer.commandMap.register("other", other)
         val warnings = registrar.sync(dispatcher())
         assertEquals(listOf("/coins is another plugin's, so XSample's is /xsample:coins"), warnings)
         assertSame(other, known()["coins"])
         assertSame(known().getValue("xsample"), known()["xsample:coins"])
+    }
+
+    @Test
+    fun theServersOwnCommandGivesWayAndComesBack() {
+        // Vanilla /gamemode and Bukkit's /version aren't any plugin's: ours replaces them while it's on.
+        val vanilla = object : Command("coins") {
+            override fun execute(sender: CommandSender, label: String, args: Array<out String>) = true
+        }
+        FakeServer.commandMap.register("minecraft", vanilla)
+        assertEquals(emptyList(), registrar.sync(dispatcher()))
+        assertSame(known().getValue("xsample"), known()["coins"])
+        registrar.clear()
+        assertSame(vanilla, known()["coins"], "given back once ours is gone")
     }
 }

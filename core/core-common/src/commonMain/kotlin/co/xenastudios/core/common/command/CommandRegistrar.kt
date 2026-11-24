@@ -1,5 +1,8 @@
 package co.xenastudios.core.common.command
 
+import co.xenastudios.core.common.admin.AdminText
+import co.xenastudios.core.common.i18n.CoreMessages
+import co.xenastudios.core.common.i18n.MessageKey
 import co.xenastudios.core.common.text.Component
 import co.xenastudios.core.common.time.Durations
 
@@ -46,15 +49,55 @@ public interface CommandRegistrar {
 }
 
 /**
- * What a source is told after running a command, in their language. [ENGLISH] until the
- * translations' messages take over; an adapter calls [message] with every result and replies
- * with what it gets, if anything.
+ * What a source is told after running a command, in their language: [ENGLISH], or [of] the
+ * plugin's translations ([CoreMessages]' `core.command.*`). An adapter calls
+ * `message(result, source)` with every result and replies with what it gets, if anything.
  */
 public fun interface CommandFeedback {
     /** What to tell the source about [result], or `null` for nothing (a command that [CommandResult.Ran] replies itself). */
     public fun message(result: CommandResult): Component?
 
+    /** What to tell [source] about [result], in their language; [message] unless the feedback knows languages. */
+    public fun message(result: CommandResult, source: CommandSource): Component? = message(result)
+
     public companion object {
+        /**
+         * Each result as one of [CoreMessages]' `core.command.*` messages, drawn by [text] for
+         * the source who ran the command, so the plugin's lang files (and an owner's edits to
+         * them) word it. Without a source, English.
+         */
+        public fun of(text: AdminText): CommandFeedback = object : CommandFeedback {
+            override fun message(result: CommandResult): Component? = ENGLISH.message(result)
+
+            override fun message(result: CommandResult, source: CommandSource): Component? {
+                fun draw(key: MessageKey, vararg placeholders: Pair<String, Any>) = text.render(source, key, placeholders.toMap())
+                return when (result) {
+                    CommandResult.Ran -> null
+                    CommandResult.Unknown -> draw(CoreMessages.commandUnknown)
+                    is CommandResult.NoPermission -> draw(CoreMessages.commandNoPermission)
+                    CommandResult.PlayersOnly -> draw(CoreMessages.commandPlayersOnly)
+                    is CommandResult.Usage -> draw(CoreMessages.commandUsage, "usage" to result.usage)
+                    is CommandResult.InvalidArgument -> {
+                        val input = result.input
+                        val usage = "usage" to result.usage
+                        when (val error = result.error) {
+                            ArgumentError.UnknownPlayer -> draw(CoreMessages.commandUnknownPlayer, "player" to input)
+                            ArgumentError.NotAnInteger -> draw(CoreMessages.commandNotAnInteger, "input" to input, usage)
+                            ArgumentError.NotANumber -> draw(CoreMessages.commandNotANumber, "input" to input, usage)
+                            is ArgumentError.TooSmall -> draw(CoreMessages.commandTooSmall, "input" to input, "min" to number(error.min), usage)
+                            is ArgumentError.TooLarge -> draw(CoreMessages.commandTooLarge, "input" to input, "max" to number(error.max), usage)
+                            is ArgumentError.NotAChoice -> draw(CoreMessages.commandNotAChoice, "input" to input, "choices" to error.choices.joinToString(", "), usage)
+                            else -> draw(CoreMessages.commandInvalid, "reason" to describe(error, input), usage)
+                        }
+                    }
+                    is CommandResult.OnCooldown -> draw(CoreMessages.commandCooldown, "time" to result.remaining)
+                    is CommandResult.ConfirmNeeded -> draw(CoreMessages.commandConfirm, "line" to result.line, "time" to result.window)
+                    is CommandResult.Failed -> result.message
+                    is CommandResult.Error -> draw(CoreMessages.commandError)
+                }
+            }
+        }
+
         /** Plain English, as today's core says it. */
         public val ENGLISH: CommandFeedback = CommandFeedback { result ->
             when (result) {

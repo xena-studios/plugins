@@ -1,4 +1,4 @@
-package co.xenastudios.core.fabric.sandbox
+package co.xenastudios.xsample.fabric
 
 import co.xenastudios.core.common.admin.AdminText
 import co.xenastudios.core.common.i18n.Translations

@@ -1,0 +1,27 @@
+# The rewrite's runtime budgets (ROADMAP.md, "Fast, robust, light"), checked on a real server by
+# scripts/budgets/check.sh, which fails when a plugin is over one: "<name> <limit>", one a line.
+# The jar budgets are gradle/jar-budgets.txt; the benchmarks' are core/core-benchmarks/budgets.txt.
+
+# Startup: the plugin's time on the server thread at every boot (its libraries: resolved by the
+# server, onLoad, onEnable), median of the timed boots. The first Xena plugin to start pays for
+# loading the Kotlin stdlib's first classes.
+startup-first-ms 150
+startup-ms 100
+
+# Idle, no players: server-thread time a tick, and CPU time a second on every other thread, in
+# stacks that pass through the plugin's package.
+idle-tick-ms 0.001
+idle-offthread-ms-per-s 0.5
+
+# Under load (10 bots): the same, per plugin and for every plugin of the run together.
+load-tick-ms 0.05
+load-family-tick-ms 0.25
+load-offthread-ms-per-s 2
+
+# Heap used after two full GCs, over the same server without the plugins, per plugin; and
+# metaspace in the plugins' own class loaders (their jars; libraries: are reported, not budgeted).
+heap-mb 4
+metaspace-mb 1.5
+# Our classes' instances after the load against before it: the larger of the two allowances.
+heap-growth-percent 10
+heap-growth-mb 0.5

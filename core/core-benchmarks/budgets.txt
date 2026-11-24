@@ -1,0 +1,30 @@
+# Budgets for the core's hot paths (core/core-benchmarks, checkBenchmarks): one benchmark a
+# line, "<Class.method[param=value]> <ns/op> <B/op>", "-" for no limit. A benchmark with no line
+# fails, so a new one gets a budget on purpose.
+#
+# Bytes allocated per call (JMH's gc profiler) don't move with the machine: each limit is
+# today's plus a quarter, and 16 where today's is nothing, so one new object per call fails.
+# Times do move (CI's runners are slower and shared): each limit is five times today's on an
+# M1 Pro, a tripwire for a path that got many times slower, not a measurement.
+#
+# Today's, on the M1 Pro (ns/op, B/op), are in DECISIONS.md ("Budgets").
+CommandBenchmark.dispatch 3370 2024
+CommandBenchmark.noPermission 990 392
+CommandBenchmark.suggestPlayer 880 976
+ConfigBenchmark.get 50 16
+ConfigBenchmark.getDuration 50 16
+ConfigBenchmark.load 38420 32184
+EventBusBenchmark.cancellable 50 16
+EventBusBenchmark.noListeners 50 16
+EventBusBenchmark.threeListeners 60 16
+MarkupBenchmark.parse 14260 6592
+MarkupBenchmark.renderPlain 50 16
+MarkupBenchmark.renderWithPlaceholders 2150 2768
+MessageBenchmark.adventureKept[language=en] 50 16
+MessageBenchmark.adventureKept[language=de] 50 16
+MessageBenchmark.adventureWithPlaceholders[language=en] 3440 4152
+MessageBenchmark.adventureWithPlaceholders[language=de] 3470 4176
+MessageBenchmark.languageOf[language=en] 50 16
+MessageBenchmark.languageOf[language=de] 50 16
+MessageBenchmark.spigotWithPlaceholders[language=en] 4280 5192
+MessageBenchmark.spigotWithPlaceholders[language=de] 4100 4992

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Paper's console, with milliseconds since JVM start (%r) and the logger's name, so plugin load and enable times can be read off the log. -->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Out" target="SYSTEM_OUT">
+      <PatternLayout pattern="%r %d{HH:mm:ss.SSS} [%t/%level] [%c]: %msg%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Root level="info"><AppenderRef ref="Out"/></Root>
+  </Loggers>
+</Configuration>

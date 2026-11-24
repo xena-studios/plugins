@@ -18,6 +18,7 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -56,36 +57,83 @@ public abstract class BukkitBootstrap extends JavaPlugin {
     private static final String SHARED = "Xena";
     private static final String SETTINGS = "libraries.yml";
 
+    /**
+     * {@code -Dxena.startupTimes=true}: each plugin logs how long its onLoad and onEnable took,
+     * for the budget check (scripts/budgets/check.sh), which can't tell from the log where the
+     * last plugin's enable ends.
+     */
+    private static final boolean STARTUP_TIMES = Boolean.getBoolean("xena.startupTimes");
+
+    /**
+     * The stdlib's biggest classes, which nearly every plugin needs at once (`listOf` alone
+     * loads all of {@code ArraysKt}, 800 KiB of class files). Paper passes each class from
+     * {@code libraries:} through ASM as it loads it, about 80 ms for these on Paper 1.21.11, so
+     * a thread of the plugin's own loads them while the server prepares its worlds between
+     * onLoad and onEnable, instead of the server thread at enable (DECISIONS.md, "Budgets").
+     */
+    private static final String[] PRELOAD = {
+        "kotlin.collections.ArraysKt", "kotlin.collections.CollectionsKt", "kotlin.collections.MapsKt",
+        "kotlin.collections.SetsKt", "kotlin.text.StringsKt", "kotlin.sequences.SequencesKt", "kotlin.ranges.RangesKt",
+        "kotlin.text.CharsKt", "kotlin.text.Regex", "kotlin.text.HexExtensionsKt", "kotlin.time.Duration",
+        "kotlin.time.DurationKt", "kotlin.uuid.Uuid", "kotlin.uuid.UuidKt", "kotlin.collections.ArrayDeque",
+        "kotlin.collections.builders.MapBuilder",
+    };
+
     private PluginEntry entry;
+    /** The entry point's class, made at onEnable when it has nothing to do at onLoad. */
+    private Class<?> entryType;
+    private long loadNanos;
 
     /** The binary name of the plugin's {@link PluginEntry}, such as {@code co.xenastudios.xutilities.XUtilities}. */
     protected abstract String entryPoint();
 
     @Override
     public final void onLoad() {
+        long started = System.nanoTime();
         try {
-            entry = start();
-            if (entry != null) {
-                entry.load();
+            Class<?> type = start();
+            if (type != null) {
+                // An entry point with work at onLoad (a service other plugins look up as they
+                // enable) is made now; the rest wait for onEnable, so the stdlib's classes have
+                // loaded on their own thread by then.
+                if (overridesLoad(type)) {
+                    entry = construct(type);
+                    entry.load();
+                } else {
+                    entryType = type;
+                }
             }
         } catch (LibraryException e) {
             entry = null;
+            entryType = null;
             getLogger().severe(e.getMessage());
         } catch (Throwable e) {
             entry = null;
+            entryType = null;
             getLogger().log(Level.SEVERE, getName() + " couldn't start: " + e, e);
         }
+        loadNanos = System.nanoTime() - started;
     }
 
     @Override
     public final void onEnable() {
-        if (entry != null) {
+        if (entry != null || entryType != null) {
+            long started = System.nanoTime();
             try {
+                if (entry == null) {
+                    entry = construct(entryType);
+                    entryType = null;
+                }
                 entry.enable();
+                if (STARTUP_TIMES) {
+                    getLogger().info(String.format(Locale.ROOT, "Startup times: onLoad %.1f ms, onEnable %.1f ms",
+                        loadNanos / 1e6, (System.nanoTime() - started) / 1e6));
+                }
                 return;
             } catch (Throwable e) {
                 getLogger().log(Level.SEVERE, getName() + " couldn't start: " + e, e);
                 entry = null;
+                entryType = null;
             }
         }
         getServer().getPluginManager().disablePlugin(this);
@@ -104,8 +152,8 @@ public abstract class BukkitBootstrap extends JavaPlugin {
         }
     }
 
-    /** The entry point, or null (having said why) when this server can't run the plugin. */
-    private PluginEntry start() throws Exception {
+    /** The entry point's class, or null (having said why) when this server can't run the plugin. */
+    private Class<?> start() throws Exception {
         int running = JavaVersion.current();
         int needed = neededJava();
         if (running < needed) {
@@ -121,8 +169,49 @@ public abstract class BukkitBootstrap extends JavaPlugin {
             loader = Libraries.load(libraries, own, getFile().toURI().toURL(), cache(settings), running, strategy(settings),
                 getLogger()).loader();
             checkKotlin(libraries, loader);
+            preload(libraries, loader);
         }
-        return construct(Class.forName(entryPoint(), true, loader));
+        return Class.forName(entryPoint(), false, loader);
+    }
+
+    /** Whether the entry point has its own {@link PluginEntry#load()}. */
+    private static boolean overridesLoad(Class<?> type) {
+        try {
+            return type.getMethod("load").getDeclaringClass() != PluginEntry.class;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Loads {@link #PRELOAD} on a daemon thread, without running anything in them, when the
+     * plugin uses the stdlib. Class loading is safe from any thread: if the server's thread
+     * wants a class this one is loading, it waits for that class alone, as it would have
+     * loaded it itself.
+     */
+    private void preload(List<Library> libraries, final ClassLoader loader) {
+        boolean kotlin = false;
+        for (Library library : libraries) {
+            kotlin |= library.coordinates().startsWith("org.jetbrains.kotlin:kotlin-stdlib:");
+        }
+        if (!kotlin) {
+            return;
+        }
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (String name : PRELOAD) {
+                    try {
+                        Class.forName(name, false, loader);
+                    } catch (Throwable ignored) {
+                        // A class another Kotlin release doesn't have: the plugin loads what it uses itself.
+                    }
+                }
+            }
+        }, getName() + " preloading");
+        thread.setDaemon(true);
+        thread.setPriority(Thread.NORM_PRIORITY - 1);
+        thread.start();
     }
 
     /**

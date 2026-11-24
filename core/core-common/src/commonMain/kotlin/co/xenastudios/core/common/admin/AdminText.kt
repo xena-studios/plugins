@@ -44,7 +44,9 @@ public fun interface AdminText {
         public fun plainEnglish(message: MessageKey, placeholders: Map<String, Any>): String =
             english(message, placeholders)?.plain() ?: ""
 
-        private val englishFormats = Formats.of(co.xenastudios.core.common.i18n.LanguageTag.ENGLISH)
+        // On first use: AdminText.ENGLISH is made as a plugin enables, and the formats table
+        // (every language's) has no business on the server thread before a reply needs it.
+        private val englishFormats by lazy { Formats.of(co.xenastudios.core.common.i18n.LanguageTag.ENGLISH) }
 
         private fun english(message: MessageKey, placeholders: Map<String, Any>, theme: Theme = Theme.DEFAULT): Component? {
             if (message.english.isBlank()) return null

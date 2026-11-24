@@ -88,6 +88,8 @@ include("core:core-fuzz")
 include("core:core-testing:sample:bukkit")
 // xTwin, a second plugin on its own relocated core, booted beside xSample in the family test.
 include("core:core-testing:twin", "core:core-testing:twin:bukkit")
+// JMH benchmarks for the core's hot paths, with budgets: never shipped.
+include("core:core-benchmarks")
 // A plugin that is never released: it boots the core on a real server in CI.
 include("sandbox")
 // Its API, and two plugins that use it, so CI checks that other plugins can use an API.

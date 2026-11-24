@@ -1,0 +1,7 @@
+# A real client on the server (scripts/boot-test.sh --checks, with --seed scripts/boot-seeds/client
+# so the client is an operator), after boot-checks.txt: scripts/budgets/bots/client.js joins in
+# German, runs commands, completes them and switches to English, and xSample's PlatformCheck
+# checks its join and quit in the family's player cache.
+client:
+logged: CLIENT JOIN PASS
+logged: CLIENT QUIT PASS

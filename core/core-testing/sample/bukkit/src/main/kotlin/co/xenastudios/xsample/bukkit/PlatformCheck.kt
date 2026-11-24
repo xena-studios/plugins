@@ -8,6 +8,7 @@ import co.xenastudios.core.api.event.EventType
 import co.xenastudios.core.bukkit.BukkitPlatform
 import co.xenastudios.core.bukkit.XenaCancellableEvent
 import co.xenastudios.core.bukkit.ref
+import co.xenastudios.core.api.toPlayerRef
 import co.xenastudios.core.common.Outcome
 import co.xenastudios.core.common.command.CommandSource
 import co.xenastudios.core.common.event.SimpleEventBus
@@ -24,6 +25,8 @@ import co.xenastudios.core.common.text.Style
 import co.xenastudios.core.common.text.TextColor
 import co.xenastudios.core.jvm.family.JvmFamilyBoard
 import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.EventExecutor
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.concurrent.ConcurrentHashMap
@@ -105,7 +108,49 @@ internal class PlatformCheck(private val plugin: JavaPlugin, private val platfor
             if (waiting.isNotEmpty()) failures["timeout"] = "never finished: ${waiting.sorted().joinToString(", ")}"
             finish()
         }
+        watchClients()
     }
+
+    /**
+     * A real client's join and quit in the family's player cache, for the boot tests' client
+     * step (scripts/budgets/bots/client.js), which joins with its language set to German and
+     * leaves in English: logs `CLIENT JOIN PASS` once the cache has them online in German, and
+     * `CLIENT QUIT PASS` once it has them offline, in the language they changed to where the
+     * server says when a client changes it (1.12 on). Anything else is an error, which fails
+     * the boot.
+     */
+    private fun watchClients() {
+        val plugins = plugin.server.pluginManager
+        // After the family's own listeners, which are registered first, at the same priority.
+        plugins.registerEvent(PlayerJoinEvent::class.java, object : Listener {}, org.bukkit.event.EventPriority.MONITOR, EventExecutor { _, event ->
+            if (event !is PlayerJoinEvent) return@EventExecutor
+            val name = event.player.name
+            // Before 1.12 the client's language arrives just after it joins; the family reads it again at 2 s.
+            scheduler.later(Where.on(event.player.uniqueId.toPlayerRef()), 3.seconds) {
+                val cached = cache.find(name)
+                if (cached != null && cached.online && cached.language?.lowercase()?.startsWith("de") == true) {
+                    platform.log.info("CLIENT JOIN PASS: $name is in the player cache, online, in ${cached.language}")
+                } else {
+                    platform.log.error("CLIENT JOIN FAIL: the player cache has $name as ${describe(cached)}, not online in German")
+                }
+            }
+        }, plugin)
+        plugins.registerEvent(PlayerQuitEvent::class.java, object : Listener {}, org.bukkit.event.EventPriority.MONITOR, EventExecutor { _, event ->
+            if (event !is PlayerQuitEvent) return@EventExecutor
+            val name = event.player.name
+            val cached = cache.find(name)
+            val changes = platform.server.atLeast(1, 12)
+            val language = !changes || cached?.language?.lowercase()?.startsWith("en") == true
+            if (cached != null && !cached.online && language) {
+                platform.log.info("CLIENT QUIT PASS: $name left, and the player cache has them offline, in ${cached.language}")
+            } else {
+                platform.log.error("CLIENT QUIT FAIL: the player cache has $name as ${describe(cached)}" + if (changes) ", not offline in English" else ", not offline")
+            }
+        }, plugin)
+    }
+
+    private fun describe(player: co.xenastudios.core.common.family.CachedPlayer?): String =
+        if (player == null) "unknown" else "${if (player.online) "online" else "offline"} in ${player.language}"
 
     private fun checkStorage() {
         val path = StoragePath.of("platform-check/hello.txt")

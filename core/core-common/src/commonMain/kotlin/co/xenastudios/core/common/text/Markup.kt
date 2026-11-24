@@ -78,7 +78,7 @@ public class Markup private constructor(
 
         private fun canonical(name: String) = ALIASES[name] ?: name
 
-        private fun isPlaceholderName(name: String) =
+        internal fun isPlaceholderName(name: String) =
             name.isNotEmpty() && name.all { it in 'a'..'z' || it in '0'..'9' || it == '_' || it == '-' }
 
         // The default gradient, as MiniMessage's: white to black.
@@ -88,7 +88,7 @@ public class Markup private constructor(
          * Splits a tag's inside at its colons, into at most [limit] parts, unquoting quoted
          * ones: `click:run_command:'/tp a:b'` is `click`, `run_command`, `/tp a:b`.
          */
-        private fun splitArgs(tag: String, limit: Int): List<String> {
+        internal fun splitArgs(tag: String, limit: Int): List<String> {
             val out = mutableListOf<String>()
             val current = StringBuilder()
             var quote: Char? = null
@@ -113,7 +113,7 @@ public class Markup private constructor(
         }
 
         /** The index of the `>` that closes a tag starting at [from], skipping quoted arguments; -1 if none. */
-        private fun tagEnd(s: String, from: Int): Int {
+        internal fun tagEnd(s: String, from: Int): Int {
             var quote: Char? = null
             var i = from
             while (i < s.length) {

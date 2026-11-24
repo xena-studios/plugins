@@ -39,6 +39,13 @@ pmd = "7.29.0"
 snakeyaml-engine-kmp = "5.0.0"
 # Reads each API's class files for its signature check (build-logic), as NeoSkript does.
 asm = "9.11.1"
+# The text APIs core-jvm draws messages to, compile-only: servers ship their own. Adventure
+# 4.7.0 is what Paper 1.16.5 bundles, the oldest Adventure the renderer meets, so nothing
+# newer can be called by accident. Spigot 1.8.8's bungeecord-chat (1.8-SNAPSHOT) is in no
+# public repository, so the oldest release on Maven Central is used, and a test keeps the
+# renderer to what 1.8 has (DECISIONS.md).
+adventure-api = "4.7.0"
+bungeecord-chat = "1.16-R0.4"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -62,6 +69,8 @@ commons-net = { module = "commons-net:commons-net", version.ref = "commons-net" 
 pmd-cli = { module = "net.sourceforge.pmd:pmd-cli", version.ref = "pmd" }
 pmd-java = { module = "net.sourceforge.pmd:pmd-java", version.ref = "pmd" }
 snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.ref = "snakeyaml-engine-kmp" }
+adventure-api = { module = "net.kyori:adventure-api", version.ref = "adventure-api" }
+bungeecord-chat = { module = "net.md-5:bungeecord-chat", version.ref = "bungeecord-chat" }
 # Applied by the rewrite's conventions in build-logic (xena.kmp, xena.kotlin-jvm).
 # The stdlib the rewrite's plugins download at runtime instead of shading (xena.fetched-libraries),
 # pinned by SHA-256 in gradle/library-pins.txt.

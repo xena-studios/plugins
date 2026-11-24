@@ -16,6 +16,13 @@ dependencies {
     testImplementation(libs.mysql.connector)
     // The fake platform's clock and log, for the change feed's tests.
     testImplementation(project(":core:core-testing"))
+    // The servers' own text, which the text package draws messages to: never shipped.
+    compileOnly(libs.adventure.api)
+    compileOnly(libs.bungeecord.chat)
+    testImplementation(libs.adventure.api)
+    testImplementation(libs.bungeecord.chat)
+    // Reads the renderer's class files, to keep it to what Spigot 1.8.8's chat API has.
+    testImplementation(libs.asm.tree)
 }
 
 tasks.test {

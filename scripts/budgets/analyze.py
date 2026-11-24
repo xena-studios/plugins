@@ -165,6 +165,8 @@ def main():
     ap.add_argument("--idle", type=int, default=60)
     ap.add_argument("--load", type=int, default=60)
     ap.add_argument("--bots", type=int, default=10)
+    ap.add_argument("--report-only", default="",
+                    help="budgets (names in perf-budgets.txt, comma-separated) reported when over but not failed")
     ap.add_argument("jars", nargs="+")
     args = ap.parse_args()
     out = args.out
@@ -241,15 +243,23 @@ def main():
             bots = json.loads(finals[-1].removeprefix("final ").strip())
 
     # ---- the report ----
-    failed = [c for c in checks if not c["ok"]]
-    md = [f"## Runtime budgets: {'PASS' if not failed else 'FAIL'}", ""]
+    report_only = {b.strip() for b in args.report_only.split(",") if b.strip()}
+    for c in checks:
+        c["report_only"] = c["budget"] in report_only
+    failed = [c for c in checks if not c["ok"] and not c["report_only"]]
+    warned = [c for c in checks if not c["ok"] and c["report_only"]]
+    md = [f"## Runtime budgets: {'PASS' if not failed else 'FAIL'}{' (with warnings)' if warned and not failed else ''}", ""]
     md.append("Plugins: " + ", ".join(f"{n} ({size / 1024:.0f} KiB)" for n, _, size in plugins))
     md.append("")
     md.append("| Budget | Measured | Limit | |")
     md.append("|---|--:|--:|---|")
     for c in checks:
-        md.append(f"| {c['what']} | {c['value']:.4g} {c['unit']} | {c['limit']:.4g} {c['unit']} | {'ok' if c['ok'] else '**over**'} |")
+        md.append(f"| {c['what']} | {c['value']:.4g} {c['unit']} | {c['limit']:.4g} {c['unit']} | {'ok' if c['ok'] else ('over (report only)' if c['report_only'] else '**over**')} |")
     md.append("")
+    for c in warned:
+        md.append(f"> [!WARNING]\n> {c['what']} is over its budget ({c['value']:.4g} {c['unit']} against {c['limit']:.4g}),"
+                  f" which is reported but doesn't fail the run yet ({c['budget']}).")
+        md.append("")
     md.append(f"### Startup (ms, median of {len(boots)} boots)")
     md.append("")
     md.append("| Plugin | Server (libraries:, class loader) | onLoad | onEnable | Total | Each boot | First boot |")
@@ -288,6 +298,12 @@ def main():
     for c in failed:
         print(f"OVER BUDGET: {c['what']}: {c['value']:.4g} {c['unit']}, limit {c['limit']:.4g} ({c['budget']})",
               file=sys.stderr)
+    for c in warned:
+        print(f"OVER BUDGET (report only): {c['what']}: {c['value']:.4g} {c['unit']}, limit {c['limit']:.4g}"
+              f" ({c['budget']})", file=sys.stderr)
+        if os.environ.get("GITHUB_ACTIONS"):
+            print(f"::warning title=Over budget (report only)::{c['what']}: {c['value']:.4g} {c['unit']},"
+                  f" budget {c['limit']:.4g} ({c['budget']})")
     return 1 if failed else 0
 
 

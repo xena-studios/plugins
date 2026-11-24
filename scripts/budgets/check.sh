@@ -14,12 +14,14 @@
 #
 #   scripts/budgets/check.sh [--version 1.21.11] [--boots 3] [--bots 10] [--idle 60]
 #     [--load 60] [--commands "xsample,coins,pay {other} 1"] [--java <JDK home>]
-#     [--out <folder>] plugin.jar...
+#     [--out <folder>] [--report-only <budget>,...] plugin.jar...
 #
 # Run it after building the jars (./gradlew :core:core-testing:sample:bukkit:assemble for
 # xSample's shrunk jar in build/r8/). --bots 0 skips the load. The report is <out>/report.md
 # (and the job summary on GitHub Actions), the numbers <out>/results.json; <out> is
-# build/budgets/ unless given. Paper, async-profiler (pinned by SHA-256 below) and the bots'
+# build/budgets/ unless given. --report-only names budgets from perf-budgets.txt
+# (startup-first-ms,startup-ms) that are reported when over, as a warning, but don't fail.
+# Paper, async-profiler (pinned by SHA-256 below) and the bots'
 # packages (npm ci) are fetched on first use and cached in .cache/.
 #
 # Exit codes: 0 every budget met; 1 over a budget (the report says which); 2 a usage error;
@@ -39,6 +41,7 @@ settle=30
 commands=""
 java_home=""
 out=""
+report_only=""
 jars=()
 while (($#)); do
   case "$1" in
@@ -51,13 +54,14 @@ while (($#)); do
     --commands) commands=$2; shift 2 ;;
     --java) java_home=$2; shift 2 ;;
     --out) out=$2; shift 2 ;;
-    -h | --help) sed -n '2,30p' "$0"; exit 0 ;;
+    --report-only) report_only=$2; shift 2 ;;
+    -h | --help) sed -n '2,32p' "$0"; exit 0 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) [[ -f $1 ]] || { echo "no plugin jar at $1" >&2; exit 2; }
        jars+=("$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"); shift ;;
   esac
 done
-((${#jars[@]})) || { sed -n '2,30p' "$0" >&2; exit 2; }
+((${#jars[@]})) || { sed -n '2,32p' "$0" >&2; exit 2; }
 ((boots >= 2)) || { echo "--boots is at least 2: the first boot only creates the world" >&2; exit 2; }
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -282,4 +286,4 @@ stop
 uptime >>"$out/uptime.txt"
 
 python3 "$here/analyze.py" --out "$out" --budgets "$root/gradle/perf-budgets.txt" --boots "$boots" \
-  --idle "$idle" --load "$load" --bots "$bots" ${jars[@]+"${jars[@]}"}
+  --idle "$idle" --load "$load" --bots "$bots" --report-only "$report_only" ${jars[@]+"${jars[@]}"}

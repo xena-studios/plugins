@@ -2,6 +2,8 @@ plugins {
     id("xena.kotlin-jvm")
     id("xena.fetched-libraries")
     id("com.gradleup.shadow")
+    // Shrunk as xSample's is, so the family test boots two R8 jars (build/r8/XTwin.jar).
+    id("xena.r8")
 }
 
 version = "0.0.0"
@@ -21,12 +23,13 @@ dependencies {
         shade(project(module)) { isTransitive = false }
     }
     fetched(libs.kotlin.stdlib) { isTransitive = false }
-    onDemand(libs.sqlite.jdbc) { isTransitive = false }
-    onDemand(libs.mysql.connector) { isTransitive = false }
-    shade(libs.snakeyaml.engine.kmp) {
+    // Downloaded, as xSample's: on servers before 1.16.5 the two plugins share one copy.
+    fetched(libs.snakeyaml.engine.kmp.jvm) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains")
     }
+    onDemand(libs.sqlite.jdbc) { isTransitive = false }
+    onDemand(libs.mysql.connector) { isTransitive = false }
 }
 
 tasks.processResources {
@@ -42,11 +45,20 @@ tasks.shadowJar {
     archiveFileName = "XTwin.jar"
     configurations = listOf(shadeClasspath.get())
     relocate("co.xenastudios.core", "co.xenastudios.xtwin.core")
-    relocate("it.krzeminski", "co.xenastudios.xtwin.lib.snakeyaml")
-    relocate("okio", "co.xenastudios.xtwin.lib.okio")
-    relocate("net.thauvin.erik", "co.xenastudios.xtwin.lib.urlencoder")
     exclude("META-INF/*.kotlin_module", "META-INF/maven/**")
     manifest.attributes("paperweight-mappings-namespace" to "mojang")
 }
 
 tasks.assemble { dependsOn(tasks.shadowJar) }
+
+// What newer servers have beyond the 1.8.8 API, for R8 to see (as xSample's build explains).
+val serverApi = configurations.dependencyScope("serverApi")
+val serverApiClasspath = configurations.resolvable("serverApiClasspath") { extendsFrom(serverApi.get()) }
+dependencies {
+    "serverApi"(libs.paper.api)
+}
+
+xenaR8 {
+    packageName = "co.xenastudios.xtwin.r8"
+    libraries.from(configurations.named("fetchedJars"), serverApiClasspath)
+}

@@ -50,7 +50,7 @@ The Boot workflow runs these on every server the rewrite ships for, and on Fabri
 ```sh
 ./gradlew :core:core-testing:twin:bukkit:assemble
 core/core-testing/sample/bukkit/boot.sh "$(scripts/server-jar.sh spigot 1.8.8 | sed -n 's/^jar=//p')" --java <JDK 8 home> \
-  --checks core/core-testing/twin/family-checks.txt core/core-testing/twin/bukkit/build/libs/XTwin.jar
+  --checks core/core-testing/twin/family-checks.txt core/core-testing/twin/bukkit/build/r8/XTwin.jar
 ```
 
 `boot.sh` boots the jar R8 shrank (`build/r8/XSample.jar`), as a release ships; the YAML parser and the stdlib are downloaded (`libraries:`, or the loader below 1.16.5). The Fabric sandbox is built and booted the same way, from its own build: `./gradlew -p core/platform-fabric build collect`, then `scripts/boot-fabric.sh --version 26.3 --java <JDK 25 home> --checks core/platform-fabric/sandbox/boot-checks.txt core/platform-fabric/build/libs/xsample-fabric-1.0.0+26.3.jar`.
@@ -71,7 +71,7 @@ scripts/budgets/check.sh --java <JDK 21 home> --commands "xsample,coins,pay {oth
   core/core-testing/sample/bukkit/build/r8/XSample.jar
 ```
 
-`check.sh` exits 0 within every budget, 1 over one, 2 on a usage error and 3 when the measurement itself failed (a download, a server that didn't start, bots that didn't join). It needs Node.js for the bots (`--bots 0` skips them) and fetches Paper, async-profiler (pinned by SHA-256) and the bots' packages into `.cache/`. The report is `build/budgets/report.md`, and the job summary on GitHub Actions. On Linux, async-profiler wants `sysctl kernel.perf_event_paranoid=1`. Several plugin jars measure the family together; the first to enable gets the 150 ms first-plugin budget.
+The Boot workflow runs both (its `budgets` and `benchmarks` jobs): startup is reported there with `--report-only startup-first-ms,startup-ms` until it's within its budget, and the 10-bot load runs nightly. `check.sh` exits 0 within every budget, 1 over one, 2 on a usage error and 3 when the measurement itself failed (a download, a server that didn't start, bots that didn't join). It needs Node.js for the bots (`--bots 0` skips them) and fetches Paper, async-profiler (pinned by SHA-256) and the bots' packages into `.cache/`. The report is `build/budgets/report.md`, and the job summary on GitHub Actions. On Linux, async-profiler wants `sysctl kernel.perf_event_paranoid=1`. Several plugin jars measure the family together; the first to enable gets the 150 ms first-plugin budget.
 
 ## How it fits together
 

@@ -6,8 +6,9 @@ name: Boot
 #
 # Per pull request, the platforms it touches (scripts/affected.sh's `boot`: a change in core/
 # or the samples) at their floor and newest: Spigot 1.8.8 and Paper for Bukkit, the oldest and
-# newest lines for Fabric, with the family test on the newest of each and Spigot 1.8.8. The
-# whole matrix nightly and by hand. Pull requests always run, so `boot-ok` always reports.
+# newest lines for Fabric, with the family test on the newest of each and Spigot 1.8.8, and a
+# real client joining Spigot 1.8.8 and Paper 1.21.11, the newest Minecraft mineflayer speaks.
+# The whole matrix nightly and by hand. Pull requests always run, so `boot-ok` always reports.
 on:
   pull_request:
   schedule:
@@ -54,8 +55,9 @@ jobs:
             || { scripts/affected.sh --all | tee -a "$GITHUB_OUTPUT"; exit 0; }
           scripts/affected.sh <<< "$files" | tee -a "$GITHUB_OUTPUT"
       # The matrix, one cell per server. A cell's `pr` puts it in pull requests' runs, `family`
-      # adds the family test, and `allow-failure` lets it fail without failing the run, for a
-      # server with no stable download. A fork's version is its own newest unless given.
+      # adds the family test, `client` a real client joining (scripts/budgets/bots/client.js, on
+      # a version mineflayer speaks), and `allow-failure` lets it fail without failing the run,
+      # for a server with no stable download. A fork's version is its own newest unless given.
       - id: matrix
         env:
           BOOT: ${{ steps.check.outputs.boot }}
@@ -74,8 +76,9 @@ jobs:
           # BungeeCord adapter, which comes with the proxies (ROADMAP.md, after M1).
           bukkit=$(jq -nc --arg newest "$newest" '[
             {id: "paper", name: "Paper \($newest)", server: "paper", version: $newest, pr: true, family: true},
+            {id: "paper-1.21.11", name: "Paper 1.21.11", server: "paper", version: "1.21.11", pr: true, client: true},
             {id: "folia", name: "Folia \($newest)", server: "folia", version: $newest},
-            {id: "spigot-1.8.8", name: "Spigot 1.8.8", server: "spigot", version: "1.8.8", buildtools: 8, pr: true, family: true},
+            {id: "spigot-1.8.8", name: "Spigot 1.8.8", server: "spigot", version: "1.8.8", buildtools: 8, pr: true, family: true, client: true},
             {id: "spigot-1.13.2", name: "Spigot 1.13.2", server: "spigot", version: "1.13.2", buildtools: 8},
             {id: "spigot-1.16.5", name: "Spigot 1.16.5", server: "spigot", version: "1.16.5", buildtools: 8},
             {id: "spigot", name: "Spigot \($newest)", server: "spigot", version: $newest, buildtools: 25},
@@ -84,7 +87,7 @@ jobs:
             {id: "leaves", name: "Leaves", server: "leaves"},
             {id: "shreddedpaper", name: "ShreddedPaper", server: "shreddedpaper", regions: true},
             {id: "canvas", name: "Canvas", server: "canvas", regions: true, "allow-failure": true}
-          ] | map({version: "", buildtools: 0, pr: false, family: false, seed: "", regions: false, "allow-failure": false} + .)')
+          ] | map({version: "", buildtools: 0, pr: false, family: false, client: false, seed: "", regions: false, "allow-failure": false} + .)')
           # Quilt runs the newest line's Fabric jar through its own loader and installer.
           fabric=$(jq -nc --arg oldest "$fabric_oldest" --arg newest "$fabric_newest" \
             --argjson oldJava "$(java_for "$fabric_oldest")" --argjson newJava "$(java_for "$fabric_newest")" '[
@@ -233,19 +236,34 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ steps.server.outputs.java }}
-      # xSample alone: its platform checks, console commands and a clean stop.
+      # The real client's Node.js and mineflayer packages, which boot-test.sh installs into .cache.
+      - if: matrix.cell.client
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - if: matrix.cell.client
+        uses: actions/cache@v6
+        with:
+          path: .cache/budget-bots
+          key: client-bots-${{ hashFiles('scripts/budgets/bots/package-lock.json') }}
+      # xSample alone: its platform checks, console commands and a clean stop; on a `client` cell
+      # also a real client, an operator through the seeded ops.json, joining in German, running
+      # and completing commands and switching to English, with its join and quit in the player
+      # cache (core/core-testing/sample/bukkit/client-checks.txt).
       - name: boot xSample
         env:
           JAR: ${{ steps.jar.outputs.jar }}
           JAVA: ${{ steps.java.outputs.path }}
           SEED: ${{ matrix.cell.seed }}
           REGIONS: ${{ matrix.cell.regions }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
           if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
           args=()
           [[ -z $SEED ]] || args+=(--seed "$SEED")
           # Folia's forks must take Folia's path, not the main thread's.
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks core/core-testing/sample/bukkit/client-checks.txt)
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
       # The family test: xTwin beside xSample, each with its own relocated core, seeing one
       # board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt).

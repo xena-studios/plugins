@@ -8,11 +8,17 @@
 #     [--logged "log text"]... plugin.jar...
 #   scripts/boot-test.sh --server spigot-1.8.8.jar [--java <JDK home>] [--jvm -Dflag]... ...
 #
-# Steps run in order. Each --expect waits for text logged after the --run before
-# it. A checks file holds the same steps, one per line: "run: <command>",
+# Steps run in order. Each --expect waits for text logged after the --run (or client:)
+# before it. A checks file holds the same steps, one per line: "run: <command>",
 # "expect: <text>", or "logged: <text>" for text logged at any point, such as
 # during startup; blank lines and lines starting with # are skipped. A step
 # that starts with "paper " or "folia " runs only on that server.
+#
+# "client: [args]" (or --client) joins a real client: scripts/budgets/bots/client.js, a
+# mineflayer bot, with the server's port and these arguments, and the step fails unless it ends
+# with CLIENT PASS. Node.js runs it; its packages are installed into .cache/budget-bots/ on first
+# use, as the budget check's bots are. The bot is an operator only if the server's ops.json says
+# so (--seed scripts/boot-seeds/client).
 #
 # "allow: <text>" (or --allow) is for the rare run that must log an error or
 # warning, such as Paper refusing a second plugin that provides the same name:
@@ -56,6 +62,7 @@ while (($#)); do
     --expect) steps+=("expect: $2"); shift 2 ;;
     --logged) steps+=("logged: $2"); shift 2 ;;
     --allow) steps+=("allow: $2"); shift 2 ;;
+    --client) steps+=("client: $2"); shift 2 ;;
     --checks)
       while IFS= read -r line || [[ -n $line ]]; do
         [[ -z ${line//[[:space:]]/} || $line == \#* ]] || steps+=("$line")
@@ -129,6 +136,33 @@ fail() {
   exit 1
 }
 
+# The bots' packages, installed once, as scripts/budgets/check.sh installs them.
+bots="$root/.cache/budget-bots"
+bots_ready() {
+  local here="$root/scripts/budgets/bots"
+  command -v node >/dev/null || fail "a client: step needs Node.js"
+  mkdir -p "$bots"
+  cp "$here/package.json" "$here/package-lock.json" "$bots/"
+  if ! cmp -s "$here/package-lock.json" "$bots/node_modules/.package-lock.json.installed" 2>/dev/null; then
+    (cd "$bots" && npm ci --no-audit --no-fund --loglevel=error) || fail "npm ci for the client failed"
+    cp "$here/package-lock.json" "$bots/node_modules/.package-lock.json.installed"
+  fi
+  cp "$here/client.js" "$bots/"
+}
+
+# Joins the client with the arguments $1, and fails unless it passes.
+client() {
+  local out="$dir/client.log"
+  bots_ready
+  # Word splitting is the point: $1 is the step's arguments.
+  # shellcheck disable=SC2086
+  if ! node "$bots/client.js" "$port" $1 >"$out" 2>&1; then
+    cat "$out" >&2
+    fail "the client didn't pass"
+  fi
+  cat "$out"
+}
+
 # Waits up to $2 seconds for the fixed string $1 to appear in the log after line $3.
 wait_for() {
   for ((i = 0; i < $2 * 2; i++)); do
@@ -191,7 +225,10 @@ EOF
       "expect: "*) wait_for "${step#expect: }" 60 "$since" ;;
       "logged: "*) wait_for "${step#logged: }" 60 0 ;;
       "allow: "*) allowed+=("${step#allow: }") ;;
-      *) fail "a step must start with \"run: \", \"expect: \", \"logged: \" or \"allow: \": $step" ;;
+      "client:"*)
+        since=$(wc -l <"$log")
+        client "${step#client:}" ;;
+      *) fail "a step must start with \"run: \", \"expect: \", \"logged: \", \"client:\" or \"allow: \": $step" ;;
     esac
   done
 

@@ -15,8 +15,9 @@ How each number is read (as M0 did, sandbox/m0/budgets/analyze.py):
   shim, its "Loading server plugin" and "Enabling" lines to the next line logged by anything
   else. The median of the timed boots (every boot but the first, which creates the world).
 - tick cost: async-profiler's CPU samples (collapsed stacks, one line a stack with its count,
-  200 us of CPU a sample); a sample is a plugin's when any frame is in its package (its main
-  class's first three names, co.xenastudios.<plugin>, which holds its relocated core).
+  200 us of CPU a sample); a sample is a plugin's when any frame is in its packages (its main
+  class's first three names, co.xenastudios.<plugin>, which holds its relocated core, and the
+  package R8 moved renamed classes to, the plugin's id).
   Server thread ms a tick = sampled ms / (seconds x 20); off-thread = sampled ms a second on
   every other thread.
 - heap: used heap after two full GCs, less the same server's without the plugins, shared
@@ -89,9 +90,11 @@ def enable_order(path, names):
 
 
 def samples(path, packages):
-    """{"server"|"other": {package or "*": samples}} from async-profiler's collapsed stacks."""
-    out = {"server": {p: 0 for p in packages + ["*"]}, "other": {p: 0 for p in packages + ["*"]}}
-    pattern = {p: re.compile(re.escape(p).replace(r"\.", r"[./]") + r"[./]") for p in packages}
+    """{"server"|"other": {plugin or "*": samples}} from async-profiler's collapsed stacks, where
+    packages is {plugin: [its packages]}."""
+    out = {"server": {p: 0 for p in list(packages) + ["*"]}, "other": {p: 0 for p in list(packages) + ["*"]}}
+    pattern = {p: re.compile("(?:" + "|".join(re.escape(q).replace(r"\.", r"[./]") for q in qs) + r")[./]")
+               for p, qs in packages.items()}
     with open(path, errors="replace") as f:
         for line in f:
             line = line.rstrip("\n")
@@ -155,11 +158,18 @@ def read_budgets(path):
 
 
 def plugin_info(jar):
+    """(name, packages, size): its packages are its main class's first three names
+    (co.xenastudios.<plugin>, with its relocated core) and the package R8 moved renamed
+    classes to (the plugin's id, xena.r8's packageName), so every class of the jar's own."""
     with zipfile.ZipFile(jar) as z:
         yml = z.read("plugin.yml").decode()
+        classes = [n for n in z.namelist() if n.endswith(".class")]
     name = re.search(r"(?m)^name:\s*['\"]?([^'\"\n]+)", yml).group(1).strip()
     main = re.search(r"(?m)^main:\s*['\"]?([\w.$]+)", yml).group(1)
-    return name, ".".join(main.split(".")[:3]), os.path.getsize(jar)
+    own = ".".join(main.split(".")[:3])
+    others = sorted({n.rsplit("/", 1)[0].replace("/", ".") for n in classes
+                     if "/" in n and not n.startswith(own.replace(".", "/") + "/")})
+    return name, [own] + others, os.path.getsize(jar)
 
 
 def main():
@@ -178,8 +188,8 @@ def main():
     budgets = read_budgets(args.budgets)
     plugins = [plugin_info(j) for j in args.jars]
     names = [p[0] for p in plugins]
-    packages = [p[1] for p in plugins]
-    package_of = dict(zip(names, packages))
+    package_of = dict(zip(names, (p[1] for p in plugins)))
+    packages = [q for p in plugins for q in p[1]]
 
     checks = []  # (what, value, limit, unit)
 
@@ -217,11 +227,11 @@ def main():
         path = os.path.join(out, f"{phase}.collapsed")
         if not seconds or not os.path.exists(path):
             continue
-        s = samples(path, packages)
+        s = samples(path, package_of)
         ticks[phase] = {
             "server thread, everything (ms/tick)": s["server"]["*"] * SAMPLE_MS / (seconds * 20),
-            **{name: {"tick": s["server"][package_of[name]] * SAMPLE_MS / (seconds * 20),
-                      "offthread": s["other"][package_of[name]] * SAMPLE_MS / seconds} for name in names},
+            **{name: {"tick": s["server"][name] * SAMPLE_MS / (seconds * 20),
+                      "offthread": s["other"][name] * SAMPLE_MS / seconds} for name in names},
         }
         for name in names:
             t = ticks[phase][name]

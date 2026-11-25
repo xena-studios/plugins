@@ -75,8 +75,8 @@ dependencies {
 }
 
 xenaR8 {
-    // The plugin's own package, which the budget check's profile counts as xSample's.
-    packageName = "co.xenastudios.xsample.r8"
+    // The plugin's own package (its id), which the budget check's profile counts as xSample's.
+    packageName = "xsample"
     // What the server has at runtime beside the jar: its API, and what's downloaded.
     libraries.from(configurations.named("fetchedJars"), serverApiClasspath)
 }

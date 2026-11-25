@@ -56,8 +56,8 @@ tasks.shadowJar {
 tasks.assemble { dependsOn(tasks.shadowJar) }
 
 xenaR8 {
-    // The plugin's own package, as a real plugin's (co.xenastudios.<plugin>.r8).
-    packageName = "co.xenastudios.loadersandbox.r8"
+    // The plugin's own package, as a real plugin's (its id).
+    packageName = "loadersandbox"
 }
 
 tasks.test {

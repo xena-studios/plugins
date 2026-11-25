@@ -4,7 +4,7 @@ import org.gradle.api.provider.Property
 abstract class XenaFabricModExtension {
     /**
      * The plugin's id, as in `fabric.mod.json`: `xutilities`. Its core moves to
-     * `co.xenastudios.<id>.core`, and R8's renamed classes to `co.xenastudios.<id>.r8`.
+     * `co.xenastudios.<id>.core`, and R8's renamed classes to the package `<id>`.
      */
     abstract val id: Property<String>
 }

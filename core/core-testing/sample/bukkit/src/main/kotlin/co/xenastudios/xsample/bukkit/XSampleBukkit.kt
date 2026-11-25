@@ -53,6 +53,8 @@ public class XSampleBukkit(private val plugin: JavaPlugin) : PluginEntry {
             // Plugins a real one would hook into, to show the check: neither is needed.
             dependencies = { listOf(platform.dependency("Vault"), platform.dependency("PlaceholderAPI")) },
             adminText = AdminText { source, message, placeholders -> adminText.render(source, message, placeholders) },
+            // The chat format: Paper's AsyncChatEvent, or Bukkit's AsyncPlayerChatEvent, picked as it starts.
+            chat = { platform.chat() },
         )
         this.platform = platform
         this.sample = sample
@@ -78,7 +80,7 @@ public class XSampleBukkit(private val plugin: JavaPlugin) : PluginEntry {
         platform.checkUpdates("xsample", sample.admin.updates, SampleConfig.updates.settings(SampleConfig.defaults)) { translations }
         Integer.getInteger("xsample.bstats")?.let(platform::metrics)
         val millis = (System.nanoTime() - started) / 1_000_000
-        platform.log.info("xSample on ${platform.name}: ${platform.threading} threading, text as ${platform.text}, enabled in $millis ms")
+        platform.log.info("xSample on ${platform.name}: ${platform.threading} threading, text as ${platform.text}, chat through ${platform.chatPath}, enabled in $millis ms")
         PlatformCheck(plugin, platform, cache).start()
     }
 

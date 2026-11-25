@@ -34,8 +34,8 @@ dependencies {
     // Mojang's names on the obfuscated versions too, so one source reads the same everywhere.
     loomx.applyMojangMappings()
     modImplementation("net.fabricmc:fabric-loader:${sc.properties["deps.fabric_loader"]}")
-    // Lifecycle and tick events (the scheduler), commands, and players joining and leaving.
-    fabricApi("fabric-api-base", "fabric-lifecycle-events-v1", "fabric-command-api-v2", "fabric-networking-api-v1")
+    // Lifecycle and tick events (the scheduler), commands, players joining and leaving, and chat.
+    fabricApi("fabric-api-base", "fabric-lifecycle-events-v1", "fabric-command-api-v2", "fabric-networking-api-v1", "fabric-message-api-v1")
     // The Kotlin stdlib, which the server gets from fabric-language-kotlin. Its POM names a
     // Fabric API too, for a newer Minecraft, which would win over this line's.
     modImplementation("net.fabricmc:fabric-language-kotlin:${sc.properties["deps.flk"]}") {

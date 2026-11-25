@@ -6,6 +6,7 @@ import co.xenastudios.core.api.event.CancellableEvent
 import co.xenastudios.core.api.event.EventPriority
 import co.xenastudios.core.api.event.EventType
 import co.xenastudios.core.bukkit.BukkitPlatform
+import co.xenastudios.core.bukkit.BukkitServer
 import co.xenastudios.core.bukkit.XenaCancellableEvent
 import co.xenastudios.core.bukkit.ref
 import co.xenastudios.core.api.toPlayerRef
@@ -24,6 +25,7 @@ import co.xenastudios.core.common.text.Component
 import co.xenastudios.core.common.text.Style
 import co.xenastudios.core.common.text.TextColor
 import co.xenastudios.core.jvm.family.JvmFamilyBoard
+import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -61,7 +63,7 @@ internal class PlatformCheck(private val plugin: JavaPlugin, private val platfor
     private val finished = AtomicBoolean()
 
     fun start() {
-        val checks = listOf("global", "async", "async delay", "repeat", "place", "retired", "storage", "event", "async event", "text", "family", "drivers")
+        val checks = listOf("global", "async", "async delay", "repeat", "place", "retired", "storage", "event", "async event", "text", "family", "drivers", "chat")
         waiting += checks
 
         scheduler.run(Where.Global) {
@@ -95,6 +97,7 @@ internal class PlatformCheck(private val plugin: JavaPlugin, private val platfor
         }
         scheduler.run(Where.Async) { checkStorage() }
         checkEvents()
+        scheduler.run(Where.Global) { checkChat() }
         platform.text.send(plugin.server.consoleSender, Component("Platform check: text drawn as ${platform.text}", Style(color = TextColor.NAMED.getValue("aqua"))))
         check("text", platform.locale(FakeConsole) == null) { "the console has a locale" }
         scheduler.run(Where.Async) { checkFamily() }
@@ -188,6 +191,26 @@ internal class PlatformCheck(private val plugin: JavaPlugin, private val platfor
         }
         scheduler.run(Where.Global) { bus.fire(CheckEvent.TYPE, CheckEvent("global")) }
         scheduler.run(Where.Async) { bus.fire(CheckEvent.TYPE, CheckEvent("async")) }
+    }
+
+    /**
+     * The chat bridge's path, picked once: Paper's AsyncChatEvent on Paper 1.17+ and Folia,
+     * Bukkit's AsyncPlayerChatEvent elsewhere; a bridge registers its listeners (the plugin's
+     * slot, MONITOR, and a quit listener for its references) and closing it takes them away.
+     * What a chat line looks like is the client step's (scripts/budgets/bots/client.js).
+     */
+    private fun checkChat() {
+        val server = platform.server
+        val paper = (server.flavor == BukkitServer.Flavor.PAPER || server.flavor == BukkitServer.Flavor.FOLIA) && server.atLeast(1, 17)
+        val expected = if (paper) "Paper's AsyncChatEvent" else "Bukkit's AsyncPlayerChatEvent"
+        val before = HandlerList.getRegisteredListeners(plugin).size
+        val bridge = platform.chat(EventPriority.LOW)
+        val registered = HandlerList.getRegisteredListeners(plugin).size - before
+        bridge.close()
+        val left = HandlerList.getRegisteredListeners(plugin).size - before
+        check("chat", platform.chatPath == expected && registered == 3 && left == 0) {
+            "chat through ${platform.chatPath} (expected $expected), $registered listeners registered (expected 3), $left left after closing"
+        }
     }
 
     // The console, as a command source: it has no client, so no locale.

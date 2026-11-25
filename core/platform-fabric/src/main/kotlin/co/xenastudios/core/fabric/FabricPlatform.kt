@@ -2,7 +2,9 @@ package co.xenastudios.core.fabric
 
 import co.xenastudios.core.api.event.Event
 import co.xenastudios.core.api.event.EventBus
+import co.xenastudios.core.api.event.EventPriority
 import co.xenastudios.core.api.event.EventType
+import co.xenastudios.core.common.chat.ChatBridge
 import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.api.event.Subscription
 import co.xenastudios.core.common.command.CommandSource
@@ -128,6 +130,14 @@ public class FabricPlatform(
      * records joins, quits and languages. Made on first use, which is as the mod starts.
      */
     public val family: FabricFamily by lazy { FabricFamily(this) }
+
+    /**
+     * Starts hearing chat for the plugin at [priority] among other mods, through Fabric API's
+     * message events (DECISIONS.md, "The chat bridge"); nothing listens until this is called.
+     * [ChatBridge.close] stops it, and it stops for good with the server.
+     */
+    @JvmOverloads
+    public fun chat(priority: EventPriority = EventPriority.NORMAL): ChatBridge = FabricChat({ running }, priority, log)
 
     /** Sends drawn messages to players by reference, and to the console. */
     public val delivery: FabricDelivery = FabricDelivery { running }

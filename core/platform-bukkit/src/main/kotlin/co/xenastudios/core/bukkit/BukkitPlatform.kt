@@ -2,7 +2,9 @@ package co.xenastudios.core.bukkit
 
 import co.xenastudios.core.bukkit.modern.FoliaScheduler
 import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.api.event.EventPriority
 import co.xenastudios.core.common.admin.Dependency
+import co.xenastudios.core.common.chat.ChatBridge
 import co.xenastudios.core.common.command.CommandSource
 import co.xenastudios.core.common.family.Family
 import co.xenastudios.core.common.family.PlayerCache
@@ -96,6 +98,21 @@ public class BukkitPlatform private constructor(
      * threads ([Family.load]).
      */
     public val family: Family = Family(FolderStorage(plugin.dataFolder.toPath().resolveSibling(FAMILY_FOLDER)), BukkitFamily.board(plugin), JvmYaml)
+
+    private val chats = java.util.concurrent.CopyOnWriteArrayList<ChatBridge>()
+
+    /**
+     * Starts hearing chat for the plugin at [priority] among other chat plugins (DECISIONS.md,
+     * "The chat bridge"): Paper's `AsyncChatEvent` and its renderer on Paper 1.17+ and Folia,
+     * Bukkit's `AsyncPlayerChatEvent` and its format on Spigot, CraftBukkit and older Paper.
+     * Nothing listens to chat until this is called; [ChatBridge.close] stops it, as [close] does.
+     */
+    @JvmOverloads
+    public fun chat(priority: EventPriority = EventPriority.NORMAL): ChatBridge =
+        BukkitChat.create(plugin, text, priority, log).also { chats += it }
+
+    /** Which way chat is heard here: `Paper's AsyncChatEvent` or `Bukkit's AsyncPlayerChatEvent`, for `/<plugin> debug`. */
+    public val chatPath: String get() = if (BukkitChat.paperChat(plugin.server)) "Paper's AsyncChatEvent" else "Bukkit's AsyncPlayerChatEvent"
 
     @Volatile
     private var recording: AutoCloseable? = null
@@ -199,6 +216,8 @@ public class BukkitPlatform private constructor(
         bStats?.close()
         bStats = null
         events.close()
+        chats.forEach { it.close() }
+        chats.clear()
         commands.clear()
         permissions.sync(emptyList())
         recording?.close()

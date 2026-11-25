@@ -38,6 +38,8 @@ public class BukkitText internal constructor(
     private val server: Server,
     // A Java type, so the Adventure side, compiled apart, can be one.
     private val toSender: BiConsumer<CommandSender, Any>,
+    /** The same text as `§` codes, for what takes only a string: Bukkit's chat format, a console line. */
+    public val legacy: LegacyRenderer,
 ) {
     /** Sends what [renderer] drew to the player [viewer] names, if they're online, or to the console when it's `null`. */
     public val delivery: Delivery<Any> = Delivery { viewer, text ->
@@ -60,26 +62,28 @@ public class BukkitText internal constructor(
     internal companion object {
         /** The way [server] takes text. */
         fun pick(server: BukkitServer, bukkit: Server): BukkitText = when {
-            server.adventure -> adventure(bukkit)
+            server.adventure -> adventure(server, bukkit)
             server.bungeeChat -> spigot(server, bukkit)
             else -> legacy(server, bukkit)
         }
 
         // Its own function, so only a server with Adventure loads the class that calls it.
-        private fun adventure(bukkit: Server): BukkitText = BukkitText("Adventure", AdventureText.renderer, bukkit, AdventureText.send)
+        private fun adventure(server: BukkitServer, bukkit: Server): BukkitText =
+            BukkitText("Adventure", AdventureText.renderer, bukkit, AdventureText.send, LegacyRenderer(hex = server.atLeast(1, 16)))
 
         fun spigot(server: BukkitServer, bukkit: Server): BukkitText {
+            val legacy = LegacyRenderer(hex = server.atLeast(1, 16))
             val renderer = SpigotRenderer(
                 components = BungeeRenderer(hex = server.atLeast(1, 16), copyToClipboard = server.atLeast(1, 15)),
-                legacy = LegacyRenderer(hex = server.atLeast(1, 16)),
+                legacy = legacy,
                 plainAsString = server.atLeast(1, 21),
             )
-            return BukkitText("BaseComponent", renderer, bukkit, BiConsumer { target, text -> SpigotRenderer.send(target, text as SpigotMessage) })
+            return BukkitText("BaseComponent", renderer, bukkit, BiConsumer { target, text -> SpigotRenderer.send(target, text as SpigotMessage) }, legacy)
         }
 
         fun legacy(server: BukkitServer, bukkit: Server): BukkitText {
             val renderer = LegacyRenderer(hex = server.atLeast(1, 16))
-            return BukkitText("legacy text", renderer, bukkit, BiConsumer { target, text -> target.sendMessage(text as String) })
+            return BukkitText("legacy text", renderer, bukkit, BiConsumer { target, text -> target.sendMessage(text as String) }, renderer)
         }
     }
 }

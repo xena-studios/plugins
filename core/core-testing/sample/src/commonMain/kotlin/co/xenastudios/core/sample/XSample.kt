@@ -14,6 +14,9 @@ import co.xenastudios.core.common.admin.Importer
 import co.xenastudios.core.common.admin.Imports
 import co.xenastudios.core.common.admin.PlayerDataRegistry
 import co.xenastudios.core.common.admin.PlayerLookup
+import co.xenastudios.core.common.chat.ChatBridge
+import co.xenastudios.core.common.chat.ChatEvent
+import co.xenastudios.core.common.chat.ChatRendering
 import co.xenastudios.core.common.command.AdminCommands
 import co.xenastudios.core.common.command.ArgumentTypes
 import co.xenastudios.core.common.command.CommandDispatcher
@@ -46,6 +49,8 @@ import co.xenastudios.core.common.platform.Platform
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.every
 import co.xenastudios.core.common.text.Component
+import co.xenastudios.core.common.text.Markup
+import co.xenastudios.core.common.text.Style
 import co.xenastudios.core.common.update.UpdatesSection
 import kotlin.jvm.JvmField
 import kotlin.time.Duration
@@ -67,6 +72,7 @@ public object SampleConfig : ConfigSchema(1, "xSample: the core's sample plugin.
     public val payCooldown: ConfigKey<Duration> =
         duration("pay-cooldown", 10.seconds, "How long a player waits between payments.", min = 1.seconds)
     public val interest: Interest = Interest(this)
+    public val chat: Chat = Chat(this)
     /** The update checker's switch and channel, which every plugin's config has. */
     public val updates: UpdatesSection = UpdatesSection(this)
 
@@ -74,6 +80,11 @@ public object SampleConfig : ConfigSchema(1, "xSample: the core's sample plugin.
         public val enabled: ConfigKey<Boolean> = boolean("enabled", true, "Whether interest is paid.")
         public val percent: ConfigKey<Int> = int("percent", 1, "How much of each balance, in percent.", min = 0, max = 100)
         public val every: ConfigKey<Duration> = duration("every", 1.hours, "How often.", min = 1.minutes)
+    }
+
+    public class Chat(parent: SampleConfig) : ConfigSection(parent, "chat", "A chat format, through the core's chat bridge.") {
+        public val enabled: ConfigKey<Boolean> = boolean("enabled", true, "Whether xSample formats chat.")
+        public val prefix: ConfigKey<String> = string("prefix", "<gray>[xSample]</gray>", "What goes before each player's name, in markup.")
     }
 }
 
@@ -135,6 +146,11 @@ public class XSample(
     dependencies: (() -> List<Dependency>)? = null,
     /** Draws the admin subcommands' replies in each reader's language; English by default. */
     adminText: AdminText = AdminText.ENGLISH,
+    /**
+     * Starts hearing chat (`BukkitPlatform.chat`, `FabricPlatform.chat`, a `FakeChat` in tests),
+     * for the chat format; `null` where the platform has no chat, which turns the format off.
+     */
+    private val chat: (() -> ChatBridge)? = null,
 ) {
     private var config: Config = settings()
     private val coins = HashMap<PlayerRef, Int>()
@@ -261,8 +277,29 @@ public class XSample(
         return warnings
     }
 
-    private fun wantedModules(): Map<String, () -> Module> =
-        if (config[SampleConfig.interest.enabled]) mapOf("interest" to { Interest() }) else emptyMap()
+    private fun wantedModules(): Map<String, () -> Module> = buildMap {
+        if (config[SampleConfig.interest.enabled]) put("interest") { Interest() }
+        val chat = chat
+        if (chat != null && config[SampleConfig.chat.enabled]) put("chat") { ChatFormat(chat) }
+    }
+
+    /**
+     * The chat format: the config's prefix, then the sender's name with a hover, then what they
+     * said. The same line for everyone, so each platform draws it once per message and sends
+     * that one object to every recipient; the prefix is parsed once, as the module turns on.
+     */
+    private inner class ChatFormat(private val start: () -> ChatBridge) : Module {
+        override fun enable(context: ModuleContext) {
+            val prefix = Markup.parse(config[SampleConfig.chat.prefix]).render()
+            val hover = Style(hover = Component.text("Formatted by xSample, through the core's chat bridge"))
+            val rendering = ChatRendering.same { chat ->
+                Component(children = listOf(prefix, Component(" " + chat.senderName, hover), Component.text(": " + chat.message)))
+            }
+            val bridge = start()
+            context.onDisable { bridge.close() }
+            context.subscribe(bridge.events, ChatEvent.TYPE, ignoreCancelled = true) { it.rendering = rendering }
+        }
+    }
 
     private inner class Interest : Module {
         override fun enable(context: ModuleContext) {

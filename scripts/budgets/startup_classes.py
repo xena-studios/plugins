@@ -5,6 +5,10 @@ names. scripts/budgets/check.sh --record-startup runs it after a boot with
 -Xlog:class+load=info:file=<log>:uptimemillis.
 
     startup_classes.py --log classload.log --boot boot.log --jar Plugin.jar --out startup-classes.txt
+    startup_classes.py --log classload.log --done-ms 4210 --jar Plugin.jar --out startup-classes.txt
+
+--done-ms is for a log without millisecond timestamps (a proxy's, scripts/boot-proxy.sh
+--record-startup): the JVM's uptime when the server said it was done.
 
 Kept: every class loaded before the server's "Done (" line from the plugin's jar or from a
 library its META-INF/xena/libraries.txt lists (from plugins/Xena/libraries/, or the server's
@@ -19,19 +23,23 @@ import zipfile
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--log", required=True)
-ap.add_argument("--boot", required=True)
+ap.add_argument("--boot")
+ap.add_argument("--done-ms", type=int)
 ap.add_argument("--jar", required=True)
 ap.add_argument("--out", required=True)
 a = ap.parse_args()
 
-done = None
-for line in open(a.boot, errors="replace"):
-    m = re.match(r"^(\d+) .*Done \(", line)
-    if m:
-        done = int(m.group(1))
-        break
+done = a.done_ms
 if done is None:
-    raise SystemExit(f"no Done line in {a.boot}")
+    if a.boot is None:
+        raise SystemExit("--boot or --done-ms says when the server was done")
+    for line in open(a.boot, errors="replace"):
+        m = re.match(r"^(\d+) .*Done \(", line)
+        if m:
+            done = int(m.group(1))
+            break
+    if done is None:
+        raise SystemExit(f"no Done line in {a.boot}")
 
 original = {}
 mapping = os.path.splitext(a.jar)[0] + ".map"
@@ -69,8 +77,12 @@ for line in open(a.log, errors="replace"):
         names.append(name)
 
 with open(a.out, "w") as f:
-    f.write("# The classes this plugin loads as it starts, recorded on Paper by scripts/budgets/check.sh\n")
-    f.write("# --record-startup: the shim loads them on a thread of its own before onEnable (DECISIONS.md).\n")
+    if a.done_ms is None:
+        f.write("# The classes this plugin loads as it starts, recorded on Paper by scripts/budgets/check.sh\n")
+        f.write("# --record-startup: the shim loads them on a thread of its own before onEnable (DECISIONS.md).\n")
+    else:
+        f.write("# The classes this plugin loads as it starts, recorded on the proxy by scripts/boot-proxy.sh\n")
+        f.write("# --record-startup: the shim loads them on a thread of its own as it starts (DECISIONS.md).\n")
     f.write("# In their names before R8; R8Shrink maps them. Record again after big changes.\n")
     for name in names:
         f.write(name + "\n")

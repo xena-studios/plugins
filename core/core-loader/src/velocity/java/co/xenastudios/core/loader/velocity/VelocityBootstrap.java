@@ -4,6 +4,7 @@ import co.xenastudios.core.loader.JavaVersion;
 import co.xenastudios.core.loader.JulBridge;
 import co.xenastudios.core.loader.Libraries;
 import co.xenastudios.core.loader.Library;
+import co.xenastudios.core.loader.LibraryCache;
 import co.xenastudios.core.loader.LibraryException;
 import co.xenastudios.core.loader.LibrarySettings;
 import co.xenastudios.core.loader.Manifest;
@@ -22,6 +23,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -29,7 +33,8 @@ import java.util.logging.Logger;
  * The main class of a Xena plugin on Velocity (3.4 on, and 4.x), in Java, so nothing of Kotlin
  * is touched before the stdlib is there. Velocity makes it with Guice, which fills in the proxy,
  * the plugin's logger and its folder; on {@link ProxyInitializeEvent} it makes the libraries in
- * the jar's {@value Manifest#RESOURCE} visible, then loads the plugin's Kotlin
+ * the jar's {@value Manifest#RESOURCE} visible (checked against their pins on threads of their own
+ * from the moment Velocity makes the plugin), then loads the plugin's Kotlin
  * {@link PluginEntry} by name, with a public constructor taking this object. A plugin's main
  * class is a one-line subclass, named in its {@code velocity-plugin.json}:
  *
@@ -57,12 +62,12 @@ public abstract class VelocityBootstrap implements Supplier<Object> {
     @Inject
     private org.slf4j.Logger logger;
 
-    @Inject
-    @DataDirectory
     private Path dataFolder;
 
     private volatile Object shared;
     private PluginEntry entry;
+    private FutureTask<Ahead> ahead;
+    private long injectNanos;
 
     /** The binary name of the plugin's {@link PluginEntry}. */
     protected abstract String entryPoint();
@@ -102,6 +107,37 @@ public abstract class VelocityBootstrap implements Supplier<Object> {
         return OnDemandLibraries.read(getClass().getClassLoader(), LibrarySettings.read(plugins()).cache(plugins()));
     }
 
+    /**
+     * Called by Guice once the fields are in, as Velocity makes the plugin, before it makes the
+     * next one and well before {@link ProxyInitializeEvent}, when the plugin may first add a jar
+     * to its class path: starts reading the jar's libraries and checking the cached ones against
+     * their pins (about 20 ms of hashing on a fast machine, more where the JIT is slower to warm),
+     * each on a thread of its own, so that's done, or nearly, by the time it's wanted. Nothing
+     * else happens on Velocity's thread here.
+     */
+    @Inject
+    private void prepare(@DataDirectory Path folder) {
+        long started = System.nanoTime();
+        dataFolder = folder;
+        final ClassLoader own = getClass().getClassLoader();
+        final File plugins = plugins();
+        final String name = getClass().getSimpleName() + " libraries";
+        FutureTask<Ahead> task = new FutureTask<>(new Callable<Ahead>() {
+            @Override
+            public Ahead call() throws IOException {
+                List<Library> libraries = Manifest.read(own);
+                LibraryCache cache = LibrarySettings.read(plugins).cache(plugins);
+                cache.fetchAhead(libraries, name);
+                return new Ahead(libraries, cache);
+            }
+        });
+        Thread thread = new Thread(task, name);
+        thread.setDaemon(true);
+        thread.start();
+        ahead = task;
+        injectNanos = System.nanoTime() - started;
+    }
+
     @Subscribe
     public final void onProxyInitialize(ProxyInitializeEvent event) {
         long started = System.nanoTime();
@@ -111,12 +147,16 @@ public abstract class VelocityBootstrap implements Supplier<Object> {
             if (type == null) {
                 return;
             }
+            long loaded = System.nanoTime();
             PluginEntry made = Startup.construct(type, this);
             made.load();
             made.enable();
             entry = made;
             if (Startup.TIMES) {
-                logger.info(String.format(Locale.ROOT, "Startup times: enable %.1f ms", (System.nanoTime() - started) / 1e6));
+                // Each part on the proxy's threads: making the plugin, its libraries, its start.
+                long now = System.nanoTime();
+                logger.info(String.format(Locale.ROOT, "Startup times: inject %.1f ms, libraries %.1f ms, enable %.1f ms",
+                    injectNanos / 1e6, (loaded - started) / 1e6, (now - loaded) / 1e6));
             }
         } catch (LibraryException e) {
             logger.error(e.getMessage());
@@ -148,16 +188,41 @@ public abstract class VelocityBootstrap implements Supplier<Object> {
                 + System.getProperty("java.version") + ". Start the proxy with Java " + needed + " or newer.");
             return null;
         }
-        List<Library> libraries = Manifest.read(own);
+        Ahead prepared = prepared(own);
+        List<Library> libraries = prepared.libraries;
         if (!libraries.isEmpty()) {
-            File plugins = plugins();
             final Object plugin = this;
-            Libraries.load(libraries, own, LibrarySettings.read(plugins).cache(plugins),
+            Libraries.load(libraries, own, prepared.cache,
                 jar -> server.getPluginManager().addToClasspath(plugin, jar), "Velocity's addToClasspath", log);
             Startup.checkKotlin(name(), libraries, own, log);
             Startup.preload(libraries, own, own, name() + " preloading");
         }
         return Class.forName(entryPoint(), false, own);
+    }
+
+    /** What {@link #prepare} started, once it's done; read here if Guice never called it. */
+    private Ahead prepared(ClassLoader own) throws Exception {
+        if (ahead == null) {
+            File plugins = plugins();
+            return new Ahead(Manifest.read(own), LibrarySettings.read(plugins).cache(plugins));
+        }
+        try {
+            return ahead.get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            throw cause instanceof Exception ? (Exception) cause : e;
+        }
+    }
+
+    /** The jar's libraries, and the cache checking them. */
+    private static final class Ahead {
+        final List<Library> libraries;
+        final LibraryCache cache;
+
+        Ahead(List<Library> libraries, LibraryCache cache) {
+            this.libraries = libraries;
+            this.cache = cache;
+        }
     }
 
     private File plugins() {

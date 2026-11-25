@@ -5,6 +5,7 @@ import co.xenastudios.core.common.proxy.ProxyEndpoint
 import co.xenastudios.core.common.proxy.ProxySide
 import co.xenastudios.core.common.proxy.ProxyTransport
 import co.xenastudios.core.common.proxy.Sent
+import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.jvm.config.JvmYaml
 import co.xenastudios.core.jvm.proxy.ProxySecret
 import org.bukkit.plugin.messaging.PluginMessageListener
@@ -62,7 +63,10 @@ internal class BukkitChannel private constructor(
                 platform.log.warn("$name can't check messages from the proxy, so it accepts none: ${e.message}")
                 null
             }
-            val endpoint = ProxyEndpoint(name, ProxySide.SERVER, platform, secret?.signer())
+            val signer = secret?.signer()
+            // The key's first use starts the JDK's crypto providers: on the async pool, now.
+            signer?.let { warming -> platform.scheduler.run(Where.Async) { ProxySecret.warm(warming) } }
+            val endpoint = ProxyEndpoint(name, ProxySide.SERVER, platform, signer)
             val transport = BukkitChannel(platform, endpoint)
             endpoint.attach(transport)
             transport.start()

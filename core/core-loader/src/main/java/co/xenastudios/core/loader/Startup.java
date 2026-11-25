@@ -11,6 +11,7 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -91,12 +92,14 @@ public final class Startup {
     }
 
     /**
-     * Loads, without initializing, the classes the plugin needs as it starts, on a daemon thread
-     * called {@code name}: the jar's {@value #STARTUP_CLASSES} (written at build time from a list
-     * recorded on a real server), or {@link #PRELOAD} when the jar has none and uses the stdlib.
-     * Class loading is safe from any thread: if the server's thread wants a class this one is
-     * loading, it waits for that class alone, as it would have loaded it itself. Nothing in them
-     * runs, so no listener, task or static state of a module starts here.
+     * Loads and links, without initializing, the classes the plugin needs as it starts, on up to
+     * two daemon threads called {@code name}: the jar's {@value #STARTUP_CLASSES} (written at build
+     * time from a list recorded on a real server), or {@link #PRELOAD} when the jar has none and
+     * uses the stdlib. Class loading is safe from any thread: if the server's thread wants a class
+     * one of these is loading, it waits for that class alone, as it would have loaded it itself.
+     * Linking is the bytecode verifier's pass over the class, which a class from a plugin's jar
+     * gets and which otherwise falls to the first thread that uses it, the server's; nothing in
+     * the classes runs, so no listener, task or static state of a module starts here.
      */
     public static void preload(List<Library> libraries, ClassLoader jar, final ClassLoader loader, String name) {
         final List<String> names = startupClasses(jar);
@@ -110,22 +113,32 @@ public final class Startup {
             }
             Collections.addAll(names, PRELOAD);
         }
-        Thread thread = new Thread(new Runnable() {
+        // Two take the list in turn, in its order, the order the server's thread will want them
+        // in: one keeps ahead of it while the other verifies. One on a machine with two cores or
+        // fewer, where a second would only take the server's.
+        final AtomicInteger next = new AtomicInteger();
+        Runnable work = new Runnable() {
             @Override
             public void run() {
-                for (String type : names) {
+                for (int i = next.getAndIncrement(); i < names.size(); i = next.getAndIncrement()) {
                     try {
-                        Class.forName(type, false, loader);
+                        // getDeclaredConstructors links the class (verifies it) without
+                        // initializing it, where Class.forName(name, false, ...) only loads it.
+                        Class.forName(names.get(i), false, loader).getDeclaredConstructors();
                     } catch (Throwable ignored) {
                         // A class this server doesn't have (another Kotlin release, a platform path
                         // that isn't this one's): the plugin loads what it uses itself.
                     }
                 }
             }
-        }, name);
-        thread.setDaemon(true);
-        thread.setPriority(Thread.NORM_PRIORITY - 1);
-        thread.start();
+        };
+        int threads = Runtime.getRuntime().availableProcessors() > 2 ? 2 : 1;
+        for (int i = 0; i < threads; i++) {
+            Thread thread = new Thread(work, name);
+            thread.setDaemon(true);
+            thread.setPriority(Thread.NORM_PRIORITY - 1);
+            thread.start();
+        }
     }
 
     /** The jar's {@value #STARTUP_CLASSES}, one class a line; empty when it has none. */

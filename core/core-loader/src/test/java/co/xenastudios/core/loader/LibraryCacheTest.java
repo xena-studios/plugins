@@ -59,6 +59,26 @@ class LibraryCacheTest {
     }
 
     @Test
+    void fetchingAheadHandsTheSameResultToFetch() throws Exception {
+        try (Fixtures.Mirror mirror = new Fixtures.Mirror(Map.of("/good/", real, "/tampered/", tampered))) {
+            LibraryCache cache = new LibraryCache(dir.resolve("ahead"), List.of(mirror.url("/good")), HELP);
+            cache.fetchAhead(List.of(library), "test libraries");
+            LibraryCache.Fetched fetched = cache.fetch(library);
+            assertEquals(library.sha256(), Sha256.of(fetched.jar()));
+            assertEquals("127.0.0.1", fetched.downloadedFrom());
+            // Taken once: the next fetch checks the cached jar again itself.
+            assertNull(cache.fetch(library).downloadedFrom());
+            assertEquals(1, mirror.requests.get());
+
+            // What went wrong ahead is thrown by fetch, as it would have been.
+            LibraryCache bad = new LibraryCache(dir.resolve("bad"), List.of(mirror.url("/tampered/")), HELP);
+            bad.fetchAhead(List.of(library), "test libraries");
+            LibraryException refused = assertThrows(LibraryException.class, () -> bad.fetch(library));
+            Fixtures.assertContains(refused.getMessage(), "Couldn't download probe 1.0", "so it wasn't used");
+        }
+    }
+
+    @Test
     void aDownloadThatDoesNotMatchIsNeverUsed() throws Exception {
         try (Fixtures.Mirror mirror = new Fixtures.Mirror(Map.of("/tampered/", tampered, "/good/", real))) {
             Path cache = dir.resolve("a");

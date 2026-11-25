@@ -16,7 +16,13 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 /**
  * The folder every plugin of the family keeps its downloaded libraries in, laid out like a
@@ -39,6 +45,7 @@ public final class LibraryCache {
     private final String mirrorHelp;
     private int connectTimeoutMillis = 10_000;
     private int readTimeoutMillis = 60_000;
+    private final ConcurrentMap<String, FutureTask<Fetched>> ahead = new ConcurrentHashMap<>();
 
     /**
      * @param mirrors Maven repositories to try in order, such as {@link #DEFAULT_MIRRORS}
@@ -124,8 +131,71 @@ public final class LibraryCache {
         }
     }
 
-    /** The library's jar, from the cache if it's there and right, downloaded otherwise. */
+    /**
+     * Starts {@link #fetch fetching} each library now, each on a daemon thread of its own called
+     * {@code name}, so their hashes (and, the first time, their downloads) happen while the
+     * server goes on with other things; {@link #fetch} then waits for that library's result. For
+     * a platform that makes the plugin well before it may add libraries to it (Velocity).
+     */
+    public void fetchAhead(List<Library> libraries, String name) {
+        // The biggest first (the stdlib), whose hash takes longest and is waited for first.
+        List<Library> bySize = new ArrayList<>(libraries);
+        Collections.sort(bySize, new Comparator<Library>() {
+            @Override
+            public int compare(Library a, Library b) {
+                return Long.compare(size(b), size(a));
+            }
+        });
+        for (final Library library : bySize) {
+            FutureTask<Fetched> task = new FutureTask<>(new Callable<Fetched>() {
+                @Override
+                public Fetched call() throws LibraryException {
+                    return fetchNow(library);
+                }
+            });
+            if (ahead.putIfAbsent(library.coordinates(), task) == null) {
+                Thread thread = new Thread(task, name);
+                thread.setDaemon(true);
+                thread.start();
+            }
+        }
+    }
+
+    /**
+     * The library's jar, from the cache if it's there and right, downloaded otherwise; what
+     * {@link #fetchAhead} started for it, once that's done, if it did.
+     */
     public Fetched fetch(Library library) throws LibraryException {
+        FutureTask<Fetched> task = ahead.remove(library.coordinates());
+        if (task == null) {
+            return fetchNow(library);
+        }
+        try {
+            return task.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new LibraryException("Interrupted while checking " + library);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof LibraryException) {
+                throw (LibraryException) cause;
+            }
+            if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            throw new LibraryException("Couldn't check " + library + ": " + cause);
+        }
+    }
+
+    private long size(Library library) {
+        try {
+            return Files.size(location(library));
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    private Fetched fetchNow(Library library) throws LibraryException {
         Path jar = location(library);
         boolean bad = false;
         if (Files.isRegularFile(jar)) {

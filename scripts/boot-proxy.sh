@@ -7,7 +7,7 @@
 #   scripts/boot-proxy.sh --proxy velocity|bungeecord|waterfall [--version 4.3.1] [--java <JDK home>] \
 #     [--backend paper|<server.jar>] [--backend-version 1.21.11] [--backend-java <JDK home>] \
 #     [--backend-plugin backend.jar]... [--grant Joiner=node,node]... [--jvm -Dflag]... \
-#     [--checks file]... [--startup-budget <ms>] plugin.jar...
+#     [--checks file]... [--startup-budget <ms>] [--record-startup <folder>] plugin.jar...
 #
 # The proxy comes from scripts/server-jar.sh (its newest release unless --version says), or
 # --proxy-jar names one on disk. Steps are scripts/boot-test.sh's, one per line in a checks file
@@ -29,7 +29,11 @@
 #
 # --startup-budget boots the proxy alone three more times once the run passed, and fails if the
 # median of the plugins' own startup lines (-Dxena.startupTimes, the shim's "Startup times:") is
-# over that many milliseconds, summed over the plugins.
+# over that many milliseconds, summed over the plugins. With --record-startup, the first of those
+# boots also logs its class loading, and each plugin's startup class list (the classes it loaded
+# before the proxy was done, scripts/budgets/startup_classes.py) goes to
+# <folder>/startup-classes-<jar name>.txt, to copy beside the plugin's build file as
+# startup-classes.txt. It needs --startup-budget.
 #
 # Servers, Mojang's jar and libraries are cached in .cache/servers/.
 set -euo pipefail
@@ -42,6 +46,7 @@ backend=""
 backend_version=1.21.11
 backend_java=""
 startup_budget=""
+record_startup=""
 jvm=()
 grants=()
 steps=()
@@ -60,6 +65,7 @@ while (($#)); do
     --grant) grants+=("$2"); shift 2 ;;
     --jvm) jvm+=("$2"); shift 2 ;;
     --startup-budget) startup_budget=$2; shift 2 ;;
+    --record-startup) mkdir -p "$2"; record_startup=$(cd "$2" && pwd); shift 2 ;;
     --run) steps+=("run: $2"); shift 2 ;;
     --expect) steps+=("expect: $2"); shift 2 ;;
     --logged) steps+=("logged: $2"); shift 2 ;;
@@ -79,6 +85,7 @@ case $proxy in
   *) echo "--proxy is velocity, bungeecord or waterfall" >&2; exit 2 ;;
 esac
 ((${#jars[@]})) || { echo "no plugin jars given" >&2; exit 2; }
+[[ -z $record_startup || -n $startup_budget ]] || { echo "--record-startup needs --startup-budget, whose boots it records" >&2; exit 2; }
 
 root=$(cd "$(dirname "$0")/.." && pwd)
 cache="$root/.cache/servers"
@@ -128,11 +135,13 @@ fail() {
   exit 1
 }
 
-# Waits up to $2 seconds for the fixed string $1 in log $4 after line $3, while $5 runs.
+# Waits up to $2 seconds for the fixed string $1 in log $4 after line $3, while $5 runs. The greps
+# after sed read to the end, not -q: with pipefail, a grep that stops at an early match fails the
+# pipe once sed, still writing, gets SIGPIPE.
 wait_in() {
   local text=$1 seconds=$2 after=$3 file=$4 pid=$5
   for ((i = 0; i < seconds * 2; i++)); do
-    tail -n "+$((after + 1))" "$file" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -qF -- "$text" && return 0
+    tail -n "+$((after + 1))" "$file" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -F -- "$text" >/dev/null && return 0
     kill -0 "$pid" 2>/dev/null || fail "$(basename "$(dirname "$file")") exited while waiting for \"$text\""
     sleep 0.5
   done
@@ -263,17 +272,19 @@ if [[ $proxy == velocity && ${#grants[@]} -gt 0 ]]; then
   proxy_flags+=("-Dxena.test.grants=$(IFS=';'; echo "${grants[*]}")")
 fi
 
-# Starts the proxy in $1; sets proxy_pid and proxy_log, and the fd 3 its console reads.
+# Starts the proxy in $1, with more JVM flags after it; sets proxy_pid and proxy_log, and the fd 3
+# its console reads.
 start_proxy() {
   local dir=$1
+  shift
   proxy_log="$dir/console.log"
   mkfifo "$dir/stdin"
-  (cd "$dir" && exec "$java" "${proxy_flags[@]}" -jar "$proxy_jar" <stdin >"$proxy_log" 2>&1) &
+  (cd "$dir" && exec "$java" "${proxy_flags[@]}" "$@" -jar "$proxy_jar" <stdin >"$proxy_log" 2>&1) &
   proxy_pid=$!
   exec 3>"$dir/stdin"
   # Velocity says Done; BungeeCord and Waterfall that they're listening.
   for ((i = 0; i < 240; i++)); do
-    sed 's/\x1b\[[0-9;]*m//g' "$proxy_log" 2>/dev/null | grep -qE 'Done \(|Listening on /' && return 0
+    sed 's/\x1b\[[0-9;]*m//g' "$proxy_log" 2>/dev/null | grep -E 'Done \(|Listening on /' >/dev/null && return 0
     kill -0 "$proxy_pid" 2>/dev/null || fail "the proxy exited while starting"
     sleep 0.5
   done
@@ -381,7 +392,7 @@ fi
 
 # ---- judge the logs ----
 for text in "${allowed[@]+"${allowed[@]}"}"; do
-  sed 's/\x1b\[[0-9;]*m//g' "$proxy_log" | grep -qF -- "$text" || fail "an allowed error or warning never appeared: \"$text\""
+  sed 's/\x1b\[[0-9;]*m//g' "$proxy_log" | grep -F -- "$text" >/dev/null || fail "an allowed error or warning never appeared: \"$text\""
 done
 problems=$(judge "$proxy_log" "$ours" ${allowed[@]+"${allowed[@]}"})
 [[ -z $problems ]] || fail "the proxy's log has errors, or our plugins' warnings:"$'\n'"$problems"
@@ -405,9 +416,22 @@ if [[ -n $startup_budget ]]; then
     # The first run's downloads: the family's library cache, and BungeeCord's for libraries:.
     cp -R "$base/proxy/plugins/Xena/." "$dir/plugins/Xena/" 2>/dev/null || true
     [[ ! -d $base/proxy/libraries ]] || cp -R "$base/proxy/libraries" "$dir/"
-    start_proxy "$dir"
+    if [[ -n $record_startup && $boot == 1 ]]; then
+      start_proxy "$dir" "-Xlog:class+load=info:file=$dir/classload.log:uptimemillis"
+      # The JVM's uptime as the proxy said it was done, give or take the half second start_proxy polls.
+      done_ms=$(tail -1 "$dir/classload.log" | sed -nE 's/^\[([0-9]+)ms\].*/\1/p')
+      [[ -n $done_ms ]] || fail "the class-loading log has no uptime"
+    else
+      start_proxy "$dir"
+    fi
     sleep 2
     stop_proxy
+    if [[ -n $record_startup && $boot == 1 ]]; then
+      for jar in "${jars[@]}"; do
+        python3 "$root/scripts/budgets/startup_classes.py" --log "$dir/classload.log" --done-ms "$done_ms" --jar "$jar" \
+          --out "$record_startup/startup-classes-$(basename "$jar" .jar).txt" || fail "couldn't write $(basename "$jar")'s startup classes"
+      done
+    fi
     total=$(sed 's/\x1b\[[0-9;]*m//g' "$proxy_log" | grep -oE 'Startup times: .*' |
       grep -oE '[0-9]+\.[0-9]+ ms' | awk '{ sum += $1 } END { printf "%.1f", sum }')
     times+=("$total")

@@ -35,9 +35,14 @@ public class ProxySecret private constructor(
     public val source: String,
     private val secret: ByteArray,
 ) {
-    /** The signer for frames: HMAC-SHA256 under a key derived from the secret. */
+    /**
+     * The signer for frames: HMAC-SHA256 under a key derived from the secret. The key is derived
+     * when the first frame is signed, since the first `Mac` in a JVM starts the JDK's crypto
+     * providers (several milliseconds), which a plugin's start shouldn't wait for: the platforms
+     * sign one empty frame on their async pool as the channel opens ([warm]).
+     */
     public fun signer(): FrameSigner {
-        val key = hmac(secret, LABEL)
+        val key by lazy { hmac(secret, LABEL) }
         // A Mac isn't safe to share between threads; one per thread, made once.
         val macs = ThreadLocal.withInitial {
             Mac.getInstance(ALGORITHM).apply { init(SecretKeySpec(key, ALGORITHM)) }
@@ -48,6 +53,15 @@ public class ProxySecret private constructor(
     override fun toString(): String = "ProxySecret($source)"
 
     public companion object {
+        /**
+         * Signs an empty frame with [signer], to have the key and the JDK's crypto providers
+         * ready before the first message: for the platforms' async pools, as a channel opens.
+         */
+        @JvmStatic
+        public fun warm(signer: FrameSigner) {
+            signer.sign(ByteArray(0))
+        }
+
         /** The file in the family's folder. */
         public const val FILE: String = "proxy.secret"
 

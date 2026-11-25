@@ -1,9 +1,9 @@
 # xUtilities on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks,
 # through boot.sh): every command family, answered by the core's dispatcher and drawn from
 # lang/en.yml.
-logged: xUtilities 3.0.0-alpha.1 on
+logged: xUtilities 3.0.0 on
 run: xutilities info
-expect: xUtilities 3.0.0-alpha.1 on
+expect: xUtilities 3.0.0 on
 run: xu
 expect: commands on
 

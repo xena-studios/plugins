@@ -16,7 +16,7 @@ xenaFabricMod {
 }
 
 // The plugin's version, the same as the Bukkit jar's (xutilities/bukkit/build.gradle.kts).
-version = "3.0.0-alpha.1+${sc.current.version}"
+version = "3.0.0+${sc.current.version}"
 base.archivesName = "xutilities-fabric"
 
 val requiredJava: JavaVersion = when {

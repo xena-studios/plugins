@@ -19,7 +19,7 @@ xUtilities is a lightweight essentials plugin for Paper and Folia: gamemodes, fl
 
 **[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://plugins.xenastudios.co/xutilities/) · [Commands](https://plugins.xenastudios.co/xutilities/commands/) · [Developer API](https://plugins.xenastudios.co/xutilities/developer-api/) · [Changelog](CHANGELOG.md)
 
-2.1.0 is the release: Paper 1.21.11 or newer (or Purpur or Folia) and Java 21. **3.0, in alpha on `main`**, runs on Paper, Folia, Spigot and CraftBukkit from 1.8.8 to the newest, and on Fabric 1.20.1, 1.21.11 and 26.3, in eight languages; 2.x is kept on the `maintenance` branch.
+2.1.0 is the release: Paper 1.21.11 or newer (or Purpur or Folia) and Java 21. **3.0, on `main` and not released yet** (it ships with the other plugins' rewrites), runs on Paper, Folia, Spigot and CraftBukkit from 1.8.8 to the newest, and on Fabric 1.20.1, 1.21.11 and 26.3, in eight languages; 2.x is kept on the `maintenance` branch.
 
 ## Developing
 

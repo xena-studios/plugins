@@ -5,6 +5,13 @@
 // newest major, and each older one's pages live in /<id>/v<major>/. Plugins only in
 // versions.json (the core's sample) are hidden: built, so their pages are checked, but out of
 // navigation, search, the sitemap and search engines.
+//
+// A plugin whose rewrite is merged but not released is "unreleased" there. Its files are laid
+// out as they will be once it ships (the new major in <id>/, the old in <id>/v<old>/), but the
+// site serves them as it did before: the old major's pages at /<id>/, as the current docs, and
+// the new major's at /<id>/next/, hidden. servedId says where each file is served, and
+// links.ts rewrites the links on the plugin's own pages to match, so they're written once, as
+// they'll be after the release. Deleting the "unreleased" field is the whole switch.
 import catalog from "./data/plugins.json" with { type: "json" };
 import versions from "./data/versions.json" with { type: "json" };
 
@@ -17,6 +24,14 @@ export interface DocsPlugin {
   newest?: number;
   /** Older majors with pages in /<id>/v<major>/, newest first. */
   older: number[];
+  /** The catalog plugin whose accent and icon its pages wear: [id] but for an unreleased major's pages. */
+  catalogId: string;
+  /** The sidebar group its pages are in (astro.config.ts makes one per plugin folder). */
+  group: string;
+  /** For an unreleased plugin, the subgroup its pages are in: the current major's ("v2"). */
+  folder?: string;
+  /** Whether its sidebar and previous and next are cut to one major's pages (src/routeData.ts). */
+  versioned: boolean;
 }
 
 interface Versioned {
@@ -25,25 +40,76 @@ interface Versioned {
   hidden?: boolean;
   newest: number;
   older: number[];
+  /** Merged but not released: its last release's facts, which the brand catalog keeps until it ships. */
+  unreleased?: { version: string; jarBudgetKb: number };
 }
 const versioned: Versioned[] = versions.plugins;
 const versionsOf = (id: string) => versioned.find((v) => v.id === id);
+const newestFirst = (majors: number[]) => [...majors].sort((a, b) => b - a);
+
+/** The unreleased plugins, by id: the major they're on now, and the one still to ship. */
+const unreleased = new Map(
+  versioned.filter((v) => v.unreleased).map((v) => {
+    const [current, ...rest] = newestFirst(v.older);
+    if (current === undefined) throw new Error(`src/data/versions.json: ${v.id} is unreleased but has no older major to show meanwhile`);
+    return [v.id, { current, rest, next: v.newest }] as const;
+  }),
+);
+
+/** Whether [id]'s newest major is merged but not released. */
+export const isUnreleased = (id: string) => unreleased.has(id);
+
+/** Where a plugin's unreleased major is served meanwhile: "xutilities/next". */
+const nextId = (id: string) => `${id}/next`;
+
+function plugin(id: string, name: string, hidden: boolean, v: Versioned | undefined): DocsPlugin[] {
+  const u = unreleased.get(id);
+  const older = newestFirst(v?.older ?? []);
+  if (!u) return [{ id, name, hidden, newest: v?.newest, older, catalogId: id, group: name, versioned: older.length > 0 }];
+  return [
+    // What people see: the current major at /<id>/, as if the new one weren't there.
+    { id, name, hidden, newest: u.rest.length ? u.current : undefined, older: u.rest, catalogId: id, group: name, folder: `v${u.current}`, versioned: u.rest.length > 0 },
+    // The new major at /<id>/next/, hidden, on its own.
+    { id: nextId(id), name: `${name} ${u.next}`, hidden: true, older: [], catalogId: id, group: name, versioned: true },
+  ];
+}
 
 export const docsPlugins: DocsPlugin[] = [
-  ...catalog.plugins.map((p) => {
-    const v = versionsOf(p.id);
-    return { id: p.id, name: p.name, hidden: false, newest: v?.newest, older: [...(v?.older ?? [])].sort((a, b) => b - a) };
-  }),
+  ...catalog.plugins.flatMap((p) => plugin(p.id, p.name, false, versionsOf(p.id))),
   ...versioned
     .filter((v) => !catalog.plugins.some((p) => p.id === v.id))
-    .map((v) => {
+    .flatMap((v) => {
       if (!v.name) throw new Error(`src/data/versions.json: ${v.id} isn't in the brand catalog, so it needs a name`);
-      return { id: v.id, name: v.name, hidden: v.hidden ?? false, newest: v.newest, older: [...v.older].sort((a, b) => b - a) };
+      return plugin(v.id, v.name, v.hidden ?? false, v);
     }),
 ];
 
+/**
+ * Where the page in file [fileId] (its Starlight id by its place in src/content/docs, such as
+ * "xutilities/commands") is served: the same, but for an unreleased plugin's pages.
+ */
+export function servedId(fileId: string): string {
+  const id = fileId.split("/")[0]!;
+  const u = unreleased.get(id);
+  if (!u) return fileId;
+  const rest = fileId.slice(id.length + 1);
+  const old = /^v(\d+)(?:\/(.*))?$/.exec(rest);
+  if (old && Number(old[1]) === u.current) return old[2] ? `${id}/${old[2]}` : id;
+  if (old) return fileId;
+  return rest ? `${nextId(id)}/${rest}` : nextId(id);
+}
+
+/** A root-relative link as written on an unreleased plugin's pages, pointed where that page is served. */
+export function servedLink(href: string): string {
+  const match = /^\/([^?#]*?)\/?([?#].*)?$/.exec(href);
+  if (!match || !href.startsWith("/") || href.startsWith("//")) return href;
+  const served = servedId(match[1]!);
+  return served === match[1] ? href : `/${served}/${match[2] ?? ""}`;
+}
+
 /** The plugin a page (by its Starlight id, such as "xutilities/commands") belongs to. */
-export const pluginOf = (routeId: string) => docsPlugins.find((p) => routeId === p.id || routeId.startsWith(`${p.id}/`));
+export const pluginOf = (routeId: string) =>
+  [...docsPlugins].sort((a, b) => b.id.length - a.id.length).find((p) => routeId === p.id || routeId.startsWith(`${p.id}/`));
 
 export interface PageMajor {
   /** The major this page describes, or undefined for a plugin whose docs have one. */
@@ -67,6 +133,9 @@ export const pageUrl = (plugin: DocsPlugin, major: number | undefined, rest: str
   const base = major === undefined || major === plugin.newest ? `/${plugin.id}/` : `/${plugin.id}/v${major}/`;
   return rest ? `${base}${rest}/` : base;
 };
+
+/** Whether [href] is an unreleased major's page (/<id>/next/...), which no other page's previous or next leads to. */
+export const isUnlisted = (href: string) => docsPlugins.some((p) => p.group !== p.name && (href === `/${p.id}/` || href.startsWith(`/${p.id}/`)));
 
 /** The ids of plugins kept out of navigation, search, the sitemap and search engines. */
 export const hiddenIds = docsPlugins.filter((p) => p.hidden).map((p) => p.id);

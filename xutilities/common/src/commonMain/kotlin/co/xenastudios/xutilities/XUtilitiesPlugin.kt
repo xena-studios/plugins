@@ -200,6 +200,6 @@ public class XUtilitiesPlugin(
         public const val NAME: String = "xUtilities"
 
         /** xUtilities' version. The adapters' builds check theirs is the same. */
-        public const val VERSION: String = "3.0.0-alpha.1"
+        public const val VERSION: String = "3.0.0"
     }
 }

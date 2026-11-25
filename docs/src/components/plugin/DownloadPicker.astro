@@ -7,10 +7,11 @@
 // Without JavaScript it's the whole list: each platform's jars for the latest release, with
 // the Minecraft versions each runs on and its stores. The script only adds the two menus and
 // hides the rows that don't match.
-import { getEntry } from "astro:content";
+import { getCollection, getEntry } from "astro:content";
 import type { Manifest } from "../reference/manifest";
 import External from "../External.astro";
 import { inRange, newestFirst, span } from "./minecraft";
+import { isUnreleased } from "../../plugins";
 
 interface Props {
   plugin: string;
@@ -19,9 +20,11 @@ const { plugin } = Astro.props;
 const manifestEntry = await getEntry("references", plugin);
 if (!manifestEntry) throw new Error(`DownloadPicker: ${plugin} has no manifest (src/generated/${plugin}/manifest.json)`);
 const manifest = manifestEntry.data as unknown as Manifest;
-const releasesEntry = await getEntry("releases", plugin);
-if (!releasesEntry) throw new Error(`DownloadPicker: ${plugin} has no releases (src/data/releases/${plugin}.json)`);
-const data = releasesEntry.data;
+const releasesEntry = (await getCollection("releases")).find((e) => e.id === plugin);
+// A plugin whose rewrite is merged but not released (src/data/versions.json) has none yet: its
+// release writes the file.
+if (!releasesEntry && !isUnreleased(plugin)) throw new Error(`DownloadPicker: ${plugin} has no releases (src/data/releases/${plugin}.json)`);
+const data: NonNullable<typeof releasesEntry>["data"] = releasesEntry?.data ?? { plugin, releases: [] };
 if (data.plugin !== plugin) throw new Error(`src/data/releases/${plugin}.json says it's ${data.plugin}'s`);
 
 const name = manifest.plugin.name;

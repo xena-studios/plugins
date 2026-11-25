@@ -6,9 +6,21 @@ import { docsSchema } from "@astrojs/starlight/schema";
 // The reference manifests' JSON Schema, written by the same Kotlin build as the manifests
 // (./gradlew updateXenaManifest), so a manifest this site can't read fails the build here.
 import manifestSchema from "./generated/manifest.schema.json" with { type: "json" };
+import { servedId } from "./plugins.ts";
+
+/**
+ * A page's id, so its address: Astro's (its path, less the extension and a last "index"), but
+ * an unreleased plugin's pages where they're served until it ships (src/plugins.ts).
+ */
+function docsId({ entry, data }: { entry: string; data: Record<string, unknown> }): string {
+  if (typeof data.slug === "string") return data.slug;
+  // Astro slugs each segment; the file names here are already slugs, which this keeps so.
+  if (!/^([a-z0-9-]+\/)*[a-z0-9-]+\.(md|mdx|mdoc)$/.test(entry)) throw new Error(`src/content/docs/${entry}: name pages in lowercase, digits and hyphens`);
+  return servedId(entry.replace(/\.\w+$/, "").replace(/\/index$/, ""));
+}
 
 export const collections = {
-  docs: defineCollection({ loader: docsLoader(), schema: docsSchema() }),
+  docs: defineCollection({ loader: docsLoader({ generateId: docsId }), schema: docsSchema() }),
   // Each rewritten plugin's reference manifest (src/generated/<plugin>/manifest.json), by plugin
   // id, for the components in src/components/reference/ (<Reference plugin show />). xsample is
   // the core's sample plugin, whose hidden pages (/xsample/) prove them.

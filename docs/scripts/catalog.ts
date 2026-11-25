@@ -2,7 +2,8 @@
 // repo's catalog (src/data/catalog.json, copied by `pnpm brand:sync`) gives each plugin's
 // name, words, category and colours, and whether it's released; each plugin's
 // build.gradle.kts (a rewritten plugin's bukkit/build.gradle.kts) gives its version and whether it runs on Folia; an api/ folder means it
-// has a developer API; src/data/modrinth.json lists the released plugins Modrinth is still
+// has a developer API; src/data/versions.json gives an unreleased rewrite's last release, whose
+// version and jar budget the lists keep until the rewrite ships; src/data/modrinth.json lists the released plugins Modrinth is still
 // reviewing, whose Modrinth pages nothing may link yet. From those:
 //
 //   docs/src/data/plugins.json       what the docs site reads: sidebar, home, titles, footer
@@ -65,6 +66,12 @@ for (const id of review.inReview) {
 }
 const inReview = new Set(review.inReview);
 
+// A rewrite merged but not released: the lists keep its last release's facts (src/plugins.ts).
+const versions: { plugins: { id: string; unreleased?: { version: string; jarBudgetKb: number } }[] } = JSON.parse(
+  fs.readFileSync(path.join(DOCS, "src/data/versions.json"), "utf8"),
+);
+const unreleasedOf = (id: string) => versions.plugins.find((v) => v.id === id)?.unreleased;
+
 /** Whether a plugin is in the rewrite's layout (<id>/api, common and a folder per platform). */
 const isRewritten = (id: string) =>
   fs.existsSync(path.join(ROOT, id, "common/build.gradle.kts")) && !fs.existsSync(path.join(ROOT, id, "build.gradle.kts"));
@@ -81,16 +88,22 @@ function facts(id: string) {
   const version = text.match(/^version = "([^"]+)"/m)?.[1];
   if (!version) throw new Error(`${file}: no version = "..." line`);
   const budgets = rewritten ? fs.readFileSync(path.join(ROOT, "gradle/jar-budgets.txt"), "utf8") : "";
+  const unreleased = unreleasedOf(id);
   return {
-    version,
+    version: unreleased?.version ?? version,
+    /** The build's version, which an unreleased rewrite's own pages show. */
+    buildVersion: version,
     // xena.folia is on unless the plugin turns it off.
     folia: !/^\s*folia = false/m.test(text),
     // The most its jar may weigh: the build fails over it.
-    jarBudgetKb: rewritten
+    jarBudgetKb: unreleased
+      ? unreleased.jarBudgetKb
+      : rewritten
       ? Number(budgets.match(new RegExp(`^:${id}:bukkit (\\d+)`, "m"))?.[1] ?? 150)
       : Number(text.match(/jarBudgetKb = (\d+)/)?.[1] ?? 150),
     api: fs.existsSync(path.join(ROOT, id, "api/build.gradle.kts")),
     rewritten,
+    unreleased: !!unreleased,
   };
 }
 
@@ -135,7 +148,12 @@ function between(file: string, body: string, marker = "catalog") {
 // --- The docs site's data ---
 write(
   "docs/src/data/plugins.json",
-  JSON.stringify({ categories: catalog.categories, plugins }, null, 2) + "\n",
+  JSON.stringify(
+    // What the site reads; the rest only steers this script.
+    { categories: catalog.categories, plugins: plugins.map(({ buildVersion, rewritten, unreleased, ...p }) => p) },
+    null,
+    2,
+  ) + "\n",
 );
 
 // --- Accents ---
@@ -288,23 +306,40 @@ for (const p of plugins) {
     // The page has its own title.
     .replace(/^# .*\n+/, "")
     .replace(/^## Unreleased$/m, "## Unreleased\n\nIn the next release.");
-  write(
-    `docs/src/content/docs/${p.id}/changelog.md`,
-    // Its Edit page link opens the changelog it's made from, not this generated copy.
-    `---\n# ${GENERATED} From ${p.id}/CHANGELOG.md.\ntitle: Changelog\ndescription: "What changed in each ${p.name} release."\neditUrl: https://github.com/xena-studios/plugins/edit/main/${p.id}/CHANGELOG.md\nsidebar:\n  order: 90\n---\n\n${changelog.trimEnd()}\n`,
-  );
+  const changelogPage = (dir: string, text: string) =>
+    write(
+      `docs/src/content/docs/${dir}/changelog.md`,
+      // Its Edit page link opens the changelog it's made from, not this generated copy.
+      `---\n# ${GENERATED} From ${p.id}/CHANGELOG.md.\ntitle: Changelog\ndescription: "What changed in each ${p.name} release."\neditUrl: https://github.com/xena-studios/plugins/edit/main/${p.id}/CHANGELOG.md\nsidebar:\n  order: 90\n---\n\n${text.trimEnd()}\n`,
+    );
+  changelogPage(p.id, changelog);
+  // An unreleased rewrite's old major, which the site shows meanwhile, has every section but
+  // the new major's.
+  if (p.unreleased) {
+    const major = p.version.split(".")[0]!;
+    const sections = changelog.split(/^(?=## )/m);
+    const kept = sections.filter((s) => !s.startsWith("## ") || /^## (\d+)/.exec(s)?.[1] === undefined || Number(/^## (\d+)/.exec(s)![1]) <= Number(major));
+    changelogPage(`${p.id}/v${major}`, kept.join(""));
+  }
   // A rewritten plugin's download page is its own: the picker, from its manifest and releases.
   if (!p.rewritten) write(
     `docs/src/content/docs/${p.id}/download.mdx`,
     `---\n# ${GENERATED}\ntitle: Download\ndescription: "Download ${p.name}: the latest version and every one before it, with the Minecraft versions each supports."\nsidebar:\n  order: 1.5\n---\n\nimport Downloads from "../../../components/Downloads.astro";\n\n<Downloads plugin="${p.id}" />\n`,
   );
-  // The overview's "Current version: **x.y.z**" follows the build file.
-  const overview = fs.existsSync(path.join(ROOT, `docs/src/content/docs/${p.id}/index.mdx`))
-    ? `docs/src/content/docs/${p.id}/index.mdx`
-    : `docs/src/content/docs/${p.id}/index.md`;
-  const text = outputs.get(overview) ?? fs.readFileSync(path.join(ROOT, overview), "utf8");
-  const updated = text.replace(/^(Current version: \*\*)[^*]+(\*\*)/m, `$1${p.version}$2`);
-  if (updated !== text) write(overview, updated);
+  // The overview's "Current version: **x.y.z**" follows the build file. An unreleased
+  // rewrite's says the build's on its own (hidden) pages, and the old major's overview, which
+  // the site shows meanwhile, says the last release.
+  const overviewIn = (dir: string) =>
+    fs.existsSync(path.join(ROOT, `docs/src/content/docs/${dir}/index.mdx`))
+      ? `docs/src/content/docs/${dir}/index.mdx`
+      : `docs/src/content/docs/${dir}/index.md`;
+  const overviews: [string, string][] = [[overviewIn(p.id), p.buildVersion]];
+  if (p.unreleased) overviews.push([overviewIn(`${p.id}/v${p.version.split(".")[0]}`), p.version]);
+  for (const [overview, version] of overviews) {
+    const text = outputs.get(overview) ?? fs.readFileSync(path.join(ROOT, overview), "utf8");
+    const updated = text.replace(/^(Current version: \*\*)[^*]+(\*\*)/m, `$1${version}$2`);
+    if (updated !== text) write(overview, updated);
+  }
 }
 
 // --- Nothing links a Modrinth page that's still in review: it's a 404 for everyone else ---

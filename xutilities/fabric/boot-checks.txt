@@ -1,7 +1,7 @@
 # What scripts/boot-fabric.sh checks on each Minecraft line with xUtilities, from the console.
-logged: [xUtilities] xUtilities 3.0.0-alpha.1 on
+logged: [xUtilities] xUtilities 3.0.0 on
 run: xutilities info
-expect: xUtilities 3.0.0-alpha.1 on
+expect: xUtilities 3.0.0 on
 # Ours replaces Minecraft's /clear and /gamemode, which say "No player was found".
 run: clear Nobody
 expect: No player called Nobody is online.

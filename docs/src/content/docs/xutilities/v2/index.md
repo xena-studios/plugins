@@ -1,6 +1,6 @@
 ---
-title: xUtilities 2.x
-description: "xUtilities 2.x: lightweight essentials for Paper and Folia servers, with gamemode, fly, heal, /back, workstations anywhere and your own link commands, each one switchable."
+title: xUtilities
+description: "xUtilities: lightweight essentials for Paper and Folia servers, with gamemode, fly, heal, /back, workstations anywhere and your own link commands, each one switchable."
 sidebar:
   label: Overview
   order: 1

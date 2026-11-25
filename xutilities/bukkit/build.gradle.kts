@@ -14,7 +14,7 @@ plugins {
 
 group = "co.xenastudios"
 // The plugin's version, the same as XUtilitiesPlugin.VERSION (checked below) and the Fabric jars'.
-version = "3.0.0-alpha.1"
+version = "3.0.0"
 description = "xUtilities for Paper, Folia, Spigot and CraftBukkit, 1.8.8 to the newest."
 
 // What only some servers have (Folia's regions, Paper's menus and teleportAsync, the ping and

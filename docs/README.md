@@ -30,7 +30,8 @@ src/
     reference/       a rewritten plugin's reference, from its manifest (<Reference plugin show />)
     plugin/          a rewritten plugin's install tabs, download picker and version switch
   pages/404.astro    the not-found page, kept out of search engines
-  plugins.ts         every plugin with pages, and which major a page describes
+  plugins.ts         every plugin with pages, which major a page describes, and where an unreleased rewrite's pages are served
+  links.ts           points the links on an unreleased rewrite's pages where they're served
   redirects.ts       redirects for an old major's pages when a rewrite ships
   routeData.ts       each page's sidebar and accent
   styles/            the brand's tokens (tokens.css), the family's look (theme.css) and its game GUI (gui.css)
@@ -61,7 +62,19 @@ A rewritten plugin's docs are built from its code. Its Gradle build writes `src/
 - **Pages:** overview, install, download, commands, permissions, configuration, messages, placeholders, integrations, importers, FAQ, developer API, changelog. A reference section is one line, `<Reference plugin="xsample" show="commands" />` (also `platforms`, `permissions`, `config`, `messages`, `placeholders`, `events`), under a short hand-written intro. A section with nothing in it says so instead of showing an empty table.
 - **Install:** `<InstallTabs plugin="..." />`, a tab per platform the manifest releases on.
 - **Download:** `<DownloadPicker plugin="..." />`, from the manifest's platforms and `src/data/releases/<plugin>.json` (each jar's platforms and Minecraft versions, and the stores that carry it; its shape is in `content.config.ts`). Without JavaScript it's the full list; with it, two menus pick the one jar. A jar for a platform the manifest doesn't release on fails the build.
-- **Versions:** when a plugin's rewrite ships, move its current pages into `src/content/docs/<plugin>/v<old major>/` and add it to `src/data/versions.json`. `/<plugin>/` is then the new major; the old one gets a sidebar of its own, a version switch under every title and a note that it's the old major, and each old page the new major doesn't have redirects from its old address (`src/redirects.ts`), so no link breaks. Until then nothing moves.
+- **Versions:** when a plugin's rewrite is merged, move its current pages into `src/content/docs/<plugin>/v<old major>/`, write the new major's in `src/content/docs/<plugin>/`, and add it to `src/data/versions.json` as unreleased (below). Once it ships, `/<plugin>/` is the new major; the old one gets a sidebar of its own, a version switch under every title and a note that it's the old major, and each old page the new major doesn't have redirects from its old address (`src/redirects.ts`), so no link breaks.
+
+### Unreleased rewrites
+
+The rewrites are merged one by one but released together (ROADMAP.md, Release), so a rewrite's pages sit on `main` for a while before its release. Meanwhile the site shows the last release as it did before: its line in `src/data/versions.json` has `"unreleased"`, with the last release's version and jar budget, and then
+
+- `/<plugin>/` serves the old major's pages (the files in `v<old>/`), at the addresses they had, with the plugin's catalog entry (version, jar budget) as it was;
+- the new major's pages (the files in `<plugin>/`) are built at `/<plugin>/next/`, with every link checked, but hidden: out of the sidebar, search and the sitemap, `noindex`, and skipped by every other page's previous and next. Its download page says it isn't released yet;
+- `pnpm catalog` writes the new major's changelog page from `<plugin>/CHANGELOG.md`, and the old major's from the same file without the new major's sections, so a fix release of the old major still shows.
+
+Write every page as it will be after the release: the new major's links as `/<plugin>/commands/`, the old major's as `/<plugin>/v<old>/commands/`. `src/plugins.ts` serves each file where it belongs (`servedId`) and `src/links.ts` rewrites the links on the plugin's pages to match, before the links validator checks them, so a broken link fails the build either way. Pages outside the plugin's folder (the start pages) link to `/<plugin>/...` and get the current release either way.
+
+**The switch, in the release's pull request, is one line:** delete `"unreleased": {...}` from the plugin's line in `src/data/versions.json`, then run `pnpm catalog`, which brings the build's version and jar budget into the catalog. The rest of that pull request is the release's own: `src/data/releases/<plugin>.json` for the download picker (the build fails without it once the plugin is released), `(unreleased)` and its note off the changelog's heading, and the start pages' requirements.
 
 ## Look
 

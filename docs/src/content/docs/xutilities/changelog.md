@@ -7,9 +7,11 @@ sidebar:
   order: 90
 ---
 
-## 3.0.0-alpha.1
+## 3.0.0 (unreleased)
 
-The rewrite, and the first alpha of 3.0: the same commands, permissions and settings as 2.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, and **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), in eight languages. It's an alpha: run it on a test server first, and keep the 2.1.0 jar to go back to.
+Not released yet: 3.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 2.1 is the release, and 2.x gets its fixes.
+
+The rewrite: the same commands, permissions and settings as 2.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, and **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), in eight languages. Keep the 2.1.0 jar to go back to.
 
 ### Upgrading from 2.x
 

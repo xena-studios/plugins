@@ -10,8 +10,8 @@
         {
           "name": "xutilities-3.0.0-alpha.1-bukkit.jar",
           "url": "https://github.com/xena-studios/plugins/releases/download/xutilities-v3.0.0-alpha.1/xutilities-3.0.0-alpha.1-bukkit.jar",
-          "size": 585324,
-          "sha256": "14d89bb16b0b456d407ddcc0041ddac494530d274a88d1d082de2572b699c200",
+          "size": 527325,
+          "sha256": "7ee48d6050bc635a88469f91397819f859ccad4f468851a1d46e590c50ab9987",
           "platforms": [
             "fabric"
           ],
@@ -88,8 +88,8 @@
         {
           "name": "xutilities-3.0.0-alpha.1-fabric-1.20.1.jar",
           "url": "https://github.com/xena-studios/plugins/releases/download/xutilities-v3.0.0-alpha.1/xutilities-3.0.0-alpha.1-fabric-1.20.1.jar",
-          "size": 495360,
-          "sha256": "9b294d10a3c1e5c9d91bd0809a3a829fe1a89d036458bec6ad7e192dc65c4671",
+          "size": 489278,
+          "sha256": "0eb91d5e8c28a0b29c456c1bfa6389a959d2729eb8ee04c55492ffd68be53b85",
           "platforms": [
             "fabric"
           ],
@@ -100,8 +100,8 @@
         {
           "name": "xutilities-3.0.0-alpha.1-fabric-1.21.11.jar",
           "url": "https://github.com/xena-studios/plugins/releases/download/xutilities-v3.0.0-alpha.1/xutilities-3.0.0-alpha.1-fabric-1.21.11.jar",
-          "size": 497916,
-          "sha256": "afc44c305d42967fa205baf496f3c55d61cab3e80ebab7a6c13c2b95aadf797a",
+          "size": 491841,
+          "sha256": "c923e5365ea623089a0c95cd5ea4bc9bc480e985b030d176a99dfb47326125b9",
           "platforms": [
             "fabric"
           ],
@@ -112,8 +112,8 @@
         {
           "name": "xutilities-3.0.0-alpha.1-fabric-26.3.jar",
           "url": "https://github.com/xena-studios/plugins/releases/download/xutilities-v3.0.0-alpha.1/xutilities-3.0.0-alpha.1-fabric-26.3.jar",
-          "size": 548566,
-          "sha256": "4630fb2bc5f0e62d82f55209eed6f7d6293cf9d38f9c9f3c6fb671ba3cbb478c",
+          "size": 485415,
+          "sha256": "4c916ed1141fdece81a4ab9b87c36f793a54e35508df6495a386ad93b26cced0",
           "platforms": [
             "fabric"
           ],

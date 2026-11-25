@@ -32,6 +32,8 @@ case "$1" in
 esac
 
 # Old Spigot waits 20 seconds over its age without the first; the second keeps debug reports
-# on disk rather than uploading them from CI.
+# on disk rather than uploading them from CI. bStats starts with xSample's seeded
+# plugins/bStats/config.yml turning it off, so a boot sends nothing.
 exec "$root/scripts/boot-test.sh" "${server[@]}" --jvm -DIReallyKnowWhatIAmDoingISwear=true --jvm -Dxena.debug.paste=false \
+  --seed "$root/core/core-testing/sample/bukkit/boot-seed" \
   --checks "$here/boot-checks.txt" "$@" "$jar"

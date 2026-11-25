@@ -164,6 +164,10 @@ public object Legacy {
         val edited = messages(scope.root).isNotEmpty()
         for (moved in MOVED) scope.remove(moved.path)
         for (path in DROPPED) scope.remove(path)
+        // 2.x's update checker is the core's now: `update-checker.enabled` is `updates.check`.
+        scope.move("update-checker.enabled", "updates.check")
+        val checker = scope["update-checker"]
+        if (checker is YamlNode.Mapping && checker.entries.isEmpty() || checker is YamlNode.Null) scope.remove("update-checker")
         // The sections the messages left, if nothing else is in them.
         for (section in listOf("messages.error", "messages.state")) {
             val node = scope[section]

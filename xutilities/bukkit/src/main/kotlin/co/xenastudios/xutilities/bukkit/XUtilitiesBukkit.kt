@@ -13,6 +13,7 @@ import co.xenastudios.core.loader.PluginEntry
 import co.xenastudios.xutilities.JvmFiles
 import co.xenastudios.xutilities.XUtilitiesPlugin
 import co.xenastudios.xutilities.api.XUtilitiesApi
+import co.xenastudios.xutilities.config.XUtilitiesConfig
 import co.xenastudios.xutilities.api.bukkit.BukkitBackRecordEvent
 import co.xenastudios.xutilities.api.bukkit.BukkitBackTeleportEvent
 import co.xenastudios.xutilities.api.event.BackRecordEvent
@@ -61,6 +62,11 @@ public class XUtilitiesBukkit(private val plugin: JavaPlugin) : PluginEntry {
 
         // The config now, so the commands are the server's from the start; the rest off the thread.
         val config = files.config()
+        // The update checker (once a day, off the threads) and bStats, as 2.x had them.
+        xutilities.updates = platform.checkUpdates(XUtilitiesPlugin.PLUGIN_ID, xutilities.admin.updates, XUtilitiesConfig.updates.settings(config.config)) {
+            xutilities.texts.translations
+        }
+        platform.metrics(BSTATS)
         platform.scheduler.now(Where.Global) {
             xutilities.start(config)
             platform.scheduler.run(Where.Async) {
@@ -80,6 +86,11 @@ public class XUtilitiesBukkit(private val plugin: JavaPlugin) : PluginEntry {
         platform.close()
         this.platform = null
         xutilities = null
+    }
+
+    private companion object {
+        // bstats.org/plugin/bukkit/XenaUtilities/34866, 2.x's.
+        const val BSTATS = 34866
     }
 
     // /back's events as Bukkit events, made only when a Bukkit plugin listens.

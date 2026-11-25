@@ -60,7 +60,7 @@ class MigrationTest {
         assertTrue("config-version: 3" in migrated)
         assertFalse("message-self" in migrated, "messages are in lang/ now")
         assertFalse("disabled: \"<red>This command is disabled." in migrated)
-        assertTrue("stonecutter:" in migrated && "update-checker:" in migrated)
+        assertTrue("stonecutter:" in migrated && "updates:" in migrated && "update-checker:" !in migrated)
         assertTrue(migrated.startsWith("# xUtilities: every command you need."))
 
         // Loading again changes nothing.
@@ -78,11 +78,14 @@ class MigrationTest {
             .replace("player-not-found: \"<prefix><error>No player named <highlight><player></highlight> is online.\"", "player-not-found: \"<red>Who is <player>?\"")
             .replace("highlight: \"<#B48CFF>\"", "highlight: \"<gold>\"")
             .replace("aliases: [\"fix\"]", "aliases: [\"fix\", \"mend\"]")
+            .replace("update-checker:\n  # Ask Modrinth", "update-checker:\n  # Ask Modrinth").replace(Regex("(update-checker:\\n(?:  #.*\\n)*  enabled: )true"), "$1false")
         write("config.yml", edited)
         val loaded = load()
         assertEquals(emptyList(), loaded.problems)
         val config = loaded.config
         assertEquals(listOf("fix", "mend"), config[XUtilitiesConfig.commands.repair.aliases])
+        // 2.x's update-checker.enabled: false is updates.check: false.
+        assertEquals(false, config[XUtilitiesConfig.updates.check])
         // The edited messages are in lang/en.yml, the rest are 3.0's.
         val english = read("lang/en.yml")
         assertTrue("heal.self: \"<gold>Patched up!\"" in english, english)

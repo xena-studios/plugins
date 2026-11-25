@@ -167,6 +167,10 @@ prepare() {
     ln -s "$cache/servers/paper-$version/$shared" "$dir/$shared"
   done
   (($#)) && cp "$@" "$dir/plugins/"
+  # bStats starts as on any server, but sends nothing from a measurement (a released plugin's
+  # jar has its real service id).
+  mkdir -p "$dir/plugins/bStats"
+  cp "$root/core/core-testing/sample/bukkit/boot-seed/plugins/bStats/config.yml" "$dir/plugins/bStats/"
   echo "eula=true" >"$dir/eula.txt"
   port=$((20000 + RANDOM % 12000))
   # M0's world: flat, small view, nobody pausing it (an empty server pauses after a minute,

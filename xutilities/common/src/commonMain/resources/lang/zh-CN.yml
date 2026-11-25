@@ -1,3 +1,4 @@
+core.update.available: "<prefix><plugin> <highlight><latest></highlight> 已发布（你的版本是 <current>）：<click:open_url:'<url>'><hover:show_text:'打开下载页面'><highlight><underlined><url></underlined></highlight></hover></click>"
 core.pages.footer: "<gray>第 <page> 页，共 <pages> 页</gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« 上一页</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>下一页 »</highlight></hover></click></has_next>"
 core.debug.checking: "<prefix>正在检查 <highlight><plugin></highlight>..."
 core.debug.database.ok: "<success>✔</success> 数据库：<highlight><database></highlight> 在 <millis> 毫秒内响应。"

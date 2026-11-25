@@ -11,7 +11,7 @@ Replace the jar and restart. Your `config.yml` is carried forward and the old on
 - **Messages are in `lang/` now**, one file per language (`lang/en.yml`, `lang/de.yml`, ...), no longer in `config.yml`. Every message you changed in 2.x is copied into `lang/en.yml` on the first start, and then xUtilities sends English to everyone (`messages.language: en`), as 2.x did. Set it to `auto` to give each player their own language. Messages you never changed get 3.0's.
 - **`theme` moved into `messages.theme`**, and is shared with the other Xena plugins in `plugins/Xena/config.yml` unless you set it here. Colours you changed in 2.x stay this plugin's own.
 - The error messages (`messages.error.*`) are the core's now: `core.command.*` in `lang/`. A changed one is carried there.
-- `update-checker.message` is gone; the update checker comes back with the next alpha.
+- `update-checker` is `updates` now, the core's: `update-checker.enabled` is carried to `updates.check`, and `updates.channel` picks which releases you hear of (`release`, `beta` or `alpha`). `update-checker.message` is `core.update.available` in `lang/`, and the notice goes to players with `xutilities.admin.update` as they join.
 - Every command, alias, permission, link command and `/back` works as it did. Nothing else to change.
 - **Going back to 2.1.0:** stop the server, put the 2.1.0 jar back, and rename `config.yml.bak-v2` to `config.yml` (keep 3.0's as `config.yml.v3` to come back to). If you don't, 2.1.0 still starts: it reads 3.0's file without changing it, keeps your commands' settings and link commands, and uses its own default messages and theme.
 
@@ -33,7 +33,7 @@ Replace the jar and restart. Your `config.yml` is carried forward and the old on
 
 - "No player named X is online" is "No player called X is online".
 - A command whose alias another xUtilities command already has keeps its name and loses the alias, with a warning, instead of the reload failing.
-- The bStats and update-checker lines aren't in this alpha yet; both come back with the next one.
+- bStats (Bukkit only: bStats has no Fabric platform) and the update checker are the core's now, as above; `plugins/bStats/config.yml` still turns bStats off for every plugin.
 
 ## 2.1.0
 

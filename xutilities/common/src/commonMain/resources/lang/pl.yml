@@ -1,3 +1,4 @@
+core.update.available: "<prefix>Wyszedł <plugin> <highlight><latest></highlight> (masz <current>): <click:open_url:'<url>'><hover:show_text:'Otwórz stronę pobierania'><highlight><underlined><url></underlined></highlight></hover></click>"
 core.pages.footer: "<gray>Strona <page> z <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Poprzednia</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Następna »</highlight></hover></click></has_next>"
 core.debug.checking: "<prefix>Sprawdzam <highlight><plugin></highlight>..."
 core.debug.database.ok: "<success>✔</success> Baza danych: <highlight><database></highlight> odpowiedziała w <millis> ms."

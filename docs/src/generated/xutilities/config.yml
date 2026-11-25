@@ -231,8 +231,11 @@ info-commands:
     permission: "xutilities.command.website"
     message: "<prefix>Visit our website: <click:open_url:'https://example.com'><hover:show_text:'<gray>Click to open'><highlight><underlined>example.com"
 
-# Tells you when a new version is out.
-update-checker:
-  # Ask Modrinth for the newest version at startup and every 24 hours. It sends only the
-  # plugin version, the platform and the Minecraft version.
-  enabled: true
+# Telling you when a newer version is out: in the console, and to players with
+# <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
+# sending only the plugin's version, the platform and the Minecraft version.
+updates:
+  # Whether to ask at all.
+  check: true
+  # Which releases to hear of: release, beta (betas and releases) or alpha (everything).
+  channel: "release"

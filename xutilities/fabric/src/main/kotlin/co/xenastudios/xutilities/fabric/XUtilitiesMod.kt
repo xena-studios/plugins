@@ -7,6 +7,7 @@ import co.xenastudios.core.fabric.FabricPlatform
 import co.xenastudios.core.jvm.admin.MclogsPaste
 import co.xenastudios.xutilities.JvmFiles
 import co.xenastudios.xutilities.XUtilitiesPlugin
+import co.xenastudios.xutilities.config.XUtilitiesConfig
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.loader.api.FabricLoader
@@ -37,6 +38,10 @@ public object XUtilitiesMod : ModInitializer {
         platform.commands.feedback = xutilities.texts.feedback
 
         val config = files.config()
+        // The update checker; bStats has no Fabric platform, so there's no metrics here.
+        xutilities.updates = platform.checkUpdates(XUtilitiesPlugin.PLUGIN_ID, xutilities.admin.updates, XUtilitiesConfig.updates.settings(config.config)) {
+            xutilities.texts.translations
+        }
         platform.scheduler.now(Where.Global) { xutilities.start(config) }
         platform.scheduler.run(Where.Async) {
             val loaded = files.translations(config.config, config.problems)

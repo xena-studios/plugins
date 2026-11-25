@@ -13,7 +13,8 @@ Replace the jar and restart. Nothing else is needed: every command, alias, permi
 - **Messages move to `lang/`.** 3.0 keeps every message in one file per language (`lang/en.yml`, `lang/de.yml`, ...). Each message you changed in 2.x's `config.yml` is copied into `lang/en.yml` under its new key (`commands.heal.message-self` is `heal.self`, the errors are `core.command.*`), and the console says how many. Messages you never changed get 3.0's.
 - **The language.** If you had changed any message, xUtilities' `messages.language` is set to `en`, so every player sees your words, as in 2.x. Set it to `auto` (or `shared`, the family's choice) to give each player their own language; then translate your edits into the other files too, or players reading them get the shipped text.
 - **The theme moves into `messages.theme`.** A colour you'd changed stays xUtilities' own; the rest become `shared`, the look every Xena plugin takes from `plugins/Xena/config.yml`.
-- **Gone:** `update-checker.message` (the update checker comes back with the next alpha) and `messages.error.disabled` (1.x's).
+- **The update checker** is `updates` now: `update-checker.enabled` becomes `updates.check`, and `updates.channel` (`release` by default) says which releases you hear of. Its message is `core.update.available` in `lang/`.
+- **Gone:** `messages.error.disabled` (1.x's).
 
 ## Going back to 2.1.0
 

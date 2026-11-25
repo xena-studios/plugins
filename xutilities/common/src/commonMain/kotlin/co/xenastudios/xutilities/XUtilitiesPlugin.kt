@@ -20,6 +20,8 @@ import co.xenastudios.core.common.module.Module
 import co.xenastudios.core.common.module.ModuleSet
 import co.xenastudios.core.common.permission.PermissionRegistrar
 import co.xenastudios.core.common.platform.Platform
+import co.xenastudios.core.common.update.UpdateChecker
+import co.xenastudios.core.common.update.UpdateSettings
 import co.xenastudios.xutilities.api.XUtilities
 import co.xenastudios.xutilities.api.XUtilitiesApi
 import co.xenastudios.xutilities.config.XUtilitiesConfig
@@ -116,6 +118,16 @@ public class XUtilitiesPlugin(
     private var labels: Set<String> = emptySet()
 
     /**
+     * The platform's update checker, which the adapter starts with [updateSettings]; every
+     * reload gives it the config's settings again, and [stop] closes it.
+     */
+    @Volatile
+    public var updates: UpdateChecker? = null
+
+    /** What the config says about checking for updates. */
+    public val updateSettings: UpdateSettings get() = XUtilitiesConfig.updates.settings(config)
+
+    /**
      * Turns the plugin on with what [Files] read: the permissions, the commands and `/back`'s
      * listener as the config says, then the API. On the global thread.
      */
@@ -128,6 +140,8 @@ public class XUtilitiesPlugin(
     /** Turns the plugin off, as the server stops: the API, the modules, then the commands. */
     public fun stop() {
         XUtilities.register(null)
+        updates?.close()
+        updates = null
         modules.clear()
         registrar?.clear()
         permissionRegistrar?.sync(emptyList())
@@ -150,6 +164,7 @@ public class XUtilitiesPlugin(
         val warnings = registrar?.sync(dispatcher).orEmpty() + commands.warnings + soundWarnings()
         warnings.forEach(log::warn)
         problems = loaded.problems + warnings
+        updates?.apply(updateSettings)
         return problems
     }
 

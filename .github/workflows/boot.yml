@@ -267,18 +267,22 @@ jobs:
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks core/core-testing/sample/bukkit/client-checks.txt)
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
-      # xUtilities alone: every command family from the console, a reload and debug.
+      # xUtilities alone: every command family from the console, a reload and debug; on a
+      # `client` cell also a real client running /fly, /heal and /back in German, then English
+      # (xutilities/bukkit/client-checks.txt).
       - name: boot xUtilities
         env:
           JAR: ${{ steps.jar.outputs.jar }}
           JAVA: ${{ steps.java.outputs.path }}
           SEED: ${{ matrix.cell.seed }}
           REGIONS: ${{ matrix.cell.regions }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
           if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
           args=()
           [[ -z $SEED ]] || args+=(--seed "$SEED")
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xutilities/bukkit/client-checks.txt)
           xutilities/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
       # The family test: xTwin and xUtilities beside xSample, each with its own relocated core,
       # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),

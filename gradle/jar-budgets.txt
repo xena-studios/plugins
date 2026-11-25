@@ -41,13 +41,11 @@
 :core:platform-fabric:twin:1.21.11 300
 :core:platform-fabric:twin:26.3 310
 
-# xUtilities 3.0 (M2, the pilot): 571 KiB on Bukkit, 528-542 KiB on Fabric, shrunk. Over the
-# rule's 163 KiB (2.x's jar): the shared core, shrunk, is about 420 KiB of it (core-common's
-# i18n, commands, config, markup and family layers each 30-45 KiB), the plugin itself about
-# 70 KiB and its eight languages 20 KiB. xSample's 476 KiB is the same core. Bringing it back
-# under 2.x's size is the core's work (#123's report); these lines hold it from growing.
-:xutilities:bukkit 630
-# Fabric: shrunk before Loom remaps it, then relocated (xutilities/fabric/build.gradle.kts).
-:core:platform-fabric:xutilities:1.20.1 580
-:core:platform-fabric:xutilities:1.21.11 580
-:core:platform-fabric:xutilities:26.3 600
+# xUtilities 3.0 (M2, the pilot), shrunk: 515 KiB on Bukkit (with bStats, the update checker,
+# Paper's loader and its startup list), over the 500 KiB rule (ROADMAP.md): reported in #167,
+# not raised past. 460-474 KiB on Fabric, shrunk before Loom remaps it, its core relocated
+# (xena.fabric-mod), whose lines stop at the rule. About 360 KiB of each is the shared core.
+:xutilities:bukkit 565
+:core:platform-fabric:xutilities:1.20.1 500
+:core:platform-fabric:xutilities:1.21.11 500
+:core:platform-fabric:xutilities:26.3 500

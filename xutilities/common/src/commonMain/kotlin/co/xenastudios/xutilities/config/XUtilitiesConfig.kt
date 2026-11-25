@@ -8,6 +8,7 @@ import co.xenastudios.core.common.config.ConfigType
 import co.xenastudios.core.common.config.YamlNode
 import co.xenastudios.core.common.family.MessagesSection
 import co.xenastudios.core.common.permission.PermissionSet
+import co.xenastudios.core.common.update.UpdatesSection
 
 /**
  * xUtilities' `config.yml`, version 3. Every setting 2.x had keeps its path, so a 2.x config
@@ -38,7 +39,8 @@ public object XUtilitiesConfig : ConfigSchema(
         "Replace the example links!",
     )
 
-    public val updateChecker: UpdateChecker = UpdateChecker(this)
+    /** The update checker: `updates.check` was 2.x's `update-checker.enabled`. */
+    public val updates: UpdatesSection = UpdatesSection(this)
 
     /** Every command's section, in file order. */
     public val all: List<CommandSection> get() = commands.all
@@ -163,17 +165,6 @@ public object XUtilitiesConfig : ConfigSchema(
         comment = arrayOf("/clear [player]: empties the inventory. include-armor: false keeps armour and the off-hand."),
     ) {
         public val includeArmor: ConfigKey<Boolean> = boolean("include-armor", true)
-    }
-
-    /** `update-checker:`. */
-    public class UpdateChecker(parent: ConfigGroup) : ConfigSection(parent, "update-checker", "Tells you when a new version is out.") {
-        // TODO(#core-m2-fixes): the core's update checker brings its own section and message;
-        // until it lands this switch is read but nothing checks.
-        public val enabled: ConfigKey<Boolean> = boolean(
-            "enabled", true,
-            "Ask Modrinth for the newest version at startup and every 24 hours. It sends only the",
-            "plugin version, the platform and the Minecraft version.",
-        )
     }
 }
 

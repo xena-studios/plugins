@@ -52,6 +52,10 @@ dependencies {
     )) {
         shade(project(module)) { isTransitive = false }
     }
+    // bStats (BukkitPlatform.metrics), with its base library, relocated below: bStats refuses
+    // to run in its own package, so every plugin carries its own copy.
+    shade(libs.bstats.bukkit)
+    compileOnly(libs.bstats.bukkit)
     fetched(libs.kotlin.stdlib) { isTransitive = false }
     fetched(libs.snakeyaml.engine.kmp.jvm) {
         exclude(group = "org.jetbrains.kotlin")
@@ -69,7 +73,7 @@ tasks.processResources {
         "libraries" to fetchedCoordinates.get().joinToString("") { "\n  - $it" },
     )
     inputs.properties(props)
-    filesMatching("plugin.yml") { expand(props) }
+    filesMatching(listOf("plugin.yml", "paper-plugin.yml")) { expand(props) }
 }
 
 tasks.shadowJar {
@@ -77,6 +81,7 @@ tasks.shadowJar {
     configurations = listOf(shadeClasspath.get())
     from(modern.output)
     relocate("co.xenastudios.core", "co.xenastudios.xutilities.core")
+    relocate("org.bstats", "co.xenastudios.xutilities.bstats")
     exclude("META-INF/*.kotlin_module", "META-INF/maven/**")
     // Bukkit API only: Paper doesn't need to remap the jar at startup.
     manifest.attributes("paperweight-mappings-namespace" to "mojang")
@@ -92,7 +97,6 @@ dependencies {
 }
 
 xenaR8 {
-    packageName = "co.xenastudios.xutilities.r8"
     libraries.from(configurations.named("fetchedJars"), serverApiClasspath)
 }
 

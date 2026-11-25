@@ -1,3 +1,4 @@
+core.update.available: "<prefix>Вышел <plugin> <highlight><latest></highlight> (у вас <current>): <click:open_url:'<url>'><hover:show_text:'Открыть страницу загрузки'><highlight><underlined><url></underlined></highlight></hover></click>"
 core.pages.footer: "<gray>Страница <page> из <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Назад</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Далее »</highlight></hover></click></has_next>"
 core.debug.checking: "<prefix>Проверка <highlight><plugin></highlight>..."
 core.debug.database.ok: "<success>✔</success> База данных: <highlight><database></highlight> ответила за <millis> мс."

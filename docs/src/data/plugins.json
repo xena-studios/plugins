@@ -27,7 +27,7 @@
       "banner": "plugins/xutilities/banner.png",
       "version": "3.0.0-alpha.1",
       "folia": true,
-      "jarBudgetKb": 630,
+      "jarBudgetKb": 565,
       "api": true,
       "rewritten": true,
       "docs": "/xutilities/",

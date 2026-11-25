@@ -28,24 +28,27 @@ Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :zchat:build       # compile, test, and check the jar's size budget
-./gradlew :zchat:runServer   # a Paper server with zChat and PlaceholderAPI, in zchat/run/
+./gradlew :zchat:common:build :zchat:bukkit:build     # tests on the JVM and wasmWasi, the R8 jar and its budget
+./gradlew :zchat:bukkit:runServer                     # a Paper server with the jar, in zchat/bukkit/run/
+./gradlew -p core/platform-fabric :zchat:26.3:collect # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+zchat/bukkit/boot.sh paper 26.3 --java <JDK 25 home>  # the boot checks on a real server
+./gradlew :zchat:api:updateKotlinAbi                  # after a deliberate API change
+./gradlew :zchat:common:updateXenaManifest            # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-api/               the developer API (co.xenastudios.zchat:zchat-api), shipped inside the jar
-src/main/java/co/xenastudios/zchat/
-  ZChat.java       the plugin: declares the config and, in setup, the features it turns on
-  Api.java         the developer API's implementation, registered while the plugin is enabled
-  chat/            the chat path: the listener, formats, the filter, mentions, anti-repeat
-  command/         /mutechat, /clearchat, /togglechat, /filter, and private messages (/msg, /reply, social spy)
-  config/          the config records; ZConfig carries a zChat 2 config forward
-boot-checks.txt    console commands CI runs on real Paper and Folia servers, and what each must log
-CHANGELOG.md       one section per release; the release workflow publishes it
-modrinth.md        the Modrinth project page, published when it changes on main
+api/        the developer API (ZChatApi, ZChat.api(), mute providers, hidden players, placeholders, chat's events)
+common/     everything zChat does, in Kotlin Multiplatform: the config and its migrations from 2.x and 3.x, the
+            messages (lang/ in its resources), the filter, formats, mentions, the chat path and the commands;
+            jvmMain reads the files on a JVM server
+bukkit/     the Paper, Folia, Spigot and CraftBukkit jar: what it does to players, from 1.8.8 on, PlaceholderAPI
+            and the Bukkit events
+fabric/     the Fabric mod, a branch of core/platform-fabric's own build, one jar per Minecraft line
+CHANGELOG.md   one section per release; the release workflow publishes it
+modrinth.md    the Modrinth and Hangar project page, published when it changes on main
 ```
 
-Anything on the chat path runs for every message, so keep it allocation-light and do the work when the config loads instead. `ChatBenchmarkTest` times a message and fails if it gets much slower. The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
+Anything on the chat path runs for every message, so keep it allocation-light and do the work when the config loads instead. The shared core (the chat bridge, config, messages, commands, the family, the platforms) is in [`core/`](../core).
 
 ## Licence
 

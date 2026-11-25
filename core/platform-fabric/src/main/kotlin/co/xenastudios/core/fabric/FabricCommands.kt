@@ -155,7 +155,8 @@ internal object BrigadierMaps {
  * Minecraft's when the first executor in its tree is a lambda of one of Minecraft's classes
  * (`net.minecraft.server.commands.GameModeCommand$$Lambda...`, or `net.minecraft.class_...` in
  * intermediary names). A mod's command runs the mod's own code, even when it borrows
- * Minecraft's permission check.
+ * Minecraft's permission check. An alias Minecraft makes as a redirect (`/tell` and `/w` to
+ * `/msg`, `/tm` to `/teammsg`) has no executor of its own, so the redirect's target is looked at.
  */
 internal object MinecraftCommands {
     fun owns(node: CommandNode<*>): Boolean {
@@ -167,6 +168,7 @@ internal object MinecraftCommands {
         node.command?.let { return it }
         // A command's tree is shallow; a redirect loop or a huge tree stops here.
         if (depth > 8) return null
+        node.redirect?.let { target -> firstCommand(target, depth + 1)?.let { return it } }
         for (child in node.children) firstCommand(child, depth + 1)?.let { return it }
         return null
     }

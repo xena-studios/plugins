@@ -1,0 +1,166 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.zchat.api/MessageKind : kotlin/Enum<co.xenastudios.zchat.api/MessageKind> { // co.xenastudios.zchat.api/MessageKind|null[0]
+    enum entry CHAT // co.xenastudios.zchat.api/MessageKind.CHAT|null[0]
+    enum entry PRIVATE_MESSAGE // co.xenastudios.zchat.api/MessageKind.PRIVATE_MESSAGE|null[0]
+
+    final val entries // co.xenastudios.zchat.api/MessageKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.zchat.api/MessageKind> // co.xenastudios.zchat.api/MessageKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.zchat.api/MessageKind // co.xenastudios.zchat.api/MessageKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.zchat.api/MessageKind> // co.xenastudios.zchat.api/MessageKind.values|values#static(){}[0]
+}
+
+abstract fun interface co.xenastudios.zchat.api/ChatPlaceholder { // co.xenastudios.zchat.api/ChatPlaceholder|null[0]
+    abstract fun value(co.xenastudios.core.api/PlayerRef): kotlin/String? // co.xenastudios.zchat.api/ChatPlaceholder.value|value(co.xenastudios.core.api.PlayerRef){}[0]
+}
+
+abstract fun interface co.xenastudios.zchat.api/HiddenPlayers { // co.xenastudios.zchat.api/HiddenPlayers|null[0]
+    abstract fun isHidden(co.xenastudios.core.api/PlayerRef, co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.zchat.api/HiddenPlayers.isHidden|isHidden(co.xenastudios.core.api.PlayerRef;co.xenastudios.core.api.PlayerRef){}[0]
+}
+
+abstract fun interface co.xenastudios.zchat.api/MuteProvider { // co.xenastudios.zchat.api/MuteProvider|null[0]
+    abstract fun muteReason(co.xenastudios.core.api/PlayerRef, co.xenastudios.zchat.api/MessageKind): kotlin/String? // co.xenastudios.zchat.api/MuteProvider.muteReason|muteReason(co.xenastudios.core.api.PlayerRef;co.xenastudios.zchat.api.MessageKind){}[0]
+}
+
+abstract interface co.xenastudios.zchat.api/ZChatApi { // co.xenastudios.zchat.api/ZChatApi|null[0]
+    abstract val events // co.xenastudios.zchat.api/ZChatApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.zchat.api/ZChatApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.zchat.api/ZChatApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.zchat.api/ZChatApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun broadcast(kotlin/String) // co.xenastudios.zchat.api/ZChatApi.broadcast|broadcast(kotlin.String){}[0]
+    abstract fun getFormatName(co.xenastudios.core.api/PlayerRef): kotlin/String // co.xenastudios.zchat.api/ZChatApi.getFormatName|getFormatName(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun hasChatHidden(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.zchat.api/ZChatApi.hasChatHidden|hasChatHidden(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun isChatMuted(): kotlin/Boolean // co.xenastudios.zchat.api/ZChatApi.isChatMuted|isChatMuted(){}[0]
+    abstract fun registerHiddenPlayers(kotlin/String, co.xenastudios.zchat.api/HiddenPlayers) // co.xenastudios.zchat.api/ZChatApi.registerHiddenPlayers|registerHiddenPlayers(kotlin.String;co.xenastudios.zchat.api.HiddenPlayers){}[0]
+    abstract fun registerMuteProvider(kotlin/String, co.xenastudios.zchat.api/MuteProvider) // co.xenastudios.zchat.api/ZChatApi.registerMuteProvider|registerMuteProvider(kotlin.String;co.xenastudios.zchat.api.MuteProvider){}[0]
+    abstract fun registerPlaceholder(kotlin/String, co.xenastudios.zchat.api/ChatPlaceholder) // co.xenastudios.zchat.api/ZChatApi.registerPlaceholder|registerPlaceholder(kotlin.String;co.xenastudios.zchat.api.ChatPlaceholder){}[0]
+    abstract fun send(co.xenastudios.core.api/PlayerRef, kotlin/String): kotlin/Boolean // co.xenastudios.zchat.api/ZChatApi.send|send(co.xenastudios.core.api.PlayerRef;kotlin.String){}[0]
+    abstract fun unregisterHiddenPlayers(co.xenastudios.zchat.api/HiddenPlayers) // co.xenastudios.zchat.api/ZChatApi.unregisterHiddenPlayers|unregisterHiddenPlayers(co.xenastudios.zchat.api.HiddenPlayers){}[0]
+    abstract fun unregisterMuteProvider(co.xenastudios.zchat.api/MuteProvider) // co.xenastudios.zchat.api/ZChatApi.unregisterMuteProvider|unregisterMuteProvider(co.xenastudios.zchat.api.MuteProvider){}[0]
+    abstract fun unregisterPlaceholder(kotlin/String) // co.xenastudios.zchat.api/ZChatApi.unregisterPlaceholder|unregisterPlaceholder(kotlin.String){}[0]
+
+    final object Companion { // co.xenastudios.zchat.api/ZChatApi.Companion|null[0]
+        final const val DEFAULT_FORMAT // co.xenastudios.zchat.api/ZChatApi.Companion.DEFAULT_FORMAT|{}DEFAULT_FORMAT[0]
+            final fun <get-DEFAULT_FORMAT>(): kotlin/String // co.xenastudios.zchat.api/ZChatApi.Companion.DEFAULT_FORMAT.<get-DEFAULT_FORMAT>|<get-DEFAULT_FORMAT>(){}[0]
+    }
+}
+
+final class co.xenastudios.zchat.api.event/ChatMessageEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.zchat.api.event/ChatMessageEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin/String, kotlin/String, kotlin/Boolean) // co.xenastudios.zchat.api.event/ChatMessageEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.String;kotlin.String;kotlin.Boolean){}[0]
+
+    final val async // co.xenastudios.zchat.api.event/ChatMessageEvent.async|{}async[0]
+        final fun <get-async>(): kotlin/Boolean // co.xenastudios.zchat.api.event/ChatMessageEvent.async.<get-async>|<get-async>(){}[0]
+    final val formatName // co.xenastudios.zchat.api.event/ChatMessageEvent.formatName|{}formatName[0]
+        final fun <get-formatName>(): kotlin/String // co.xenastudios.zchat.api.event/ChatMessageEvent.formatName.<get-formatName>|<get-formatName>(){}[0]
+    final val message // co.xenastudios.zchat.api.event/ChatMessageEvent.message|{}message[0]
+        final fun <get-message>(): kotlin/String // co.xenastudios.zchat.api.event/ChatMessageEvent.message.<get-message>|<get-message>(){}[0]
+    final val placeholders // co.xenastudios.zchat.api.event/ChatMessageEvent.placeholders|{}placeholders[0]
+        final fun <get-placeholders>(): kotlin.collections/Map<kotlin/String, kotlin/String> // co.xenastudios.zchat.api.event/ChatMessageEvent.placeholders.<get-placeholders>|<get-placeholders>(){}[0]
+    final val player // co.xenastudios.zchat.api.event/ChatMessageEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.zchat.api.event/ChatMessageEvent.player.<get-player>|<get-player>(){}[0]
+    final val playerName // co.xenastudios.zchat.api.event/ChatMessageEvent.playerName|{}playerName[0]
+        final fun <get-playerName>(): kotlin/String // co.xenastudios.zchat.api.event/ChatMessageEvent.playerName.<get-playerName>|<get-playerName>(){}[0]
+
+    final fun placeholder(kotlin/String, kotlin/String) // co.xenastudios.zchat.api.event/ChatMessageEvent.placeholder|placeholder(kotlin.String;kotlin.String){}[0]
+
+    final object Companion { // co.xenastudios.zchat.api.event/ChatMessageEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.zchat.api.event/ChatMessageEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.zchat.api.event/ChatMessageEvent> // co.xenastudios.zchat.api.event/ChatMessageEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.zchat.api.event/ChatMessageSentEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.zchat.api.event/ChatMessageSentEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin/String, kotlin.collections/Set<co.xenastudios.core.api/PlayerRef>, kotlin/Boolean) // co.xenastudios.zchat.api.event/ChatMessageSentEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.String;kotlin.collections.Set<co.xenastudios.core.api.PlayerRef>;kotlin.Boolean){}[0]
+
+    final val message // co.xenastudios.zchat.api.event/ChatMessageSentEvent.message|{}message[0]
+        final fun <get-message>(): kotlin/String // co.xenastudios.zchat.api.event/ChatMessageSentEvent.message.<get-message>|<get-message>(){}[0]
+    final val network // co.xenastudios.zchat.api.event/ChatMessageSentEvent.network|{}network[0]
+        final fun <get-network>(): kotlin/Boolean // co.xenastudios.zchat.api.event/ChatMessageSentEvent.network.<get-network>|<get-network>(){}[0]
+    final val player // co.xenastudios.zchat.api.event/ChatMessageSentEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.zchat.api.event/ChatMessageSentEvent.player.<get-player>|<get-player>(){}[0]
+    final val playerName // co.xenastudios.zchat.api.event/ChatMessageSentEvent.playerName|{}playerName[0]
+        final fun <get-playerName>(): kotlin/String // co.xenastudios.zchat.api.event/ChatMessageSentEvent.playerName.<get-playerName>|<get-playerName>(){}[0]
+    final val recipients // co.xenastudios.zchat.api.event/ChatMessageSentEvent.recipients|{}recipients[0]
+        final fun <get-recipients>(): kotlin.collections/Set<co.xenastudios.core.api/PlayerRef> // co.xenastudios.zchat.api.event/ChatMessageSentEvent.recipients.<get-recipients>|<get-recipients>(){}[0]
+
+    final object Companion { // co.xenastudios.zchat.api.event/ChatMessageSentEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.zchat.api.event/ChatMessageSentEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.zchat.api.event/ChatMessageSentEvent> // co.xenastudios.zchat.api.event/ChatMessageSentEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.zchat.api.event/FilterMatchEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.zchat.api.event/FilterMatchEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.zchat.api/MessageKind, kotlin/String, kotlin.collections/List<kotlin/String>, kotlin/Boolean) // co.xenastudios.zchat.api.event/FilterMatchEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.zchat.api.MessageKind;kotlin.String;kotlin.collections.List<kotlin.String>;kotlin.Boolean){}[0]
+
+    final val blocked // co.xenastudios.zchat.api.event/FilterMatchEvent.blocked|{}blocked[0]
+        final fun <get-blocked>(): kotlin/Boolean // co.xenastudios.zchat.api.event/FilterMatchEvent.blocked.<get-blocked>|<get-blocked>(){}[0]
+    final val kind // co.xenastudios.zchat.api.event/FilterMatchEvent.kind|{}kind[0]
+        final fun <get-kind>(): co.xenastudios.zchat.api/MessageKind // co.xenastudios.zchat.api.event/FilterMatchEvent.kind.<get-kind>|<get-kind>(){}[0]
+    final val matches // co.xenastudios.zchat.api.event/FilterMatchEvent.matches|{}matches[0]
+        final fun <get-matches>(): kotlin.collections/List<kotlin/String> // co.xenastudios.zchat.api.event/FilterMatchEvent.matches.<get-matches>|<get-matches>(){}[0]
+    final val message // co.xenastudios.zchat.api.event/FilterMatchEvent.message|{}message[0]
+        final fun <get-message>(): kotlin/String // co.xenastudios.zchat.api.event/FilterMatchEvent.message.<get-message>|<get-message>(){}[0]
+    final val player // co.xenastudios.zchat.api.event/FilterMatchEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.zchat.api.event/FilterMatchEvent.player.<get-player>|<get-player>(){}[0]
+
+    final object Companion { // co.xenastudios.zchat.api.event/FilterMatchEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.zchat.api.event/FilterMatchEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.zchat.api.event/FilterMatchEvent> // co.xenastudios.zchat.api.event/FilterMatchEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.zchat.api.event/MentionEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.zchat.api.event/MentionEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.core.api/PlayerRef, kotlin/Boolean) // co.xenastudios.zchat.api.event/MentionEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.core.api.PlayerRef;kotlin.Boolean){}[0]
+
+    final val everyone // co.xenastudios.zchat.api.event/MentionEvent.everyone|{}everyone[0]
+        final fun <get-everyone>(): kotlin/Boolean // co.xenastudios.zchat.api.event/MentionEvent.everyone.<get-everyone>|<get-everyone>(){}[0]
+    final val mentioned // co.xenastudios.zchat.api.event/MentionEvent.mentioned|{}mentioned[0]
+        final fun <get-mentioned>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.zchat.api.event/MentionEvent.mentioned.<get-mentioned>|<get-mentioned>(){}[0]
+    final val sender // co.xenastudios.zchat.api.event/MentionEvent.sender|{}sender[0]
+        final fun <get-sender>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.zchat.api.event/MentionEvent.sender.<get-sender>|<get-sender>(){}[0]
+
+    final object Companion { // co.xenastudios.zchat.api.event/MentionEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.zchat.api.event/MentionEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.zchat.api.event/MentionEvent> // co.xenastudios.zchat.api.event/MentionEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.zchat.api.event/PrivateMessageEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.zchat.api.event/PrivateMessageEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef?, kotlin/String, co.xenastudios.core.api/PlayerRef?, kotlin/String, kotlin/String, kotlin/Boolean, kotlin/Boolean) // co.xenastudios.zchat.api.event/PrivateMessageEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef?;kotlin.String;co.xenastudios.core.api.PlayerRef?;kotlin.String;kotlin.String;kotlin.Boolean;kotlin.Boolean){}[0]
+
+    final val network // co.xenastudios.zchat.api.event/PrivateMessageEvent.network|{}network[0]
+        final fun <get-network>(): kotlin/Boolean // co.xenastudios.zchat.api.event/PrivateMessageEvent.network.<get-network>|<get-network>(){}[0]
+    final val recipient // co.xenastudios.zchat.api.event/PrivateMessageEvent.recipient|{}recipient[0]
+        final fun <get-recipient>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.zchat.api.event/PrivateMessageEvent.recipient.<get-recipient>|<get-recipient>(){}[0]
+    final val recipientName // co.xenastudios.zchat.api.event/PrivateMessageEvent.recipientName|{}recipientName[0]
+        final fun <get-recipientName>(): kotlin/String // co.xenastudios.zchat.api.event/PrivateMessageEvent.recipientName.<get-recipientName>|<get-recipientName>(){}[0]
+    final val reply // co.xenastudios.zchat.api.event/PrivateMessageEvent.reply|{}reply[0]
+        final fun <get-reply>(): kotlin/Boolean // co.xenastudios.zchat.api.event/PrivateMessageEvent.reply.<get-reply>|<get-reply>(){}[0]
+    final val sender // co.xenastudios.zchat.api.event/PrivateMessageEvent.sender|{}sender[0]
+        final fun <get-sender>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.zchat.api.event/PrivateMessageEvent.sender.<get-sender>|<get-sender>(){}[0]
+    final val senderName // co.xenastudios.zchat.api.event/PrivateMessageEvent.senderName|{}senderName[0]
+        final fun <get-senderName>(): kotlin/String // co.xenastudios.zchat.api.event/PrivateMessageEvent.senderName.<get-senderName>|<get-senderName>(){}[0]
+
+    final var message // co.xenastudios.zchat.api.event/PrivateMessageEvent.message|{}message[0]
+        final fun <get-message>(): kotlin/String // co.xenastudios.zchat.api.event/PrivateMessageEvent.message.<get-message>|<get-message>(){}[0]
+        final fun <set-message>(kotlin/String) // co.xenastudios.zchat.api.event/PrivateMessageEvent.message.<set-message>|<set-message>(kotlin.String){}[0]
+
+    final object Companion { // co.xenastudios.zchat.api.event/PrivateMessageEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.zchat.api.event/PrivateMessageEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.zchat.api.event/PrivateMessageEvent> // co.xenastudios.zchat.api.event/PrivateMessageEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final object co.xenastudios.zchat.api/ZChat { // co.xenastudios.zchat.api/ZChat|null[0]
+    final fun api(): co.xenastudios.zchat.api/ZChatApi // co.xenastudios.zchat.api/ZChat.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.zchat.api/ZChat.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.zchat.api/ZChatApi?) // co.xenastudios.zchat.api/ZChat.register|register(co.xenastudios.zchat.api.ZChatApi?){}[0]
+}

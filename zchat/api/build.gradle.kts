@@ -1,5 +1,15 @@
 plugins {
-    id("xena.api")
+    id("xena.kmp-api")
 }
 
-description = "zChat's developer API: mute providers, broadcasts, chat state and chat events."
+group = "co.xenastudios"
+description = "zChat's developer API: mutes, hidden players, placeholders, broadcasts and chat's events, the same on every platform."
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            // Players and events, as every Xena plugin's API has them.
+            api(project(":core:core-api"))
+        }
+    }
+}

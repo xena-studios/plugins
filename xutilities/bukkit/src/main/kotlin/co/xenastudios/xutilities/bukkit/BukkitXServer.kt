@@ -29,7 +29,7 @@ import co.xenastudios.xutilities.bukkit.modern.repairMeta
 import co.xenastudios.xutilities.bukkit.modern.setMainHand
 import co.xenastudios.xutilities.bukkit.modern.setRotation
 import co.xenastudios.xutilities.bukkit.modern.teleportAsync
-import co.xenastudios.xutilities.config.Sound
+import co.xenastudios.core.common.config.Sound
 import org.bukkit.World
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler

@@ -1,0 +1,16 @@
+---
+title: Commands
+description: "Every zChat command: its arguments, aliases and permission."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`<angle brackets>` are required. Aliases are the defaults; change them in the [config](/zchat/configuration/), where every command can also be turned off or given another permission. A player without a command's permission doesn't see it in tab completion.
+
+- **`/msg`** replaces Minecraft's `/msg`, `/tell` and `/w`, and gives them back when turned off. A command another plugin already has is left to it, with a console warning; ours stays reachable as `/zchat:<name>`. See [Private messages](/zchat/mentions/#private-messages).
+- **`/filter`** edits `filter.words` in `config.yml`, comments kept, and applies at once: see [Moderation](/zchat/moderation/#changing-words-in-game-filter).
+- **`/zchat forget <player>`** deletes what zChat keeps about a player: their remembered `/togglechat` and `/socialspy`. Nothing else is kept per player.
+
+<Reference plugin="zchat" show="commands" />

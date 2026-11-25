@@ -1,0 +1,20 @@
+# Paper and Folia from 1.19.3 read this instead of plugin.yml; Spigot and older Paper ignore it.
+# The same plugin, with its libraries handed to Paper by the core's loader from the family's
+# cache rather than resolved by Paper from plugin.yml's libraries: at every boot (DECISIONS.md).
+name: zChat
+version: '${version}'
+main: co.xenastudios.zchat.bukkit.ZChatBootstrap
+# The core's, relocated into the plugin's package with the rest of it.
+loader: co.xenastudios.zchat.core.loader.paper.PaperLibraryLoader
+api-version: '1.19'
+folia-supported: true
+description: Format your chat. Keep it clean.
+website: https://plugins.xenastudios.co/zchat/
+authors: [Xena Studios]
+dependencies:
+  server:
+    # Optional: fills in %placeholders% in chat formats when it's installed.
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true

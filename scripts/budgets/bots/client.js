@@ -7,10 +7,12 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat]
 //
-// --plugin picks whose commands it checks: xSample's (the default), or xUtilities' (/fly,
-// /heal and /back, a teleport and its way back, and /gamemode's completion).
+// --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
+// /heal and /back, a teleport and its way back, and /gamemode's completion), or zChat's (a
+// second client, Friend, who isn't an operator: chat in zChat's format, the filter, a mention
+// with its sound, /msg and /reply between the two, and /togglechat in German).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks.
@@ -93,10 +95,63 @@ async function xutilities () {
   finish()
 }
 
+// zChat between two players: Joiner (an operator, in German) and Friend (not one, so the filter
+// and the cooldown apply to them).
+async function zchat () {
+  const friend = mineflayer.createBot({ host: '127.0.0.1', port, username: 'Friend', auth: 'offline', version: false })
+  const friendHeard = []
+  let friendSounds = 0
+  let joinerSounds = 0
+  friend.on('message', (msg) => friendHeard.push((msg.unsigned || msg).toString()))
+  friend.on('soundEffectHeard', () => { friendSounds++ })
+  friend.on('hardcodedSoundEffectHeard', () => { friendSounds++ })
+  bot.on('soundEffectHeard', () => { joinerSounds++ })
+  bot.on('hardcodedSoundEffectHeard', () => { joinerSounds++ })
+  friend.on('error', (e) => fail(`Friend's client error: ${e.message}`, true))
+  await new Promise((resolve) => friend.once('spawn', resolve))
+  await sleep(2000)
+  const friendHears = async (text, from, ms = 8000) => {
+    for (let waited = 0; waited < ms; waited += 100) {
+      if (friendHeard.slice(from).some((l) => l.includes(text))) return true
+      await sleep(100)
+    }
+    return false
+  }
+  // Chat in zChat's default format, drawn once: both players see the same line.
+  let from = friendHeard.length
+  await command('hello from the client', `${username}: hello from the client`, "chat in zChat's format, to the sender")
+  check('chat in zChat\'s format, to another player', await friendHears(`${username}: hello from the client`, from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  // The filter, on a player without its bypass.
+  let mine = heard.length
+  friend.chat('you badword1 there')
+  check('the filter censors a word', await hear('Friend: you ******** there', mine) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  // A mention: highlighted, and the mentioned player hears the ping.
+  await sleep(3500)
+  mine = heard.length
+  const before = joinerSounds
+  friend.chat(`hey ${username.toLowerCase()} look`)
+  check('a mention is highlighted', await hear(`Friend: hey @${username} look`, mine) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  await sleep(1500)
+  check('the mentioned player hears the ping', joinerSounds > before, `${joinerSounds - before} sounds`)
+  // /msg and /reply between the two.
+  from = friendHeard.length
+  await command('/msg Friend psst over here', 'You → Friend: psst over here', '/msg shows the sender their line')
+  check('/msg reaches the other player', await friendHears(`${username} → You: psst over here`, from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  mine = heard.length
+  friend.chat('/r got it')
+  check('/reply answers the last message', await hear('Friend → You: got it', mine) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  // A reply from zChat's lang/de.yml.
+  await command('/togglechat', 'ausgeblendet', "/togglechat answers in the client's language (German)")
+  await command('/togglechat', 'angezeigt', '/togglechat again shows chat')
+  try { friend.quit() } catch {}
+  finish()
+}
+
 async function run () {
   // The server reads the client's language as it joins (1.8.8 a moment later) and records it.
   await sleep(3000)
   if (plugin === 'xutilities') return xutilities()
+  if (plugin === 'zchat') return zchat()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")

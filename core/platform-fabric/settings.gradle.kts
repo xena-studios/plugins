@@ -50,12 +50,14 @@ stonecutter {
         // xUtilities' Fabric mod. Its folder is xutilities/fabric, in the plugin's own folder
         // (ROADMAP.md, Architecture); it's a branch here, set to that folder below.
         branch("xutilities")
+        // zChat's Fabric mod, likewise, from zchat/fabric.
+        branch("zchat")
     }
 }
 
 // A plugin's Fabric adapter lives in its own folder; its branch here is pointed at it, and each
 // Minecraft line's node at its versions/ folder there, as Stonecutter puts a branch's nodes.
-for (plugin in listOf("xutilities")) {
+for (plugin in listOf("xutilities", "zchat")) {
     val folder = file("../../$plugin/fabric")
     project(":$plugin").projectDir = folder
     for (node in project(":$plugin").children) node.projectDir = folder.resolve("versions/${node.name}").also { it.mkdirs() }
@@ -100,5 +102,6 @@ includeBuild("../..") {
         substitute(module("co.xenastudios.core:sample")).using(project(":core:core-testing:sample"))
         substitute(module("co.xenastudios.core:twin")).using(project(":core:core-testing:twin"))
         substitute(module("co.xenastudios:xutilities-common")).using(project(":xutilities:common"))
+        substitute(module("co.xenastudios:zchat-common")).using(project(":zchat:common"))
     }
 }

@@ -1,0 +1,122 @@
+public abstract interface class co/xenastudios/zchat/api/ChatPlaceholder {
+	public abstract fun value (Lco/xenastudios/core/api/PlayerRef;)Ljava/lang/String;
+}
+
+public abstract interface class co/xenastudios/zchat/api/HiddenPlayers {
+	public abstract fun isHidden (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/PlayerRef;)Z
+}
+
+public final class co/xenastudios/zchat/api/MessageKind : java/lang/Enum {
+	public static final field CHAT Lco/xenastudios/zchat/api/MessageKind;
+	public static final field PRIVATE_MESSAGE Lco/xenastudios/zchat/api/MessageKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/zchat/api/MessageKind;
+	public static fun values ()[Lco/xenastudios/zchat/api/MessageKind;
+}
+
+public abstract interface class co/xenastudios/zchat/api/MuteProvider {
+	public abstract fun muteReason (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/zchat/api/MessageKind;)Ljava/lang/String;
+}
+
+public final class co/xenastudios/zchat/api/ZChat {
+	public static final field INSTANCE Lco/xenastudios/zchat/api/ZChat;
+	public static final fun api ()Lco/xenastudios/zchat/api/ZChatApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/zchat/api/ZChatApi;)V
+}
+
+public abstract interface class co/xenastudios/zchat/api/ZChatApi {
+	public static final field Companion Lco/xenastudios/zchat/api/ZChatApi$Companion;
+	public static final field DEFAULT_FORMAT Ljava/lang/String;
+	public abstract fun broadcast (Ljava/lang/String;)V
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getFormatName (Lco/xenastudios/core/api/PlayerRef;)Ljava/lang/String;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun hasChatHidden (Lco/xenastudios/core/api/PlayerRef;)Z
+	public abstract fun isChatMuted ()Z
+	public abstract fun registerHiddenPlayers (Ljava/lang/String;Lco/xenastudios/zchat/api/HiddenPlayers;)V
+	public abstract fun registerMuteProvider (Ljava/lang/String;Lco/xenastudios/zchat/api/MuteProvider;)V
+	public abstract fun registerPlaceholder (Ljava/lang/String;Lco/xenastudios/zchat/api/ChatPlaceholder;)V
+	public abstract fun send (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)Z
+	public abstract fun unregisterHiddenPlayers (Lco/xenastudios/zchat/api/HiddenPlayers;)V
+	public abstract fun unregisterMuteProvider (Lco/xenastudios/zchat/api/MuteProvider;)V
+	public abstract fun unregisterPlaceholder (Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/zchat/api/ZChatApi$Companion {
+	public static final field DEFAULT_FORMAT Ljava/lang/String;
+}
+
+public final class co/xenastudios/zchat/api/event/ChatMessageEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/zchat/api/event/ChatMessageEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public final fun getAsync ()Z
+	public final fun getFormatName ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getPlaceholders ()Ljava/util/Map;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getPlayerName ()Ljava/lang/String;
+	public final fun placeholder (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/zchat/api/event/ChatMessageEvent$Companion {
+}
+
+public final class co/xenastudios/zchat/api/event/ChatMessageSentEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/zchat/api/event/ChatMessageSentEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Z)V
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getNetwork ()Z
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getPlayerName ()Ljava/lang/String;
+	public final fun getRecipients ()Ljava/util/Set;
+}
+
+public final class co/xenastudios/zchat/api/event/ChatMessageSentEvent$Companion {
+}
+
+public final class co/xenastudios/zchat/api/event/FilterMatchEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/zchat/api/event/FilterMatchEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/zchat/api/MessageKind;Ljava/lang/String;Ljava/util/List;Z)V
+	public final fun getBlocked ()Z
+	public final fun getKind ()Lco/xenastudios/zchat/api/MessageKind;
+	public final fun getMatches ()Ljava/util/List;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+}
+
+public final class co/xenastudios/zchat/api/event/FilterMatchEvent$Companion {
+}
+
+public final class co/xenastudios/zchat/api/event/MentionEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/zchat/api/event/MentionEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/PlayerRef;Z)V
+	public final fun getEveryone ()Z
+	public final fun getMentioned ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getSender ()Lco/xenastudios/core/api/PlayerRef;
+}
+
+public final class co/xenastudios/zchat/api/event/MentionEvent$Companion {
+}
+
+public final class co/xenastudios/zchat/api/event/PrivateMessageEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/zchat/api/event/PrivateMessageEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Ljava/lang/String;ZZ)V
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getNetwork ()Z
+	public final fun getRecipient ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getRecipientName ()Ljava/lang/String;
+	public final fun getReply ()Z
+	public final fun getSender ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getSenderName ()Ljava/lang/String;
+	public final fun setMessage (Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/zchat/api/event/PrivateMessageEvent$Companion {
+}
+

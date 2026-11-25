@@ -1,5 +1,41 @@
 # zChat changelog
 
+## 4.0.0 (unreleased)
+
+Not released yet: 4.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 3.2 is the release, and 3.x gets its fixes.
+
+The rewrite: the same formats, filter, commands, permissions and settings as 3.2, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, and **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), with zChat's messages in eight languages. Keep the 3.2 jar to go back to.
+
+### Upgrading from 3.x
+
+Replace the jar and restart. Your `config.yml` is carried forward and the old one is kept beside it as `config.yml.bak-v2` (`config.yml.bak-v1` from 2.x). See [Upgrading from 3.x](https://plugins.xenastudios.co/zchat/upgrade/).
+
+- **Messages are in `lang/` now**, one file per language, no longer in `config.yml`. Every message you changed in 3.x is copied into `lang/en.yml` on the first start, and then zChat sends English to everyone (`messages.language: en`), as 3.x did. Set it to `auto` to give each player their own language. **Chat formats stay in `config.yml`.**
+- **`theme` moved into `messages.theme`**, shared with the other Xena plugins in `plugins/Xena/config.yml` unless you set it here. Colours you changed in 3.x stay zChat's own.
+- The error messages (`messages.error.*`) are the core's now: `core.command.*` in `lang/`. "No player named ... is online" is the shared "No player called ... is online", unless you'd changed it.
+- `update-checker` is `updates` now: `update-checker.enabled` is carried to `updates.check`.
+- Remembered `/togglechat` and `/socialspy` choices are kept in `players.records` in zChat's folder; 3.x's, kept on the player, are brought over as each player joins (Bukkit 1.14 and newer). `/zchat forget <player>` deletes a player's.
+- **Going back to 3.2:** stop the server, put the 3.2 jar back, and rename `config.yml.bak-v2` to `config.yml` (keep 4.0's as `config.yml.v4`). If you don't, 3.2 still starts and keeps your formats, filter and commands, with its own default messages.
+
+### For developers: the API's breaking changes
+
+- `ZChat.api()` replaces `ZChatApi.get()`. Players are `PlayerRef`s (by UUID), and text is zChat's markup (`String`) instead of Adventure `Component`s, so one API works on every platform.
+- `registerMuteProvider(String owner, MuteProvider)`: the provider gets a `PlayerRef` and returns a reason in markup, or `null`.
+- The events are zChat's own, on `api.getEvents()` (`ChatMessageEvent.TYPE` and the others), and on Bukkit also Bukkit events in `co.xenastudios.zchat.api.bukkit` (`BukkitChatMessageEvent`, ...). Their messages are plain text; `ChatMessageEvent.placeholder(name, value)` replaces `addPlaceholder`.
+- See [Developer API](https://plugins.xenastudios.co/zchat/developer-api/#from-3x) for every change.
+
+### Added
+
+- **Spigot, CraftBukkit and Fabric**, from 1.8.8 and 1.20.1, beside Paper and Folia.
+- **Translations:** zChat's messages in German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese, each player in their client's language.
+- **`/zchat debug`** (health checks and a report to share) and **`/zchat forget <player>`**.
+- **For other plugins:** a vanish plugin can hide players from mentions, `/msg` and its completion, and a plugin can give chat formats tags of its own (`<balance>`).
+
+### Changed
+
+- A message another chat plugin changed before zChat (an `[item]` tag) is shown with its text, but without the hover it added, once zChat draws the format: the core's chat bridge works on text on every platform.
+- On Spigot 1.19 and newer and on Fabric, a formatted line is sent as the server's own message, unsigned, as those servers do for any chat a plugin changes. Paper and Folia keep the player's signature.
+
 ## 3.2.0
 
 Replace the jar and restart. Your config is kept as it is.

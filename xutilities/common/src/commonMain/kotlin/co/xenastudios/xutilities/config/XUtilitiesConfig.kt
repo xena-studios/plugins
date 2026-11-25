@@ -8,6 +8,7 @@ import co.xenastudios.core.common.config.ConfigType
 import co.xenastudios.core.common.config.YamlNode
 import co.xenastudios.core.common.family.MessagesSection
 import co.xenastudios.core.common.permission.PermissionSet
+import co.xenastudios.core.common.config.Sound
 import co.xenastudios.core.common.update.UpdatesSection
 
 /**
@@ -221,60 +222,4 @@ public class SoundCommand(
     vararg comment: String,
 ) : CommandSection(parent, name, defaultAliases, others, *comment) {
     public val sound: ConfigKey<Sound> = key("sound", Sound.TYPE, sound)
-}
-
-/**
- * A sound as the config writes it: its Minecraft name, then optionally a volume (0 to 10) and
- * a pitch (0.5 to 2), `"block.anvil.use 0.5 1.2"`. Blank is none.
- */
-public class Sound(public val name: String, public val volume: Float = 1f, public val pitch: Float = 1f) {
-    /** Whether it plays nothing. */
-    public val isNone: Boolean get() = name.isEmpty()
-
-    override fun equals(other: Any?): Boolean = other is Sound && other.name == name && other.volume == volume && other.pitch == pitch
-    override fun hashCode(): Int = (name.hashCode() * 31 + volume.hashCode()) * 31 + pitch.hashCode()
-
-    /** As the config writes it. */
-    override fun toString(): String = when {
-        isNone -> ""
-        pitch != 1f -> "$name ${number(volume)} ${number(pitch)}"
-        volume != 1f -> "$name ${number(volume)}"
-        else -> name
-    }
-
-    public companion object {
-        /** No sound. */
-        public val NONE: Sound = Sound("")
-
-        private val NAME = Regex("[a-z0-9_.:/-]+")
-
-        /** A sound as the config writes it, or [NONE] if blank. Throws on one that can't be read: for defaults. */
-        public fun parse(text: String): Sound = when (val read = read(text)) {
-            is co.xenastudios.core.common.Outcome.Ok -> read.value
-            is co.xenastudios.core.common.Outcome.Err -> throw IllegalArgumentException("\"$text\" ${read.error}")
-        }
-
-        internal fun read(text: String): co.xenastudios.core.common.Outcome<Sound, String> {
-            val parts = text.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
-            if (parts.isEmpty()) return co.xenastudios.core.common.Outcome.Ok(NONE)
-            if (parts.size > 3) return co.xenastudios.core.common.Outcome.Err("should be a sound's name, then optionally a volume and a pitch")
-            val name = parts[0].lowercase()
-            if (!NAME.matches(name)) return co.xenastudios.core.common.Outcome.Err("should start with a sound's name, such as block.anvil.use")
-            val volume = parts.getOrNull(1)?.let { it.toFloatOrNull()?.takeIf { v -> v in 0f..10f } ?: return co.xenastudios.core.common.Outcome.Err("has a volume that isn't from 0 to 10") } ?: 1f
-            val pitch = parts.getOrNull(2)?.let { it.toFloatOrNull()?.takeIf { p -> p in 0.5f..2f } ?: return co.xenastudios.core.common.Outcome.Err("has a pitch that isn't from 0.5 to 2") } ?: 1f
-            return co.xenastudios.core.common.Outcome.Ok(Sound(name, volume, pitch))
-        }
-
-        /** How a sound reads and writes in the config. */
-        public val TYPE: ConfigType<Sound> = object : ConfigType<Sound>() {
-            override val name: String get() = "sound"
-            override fun empty(): Sound = NONE
-            override fun decode(node: YamlNode, context: co.xenastudios.core.common.config.ConfigContext): co.xenastudios.core.common.Outcome<Sound, String> =
-                if (node is YamlNode.Scalar) read(node.content) else co.xenastudios.core.common.Outcome.Err("should be a single value")
-            override fun encode(value: Sound): YamlNode = YamlNode.Scalar(value.toString())
-        }
-
-        private fun number(value: Float): String =
-            if (value == kotlin.math.floor(value)) value.toInt().toString() else value.toString()
-    }
 }

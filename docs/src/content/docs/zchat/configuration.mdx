@@ -1,31 +1,38 @@
 ---
 title: Configuration
-description: Every setting in zChat's config.yml.
+description: "Every setting in zChat's config.yml, with its default."
 sidebar:
-  order: 6
+  order: 4
 ---
 
-import { Code } from "@astrojs/starlight/components";
-import config from "../../../generated/zchat/config.yml?raw";
+import Reference from "../../../components/reference/Reference.astro";
 
-The config is `plugins/zChat/config.yml`, written on first start. Apply changes with `/zchat reload` (or `/zc reload`): everything applies, including turning commands on or off and changing aliases and permissions. The mute, hidden chat, social spy and reply targets all last through a reload.
+The config is `plugins/zChat/config.yml` (`config/zchat/config.yml` on Fabric), written on first start. Apply changes with `/zchat reload` (or `/zc reload`): everything applies, including turning commands on or off and changing aliases and permissions. A bad value falls back to its default with a warning in the console; zChat never stops over config. The chat formats are here; zChat's own messages are in `lang/`: see [Messages](/zchat/messages/).
 
-| Section | What it covers |
+| Section | What it's for |
 | --- | --- |
-| `theme` | The prefix and colours zChat's own messages share: see [the theme](/start/formatting/#the-theme). |
-| `messages.error` | Shared errors: players only, no permission, player not found, wrong usage, and a command that hit an error. |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
 | `formatting` | Formats per group, the fallback format, and the colour permission: [Chat formats](/zchat/formats/). |
-| `filter` | Words and patterns to censor or block: [Filter](/zchat/moderation/#filter). |
+| `filter` | Words and patterns to censor or block, and `/filter`: [Moderation](/zchat/moderation/#filter). |
 | `cooldown`, `anti-repeat` | Time between messages, and repeated messages: [Moderation](/zchat/moderation/). |
-| `mentions` | Highlighting and pinging named players: [Mentions](/zchat/messages/#mentions). |
-| `clearchat`, `mutechat`, `togglechat` | Each command's switch, aliases, permission and messages: [Moderation](/zchat/moderation/). |
-| `private-messages` | `/msg`, `/reply` and `/socialspy`: [Private messages](/zchat/messages/#private-messages). |
-| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+| `mentions` | Highlighting and pinging named players: [Mentions](/zchat/mentions/#mentions). |
+| `clearchat`, `mutechat`, `togglechat` | Each command's switch, aliases and permission: [Moderation](/zchat/moderation/). |
+| `private-messages` | `/msg`, `/reply` and `/socialspy`: [Private messages](/zchat/mentions/#private-messages). |
+| `updates` | The update checker. |
 
-Every command has the same three settings: `enabled` (`false` removes the command entirely, and gives a command it replaced, such as Minecraft's `/msg`, back), `aliases`, and `permission` (blank lets anyone).
+## Make it look like your server
 
-A bad value falls back to its default with a warning in the console. A colour or sound with nothing after it, such as `highlight: #B48CFF` without quotes (YAML reads `#` as a comment), also warns.
+`messages.theme` sets the look of every message zChat sends, and the tags chat formats may use: a prefix, the text colour, and three styles. Each is `shared` until you set it, which takes the value every Xena plugin shares, in `plugins/Xena/config.yml`: set it there to restyle the whole family, or here for zChat alone.
 
-## The full default config
+```yaml
+messages:
+  theme:
+    prefix: "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> "
+    highlight: "<gold>"
+```
 
-<Code code={config} lang="yaml" title="plugins/zChat/config.yml" />
+## Language
+
+`messages.language` is `auto` by default (through `shared`): each player reads zChat's messages in their client's language, and the console in `default-language`. Set it to one language, such as `language: en`, to give everyone the same. A config carried forward from 3.x with messages you'd edited is set to `en`, so your words are what everyone sees, as before.
+
+<Reference plugin="zchat" show="config" />

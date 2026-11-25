@@ -1,0 +1,12 @@
+---
+title: Permissions
+description: "Every zChat permission, and who has it by default."
+sidebar:
+  order: 2.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Every command has its own permission, the defaults below: rename any in the [config](/zchat/configuration/) (`permission: "essentials.msg"`), or set one blank (`""`) to let everyone use it. They default to operators, except `/msg`, `/reply` and `/togglechat`, which are everyone's, and the group formats' (`zchat.group.*`), which are no one's until you give them. The colour, `@everyone` and group permissions are named in the config too. On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api; without one, operators (level 2) have the operator permissions.
+
+<Reference plugin="zchat" show="permissions" />

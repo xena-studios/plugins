@@ -1,0 +1,18 @@
+---
+title: Install
+description: "Install zChat on your server: the steps for Paper, Folia, Spigot and Fabric."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="zchat" />
+
+On the first start zChat writes `config.yml` and one file per language in `lang/`, in `plugins/zChat/` (Bukkit) or `config/zchat/` (Fabric). [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) is optional on Bukkit, for `%placeholders%` in chat formats. Settings every Xena plugin shares, such as the language and the look of messages, are in `plugins/Xena/config.yml` (`config/xena/` on Fabric).
+
+## Coming from 3.x
+
+Replace the jar and restart: see [Upgrading from 3.x](/zchat/upgrade/). The [3.x docs](/zchat/v3/) stay up while 3.x gets fixes.

@@ -40,3 +40,12 @@
 :core:platform-fabric:twin:1.20.1 295
 :core:platform-fabric:twin:1.21.11 300
 :core:platform-fabric:twin:26.3 310
+
+# xUtilities 3.0 (M2, the pilot), shrunk: 508 KiB on Bukkit (with bStats, the update checker,
+# Paper's loader and its startup list), over the 500 KiB target with the reason recorded in
+# decisions/2026-11-24-xutilities-3-the-pilot.md, so its line is size + about 10%; 453-467 KiB
+# on Fabric, shrunk before Loom remaps it, its core relocated (xena.fabric-mod), lines size + 5%.
+:xutilities:bukkit 560
+:core:platform-fabric:xutilities:1.20.1 476
+:core:platform-fabric:xutilities:1.21.11 477
+:core:platform-fabric:xutilities:26.3 490

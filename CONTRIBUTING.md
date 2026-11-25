@@ -55,6 +55,8 @@ core/core-testing/sample/bukkit/boot.sh "$(scripts/server-jar.sh spigot 1.8.8 | 
 
 `boot.sh` boots the jar R8 shrank (`build/r8/XSample.jar`), as a release ships; the YAML parser and the stdlib are downloaded (`libraries:`, or the loader below 1.16.5). The Fabric sandbox is built and booted the same way, from its own build: `./gradlew -p core/platform-fabric build collect`, then `scripts/boot-fabric.sh --version 26.3 --java <JDK 25 home> --checks core/platform-fabric/sandbox/boot-checks.txt core/platform-fabric/build/libs/xsample-fabric-1.0.0+26.3.jar`.
 
+A rewritten plugin boots the same way. xUtilities, the first: `./gradlew :xutilities:bukkit:assemble`, then `xutilities/bukkit/boot.sh paper 26.3 --java <JDK 25 home>` (or a Spigot jar with `--java <JDK 8 home>`); its Fabric mod is a branch of platform-fabric's build, `./gradlew -p core/platform-fabric :xutilities:26.3:collect`, booted with `scripts/boot-fabric.sh --version 26.3 --checks xutilities/fabric/boot-checks.txt core/platform-fabric/build/libs/xutilities-fabric-*+26.3.jar`. The Boot workflow boots it in every cell, and beside xSample and xTwin in the family test.
+
 ### Performance budgets
 
 The runtime budgets in ROADMAP.md ("Fast, robust, light") are checked two ways, neither part of `build`, since each takes minutes and wants a quiet machine:

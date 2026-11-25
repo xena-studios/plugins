@@ -141,17 +141,47 @@ public class LangFolder(
     public companion object {
         /**
          * The jar's translations: `lang/<tag>.yml` for each of [tags], read from [loader] (the
-         * plugin's class loader). No classpath scanning, so the plugin lists what it ships.
+         * plugin's class loader), or from the jar's [BUNDLE]. No classpath scanning, so the plugin lists what it ships.
          * English is in the code, never a file. A tag whose file is missing is left out.
          */
         @JvmStatic
         public fun shipped(loader: ClassLoader, tags: List<LanguageTag>): Map<LanguageTag, String> {
             val out = LinkedHashMap<LanguageTag, String>()
+            val bundle by lazy { loader.getResourceAsStream(BUNDLE)?.use { bundle(String(it.readBytes(), StandardCharsets.UTF_8)) }.orEmpty() }
             for (tag in tags) {
                 if (tag == LanguageTag.ENGLISH) continue
-                val stream = loader.getResourceAsStream("lang/$tag.yml") ?: continue
+                val stream = loader.getResourceAsStream("lang/$tag.yml")
+                if (stream == null) {
+                    bundle[tag.toString()]?.let { out[tag] = it }
+                    continue
+                }
                 out[tag] = stream.use { String(it.readBytes(), StandardCharsets.UTF_8) }
             }
+            return out
+        }
+
+        /**
+         * Where a shrunk jar keeps its translations: every `lang/<tag>.yml` in one entry (the
+         * build's R8Shrink writes it), so what each language repeats compresses once.
+         */
+        public const val BUNDLE: String = "lang/shipped.txt"
+
+        /** [text], a [BUNDLE], as each language's file by tag: lines `@@ <tag>` start each. */
+        @JvmStatic
+        public fun bundle(text: String): Map<String, String> {
+            val out = LinkedHashMap<String, String>()
+            var tag: String? = null
+            val file = StringBuilder()
+            for (line in text.split('\n')) {
+                if (line.startsWith("@@ ")) {
+                    tag?.let { out[it] = file.toString() }
+                    tag = line.removePrefix("@@ ").trim()
+                    file.setLength(0)
+                } else if (tag != null) {
+                    file.append(line).append('\n')
+                }
+            }
+            tag?.let { out[it] = file.toString() }
             return out
         }
 

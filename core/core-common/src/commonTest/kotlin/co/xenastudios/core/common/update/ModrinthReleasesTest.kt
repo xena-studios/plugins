@@ -64,14 +64,17 @@ class ModrinthReleasesTest {
     }
 
     @Test
-    fun readsJson() {
+    fun readsJustTheTopLevelFieldsOfEachObject() {
         assertEquals(
-            mapOf("a" to listOf(1.0, -2.5, true, false, null), "b" to "x\"\né/"),
-            JsonReader.read("""{ "a": [1, -2.5e0, true, false, null], "b": "x\"\né\/" }"""),
+            listOf(mapOf("a" to "x\"\né/", "ok" to true), mapOf("b" to "y", "no" to false)),
+            JsonReader.objects("""[ {"a": "x\"\né\/", "n": 1.5e3, "files": [{"a": "nested"}], "ok": true}, {"b":"y","no":false,"x":null} ]"""),
         )
-        assertNull(JsonReader.read("[1, 2"))
-        assertNull(JsonReader.read("[1] 2"))
-        assertNull(JsonReader.read("[".repeat(10_000)))
+        assertEquals(emptyList(), JsonReader.objects(" [ ] "))
+        assertNull(JsonReader.objects("[{\"a\": 1}"))
+        assertNull(JsonReader.objects("[1] 2"))
+        assertNull(JsonReader.objects("{}"))
+        assertEquals(emptyList(), JsonReader.objects("[\"a\", 1]"))
+        assertNull(JsonReader.objects("[".repeat(10_000)))
     }
 
     private companion object {

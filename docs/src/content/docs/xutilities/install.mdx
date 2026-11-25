@@ -1,0 +1,18 @@
+---
+title: Install
+description: "Install xUtilities on your server: the steps for Paper, Folia, Spigot and Fabric."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="xutilities" />
+
+On the first start xUtilities writes `config.yml` and one file per language in `lang/`, in `plugins/xUtilities/` (Bukkit) or `config/xutilities/` (Fabric). Settings every Xena plugin shares, such as the language and the look of messages, are in `plugins/Xena/config.yml` (`config/xena/` on Fabric).
+
+## Coming from 2.x
+
+Replace the jar and restart: see [Upgrading from 2.x](/xutilities/upgrade/). The [2.x docs](/xutilities/v2/) stay up while 2.x gets fixes.

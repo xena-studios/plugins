@@ -6,7 +6,10 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities]
+//
+// --plugin picks whose commands it checks: xSample's (the default), or xUtilities' (/fly,
+// /heal and /back, a teleport and its way back, and /gamemode's completion).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks.
@@ -16,6 +19,7 @@ const port = Number(process.argv[2])
 const option = (name, fallback) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : fallback }
 const username = option('--name', 'Joiner')
 const timeout = Number(option('--timeout', 90)) * 1000
+const plugin = option('--plugin', 'xsample')
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const failures = []
 const heard = []
@@ -63,9 +67,33 @@ async function completions (text) {
   return matches.map((m) => (typeof m === 'string' ? m : m.match).replace(/^\//, ''))
 }
 
+// xUtilities as a player uses it, replies drawn from its lang/de.yml, then lang/en.yml.
+async function xutilities () {
+  await command('/fly', 'Fliegen', '/fly answers the player in German')
+  await command('/heal', 'geheilt', '/heal answers the player in German')
+  const modes = await completions('/gamemode ')
+  check('tab completion of /gamemode', ['survival', 'creative'].every((m) => modes.includes(m)), `/gamemode  completed to ${JSON.stringify(modes)}`)
+  // A teleport by a command, which /back remembers, then /back to where the player was.
+  const before = bot.entity.position.y
+  bot.chat(`/tp ${username} ~ ~10 ~`)
+  await sleep(1500)
+  await command('/back', 'Zurück zu deinem vorherigen Ort', '/back after a teleport')
+  await sleep(1000)
+  check('/back took the player back', Math.abs(bot.entity.position.y - before) < 1.5, `y ${bot.entity.position.y}, before the teleport ${before}`)
+  // Before 1.12 the server reads a client's language only as it joins (DECISIONS.md, "A real client").
+  const [major, minor] = (bot.version || '1.8').split('.').map(Number)
+  if (major > 1 || minor >= 12) {
+    bot.setSettings({ locale: 'en_us' })
+    await sleep(2000)
+    await command('/fly', 'Flight', '/fly answers in the language the client changed to (English)')
+  }
+  finish()
+}
+
 async function run () {
   // The server reads the client's language as it joins (1.8.8 a moment later) and records it.
   await sleep(3000)
+  if (plugin === 'xutilities') return xutilities()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   const pay = await completions('/pay ')
   check('tab completion of a player argument', pay.includes(username), `/pay  completed to ${JSON.stringify(pay)}`)

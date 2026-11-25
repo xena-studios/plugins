@@ -1,0 +1,50 @@
+---
+title: xUtilities
+description: "xUtilities: lightweight essentials for Paper, Folia, Spigot and Fabric servers, with gamemode, fly, heal, /back, workstations anywhere and your own link commands, each one switchable."
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import { LinkCard, CardGrid } from "@astrojs/starlight/components";
+import Reference from "../../../components/reference/Reference.astro";
+
+Current version: **3.0.0**
+
+xUtilities gives a server the small commands it needs: gamemodes, flight, speed, `/top`, `/back`, heal and feed, inventory tools, workstation menus, and link commands like `/discord` that you write yourself. Install it on your lobby, survival and minigame servers alike, then switch off whatever a server doesn't use.
+
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
+- **Only what you want.** Every command can be turned off, renamed with aliases, given its own permission, and reworded. A command that's off isn't registered at all, so it doesn't show up in tab completion and another plugin can have its name.
+- **You won't feel it running.** Nothing runs on a timer but the daily update check and bStats (Bukkit), and you can turn both off. `/back`'s listener exists only while `/back` is on.
+- **In your players' languages.** Each player reads xUtilities in their own client's language: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese.
+- **Every change applies on reload**, even turning commands on or off and adding link commands. No restarts.
+
+:::caution[Not released yet]
+3.0 isn't released yet: it ships with the other plugins' rewrites. Until then 2.1 is the release, and these pages are a preview. The [2.x docs](/xutilities/v2/) stay up while 2.x gets fixes.
+:::
+
+:::note[Coming from xUtilities 2.x?]
+Replace the jar and restart: your config is carried forward, your edited messages move to `lang/en.yml`, and the old file is kept as `config.yml.bak-v2`. See [Upgrading from 2.x](/xutilities/upgrade/).
+:::
+
+## Where it runs
+
+One jar for every Bukkit-family server from 1.8.8 to the newest, Folia included, and a jar per Minecraft line on Fabric, server-side only: players install nothing.
+
+<Reference plugin="xutilities" show="platforms" />
+
+A few things depend on the server. xUtilities checks once as it starts, and a command the server can't do says so instead of failing:
+
+| | Needs |
+| --- | --- |
+| `/anvil`, `/grinder`, `/loom`, `/smith`, `/stonecutter`, `/cartography` on Bukkit | Paper 1.14 or newer, or Spigot 1.21.4 or newer. `/craft` works everywhere. Every menu works on Fabric. |
+| `/ping` on Bukkit | Paper, or Spigot 1.17 or newer |
+| `/back` after another plugin's teleport | Bukkit. Fabric has no teleport event without a mixin, so there `/back` remembers deaths and xUtilities' own teleports, and other mods' if they tell it through the [API](/xutilities/developer-api/). |
+| Each player's own language | Bukkit from 1.8.8 (Spigot), Fabric from 1.20.2. On CraftBukkit before 1.12 and Fabric 1.20.1, players read `default-language`. |
+
+<CardGrid>
+  <LinkCard title="Install" href="/xutilities/install/" description="The steps for your platform." />
+  <LinkCard title="Download" href="/xutilities/download/" description="The jar for your platform and Minecraft version, and every store." />
+  <LinkCard title="Commands" href="/xutilities/commands/" description="Every command, its arguments and permission." />
+  <LinkCard title="Configuration" href="/xutilities/configuration/" description="Every setting in config.yml." />
+</CardGrid>

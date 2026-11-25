@@ -8,12 +8,13 @@ import co.xenastudios.core.common.text.Component
 import co.xenastudios.core.common.text.Markup
 import co.xenastudios.core.common.text.Placeholder
 import co.xenastudios.core.common.text.Theme
+import kotlin.time.Duration
 
 /**
  * Draws the admin subcommands' replies ([co.xenastudios.core.common.i18n.CoreMessages], and a
  * plugin's own health checks' messages) for whoever ran the command, in their language.
- * Placeholder values that are numbers are written for that language (`1.234` in German);
- * anything else is text.
+ * Placeholder values that are numbers or lengths of time are written for that language
+ * (`1.234` in German); anything else is text.
  *
  * The command source doesn't carry a language yet, so the adapter says which client locale a
  * source has ([of]); until it does, [ENGLISH].
@@ -59,6 +60,8 @@ public fun interface AdminText {
                     is Placeholder -> value
                     is Int -> Placeholder.text(formats.number(value))
                     is Long -> Placeholder.text(formats.number(value))
+                    is Double -> Placeholder.text(formats.number(value))
+                    is Duration -> Placeholder.text(formats.duration(value))
                     is Component -> Placeholder.component(value)
                     else -> Placeholder.text(value)
                 }

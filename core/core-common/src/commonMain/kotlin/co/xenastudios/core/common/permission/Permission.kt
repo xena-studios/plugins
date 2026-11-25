@@ -96,6 +96,18 @@ public abstract class PermissionSet(
         children: Map<String, Boolean> = emptyMap(),
     ): Permission = declare("$pluginId.$suffix", description, default, children, builtIn = false)
 
+    /**
+     * A permission whose whole [node] is given, not only its suffix: for a plugin whose owners
+     * name its permissions in the config (`permission: "essentials.fly"`), so the node needn't
+     * start with the plugin's id. [isNode] says whether a text can be one.
+     */
+    protected fun node(
+        node: String,
+        description: String,
+        default: PermissionDefault = PermissionDefault.OP,
+        children: Map<String, Boolean> = emptyMap(),
+    ): Permission = declare(node, description, default, children, builtIn = false)
+
     /** [permissions] as children that grant each, for [permission]'s `children`. */
     protected fun grants(vararg permissions: Permission): Map<String, Boolean> = permissions.associate { it.node to true }
 
@@ -109,8 +121,11 @@ public abstract class PermissionSet(
         return Permission(node, description, default, LinkedHashMap(children), builtIn).also { declared += it }
     }
 
-    internal companion object {
-        val PLUGIN_ID = Regex("[a-z][a-z0-9_-]*")
+    public companion object {
+        internal val PLUGIN_ID = Regex("[a-z][a-z0-9_-]*")
+
+        /** Whether [text] can be a permission node: lower-case words of a-z, 0-9, - and _, joined with `.`. */
+        public fun isNode(text: String): Boolean = Permission.NODE.matches(text)
     }
 }
 

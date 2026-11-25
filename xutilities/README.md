@@ -19,30 +19,32 @@ xUtilities is a lightweight essentials plugin for Paper and Folia: gamemodes, fl
 
 **[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://plugins.xenastudios.co/xutilities/) · [Commands](https://plugins.xenastudios.co/xutilities/commands/) · [Developer API](https://plugins.xenastudios.co/xutilities/developer-api/) · [Changelog](CHANGELOG.md)
 
-Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer.
+2.1.0 is the release: Paper 1.21.11 or newer (or Purpur or Folia) and Java 21. **3.0, on `main` and not released yet** (it ships with the other plugins' rewrites), runs on Paper, Folia, Spigot and CraftBukkit from 1.8.8 to the newest, and on Fabric 1.20.1, 1.21.11 and 26.3, in eight languages; 2.x is kept on the `maintenance` branch.
 
 ## Developing
 
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xutilities:build       # compile, test, and check the jar's size budget
-./gradlew :xutilities:runServer   # a Paper server with xUtilities, in xutilities/run/
+./gradlew :xutilities:common:build :xutilities:bukkit:build    # tests on the JVM and wasmWasi, the R8 jar and its budget
+./gradlew :xutilities:bukkit:runServer                          # a Paper server with the jar, in xutilities/bukkit/run/
+./gradlew -p core/platform-fabric :xutilities:26.3:collect      # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+xutilities/bukkit/boot.sh paper 26.3 --java <JDK 25 home>       # the boot checks on a real server
+./gradlew :xutilities:api:updateKotlinAbi                       # after a deliberate API change
+./gradlew :xutilities:common:updateXenaManifest                 # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-api/                the developer API (co.xenastudios.xutilities:xutilities-api), shipped inside the jar
-src/main/java/co/xenastudios/xutilities/
-  XUtilities.java   the plugin: declares the config and, in setup, the commands it turns on
-  Api.java          the developer API's implementation, registered while the plugin is enabled
-  command/          the commands, grouped by kind (gamemodes, travel, menus, links, ...)
-  config/           the config records; XConfig carries a 1.x config forward
-boot-checks.txt     console commands CI runs on real Paper and Folia servers, and what each must log
-CHANGELOG.md        one section per release; the release workflow publishes it
-modrinth.md         the Modrinth project page, published when it changes on main
+api/        the developer API (XUtilitiesApi, XUtilities.api(), /back's events), the same on every platform
+common/     everything xUtilities does, in Kotlin Multiplatform: the config and its migrations from 1.x and 2.x,
+            the messages (lang/ in its resources), the commands, /back; jvmMain reads the files on a JVM server
+bukkit/     the Paper, Folia, Spigot and CraftBukkit jar: what it does to players, from 1.8.8 on, and the Bukkit events
+fabric/     the Fabric mod, a branch of core/platform-fabric's own build, one jar per Minecraft line
+CHANGELOG.md   one section per release; the release workflow publishes it
+modrinth.md    the Modrinth and Hangar project page, published when it changes on main
 ```
 
-The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
+The shared core (config, messages, commands, the family, the platforms) is in [`core/`](../core).
 
 ## Licence
 

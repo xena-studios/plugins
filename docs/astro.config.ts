@@ -11,6 +11,7 @@ import starlightLinksValidator from "starlight-links-validator";
 // sample, which is built but hidden (src/data/versions.json).
 import { docsPlugins, hiddenIds } from "./src/plugins.ts";
 import { versionRedirects } from "./src/redirects.ts";
+import { unreleasedLinks } from "./src/links.ts";
 
 const site = "https://plugins.xenastudios.co";
 
@@ -25,6 +26,9 @@ export default defineConfig({
   // Fonts are files, not data: URLs, since the CSP's font-src is 'self'.
   vite: { build: { assetsInlineLimit: 0 } },
   integrations: [
+    // An unreleased plugin's links, pointed where its pages are served; before Starlight, whose
+    // links validator then checks them there.
+    unreleasedLinks(),
     // Starlight's own sitemap, less the hidden plugins' pages (Starlight adds none when this is here).
     sitemap({ filter: (page) => !hiddenIds.some((id) => page.startsWith(`${site}/${id}/`)) }),
     starlight({
@@ -84,7 +88,8 @@ export default defineConfig({
         { label: "Start here", items: [{ autogenerate: { directory: "start" } }] },
         // One group per plugin; src/routeData.ts shows only the current one, or a link to each.
         // A versioned plugin's v<old>/ folders are groups inside it, shown only on their own pages.
-        ...docsPlugins.map((p) => ({ label: p.name, items: [{ autogenerate: { directory: p.id } }] })),
+        // An unreleased major's pages (/<id>/next/) are files in the plugin's own folder, so its group.
+        ...docsPlugins.filter((p) => p.group === p.name).map((p) => ({ label: p.name, items: [{ autogenerate: { directory: p.id } }] })),
         { label: "Developers", link: "/developers/" },
         {
           label: "More from Xena Studios",

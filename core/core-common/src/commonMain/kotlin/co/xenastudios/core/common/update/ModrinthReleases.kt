@@ -72,10 +72,9 @@ public class ModrinthReleases(
 
         /** Modrinth's list of versions as [Release]s; versions of a type it doesn't know are left out. */
         internal fun parseModrinth(body: String, project: String): Outcome<List<Release>, String> {
-            val versions = JsonReader.read(body) as? List<*> ?: return Outcome.Err("Modrinth's answer isn't a list of versions")
+            val versions = JsonReader.objects(body) ?: return Outcome.Err("Modrinth's answer isn't a list of versions")
             return Outcome.Ok(
-                versions.mapNotNull { version ->
-                    val fields = version as? Map<*, *> ?: return@mapNotNull null
+                versions.mapNotNull { fields ->
                     val number = fields["version_number"] as? String ?: return@mapNotNull null
                     val channel = (fields["version_type"] as? String)?.let(UpdateChannel::ofModrinth) ?: return@mapNotNull null
                     val id = fields["id"] as? String ?: number
@@ -86,11 +85,10 @@ public class ModrinthReleases(
 
         /** GitHub's releases tagged `<project>-v<version>`, drafts left out. */
         internal fun parseGitHub(body: String, project: String): Outcome<List<Release>, String> {
-            val releases = JsonReader.read(body) as? List<*> ?: return Outcome.Err("GitHub's answer isn't a list of releases")
+            val releases = JsonReader.objects(body) ?: return Outcome.Err("GitHub's answer isn't a list of releases")
             val prefix = "$project-v"
             return Outcome.Ok(
-                releases.mapNotNull { release ->
-                    val fields = release as? Map<*, *> ?: return@mapNotNull null
+                releases.mapNotNull { fields ->
                     val tag = fields["tag_name"] as? String ?: return@mapNotNull null
                     if (fields["draft"] == true || !tag.startsWith(prefix)) return@mapNotNull null
                     val number = tag.removePrefix(prefix)
@@ -124,120 +122,103 @@ public class ModrinthReleases(
 }
 
 /**
- * A small JSON reader for the release lists: objects as maps, arrays as lists, strings,
- * numbers as doubles, booleans and `null`. `null` for text that isn't JSON. Nested at most 64
- * deep, so an answer can't overflow the stack.
+ * The release lists' JSON, read only as far as the checker needs: the objects directly inside
+ * the top-level array, each as its top-level text and boolean fields. Nested objects and arrays
+ * (a version's files) are skipped, numbers too. `null` for text that isn't an array of objects
+ * closed as it should be. No recursion, so no answer can overflow the stack.
  */
 internal object JsonReader {
-    fun read(text: String): Any? = try {
-        val parser = Parser(text)
-        val value = parser.value(0)
-        parser.blank()
-        if (parser.at < text.length) null else value
-    } catch (e: IllegalArgumentException) {
-        null
+    fun objects(text: String): List<Map<String, Any>>? {
+        val out = ArrayList<Map<String, Any>>()
+        var at = skip(text, 0)
+        if (text.getOrNull(at) != '[') return null
+        at++
+        var depth = 1
+        var current: HashMap<String, Any>? = null
+        var key: String? = null
+        while (at < text.length) {
+            val c = text[at]
+            when {
+                c == '"' -> {
+                    val end = end(text, at) ?: return null
+                    if (depth == 2) {
+                        val next = skip(text, end)
+                        if (key == null && text.getOrNull(next) == ':') {
+                            key = unescape(text, at + 1, end - 1)
+                            at = next + 1
+                            continue
+                        }
+                        key?.let { current?.put(it, unescape(text, at + 1, end - 1)) }
+                    }
+                    key = null
+                    at = end
+                    continue
+                }
+                c == '{' || c == '[' -> {
+                    depth++
+                    if (depth == 2) {
+                        if (c != '{') return null
+                        current = HashMap()
+                    }
+                    key = null
+                }
+                c == '}' || c == ']' -> {
+                    depth--
+                    if (depth == 1) current?.let { out += it }.also { current = null }
+                    if (depth == 0) return if (skip(text, at + 1) == text.length) out else null
+                    key = null
+                }
+                depth == 2 && key != null && text.startsWith("true", at) -> { current?.put(key, true); key = null; at += 4; continue }
+                depth == 2 && key != null && text.startsWith("false", at) -> { current?.put(key, false); key = null; at += 5; continue }
+                c == ',' -> key = null
+            }
+            at++
+        }
+        return null
     }
 
-    private class Parser(val text: String) {
-        var at = 0
+    private fun skip(text: String, from: Int): Int {
+        var at = from
+        while (at < text.length && text[at].isWhitespace()) at++
+        return at
+    }
 
-        fun value(depth: Int): Any? {
-            require(depth < 64) { "too deep" }
-            blank()
-            require(at < text.length) { "end of text" }
-            return when (text[at]) {
-                '{' -> obj(depth)
-                '[' -> array(depth)
-                '"' -> string()
-                't' -> word("true", true)
-                'f' -> word("false", false)
-                'n' -> word("null", null)
-                else -> number()
+    // Just past the string that starts at [start], or null if it never ends.
+    private fun end(text: String, start: Int): Int? {
+        var at = start + 1
+        while (at < text.length) {
+            when (text[at]) {
+                '\\' -> at += 2
+                '"' -> return at + 1
+                else -> at++
             }
         }
+        return null
+    }
 
-        fun obj(depth: Int): Map<String, Any?> {
-            at++
-            val map = LinkedHashMap<String, Any?>()
-            blank()
-            if (peek() == '}') { at++; return map }
-            while (true) {
-                blank()
-                require(peek() == '"') { "a key" }
-                val key = string()
-                blank()
-                require(peek() == ':') { "a colon" }
-                at++
-                map[key] = value(depth + 1)
-                blank()
-                when (peek()) {
-                    ',' -> at++
-                    '}' -> { at++; return map }
-                    else -> throw IllegalArgumentException("a comma or }")
+    private fun unescape(text: String, from: Int, to: Int): String {
+        if (text.indexOf('\\', from).let { it < 0 || it >= to }) return text.substring(from, to)
+        val out = StringBuilder()
+        var at = from
+        while (at < to) {
+            val c = text[at++]
+            if (c != '\\' || at >= to) {
+                out.append(c)
+                continue
+            }
+            when (val e = text[at++]) {
+                'n' -> out.append('\n')
+                't' -> out.append('\t')
+                'r' -> out.append('\r')
+                'b' -> out.append('\b')
+                'f' -> out.append('\u000C')
+                'u' -> {
+                    out.append(text.substring(at, minOf(at + 4, to)).toIntOrNull(16)?.toChar() ?: '?')
+                    at += 4
                 }
+                else -> out.append(e)
             }
         }
-
-        fun array(depth: Int): List<Any?> {
-            at++
-            val list = ArrayList<Any?>()
-            blank()
-            if (peek() == ']') { at++; return list }
-            while (true) {
-                list += value(depth + 1)
-                blank()
-                when (peek()) {
-                    ',' -> at++
-                    ']' -> { at++; return list }
-                    else -> throw IllegalArgumentException("a comma or ]")
-                }
-            }
-        }
-
-        fun string(): String {
-            at++
-            val out = StringBuilder()
-            while (true) {
-                require(at < text.length) { "an unfinished string" }
-                when (val c = text[at++]) {
-                    '"' -> return out.toString()
-                    '\\' -> {
-                        require(at < text.length) { "an unfinished escape" }
-                        when (val e = text[at++]) {
-                            'n' -> out.append('\n')
-                            't' -> out.append('\t')
-                            'r' -> out.append('\r')
-                            'b' -> out.append('\b')
-                            'f' -> out.append('\u000C')
-                            'u' -> {
-                                require(at + 4 <= text.length) { "a short \\u escape" }
-                                out.append(text.substring(at, at + 4).toIntOrNull(16)?.toChar() ?: throw IllegalArgumentException("a bad \\u escape"))
-                                at += 4
-                            }
-                            else -> out.append(e)
-                        }
-                    }
-                    else -> out.append(c)
-                }
-            }
-        }
-
-        fun word(word: String, value: Any?): Any? {
-            require(text.startsWith(word, at)) { word }
-            at += word.length
-            return value
-        }
-
-        fun number(): Double {
-            val start = at
-            while (at < text.length && (text[at].isDigit() || text[at] in "+-.eE")) at++
-            return text.substring(start, at).toDoubleOrNull() ?: throw IllegalArgumentException("a number")
-        }
-
-        fun peek(): Char? = text.getOrNull(at)
-
-        fun blank() {
-            while (at < text.length && text[at].isWhitespace()) at++
-        }
+        return out.toString()
     }
 }

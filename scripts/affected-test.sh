@@ -80,6 +80,17 @@ rewriteTasks=$(git ls-files 'core/*/build.gradle.kts' | while read -r f; do
   while [[ $d == core/* ]]; do [[ -f $d/settings.gradle.kts ]] && separate=true; d=${d%/*}; done
   [[ $separate == true ]] || echo ":${dir//\//:}:build"
 done | sort | tr '\n' ' ' | sed 's/ $//')
+# The rewritten plugins (<plugin>/common, no build at the top) use the rewrite's modules, so a
+# change to those builds them too, after the root's own check; their fabric/ is platform-fabric's.
+pluginTasks=$(for f in */common/build.gradle.kts; do
+  unit=${f%%/*}
+  [[ -f $unit/build.gradle.kts ]] && continue
+  for b in "$unit"/*/build.gradle.kts; do
+    module=${b%/build.gradle.kts}
+    [[ ${module##*/} == fabric ]] || echo ":${module//\//:}:build"
+  done | sort
+done | tr '\n' ' ' | sed 's/ $//')
+[[ -z $pluginTasks ]] || rewriteTasks=":build $pluginTasks $rewriteTasks"
 
 rows=()
 check() {
@@ -113,6 +124,12 @@ check "Rewrite's Bukkit platform" core/platform-bukkit/src/main/kotlin/co/xenast
   "$rewrite"$'\nboot=bukkit'
 check "Rewrite's Fabric platform (its own build)" core/platform-fabric/src/main/kotlin/co/xenastudios/core/fabric/FabricCommands.kt \
   "$rewrite"$'\nboot=fabric'
+check "A rewritten plugin's common code" xutilities/common/src/commonMain/kotlin/co/xenastudios/xutilities/Commands.kt \
+  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nxmoney=false\nboot=bukkit fabric'
+check "A rewritten plugin's Bukkit adapter" xutilities/bukkit/src/main/kotlin/co/xenastudios/xutilities/bukkit/BukkitXServer.kt \
+  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nxmoney=false\nboot=bukkit'
+check "A rewritten plugin's Fabric mod (platform-fabric's build)" xutilities/fabric/src/main/kotlin/co/xenastudios/xutilities/fabric/XUtilitiesMod.kt \
+  $'checks=\nxmoney=false\nboot=fabric'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 check "Today's plugin" xbans/src/main/java/co/xenastudios/xbans/XBans.java \
   $'units=xbans\ncompile=:xbans:compileJava :xbans:api:compileJava\nchecks=xbans/boot-checks.txt\nxmoney=false\nboot='

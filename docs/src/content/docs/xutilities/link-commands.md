@@ -7,7 +7,7 @@ sidebar:
 
 Link commands are commands you define in the config, with no code: each one sends the player a message, usually a clickable link. xUtilities ships three examples, `/discord`, `/store` and `/website`, pointing at placeholder addresses. **Replace those URLs** before you go live.
 
-They live under `info-commands` in `plugins/xUtilities/config.yml`. Each key becomes a command:
+They live under `info-commands` in `plugins/xUtilities/config.yml` (`config/xutilities/config.yml` on Fabric). Each key becomes a command:
 
 ```yaml
 info-commands:
@@ -51,6 +51,8 @@ Use `<newline>` in the message, or a YAML block, where each line of the block is
 | `enabled` | `true` | `false` removes the command. |
 | `aliases` | none | Other names for it, such as `["votes"]`. |
 | `permission` | `xutilities.command.<name>` | Who can use it. The default is everyone's. Blank (`""`) means no restriction. |
-| `message` | | What the player sees, in [MiniMessage](/start/formatting/). It can use the [theme](/xutilities/configuration/#make-it-look-like-your-server)'s tags, like `<prefix>` and `<highlight>`. |
+| `message` | | What the player sees, in [the same markup as the lang files](/start/formatting/). It can use the [theme](/xutilities/configuration/#make-it-look-like-your-server)'s tags, like `<prefix>` and `<highlight>`. |
 
 A link command whose name or alias clashes with one of xUtilities' own commands is skipped, with a warning in the console.
+
+A link command's message is yours, in your own words, so it's in `config.yml` and the same for every player whatever their language; the commands' own messages are in [`lang/`](/xutilities/messages/).

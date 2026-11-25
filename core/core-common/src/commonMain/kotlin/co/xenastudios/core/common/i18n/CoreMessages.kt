@@ -292,6 +292,130 @@ public object CoreMessages : MessageBundle() {
         "/<plugin> forget: part of it failed. <failed> lists what, with why, in English.",
         placeholders = listOf("player", "failed", "records"),
     )
+
+    // /<plugin> reload
+
+    /** The reload went through. */
+    public val reloadDone: MessageKey = message(
+        "core.reload.done", "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise.",
+        placeholders = listOf("plugin", "count", "has_one", "has_many"),
+    )
+
+    /** A problem the reload found in the files. */
+    public val reloadProblem: MessageKey = message(
+        "core.reload.problem", "<gold>!</gold> Problem: <problem>",
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too.",
+        placeholders = listOf("problem"),
+    )
+
+    /** A module that failed as it reloaded. */
+    public val reloadModuleOff: MessageKey = message(
+        "core.reload.module-off", "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+        "/<plugin> reload: a module that failed, and why, in English.",
+        placeholders = listOf("module", "reason"),
+    )
+
+    /** The reload itself threw. */
+    public val reloadFailed: MessageKey = message(
+        "core.reload.failed", "<prefix><error>Reloading <plugin> failed; the console has the details.",
+        "/<plugin> reload: something went wrong; the settings from before are still in use.",
+        placeholders = listOf("plugin"),
+    )
+
+    // What every command's sender is told when it doesn't run: see CommandFeedback.
+
+    /** No command answers to what was typed. */
+    public val commandUnknown: MessageKey = message("core.command.unknown", "<prefix><error>Unknown command.", "Rare: a command that went away as it was typed.")
+
+    /** The sender lacks the command's permission. */
+    public val commandNoPermission: MessageKey = message(
+        "core.command.no-permission", "<prefix><error>You don't have permission to do that.",
+        "The sender lacks the command's permission.",
+    )
+
+    /** The console ran a command only players can use. */
+    public val commandPlayersOnly: MessageKey = message(
+        "core.command.players-only", "<prefix><error>Only players can use this command.",
+        "The console or a command block ran a command only players can use.",
+    )
+
+    /** The command was typed wrong. */
+    public val commandUsage: MessageKey = message(
+        "core.command.usage", "<prefix><error>Usage:</error> <usage>",
+        "The command was typed with missing or extra words. <usage> is how to type it.",
+        placeholders = listOf("usage"),
+    )
+
+    /** No player online by the name typed. */
+    public val commandUnknownPlayer: MessageKey = message(
+        "core.command.unknown-player", "<prefix><error>No player called <highlight><player></highlight> is online.",
+        "No player the sender can see is online by the name typed (<player>).",
+        placeholders = listOf("player"),
+    )
+
+    /** A number was expected. */
+    public val commandNotANumber: MessageKey = message(
+        "core.command.not-a-number", "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+        "A number was expected. <input> is what was typed.",
+        placeholders = listOf("input", "usage"),
+    )
+
+    /** A whole number was expected. */
+    public val commandNotAnInteger: MessageKey = message(
+        "core.command.not-an-integer", "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+        "A whole number was expected. <input> is what was typed.",
+        placeholders = listOf("input", "usage"),
+    )
+
+    /** A number below the least the command takes. */
+    public val commandTooSmall: MessageKey = message(
+        "core.command.too-small", "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+        "A number below the least the command takes (<min>).",
+        placeholders = listOf("input", "min", "usage"),
+    )
+
+    /** A number above the most the command takes. */
+    public val commandTooLarge: MessageKey = message(
+        "core.command.too-large", "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+        "A number above the most the command takes (<max>).",
+        placeholders = listOf("input", "max", "usage"),
+    )
+
+    /** A word that isn't one of the choices. */
+    public val commandNotAChoice: MessageKey = message(
+        "core.command.not-a-choice", "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+        "A word that isn't one of those the command takes (<choices>, comma-separated).",
+        placeholders = listOf("input", "choices", "usage"),
+    )
+
+    /** Anything else wrong with what was typed, as the argument says in English. */
+    public val commandInvalid: MessageKey = message(
+        "core.command.invalid", "<prefix><error><reason></error> Usage: <usage>",
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English.",
+        placeholders = listOf("reason", "usage"),
+    )
+
+    /** The sender used the command too recently. */
+    public val commandCooldown: MessageKey = message(
+        "core.command.cooldown", "<prefix><error>You can use that again in <time>.",
+        "The command has a cooldown. <time> is how long is left.",
+        placeholders = listOf("time"),
+    )
+
+    /** The command needs typing twice. */
+    public val commandConfirm: MessageKey = message(
+        "core.command.confirm", "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is.",
+        placeholders = listOf("line", "time"),
+    )
+
+    /** The command threw. */
+    public val commandError: MessageKey = message(
+        "core.command.error", "<prefix><error>Something went wrong running that command; the console has the details.",
+        "The command hit an error. The console has what happened.",
+    )
 }
 
 /**

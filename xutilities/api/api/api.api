@@ -1,0 +1,48 @@
+public final class co/xenastudios/xutilities/api/XUtilities {
+	public static final field INSTANCE Lco/xenastudios/xutilities/api/XUtilities;
+	public static final fun api ()Lco/xenastudios/xutilities/api/XUtilitiesApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xutilities/api/XUtilitiesApi;)V
+}
+
+public abstract interface class co/xenastudios/xutilities/api/XUtilitiesApi {
+	public abstract fun clearBackLocation (Lco/xenastudios/core/api/PlayerRef;)V
+	public abstract fun getBackLocation (Lco/xenastudios/core/api/PlayerRef;)Lco/xenastudios/core/api/Location;
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun isBackEnabled ()Z
+	public abstract fun isCommandEnabled (Ljava/lang/String;)Z
+	public abstract fun setBackLocation (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/Location;)Z
+}
+
+public final class co/xenastudios/xutilities/api/event/BackRecordEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xutilities/api/event/BackRecordEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/Location;Lco/xenastudios/xutilities/api/event/BackRecordEvent$Reason;)V
+	public final fun getLocation ()Lco/xenastudios/core/api/Location;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getReason ()Lco/xenastudios/xutilities/api/event/BackRecordEvent$Reason;
+}
+
+public final class co/xenastudios/xutilities/api/event/BackRecordEvent$Companion {
+}
+
+public final class co/xenastudios/xutilities/api/event/BackRecordEvent$Reason : java/lang/Enum {
+	public static final field DEATH Lco/xenastudios/xutilities/api/event/BackRecordEvent$Reason;
+	public static final field TELEPORT Lco/xenastudios/xutilities/api/event/BackRecordEvent$Reason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xutilities/api/event/BackRecordEvent$Reason;
+	public static fun values ()[Lco/xenastudios/xutilities/api/event/BackRecordEvent$Reason;
+}
+
+public final class co/xenastudios/xutilities/api/event/BackTeleportEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xutilities/api/event/BackTeleportEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/Location;)V
+	public final fun getDestination ()Lco/xenastudios/core/api/Location;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+}
+
+public final class co/xenastudios/xutilities/api/event/BackTeleportEvent$Companion {
+}
+

@@ -98,10 +98,11 @@ class AdminCommandsTest {
         assertEquals(1, reloads)
         assertEquals(emptyList(), modules.active)
         assertEquals(
+            // A line each, drawn from the lang files' core.reload.* messages.
             listOf(
-                "Reloaded xTest: 0 modules on.\n" +
-                    "Problem: config.yml line 3: limit must be at least 1\n" +
-                    "Module broken is off: it threw IllegalStateException: no database",
+                "» Reloaded xTest: 0 modules on.",
+                "! Problem: config.yml line 3: limit must be at least 1",
+                "✘ Module broken is off: it threw IllegalStateException: no database",
             ),
             owner.replies,
         )
@@ -113,7 +114,7 @@ class AdminCommandsTest {
         fileProblems = emptyList()
         dispatcher.dispatch(owner, "xtest reload")
         platform.scheduler.tick()
-        assertEquals(listOf("Reloaded xTest: 1 module on."), owner.replies)
+        assertEquals(listOf("» Reloaded xTest: 1 module on."), owner.replies)
         assertEquals(listOf("ticker"), modules.active)
     }
 
@@ -123,7 +124,7 @@ class AdminCommandsTest {
         val dispatcher = CommandDispatcher(commands { root("xtest", "") { mount(failing) } }, platform.clock, platform.log)
         dispatcher.dispatch(owner, "xtest reload")
         platform.scheduler.tick()
-        assertEquals(listOf("Reloading xTest failed; the console has the details."), owner.replies)
+        assertEquals(listOf("» Reloading xTest failed; the console has the details."), owner.replies)
         assertEquals(listOf("Reloading xTest failed"), platform.log.errors)
     }
 

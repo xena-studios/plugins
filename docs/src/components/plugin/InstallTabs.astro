@@ -5,6 +5,7 @@
 import { TabItem, Tabs } from "@astrojs/starlight/components";
 import { getEntry } from "astro:content";
 import type { Manifest, Platform } from "../reference/manifest";
+import { servedLink } from "../../plugins";
 
 interface Props {
   plugin: string;
@@ -15,7 +16,8 @@ if (!entry) throw new Error(`InstallTabs: ${plugin} has no manifest (src/generat
 const m = entry.data as unknown as Manifest;
 const name = m.plugin.name;
 const platforms = m.platforms.filter((p) => p.status === "release");
-const download = `/${plugin}/download/`;
+// Its newest major's download page, wherever that's served (src/plugins.ts).
+const download = servedLink(`/${plugin}/download/`);
 
 const versions = (p: Platform) =>
   p.minVersion === p.maxVersion ? p.minVersion : p.maxVersion === "latest" ? `${p.minVersion} or newer` : `${p.minVersion} to ${p.maxVersion}`;

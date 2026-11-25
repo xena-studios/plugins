@@ -35,7 +35,8 @@ public class BrigadierTree<S>(
     private val wrap: (S) -> CommandSource,
     /** The dispatcher in use now: a reload replaces it without rebuilding these nodes' callbacks. */
     private val dispatcher: () -> CommandDispatcher,
-    private val feedback: CommandFeedback = CommandFeedback.ENGLISH,
+    /** What a source is told after a command: read on every run, so the plugin can set it once its translations are loaded. */
+    private val feedback: () -> CommandFeedback = { CommandFeedback.ENGLISH },
 ) {
     /** One root node, called [label]: the root's name or one of its aliases. */
     public fun build(root: CommandNode, label: String): LiteralCommandNode<S> = literal(root, label).build()
@@ -69,7 +70,7 @@ public class BrigadierTree<S>(
     private val run = Command<S> { context ->
         val source = wrap(context.source)
         val result = dispatcher().dispatch(source, line(context))
-        feedback.message(result)?.let(source::reply)
+        feedback().message(result, source)?.let(source::reply)
         if (result == CommandResult.Ran) Command.SINGLE_SUCCESS else 0
     }
 

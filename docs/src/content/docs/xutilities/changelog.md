@@ -7,6 +7,43 @@ sidebar:
   order: 90
 ---
 
+## 3.0.0 (unreleased)
+
+Not released yet: 3.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 2.1 is the release, and 2.x gets its fixes.
+
+The rewrite: the same commands, permissions and settings as 2.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, and **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), in eight languages. Keep the 2.1.0 jar to go back to.
+
+### Upgrading from 2.x
+
+Replace the jar and restart. Your `config.yml` is carried forward and the old one is kept beside it as `config.yml.bak-v2` (`config.yml.bak-v1` from 1.x). See [Upgrading from 2.x](https://plugins.xenastudios.co/xutilities/upgrade/).
+
+- **Messages are in `lang/` now**, one file per language (`lang/en.yml`, `lang/de.yml`, ...), no longer in `config.yml`. Every message you changed in 2.x is copied into `lang/en.yml` on the first start, and then xUtilities sends English to everyone (`messages.language: en`), as 2.x did. Set it to `auto` to give each player their own language. Messages you never changed get 3.0's.
+- **`theme` moved into `messages.theme`**, and is shared with the other Xena plugins in `plugins/Xena/config.yml` unless you set it here. Colours you changed in 2.x stay this plugin's own.
+- The error messages (`messages.error.*`) are the core's now: `core.command.*` in `lang/`. A changed one is carried there.
+- `update-checker` is `updates` now, the core's: `update-checker.enabled` is carried to `updates.check`, and `updates.channel` picks which releases you hear of (`release`, `beta` or `alpha`). `update-checker.message` is `core.update.available` in `lang/`, and the notice goes to players with `xutilities.admin.update` as they join.
+- Every command, alias, permission, link command and `/back` works as it did. Nothing else to change.
+- **Going back to 2.1.0:** stop the server, put the 2.1.0 jar back, and rename `config.yml.bak-v2` to `config.yml` (keep 3.0's as `config.yml.v3` to come back to). If you don't, 2.1.0 still starts: it reads 3.0's file without changing it, keeps your commands' settings and link commands, and uses its own default messages and theme.
+
+### For developers: the API's breaking changes
+
+- `XUtilitiesApi.get()` is `XUtilities.api()` (any platform), and the API is still in Bukkit's services manager.
+- Players are `PlayerRef` (by UUID: `PlayerRefs.of(player.getUniqueId())`), and places are the core's `Location`, not Bukkit's `Player` and `Location`, so the same API works on Fabric. `getBackLocation` returns the location or `null` instead of an `Optional`.
+- The events are on `XUtilities.api().getEvents()` (`BackRecordEvent.TYPE`, `BackTeleportEvent.TYPE`). On Bukkit they're also Bukkit events, now named `BukkitBackRecordEvent` and `BukkitBackTeleportEvent` in `co.xenastudios.xutilities.api.bukkit`, with Bukkit's `Player` and `Location` as before.
+- See [Developer API](https://plugins.xenastudios.co/xutilities/developer-api/).
+
+### New
+
+- **Spigot, CraftBukkit and Bukkit 1.8.8 to 26.3**, and **Fabric**. Where a server can't do something, the command says so instead of failing: `/ping` needs 1.17 on Spigot (Paper has it earlier), and the workstation menus other than `/craft` need Paper 1.14 or Spigot 1.21.4. On Fabric, `/back` remembers deaths and xUtilities' own teleports (Fabric has no teleport event for other mods' without a mixin).
+- **Eight languages**, each player's own: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese. The seven besides English are machine-drafted, waiting for native speakers to read them; corrections are welcome.
+- `/xutilities debug`: checks that the plugin's tasks run where they should and the config read cleanly, then uploads a report to mclo.gs (passwords and tokens removed) to share when asking for help.
+- The gamemodes' names, flight's "enabled" and "disabled" and the speed types are words in `lang/`, so they're translated too.
+
+### Changed
+
+- "No player named X is online" is "No player called X is online".
+- A command whose alias another xUtilities command already has keeps its name and loses the alias, with a warning, instead of the reload failing.
+- bStats (Bukkit only: bStats has no Fabric platform) and the update checker are the core's now, as above; `plugins/bStats/config.yml` still turns bStats off for every plugin.
+
 ## 2.1.0
 
 Replace the jar and restart. Your config is kept as it is.

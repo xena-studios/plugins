@@ -1,5 +1,15 @@
 plugins {
-    id("xena.api")
+    id("xena.kmp-api")
 }
 
-description = "xUtilities' developer API: /back locations, which commands are on, and /back events."
+group = "co.xenastudios"
+description = "xUtilities' developer API: /back spots, which commands are on, and /back's events, the same on every platform."
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            // Players, places and events, as every Xena plugin's API has them.
+            api(project(":core:core-api"))
+        }
+    }
+}

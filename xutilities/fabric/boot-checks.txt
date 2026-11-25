@@ -1,0 +1,44 @@
+# What scripts/boot-fabric.sh checks on each Minecraft line with xUtilities, from the console.
+logged: [xUtilities] xUtilities 3.0.0 on
+run: xutilities info
+expect: xUtilities 3.0.0 on
+# Ours replaces Minecraft's /clear and /gamemode, which say "No player was found".
+run: clear Nobody
+expect: No player called Nobody is online.
+run: gamemode creative Nobody
+expect: No player called Nobody is online.
+run: gmc Nobody
+expect: No player called Nobody is online.
+run: fly
+expect: Only players can use this command.
+run: speed 11
+expect: Speed must be from 1 to 10.
+run: setrotation 400 0
+expect: 400 is more than 360.
+run: ping Nobody
+expect: No player called Nobody is online.
+run: heal Nobody
+expect: No player called Nobody is online.
+run: feed Nobody
+expect: No player called Nobody is online.
+run: repair all Nobody
+expect: No player called Nobody is online.
+run: top
+expect: Only players can use this command.
+run: back
+expect: Only players can use this command.
+run: enderchest
+expect: Only players can use this command.
+run: anvil
+expect: Only players can use this command.
+run: trash
+expect: Only players can use this command.
+run: discord
+expect: Join our Discord: discord.gg/example
+# The reload puts the rebuilt commands back on Brigadier.
+run: xu reload
+expect: Reloaded xUtilities: 1 module on.
+run: clear Nobody
+expect: No player called Nobody is online.
+run: xutilities debug
+expect: Debug report saved as

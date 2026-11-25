@@ -84,7 +84,10 @@ class StorageMigrationJdbcTest {
     fun close() {
         MySqlFixture.drop(opened.lastOrNull { it.dialect.shared })
         opened.forEach { it.close().await() }
+        // Wait for work still on the pool (a migration closes its target there), so no
+        // connection holds SQLite's -wal or -shm file open while JUnit deletes the folder.
         pool.shutdown()
+        check(pool.awaitTermination(10, TimeUnit.SECONDS)) { "the test's async work didn't finish" }
     }
 
     private fun sqlite(name: String): JdbcDatabase = DbFixtures.sqlite(dir.resolve(name), limits = JdbcLimits()).also { opened += it }

@@ -1,0 +1,75 @@
+---
+title: Developer API
+description: "Build on zChat: mute players, hide vanished staff, add placeholders to chat formats, broadcast in zChat's style, and listen to chat's events, on every platform."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+zChat's API is the same on Paper, Folia, Spigot and Fabric: players are by UUID, text is zChat's markup (MiniMessage's tags and the theme's), and every method answers from memory, on any thread, at once. Get it with `ZChat.api()` once zChat is enabled (add it to your plugin's `depend`, or `softdepend` and check `ZChat.isEnabled()` first). On Bukkit it's also in the services manager, as `ZChatApi`.
+
+:::caution[Not on Maven Central yet]
+4.0's API isn't published until 4.0 is released. Its coordinates will be `co.xenastudios.zchat:zchat-api:4.0.0`; until then, compile against the plugin's jar. The [3.x API](/zchat/v3/developer-api/) is on Maven Central as `3.2.0`.
+:::
+
+## Mutes
+
+A punishment plugin tells zChat who's muted. zChat asks before every chat message and private message, on the thread it's sent from, so answer from memory.
+
+```java
+ZChatApi api = ZChat.api();
+api.registerMuteProvider("MyBans", (player, kind) ->
+    isMuted(player.getUuid()) ? "<error>You're muted for <highlight>2h</highlight>." : null);
+```
+
+The first provider with a reason wins, and the player is told it. One that throws is logged and dropped, so it can't break chat. `unregisterMuteProvider` stops asking it.
+
+## Hidden players
+
+A vanish plugin says who's hidden from whom: a hidden player isn't completed in `/msg`, mentioned or messaged by those who can't see them, as with the server's own visibility.
+
+```java
+api.registerHiddenPlayers("MyVanish", (viewer, target) -> isVanished(target) && !canSeeVanished(viewer));
+```
+
+## Placeholders
+
+Give chat formats a tag of your own, filled in per sender, such as `<balance>`:
+
+```java
+api.registerPlaceholder("balance", player -> "<gold>$" + balanceOf(player));
+```
+
+An owner then writes `<balance>` in a format. The value is zChat's markup with only its colours and styles kept. `player`, `displayname`, `message` and the theme's tags are zChat's own.
+
+## Broadcasts and state
+
+`broadcast(message)` sends to everyone who hasn't hidden chat, and the console, with the theme's prefix and colour; `send(player, message)` to one. `hasChatHidden`, `isChatMuted` and `getFormatName` read what zChat knows.
+
+## Events
+
+Fired on zChat's bus (`api.getEvents()`), only when something listens. `ChatMessageEvent`, `MentionEvent` and `PrivateMessageEvent` can be cancelled; `ChatMessageEvent` can add tags for one message, and `PrivateMessageEvent` can change the message.
+
+```java
+api.getEvents().subscribe(ChatMessageEvent.TYPE, event -> event.placeholder("clan", clanOf(event.getPlayer())));
+```
+
+On Bukkit, each is also fired as a Bukkit event, for plugins and Skript scripts that listen the Bukkit way: `BukkitChatMessageEvent`, `BukkitChatMessageSentEvent`, `BukkitMentionEvent`, `BukkitPrivateMessageEvent` and `BukkitFilterMatchEvent` in `co.xenastudios.zchat.api.bukkit`, with Bukkit's `Player`. Cancelling one cancels zChat's own.
+
+<Reference plugin="zchat" show="events" />
+
+## From 3.x
+
+| 3.x | 4.0 |
+| --- | --- |
+| `ZChatApi.get()` | `ZChat.api()` |
+| `registerMuteProvider(Plugin, MuteProvider)`, `muteReason(Player, MessageKind)`: a `Component` | `registerMuteProvider(String, MuteProvider)`, `muteReason(PlayerRef, MessageKind)`: markup, or `null` |
+| `broadcast(Component)`, `send(Player, Component)` | `broadcast(String)`, `send(PlayerRef, String)`, in markup |
+| `hasChatHidden(Player)`, `getFormatName(Player)`, `isChatMuted()` | the same, by `PlayerRef` |
+| Bukkit events in `co.xenastudios.zchat.api.event` | zChat's own events on `api.getEvents()`, with their `TYPE`; on Bukkit also the `Bukkit*Event`s above |
+| `ChatMessageEvent.addPlaceholder(name, Component)` | `ChatMessageEvent.placeholder(name, String)` |
+| `ChatMessageEvent.getMessage()`, `PrivateMessageEvent.getMessage()`: a `Component` | plain text |
+| — | `registerHiddenPlayers`, `registerPlaceholder` |
+
+Inside zChat's jar, the core's types the API uses (`PlayerRef`, `EventBus`) are relocated with its own copy of the core, as every Xena plugin's are. The published API will carry the same names.

@@ -7,6 +7,7 @@ import co.xenastudios.core.common.family.Family
 import co.xenastudios.core.common.i18n.LanguageTag
 import co.xenastudios.core.common.i18n.Translations
 import co.xenastudios.core.common.platform.Log
+import co.xenastudios.core.jvm.config.CarriedMessages
 import co.xenastudios.core.jvm.config.ConfigFile
 import co.xenastudios.core.jvm.config.JvmYaml
 import co.xenastudios.core.jvm.i18n.LangFolder
@@ -93,23 +94,7 @@ public class JvmFiles(
         if (version >= XUtilitiesConfig.version) return
         val edited = Legacy.messages(root)
         if (edited.isEmpty()) return
-        val english = folder.resolve("lang").resolve("en.yml")
-        if (NioFiles.exists(english)) {
-            problems += "config.yml is from xUtilities ${if (version == 1) "1.x" else "2.x"} and has messages you edited, but lang/en.yml is already there, " +
-                "so they aren't copied into it. They're in config.yml.bak-v$version."
-            return
-        }
-        val text = buildString {
-            append("# Your messages from xUtilities ").append(if (version == 1) "1.x" else "2.x").append("'s config.yml.\n")
-            for ((key, value) in edited) append(key).append(": ").append(quote(value)).append('\n')
-        }
-        try {
-            NioFiles.createDirectories(english.parent)
-            NioFiles.write(english, text.toByteArray(StandardCharsets.UTF_8))
-            log.info("Copied ${edited.size} message${if (edited.size == 1) "" else "s"} you edited in config.yml to lang/en.yml.")
-        } catch (e: Exception) {
-            problems += "Couldn't write lang/en.yml (${e.message}), so your edited messages are only in config.yml.bak-v$version."
-        }
+        CarriedMessages.write(folder, edited, "xUtilities ${if (version == 1) "1.x" else "2.x"}", "config.yml.bak-v$version", log)?.let { problems += it }
     }
 
     private fun read(): YamlNode? {
@@ -126,20 +111,5 @@ public class JvmFiles(
         /** The languages the jar ships besides English: drafts until native speakers have read them. */
         @JvmField
         public val LANGUAGES: List<LanguageTag> = listOf("de", "es", "fr", "pt-BR", "ru", "pl", "zh-CN").map { LanguageTag.of(it) }
-
-        // A YAML double-quoted string.
-        private fun quote(text: String): String = buildString {
-            append('"')
-            for (c in text) {
-                when (c) {
-                    '"' -> append("\\\"")
-                    '\\' -> append("\\\\")
-                    '\n' -> append("\\n")
-                    '\t' -> append("\\t")
-                    else -> append(c)
-                }
-            }
-            append('"')
-        }
     }
 }

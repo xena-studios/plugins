@@ -1,0 +1,59 @@
+# zChat on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks, through
+# boot.sh): every command, answered by the core's dispatcher and drawn from lang/en.yml.
+logged: zChat 4.0.0 on
+run: zchat info
+expect: zChat 4.0.0 on
+
+# Ours replaces Minecraft's /msg (vanilla says "No player was found").
+run: msg Nobody hi
+expect: No player called Nobody is online.
+run: tell Nobody hi
+expect: No player called Nobody is online.
+run: reply hi
+expect: You have nobody to reply to.
+
+# The console may use selectors (Paper, not Folia); with nobody online, none match.
+paper run: msg @a hi
+paper expect: No player called @a is online.
+
+run: mutechat
+expect: Chat has been muted by CONSOLE.
+run: mutechat
+expect: Chat has been unmuted by CONSOLE.
+run: clearchat
+expect: Chat was cleared by CONSOLE.
+run: togglechat
+expect: Only players can use this command.
+run: socialspy
+expect: Only players can use this command.
+
+# /filter saves to config.yml and applies at once.
+run: filter add bootcheck*
+expect: Added bootcheck* to the filter.
+run: filter test say bootchecks now
+expect: That would show as: say ********** now
+run: filter remove bootcheck*
+expect: Removed bootcheck* from the filter.
+run: filter test say bootchecks now
+expect: That passes the filter.
+run: filter list
+expect: Filtered words (2): badword1, badword2
+
+# Reloading re-registers the commands while the server runs: chat handling is the one module.
+run: zc reload
+expect: Reloaded zChat: 1 module on.
+run: msg Nobody hi
+expect: No player called Nobody is online.
+run: zchat:clearchat
+expect: Chat was cleared by CONSOLE.
+
+# The health checks, and the report written to debug/ (boot.sh turns the upload off).
+run: zchat debug
+expect: Threads: tasks run where they should
+expect: Debug report saved as debug/debug-
+
+# A datapack reload rebuilds the server's command tree; ours must survive it. Folia has no /reload.
+paper run: minecraft:reload
+paper expect: advancements
+paper run: msg Nobody hi
+paper expect: No player called Nobody is online.

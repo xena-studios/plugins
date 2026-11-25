@@ -4,7 +4,7 @@ import co.xenastudios.core.api.Location
 import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.api.WorldRef
 import co.xenastudios.core.common.text.Component
-import co.xenastudios.xutilities.config.Sound
+import co.xenastudios.core.common.config.Sound
 
 /**
  * What xUtilities does to players, as each platform's adapter does it: the one thing its shared

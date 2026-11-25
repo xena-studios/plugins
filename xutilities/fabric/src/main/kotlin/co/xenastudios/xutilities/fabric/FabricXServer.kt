@@ -17,7 +17,7 @@ import co.xenastudios.xutilities.GameMode
 import co.xenastudios.xutilities.MoveListener
 import co.xenastudios.xutilities.Server
 import co.xenastudios.xutilities.Station
-import co.xenastudios.xutilities.config.Sound
+import co.xenastudios.core.common.config.Sound
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder

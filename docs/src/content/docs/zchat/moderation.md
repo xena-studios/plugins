@@ -2,14 +2,14 @@
 title: Moderation
 description: The chat filter, cooldown, anti-repeat, chat mute, clearing chat, and hiding chat.
 sidebar:
-  order: 3
+  order: 3.2
 ---
 
 Each tool has an `enabled` switch, so turn off any you don't want.
 
 ## Filter
 
-Censors or blocks words, in chat and in [private messages](/zchat/messages/#private-messages).
+Censors or blocks words, in chat and in [private messages](/zchat/mentions/#private-messages).
 
 ```yaml
 filter:
@@ -19,11 +19,10 @@ filter:
   smart: true
   words: ["badword1", "badword2"]
   patterns: []
-  message-blocked: "<prefix><error>Your message was blocked by the chat filter."
 ```
 
 - **`censor`** replaces what matched with `censor-char` and lets the message through.
-- **`block`** stops the message and sends the player `message-blocked`.
+- **`block`** stops the message and tells the player `filter.blocked` (in [`lang/`](/zchat/messages/)).
 
 ### Words
 
@@ -56,13 +55,13 @@ When someone finds a new word to dodge with, staff can add it without opening th
 | `/filter list` | Shows the words, to you only. |
 | `/filter test <message>` | Shows what the filter would do to a message, without sending it. Handy to check a new word catches what you meant. |
 
-The words are saved to `filter.words` in `config.yml`, the same list you'd edit by hand, with your comments kept. A word is one word, lowercased, with `*` only at its start or end; anything else belongs in `patterns`. Adding a word without `*` reminds you that it won't catch plurals (turn that off by blanking `command.message-added-tip`). If `config.yml` isn't valid YAML, `/filter` changes nothing and says so in the console.
+The words are saved to `filter.words` in `config.yml`, the same list you'd edit by hand, with your comments kept. A word is one word, lowercased, with `*` only at its start or end; anything else belongs in `patterns`. Adding a word without `*` reminds you that it won't catch plurals (turn that off by blanking `filter.added-tip` in `lang/`). If `config.yml` isn't valid YAML, `/filter` changes nothing and says so in the console.
 
-`/filter` needs `zchat.command.filter` (`op` by default). Its aliases (`chatfilter`), permission and messages are under `filter.command`.
+`/filter` needs `zchat.command.filter` (`op` by default). Its aliases (`chatfilter`) and permission are under `filter.command`; its messages are `filter.*` in `lang/`.
 
 ### Patterns
 
-For anything words can't express, `patterns` are Java regular expressions, matched anywhere in the message as typed, ignoring case: `"free\\s*money"`. They aren't smart. A pattern that isn't a valid regular expression is skipped, with a warning in the console.
+For anything words can't express, `patterns` are regular expressions (Java's, on Bukkit and Fabric), matched anywhere in the message as typed, ignoring case: `"free\\s*money"`. They aren't smart. A pattern that isn't a valid regular expression is skipped, with a warning in the console.
 
 Words and patterns are compiled when the config loads, not per message. Players with `zchat.bypass.filter` are never filtered.
 
@@ -78,10 +77,9 @@ Sets a minimum gap between one player's messages.
 cooldown:
   enabled: true
   seconds: 3
-  message: "<prefix><error>Wait <highlight><seconds>s</highlight> before chatting again."
 ```
 
-`seconds` can have decimals, such as `1.5`. `<seconds>` is the whole seconds left. Players with `zchat.bypass.cooldown` are never held back.
+`seconds` can have decimals, such as `1.5`. The message is `cooldown.wait`, whose `<seconds>` is the whole seconds left. Players with `zchat.bypass.cooldown` are never held back.
 
 ## Anti-repeat
 
@@ -92,25 +90,24 @@ anti-repeat:
   enabled: true
   seconds: 30
   similarity: 90
-  message: "<prefix><error>You just said that."
 ```
 
 A message counts as a repeat if it's at least `similarity` percent like the player's last one within `seconds`. Messages are compared the way the smart filter sees them, so changing the case, spacing or punctuation doesn't make a message new. `100` catches only exact repeats. Messages under three letters, like *gg* or *ok*, are always let through. Players with `zchat.bypass.anti-repeat` are never stopped.
 
 ## Mute chat: `/mutechat`
 
-`/mutechat` (alias `/mc`) turns a global mute on or off. While chat is muted, only players with `zchat.bypass.mute` can talk; anyone else gets `message-blocked`. Private messages still work. The mute lasts through `/zchat reload`, until someone turns it off or the server restarts.
+`/mutechat` (alias `/mc`) turns a global mute on or off. While chat is muted, only players with `zchat.bypass.mute` can talk; anyone else is told `mutechat.blocked`. Private messages still work. The mute lasts through `/zchat reload`, until someone turns it off or the server restarts.
 
 ## Clear chat: `/clearchat`
 
-`/clearchat` (alias `/cc`) pushes everyone's chat out of view with `lines` blank lines (default 100), sent as one message, then shows `message-cleared`. Players with `zchat.bypass.clearchat` keep their chat.
+`/clearchat` (alias `/cc`) pushes everyone's chat out of view with `lines` blank lines (default 100), sent as one message, then shows `clearchat.cleared`. Players with `zchat.bypass.clearchat` keep their chat.
 
 ## Hide chat: `/togglechat`
 
-`/togglechat` (alias `/tc`) lets a player hide other players' chat messages for themselves, and show them again. Everyone can use it by default. Their own messages, private messages and commands still work, and they aren't pinged by [mentions](/zchat/messages/#mentions).
+`/togglechat` (alias `/tc`) lets a player hide other players' chat messages for themselves, and show them again. Everyone can use it by default. Their own messages, private messages and commands still work, and they aren't pinged by [mentions](/zchat/mentions/#mentions).
 
-With `remember: true` (the default), the choice is kept when they rejoin. It's stored on the player, so there's no file to manage.
+With `remember: true` (the default), the choice is kept when they rejoin, in `players.records` in zChat's folder; `/zchat forget <player>` deletes a player's. (3.x kept it on the player; a 3.x choice is brought over the first time they join 4.0.)
 
 ## What runs first
 
-For each message, zChat checks the cheapest things first: mute, then cooldown, then filter, then anti-repeat, then mentions and the format. A message stopped early costs almost nothing, and one that gets through is drawn once for everyone.
+For each message, zChat checks the cheapest things first: mute, then cooldown, then filter, then anti-repeat, then mentions and the format. Mute providers from other plugins (a punishment plugin's mutes) are asked right after the chat mute. A message stopped early costs almost nothing, and one that gets through is drawn once for everyone.

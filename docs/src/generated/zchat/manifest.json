@@ -1,0 +1,2256 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "zchat",
+    "name": "zChat",
+    "version": "unspecified",
+    "description": "Format your chat. Keep it clean."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "4.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "4.0.0"
+    },
+    {
+      "id": "spigot",
+      "name": "Spigot",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "4.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "4.0.0"
+    },
+    {
+      "id": "neoforge",
+      "name": "NeoForge",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "id": "sponge",
+      "name": "Sponge",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    },
+    {
+      "id": "pumpkin",
+      "name": "Pumpkin",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "zchat",
+      "usage": "/zchat [info|reload|debug|forget]",
+      "aliases": [
+        "zc"
+      ],
+      "description": "Shows zChat's version, and holds its admin subcommands.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "zchat info",
+          "usage": "/zchat info",
+          "aliases": [],
+          "description": "Shows zChat's version.",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "zchat reload",
+          "usage": "/zchat reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "zchat.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "zchat debug",
+          "usage": "/zchat debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "zchat.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "zchat forget",
+          "usage": "/zchat forget <player>",
+          "aliases": [],
+          "description": "Deletes everything kept about one player.",
+          "permission": "zchat.admin.forget",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player name or UUID",
+              "required": true,
+              "greedy": false,
+              "description": "The player whose data is deleted, online or not.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": true,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "clearchat",
+      "usage": "/clearchat",
+      "aliases": [
+        "cc"
+      ],
+      "description": "Clear chat for everyone.",
+      "permission": "zchat.command.clearchat",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "mutechat",
+      "usage": "/mutechat",
+      "aliases": [
+        "mc"
+      ],
+      "description": "Mute or unmute chat for everyone.",
+      "permission": "zchat.command.mutechat",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "togglechat",
+      "usage": "/togglechat",
+      "aliases": [
+        "tc"
+      ],
+      "description": "Hide or show other players' chat.",
+      "permission": "zchat.command.togglechat",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "msg",
+      "usage": "/msg <player> <message>",
+      "aliases": [
+        "tell",
+        "w",
+        "whisper",
+        "m",
+        "pm"
+      ],
+      "description": "Send a player a private message.",
+      "permission": "zchat.command.msg",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "player",
+          "required": true,
+          "greedy": false,
+          "description": "Who to message: an online player.",
+          "choices": []
+        },
+        {
+          "name": "message",
+          "type": "text",
+          "required": true,
+          "greedy": true,
+          "description": "What to say.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "reply",
+      "usage": "/reply <message>",
+      "aliases": [
+        "r"
+      ],
+      "description": "Answer your last private message.",
+      "permission": "zchat.command.reply",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "message",
+          "type": "text",
+          "required": true,
+          "greedy": true,
+          "description": "What to say.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "socialspy",
+      "usage": "/socialspy",
+      "aliases": [
+        "spy"
+      ],
+      "description": "See every private message.",
+      "permission": "zchat.command.socialspy",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "filter",
+      "usage": "/filter <add|remove|list|test>",
+      "aliases": [
+        "chatfilter"
+      ],
+      "description": "Add, remove and list chat filter words, or test a message.",
+      "permission": "zchat.command.filter",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": false,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "filter add",
+          "usage": "/filter add <word>",
+          "aliases": [],
+          "description": "Add a word to the filter.",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "word",
+              "type": "text",
+              "required": true,
+              "greedy": true,
+              "description": "One word, with * at either end to catch longer words.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "filter remove",
+          "usage": "/filter remove <word>",
+          "aliases": [],
+          "description": "Take a word out of the filter.",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "word",
+              "type": "word",
+              "required": true,
+              "greedy": true,
+              "description": "A word in the filter.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "filter list",
+          "usage": "/filter list",
+          "aliases": [],
+          "description": "List the filter's words.",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "filter test",
+          "usage": "/filter test <message>",
+          "aliases": [],
+          "description": "See what the filter would do to a message.",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "message",
+              "type": "text",
+              "required": true,
+              "greedy": true,
+              "description": "The message to test.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "node": "zchat.bypass.mute",
+      "description": "Talk while chat is muted with /mutechat.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.bypass.cooldown",
+      "description": "Skip the gap between chat messages.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.bypass.filter",
+      "description": "Skip the chat filter, in chat and private messages.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.bypass.anti-repeat",
+      "description": "Say the same thing twice in a row.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.bypass.clearchat",
+      "description": "Keep your chat when /clearchat clears everyone's.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.chat.color",
+      "description": "Use colour and style tags in your own chat messages.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.mention.everyone",
+      "description": "Mention everyone with @everyone.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.group.vip",
+      "description": "Chat in the vip format.",
+      "default": "nobody",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.group.staff",
+      "description": "Chat in the staff format.",
+      "default": "nobody",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.group.admin",
+      "description": "Chat in the admin format.",
+      "default": "nobody",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.command.clearchat",
+      "description": "Use /clearchat.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "clearchat"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.command.mutechat",
+      "description": "Use /mutechat.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "mutechat"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.command.togglechat",
+      "description": "Use /togglechat.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "togglechat"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.command.msg",
+      "description": "Use /msg.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "msg"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.command.reply",
+      "description": "Use /reply.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "reply"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.command.socialspy",
+      "description": "Use /socialspy.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "socialspy"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.command.filter",
+      "description": "Use /filter.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "filter"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "zchat.admin",
+      "description": "Every admin subcommand of zChat, and its update notices.",
+      "default": "op",
+      "children": {
+        "zchat.admin.reload": true,
+        "zchat.admin.debug": true,
+        "zchat.admin.forget": true,
+        "zchat.admin.update": true
+      },
+      "commands": [],
+      "builtIn": true
+    },
+    {
+      "node": "zchat.admin.reload",
+      "description": "Use /zchat reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "zchat reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "zchat.admin.debug",
+      "description": "Use /zchat debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "zchat debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "zchat.admin.forget",
+      "description": "Use /zchat forget.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "zchat forget"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "zchat.admin.update",
+      "description": "Hear about newer versions of zChat when joining.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 3,
+    "header": [
+      "zChat: format your chat. Keep it clean.",
+      "Docs: https://plugins.xenastudios.co/zchat/configuration/",
+      "",
+      "Apply changes with /zchat reload (or /zc reload). Everything applies, even turning",
+      "commands on or off. A bad value falls back to its default with a warning in the",
+      "console; zChat never stops over config. Formats are in MiniMessage's tags:",
+      "https://plugins.xenastudios.co/start/formatting/. The messages are in lang/."
+    ],
+    "entries": [
+      {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "formatting",
+        "type": "section",
+        "comment": [
+          "How chat looks. Formats can use <player> (the name), <displayname> (the name with",
+          "any nickname colours), <message>, the theme's tags (<prefix>, <highlight>...), and",
+          "PlaceholderAPI placeholders such as %vault_prefix% when PlaceholderAPI is installed."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "formatting.enabled",
+            "type": "boolean",
+            "comment": [
+              "false leaves chat as the server shows it."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "formatting.color-permission",
+            "type": "permission",
+            "comment": [
+              "Players with this permission can use colour and style tags, such as <red> or",
+              "<bold>, in their own messages. Never clicks or hovers. Blank lets nobody."
+            ],
+            "default": "zchat.chat.color",
+            "defaultText": "\"zchat.chat.color\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "formatting.default-format",
+            "type": "string",
+            "comment": [
+              "The format for players in no group below."
+            ],
+            "default": "<gray><player>:</gray> <white><message></white>",
+            "defaultText": "\"<gray><player>:</gray> <white><message></white>\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "formatting.groups",
+            "type": "groups",
+            "comment": [
+              "Each group's format goes to players with its permission (zchat.group.<name> if left",
+              "out). A player in several groups gets the one with the highest weight. Group",
+              "permissions are given out on purpose: operators don't get them by being operators."
+            ],
+            "default": {
+              "vip": {
+                "weight": "10",
+                "permission": "zchat.group.vip",
+                "format": "<gold>[VIP] <player></gold> <dark_gray>»</dark_gray> <white><message></white>"
+              },
+              "staff": {
+                "weight": "20",
+                "permission": "zchat.group.staff",
+                "format": "<aqua>[Staff] <player></aqua> <dark_gray>»</dark_gray> <white><message></white>"
+              },
+              "admin": {
+                "weight": "30",
+                "permission": "zchat.group.admin",
+                "format": "<red>[Admin] <player></red> <dark_gray>»</dark_gray> <white><message></white>"
+              }
+            },
+            "defaultText": "{vip: {weight: 10, permission: \"zchat.group.vip\", format: \"<gold>[VIP] <player></gold> <dark_gray>»</dark_gray> <white><message></white>\"}, staff: {weight: 20, permission: \"zchat.group.staff\", format: \"<aqua>[Staff] <player></aqua> <dark_gray>»</dark_gray> <white><message></white>\"}, admin: {weight: 30, permission: \"zchat.group.admin\", format: \"<red>[Admin] <player></red> <dark_gray>»</dark_gray> <white><message></white>\"}}",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "filter",
+        "type": "section",
+        "comment": [
+          "Catches words you don't want in chat and private messages. Players with",
+          "zchat.bypass.filter skip it."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "filter.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "filter.mode",
+            "type": "enum",
+            "comment": [
+              "censor hides what matched and lets the message through; block stops the message."
+            ],
+            "default": "censor",
+            "defaultText": "\"censor\"",
+            "choices": [
+              "censor",
+              "block"
+            ],
+            "entries": []
+          },
+          {
+            "path": "filter.censor-char",
+            "type": "character",
+            "comment": [],
+            "default": "*",
+            "defaultText": "\"*\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "filter.smart",
+            "type": "boolean",
+            "comment": [
+              "Also catch words dressed up to get past the filter: s p a c e d out, b4dw0rd,",
+              "baaadword, bädword. false matches words only as typed."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "filter.words",
+            "type": "list<string>",
+            "comment": [
+              "Words to catch, matched as whole words. Put * at either end to also catch longer",
+              "words: \"bad*\" catches badly and bads, where \"bad\" alone misses plurals.",
+              "/filter add and /filter remove change this list in game."
+            ],
+            "default": [
+              "badword1",
+              "badword2"
+            ],
+            "defaultText": "[\"badword1\", \"badword2\"]",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "filter.patterns",
+            "type": "list<string>",
+            "comment": [
+              "Regular expressions, matched anywhere in the message as typed, ignoring case.",
+              "For anything words can't express. Not smart."
+            ],
+            "default": [],
+            "defaultText": "[]",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "filter.command",
+            "type": "section",
+            "comment": [
+              "/filter: add, remove and list words, and test a message, in game."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "filter.command.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "filter.command.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "chatfilter"
+                ],
+                "defaultText": "[\"chatfilter\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "filter.command.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "zchat.command.filter",
+                "defaultText": "\"zchat.command.filter\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "cooldown",
+        "type": "section",
+        "comment": [
+          "The shortest gap between one player's messages. zchat.bypass.cooldown skips it."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "cooldown.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "cooldown.seconds",
+            "type": "number",
+            "comment": [],
+            "default": 3,
+            "defaultText": "3",
+            "choices": [],
+            "min": 0,
+            "max": 3600,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "anti-repeat",
+        "type": "section",
+        "comment": [
+          "Stops a player sending the same message again soon after. Messages under three",
+          "letters, like \"gg\", are let through. zchat.bypass.anti-repeat skips it."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "anti-repeat.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "anti-repeat.seconds",
+            "type": "integer",
+            "comment": [
+              "How long a message counts as recent."
+            ],
+            "default": 30,
+            "defaultText": "30",
+            "choices": [],
+            "min": 1,
+            "max": 3600,
+            "entries": []
+          },
+          {
+            "path": "anti-repeat.similarity",
+            "type": "integer",
+            "comment": [
+              "How alike two messages must be, in percent, to count as a repeat. 100 catches",
+              "only exact repeats; lower also catches small changes."
+            ],
+            "default": 90,
+            "defaultText": "90",
+            "choices": [],
+            "min": 50,
+            "max": 100,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "mentions",
+        "type": "section",
+        "comment": [
+          "Writing a player's name, or @name, highlights it and pings them. Players who've",
+          "hidden chat aren't pinged."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "mentions.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "mentions.format",
+            "type": "string",
+            "comment": [
+              "How a mention looks, to everyone. <name> is the mentioned player's name."
+            ],
+            "default": "<highlight>@<name></highlight>",
+            "defaultText": "\"<highlight>@<name></highlight>\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "mentions.sound",
+            "type": "sound",
+            "comment": [
+              "Played to the mentioned player. Blank for none."
+            ],
+            "default": "entity.experience_orb.pickup 0.5 1.2",
+            "defaultText": "\"entity.experience_orb.pickup 0.5 1.2\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "mentions.everyone-permission",
+            "type": "permission",
+            "comment": [
+              "Players with this permission can write @everyone to mention everyone. Blank lets",
+              "nobody."
+            ],
+            "default": "zchat.mention.everyone",
+            "defaultText": "\"zchat.mention.everyone\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "clearchat",
+        "type": "section",
+        "comment": [
+          "Every command has the same settings:",
+          "  enabled     false removes the command entirely",
+          "  aliases     other names for it",
+          "  permission  needed to use it; blank (\"\") lets anyone",
+          "The messages are in lang/<language>.yml.",
+          "",
+          "/clearchat: clears chat for everyone. zchat.bypass.clearchat keeps a player's."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "clearchat.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "clearchat.aliases",
+            "type": "list<alias>",
+            "comment": [],
+            "default": [
+              "cc"
+            ],
+            "defaultText": "[\"cc\"]",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "clearchat.permission",
+            "type": "permission",
+            "comment": [],
+            "default": "zchat.command.clearchat",
+            "defaultText": "\"zchat.command.clearchat\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "clearchat.lines",
+            "type": "integer",
+            "comment": [
+              "How many blank lines push chat out of view."
+            ],
+            "default": 100,
+            "defaultText": "100",
+            "choices": [],
+            "min": 1,
+            "max": 500,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "mutechat",
+        "type": "section",
+        "comment": [
+          "/mutechat: mutes chat for everyone but zchat.bypass.mute until it's run again."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "mutechat.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "mutechat.aliases",
+            "type": "list<alias>",
+            "comment": [],
+            "default": [
+              "mc"
+            ],
+            "defaultText": "[\"mc\"]",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "mutechat.permission",
+            "type": "permission",
+            "comment": [],
+            "default": "zchat.command.mutechat",
+            "defaultText": "\"zchat.command.mutechat\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "togglechat",
+        "type": "section",
+        "comment": [
+          "/togglechat: hides other players' chat for yourself, or shows it again."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "togglechat.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "togglechat.aliases",
+            "type": "list<alias>",
+            "comment": [],
+            "default": [
+              "tc"
+            ],
+            "defaultText": "[\"tc\"]",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "togglechat.permission",
+            "type": "permission",
+            "comment": [],
+            "default": "zchat.command.togglechat",
+            "defaultText": "\"zchat.command.togglechat\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "togglechat.remember",
+            "type": "boolean",
+            "comment": [
+              "Keep a player's choice when they rejoin."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "private-messages",
+        "type": "section",
+        "comment": [
+          "Private messages. The filter applies to them; the mute and cooldown don't."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "private-messages.msg",
+            "type": "section",
+            "comment": [
+              "/msg <player> <message>. Replaces Minecraft's /msg, /tell and /w. <player> is the",
+              "other player and <message> what was said."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "private-messages.msg.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.msg.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "tell",
+                  "w",
+                  "whisper",
+                  "m",
+                  "pm"
+                ],
+                "defaultText": "[\"tell\", \"w\", \"whisper\", \"m\", \"pm\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.msg.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "zchat.command.msg",
+                "defaultText": "\"zchat.command.msg\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.msg.format-sent",
+                "type": "string",
+                "comment": [],
+                "default": "<highlight>You → <player></highlight><gray>:</gray> <white><message>",
+                "defaultText": "\"<highlight>You → <player></highlight><gray>:</gray> <white><message>\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.msg.format-received",
+                "type": "string",
+                "comment": [],
+                "default": "<highlight><player> → You</highlight><gray>:</gray> <white><message>",
+                "defaultText": "\"<highlight><player> → You</highlight><gray>:</gray> <white><message>\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.msg.sound",
+                "type": "sound",
+                "comment": [
+                  "Played to whoever receives a message. Blank for none."
+                ],
+                "default": "entity.experience_orb.pickup 0.5 1.2",
+                "defaultText": "\"entity.experience_orb.pickup 0.5 1.2\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "private-messages.reply",
+            "type": "section",
+            "comment": [
+              "/reply <message>: answers whoever you last messaged, or who last messaged you."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "private-messages.reply.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.reply.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "r"
+                ],
+                "defaultText": "[\"r\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.reply.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "zchat.command.reply",
+                "defaultText": "\"zchat.command.reply\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "private-messages.socialspy",
+            "type": "section",
+            "comment": [
+              "/socialspy: shows staff every private message. <sender> and <receiver> are filled in."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "private-messages.socialspy.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.socialspy.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "spy"
+                ],
+                "defaultText": "[\"spy\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.socialspy.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "zchat.command.socialspy",
+                "defaultText": "\"zchat.command.socialspy\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.socialspy.remember",
+                "type": "boolean",
+                "comment": [
+                  "Keep a player's choice when they rejoin."
+                ],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.socialspy.log-to-console",
+                "type": "boolean",
+                "comment": [
+                  "Also log every private message to the console."
+                ],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "private-messages.socialspy.format",
+                "type": "string",
+                "comment": [],
+                "default": "<dark_gray>[Spy]</dark_gray> <gray><sender> → <receiver>: <message>",
+                "defaultText": "\"<dark_gray>[Spy]</dark_gray> <gray><sender> → <receiver>: <message>\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "updates",
+        "type": "section",
+        "comment": [
+          "Telling you when a newer version is out: in the console, and to players with",
+          "<plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,",
+          "sending only the plugin's version, the platform and the Minecraft version."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "updates.check",
+            "type": "boolean",
+            "comment": [
+              "Whether to ask at all."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "updates.channel",
+            "type": "enum",
+            "comment": [
+              "Which releases to hear of: release, beta (betas and releases) or alpha (everything)."
+            ],
+            "default": "release",
+            "defaultText": "\"release\"",
+            "choices": [
+              "release",
+              "beta",
+              "alpha"
+            ],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [],
+  "messages": [
+    {
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.update.available",
+      "english": "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+      "comment": [
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page."
+      ],
+      "placeholders": [
+        "plugin",
+        "current",
+        "latest",
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
+      ],
+      "placeholders": [
+        "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "core.reload.done",
+      "english": "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+      "comment": [
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise."
+      ],
+      "placeholders": [
+        "plugin",
+        "count",
+        "has_one",
+        "has_many"
+      ]
+    },
+    {
+      "key": "core.reload.problem",
+      "english": "<gold>!</gold> Problem: <problem>",
+      "comment": [
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too."
+      ],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "core.reload.module-off",
+      "english": "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+      "comment": [
+        "/<plugin> reload: a module that failed, and why, in English."
+      ],
+      "placeholders": [
+        "module",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.reload.failed",
+      "english": "<prefix><error>Reloading <plugin> failed; the console has the details.",
+      "comment": [
+        "/<plugin> reload: something went wrong; the settings from before are still in use."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.command.unknown",
+      "english": "<prefix><error>Unknown command.",
+      "comment": [
+        "Rare: a command that went away as it was typed."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.no-permission",
+      "english": "<prefix><error>You don't have permission to do that.",
+      "comment": [
+        "The sender lacks the command's permission."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.players-only",
+      "english": "<prefix><error>Only players can use this command.",
+      "comment": [
+        "The console or a command block ran a command only players can use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.usage",
+      "english": "<prefix><error>Usage:</error> <usage>",
+      "comment": [
+        "The command was typed with missing or extra words. <usage> is how to type it."
+      ],
+      "placeholders": [
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.unknown-player",
+      "english": "<prefix><error>No player called <highlight><player></highlight> is online.",
+      "comment": [
+        "No player the sender can see is online by the name typed (<player>)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.command.not-a-number",
+      "english": "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+      "comment": [
+        "A number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-an-integer",
+      "english": "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+      "comment": [
+        "A whole number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-small",
+      "english": "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+      "comment": [
+        "A number below the least the command takes (<min>)."
+      ],
+      "placeholders": [
+        "input",
+        "min",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-large",
+      "english": "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+      "comment": [
+        "A number above the most the command takes (<max>)."
+      ],
+      "placeholders": [
+        "input",
+        "max",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-a-choice",
+      "english": "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+      "comment": [
+        "A word that isn't one of those the command takes (<choices>, comma-separated)."
+      ],
+      "placeholders": [
+        "input",
+        "choices",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.invalid",
+      "english": "<prefix><error><reason></error> Usage: <usage>",
+      "comment": [
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.cooldown",
+      "english": "<prefix><error>You can use that again in <time>.",
+      "comment": [
+        "The command has a cooldown. <time> is how long is left."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.confirm",
+      "english": "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+      "comment": [
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is."
+      ],
+      "placeholders": [
+        "line",
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.error",
+      "english": "<prefix><error>Something went wrong running that command; the console has the details.",
+      "comment": [
+        "The command hit an error. The console has what happened."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "info",
+      "english": "<prefix>zChat <highlight><version></highlight> on <platform>. <gray>/zchat reload | debug",
+      "comment": [
+        "/zchat (or /zc) on its own."
+      ],
+      "placeholders": [
+        "version",
+        "platform"
+      ]
+    },
+    {
+      "key": "filter.blocked",
+      "english": "<prefix><error>Your message was blocked by the chat filter.",
+      "comment": [
+        "A message the filter stopped (filter.mode: block)."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "filter.added",
+      "english": "<prefix>Added <highlight><word></highlight> to the filter.",
+      "comment": [
+        "/filter add. <word> is the word."
+      ],
+      "placeholders": [
+        "word"
+      ]
+    },
+    {
+      "key": "filter.added-tip",
+      "english": "<prefix>It catches <highlight><word></highlight> as a whole word. Add <highlight><word>*</highlight> to catch plurals and longer words too.",
+      "comment": [
+        "Sent after adding a word without *, as a reminder that plurals and longer words aren't caught. Blank for none."
+      ],
+      "placeholders": [
+        "word"
+      ]
+    },
+    {
+      "key": "filter.removed",
+      "english": "<prefix>Removed <highlight><word></highlight> from the filter.",
+      "comment": [
+        "/filter remove."
+      ],
+      "placeholders": [
+        "word"
+      ]
+    },
+    {
+      "key": "filter.already",
+      "english": "<prefix><error><highlight><word></highlight> is already in the filter.",
+      "comment": [
+        "/filter add, for a word already there."
+      ],
+      "placeholders": [
+        "word"
+      ]
+    },
+    {
+      "key": "filter.not-found",
+      "english": "<prefix><error><highlight><word></highlight> isn't in the filter.",
+      "comment": [
+        "/filter remove, for a word that isn't there."
+      ],
+      "placeholders": [
+        "word"
+      ]
+    },
+    {
+      "key": "filter.invalid",
+      "english": "<prefix><error>A filter word is one word, with <highlight>*</highlight> only at its start or end. For anything else, use filter.patterns in config.yml.",
+      "comment": [
+        "For a word with spaces, or * anywhere but its ends."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "filter.list",
+      "english": "<prefix>Filtered words (<highlight><count></highlight>): <words>",
+      "comment": [
+        "/filter list. <count> is how many words, <words> the words."
+      ],
+      "placeholders": [
+        "count",
+        "words"
+      ]
+    },
+    {
+      "key": "filter.list-empty",
+      "english": "<prefix>No words are filtered yet.",
+      "comment": [
+        "/filter list with no words."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "filter.test-passes",
+      "english": "<prefix><success>That passes the filter.",
+      "comment": [
+        "/filter test <message>: nothing caught."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "filter.test-censored",
+      "english": "<prefix>That would show as: <white><message>",
+      "comment": [
+        "/filter test <message>, censored. <message> is how it would show."
+      ],
+      "placeholders": [
+        "message"
+      ]
+    },
+    {
+      "key": "filter.test-blocked",
+      "english": "<prefix>That would be <error>blocked</error>.",
+      "comment": [
+        "/filter test <message>, blocked."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "filter.save-failed",
+      "english": "<prefix><error>Couldn't save config.yml, so the filter is unchanged. The console says why.",
+      "comment": [
+        "/filter add or remove couldn't write config.yml."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "cooldown.wait",
+      "english": "<prefix><error>Wait <highlight><seconds>s</highlight> before chatting again.",
+      "comment": [
+        "Chatting again too soon. <seconds> is the whole seconds left."
+      ],
+      "placeholders": [
+        "seconds"
+      ]
+    },
+    {
+      "key": "anti-repeat.blocked",
+      "english": "<prefix><error>You just said that.",
+      "comment": [
+        "The same message again, too soon."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "clearchat.cleared",
+      "english": "<prefix>Chat was cleared by <highlight><player></highlight>.",
+      "comment": [
+        "/clearchat, to everyone. <player> is who cleared it."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "mutechat.muted",
+      "english": "<prefix>Chat has been <error>muted</error> by <highlight><player></highlight>.",
+      "comment": [
+        "/mutechat, to everyone. <player> is who muted it."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "mutechat.unmuted",
+      "english": "<prefix>Chat has been <success>unmuted</success> by <highlight><player></highlight>.",
+      "comment": [
+        "/mutechat again, to everyone."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "mutechat.blocked",
+      "english": "<prefix><error>Chat is muted right now.",
+      "comment": [
+        "Shown to a player who talks while chat is muted."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "togglechat.on",
+      "english": "<prefix>Chat is now <success>shown</success>.",
+      "comment": [
+        "/togglechat, showing chat again."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "togglechat.off",
+      "english": "<prefix>Chat is now <error>hidden</error>. Run it again to show it.",
+      "comment": [
+        "/togglechat, hiding other players' chat."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "reply.nobody",
+      "english": "<prefix><error>You have nobody to reply to.",
+      "comment": [
+        "/reply when nobody has messaged you, or you them."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "socialspy.on",
+      "english": "<prefix>Social spy <success>on</success>.",
+      "comment": [
+        "/socialspy turned on."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "socialspy.off",
+      "english": "<prefix>Social spy <error>off</error>.",
+      "comment": [
+        "/socialspy turned off."
+      ],
+      "placeholders": []
+    }
+  ],
+  "events": [
+    {
+      "key": "zchat:chat_message",
+      "className": "co.xenastudios.zchat.api.event.ChatMessageEvent",
+      "description": "A chat message passed zChat's checks and is about to be drawn. Cancel it to stop it, or add tags for the format.",
+      "cancellable": true,
+      "since": "4.0.0"
+    },
+    {
+      "key": "zchat:chat_message_sent",
+      "className": "co.xenastudios.zchat.api.event.ChatMessageSentEvent",
+      "description": "A chat message zChat handled went out, after every plugin had its say.",
+      "cancellable": false,
+      "since": "4.0.0"
+    },
+    {
+      "key": "zchat:mention",
+      "className": "co.xenastudios.zchat.api.event.MentionEvent",
+      "description": "A mentioned player is about to hear the mention sound. Cancel it to keep it quiet.",
+      "cancellable": true,
+      "since": "4.0.0"
+    },
+    {
+      "key": "zchat:private_message",
+      "className": "co.xenastudios.zchat.api.event.PrivateMessageEvent",
+      "description": "A private message is about to be delivered. Cancel it, or change the message.",
+      "cancellable": true,
+      "since": "4.0.0"
+    },
+    {
+      "key": "zchat:filter_match",
+      "className": "co.xenastudios.zchat.api.event.FilterMatchEvent",
+      "description": "The filter caught something in a chat or private message.",
+      "cancellable": false,
+      "since": "4.0.0"
+    }
+  ]
+}

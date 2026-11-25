@@ -8,7 +8,7 @@ import co.xenastudios.core.common.command.OnlinePlayers
 import co.xenastudios.core.common.i18n.LanguageSource
 import co.xenastudios.core.common.text.Component
 import co.xenastudios.core.testing.FakeCommandSource
-import co.xenastudios.xutilities.config.Sound
+import co.xenastudios.core.common.config.Sound
 
 /** A player on the [FakeServer], with everything xUtilities changes. */
 class FakePlayer(val source: FakeCommandSource, var location: Location) {

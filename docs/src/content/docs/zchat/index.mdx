@@ -1,0 +1,52 @@
+---
+title: zChat
+description: "zChat: a light chat plugin for Paper, Folia, Spigot and Fabric servers, with chat formats per rank, a filter that's hard to dodge, anti-spam, mentions and private messages."
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import { LinkCard, CardGrid } from "@astrojs/starlight/components";
+import Reference from "../../../components/reference/Reference.astro";
+
+Current version: **4.0.0**
+
+zChat handles the chat basics almost every server wants: a chat format per rank, a filter that's hard to dodge, a cooldown and anti-spam, mentions, private messages, a global chat mute, clearing chat, and letting players hide chat for themselves. Every piece can be turned off.
+
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
+- **You won't feel it running.** zChat runs on every chat message, so that path is kept cheap: formats and the filter are compiled when the config loads, the cheapest checks run first, and each message is drawn once, not once per player who sees it. Nothing runs on a timer but the daily update check and bStats (Bukkit), and you can turn both off.
+- **A filter that's hard to dodge.** It catches `s p a c e d` words, `b4dw0rd`, `baaadword` and `bädword`, but leaves innocent words like *class* alone. See [Moderation](/zchat/moderation/).
+- **Players can't inject formatting.** What a player types is shown as typed, unless you give them the colour permission, and then only colours and styles: never clicks or hovers.
+- **In your players' languages.** zChat's own messages reach each player in their client's language: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese. Chat formats are yours, the same for everyone.
+- **Every change applies on reload**, even turning commands on or off. No restarts.
+
+:::caution[Not released yet]
+4.0 isn't released yet: it ships with the other plugins' rewrites. Until then 3.2 is the release, and these pages are a preview. The [3.x docs](/zchat/v3/) stay up while 3.x gets fixes.
+:::
+
+:::note[Coming from zChat 3.x?]
+Replace the jar and restart: your config is carried forward, your edited messages move to `lang/en.yml`, and the old file is kept as `config.yml.bak-v2`. See [Upgrading from 3.x](/zchat/upgrade/).
+:::
+
+## Where it runs
+
+One jar for every Bukkit-family server from 1.8.8 to the newest, Folia included, and a jar per Minecraft line on Fabric, server-side only: players install nothing.
+
+<Reference plugin="zchat" show="platforms" />
+
+A few things depend on the server:
+
+| | |
+| --- | --- |
+| **Chat signing** | On Paper and Folia, chat keeps the player's signature: a player who reports a message reports what they signed, and a client may mark a line zChat formatted or censored as changed by the server. On Spigot 1.19 and newer, and on Fabric, a formatted line goes out as the server's own message, unsigned and not reportable; that's how those servers send chat a plugin changed. Players with **Only Show Secure Chat** on may see a censored word uncensored on Paper. |
+| `%placeholders%` in formats | Bukkit, with [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi). Fabric has none yet; other plugins can still give formats tags through the [API](/zchat/developer-api/#placeholders). |
+| Selectors in `/msg` (`@p`) | Paper and Spigot 1.12.2 or newer, for those Minecraft lets use them. Not Folia or Fabric, where `@a` is read as a name. |
+| Another plugin's vanish | Bukkit's own visibility on Bukkit; on both, a vanish plugin through the [API](/zchat/developer-api/#hidden-players). |
+| Each player's own language | Bukkit from 1.8.8 (Spigot), Fabric from 1.20.2. On CraftBukkit before 1.12 and Fabric 1.20.1, players read `default-language`. |
+
+<CardGrid>
+  <LinkCard title="Install" href="/zchat/install/" description="The steps for your platform." />
+  <LinkCard title="Chat formats" href="/zchat/formats/" description="A format per rank, with placeholders." />
+  <LinkCard title="Moderation" href="/zchat/moderation/" description="The filter, cooldown, anti-repeat, mute and clear chat." />
+  <LinkCard title="Commands" href="/zchat/commands/" description="Every command, its arguments and permission." />
+</CardGrid>

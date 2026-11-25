@@ -132,6 +132,16 @@ class ReleaseTest {
     }
 
     @Test
+    fun `gives Hangar a proxy jar's own versions`() {
+        // A Velocity jar lists Minecraft's versions for Modrinth and Velocity's for Hangar.
+        val velocity = jar("velocity", ReleasePlatform.VELOCITY, listOf("1.8.8", "1.21.11")).copy(hangarVersions = listOf("3.4", "3.5"))
+        val known = mapOf("VELOCITY" to setOf("3.3", "3.4", "3.5"))
+        val upload = JsonSlurper().parseText(Hangar.versionUpload(manifest(velocity), listOf(velocity), known)) as Map<*, *>
+        assertEquals(mapOf("VELOCITY" to listOf("3.4", "3.5")), upload["platformDependencies"])
+        assertEquals(velocity, ReleaseFile.of(velocity.toMap()), "kept through the release manifest")
+    }
+
+    @Test
     fun `never prints a secret in a dry run`() {
         val file = kotlin.io.path.createTempFile(suffix = ".jar").toFile().apply { writeText("jar") }
         val text = Voxel.upload(4, "2.0.0", "xBans 2.0.0", "- A fix.", false, "s3cret", file).describe()

@@ -120,6 +120,14 @@ class MigrationTest {
     }
 
     @Test
+    fun aFileWithOnlyFourPointZerosSettingsIsntZChatOne() {
+        write("config.yml", "network:\n  enabled: true\n")
+        val loaded = files().load()
+        assertEquals(true, loaded.config[ZChatConfig.network.enabled])
+        assertFalse(NioFiles.exists(dir.resolve("config.yml.old")))
+    }
+
+    @Test
     fun aBrokenGroupIsSkippedAndSaysWhy() {
         write("config.yml", "formatting:\n  groups:\n    vip:\n      weight: 10\n      format: \"<gold><player>: <message>\"\n    bad:\n      weight: lots\n")
         val loaded = files().load()

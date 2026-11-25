@@ -20,6 +20,13 @@ public object ZChatMessages : MessageBundle() {
         placeholders = listOf("version", "platform"),
     )
 
+    /** `/zchatproxy` on its own, on Velocity or BungeeCord. */
+    public val proxyInfo: MessageKey = message(
+        "proxy.info", "<prefix>zChat <highlight><version></highlight> on <platform>, carrying chat between servers for <highlight><players></highlight> players. <gray>/zchatproxy reload | debug",
+        "/zchatproxy (or /zcp) on the proxy. <players> is how many are on the network.",
+        placeholders = listOf("version", "platform", "players"),
+    )
+
     public val filterBlocked: MessageKey = message(
         "filter.blocked", "<prefix><error>Your message was blocked by the chat filter.",
         "A message the filter stopped (filter.mode: block).",

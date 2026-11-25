@@ -41,6 +41,7 @@ A few things depend on the server:
 | **Chat signing** | On Paper and Folia, chat keeps the player's signature: a player who reports a message reports what they signed, and a client may mark a line zChat formatted or censored as changed by the server. On Spigot 1.19 and newer, and on Fabric, a formatted line goes out as the server's own message, unsigned and not reportable; that's how those servers send chat a plugin changed. Players with **Only Show Secure Chat** on may see a censored word uncensored on Paper. |
 | `%placeholders%` in formats | Bukkit, with [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi). Fabric has none yet; other plugins can still give formats tags through the [API](/zchat/developer-api/#placeholders). |
 | Selectors in `/msg` (`@p`) | Paper and Spigot 1.12.2 or newer, for those Minecraft lets use them. Not Folia or Fabric, where `@a` is read as a name. |
+| Network chat | Velocity 3.4+ or BungeeCord (Waterfall) in front of Bukkit-family servers, with zChat on the proxy too: see [Network chat](/zchat/network/). Not Fabric servers yet. |
 | Another plugin's vanish | Bukkit's own visibility on Bukkit; on both, a vanish plugin through the [API](/zchat/developer-api/#hidden-players). |
 | Each player's own language | Bukkit from 1.8.8 (Spigot), Fabric from 1.20.2. On CraftBukkit before 1.12 and Fabric 1.20.1, players read `default-language`. |
 

@@ -79,6 +79,13 @@ abstract class ReleaseJar @Inject constructor(private val name: String) : Named 
     @get:Optional
     abstract val minecraftTo: Property<String>
 
+    /**
+     * The platform's own versions for Hangar, where they aren't Minecraft's: Velocity's (`3.4`).
+     * Empty: Hangar gets the Minecraft versions, as Paper's do.
+     */
+    @get:Input
+    abstract val hangarVersions: ListProperty<String>
+
     /** Modrinth's loaders, when not the platform's own. */
     @get:Input
     abstract val loaders: ListProperty<String>

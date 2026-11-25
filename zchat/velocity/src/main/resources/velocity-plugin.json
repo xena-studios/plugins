@@ -1,0 +1,10 @@
+{
+  "id": "zchat",
+  "name": "zChat",
+  "version": "${version}",
+  "description": "Format your chat. Keep it clean. On the proxy: chat and private messages across your servers.",
+  "url": "https://plugins.xenastudios.co/zchat/",
+  "authors": ["Xena Studios"],
+  "dependencies": [],
+  "main": "co.xenastudios.zchat.velocity.ZChatVelocityBootstrap"
+}

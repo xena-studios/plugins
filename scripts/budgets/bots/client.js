@@ -7,13 +7,15 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network]
 //     [--version 1.21.11] [--forge xena:xsample]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
 // /heal and /back, a teleport and its way back, and /gamemode's completion), or zChat's (a
 // second client, Friend, who isn't an operator: chat in zChat's format, the filter, a mention
-// with its sound, /msg and /reply between the two, and /togglechat in German).
+// with its sound, /msg and /reply between the two, and /togglechat in German), or zChat across a
+// network (zchat-network: through a proxy with two servers, Friend moves to "game" with /server,
+// and chat, /msg and /reply cross between the two).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks; --version sets it instead, for a
@@ -156,6 +158,41 @@ async function zchat () {
   finish()
 }
 
+// zChat across a network: Joiner stays on lobby, Friend moves to game, and what each says reaches
+// the other through zChat on the proxy.
+async function zchatNetwork () {
+  const friend = mineflayer.createBot({ host: '127.0.0.1', port, username: 'Friend', auth: 'offline', version })
+  const friendHeard = []
+  friend.on('message', (msg) => friendHeard.push((msg.unsigned || msg).toString()))
+  friend.on('error', (e) => fail(`Friend's client error: ${e.message}`, true))
+  friend.on('kicked', (reason) => fail(`Friend was kicked: ${JSON.stringify(reason).slice(0, 300)}`, true))
+  await new Promise((resolve) => friend.once('spawn', resolve))
+  await sleep(2000)
+  friend.chat('/server game')
+  await sleep(5000)
+  const friendHears = async (text, from, ms = 10000) => {
+    for (let waited = 0; waited < ms; waited += 100) {
+      if (friendHeard.slice(from).some((l) => l.includes(text))) return true
+      await sleep(100)
+    }
+    return false
+  }
+  let from = friendHeard.length
+  bot.chat('hello from lobby')
+  check('chat from lobby reaches game', await friendHears(`[lobby] ${username}: hello from lobby`, from), `Friend heard ${JSON.stringify(friendHeard.slice(from)).slice(0, 400)}`)
+  let mine = heard.length
+  friend.chat('hi from game')
+  check('chat from game reaches lobby', await hear('[game] Friend: hi from game', mine, 10000) != null, `heard ${JSON.stringify(heard.slice(mine)).slice(0, 400)}`)
+  from = friendHeard.length
+  await command('/msg Friend psst across', 'You → Friend: psst across', '/msg to a player on another server')
+  check('the private message reaches the other server', await friendHears(`${username} → You: psst across`, from), `Friend heard ${JSON.stringify(friendHeard.slice(from)).slice(0, 400)}`)
+  mine = heard.length
+  friend.chat('/r got it')
+  check('/reply answers across servers', await hear('Friend → You: got it', mine, 10000) != null, `heard ${JSON.stringify(heard.slice(mine)).slice(0, 400)}`)
+  try { friend.quit() } catch {}
+  finish()
+}
+
 async function run () {
   if (forge) {
     // Looks like a frame of ours ('X', version 1), signed with nothing the network knows.
@@ -166,6 +203,7 @@ async function run () {
   await sleep(3000)
   if (plugin === 'xutilities') return xutilities()
   if (plugin === 'zchat') return zchat()
+  if (plugin === 'zchat-network') return zchatNetwork()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")

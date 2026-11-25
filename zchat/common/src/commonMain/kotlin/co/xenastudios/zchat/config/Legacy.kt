@@ -120,11 +120,13 @@ public object Legacy {
     public fun version(root: YamlNode.Mapping): Int? = (root["config-version"] as? YamlNode.Scalar)?.content?.trim()?.toIntOrNull()
 
     /**
-     * Whether [root] is zChat 1.x's: no `config-version` and none of 2.x's sections. 1.x was a
+     * Whether [root] is zChat 1.x's: no `config-version`, and none of 2.x's, 3.x's or 4.0's sections
+     * (a file an owner wrote with only `network:` is 4.0's). 1.x was a
      * different plugin, so its file is set aside, not carried forward, as 3.x did.
      */
     public fun isZChatOne(root: YamlNode.Mapping): Boolean =
-        version(root) == null && root.entries.isNotEmpty() && SECTIONS.none { root[it] != null }
+        version(root) == null && root.entries.isNotEmpty() && SECTIONS.none { root[it] != null } &&
+            ZChatConfig.children.none { root[it.name] != null }
 
     /**
      * 3.x to 4.0: messages out of the config (the loader has put the edited ones in

@@ -173,6 +173,20 @@ private-messages:
     log-to-console: true
     format: "<dark_gray>[Spy]</dark_gray> <gray><sender> → <receiver>: <message>"
 
+# Chat across a network: with zChat on the Velocity or BungeeCord proxy too, chat on this
+# server goes to the others and theirs comes here, and /msg reaches players on any server.
+# Needs the network's secret (plugins/Xena/proxy.secret, or Velocity's forwarding secret
+# with modern forwarding). Each server checks its own players' messages (the filter, the
+# mute, mute providers) before they leave it. Read at startup: restart to turn it on or off.
+network:
+  enabled: false
+  # Chat goes to every server of the network, and theirs comes here.
+  chat: true
+  # /msg and /reply reach players on other servers.
+  private-messages: true
+  # Shown before a line from another server. <server> is its name, as the proxy calls it.
+  server-format: "<dark_gray>[<server>]</dark_gray> "
+
 # Telling you when a newer version is out: in the console, and to players with
 # <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
 # sending only the plugin's version, the platform and the Minecraft version.

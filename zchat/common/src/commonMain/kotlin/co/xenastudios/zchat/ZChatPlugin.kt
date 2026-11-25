@@ -171,6 +171,49 @@ public class ZChatPlugin(
 
     private var chat: ChatModule? = null
 
+    /** The network's other servers, while `network.enabled` and the adapter has [connect]ed. */
+    @Volatile
+    public var network: co.xenastudios.zchat.network.NetworkChat? = null
+        private set
+
+    /**
+     * Joins the network through [channel], zChat's channel to the proxy: the adapter calls it at
+     * startup when `network.enabled` is on.
+     */
+    public fun connect(channel: co.xenastudios.core.common.proxy.ProxyChannel) {
+        network = co.xenastudios.zchat.network.NetworkChat(channel, platform, object : co.xenastudios.zchat.network.NetworkChat.Receiver {
+            override fun chat(origin: String, sender: PlayerRef, senderName: String, line: Component, plain: String, pinged: List<PlayerRef>, everyone: Boolean) {
+                receiveChat(origin, sender, line, pinged, everyone)
+            }
+
+            override fun privateMessage(origin: String, from: PlayerRef, fromName: String, toName: String, message: Component, plain: String, reply: Boolean): PlayerRef? {
+                if (!config[ZChatConfig.network.privateMessages]) return null
+                return messages.receiveRemote(from, fromName, toName, message)
+            }
+        })
+    }
+
+    // Another server's chat line: to everyone here who hasn't hidden chat, with its server's name in front.
+    private fun receiveChat(origin: String, sender: PlayerRef, line: Component, pinged: List<PlayerRef>, everyone: Boolean) {
+        val config = config
+        if (!config[ZChatConfig.network.chat]) return
+        val shown = Component(children = listOf(compiled.formats.network.render("server" to Placeholder.text(origin)), line))
+        val hiding = config[ZChatConfig.togglechat.enabled]
+        for (player in state.online()) if (!(hiding && state.hidesChat(player))) server.send(player, shown)
+        server.console(shown)
+        if (!everyone && pinged.isEmpty()) return
+        val sound = config[ZChatConfig.mentions.sound]
+        for (player in state.online()) {
+            if (!(everyone || player in pinged) || (hiding && state.hidesChat(player))) continue
+            onPlayer(player) {
+                if (bus.hasListeners(co.xenastudios.zchat.api.event.MentionEvent.TYPE) &&
+                    bus.fire(co.xenastudios.zchat.api.event.MentionEvent.TYPE, co.xenastudios.zchat.api.event.MentionEvent(player, sender, everyone)).isCancelled
+                ) return@onPlayer
+                server.playSound(player, sound)
+            }
+        }
+    }
+
     /** Turns the plugin on with what [Files] read: permissions, commands and chat handling, then the API. On the global thread. */
     public fun start(loaded: Loaded) {
         apply(loaded)
@@ -231,6 +274,7 @@ public class ZChatPlugin(
     /** [player] joined as [name]: their remembered choices come back. On their thread. */
     public fun joined(player: PlayerRef, name: String) {
         state.joined(player, name)
+        network?.joined(player, name)
         val kept = settings[player] ?: return
         val config = config
         if (kept.chatHidden && config[ZChatConfig.togglechat.enabled] && config[ZChatConfig.togglechat.remember]) state.hideChat(player, true)

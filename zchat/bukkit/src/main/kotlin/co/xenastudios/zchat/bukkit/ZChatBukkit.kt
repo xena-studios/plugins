@@ -87,6 +87,12 @@ public class ZChatBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
 
         // The config now, so the commands are the server's from the start; the rest off the thread.
         val config = files.config()
+        // The network, behind Velocity or BungeeCord: read at startup, as the proxy channel opens once.
+        if (config.config[ZChatConfig.network.enabled]) {
+            val channel = platform.proxyChannel()
+            zchat.connect(channel)
+            if (!channel.ready) platform.log.warn("network.enabled is on, but there's no network secret (plugins/Xena/proxy.secret, or Velocity's forwarding secret), so nothing crosses servers.")
+        }
         zchat.updates = platform.checkUpdates(ZChatPlugin.PLUGIN_ID, zchat.admin.updates, ZChatConfig.updates.settings(config.config)) {
             zchat.texts.translations
         }

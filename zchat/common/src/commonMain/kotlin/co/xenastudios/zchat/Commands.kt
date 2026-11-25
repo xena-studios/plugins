@@ -221,11 +221,24 @@ internal class PrivateMessages(private val plugin: ZChatPlugin) {
     /** Who [source] may message, for completion: online players they can see. */
     fun names(source: CommandSource): List<String> {
         val viewer = source.player
-        return state.online().filter { viewer == null || it == viewer || plugin.visible(viewer, it) }.mapNotNull { state.name(it) }.sorted()
+        val here = state.online().filter { viewer == null || it == viewer || plugin.visible(viewer, it) }.mapNotNull { state.name(it) }
+        return (here + remote()?.names().orEmpty()).distinct().sorted()
     }
+
+    // The network, when private messages cross it.
+    private fun remote(): co.xenastudios.zchat.network.NetworkChat? =
+        plugin.network?.takeIf { plugin.compiled.config[ZChatConfig.network.privateMessages] }
 
     fun msg(ctx: CommandContext, name: String, text: String) {
         val source = ctx.source
+        // Not here, but on another server of the network.
+        if (state.online(name) == null && !name.startsWith("@")) {
+            val there = remote()?.find(name)
+            if (there != null) {
+                if (!muted(source)) deliverRemote(ctx, there.name, text, reply = false)
+                return
+            }
+        }
         val targets = targets(ctx, name)
         // Once, not per target: a selector can name many.
         if (muted(source)) return
@@ -238,6 +251,7 @@ internal class PrivateMessages(private val plugin: ZChatPlugin) {
         val partner = (if (self == null) state.consolePartner else state.partner(self))
             ?: fail(ctx, ZChatMessages.replyNobody)
         if (muted(source)) return
+        if (partner.remote) return deliverRemote(ctx, partner.name, text, reply = true)
         val to = partner.player
         if (to == null) return deliver(ctx, null, "CONSOLE", text, reply = true)
         if (!state.isOnline(to) || (self != null && !plugin.visible(self, to))) fail(ctx, CoreMessages.commandUnknownPlayer, "player" to partner.name)
@@ -316,6 +330,59 @@ internal class PrivateMessages(private val plugin: ZChatPlugin) {
         }
         if (from != null) state.partner(from, ChatState.Partner(to, toName)) else state.consolePartner = ChatState.Partner(to, toName)
         plugin.spy(from, source.name, to, toName, message)
+    }
+
+    /**
+     * A private message to [toName] on another server: filtered and its event fired here, then sent
+     * through the proxy; the sender sees their line once the other server says it arrived.
+     */
+    private fun deliverRemote(ctx: CommandContext, toName: String, text: String, reply: Boolean) {
+        val source = ctx.source
+        val network = remote() ?: fail(ctx, CoreMessages.commandUnknownPlayer, "player" to toName)
+        val from = source.player ?: fail(ctx, CoreMessages.commandPlayersOnly)
+        val screen = plugin.screen(from, text, MessageKind.PRIVATE_MESSAGE)
+        if (screen.blocked) fail(ctx, ZChatMessages.filterBlocked)
+        var message = screen.message
+        var plain = screen.plain
+        val bus = plugin.bus
+        if (bus.hasListeners(co.xenastudios.zchat.api.event.PrivateMessageEvent.TYPE)) {
+            val event = bus.fire(
+                co.xenastudios.zchat.api.event.PrivateMessageEvent.TYPE,
+                co.xenastudios.zchat.api.event.PrivateMessageEvent(from, source.name, null, toName, plain, reply, network = true),
+            )
+            if (event.isCancelled) return
+            if (event.message != plain) {
+                plain = event.message
+                message = Component.text(plain)
+            }
+        }
+        network.privateMessage(from, source.name, toName, message, plain, reply) { to, name, delivered ->
+            if (!delivered) {
+                plugin.texts.render(from, CoreMessages.commandUnknownPlayer, "player" to name)?.let(source::reply)
+                return@privateMessage
+            }
+            val formats = plugin.compiled.formats
+            source.reply(formats.render(formats.sent, from, server, mapOf("player" to text(name), "message" to component(message))))
+            state.partner(from, ChatState.Partner(to, name, remote = true))
+            plugin.spy(from, source.name, to, name, message)
+        }
+    }
+
+    /**
+     * A private message from [fromName] on another server to the player here called [toName]:
+     * delivered as one from here would be, or `null` if there's no such player (or they're hidden
+     * from the sender).
+     */
+    fun receiveRemote(from: PlayerRef, fromName: String, toName: String, message: Component): PlayerRef? {
+        val to = state.online(toName) ?: return null
+        if (plugin.hooks.isHidden(from, to)) return null
+        val formats = plugin.compiled.formats
+        server.send(to, formats.render(formats.received, null, server, mapOf("player" to text(fromName), "message" to component(message))))
+        val sound = plugin.compiled.config[ZChatConfig.privateMessages.msg.sound]
+        if (!sound.isNone) plugin.onPlayer(to) { server.playSound(to, sound) }
+        state.partner(to, ChatState.Partner(from, fromName, remote = true))
+        plugin.spy(from, fromName, to, state.name(to) ?: toName, message)
+        return to
     }
 
     private fun fail(ctx: CommandContext, message: MessageKey, vararg placeholders: Pair<String, Any>): Nothing =

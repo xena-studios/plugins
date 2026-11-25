@@ -1,0 +1,9 @@
+# zChat on a proxy alone (scripts/boot-proxy.sh --checks): the relay starts, and /zchatproxy
+# answers with its admin subcommands.
+logged: zChat 4.0.0 on
+run: zchatproxy
+expect: carrying chat between servers for 0 players
+run: zcp reload
+expect: Reloaded zChat
+run: zchatproxy debug
+expect: Debug report saved as

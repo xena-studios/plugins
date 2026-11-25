@@ -49,6 +49,26 @@
       "since": "4.0.0"
     },
     {
+      "id": "velocity",
+      "name": "Velocity",
+      "kind": "server",
+      "minVersion": "3.4.0",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "4.0.0"
+    },
+    {
+      "id": "bungeecord",
+      "name": "BungeeCord",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "4.0.0"
+    },
+    {
       "id": "neoforge",
       "name": "NeoForge",
       "kind": "server",
@@ -1348,6 +1368,62 @@
         ]
       },
       {
+        "path": "network",
+        "type": "section",
+        "comment": [
+          "Chat across a network: with zChat on the Velocity or BungeeCord proxy too, chat on this",
+          "server goes to the others and theirs comes here, and /msg reaches players on any server.",
+          "Needs the network's secret (plugins/Xena/proxy.secret, or Velocity's forwarding secret",
+          "with modern forwarding). Each server checks its own players' messages (the filter, the",
+          "mute, mute providers) before they leave it. Read at startup: restart to turn it on or off."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "network.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "network.chat",
+            "type": "boolean",
+            "comment": [
+              "Chat goes to every server of the network, and theirs comes here."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "network.private-messages",
+            "type": "boolean",
+            "comment": [
+              "/msg and /reply reach players on other servers."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "network.server-format",
+            "type": "string",
+            "comment": [
+              "Shown before a line from another server. <server> is its name, as the proxy calls it."
+            ],
+            "default": "<dark_gray>[<server>]</dark_gray> ",
+            "defaultText": "\"<dark_gray>[<server>]</dark_gray> \"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
         "path": "updates",
         "type": "section",
         "comment": [
@@ -1998,6 +2074,18 @@
       "placeholders": [
         "version",
         "platform"
+      ]
+    },
+    {
+      "key": "proxy.info",
+      "english": "<prefix>zChat <highlight><version></highlight> on <platform>, carrying chat between servers for <highlight><players></highlight> players. <gray>/zchatproxy reload | debug",
+      "comment": [
+        "/zchatproxy (or /zcp) on the proxy. <players> is how many are on the network."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "players"
       ]
     },
     {

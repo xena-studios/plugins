@@ -45,7 +45,7 @@ internal class ChatModule(private val plugin: ZChatPlugin, private val bridges: 
      * counts toward the cooldown and anti-repeat, and pings anyone. One per sender (their latest),
      * so a message another plugin cancels leaves nothing behind for long.
      */
-    private class Pending(val chat: ChatEvent, val recent: ChatState.Recent, val mentions: Mentions.Applied?)
+    private class Pending(val chat: ChatEvent, val recent: ChatState.Recent, val mentions: Mentions.Applied?, val line: (() -> Component)?)
 
     private val pending = concurrentMap<PlayerRef, Pending>()
 
@@ -125,7 +125,7 @@ internal class ChatModule(private val plugin: ZChatPlugin, private val bridges: 
             mentions = Mentions.apply(
                 message, sender, compiled.formats.mention,
                 mayPingEveryone = everyone.isNotEmpty() && server.has(sender, everyone),
-                find = { name -> state.online(name)?.let { ref -> state.name(ref)?.let { ref to it } } },
+                find = { name -> state.online(name)?.let { ref -> state.name(ref)?.let { ref to it } } ?: plugin.network?.find(name)?.let { it.player to it.name } },
                 visible = { target -> plugin.visible(sender, target) },
             )
             message = mentions.message
@@ -148,6 +148,7 @@ internal class ChatModule(private val plugin: ZChatPlugin, private val bridges: 
             added = event.placeholders
         }
 
+        var line: (() -> Component)? = null
         if (compiled.formats.enabled) {
             val name = chat.senderName
             val shown = message
@@ -159,8 +160,9 @@ internal class ChatModule(private val plugin: ZChatPlugin, private val bridges: 
                 val body = if (final.message == said) shown else Component.text(final.message)
                 plugin.line(format, sender, name, body, tags)
             }
+            line = { plugin.line(format, sender, name, if (chat.message == said) shown else Component.text(chat.message), tags) }
         }
-        pending[sender] = Pending(chat, sent, mentions)
+        pending[sender] = Pending(chat, sent, mentions, line)
     }
 
     private fun onSent(sent: ChatSentEvent, context: ModuleContext) {
@@ -173,6 +175,12 @@ internal class ChatModule(private val plugin: ZChatPlugin, private val bridges: 
             val recipients = HashSet<PlayerRef>(chat.recipients.size * 2)
             chat.recipients.forEach { recipients += it }
             plugin.bus.fire(ChatMessageSentEvent.TYPE, ChatMessageSentEvent(sender, chat.senderName, chat.message, recipients, network = false))
+        }
+        // To the network's other servers: the same line, drawn here, where the sender's group and placeholders are known.
+        val network = plugin.network
+        if (network != null && plugin.compiled.config[ZChatConfig.network.chat]) {
+            val drawn = done.line?.invoke() ?: Component.text("<${chat.senderName}> ${chat.message}")
+            network.chat(sender, chat.senderName, drawn, chat.message, done.mentions?.pinged.orEmpty(), done.mentions?.everyone == true)
         }
         val mentions = done.mentions ?: return
         if (!mentions.everyone && mentions.pinged.isEmpty()) return

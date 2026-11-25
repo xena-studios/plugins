@@ -24,6 +24,8 @@ public class Formats private constructor(
     public val sent: Format,
     public val received: Format,
     public val spy: Format,
+    /** What starts a line from another server of the network. */
+    public val network: Markup,
 ) {
     /** One format: its group's [name] and [permission], the [markup], and the placeholders its slots stand for. */
     public class Format internal constructor(
@@ -95,6 +97,7 @@ public class Formats private constructor(
                 format("sent", "", config[pm.msg.formatSent], theme, "private-messages.msg.format-sent", warnings),
                 format("received", "", config[pm.msg.formatReceived], theme, "private-messages.msg.format-received", warnings),
                 format("spy", "", config[pm.socialspy.format], theme, "private-messages.socialspy.format", warnings),
+                Markup.parse(config[ZChatConfig.network.serverFormat], theme.tags),
             )
         }
 

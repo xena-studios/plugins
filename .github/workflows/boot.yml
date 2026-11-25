@@ -191,7 +191,7 @@ jobs:
           path: core/platform-fabric/build/libs/*.jar
           if-no-files-found: error
 
-  # xSample's proxy jars, and its Bukkit jar for the pair tests' backends, once for every proxy cell.
+  # xSample's and zChat's proxy jars, and their Bukkit jars for the backends, once for every proxy cell.
   build-proxy:
     needs: changes
     if: needs.changes.outputs.proxy != '[]'
@@ -210,7 +210,9 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       - run: >-
           ./gradlew :core:core-testing:sample:velocity:assemble :core:core-testing:sample:bungee:assemble :core:core-testing:sample:bukkit:assemble
+          :zchat:velocity:assemble :zchat:bungee:assemble :zchat:bukkit:assemble
           :core:core-testing:sample:velocity:checkJarBudget :core:core-testing:sample:bungee:checkJarBudget
+          :zchat:velocity:checkJarBudget :zchat:bungee:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: proxy-jars
@@ -218,6 +220,9 @@ jobs:
             core/core-testing/sample/velocity/build/r8/XSample-Velocity.jar
             core/core-testing/sample/bungee/build/r8/XSample-Bungee.jar
             core/core-testing/sample/bukkit/build/r8/XSample.jar
+            zchat/velocity/build/r8/zChat-Velocity.jar
+            zchat/bungee/build/r8/zChat-Bungee.jar
+            zchat/bukkit/build/r8/zChat.jar
           if-no-files-found: error
 
   bukkit:
@@ -479,6 +484,34 @@ jobs:
           scripts/boot-proxy.sh --proxy "$PROXY" "${version[@]}" --java "$JAVA" "${backend[@]}" --backend-java "$BACKEND_JAVA" \
             --backend-plugin core/core-testing/sample/bukkit/build/r8/XSample.jar --grant 'Joiner=xsample.*,xsample.admin' \
             --checks "core/core-testing/sample/$SIDE/pair-checks.txt" "$jar"
+      # zChat's relay alone, with its startup against the budget; then, where the cell has a
+      # backend, the network test: two servers with zChat behind the proxy, a real client on
+      # each, and chat, /msg and /reply crossing between them (zchat/<side>/network-checks.txt).
+      - name: boot zChat
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          VERSION: ${{ steps.server.outputs.version }}
+        run: |
+          version=()
+          [[ $VERSION == latest ]] || version=(--version "$VERSION")
+          budget=$(sed -n 's/^startup-first-ms //p' gradle/perf-budgets.txt)
+          scripts/boot-proxy.sh --proxy "$PROXY" "${version[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
+            --checks "zchat/$SIDE/boot-checks.txt" --startup-budget "$budget" "zchat/$SIDE/build/r8/zChat-${SIDE^}.jar"
+      - name: zChat network test
+        if: matrix.cell.backend != ''
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          VERSION: ${{ steps.server.outputs.version }}
+          BACKEND_JAVA: ${{ steps.backend-java.outputs.path }}
+          BACKEND_JAR: ${{ steps.backend-jar.outputs.jar }}
+        run: |
+          version=()
+          [[ $VERSION == latest ]] || version=(--version "$VERSION")
+          backend=(--backend "${BACKEND_JAR:-$BACKEND}" --backend-version "$BACKEND_VERSION")
+          scripts/boot-proxy.sh --proxy "$PROXY" "${version[@]}" --java "$JAVA" "${backend[@]}" --backend-java "$BACKEND_JAVA" \
+            --backend-plugin zchat/bukkit/build/r8/zChat.jar --two-backends --backend-seed zchat/velocity/network-seed \
+            --grant Friend=bungeecord.command.server --jvm -Dxena.debug.paste=false \
+            --checks "zchat/$SIDE/network-checks.txt" "zchat/$SIDE/build/r8/zChat-${SIDE^}.jar"
       - if: failure()
         uses: actions/upload-artifact@v7
         with:

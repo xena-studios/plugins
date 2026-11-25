@@ -55,6 +55,7 @@ core.command.cooldown: "<prefix><error>Это можно будет снова �
 core.command.confirm: "<prefix>Введите <highlight>/<line></highlight> ещё раз в течение <time>, чтобы подтвердить."
 core.command.error: "<prefix><error>При выполнении команды что-то пошло не так; подробности в консоли."
 info: "<prefix>zChat <highlight><version></highlight> на <platform>. <gray>/zchat reload | debug"
+proxy.info: "<prefix>zChat <highlight><version></highlight> на <platform> передаёт чат между серверами для <highlight><players></highlight> игроков. <gray>/zchatproxy reload | debug"
 filter.blocked: "<prefix><error>Твоё сообщение заблокировано фильтром чата."
 filter.added: "<prefix><highlight><word></highlight> добавлено в фильтр."
 filter.added-tip: "<prefix>Фильтр ловит <highlight><word></highlight> как целое слово. Добавь <highlight><word>*</highlight>, чтобы ловить и формы подлиннее."

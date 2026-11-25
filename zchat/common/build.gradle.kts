@@ -33,6 +33,8 @@ xenaReference {
     platform("folia", "Folia", "1.20.6", java = 21, since = "4.0.0")
     platform("spigot", "Spigot", "1.8.8", java = 8, since = "4.0.0")
     platform("fabric", "Fabric", "1.20.1", java = 17, since = "4.0.0")
+    platform("velocity", "Velocity", "3.4.0", java = 21, since = "4.0.0")
+    platform("bungeecord", "BungeeCord", "latest", java = 17, since = "4.0.0")
     platform("neoforge", "NeoForge", "1.20.1", java = 17, status = "planned")
     platform("sponge", "Sponge", "latest", status = "planned")
     platform("pumpkin", "Pumpkin", "latest", status = "planned")

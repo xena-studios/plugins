@@ -18,9 +18,18 @@ import kotlin.concurrent.Volatile
  * cache has it ([languages]); the console reads `default-language`.
  */
 public class Texts(private val languages: LanguageSource) {
-    /** The lang files as last loaded. */
+    // English until the lang files are loaded, made on first use: not as the plugin is made on a
+    // proxy's thread, where the loaded files usually come first.
     @Volatile
-    public var translations: Translations = Translations.of(ZChatMessages.catalog, emptyMap())
+    private var loaded: Translations? = null
+    private val english by lazy { Translations.of(ZChatMessages.catalog, emptyMap()) }
+
+    /** The lang files as last loaded. */
+    public var translations: Translations
+        get() = loaded ?: english
+        set(value) {
+            loaded = value
+        }
 
     /** The admin subcommands' replies, from the same files. */
     public val admin: AdminText = AdminText { source, message, placeholders ->

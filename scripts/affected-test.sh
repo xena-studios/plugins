@@ -141,13 +141,15 @@ check "A rewritten plugin's Bukkit adapter" xutilities/bukkit/src/main/kotlin/co
 check "A rewritten plugin's Fabric mod (platform-fabric's build)" xutilities/fabric/src/main/kotlin/co/xenastudios/xutilities/fabric/XUtilitiesMod.kt \
   $'checks=\nxmoney=false\nboot=fabric'
 check "zChat's common code" zchat/common/src/commonMain/kotlin/co/xenastudios/zchat/ChatModule.kt \
-  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:common:build\nchecks=\nxmoney=false\nboot=bukkit fabric'
+  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nxmoney=false\nboot=bukkit fabric proxy'
 check "zChat's Bukkit adapter" zchat/bukkit/src/main/kotlin/co/xenastudios/zchat/bukkit/ZChatBukkit.kt \
-  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:common:build\nchecks=\nxmoney=false\nboot=bukkit'
+  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nxmoney=false\nboot=bukkit'
 check "zChat's Fabric mod (platform-fabric's build)" zchat/fabric/src/main/kotlin/co/xenastudios/zchat/fabric/ZChatMod.kt \
   $'checks=\nxmoney=false\nboot=fabric'
+check "zChat's Velocity relay" zchat/velocity/src/main/kotlin/co/xenastudios/zchat/velocity/ZChatVelocity.kt \
+  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nxmoney=false\nboot=proxy'
 check "zChat's real-client checks" zchat/bukkit/client-checks.txt \
-  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:common:build\nchecks=\nxmoney=false\nboot=bukkit'
+  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nxmoney=false\nboot=bukkit'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 check "Today's plugin" xbans/src/main/java/co/xenastudios/xbans/XBans.java \
   $'units=xbans\ncompile=:xbans:compileJava :xbans:api:compileJava\nchecks=xbans/boot-checks.txt\nxmoney=false\nboot='

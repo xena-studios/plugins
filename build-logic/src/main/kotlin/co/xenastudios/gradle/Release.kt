@@ -85,10 +85,13 @@ data class ReleaseFile(
     val java: Int?,
     val sha256: String,
     val size: Long,
+    /** Hangar's versions for the platform, where they aren't [gameVersions] (Velocity's own). */
+    val hangarVersions: List<String> = emptyList(),
 ) {
     fun toMap(): Map<String, Any?> = linkedMapOf(
         "name" to name, "file" to file, "platform" to platform.name, "label" to label,
         "gameVersions" to gameVersions, "loaders" to loaders, "java" to java, "sha256" to sha256, "size" to size,
+        "hangarVersions" to hangarVersions,
     )
 
     companion object {
@@ -102,6 +105,7 @@ data class ReleaseFile(
             java = (map["java"] as Number?)?.toInt(),
             sha256 = map["sha256"] as String,
             size = (map["size"] as Number).toLong(),
+            hangarVersions = (map["hangarVersions"] as List<*>?)?.map { it.toString() }.orEmpty(),
         )
     }
 }

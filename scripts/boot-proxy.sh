@@ -410,11 +410,18 @@ sed 's/\x1b\[[0-9;]*m//g' "$proxy_log" | grep -E "INFO\](:)? \[($ours)\]" || tru
 # "onLoad 16.2 ms, onEnable 142.4 ms" on BungeeCord. The run above downloaded what it needed.
 if [[ -n $startup_budget ]]; then
   times=()
+  xena="$base/proxy/plugins/Xena"
   for boot in 1 2 3; do
     dir="$base/startup-$boot"
     proxy_files "$dir" "$(port)" ""
     # The first run's downloads: the family's library cache, and BungeeCord's for libraries:.
-    cp -R "$base/proxy/plugins/Xena/." "$dir/plugins/Xena/" 2>/dev/null || true
+    # The family's folder is moved from boot to boot, not copied, as a restarted proxy keeps it:
+    # a copy is a new file to the loader (inode, modified time), which hashes it again.
+    if [[ -d $xena ]]; then
+      rm -rf "$dir/plugins/Xena"
+      mv "$xena" "$dir/plugins/Xena"
+      xena="$dir/plugins/Xena"
+    fi
     [[ ! -d $base/proxy/libraries ]] || cp -R "$base/proxy/libraries" "$dir/"
     if [[ -n $record_startup && $boot == 1 ]]; then
       start_proxy "$dir" "-Xlog:class+load=info:file=$dir/classload.log:uptimemillis"

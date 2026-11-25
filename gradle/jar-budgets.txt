@@ -12,8 +12,9 @@
 
 # The loader's boot-test plugin: the shim, the loader and a Kotlin entry point, no core.
 # 27 KiB shrunk (43 KiB before R8); its budget leaves room for the loader to grow, not for a library
-# shaded in by mistake.
-:core:core-loader:sandbox 30
+# shaded in by mistake. 29.3 KiB with the proxies' shims' shared startup; 30.6 KiB with the records
+# that let a cached library skip its hash while unchanged ("The proxy platforms").
+:core:core-loader:sandbox 32
 
 # xSample on Bukkit (core/core-testing/sample/bukkit): every part of the core a plugin can use
 # (admin subcommands, the family, the player cache, i18n, config), with the stdlib and the YAML

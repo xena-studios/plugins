@@ -5,7 +5,7 @@ Every plugin is rewritten once more, so the same plugin runs on every server sof
 ## Goals
 
 - **Every server it makes sense on:** Paper, Folia and their forks; Spigot, CraftBukkit and Bukkit down to 1.8.8; Fabric, NeoForge and Forge 1.20.1 (server-side, players install nothing); Sponge; Velocity and BungeeCord for network features; Pumpkin and its proxy Vine; Minestom, as libraries; Hytale.
-- **Fast, robust and light** on all of them, with budgets CI enforces. Paper keeps today's speed; jars stay under 500 KiB each.
+- **Fast, robust and light** on all of them, with budgets CI enforces. Paper keeps today's speed; jars aim at 500 KiB each, and go over only for a recorded reason.
 - **Translated**, each player in their own language.
 - **Good developer APIs**, the same on every platform.
 - **One family:** the plugins work together, and with the big third-party plugins.
@@ -100,7 +100,7 @@ The floors are proposals; M0 confirms them. In the later minors, NeoForge brings
 | Idle | under 0.001 ms a tick per plugin, and under 0.5 ms of CPU a second on its own threads | 0.012 ms a tick; 3.5 ms a second (xBackup polling) |
 | Under load (10 bots) | under 0.05 ms a tick per plugin, 0.25 ms for the family; under 2 ms of CPU a second off-thread | 0.010 ms a tick (xLimbo) |
 | Heap after load | under 4 MB per plugin and 1.5 MB metaspace, worlds a plugin makes on purpose aside; then growth over 10% (or 0.5 MB) fails | 9.5 MB (xRewind's block-state table) |
-| Jar | 500 KiB per jar after R8, every platform (the Kotlin stdlib and YAML parser are downloaded, never shipped); each jar's own line in `gradle/jar-budgets.txt` sits about 10% over its size, so growth still fails the build | 483 KB (xBackup) |
+| Jar | 500 KiB per jar after R8 is the target, every platform (the Kotlin stdlib and YAML parser are downloaded, never shipped); a jar goes over it only when it can't shrink without losing quality or robustness, with the reason recorded in its `decisions/` file. Each jar's own line in `gradle/jar-budgets.txt` sits about 10% over its size, so growth still fails the build | 483 KB (xBackup) |
 
 ## Built once, in the core
 

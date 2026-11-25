@@ -238,12 +238,27 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
                 out.setLevel(Deflater.BEST_COMPRESSION)
                 val entries = zip.entries().asSequence().map { it.name }.filter { it != STARTUP_CLASSES }.toMutableList()
                 if (startup != null) entries += STARTUP_CLASSES
+                // The shipped translations in one entry, so what every language repeats (the keys,
+                // the tags) compresses once: core-jvm's LangFolder.shipped reads either form.
+                val languages = entries.filter { LANG.matches(it) }.sorted()
+                val bundle = if (languages.size < 2) null else buildString {
+                    for (name in languages) {
+                        val text = zip.getInputStream(zip.getEntry(name)).use { String(it.readBytes(), Charsets.UTF_8) }
+                        append(BUNDLE_MARK).append(name.removePrefix("lang/").removeSuffix(".yml")).append('\n')
+                        append(text)
+                        if (!text.endsWith("\n")) append('\n')
+                    }
+                }
+                if (bundle != null) {
+                    entries -= languages.toSet()
+                    entries += LANG_BUNDLE
+                }
                 for (name in entries.sorted()) {
                     if (name.startsWith("META-INF/maven/") || name.endsWith(".kotlin_builtins") || name.endsWith(".kotlin_module")) continue
-                    var bytes = if (name == STARTUP_CLASSES && startup != null) {
-                        startup.toByteArray()
-                    } else {
-                        zip.getInputStream(zip.getEntry(name)).use { it.readBytes() }
+                    var bytes = when {
+                        name == STARTUP_CLASSES && startup != null -> startup.toByteArray()
+                        name == LANG_BUNDLE && bundle != null -> bundle.toByteArray(Charsets.UTF_8)
+                        else -> zip.getInputStream(zip.getEntry(name)).use { it.readBytes() }
                     }
                     if (name.endsWith(".class")) bytes = withoutMarker(bytes)
                     // Sizes and CRC up front, so no data descriptor follows each entry (16 bytes
@@ -276,6 +291,11 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
     companion object {
         /** Where the startup list goes in the jar, which the shim reads (core-loader's BukkitBootstrap). */
         const val STARTUP_CLASSES = "META-INF/xena/startup-classes.txt"
+
+        /** Every shipped `lang/<tag>.yml` of a jar, one after another, each after a `@@ <tag>` line (core-jvm's LangFolder). */
+        const val LANG_BUNDLE = "lang/shipped.txt"
+        private const val BUNDLE_MARK = "@@ "
+        private val LANG = Regex("lang/[A-Za-z0-9-]+\\.yml")
 
         /**
          * [bytes] with R8's marker emptied: R8 writes it as constant #1 of every class, a

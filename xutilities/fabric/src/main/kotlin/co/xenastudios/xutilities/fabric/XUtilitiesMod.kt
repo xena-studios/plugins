@@ -5,6 +5,7 @@ import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.now
 import co.xenastudios.core.fabric.FabricPlatform
 import co.xenastudios.core.jvm.admin.MclogsPaste
+import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.xutilities.JvmFiles
 import co.xenastudios.xutilities.XUtilitiesPlugin
 import co.xenastudios.xutilities.config.XUtilitiesConfig
@@ -56,8 +57,14 @@ public object XUtilitiesMod : ModInitializer {
     private fun shipped(): Map<LanguageTag, String> {
         val mod = FabricLoader.getInstance().getModContainer(XUtilitiesPlugin.PLUGIN_ID).orElse(null) ?: return emptyMap()
         val out = LinkedHashMap<LanguageTag, String>()
+        // The shrunk jar has them in one entry (LangFolder.BUNDLE); a dev build, one file each.
+        val bundle = mod.findPath(LangFolder.BUNDLE).orElse(null)?.let { LangFolder.bundle(String(Files.readAllBytes(it), StandardCharsets.UTF_8)) }.orEmpty()
         for (tag in JvmFiles.LANGUAGES) {
-            val path = mod.findPath("lang/$tag.yml").orElse(null) ?: continue
+            val path = mod.findPath("lang/$tag.yml").orElse(null)
+            if (path == null) {
+                bundle[tag.toString()]?.let { out[tag] = it }
+                continue
+            }
             out[tag] = String(Files.readAllBytes(path), StandardCharsets.UTF_8)
         }
         return out

@@ -47,6 +47,20 @@ class LangFolderTest {
     private fun read(name: String) = String(Files.readAllBytes(dir.resolve("lang/$name")), Charsets.UTF_8)
 
     @Test
+    fun aShrunkJarsBundleOfTranslationsReadsAsItsFiles() {
+        val dir = Files.createTempDirectory("bundle")
+        try {
+            Files.createDirectories(dir.resolve("lang"))
+            Files.write(dir.resolve("lang/shipped.txt"), "@@ de\nshop.empty: \"Leer\"\n@@ fr\nshop.empty: \"Vide\"\n".toByteArray())
+            val loader = java.net.URLClassLoader(arrayOf(dir.toUri().toURL()), null)
+            val shipped = LangFolder.shipped(loader, listOf(LanguageTag.of("de"), LanguageTag.of("fr"), LanguageTag.of("es")))
+            assertEquals(mapOf(LanguageTag.of("de") to "shop.empty: \"Leer\"\n", LanguageTag.of("fr") to "shop.empty: \"Vide\"\n\n"), shipped)
+        } finally {
+            dir.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun theJarsTranslationsPassTheCheck() {
         TranslationCheck.verify(catalog, shipped, JvmYaml)
     }

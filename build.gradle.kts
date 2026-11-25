@@ -1,10 +1,11 @@
 // Checks across the whole repo. Each module's own build is in its folder.
 plugins {
     base
-    // build-logic's conventions on the root's class path, so every project can ask for the
-    // plugins they bring by id alone (Shadow, run-paper): a rewritten plugin's folder has no
-    // build of its own above its bukkit/ project to put them there, as :core does for its own.
-    id("xena.kotlin-jvm") apply false
+    // build-logic (and the plugins it brings, Shadow and run-paper) on the root's class path, so
+    // every project can ask for those by id alone: a rewritten plugin's folder has no build of
+    // its own above its bukkit/ project to put them there, as :core does for its own. Any
+    // convention does it; today's, so scripts/affected-test.sh keeps the rewrite's its own.
+    id("xena.java") apply false
 }
 
 // Code copied from one module into another belongs in the core instead (issue #48).

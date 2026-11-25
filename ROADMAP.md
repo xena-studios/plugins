@@ -1,6 +1,6 @@
 # Roadmap: the rewrite
 
-Every plugin is rewritten once more, so the same plugin runs on every server software it reasonably can, in every player's language, with the same speed and size it has on Paper today. Tracked in #120, one milestone at a time; why each choice was made goes in [DECISIONS.md](DECISIONS.md) as it's settled.
+Every plugin is rewritten once more, so the same plugin runs on every server software it reasonably can, in every player's language, with the same speed and size it has on Paper today. Tracked in #120, one milestone at a time; why each choice was made goes in [decisions/](decisions/) as it's settled, one file each, listed in [DECISIONS.md](DECISIONS.md).
 
 ## Goals
 
@@ -177,7 +177,7 @@ Everything follows the [brand repo](https://github.com/xena-studios/brand): the 
 
 Each one meets its exit before the next starts.
 
-**M0: Spike and decisions.** Nothing released. Results in `sandbox/m0/` and DECISIONS.md. KMP `common` for JVM and `wasmWasi`; a Pumpkin hello-world on `pumpkin-api-kt`, and Pumpkin's plugin-to-plugin calls and storage; a Java 17 jar with the fetched stdlib on Spigot 1.8.8 and 1.16.5; Fabric with `fabric-language-kotlin`; a YAML library and `kotlinx.serialization` on Wasm; Cloud and Adventure on 1.8.8, Fabric and Sponge; Stonecutter; a Java project calling a Kotlin API; CurseForge's upload API; site pages generated from code; the budgets' numbers. *Exit:* results and decisions in DECISIONS.md.
+**M0: Spike and decisions.** Nothing released. Results in `sandbox/m0/` and [decisions/2026-11-24-m0.md](decisions/2026-11-24-m0.md). KMP `common` for JVM and `wasmWasi`; a Pumpkin hello-world on `pumpkin-api-kt`, and Pumpkin's plugin-to-plugin calls and storage; a Java 17 jar with the fetched stdlib on Spigot 1.8.8 and 1.16.5; Fabric with `fabric-language-kotlin`; a YAML library and `kotlinx.serialization` on Wasm; Cloud and Adventure on 1.8.8, Fabric and Sponge; Stonecutter; a Java project calling a Kotlin API; CurseForge's upload API; site pages generated from code; the budgets' numbers. *Exit:* results and decisions in [decisions/2026-11-24-m0.md](decisions/2026-11-24-m0.md).
 
 **M1: Foundations.** The KMP repo layout, build caches, the `new-plugin` scaffolder and `runServer` per platform. Core: config with migrations, i18n, markup, database, change feed, scheduler, event bus, API rules, library loader, importers, admin subcommands. `platform-bukkit` (Paper, Folia, Spigot, legacy) and `platform-fabric`. CI: the boot matrix, the family test, benchmarks, budgets, attestations. The release pipeline for every store. The new site's skeleton with generated pages. *Exit:* a sandbox plugin passes the full matrix and a dry-run release.
 

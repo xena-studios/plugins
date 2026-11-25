@@ -56,6 +56,20 @@ jobs:
           done <<< "$files"
           echo "docs=$docs" >> "$GITHUB_OUTPUT"
 
+  # DECISIONS.md against decisions/, on every run: a misnamed decision or a wrong row fails,
+  # and a decision not listed yet is only noted (scripts/decisions.ts).
+  decisions:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node scripts/decisions.ts --check
+
   docs:
     needs: changes
     if: needs.changes.outputs.docs == 'true'
@@ -119,10 +133,10 @@ jobs:
           # Not sensitive (it's in every dashboard URL), so a variable, not a secret.
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
 
-  # The one check main requires: passes when the build passed or was skipped
-  # because the docs didn't change.
+  # The one check main requires: passes when the decisions' check passed and the build passed
+  # or was skipped because the docs didn't change.
   docs-ok:
-    needs: [changes, docs, deploy]
+    needs: [changes, decisions, docs, deploy]
     if: always()
     runs-on: ubuntu-26.04
     steps:

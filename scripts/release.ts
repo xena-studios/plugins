@@ -12,7 +12,9 @@
 //     expects from /<plugin> info;
 //   - updates the docs: the "Current version" line, the API's Gradle and Maven snippets,
 //     and the note that the API reaches Maven Central with the release;
-//   - regenerates docs/src/data/plugins.json (docs/scripts/catalog.ts).
+//   - regenerates docs/src/data/plugins.json (docs/scripts/catalog.ts);
+//   - and DECISIONS.md (scripts/decisions.ts), which pull requests leave alone, so it lists the
+//     decisions added since the last release.
 // Without @<version>, the version comes from the Unreleased section: a "### Fixed" (or
 // "### Security") heading alone is a patch, any other heading a minor. A build version
 // that's never been tagged, like a new plugin's 1.0.0, is released as it is; if its
@@ -305,6 +307,7 @@ function release(args: string[], dryRun: boolean, push: boolean) {
   }
   // The catalog reads each build file's version.
   run(process.execPath, [path.join(ROOT, "docs/scripts/catalog.ts")]);
+  run(process.execPath, [path.join(ROOT, "scripts/decisions.ts")]);
   git("add", "-A");
   git("commit", "--quiet", "-m", title);
   console.log(`\ncommitted ${git("rev-parse", "--short", "HEAD")} on ${branch}`);

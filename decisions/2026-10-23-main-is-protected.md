@@ -1,0 +1,5 @@
+# Main is protected, and checked by CodeQL (2026-10-23)
+
+`main` takes changes only through pull requests, never force-pushed or deleted, and requires two checks: `plugins-ok` and `docs-ok`. A required check has to report on every PR, but each workflow only has work for some of them, so each runs on every PR, skips what the change doesn't touch (its `changes` job), and ends in one job that passes when everything else passed or was skipped. A PR that the New Minecraft workflow opens has to start both workflows itself.
+
+Code scanning is CodeQL, GitHub's own: the deepest free dataflow analysis for Java (a player's chat line followed into a command, for example), with results on the PR. Java is traced through a real Gradle build rather than CodeQL's build-less mode, for accuracy; the workflows and the docs' scripts are scanned too. `security-extended` queries, weekly as well as on every change. Dependencies are left to Renovate, which opens a fix PR as soon as one has a known vulnerability (`osvVulnerabilityAlerts`, in the org's shared settings): Dependabot alerts and its fix PRs would duplicate it.

@@ -30,10 +30,13 @@ public class Family(
     public val board: FamilyBoard,
     private val reader: YamlReader,
 ) {
-    /** The family's settings as last loaded; the defaults until then. */
+    // Null until the first load: the defaults are read only when asked for, so making the
+    // family (as a plugin enables, on the server's thread) doesn't build the family's schema.
     @Volatile
-    public var config: Config = FamilyConfig.defaults
-        private set
+    private var loaded: Config? = null
+
+    /** The family's settings as last loaded; the defaults until then. */
+    public val config: Config get() = loaded ?: FamilyConfig.defaults
 
     /** The look the family sets: the theme and languages of every plugin that leaves them `shared`. */
     public val look: Look get() = FamilyConfig.messages.look(config)
@@ -87,7 +90,7 @@ public class Family(
                 }
             }
         }
-        config = load.config
+        loaded = load.config
         return FamilyLoad(load.config, problems, notices, null)
     }
 

@@ -8,8 +8,11 @@ name: Boot
 # Per pull request, the platforms it touches (scripts/affected.sh's `boot`: a change in core/
 # or the samples) at their floor and newest: Spigot 1.8.8 and Paper for Bukkit, the oldest and
 # newest lines for Fabric, with the family test on the newest of each and Spigot 1.8.8, and a
-# real client joining Spigot 1.8.8 and Paper 1.21.11, the newest Minecraft mineflayer speaks.
-# The whole matrix nightly and by hand. Pull requests always run, so `boot-ok` always reports.
+# real client joining Spigot 1.8.8 and Paper 1.21.11, the newest Minecraft mineflayer speaks;
+# for the proxies, Velocity's floor (3.4.0) and newest and BungeeCord, the newest Velocity in
+# front of Paper 1.21.11 and BungeeCord in front of Spigot 1.8.8 with a real client joining
+# through the proxy (scripts/boot-proxy.sh). The whole matrix nightly and by hand, Waterfall
+# among it. Pull requests always run, so `boot-ok` always reports.
 on:
   pull_request:
   schedule:
@@ -42,6 +45,7 @@ jobs:
     outputs:
       bukkit: ${{ steps.matrix.outputs.bukkit }}
       fabric: ${{ steps.matrix.outputs.fabric }}
+      proxy: ${{ steps.matrix.outputs.proxy }}
     steps:
       - uses: actions/checkout@v7
       # As the Plugins workflow: the changed files from the files API, everything if that fails.
@@ -74,7 +78,7 @@ jobs:
           # Folia's (`regions`: the core must take Folia's path). Canvas has no stable download:
           # its API (api.canvasmc.io) has been down, and its Jenkins builds carry no checksums
           # (scripts/server-jar.sh), so it may fail alone. Waterfall isn't here: it boots the
-          # BungeeCord adapter, which comes with the proxies (ROADMAP.md, after M1).
+          # proxy cells below, with the BungeeCord adapter.
           bukkit=$(jq -nc --arg newest "$newest" '[
             {id: "paper", name: "Paper \($newest)", server: "paper", version: $newest, pr: true, family: true},
             {id: "paper-1.21.11", name: "Paper 1.21.11", server: "paper", version: "1.21.11", pr: true, client: true},
@@ -96,6 +100,17 @@ jobs:
             {id: "fabric-\($newest)", name: "Fabric \($newest)", loader: "fabric", version: $newest, java: $newJava, pr: true, family: true},
             {id: "quilt-\($newest)", name: "Quilt \($newest)", loader: "quilt", version: $newest, java: $newJava}
           ] | map({pr: false, family: false, "allow-failure": false} + .)')
+          # The proxies: each boots xSample's proxy side alone, with its startup against the
+          # first-plugin budget; a cell with a `backend` also runs the pair test, xSample on that
+          # backend behind the proxy and a real client joining through it. Velocity's newest
+          # (4.x, on Java 25) and its floor (3.4.0, the first on Java 21); BungeeCord's last good
+          # build; Waterfall, which has reached its end, boot only and nightly (#162).
+          proxy=$(jq -nc '[
+            {id: "velocity", name: "Velocity", proxy: "velocity", side: "velocity", backend: "paper", "backend-version": "1.21.11", pr: true},
+            {id: "velocity-3.4.0", name: "Velocity 3.4.0", proxy: "velocity", side: "velocity", version: "3.4.0", pr: true},
+            {id: "bungeecord", name: "BungeeCord", proxy: "bungeecord", side: "bungee", backend: "spigot", "backend-version": "1.8.8", buildtools: 8, pr: true},
+            {id: "waterfall", name: "Waterfall", proxy: "waterfall", side: "bungee"}
+          ] | map({version: "", backend: "", "backend-version": "", buildtools: 0, pr: false, "allow-failure": false} + .)')
           # A pull request runs its platforms' `pr` cells; nightly and by hand, all of them.
           pick() {
             if [[ $FULL == true ]]; then echo "$2"
@@ -105,6 +120,7 @@ jobs:
           }
           echo "bukkit=$(pick bukkit "$bukkit")" | tee -a "$GITHUB_OUTPUT"
           echo "fabric=$(pick fabric "$fabric")" | tee -a "$GITHUB_OUTPUT"
+          echo "proxy=$(pick proxy "$proxy")" | tee -a "$GITHUB_OUTPUT"
 
   # xSample's, xTwin's, xUtilities' and zChat's Bukkit jars, once for every Bukkit cell.
   build-bukkit:
@@ -173,6 +189,35 @@ jobs:
         with:
           name: fabric-jars
           path: core/platform-fabric/build/libs/*.jar
+          if-no-files-found: error
+
+  # xSample's proxy jars, and its Bukkit jar for the pair tests' backends, once for every proxy cell.
+  build-proxy:
+    needs: changes
+    if: needs.changes.outputs.proxy != '[]'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      - run: >-
+          ./gradlew :core:core-testing:sample:velocity:assemble :core:core-testing:sample:bungee:assemble :core:core-testing:sample:bukkit:assemble
+          :core:core-testing:sample:velocity:checkJarBudget :core:core-testing:sample:bungee:checkJarBudget
+      - uses: actions/upload-artifact@v7
+        with:
+          name: proxy-jars
+          path: |
+            core/core-testing/sample/velocity/build/r8/XSample-Velocity.jar
+            core/core-testing/sample/bungee/build/r8/XSample-Bungee.jar
+            core/core-testing/sample/bukkit/build/r8/XSample.jar
           if-no-files-found: error
 
   bukkit:
@@ -322,6 +367,125 @@ jobs:
         with:
           name: boot-logs-${{ matrix.cell.id }}
           path: build/boot/*/console.log
+          if-no-files-found: ignore
+
+  # The proxies (scripts/boot-proxy.sh): xSample's proxy side alone, its console commands and
+  # platform checks, and its startup against the first-plugin budget (gradle/perf-budgets.txt's
+  # startup-first-ms, median of three boots); then, on a cell with a backend, the pair test:
+  # xSample on that backend behind the proxy, and a real client joining through it, running
+  # the proxy's commands in German and English and sending a forged message on xena:xsample,
+  # which the proxy must drop, while the backend's hello and the proxy's welcome cross
+  # xena:xsample signed with the network's secret (core/core-testing/sample/<side>/pair-checks.txt).
+  proxy:
+    needs: [changes, build-proxy]
+    if: needs.changes.outputs.proxy != '[]'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    continue-on-error: ${{ matrix.cell.allow-failure }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.changes.outputs.proxy) }}
+    name: boot (${{ matrix.cell.name }})
+    env:
+      PROXY: ${{ matrix.cell.proxy }}
+      SIDE: ${{ matrix.cell.side }}
+      BACKEND: ${{ matrix.cell.backend }}
+      BACKEND_VERSION: ${{ matrix.cell.backend-version }}
+    steps:
+      - uses: actions/checkout@v7
+      # The artifact keeps its files relative to the folder they share (the sample's), so
+      # it goes back there, not to the repo's root.
+      - uses: actions/download-artifact@v8
+        with:
+          name: proxy-jars
+          path: core/core-testing/sample
+      # What will boot, for the cache key: the proxy's version and build (and the Java it needs),
+      # and the backend's.
+      - id: server
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ matrix.cell.version }}
+        run: scripts/server-jar.sh --resolve "$PROXY" ${VERSION:+"$VERSION"} | tee -a "$GITHUB_OUTPUT"
+      - id: backend
+        if: matrix.cell.backend != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/server-jar.sh --resolve "$BACKEND" "$BACKEND_VERSION" | tee -a "$GITHUB_OUTPUT"
+      - id: cache
+        uses: actions/cache@v6
+        with:
+          path: .cache/servers
+          key: servers-${{ matrix.cell.id }}-${{ steps.server.outputs.build }}-${{ steps.backend.outputs.build }}
+          restore-keys: servers-${{ matrix.cell.id }}-
+      # BuildTools' Java, only when a Spigot backend isn't cached.
+      - id: buildtools
+        if: matrix.cell.backend == 'spigot' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.cell.buildtools }}
+      - id: backend-jar
+        if: matrix.cell.backend == 'spigot'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILDTOOLS_JAVA: ${{ steps.buildtools.outputs.path }}
+        run: scripts/server-jar.sh "$BACKEND" "$BACKEND_VERSION" | tee -a "$GITHUB_OUTPUT"
+      - id: backend-java
+        if: matrix.cell.backend != ''
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ steps.backend.outputs.java }}
+      - id: java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ steps.server.outputs.java }}
+      - if: matrix.cell.backend != ''
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - if: matrix.cell.backend != ''
+        uses: actions/cache@v6
+        with:
+          path: .cache/budget-bots
+          key: client-bots-${{ hashFiles('scripts/budgets/bots/package-lock.json') }}
+      - name: boot xSample
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          VERSION: ${{ steps.server.outputs.version }}
+        run: |
+          jar=core/core-testing/sample/$SIDE/build/r8/XSample-${SIDE^}.jar
+          version=()
+          [[ $VERSION == latest ]] || version=(--version "$VERSION")
+          budget=$(sed -n 's/^startup-first-ms //p' gradle/perf-budgets.txt)
+          scripts/boot-proxy.sh --proxy "$PROXY" "${version[@]}" --java "$JAVA" \
+            --checks "core/core-testing/sample/$SIDE/boot-checks.txt" --startup-budget "$budget" "$jar"
+      - name: pair test
+        if: matrix.cell.backend != ''
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          VERSION: ${{ steps.server.outputs.version }}
+          BACKEND_JAVA: ${{ steps.backend-java.outputs.path }}
+          BACKEND_JAR: ${{ steps.backend-jar.outputs.jar }}
+        run: |
+          jar=core/core-testing/sample/$SIDE/build/r8/XSample-${SIDE^}.jar
+          version=()
+          [[ $VERSION == latest ]] || version=(--version "$VERSION")
+          backend=(--backend "${BACKEND_JAR:-$BACKEND}" --backend-version "$BACKEND_VERSION")
+          scripts/boot-proxy.sh --proxy "$PROXY" "${version[@]}" --java "$JAVA" "${backend[@]}" --backend-java "$BACKEND_JAVA" \
+            --backend-plugin core/core-testing/sample/bukkit/build/r8/XSample.jar --grant 'Joiner=xsample.*,xsample.admin' \
+            --checks "core/core-testing/sample/$SIDE/pair-checks.txt" "$jar"
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: boot-logs-${{ matrix.cell.id }}
+          path: |
+            build/boot/*/*/console.log
+            build/boot/*/client.log
           if-no-files-found: ignore
 
   fabric:
@@ -483,7 +647,7 @@ jobs:
   # allocated per call held close, times at five times an M1 Pro's. About three minutes.
   benchmarks:
     needs: changes
-    if: needs.changes.outputs.bukkit != '[]' || needs.changes.outputs.fabric != '[]'
+    if: needs.changes.outputs.bukkit != '[]' || needs.changes.outputs.fabric != '[]' || needs.changes.outputs.proxy != '[]'
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
@@ -510,7 +674,7 @@ jobs:
   # The one check to require: passes when every job above passed, was skipped because nothing
   # it covers changed, or failed in a cell allowed to fail; fails when any other failed.
   boot-ok:
-    needs: [changes, build-bukkit, build-fabric, bukkit, fabric, budgets, benchmarks]
+    needs: [changes, build-bukkit, build-fabric, build-proxy, bukkit, fabric, proxy, budgets, benchmarks]
     if: always()
     runs-on: ubuntu-26.04
     timeout-minutes: 5

@@ -31,6 +31,35 @@ tasks.named<JavaCompile>("compilePaperJava") {
     targetCompatibility = "17"
     options.compilerArgs.remove("-Werror")
 }
+// The proxies' shims, each against its proxy's API in a source set of its own, as Paper's loader
+// is: VelocityBootstrap to Java 21 class files (Velocity's API is Java 21, which it needs from
+// 3.4), BungeeBootstrap to Java 8 (BungeeCord's API is Java 8 class files, though BungeeCord
+// itself now needs 17). Main's classes don't see them, so a server without the proxy's API never
+// loads them. Each is a feature of its own (its own jar), which that proxy's platform and plugins
+// ask for: `project(":core:core-loader") { capabilities { requireFeature("velocity") } }`.
+val velocity = sourceSets.create("velocity") {
+    compileClasspath += sourceSets.main.get().output
+}
+configurations.named(velocity.compileClasspathConfigurationName) {
+    attributes { attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21) }
+}
+val bungee = sourceSets.create("bungee") {
+    compileClasspath += sourceSets.main.get().output
+}
+java {
+    registerFeature("velocity") { usingSourceSet(velocity) }
+    registerFeature("bungee") { usingSourceSet(bungee) }
+}
+dependencies {
+    // Each feature's jar needs the loader's main classes beside it.
+    "velocityApi"(project(":core:core-loader"))
+    "bungeeApi"(project(":core:core-loader"))
+    "velocityCompileOnly"(libs.velocity.api)
+    "bungeeCompileOnly"(libs.bungeecord.api)
+}
+tasks.named<JavaCompile>("compileVelocityJava") {
+    options.release.set(21)
+}
 tasks.jar {
     from(paper.output)
 }

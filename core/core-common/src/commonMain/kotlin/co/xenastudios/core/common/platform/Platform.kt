@@ -61,6 +61,15 @@ public enum class Threading {
     MAIN_THREAD,
 
     /**
+     * A proxy (Velocity, BungeeCord): no worlds and no main thread, so the platform gives each
+     * plugin one thread of its own for global and player work, which keeps the plugin's state
+     * on one thread as a main thread would, and a pool for async work. There are no places
+     * ([co.xenastudios.core.common.scheduler.Where.At] is refused), work for a player is
+     * retired once they leave the proxy, and delays aren't rounded to ticks: a proxy has none.
+     */
+    PROXY,
+
+    /**
      * Pumpkin's plugins: no threads at all. Everything, async work too, runs in the
      * server's tick callbacks, one at a time.
      */

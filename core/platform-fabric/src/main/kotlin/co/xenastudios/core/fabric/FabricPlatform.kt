@@ -28,6 +28,7 @@ import co.xenastudios.core.common.platform.Threading
 import co.xenastudios.core.jvm.db.DriverFetcher
 import co.xenastudios.core.jvm.db.OnDemandDriverFetcher
 import co.xenastudios.core.jvm.platform.FolderStorage
+import co.xenastudios.core.jvm.platform.Slf4jLog
 import co.xenastudios.core.loader.OnDemandLibraries
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
@@ -74,7 +75,8 @@ public class FabricPlatform(
     // mods load) is the one that may touch the plugin's state, as the server thread is later.
     private val startupThread = Thread.currentThread()
 
-    override val log: Log = Slf4jLog(displayName)
+    // A dedicated server's log doesn't show the logger's name, so each line starts with the plugin's.
+    override val log: Log = Slf4jLog(org.slf4j.LoggerFactory.getLogger(displayName), "[$displayName] ")
 
     // The YAML parser and the other libraries the mod downloads rather than carries, before
     // anything here reads a file with them.

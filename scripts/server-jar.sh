@@ -6,9 +6,12 @@
 #   scripts/server-jar.sh --resolve <server> [version]   what would be fetched, as key=value lines
 #   scripts/server-jar.sh <server> [version]             fetches it, and prints the same plus jar=
 #
-# <server> is spigot, pandaspigot, leaf, leaves, shreddedpaper or canvas. Without a version,
-# Spigot is the newest Minecraft CI boots (xena.ciNewestMinecraft in gradle.properties), and a
-# fork its own newest. The lines, for $GITHUB_OUTPUT:
+# <server> is spigot, pandaspigot, leaf, leaves, shreddedpaper or canvas; paper for a backend
+# behind a proxy (scripts/boot-proxy.sh; boot-test.sh downloads its own); or a proxy: velocity,
+# waterfall or bungeecord. Without a version, Spigot and Paper are the newest Minecraft CI boots
+# (xena.ciNewestMinecraft in gradle.properties), Velocity its newest release (4.x), Waterfall its
+# last (it has reached its end), BungeeCord its last good build, and a fork its own newest. The
+# lines, for $GITHUB_OUTPUT:
 #   version  the Minecraft version
 #   build    what identifies the jar, for a cache key: the fork's build, or for Spigot its
 #            build on hub.spigotmc.org and BuildTools' Jenkins build, so the cache refreshes
@@ -16,8 +19,10 @@
 #   java     the newest Java that server accepts, which the boot runs on
 #   jar      (fetching only) the jar, in .cache/servers/jars/
 #
-# Every fork's jar is checked against the SHA-256 its source publishes (its API, or GitHub's for
-# Leaf). Two sources publish none: Spigot's Jenkins records no fingerprint for BuildTools.jar
+# Every fork's and proxy's jar is checked against the SHA-256 its source publishes (its API, or
+# GitHub's for Leaf). Three sources publish none: BungeeCord's Jenkins, which fingerprints the
+# Maven module's jar but not the BungeeCord.jar it ships, so it comes over HTTPS from the build
+# the cache key names and its SHA-256 is logged; Spigot's Jenkins records no fingerprint for BuildTools.jar
 # (only for the Maven module's unshaded jar), so BuildTools comes over HTTPS from the build
 # the cache key names and its SHA-256 is logged; and Canvas, whose API is down and whose
 # Jenkins records none either, so the workflow lets its boot fail. BuildTools then checks what
@@ -134,7 +139,37 @@ case $server in
     version=${version:-newest}
     java=25
     file="$jars/canvas-$build.jar" ;;
-  *) echo "unknown server $server: spigot, pandaspigot, leaf, leaves, shreddedpaper or canvas" >&2; exit 2 ;;
+  paper | velocity | waterfall)
+    # PaperMC's download API: each build with its SHA-256. Velocity's versions are its own: 3.x
+    # needs Java 21, 4.x Java 25 (its class files are 69). Waterfall's are the newest Minecraft
+    # line it took (1.21), on Java 21.
+    api="https://fill.papermc.io/v3/projects/$server"
+    if [[ -z $version ]]; then
+      case $server in
+        paper) version=$(sed -n 's/^xena\.ciNewestMinecraft=//p' "$root/gradle.properties") ;;
+        *) version=$(curl -fsS "$api" | jq -r '[.versions[][]] | map(select(test("SNAPSHOT") | not)) | .[]' | newest) ;;
+      esac
+    fi
+    found=$(curl -fsS "$api/versions/$version/builds/latest")
+    build=$(jq -r .id <<<"$found")
+    sum=$(jq -r '.downloads["server:default"].checksums.sha256' <<<"$found")
+    url=$(jq -r '.downloads["server:default"].url' <<<"$found")
+    case $server in
+      paper) java=$(java_for "$version") ;;
+      velocity) if [[ $version == 3.* ]]; then java=21; else java=25; fi ;;
+      *) java=21 ;;
+    esac
+    file="$jars/$server-$version-$build.jar" ;;
+  bungeecord)
+    # One line of builds, the newest Minecraft's; BungeeCord needs Java 17 now.
+    jenkins=https://hub.spigotmc.org/jenkins/job/BungeeCord
+    build=$(curl -fsSL "$jenkins/lastSuccessfulBuild/buildNumber")
+    version=${version:-latest}
+    url="$jenkins/$build/artifact/bootstrap/target/BungeeCord.jar"
+    sum=""
+    java=21
+    file="$jars/bungeecord-$build.jar" ;;
+  *) echo "unknown server $server: spigot, paper, pandaspigot, leaf, leaves, shreddedpaper, canvas, velocity, waterfall or bungeecord" >&2; exit 2 ;;
 esac
 
 echo "version=$version"
@@ -171,5 +206,6 @@ XML
   fi
 else
   download "$url" "$file" "$algorithm" "$sum"
+  [[ -n $sum ]] || echo "${file##*/}: SHA-256 $(shasum -a 256 "$file" | cut -d' ' -f1)" >&2
 fi
 echo "jar=$file"

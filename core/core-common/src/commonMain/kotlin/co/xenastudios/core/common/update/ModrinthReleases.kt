@@ -30,8 +30,11 @@ public class ModrinthReleases(
     private val project: String,
     /** Modrinth's loader for the jar running: `bukkit`, `fabric`. */
     private val loader: String,
-    /** The Minecraft version the server runs: `1.21.11`. */
-    private val minecraft: String,
+    /**
+     * The Minecraft version the server runs: `1.21.11`; `null` on a proxy, whose one jar runs
+     * behind servers of every version, so its releases aren't filtered by one.
+     */
+    private val minecraft: String?,
     /** The plugin's version, for the User-Agent. */
     private val current: String,
     private val http: HttpGet,
@@ -42,7 +45,8 @@ public class ModrinthReleases(
     private val headers = mapOf("User-Agent" to "xena-studios/$project/$current (contact@xenastudios.co)")
 
     override fun releases(): Outcome<List<Release>, String> {
-        val query = "?loaders=" + encode("[\"$loader\"]") + "&game_versions=" + encode("[\"$minecraft\"]") + "&include_changelog=false"
+        val versions = minecraft?.let { "&game_versions=" + encode("[\"$it\"]") }.orEmpty()
+        val query = "?loaders=" + encode("[\"$loader\"]") + versions + "&include_changelog=false"
         val answer = when (val got = http.get("${modrinth.trimEnd('/')}/v2/project/${encode(project)}/version$query", headers)) {
             is Outcome.Err -> return Outcome.Err("Modrinth can't be reached: ${got.error}")
             is Outcome.Ok -> got.value

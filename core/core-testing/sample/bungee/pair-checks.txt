@@ -1,0 +1,19 @@
+# xSample on BungeeCord or Waterfall in front of xSample on Spigot 1.8.8, a real client joining through the proxy
+# (scripts/boot-proxy.sh --backend <spigot-1.8.8.jar>, --grant Joiner=xsample.*,xsample.admin, as a permission
+# plugin would). Both sides' platform checks first.
+logged: PLATFORM PASS
+backend: PLATFORM PASS
+# The client runs xSample's commands, which are the proxy's here: a player-run command, tab
+# completion of a player and of subcommands, a reply in German, then in English after the client
+# switches. It also sends a forged message on xena:xsample, which the proxy must drop.
+client: --version 1.8.8 --forge xena:xsample
+allow: Joiner sent a message on xena:xsample, where only servers send; it was dropped
+# The proxy layer: the backend says hello as the player joins, the proxy answers that server.
+logged: NETWORK HELLO from lobby for Joiner
+backend: NETWORK PASS: the proxy welcomed Joiner on xena:xsample
+# The join, the server switch and the quit, in each side's player cache.
+logged: CLIENT JOIN PASS
+logged: CLIENT SWITCH PASS: 
+logged: CLIENT QUIT PASS
+backend: CLIENT JOIN PASS
+backend: CLIENT QUIT PASS

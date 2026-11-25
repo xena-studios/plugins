@@ -1,4 +1,4 @@
-package co.xenastudios.core.fabric
+package co.xenastudios.core.jvm.command
 
 import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.common.command.ArgumentTypes

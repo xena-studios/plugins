@@ -27,8 +27,16 @@
 -keep interface **.loader.PluginEntry { *; }
 -keepclassmembers class * implements **.loader.PluginEntry { public void load(); }
 -keep class * extends **.loader.bukkit.BukkitBootstrap { <init>(); }
+# The proxies' shims keep their names, which the other Xena plugins on a proxy find them by
+# (JvmFamilyBoard.fromShims), and their members: Guice fills in VelocityBootstrap's fields and
+# Velocity calls its @Subscribe methods, both by reflection.
+-keep class **.loader.velocity.VelocityBootstrap { *; }
+-keep class * extends **.loader.velocity.VelocityBootstrap { <init>(); }
+-keep class **.loader.bungee.BungeeBootstrap { public *; }
+-keep class * extends **.loader.bungee.BungeeBootstrap { <init>(); }
 -keep class * extends org.bukkit.plugin.java.JavaPlugin { <init>(); }
 -keepclassmembers class * implements org.bukkit.event.Listener { @org.bukkit.event.EventHandler <methods>; }
+-keepclassmembers class * implements net.md_5.bungee.api.plugin.Listener { @net.md_5.bungee.event.EventHandler <methods>; }
 # Bukkit events keep their names, since other plugins and Skript listen to them by class, and
 # their static getHandlerList(), which Bukkit finds by reflection when a listener registers.
 -keep class * extends org.bukkit.event.Event {

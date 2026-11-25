@@ -36,7 +36,8 @@ import org.gradle.process.ExecOperations
  * rules this task writes from the jar itself, so a plugin never repeats what its files say:
  * - `plugin.yml`'s and `paper-plugin.yml`'s `main` (and Paper's `bootstrapper` and `loader`),
  *   which the server makes by name;
- * - every entry point in `fabric.mod.json` (`main`, `server`, `client` and the rest);
+ * - every entry point in `fabric.mod.json` (`main`, `server`, `client` and the rest), and
+ *   `velocity-plugin.json`'s `main`;
  * - every service in `META-INF/services/`, and the interface it's for;
  * - the core's api types the plugin's own API exposes ([exposedCoreApi]), which keep their names
  *   and members like the API itself (common.pro keeps the API but not the relocated core's);
@@ -145,6 +146,12 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
                     val match = Regex("""(?m)^$key:\s*['"]?([\w.$]+)""").find(yml) ?: continue
                     append("# $file $key\n-keep class ${match.groupValues[1]} { <init>(...); }\n")
                 }
+            }
+
+            text("velocity-plugin.json")?.let { json ->
+                @Suppress("UNCHECKED_CAST")
+                val main = (JsonSlurper().parseText(json) as Map<String, Any?>)["main"]
+                if (main != null) append("# velocity-plugin.json main\n-keep class $main { <init>(...); }\n")
             }
 
             text("fabric.mod.json")?.let { json ->

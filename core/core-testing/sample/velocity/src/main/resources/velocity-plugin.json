@@ -1,0 +1,9 @@
+{
+  "id": "xsample",
+  "name": "xSample",
+  "version": "${version}",
+  "description": "The core's sample plugin on Velocity, for boot tests. Never released.",
+  "authors": ["Xena Studios"],
+  "dependencies": [],
+  "main": "co.xenastudios.xsample.velocity.XSampleVelocityBootstrap"
+}

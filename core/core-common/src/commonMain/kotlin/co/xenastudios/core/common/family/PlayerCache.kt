@@ -477,9 +477,11 @@ public class PlayerCache(
         /** The file the cache is saved in without a shared database, in `plugins/Xena/`. */
         public val FILE: StoragePath = StoragePath.of("players.records")
 
-        private val COLUMNS = Players.columns.map { it.name }
+        // On first use, by a save or the database: a cache is made as a plugin enables, on the
+        // server's thread, and the table's columns are a good part of its classes' first start.
+        private val COLUMNS by lazy { Players.columns.map { it.name } }
 
-        private val MIGRATIONS = listOf(Migration(1, "the family's player cache") { it.createTable(Players) })
+        private val MIGRATIONS by lazy { listOf(Migration(1, "the family's player cache") { it.createTable(Players) }) }
 
         private val tokenLock = Any()
         private var tokens = 0

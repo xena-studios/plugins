@@ -12,8 +12,9 @@
 
 # The loader's boot-test plugin: the shim, the loader and a Kotlin entry point, no core.
 # 27 KiB shrunk (43 KiB before R8); its budget leaves room for the loader to grow, not for a library
-# shaded in by mistake.
-:core:core-loader:sandbox 30
+# shaded in by mistake. 29.3 KiB with the proxies' shims' shared startup; 30.6 KiB with the records
+# that let a cached library skip its hash while unchanged ("The proxy platforms").
+:core:core-loader:sandbox 32
 
 # xSample on Bukkit (core/core-testing/sample/bukkit): every part of the core a plugin can use
 # (admin subcommands, the family, the player cache, i18n, config), with the stdlib and the YAML
@@ -21,11 +22,19 @@
 # with the update checker (16 KiB), bStats relocated (9 KiB) and their Bukkit side (6 KiB); 418 KiB
 # with R8's marker stripped, renamed classes in the package xsample and no keep rule for enums or
 # the core's api (DECISIONS.md, "Smaller jars"). Never released, so no 1.x jar to stay under; the
-# line keeps the core's shrunk size from creeping.
-:core:core-testing:sample:bukkit 460
+# line keeps the core's shrunk size from creeping. 443 KiB with the chat bridge, 471 KiB with the
+# proxy layer's server side (the channel, its frames and signing: "The proxy layer").
+:core:core-testing:sample:bukkit 480
 # xTwin on Bukkit, the family test's second plugin: the same core with fewer of its parts.
 # 387 KiB shrunk, 400 KiB with its own bStats, 311 KiB as xSample's above. Never released.
 :core:core-testing:twin:bukkit 345
+
+# xSample's proxy side (core/core-testing/sample/velocity and bungee): the same core and commands on
+# platform-velocity and platform-bungee, with the proxy layer and the stdlib and YAML parser
+# downloaded (Velocity's addToClasspath, BungeeCord's libraries:), shrunk: 435 and 425 KiB with
+# the chat bridge and their startup class lists (DECISIONS.md, "The proxy platforms"). Never released.
+:core:core-testing:sample:velocity 470
+:core:core-testing:sample:bungee 460
 
 # xSample on Fabric (core/platform-fabric/sandbox, its own build), one jar a Minecraft line:
 # the adapter and the core, with fabric-language-kotlin's stdlib and the YAML parser downloaded.

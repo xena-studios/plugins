@@ -173,5 +173,6 @@ public object HealthChecks {
         Threading.REGIONS -> "Folia's regions"
         Threading.MAIN_THREAD -> "one main thread"
         Threading.SINGLE -> "one thread for everything"
+        Threading.PROXY -> "the proxy's: one thread of the plugin's own"
     }
 }

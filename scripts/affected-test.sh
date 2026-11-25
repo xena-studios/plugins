@@ -119,11 +119,21 @@ nothing=$'tasks=\nchecks=\nxmoney=false\nboot='
 rewrite="tasks=$rewriteTasks"$'\nchecks=\nxmoney=false'
 
 check "Rewrite core only" core/core-common/src/commonMain/kotlin/co/xenastudios/core/common/text/Component.kt \
-  "$rewrite"$'\nboot=bukkit fabric'
+  "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Rewrite's Bukkit platform" core/platform-bukkit/src/main/kotlin/co/xenastudios/core/bukkit/BukkitText.kt \
   "$rewrite"$'\nboot=bukkit'
 check "Rewrite's Fabric platform (its own build)" core/platform-fabric/src/main/kotlin/co/xenastudios/core/fabric/FabricCommands.kt \
   "$rewrite"$'\nboot=fabric'
+check "Rewrite's Velocity platform" core/platform-velocity/src/main/kotlin/co/xenastudios/core/velocity/VelocityCommands.kt \
+  "$rewrite"$'\nboot=proxy'
+check "Rewrite's BungeeCord platform" core/platform-bungee/src/main/kotlin/co/xenastudios/core/bungee/BungeeChannel.kt \
+  "$rewrite"$'\nboot=proxy'
+check "xSample's Velocity plugin" core/core-testing/sample/velocity/src/main/kotlin/co/xenastudios/xsample/velocity/XSampleVelocity.kt \
+  "$rewrite"$'\nboot=proxy'
+check "The loader's shims" core/core-loader/src/velocity/java/co/xenastudios/core/loader/velocity/VelocityBootstrap.java \
+  "$rewrite"$'\nboot=bukkit proxy'
+check "Proxy boot script" scripts/boot-proxy.sh $'tasks=\nchecks=\nxmoney=false\nboot=proxy'
+check "The real client" scripts/budgets/bots/client.js $'tasks=\nchecks=\nxmoney=false\nboot=bukkit proxy'
 check "A rewritten plugin's common code" xutilities/common/src/commonMain/kotlin/co/xenastudios/xutilities/Commands.kt \
   $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nxmoney=false\nboot=bukkit fabric'
 check "A rewritten plugin's Bukkit adapter" xutilities/bukkit/src/main/kotlin/co/xenastudios/xutilities/bukkit/BukkitXServer.kt \
@@ -141,18 +151,19 @@ check "zChat's real-client checks" zchat/bukkit/client-checks.txt \
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 check "Today's plugin" xbans/src/main/java/co/xenastudios/xbans/XBans.java \
   $'units=xbans\ncompile=:xbans:compileJava :xbans:api:compileJava\nchecks=xbans/boot-checks.txt\nxmoney=false\nboot='
-check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric'
-check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric'
+check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric proxy'
+check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Today's convention" build-logic/src/main/kotlin/xena.plugin.gradle.kts everything
 check "build-logic's own build" build-logic/build.gradle.kts everything
-check "Rewrite's jar budgets" gradle/jar-budgets.txt "$rewrite"$'\nboot=bukkit fabric'
+check "Rewrite's jar budgets" gradle/jar-budgets.txt "$rewrite"$'\nboot=bukkit fabric proxy'
+check "Rewrite's shrinking rules" build-logic/src/main/resources/xena/r8/common.pro "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Version catalog" gradle/libs.versions.toml everything
 check "Runtime budgets script" scripts/budgets/check.sh $'tasks=\nchecks=\nxmoney=false\nboot=bukkit'
 check "Paper and Folia boot script" scripts/boot-test.sh everything
 check "Docs only" $'docs/src/content/docs/index.mdx\nREADME.md' "$nothing"
 check "A decision" $'decisions/2026-11-24-decisions-one-file-each.md\nDECISIONS.md\nscripts/decisions.ts' "$nothing"
 check "Plugins workflow" .github/workflows/plugins.yml everything
-check "Boot workflow" .github/workflows/boot.yml $'tasks=\nchecks=\nxmoney=false\nboot=bukkit fabric'
+check "Boot workflow" .github/workflows/boot.yml $'tasks=\nchecks=\nxmoney=false\nboot=bukkit fabric proxy'
 check "Another workflow" .github/workflows/docs.yml "$nothing"
 check "A new top-level file" Makefile everything
 

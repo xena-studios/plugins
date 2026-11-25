@@ -2,6 +2,7 @@ package co.xenastudios.core.fabric
 
 import co.xenastudios.core.common.permission.Permission
 import co.xenastudios.core.common.permission.PermissionRegistrar
+import co.xenastudios.core.common.permission.PermissionResolver
 import me.lucko.fabric.api.permissions.v0.PermissionCheckEvent
 import net.fabricmc.fabric.api.util.TriState
 import net.minecraft.commands.CommandSourceStack

@@ -8,6 +8,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,15 +77,7 @@ public final class Libraries {
         if (missing.isEmpty()) {
             return new Loaded(own, null, Collections.<LibraryCache.Fetched>emptyList(), visible);
         }
-        List<LibraryCache.Fetched> fetched = new ArrayList<>();
-        for (Library library : missing) {
-            LibraryCache.Fetched jar = cache.fetch(library);
-            if (jar.replacedBadCopy()) {
-                log.warning("The copy of " + library + " in " + cache.folder() + " didn't match its pinned SHA-256,"
-                    + " so it was downloaded again.");
-            }
-            fetched.add(jar);
-        }
+        List<LibraryCache.Fetched> fetched = fetch(missing, cache, log);
         List<String> failures = new ArrayList<>();
         for (Strategy strategy : Strategy.order(java, own instanceof URLClassLoader, forced)) {
             try {
@@ -99,7 +92,7 @@ public final class Libraries {
                         + "), so the plugin runs in a class loader of its own, where other plugins can't use its API."
                         + " Starting the server with --add-opens java.base/java.net=ALL-UNNAMED fixes it.");
                 }
-                log.info(describe(fetched, strategy, cache));
+                log.info(describe(fetched, strategy.description(), cache));
                 return new Loaded(loader, strategy, fetched, visible);
             } catch (Throwable e) {
                 failures.add(strategy.name().toLowerCase(Locale.ROOT) + ": " + e);
@@ -108,6 +101,56 @@ public final class Libraries {
         throw new LibraryException("Couldn't make " + missing + " visible to the plugin (" + String.join("; ", failures)
             + "). Remove the loader setting to use the default, or start the server with"
             + " --add-opens java.base/java.net=ALL-UNNAMED.");
+    }
+
+    /** Adds a downloaded jar to the plugin's class path the platform's own way, such as Velocity's {@code addToClasspath}. */
+    public interface Adder {
+        void add(Path jar) throws Exception;
+    }
+
+    /**
+     * As {@link #load(List, ClassLoader, URL, LibraryCache, int, Strategy, Logger)}, on a platform
+     * with its own way to add a jar to a plugin's class loader: each missing library is fetched
+     * into the cache and handed to {@code adder}, described as {@code how} in the console line.
+     */
+    public static Loaded load(List<Library> libraries, ClassLoader own, LibraryCache cache, Adder adder, String how, Logger log)
+            throws LibraryException {
+        List<Library> visible = new ArrayList<>();
+        List<Library> missing = new ArrayList<>();
+        for (Library library : libraries) {
+            (find(library.probe(), own) != null ? visible : missing).add(library);
+        }
+        if (missing.isEmpty()) {
+            return new Loaded(own, null, Collections.<LibraryCache.Fetched>emptyList(), visible);
+        }
+        List<LibraryCache.Fetched> fetched = fetch(missing, cache, log);
+        try {
+            for (LibraryCache.Fetched jar : fetched) {
+                adder.add(jar.jar());
+            }
+        } catch (Exception e) {
+            throw new LibraryException("Couldn't add " + missing + " to the plugin through " + how + ": " + e);
+        }
+        for (Library library : missing) {
+            if (find(library.probe(), own) == null) {
+                throw new LibraryException(library + " was added through " + how + ", but " + library.probe() + " still isn't visible");
+            }
+        }
+        log.info(describe(fetched, how, cache));
+        return new Loaded(own, null, fetched, visible);
+    }
+
+    private static List<LibraryCache.Fetched> fetch(List<Library> missing, LibraryCache cache, Logger log) throws LibraryException {
+        List<LibraryCache.Fetched> fetched = new ArrayList<>();
+        for (Library library : missing) {
+            LibraryCache.Fetched jar = cache.fetch(library);
+            if (jar.replacedBadCopy()) {
+                log.warning("The copy of " + library + " in " + cache.folder() + " didn't match its pinned SHA-256,"
+                    + " so it was downloaded again.");
+            }
+            fetched.add(jar);
+        }
+        return fetched;
     }
 
     /** The class, if the loader can see it, without initializing it. */
@@ -164,7 +207,7 @@ public final class Libraries {
             .invoke(unsafe, base, offset);
     }
 
-    private static String describe(List<LibraryCache.Fetched> jars, Strategy strategy, LibraryCache cache) {
+    private static String describe(List<LibraryCache.Fetched> jars, String how, LibraryCache cache) {
         List<String> names = new ArrayList<>();
         List<String> downloads = new ArrayList<>();
         for (LibraryCache.Fetched jar : jars) {
@@ -174,7 +217,7 @@ public final class Libraries {
                     + (jar.bytes() + 1023) / 1024 + " KiB in " + jar.millis() + " ms");
             }
         }
-        return "Loaded " + String.join(", ", names) + " through " + strategy.description() + " ("
+        return "Loaded " + String.join(", ", names) + " through " + how + " ("
             + (downloads.isEmpty() ? "from " + cache.folder() : "downloaded " + String.join("; ", downloads)) + ")";
     }
 

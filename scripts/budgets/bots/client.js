@@ -8,6 +8,7 @@
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
 //   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat]
+//     [--version 1.21.11] [--forge xena:xsample]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
 // /heal and /back, a teleport and its way back, and /gamemode's completion), or zChat's (a
@@ -15,7 +16,10 @@
 // with its sound, /msg and /reply between the two, and /togglechat in German).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
-// from Spigot 1.8.8 to the newest version mineflayer speaks.
+// from Spigot 1.8.8 to the newest version mineflayer speaks; --version sets it instead, for a
+// proxy, which speaks every version and answers a ping with the newest. --forge sends a plugin
+// message on that channel as soon as the client spawns, as a hacked client could, for the proxy
+// boot tests: the proxy must drop it (scripts/boot-proxy.sh).
 const mineflayer = require('mineflayer')
 
 const port = Number(process.argv[2])
@@ -23,13 +27,15 @@ const option = (name, fallback) => { const i = process.argv.indexOf(name); retur
 const username = option('--name', 'Joiner')
 const timeout = Number(option('--timeout', 90)) * 1000
 const plugin = option('--plugin', 'xsample')
+const version = option('--version', false)
+const forge = option('--forge', null)
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const failures = []
 const heard = []
 
 // German from the start: in the configuration phase's settings (1.20.2 on, clientSettings) and in
 // the ones mineflayer sends as it logs in, which it reads from bot.settings once its plugins load.
-const bot = mineflayer.createBot({ host: '127.0.0.1', port, username, auth: 'offline', version: false, clientSettings: { locale: 'de_de' } })
+const bot = mineflayer.createBot({ host: '127.0.0.1', port, username, auth: 'offline', version, clientSettings: { locale: 'de_de' } })
 bot.once('inject_allowed', () => { bot.settings.locale = 'de_de' })
 // What a client shows: a signed chat message's unsigned content when the server sent one (a
 // chat plugin's format on Paper), which mineflayer's messagestr leaves out.
@@ -66,8 +72,11 @@ async function command (line, expect, name) {
   check(name, got != null, `no chat line with "${expect}" after ${line}; heard: ${JSON.stringify(heard.slice(from)).slice(0, 400)}`)
 }
 
-// 1.13+ answers with objects ({ match, tooltip }), older servers with strings.
+// 1.13+ answers with objects ({ match, tooltip }), older servers with strings. A moment's pause
+// first, as a player's typing has: Velocity drops a request that comes within 10 ms of the last
+// (its tab-complete-rate-limit), which a bot asking right after an answer would.
 async function completions (text) {
+  await sleep(250)
   const matches = await bot.tabComplete(text, false, false, 8000)
   return matches.map((m) => (typeof m === 'string' ? m : m.match).replace(/^\//, ''))
 }
@@ -148,6 +157,11 @@ async function zchat () {
 }
 
 async function run () {
+  if (forge) {
+    // Looks like a frame of ours ('X', version 1), signed with nothing the network knows.
+    bot._client.write('custom_payload', { channel: forge, data: Buffer.from([0x58, 1, 1, 4, 0x6b, 0x69, 0x63, 0x6b, ...Array(34).fill(0)]) })
+    console.log(`sent a forged message on ${forge}`)
+  }
   // The server reads the client's language as it joins (1.8.8 a moment later) and records it.
   await sleep(3000)
   if (plugin === 'xutilities') return xutilities()

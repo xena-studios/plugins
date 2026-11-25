@@ -24,6 +24,9 @@ import kotlin.uuid.Uuid
  * Code outside any task (the test itself) is on [Where.Global], unless it says otherwise with
  * [runAs].
  *
+ * With [Threading.PROXY] it's a proxy's: global and player work on the plugin's one thread, no
+ * places (work [Where.At] one is refused), and no ticks, so delays are kept exact.
+ *
  * Entities exist once [spawn]ed; work for one that doesn't, or that [despawn]s, is cancelled
  * and its `retired` callback runs, as on Folia.
  */
@@ -66,6 +69,7 @@ public class VirtualScheduler(public val threading: Threading = Threading.REGION
     override fun run(where: Where, delay: Duration, period: Duration?, retired: (() -> Unit)?, action: (Task) -> Unit): Task {
         require(!delay.isNegative()) { "A delay can't be negative: $delay" }
         require(period == null || period.isPositive()) { "A period must be positive: $period" }
+        require(threading != Threading.PROXY || where !is Where.At) { "A proxy has no worlds, so no work runs at a place: $where" }
         val entry = Entry(dueAfter(where, delay), nextOrder++, where, period, retired, action)
         entry.queue = queue
         if (where is Where.On && where.entity !in entities) {
@@ -82,7 +86,7 @@ public class VirtualScheduler(public val threading: Threading = Threading.REGION
         val here = current
         return when (threading) {
             Threading.SINGLE -> true
-            Threading.MAIN_THREAD -> (where == Where.Async) == (here == Where.Async)
+            Threading.MAIN_THREAD, Threading.PROXY -> (where == Where.Async) == (here == Where.Async)
             Threading.REGIONS -> {
                 val mine = region(here)
                 mine != null && mine == region(where)
@@ -161,9 +165,10 @@ public class VirtualScheduler(public val threading: Threading = Threading.REGION
         }
     }
 
-    // Work on a server thread runs on a tick, at least the next one; async work runs when due.
+    // Work on a server thread runs on a tick, at least the next one; async work, and everything
+    // on a proxy, which has no ticks, runs when due.
     private fun dueAfter(where: Where, delay: Duration): Duration {
-        if (where == Where.Async) return time + delay
+        if (where == Where.Async || threading == Threading.PROXY) return time + delay
         val tick = TICK.inWholeMilliseconds
         val tickNow = time.inWholeMilliseconds / tick
         val ticks = maxOf(1L, (delay.inWholeMilliseconds + tick - 1) / tick)

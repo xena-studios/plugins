@@ -55,6 +55,20 @@ core/core-testing/sample/bukkit/boot.sh "$(scripts/server-jar.sh spigot 1.8.8 | 
 
 `boot.sh` boots the jar R8 shrank (`build/r8/XSample.jar`), as a release ships; the YAML parser and the stdlib are downloaded (`libraries:`, or the loader below 1.16.5). The Fabric sandbox is built and booted the same way, from its own build: `./gradlew -p core/platform-fabric build collect`, then `scripts/boot-fabric.sh --version 26.3 --java <JDK 25 home> --checks core/platform-fabric/sandbox/boot-checks.txt core/platform-fabric/build/libs/xsample-fabric-1.0.0+26.3.jar`.
 
+The proxies boot through `scripts/boot-proxy.sh`, alone or in front of a backend, with xSample's proxy side (`core/core-testing/sample/velocity`, `bungee`). Alone, its platform checks and console commands, and with `--startup-budget` its startup; in front of a backend (Paper behind Velocity through modern forwarding, Spigot behind BungeeCord), the pair test, a real client joining through the proxy while xSample's two sides talk over the proxy layer (decisions/2026-11-25-the-proxy-layer.md):
+
+```sh
+./gradlew :core:core-testing:sample:velocity:assemble :core:core-testing:sample:bungee:assemble :core:core-testing:sample:bukkit:assemble
+scripts/boot-proxy.sh --proxy velocity --java <JDK 25 home> --checks core/core-testing/sample/velocity/boot-checks.txt \
+  --startup-budget 150 core/core-testing/sample/velocity/build/r8/XSample-Velocity.jar
+scripts/boot-proxy.sh --proxy velocity --java <JDK 25 home> --backend paper --backend-version 1.21.11 --backend-java <JDK 21 home> \
+  --backend-plugin core/core-testing/sample/bukkit/build/r8/XSample.jar --grant 'Joiner=xsample.*,xsample.admin' \
+  --checks core/core-testing/sample/velocity/pair-checks.txt core/core-testing/sample/velocity/build/r8/XSample-Velocity.jar
+scripts/boot-proxy.sh --proxy bungeecord --java <JDK 21 home> --backend "$(scripts/server-jar.sh spigot 1.8.8 | sed -n 's/^jar=//p')" \
+  --backend-java <JDK 8 home> --backend-plugin core/core-testing/sample/bukkit/build/r8/XSample.jar --grant 'Joiner=xsample.*,xsample.admin' \
+  --checks core/core-testing/sample/bungee/pair-checks.txt core/core-testing/sample/bungee/build/r8/XSample-Bungee.jar
+```
+
 A rewritten plugin boots the same way. xUtilities, the first: `./gradlew :xutilities:bukkit:assemble`, then `xutilities/bukkit/boot.sh paper 26.3 --java <JDK 25 home>` (or a Spigot jar with `--java <JDK 8 home>`); its Fabric mod is a branch of platform-fabric's build, `./gradlew -p core/platform-fabric :xutilities:26.3:collect`, booted with `scripts/boot-fabric.sh --version 26.3 --checks xutilities/fabric/boot-checks.txt core/platform-fabric/build/libs/xutilities-fabric-*+26.3.jar`. The Boot workflow boots it in every cell, and beside xSample and xTwin in the family test.
 
 ### Performance budgets
@@ -83,7 +97,7 @@ The Boot workflow runs both (its `budgets` and `benchmarks` jobs): startup is re
 | `build-logic/` | The Gradle conventions: `xena.plugin` for every plugin, `xena.api` for its developer API; `xena.kmp`, `xena.kmp-api` and `xena.kotlin-jvm` for the rewrite's Kotlin modules, `xena.java8` for its Java one, `xena.fetched-libraries` for jars that download libraries at runtime, `xena.r8` for a rewrite jar shrunk with R8 against its budget in `gradle/jar-budgets.txt` |
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
 | `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/`, `xteleport/`, `xvote/`, `xbans/`, `xmoney/`, `xbackup/`, `xstats/` | The plugins, each with its own README |
-| `scripts/` | `affected.sh` and its test `affected-test.sh`, `decisions.ts` (writes DECISIONS.md), `boot-test.sh`, `boot-fabric.sh`, `budgets/check.sh` (the runtime budgets on a real server), `server-jar.sh` (Spigot from BuildTools, and the forks' jars), `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `new-rewrite-plugin.ts` (a plugin in the rewrite's layout), `release.ts` |
+| `scripts/` | `affected.sh` and its test `affected-test.sh`, `decisions.ts` (writes DECISIONS.md), `boot-test.sh`, `boot-fabric.sh`, `boot-proxy.sh`, `budgets/check.sh` (the runtime budgets on a real server), `server-jar.sh` (Spigot from BuildTools, the forks' and the proxies' jars), `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `new-rewrite-plugin.ts` (a plugin in the rewrite's layout), `release.ts` |
 | `docs/` | plugins.xenastudios.co |
 
 A plugin extends `XenaPlugin`. It declares its config as records (`ConfigSpec`), and in `setup` says which commands and modules that config turns on. The core does the rest: registering on startup and on every reload, carrying old configs forward, the theme, the update checker and bStats.

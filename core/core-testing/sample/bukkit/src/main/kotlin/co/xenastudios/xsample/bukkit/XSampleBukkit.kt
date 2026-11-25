@@ -10,10 +10,16 @@ import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.now
 import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.core.loader.PluginEntry
+import co.xenastudios.core.api.toPlayerRef
 import co.xenastudios.core.sample.SampleMessages
+import co.xenastudios.core.sample.SampleNetwork
 import co.xenastudios.core.sample.SampleConfig
 import co.xenastudios.core.sample.SamplePermissions
 import co.xenastudios.core.sample.XSample
+import org.bukkit.event.EventPriority
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.plugin.EventExecutor
 import org.bukkit.plugin.java.JavaPlugin
 import kotlin.concurrent.Volatile
 
@@ -22,7 +28,8 @@ import kotlin.concurrent.Volatile
  * the stdlib is visible. Everything it does is the shared code's; this only wires it to the
  * server, as each plugin's `bukkit/` adapter will: the family's player cache (joins, quits and
  * languages recorded by the platform, and `/xsample forget` finding players by name), the
- * admin replies in each reader's language, the debug report's server lines and dependencies.
+ * admin replies in each reader's language, the debug report's server lines and dependencies, and
+ * its network side behind a proxy ([SampleNetwork.Server]).
  * Then it runs [PlatformCheck], which the boot tests read.
  */
 public class XSampleBukkit(private val plugin: JavaPlugin) : PluginEntry {
@@ -79,6 +86,12 @@ public class XSampleBukkit(private val plugin: JavaPlugin) : PluginEntry {
         // turning bStats off, so it starts and nothing is sent.
         platform.checkUpdates("xsample", sample.admin.updates, SampleConfig.updates.settings(SampleConfig.defaults)) { translations }
         Integer.getInteger("xsample.bstats")?.let(platform::metrics)
+        // Its network side: a hello to the proxy, on xena:xsample, as each player joins. Behind no
+        // proxy there's no secret and no one to tell, so it does nothing.
+        val network = SampleNetwork.Server(platform.proxyChannel(), platform)
+        plugin.server.pluginManager.registerEvent(PlayerJoinEvent::class.java, object : Listener {}, EventPriority.MONITOR, EventExecutor { _, event ->
+            if (event is PlayerJoinEvent) network.joined(event.player.uniqueId.toPlayerRef(), event.player.name)
+        }, plugin)
         val millis = (System.nanoTime() - started) / 1_000_000
         platform.log.info("xSample on ${platform.name}: ${platform.threading} threading, text as ${platform.text}, chat through ${platform.chatPath}, enabled in $millis ms")
         PlatformCheck(plugin, platform, cache).start()

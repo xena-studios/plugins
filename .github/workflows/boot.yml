@@ -401,12 +401,22 @@ jobs:
       BACKEND_VERSION: ${{ matrix.cell.backend-version }}
     steps:
       - uses: actions/checkout@v7
-      # The artifact keeps its files relative to the folder they share (the sample's), so
-      # it goes back there, not to the repo's root.
+      # upload-artifact keeps files relative to the folder they share, which for these jars
+      # (the sample's and zChat's) is the repo's root, so they go back there. The check after
+      # names a jar that isn't where the boots look, should that folder ever change.
       - uses: actions/download-artifact@v8
         with:
           name: proxy-jars
-          path: core/core-testing/sample
+          path: .
+      - name: Check the proxy jars are in place
+        run: |
+          for jar in core/core-testing/sample/velocity/build/r8/XSample-Velocity.jar \
+                     core/core-testing/sample/bungee/build/r8/XSample-Bungee.jar \
+                     core/core-testing/sample/bukkit/build/r8/XSample.jar \
+                     zchat/velocity/build/r8/zChat-Velocity.jar zchat/bungee/build/r8/zChat-Bungee.jar \
+                     zchat/bukkit/build/r8/zChat.jar; do
+            [[ -f $jar ]] || { echo "::error::$jar is missing: the proxy-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/r8*' | head -20; exit 1; }
+          done
       # What will boot, for the cache key: the proxy's version and build (and the Java it needs),
       # and the backend's.
       - id: server

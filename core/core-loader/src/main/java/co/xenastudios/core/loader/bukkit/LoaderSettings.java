@@ -1,8 +1,8 @@
 package co.xenastudios.core.loader.bukkit;
 
 import co.xenastudios.core.loader.LibraryCache;
+import co.xenastudios.core.loader.LibrarySettings;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -14,8 +14,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
  */
 public final class LoaderSettings {
 
-    /** The family's shared folder, beside each plugin's own. */
-    static final String SHARED = "Xena";
+    static final String SHARED = LibrarySettings.SHARED;
     static final String FILE = "libraries.yml";
 
     private LoaderSettings() {}
@@ -32,23 +31,12 @@ public final class LoaderSettings {
     }
 
     static LibraryCache cache(File plugins, YamlConfiguration settings) {
-        File shared = new File(plugins, SHARED);
-        String help = "If this server can't reach Maven Central, set mirror: in " + new File(shared, FILE)
-            + " to a Maven repository it can reach.";
-        return new LibraryCache(new File(shared, "libraries").toPath(), mirrors(settings), help);
-    }
-
-    private static List<String> mirrors(YamlConfiguration settings) {
-        String flag = System.getProperty("xena.libraries.mirror");
-        if (flag != null && !flag.trim().isEmpty()) {
-            List<String> mirrors = new ArrayList<>();
-            Collections.addAll(mirrors, flag.split(","));
-            return mirrors;
-        }
+        List<String> configured = null;
         if (settings.isList("mirror")) {
-            return settings.getStringList("mirror");
+            configured = settings.getStringList("mirror");
+        } else if (settings.getString("mirror") != null && !settings.getString("mirror").trim().isEmpty()) {
+            configured = Collections.singletonList(settings.getString("mirror"));
         }
-        String mirror = settings.getString("mirror");
-        return mirror == null || mirror.trim().isEmpty() ? LibraryCache.DEFAULT_MIRRORS : Collections.singletonList(mirror);
+        return LibrarySettings.cache(plugins, configured);
     }
 }

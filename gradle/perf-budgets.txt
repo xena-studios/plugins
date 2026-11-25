@@ -7,6 +7,8 @@
 # the timed boots. The first Xena plugin to start pays for loading the Kotlin stdlib's first classes.
 startup-first-ms 150
 startup-ms 100
+# On a proxy (scripts/boot-proxy.sh --startup-budget, in the Boot workflow's proxy cells) the same
+# first-plugin budget, for the shim's own line: libraries checked and added, the plugin enabled.
 
 # Idle, no players: server-thread time a tick, and CPU time a second on every other thread, in
 # stacks that pass through the plugin's package.

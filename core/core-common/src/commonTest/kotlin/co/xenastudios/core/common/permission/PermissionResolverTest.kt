@@ -1,8 +1,5 @@
-package co.xenastudios.core.fabric
+package co.xenastudios.core.common.permission
 
-import co.xenastudios.core.common.permission.Permission
-import co.xenastudios.core.common.permission.PermissionDefault
-import co.xenastudios.core.common.permission.PermissionSet
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -21,7 +18,7 @@ class PermissionResolverTest {
     private val none: (String) -> Boolean? = { null }
 
     @Test
-    fun `with no permission mod, the declared defaults decide by operator`() {
+    fun withNoPermissionModTheDeclaredDefaultsDecideByOperator() {
         assertTrue(resolver.has(Perms.use.node, operator = false, none))
         assertFalse(resolver.has(Perms.give.node, operator = false, none))
         assertTrue(resolver.has(Perms.give.node, operator = true, none))
@@ -30,19 +27,19 @@ class PermissionResolverTest {
     }
 
     @Test
-    fun `an undeclared node is for operators`() {
+    fun anUndeclaredNodeIsForOperators() {
         assertFalse(resolver.has("other.thing", operator = false, none))
         assertTrue(resolver.has("other.thing", operator = true, none))
     }
 
     @Test
-    fun `the permission mod's answer comes first`() {
+    fun thePermissionModsAnswerComesFirst() {
         assertFalse(resolver.has(Perms.use.node, operator = true) { if (it == "xtest.use") false else null })
         assertTrue(resolver.has(Perms.give.node, operator = false) { if (it == "xtest.give") true else null })
     }
 
     @Test
-    fun `a parent grants or takes away its children`() {
+    fun aParentGrantsOrTakesAwayItsChildren() {
         // An operator has xtest.* by default, and so every child it grants, even a NOBODY one.
         assertTrue(resolver.has(Perms.hidden.node, operator = true, none))
         assertTrue(resolver.has(Perms.give.node, operator = false) { if (it == "xtest.*") true else null })
@@ -52,7 +49,7 @@ class PermissionResolverTest {
     }
 
     @Test
-    fun `children that loop stop`() {
+    fun childrenThatLoopStop() {
         val loop = object : PermissionSet("xloop") {
             val a: Permission = permission("a", "A.", PermissionDefault.NOBODY, children = mapOf("xloop.b" to true))
             val b: Permission = permission("b", "B.", PermissionDefault.NOBODY, children = mapOf("xloop.a" to true))
@@ -62,7 +59,7 @@ class PermissionResolverTest {
     }
 
     @Test
-    fun `a sync replaces what was declared`() {
+    fun aSyncReplacesWhatWasDeclared() {
         val fresh = PermissionResolver().apply { sync(Perms.permissions) }
         fresh.sync(emptyList())
         // xtest.use was for everyone; now it's undeclared, so for operators.

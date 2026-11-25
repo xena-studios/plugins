@@ -1,5 +1,6 @@
 package co.xenastudios.core.fabric
 
+import co.xenastudios.core.jvm.command.BrigadierTree
 import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.common.command.CommandDispatcher
 import co.xenastudios.core.common.command.CommandFeedback

@@ -1,5 +1,6 @@
 package co.xenastudios.core.bukkit
 
+import co.xenastudios.core.jvm.scheduler.AsyncExecutor
 import co.xenastudios.core.bukkit.modern.Ticks
 import co.xenastudios.core.common.scheduler.Scheduler
 import co.xenastudios.core.common.scheduler.Task

@@ -25,8 +25,8 @@ Not planned: 1.7.10, Legacy Fabric (1.8.9), native Rust ports, a web config edit
 | Releasing | The rewrites ship together. Each plugin's milestone ends with its rewrite merged on `main`; nothing of the rewrite is released until the release milestone, after the last plugin, when every new major goes out at once. Until then `maintenance` keeps releasing fixes to today's versions, and those are what the stores and the site show. |
 | Versions | Each plugin's rewrite is its next major: xUtilities 3.0, zChat 4.0, xLimbo 3.0, the others 2.0; new plugins start at 1.0. A platform added later is a minor. Each API has its own semver. |
 | Language | Kotlin. Plugin logic is Kotlin Multiplatform, built for the JVM and for `wasmWasi` (Pumpkin's Kotlin API is Kotlin/Wasm). Platform adapters are Kotlin/JVM. |
-| Bytecode | Java 8 for the core and the Bukkit jar: Spigot 1.13–1.16.5 refuse to start on Java 17, so a Java 17 jar can't reach them (M0). The main class is a small Java shim that loads the stdlib, then the Kotlin code. Paper-only code is Java 21 in its own source set. Fabric, NeoForge and Forge follow Minecraft: 17 for 1.20.x, 21 for 1.21.x, 25 for 26.x. Java 25 for Hytale. |
-| Kotlin stdlib | Never shaded where it can be fetched: `plugin.yml` `libraries:` on Spigot 1.16.5+ (May 2021 builds on), the core's loader (SHA-256 pinned) below that, `fabric-language-kotlin` on Fabric, KotlinForForge on NeoForge and Forge. Shaded and shrunk with R8 on Sponge, Velocity and Hytale. Servers before 1.15 share the first plugin's copy, so every Xena plugin pins the same Kotlin version. |
+| Bytecode | Java 8 for the core and the Bukkit jar: Spigot 1.13–1.16.5 refuse to start on Java 17, so a Java 17 jar can't reach them (M0). The main class is a small Java shim that loads the stdlib, then the Kotlin code. Paper-only code is Java 21 in its own source set. Fabric, NeoForge and Forge follow Minecraft: 17 for 1.20.x, 21 for 1.21.x, 25 for 26.x. Java 25 for Hytale. On the proxies the Kotlin is Java 8 too; Velocity's shim is Java 21, Velocity's own. |
+| Kotlin stdlib | Never shaded where it can be fetched: `plugin.yml` `libraries:` on Spigot 1.16.5+ (May 2021 builds on) and BungeeCord, the core's loader (SHA-256 pinned) below that and on Velocity (through its `addToClasspath`), `fabric-language-kotlin` on Fabric, KotlinForForge on NeoForge and Forge. Shaded and shrunk with R8 on Sponge and Hytale. Servers before 1.15 share the first plugin's copy, so every Xena plugin pins the same Kotlin version. |
 | Text | Our own MiniMessage-style markup in `common`, drawn once per language to each server's own text: Adventure where it's native (Paper, Folia, Velocity, Sponge), Bukkit's components on Spigot, Minecraft's text on Fabric, NeoForge and Forge, Pumpkin's text on Pumpkin. No `adventure-platform` (8 µs a send on Spigot, about 1 MB in a Fabric jar). |
 | Commands | Incendo Cloud 2's core on the JVM, with its platform modules where they exist (Paper, Bukkit, NeoForge, Velocity) and our own small bridge where they don't (Sponge 8+). Fabric registers straight onto Minecraft's Brigadier. Pumpkin's commands on Pumpkin. |
 | What a major needs | Paper, Folia, Spigot (down to the plugin's floor) and Fabric, plus a proxy where the plugin has network features. NeoForge, Forge 1.20.1, Sponge, Pumpkin, Vine, Minestom and Hytale follow as minors. |
@@ -45,7 +45,8 @@ core/
   platform-neoforge  likewise
   platform-forge     1.20.1 only
   platform-sponge    API 8+
-  platform-velocity, platform-bungee
+  platform-velocity  3.4 → 4.x, a plugin's proxy side; the proxy layer to its servers is in common
+  platform-bungee    BungeeCord and Waterfall
   platform-pumpkin   Kotlin/Wasm, on pumpkin-api-kt
   platform-vine      Kotlin/Wasm, Pumpkin's proxy
   platform-minestom  plugins shipped as libraries

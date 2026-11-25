@@ -48,6 +48,18 @@ asm = "9.11.1"
 # renderer to what 1.8 has (DECISIONS.md).
 adventure-api = "4.7.0"
 bungeecord-chat = "1.16-R0.4"
+# The proxies' APIs, compile-only (core/platform-velocity, core/platform-bungee): the oldest each
+# adapter runs on. Velocity 3.4 is the first on Java 21, and its API is the same in 4.x, which
+# moved to Adventure 5; BungeeCord's API on Maven Central, Java 8 class files, with plugin.yml's
+# libraries: (Waterfall's too).
+velocity-api = "3.4.0"
+bungeecord-api = "1.21-R0.4"
+# Brigadier's API, which core-jvm's BrigadierTree builds on: Minecraft's own on Fabric,
+# Velocity's fork of it there. Compile-only, Mojang's, the release Minecraft 1.20.1 (Fabric's
+# oldest line) ships, so nothing newer is called.
+brigadier = "1.1.8"
+# What Velocity and Minecraft (1.18 on) log through, compile-only (core-jvm's Slf4jLog).
+slf4j = "2.0.17"
 # Shrinks the rewrite's jars (xena.r8), the version M0 proved on the spike jars. From Google's
 # Maven repository, which settings.gradle.kts lists for it alone.
 r8 = "9.5.33"
@@ -85,6 +97,12 @@ snakeyaml-engine-kmp = { module = "it.krzeminski:snakeyaml-engine-kmp", version.
 snakeyaml-engine-kmp-jvm = { module = "it.krzeminski:snakeyaml-engine-kmp-jvm", version.ref = "snakeyaml-engine-kmp" }
 adventure-api = { module = "net.kyori:adventure-api", version.ref = "adventure-api" }
 bungeecord-chat = { module = "net.md-5:bungeecord-chat", version.ref = "bungeecord-chat" }
+velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity-api" }
+bungeecord-api = { module = "net.md-5:bungeecord-api", version.ref = "bungeecord-api" }
+brigadier = { module = "com.mojang:brigadier", version.ref = "brigadier" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+bstats-velocity = { module = "org.bstats:bstats-velocity", version.ref = "bstats" }
+bstats-bungeecord = { module = "org.bstats:bstats-bungeecord", version.ref = "bstats" }
 jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
 # Applied by the rewrite's conventions in build-logic (xena.kmp, xena.kotlin-jvm).
 # The stdlib the rewrite's plugins download at runtime instead of shading (xena.fetched-libraries),

@@ -1,23 +1,23 @@
-package co.xenastudios.core.fabric
+package co.xenastudios.core.common.permission
 
-import co.xenastudios.core.common.permission.Permission
-import co.xenastudios.core.common.permission.PermissionDefault
-import co.xenastudios.core.common.permission.PermissionRegistrar
+import kotlin.concurrent.Volatile
 
 /**
  * Answers a permission the way Bukkit does, on a platform where permissions are only a check:
- * Fabric has no registry to declare nodes in, their defaults or their children, so the plugin
- * keeps its own declarations here ([sync]) and applies them around the permission mod's answer.
+ * Fabric, Velocity and BungeeCord have no registry to declare nodes in, their defaults or their
+ * children, so the plugin keeps its own declarations here ([sync]) and applies them around the
+ * permission plugin's answer.
  *
  * For a node, in order:
- * 1. what the permission mod (LuckPerms, through fabric-permissions-api) says, if it says
- *    anything;
+ * 1. what the permission plugin says, if it says anything: LuckPerms through
+ *    fabric-permissions-api on Fabric, through Velocity's permission API there;
  * 2. a declared parent the source has, which grants or takes the node away ([Permission.children]);
  * 3. the node's declared default, by whether the source is an operator. An undeclared node is
- *    for operators, as on Bukkit.
+ *    for operators, as on Bukkit. A proxy has no operators: there the console is one, and
+ *    players aren't.
  *
- * It knows no Minecraft, so these rules are tested on the JVM alone; [FabricPermissions] asks
- * the permission mod and the server's op levels.
+ * It knows no platform, so these rules are tested in common code; each platform's adapter
+ * asks its permission plugin and its notion of an operator.
  */
 public class PermissionResolver : PermissionRegistrar {
 
@@ -38,6 +38,12 @@ public class PermissionResolver : PermissionRegistrar {
         }
         declared = Declared(permissions.associate { it.node to it.default }, parents)
     }
+
+    /**
+     * Whether the plugin declared [node], or a parent of it: what it has a say in, on a platform
+     * where every plugin's checks pass through one event (BungeeCord's `PermissionCheckEvent`).
+     */
+    public fun declares(node: String): Boolean = declared.let { node in it.defaults || node in it.parents }
 
     /**
      * Whether a source has [node]: [explicit] is the permission mod's answer for a node, `null`

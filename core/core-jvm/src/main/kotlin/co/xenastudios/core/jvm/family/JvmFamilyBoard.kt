@@ -17,6 +17,9 @@ import java.util.concurrent.ConcurrentMap
  *   accepts. Every Xena plugin registers it, not only the first, so it stays found while any is
  *   enabled: Bukkit drops a plugin's services when it's disabled.
  * - Fabric: `FabricLoader.getObjectShare()`, `putIfAbsent("xena:board", newRoot())`.
+ * - Velocity and BungeeCord, which have no such registry: the other Xena plugins' main objects,
+ *   from the proxy's plugin manager. Each is the core-loader's shim, which hands out the board its
+ *   plugin holds as a JDK `Supplier` ([fromShims]); every plugin sets its own to the same board.
  */
 public class JvmFamilyBoard(
     /** The server's board: what [newRoot] made, as the registry gave it. */
@@ -65,6 +68,27 @@ public class JvmFamilyBoard(
         /** Whether [candidate], something another plugin shared, is the family's board. */
         @JvmStatic
         public fun isRoot(candidate: Any?): Boolean = candidate is ConcurrentMap<*, *> && candidate[MARKER] != null
+
+        /**
+         * The board another Xena plugin on a proxy holds, from the main objects of the proxy's
+         * plugins ([instances]), or a new one if none has it: each Xena plugin's main object is the
+         * loader's shim for that proxy, whatever package its plugin relocated it to, whose class
+         * name ends with [shim] (`core.loader.velocity.VelocityBootstrap`), and which hands out its
+         * board as a `java.util.function.Supplier`. Other plugins' objects are never called.
+         */
+        @JvmStatic
+        public fun fromShims(instances: Iterable<Any?>, shim: String): JvmFamilyBoard =
+            find(instances.filter { isShim(it, shim) }.map { (it as java.util.function.Supplier<*>).get() })
+
+        private fun isShim(instance: Any?, shim: String): Boolean {
+            if (instance !is java.util.function.Supplier<*>) return false
+            var type: Class<*>? = instance.javaClass
+            while (type != null) {
+                if (type.name.endsWith(".$shim")) return true
+                type = type.superclass
+            }
+            return false
+        }
 
         /** The first of [candidates] that's the family's board, or a new one if none is. */
         @JvmStatic

@@ -11,7 +11,7 @@
 #   checks   boot-checks files the main boot runs; empty to skip it
 #   xmoney   true when xMoney's own boots run
 #   boot     the rewrite's platforms the Boot workflow boots xSample and the rewritten plugins
-#            (xUtilities) on, space-separated (bukkit, fabric); empty to skip them
+#            (xUtilities) on, space-separated (bukkit, fabric, proxy); empty to skip them
 #
 # The rules:
 # - Anything everything is built on (today's core, build-logic/, gradle/, the root build
@@ -37,10 +37,13 @@
 #   conventions' own links (every plugin on :core and its own API) need none: the core
 #   means everything, and a plugin's API is in its folder.
 # - The rewrite's boot matrix (the Boot workflow) boots a platform when its adapter, the sample
-#   plugins' code for it, a rewritten plugin's code for it (<plugin>/bukkit/, <plugin>/fabric/;
-#   its common/ and api/ mean both), or anything under them changed: core/platform-fabric/ means Fabric;
-#   core/platform-bukkit/, the loader and the samples' bukkit/ folders mean Bukkit; any other
-#   module in core/ means both, as does everything, and the Boot workflow itself.
+#   plugins' code for it, a rewritten plugin's code for it (<plugin>/bukkit/, <plugin>/fabric/,
+#   <plugin>/velocity/ and bungee/; its common/ and api/ mean each it has), or anything under them
+#   changed: core/platform-fabric/ means Fabric; core/platform-bukkit/ and the samples' bukkit/
+#   folders mean Bukkit; core/platform-velocity/, core/platform-bungee/ and the samples' velocity/
+#   and bungee/ folders mean the proxies (Velocity, BungeeCord, Waterfall, and their pair tests in
+#   front of Paper and Spigot); the loader, which has every shim, means Bukkit and the proxies;
+#   any other module in core/ means all three, as does everything, and the Boot workflow itself.
 # - Markdown (DECISIONS.md and decisions/ among it), scripts/decisions.ts, the rest of the docs
 #   and the other workflows mean nothing.
 # - Anything else, such as a new top-level folder, means everything: unsure is never
@@ -60,41 +63,47 @@ declare -A rewriteOnly=(
   # The rewrite's conventions, and the classes only they use. Today's plugins use xena.plugin,
   # xena.api and xena.java, and what those reach (scripts/affected-test.sh works it out).
   [build-logic/src/main/kotlin/xena.fabric-mod.gradle.kts]="rewrite fabric"
-  [build-logic/src/main/kotlin/xena.fetched-libraries.gradle.kts]="rewrite bukkit fabric"
-  [build-logic/src/main/kotlin/xena.java8.gradle.kts]="rewrite bukkit fabric"
-  [build-logic/src/main/kotlin/xena.kmp-api.gradle.kts]="rewrite bukkit fabric"
-  [build-logic/src/main/kotlin/xena.kmp.gradle.kts]="rewrite bukkit fabric"
-  [build-logic/src/main/kotlin/xena.kotlin-jvm.gradle.kts]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/xena.fetched-libraries.gradle.kts]="rewrite bukkit fabric proxy"
+  [build-logic/src/main/kotlin/xena.java8.gradle.kts]="rewrite bukkit fabric proxy"
+  [build-logic/src/main/kotlin/xena.kmp-api.gradle.kts]="rewrite bukkit fabric proxy"
+  [build-logic/src/main/kotlin/xena.kmp.gradle.kts]="rewrite bukkit fabric proxy"
+  [build-logic/src/main/kotlin/xena.kotlin-jvm.gradle.kts]="rewrite bukkit fabric proxy"
   [build-logic/src/main/kotlin/xena.manifest.gradle.kts]="rewrite"
-  [build-logic/src/main/kotlin/xena.r8.gradle.kts]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/xena.r8.gradle.kts]="rewrite bukkit fabric proxy"
   [build-logic/src/main/kotlin/xena.release.gradle.kts]="rewrite"
   [build-logic/src/main/kotlin/XenaFabricModExtension.kt]="rewrite fabric"
-  [build-logic/src/main/kotlin/XenaR8Extension.kt]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/XenaR8Extension.kt]="rewrite bukkit fabric proxy"
   [build-logic/src/main/kotlin/XenaReferenceExtension.kt]="rewrite"
   [build-logic/src/main/kotlin/XenaReleaseExtension.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/BenchmarkBudget.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/GeneratedReference.kt]="rewrite"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/JarBudget.kt]="rewrite bukkit fabric"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt]="rewrite bukkit fabric"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/LibraryPins.kt]="rewrite bukkit fabric"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/PinnedLibraries.kt]="rewrite bukkit fabric"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/R8Shrink.kt]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/JarBudget.kt]="rewrite bukkit fabric proxy"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt]="rewrite bukkit fabric proxy"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/LibraryPins.kt]="rewrite bukkit fabric proxy"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/PinnedLibraries.kt]="rewrite bukkit fabric proxy"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/R8Shrink.kt]="rewrite bukkit fabric proxy"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/ReleaseAssemble.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/Translations.kt]="rewrite"
   # The rewrite's jar budgets (xena.r8), the pins of the libraries its jars download
   # (xena.fetched-libraries), and the runtime budgets the Boot workflow measures.
-  [gradle/jar-budgets.txt]="rewrite bukkit fabric"
-  [gradle/library-pins.txt]="rewrite bukkit fabric"
-  [gradle/perf-budgets.txt]="bukkit"
+  [gradle/jar-budgets.txt]="rewrite bukkit fabric proxy"
+  [gradle/library-pins.txt]="rewrite bukkit fabric proxy"
+  [gradle/perf-budgets.txt]="bukkit proxy"
   # The Boot workflow's scripts: the budgets and the real client, the servers' seeds, Fabric's
   # boots. scripts/boot-test.sh boots both, so it isn't here.
   [scripts/boot-fabric.sh]="fabric"
+  # The proxies' boots and pair tests.
+  [scripts/boot-proxy.sh]="proxy"
+  # Every rewrite jar's shrinking rules (xena.r8).
+  [build-logic/src/main/resources/xena/r8/common.pro]="rewrite bukkit fabric proxy"
   # The scaffolder for the rewrite's layout, which the Scaffold workflow runs end to end.
   [scripts/new-rewrite-plugin.ts]=""
   # The decisions' index, which the Docs workflow checks.
   [scripts/decisions.ts]=""
 )
 rewriteOnlyDirs=(scripts/budgets/ scripts/boot-seeds/)
+# The real client joins the proxies' pair tests too.
+clientDir=scripts/budgets/bots/
 
 # The folders holding plugins (and the sandbox): top-level ones with a Gradle build,
 # other than the two everything is built on, and plugins in the rewrite's layout
@@ -143,7 +152,7 @@ rewrite=$(projects core | grep -vx ':core' || true)
 all=false
 [[ ${1:-} == --all ]] && all=true
 rewriteChanged=false
-bootBukkit=false bootFabric=false
+bootBukkit=false bootFabric=false bootProxy=false
 declare -A changed=()
 if [[ $all == false ]]; then
   while IFS= read -r file; do
@@ -155,11 +164,13 @@ if [[ $all == false ]]; then
       only=" ${rewriteOnly[$file]} "
     else
       for dir in "${rewriteOnlyDirs[@]}"; do [[ $file == "$dir"* ]] && only=" bukkit "; done
+      [[ $file != "$clientDir"* ]] || only=" bukkit proxy "
     fi
     if [[ -n $only ]]; then
       [[ $only != *" rewrite "* ]] || rewriteChanged=true
       [[ $only != *" bukkit "* ]] || bootBukkit=true
       [[ $only != *" fabric "* ]] || bootFabric=true
+      [[ $only != *" proxy "* ]] || bootProxy=true
       continue
     fi
     case $file in
@@ -171,8 +182,10 @@ if [[ $all == false ]]; then
         if [[ -f core/$module/build.gradle.kts ]]; then rewriteChanged=true; else all=true; fi
         case $file in
           core/platform-fabric/*) bootFabric=true ;;
-          core/platform-bukkit/* | core/core-loader/* | core/core-testing/*/bukkit/*) bootBukkit=true ;;
-          *) bootBukkit=true bootFabric=true ;;
+          core/platform-bukkit/* | core/core-testing/*/bukkit/*) bootBukkit=true ;;
+          core/platform-velocity/* | core/platform-bungee/* | core/core-testing/*/velocity/* | core/core-testing/*/bungee/*) bootProxy=true ;;
+          core/core-loader/*) bootBukkit=true bootProxy=true ;;
+          *) bootBukkit=true bootFabric=true bootProxy=true ;;
         esac ;;
       core/* | build-logic/* | gradle/* | scripts/* | gradle.properties | gradlew | gradlew.bat \
         | .github/workflows/plugins.yml) all=true ;;
@@ -183,7 +196,7 @@ if [[ $all == false ]]; then
         plugin=${file#docs/src/generated/}
         plugin=${plugin%%/*}
         if [[ -n ${known[$plugin]:-} ]]; then changed[$plugin]=1; else all=true; fi ;;
-      .github/workflows/boot.yml) bootBukkit=true bootFabric=true ;;
+      .github/workflows/boot.yml) bootBukkit=true bootFabric=true bootProxy=true ;;
       docs/* | .github/* | LICENSE | renovate.json | .gitignore) ;;
       # A plugin's folder. Anything else, the root *.gradle.kts files among it, is everything.
       # A rewritten plugin boots in the Boot workflow: its bukkit/ on Bukkit, its fabric/ on
@@ -195,8 +208,11 @@ if [[ $all == false ]]; then
             case $file in
               */bukkit/*) bootBukkit=true ;;
               */fabric/*) bootFabric=true ;;
+              */velocity/* | */bungee/*) bootProxy=true ;;
               *.md) ;;
-              *) bootBukkit=true bootFabric=true ;;
+              *)
+                bootBukkit=true bootFabric=true
+                [[ ! -d $top/velocity && ! -d $top/bungee ]] || bootProxy=true ;;
             esac
           fi
         else
@@ -217,7 +233,7 @@ if [[ $all == true ]]; then
   echo "compile=compileJava"
   echo "checks=${checks[*]}"
   echo "xmoney=true"
-  echo "boot=bukkit fabric"
+  echo "boot=bukkit fabric proxy"
   exit 0
 fi
 
@@ -289,4 +305,5 @@ echo "xmoney=$xmoney"
 boot=()
 [[ $bootBukkit == false ]] || boot+=(bukkit)
 [[ $bootFabric == false ]] || boot+=(fabric)
+[[ $bootProxy == false ]] || boot+=(proxy)
 echo "boot=${boot[*]}"

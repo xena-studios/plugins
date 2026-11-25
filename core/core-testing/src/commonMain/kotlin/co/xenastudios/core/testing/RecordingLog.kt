@@ -16,6 +16,9 @@ public class RecordingLog : Log {
     public val lines: List<Line> get() = recorded.toList()
 
     /** The messages of the [Level.ERROR] lines. */
+    /** The warnings' messages, oldest first. */
+    public val warnings: List<String> get() = recorded.filter { it.level == Level.WARN }.map { it.message }
+
     public val errors: List<String> get() = recorded.filter { it.level == Level.ERROR }.map { it.message }
 
     override fun info(message: String) {

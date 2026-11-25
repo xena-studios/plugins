@@ -1,4 +1,4 @@
-package co.xenastudios.core.fabric
+package co.xenastudios.core.jvm.command
 
 import co.xenastudios.core.common.command.CommandDispatcher
 import co.xenastudios.core.common.command.CommandFeedback
@@ -27,8 +27,9 @@ import com.mojang.brigadier.tree.LiteralCommandNode
  * where an argument type of our own would need a client mod. Every node runs, so a command
  * typed short gets our usage line too, not "Unknown or incomplete command".
  *
- * Generic over the server's command source [S], so it's tested on the JVM with plain
- * Brigadier; [FabricCommands] gives it Minecraft's.
+ * Generic over the server's command source [S], so it's tested on the JVM with plain Brigadier:
+ * platform-fabric gives it Minecraft's, platform-velocity Velocity's. Brigadier is the server's
+ * (Minecraft's, or Velocity's fork of it, which keeps Mojang's API), never shipped.
  */
 public class BrigadierTree<S>(
     /** Our view of a Brigadier source: permissions, name, replies. */
@@ -37,6 +38,13 @@ public class BrigadierTree<S>(
     private val dispatcher: () -> CommandDispatcher,
     /** What a source is told after a command: read on every run, so the plugin can set it once its translations are loaded. */
     private val feedback: () -> CommandFeedback = { CommandFeedback.ENGLISH },
+    /**
+     * Where a command runs: right away on Brigadier's thread by default (Minecraft's server
+     * thread on Fabric), or handed to the plugin's own thread on a proxy, whose commands arrive
+     * on the proxy's pool. A handed-off command always counts as run for Brigadier; our reply
+     * says how it went.
+     */
+    private val runOn: ((() -> Unit) -> Unit)? = null,
 ) {
     /** One root node, called [label]: the root's name or one of its aliases. */
     public fun build(root: CommandNode, label: String): LiteralCommandNode<S> = literal(root, label).build()
@@ -69,15 +77,29 @@ public class BrigadierTree<S>(
 
     private val run = Command<S> { context ->
         val source = wrap(context.source)
-        val result = dispatcher().dispatch(source, line(context))
+        val line = ours(line(context))
+        val hop = runOn
+        if (hop != null) {
+            hop { feedback().message(dispatcher().dispatch(source, line), source)?.let(source::reply) }
+            return@Command Command.SINGLE_SUCCESS
+        }
+        val result = dispatcher().dispatch(source, line)
         feedback().message(result, source)?.let(source::reply)
         if (result == CommandResult.Ran) Command.SINGLE_SUCCESS else 0
+    }
+
+    // A root registered under the plugin's prefix (`xsample:pay`, when another plugin has
+    // `/pay`) is our dispatcher's `pay`.
+    private fun ours(line: String): String {
+        val colon = line.indexOf(':')
+        val space = line.indexOf(' ').let { if (it < 0) line.length else it }
+        return if (colon in 1 until space) line.substring(colon + 1) else line
     }
 
     // Completes the word being typed, which starts after the last space: our dispatcher
     // suggests whole words, and a greedy argument's "word" is only its last one.
     private val suggest = SuggestionProvider<S> { context, builder ->
-        val typed = builder.input.substring(commandStart(context), builder.start) + builder.remaining
+        val typed = ours(builder.input.substring(commandStart(context), builder.start) + builder.remaining)
         val wordStart = builder.start + builder.remaining.lastIndexOf(' ') + 1
         val offset = builder.createOffset(wordStart)
         for (suggestion in dispatcher().suggest(wrap(context.source), typed)) offset.suggest(suggestion)

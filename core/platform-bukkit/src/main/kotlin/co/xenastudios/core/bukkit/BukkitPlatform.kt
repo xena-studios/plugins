@@ -1,5 +1,7 @@
 package co.xenastudios.core.bukkit
 
+import co.xenastudios.core.jvm.scheduler.AsyncExecutor
+import co.xenastudios.core.jvm.platform.JulLog
 import co.xenastudios.core.bukkit.modern.FoliaScheduler
 import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.api.event.EventPriority
@@ -26,6 +28,7 @@ import co.xenastudios.core.common.platform.Platform
 import co.xenastudios.core.common.platform.Storage
 import co.xenastudios.core.common.platform.SystemClock
 import co.xenastudios.core.common.platform.Threading
+import co.xenastudios.core.common.proxy.ProxyChannel
 import co.xenastudios.core.common.scheduler.Scheduler
 import co.xenastudios.core.jvm.platform.FolderStorage
 import org.bukkit.plugin.Plugin
@@ -44,8 +47,9 @@ import org.bukkit.plugin.Plugin
  * Besides the [Platform], what a Bukkit plugin registers through: [commands] on Bukkit's
  * command map, [permissions] in its plugin manager, [events] bridged to Bukkit's, [players]
  * for the `player` argument, the [family] and its player cache ([record]), and what the admin
- * subcommands ask of a platform ([locale], [dependency], [about], [driverFetcher]), and the
- * update checker and bStats ([checkUpdates], [metrics]). [close] undoes all of it as the plugin
+ * subcommands ask of a platform ([locale], [dependency], [about], [driverFetcher]), the
+ * update checker and bStats ([checkUpdates], [metrics]), and the channel to the plugin's proxy
+ * side ([proxyChannel]). [close] undoes all of it as the plugin
  * is disabled.
  */
 public class BukkitPlatform private constructor(
@@ -168,6 +172,20 @@ public class BukkitPlatform private constructor(
         bStats = BukkitUpdates.metrics(this, serviceId)
     }
 
+    private val channels = ArrayList<ProxyChannel>()
+
+    /**
+     * The plugin's channel to its proxy side, `xena:<id>` (`xena:zchat`), for a server behind
+     * Velocity or BungeeCord (DECISIONS.md, "The proxy layer"): signed and checked with the
+     * network's secret, `plugins/Xena/proxy.secret`, or on Paper behind Velocity its modern
+     * forwarding secret. A server on its own has no one to send to, which costs nothing.
+     * Closed by [close].
+     */
+    @JvmOverloads
+    public fun proxyChannel(id: String = plugin.name.lowercase()): ProxyChannel =
+        BukkitChannel.open(this, ProxyChannel.nameOf(id), plugin.dataFolder.toPath().toAbsolutePath().resolveSibling(FAMILY_FOLDER))
+            .also { synchronized(channels) { channels += it } }
+
     /** The locale [player]'s client sent (`de_de`), if they're online and the server says. */
     public fun locale(player: PlayerRef): String? = player.online(plugin.server)?.let(locales::of)
 
@@ -215,6 +233,10 @@ public class BukkitPlatform private constructor(
         updates = null
         bStats?.close()
         bStats = null
+        synchronized(channels) {
+            channels.forEach { it.close() }
+            channels.clear()
+        }
         events.close()
         chats.forEach { it.close() }
         chats.clear()

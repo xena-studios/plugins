@@ -41,6 +41,12 @@ dependencyResolutionManagement {
             metadataSources { artifact() }
             content { includeModule("org.nodejs", "node") }
         }
+        // Mojang's Brigadier, which core-jvm's BrigadierTree compiles against (Fabric and Velocity
+        // bring their own at runtime): only on Mojang's repository.
+        maven("https://libraries.minecraft.net") {
+            name = "Mojang"
+            content { includeModule("com.mojang", "brigadier") }
+        }
         // Spigot's API at the rewrite's floor (1.8.8), for the core's Java shim.
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") {
             content { includeModule("org.spigotmc", "spigot-api") }
@@ -90,6 +96,9 @@ include("core:core-common", "core:core-api", "core:core-jvm", "core:core-testing
 include("core:core-loader", "core:core-loader:sandbox")
 // The rewrite's platform on Bukkit, 1.8.8 to latest, with Paper's and Folia's paths.
 include("core:platform-bukkit")
+// The rewrite's proxy platforms, for a plugin's network side: Velocity 3.4 on and 4.x, and
+// BungeeCord (Waterfall boots the same jar).
+include("core:platform-velocity", "core:platform-bungee")
 // A sample plugin on the rewrite's core, never released: its tests run its commands on the
 // fake platform, and its reference manifest is the one the docs' components are checked with.
 include("core:core-testing:sample")
@@ -97,6 +106,8 @@ include("core:core-testing:sample")
 include("core:core-fuzz")
 // xSample as a Bukkit plugin on platform-bukkit and the loader's shim, for boot tests.
 include("core:core-testing:sample:bukkit")
+// xSample's proxy side, as a Velocity plugin and a BungeeCord one, for the proxy boot tests.
+include("core:core-testing:sample:velocity", "core:core-testing:sample:bungee")
 // xTwin, a second plugin on its own relocated core, booted beside xSample in the family test.
 include("core:core-testing:twin", "core:core-testing:twin:bukkit")
 // JMH benchmarks for the core's hot paths, with budgets: never shipped.

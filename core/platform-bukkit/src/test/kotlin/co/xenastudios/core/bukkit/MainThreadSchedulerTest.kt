@@ -1,5 +1,6 @@
 package co.xenastudios.core.bukkit
 
+import co.xenastudios.core.jvm.scheduler.AsyncExecutor
 import co.xenastudios.core.api.Location
 import co.xenastudios.core.api.WorldRef
 import co.xenastudios.core.bukkit.modern.Ticks

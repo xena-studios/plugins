@@ -1,0 +1,18 @@
+# xSample on platform-velocity, alone on Velocity (scripts/boot-proxy.sh --checks). The platform's
+# own checks (the proxy's threads, files, the family's board) run at startup.
+logged: PLATFORM PASS
+# Commands registered at runtime on Velocity's Brigadier, run from the console, answered through Adventure.
+run: xsample
+expect: Only players can use this command.
+run: xsample give Nobody 5
+expect: No player called Nobody is online.
+run: coins
+expect: Only players can use this command.
+run: xsample reload
+expect: Reloaded xSample: 1 module on.
+run: pay Nobody 5
+expect: Only players can use this command.
+# The health checks, and the report written to debug/ in the plugin's folder.
+run: xsample debug
+expect: Threads: tasks run where they should (the proxy's
+expect: Debug report saved as debug/debug-

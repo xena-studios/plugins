@@ -24,6 +24,11 @@ dependencies {
     compileOnly(libs.bungeecord.chat)
     testImplementation(libs.adventure.api)
     testImplementation(libs.bungeecord.chat)
+    // Brigadier, which the command package builds clients' trees on (Fabric and Velocity), and
+    // SLF4J, which Velocity and Fabric log through: the servers' own, never shipped.
+    compileOnly(libs.brigadier)
+    compileOnly(libs.slf4j.api)
+    testImplementation(libs.brigadier)
     // Reads the renderer's class files, to keep it to what Spigot 1.8.8's chat API has.
     testImplementation(libs.asm.tree)
 }

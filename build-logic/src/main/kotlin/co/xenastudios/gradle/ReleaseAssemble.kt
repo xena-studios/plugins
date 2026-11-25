@@ -109,6 +109,7 @@ abstract class ReleaseAssemble : DefaultTask() {
                 gameVersions = gameVersions,
                 loaders = jar.loaders.get().ifEmpty { platform.modrinthLoaders(folia.get()) },
                 java = jar.java.orNull,
+                hangarVersions = jar.hangarVersions.getOrElse(emptyList()),
                 sha256 = Release.sha256(target),
                 size = target.length(),
             )

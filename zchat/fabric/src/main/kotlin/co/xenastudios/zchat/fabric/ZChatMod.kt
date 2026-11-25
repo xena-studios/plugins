@@ -45,6 +45,9 @@ public object ZChatMod : ModInitializer {
         platform.events.subscribe(PlayerQuitEvent.TYPE) { zchat.quit(it.player) }
 
         val config = files.config()
+        if (config.config[ZChatConfig.network.enabled]) {
+            platform.log.warn("network.enabled is on, but network chat isn't on Fabric yet (the proxy layer has no Fabric end): this server's chat stays here.")
+        }
         // The update checker; bStats has no Fabric platform, so there's no metrics here.
         zchat.updates = platform.checkUpdates(ZChatPlugin.PLUGIN_ID, zchat.admin.updates, ZChatConfig.updates.settings(config.config)) {
             zchat.texts.translations

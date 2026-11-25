@@ -44,6 +44,9 @@ public object ZChatConfig : ConfigSchema(
     public val togglechat: ToggleChat = ToggleChat(this)
     public val privateMessages: PrivateMessages = PrivateMessages(this)
 
+    /** Chat across a network's servers, through zChat on Velocity or BungeeCord. */
+    public val network: Network = Network(this)
+
     /** The update checker: `updates.check` was 3.x's `update-checker.enabled`. */
     public val updates: UpdatesSection = UpdatesSection(this)
 
@@ -214,6 +217,24 @@ public object ZChatConfig : ConfigSchema(
         public val remember: ConfigKey<Boolean> = boolean("remember", true, "Keep a player's choice when they rejoin.")
         public val logToConsole: ConfigKey<Boolean> = boolean("log-to-console", true, "Also log every private message to the console.")
         public val format: ConfigKey<String> = string("format", "<dark_gray>[Spy]</dark_gray> <gray><sender> → <receiver>: <message>")
+    }
+
+    /** `network:` chat and private messages across a network's servers. */
+    public class Network(parent: ConfigGroup) : ConfigSection(
+        parent, "network",
+        "Chat across a network: with zChat on the Velocity or BungeeCord proxy too, chat on this",
+        "server goes to the others and theirs comes here, and /msg reaches players on any server.",
+        "Needs the network's secret (plugins/Xena/proxy.secret, or Velocity's forwarding secret",
+        "with modern forwarding). Each server checks its own players' messages (the filter, the",
+        "mute, mute providers) before they leave it. Read at startup: restart to turn it on or off.",
+    ) {
+        public val enabled: ConfigKey<Boolean> = boolean("enabled", false)
+        public val chat: ConfigKey<Boolean> = boolean("chat", true, "Chat goes to every server of the network, and theirs comes here.")
+        public val privateMessages: ConfigKey<Boolean> = boolean("private-messages", true, "/msg and /reply reach players on other servers.")
+        public val serverFormat: ConfigKey<String> = string(
+            "server-format", "<dark_gray>[<server>]</dark_gray> ",
+            "Shown before a line from another server. <server> is its name, as the proxy calls it.",
+        )
     }
 
     /** What `filter.mode` can be. */

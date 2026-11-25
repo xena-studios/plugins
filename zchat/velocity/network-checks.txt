@@ -1,0 +1,12 @@
+# zChat on the proxy in front of two servers with zChat, network chat on (scripts/boot-proxy.sh
+# --backend ... --two-backends --backend-seed zchat/velocity/network-seed): a real client on each
+# server, chat and private messages crossing between them.
+logged: zChat 4.0.0 on
+backend: zChat 4.0.0 on
+game: zChat 4.0.0 on
+client: --plugin zchat-network --version 1.21.11
+# Each side logged the other's chat line, as the receiving server's console shows it.
+game: [lobby] Joiner: hello from lobby
+backend: [game] Friend: hi from game
+run: zchatproxy
+expect: carrying chat between servers for

@@ -6,7 +6,7 @@
 #
 #   scripts/boot-proxy.sh --proxy velocity|bungeecord|waterfall [--version 4.3.1] [--java <JDK home>] \
 #     [--backend paper|<server.jar>] [--backend-version 1.21.11] [--backend-java <JDK home>] \
-#     [--backend-plugin backend.jar]... [--grant Joiner=node,node]... [--jvm -Dflag]... \
+#     [--backend-plugin backend.jar]... [--two-backends] [--backend-seed <folder>] [--grant Joiner=node,node]... [--jvm -Dflag]... \
 #     [--checks file]... [--startup-budget <ms>] [--record-startup <folder>] plugin.jar...
 #
 # The proxy comes from scripts/server-jar.sh (its newest release unless --version says), or
@@ -16,6 +16,12 @@
 # "backend: <text>" waits for text the backend logged at any point, and "backend allow: <text>"
 # lets the backend log that error or warning. A step that starts with "velocity ", "bungeecord "
 # or "waterfall " runs only on that proxy.
+#
+# --two-backends starts a second backend beside the first, the same server with the same plugins,
+# which the proxy calls "game": for a network plugin's test, a message crossing servers (a client
+# moves there with /server game). "game: <text>" waits for text it logged, as "backend:" does.
+# --backend-seed copies a folder's contents into each backend's before it starts (a plugin's
+# config.yml, such as plugins/zChat/config.yml turning network chat on).
 #
 # With --backend, the proxy forwards players to it as "lobby": Paper behind Velocity through
 # Velocity's modern forwarding (one forwarding secret, written to both, which the Xena plugins'
@@ -45,6 +51,8 @@ java_home=""
 backend=""
 backend_version=1.21.11
 backend_java=""
+two_backends=false
+backend_seed=""
 startup_budget=""
 record_startup=""
 jvm=()
@@ -61,6 +69,8 @@ while (($#)); do
     --backend) backend=$2; shift 2 ;;
     --backend-version) backend_version=$2; shift 2 ;;
     --backend-java) backend_java=$2; shift 2 ;;
+    --two-backends) two_backends=true; shift ;;
+    --backend-seed) backend_seed=$(cd "$2" && pwd); shift 2 ;;
     --backend-plugin) backend_jars+=("$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"); shift 2 ;;
     --grant) grants+=("$2"); shift 2 ;;
     --jvm) jvm+=("$2"); shift 2 ;;
@@ -108,6 +118,7 @@ if [[ -n $backend ]]; then
     [[ -f $backend_jar ]] || { echo "no server jar at $backend" >&2; exit 2; }
     backend_kind=spigot
   fi
+  [[ $two_backends == false || -n $backend ]] || { echo "--two-backends needs --backend" >&2; exit 2; }
   [[ $proxy != velocity || $backend_kind == paper ]] || { echo "behind Velocity the backend is Paper, which takes its modern forwarding" >&2; exit 2; }
 fi
 base="$root/build/boot/$version${backend_jar:+-behind-$(basename "$backend_jar" .jar)}"
@@ -122,16 +133,17 @@ done
 read -r -a names <<<"$(printf '%s\n' "${names[@]}" | sort -fu | tr '\n' ' ')"
 ours=$(IFS='|'; echo "${names[*]}")
 
-proxy_pid="" backend_pid=""
+proxy_pid="" backend_pid="" game_pid=""
 fail() {
   echo "FAIL: $*" >&2
-  for file in "${proxy_log:-}" "${backend_log:-}"; do
+  for file in "${proxy_log:-}" "${backend_log:-}" "${game_log:-}"; do
     [[ -n $file && -f $file ]] || continue
     echo "---- last lines of $file ----" >&2
     tail -60 "$file" >&2 || true
   done
   [[ -z $proxy_pid ]] || kill "$proxy_pid" 2>/dev/null || true
   [[ -z $backend_pid ]] || kill "$backend_pid" 2>/dev/null || true
+  [[ -z $game_pid ]] || kill "$game_pid" 2>/dev/null || true
   exit 1
 }
 
@@ -176,6 +188,7 @@ backend_files() {
     ln -s "$cache/$(basename "$backend_jar" .jar)/$shared" "$dir/$shared"
   done
   [[ ${#backend_jars[@]} -eq 0 ]] || cp "${backend_jars[@]}" "$dir/plugins/"
+  [[ -z $backend_seed ]] || cp -R "$backend_seed/." "$dir/"
   echo "eula=true" >"$dir/eula.txt"
   cat >"$dir/server.properties" <<EOF
 online-mode=false
@@ -198,9 +211,15 @@ EOF
   fi
 }
 
-# Writes the proxy's folder in $1, listening on $2 and forwarding to a backend on $3, if any.
+# Writes the proxy's folder in $1, listening on $2 and forwarding to a backend on $3, if any, and
+# to a second one ("game") on $4, if any.
 proxy_files() {
-  local dir=$1 port=$2 to=${3:-}
+  local dir=$1 port=$2 to=${3:-} game=${4:-}
+  local velocity_game="" bungee_game=""
+  if [[ -n $game ]]; then
+    velocity_game="game = \"127.0.0.1:$game\""
+    bungee_game=$'  game:\n    address: 127.0.0.1:'"$game"$'\n    restricted: false\n    motd: game'
+  fi
   mkdir -p "$dir/plugins"
   cp "${jars[@]}" "$dir/plugins/"
   if [[ $proxy == velocity ]]; then
@@ -217,6 +236,7 @@ forwarding-secret-file = "forwarding.secret"
 
 [servers]
 lobby = "127.0.0.1:${to:-1}"
+$velocity_game
 try = ["lobby"]
 
 [forced-hosts]
@@ -256,6 +276,7 @@ servers:
     address: 127.0.0.1:${to:-1}
     restricted: false
     motd: lobby
+$bungee_game
 groups:
 ${groups:-  nobody: []}
 permissions:
@@ -339,7 +360,21 @@ if [[ -n $backend_jar ]]; then
   wait_in "Done (" 300 0 "$backend_log" "$backend_pid"
   echo "Started the backend, $(basename "$backend_jar" .jar), on port $backend_port"
 fi
-proxy_files "$base/proxy" "$proxy_port" "$backend_port"
+game_port=""
+game_allowed=()
+if [[ $two_backends == true ]]; then
+  game_port=$(port)
+  while [[ $game_port == "$proxy_port" || $game_port == "$backend_port" ]]; do game_port=$(port); done
+  backend_files "$base/game" "$game_port"
+  game_log="$base/game/console.log"
+  mkfifo "$base/game/stdin"
+  (cd "$base/game" && exec "${backend_cmd[@]}" <stdin >"$game_log" 2>&1) &
+  game_pid=$!
+  exec 5>"$base/game/stdin"
+  wait_in "Done (" 300 0 "$game_log" "$game_pid"
+  echo "Started the second backend, game, on port $game_port"
+fi
+proxy_files "$base/proxy" "$proxy_port" "$backend_port" "$game_port"
 start_proxy "$base/proxy"
 echo "Started $version on port $proxy_port with ${names[*]}"
 
@@ -362,6 +397,10 @@ for step in "${steps[@]+"${steps[@]}"}"; do
       [[ -n $backend_jar ]] || fail "a backend: step needs --backend"
       wait_in "${step#backend: }" 60 0 "$backend_log" "$backend_pid" ;;
     "backend allow: "*) backend_allowed+=("${step#backend allow: }") ;;
+    "game: "*)
+      [[ -n $game_port ]] || fail "a game: step needs --two-backends"
+      wait_in "${step#game: }" 60 0 "$game_log" "$game_pid" ;;
+    "game allow: "*) game_allowed+=("${step#game allow: }") ;;
     "client:"*)
       since=$(wc -l <"$proxy_log")
       bots_ready
@@ -373,7 +412,7 @@ for step in "${steps[@]+"${steps[@]}"}"; do
         fail "the client didn't pass"
       fi
       cat "$out" ;;
-    *) fail "a step must start with \"run: \", \"expect: \", \"logged: \", \"allow: \", \"client:\", \"backend: \" or \"backend allow: \": $step" ;;
+    *) fail "a step must start with \"run: \", \"expect: \", \"logged: \", \"allow: \", \"client:\", \"backend: \", \"backend allow: \", \"game: \" or \"game allow: \": $step" ;;
   esac
 done
 
@@ -389,6 +428,17 @@ if [[ -n $backend_jar ]]; then
   exec 4>&-
   backend_pid=""
 fi
+if [[ -n $game_port ]]; then
+  echo "stop" >&5
+  for ((i = 0; i < 120; i++)); do
+    kill -0 "$game_pid" 2>/dev/null || break
+    sleep 0.5
+  done
+  kill -0 "$game_pid" 2>/dev/null && fail "the second backend didn't stop within 60s"
+  wait "$game_pid" || fail "the second backend exited with status $?"
+  exec 5>&-
+  game_pid=""
+fi
 
 # ---- judge the logs ----
 for text in "${allowed[@]+"${allowed[@]}"}"; do
@@ -402,6 +452,10 @@ if [[ -n $backend_jar ]]; then
   done
   problems=$(judge "$backend_log" "$ours" ${backend_allowed[@]+"${backend_allowed[@]}"})
   [[ -z $problems ]] || fail "the backend's log has errors, or our plugins' warnings:"$'\n'"$problems"
+fi
+if [[ -n $game_port ]]; then
+  problems=$(judge "$game_log" "$ours" ${game_allowed[@]+"${game_allowed[@]}"} ${backend_allowed[@]+"${backend_allowed[@]}"})
+  [[ -z $problems ]] || fail "the second backend's log has errors, or our plugins' warnings:"$'\n'"$problems"
 fi
 sed 's/\x1b\[[0-9;]*m//g' "$proxy_log" | grep -E "INFO\](:)? \[($ours)\]" || true
 

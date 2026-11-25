@@ -151,6 +151,22 @@ xenaRelease {
         minecraft("1.8.8")
         java = 8
     }
+    // The proxies' relay, for network chat: one jar each, for every Minecraft version they front.
+    jar("velocity") {
+        platform = ReleasePlatform.VELOCITY
+        file = project(":zchat:velocity").tasks.named<co.xenastudios.gradle.R8Shrink>("shrinkJar").flatMap { it.outputJar }
+        // A proxy fronts servers of every version, as the backends' jar runs on them.
+        minecraft("1.8.8")
+        // Hangar lists Velocity's own versions: 3.4 (the first on Java 21) on.
+        hangarVersions = listOf("3.4", "3.5")
+        java = 21
+    }
+    jar("bungeecord") {
+        platform = ReleasePlatform.BUNGEECORD
+        file = project(":zchat:bungee").tasks.named<co.xenastudios.gradle.R8Shrink>("shrinkJar").flatMap { it.outputJar }
+        minecraft("1.8.8")
+        java = 17
+    }
     fabricLines.forEach { (line, java) ->
         jar("fabric-$line") {
             platform = ReleasePlatform.FABRIC

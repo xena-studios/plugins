@@ -148,7 +148,8 @@ object Hangar {
         }
         val versions = jars.associate { jar ->
             val platform = jar.platform.hangar!!
-            val listed = known[platform]?.let { k -> jar.gameVersions.filter { it in k } } ?: jar.gameVersions
+            val wanted = jar.hangarVersions.ifEmpty { jar.gameVersions }
+            val listed = known[platform]?.let { k -> wanted.filter { it in k } } ?: wanted
             if (listed.isEmpty()) throw GradleException("Hangar lists none of ${jar.file}'s versions for $platform")
             platform to listed
         }

@@ -55,6 +55,7 @@ core.command.cooldown: "<prefix><error>Você poderá usar isso de novo em <time>
 core.command.confirm: "<prefix>Digite <highlight>/<line></highlight> de novo em até <time> para confirmar."
 core.command.error: "<prefix><error>Algo deu errado ao executar esse comando; o console tem os detalhes."
 info: "<prefix>zChat <highlight><version></highlight> em <platform>. <gray>/zchat reload | debug"
+proxy.info: "<prefix>zChat <highlight><version></highlight> em <platform>, levando o chat entre os servidores para <highlight><players></highlight> jogadores. <gray>/zchatproxy reload | debug"
 filter.blocked: "<prefix><error>Sua mensagem foi bloqueada pelo filtro do chat."
 filter.added: "<prefix><highlight><word></highlight> adicionada ao filtro."
 filter.added-tip: "<prefix>Ele pega <highlight><word></highlight> como palavra inteira. Adicione <highlight><word>*</highlight> para pegar também plurais e palavras maiores."

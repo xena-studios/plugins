@@ -59,11 +59,14 @@
 :core:platform-fabric:xutilities:1.21.11 477
 :core:platform-fabric:xutilities:26.3 490
 
-# zChat 4.0 (M3), shrunk: 573 KiB on Bukkit (with bStats, the update checker, Paper's loader and
-# its startup list), over the 500 KiB target with the reason recorded in
+# zChat 4.0 (M3), shrunk: 615 KiB on Bukkit (with bStats, the update checker, Paper's loader, its
+# startup list and the proxy layer's server end), over the 500 KiB target with the reason recorded in
 # decisions/2026-11-25-zchat-4.md, so its line is size + about 10%; 506-520 KiB on Fabric, shrunk
 # before Loom remaps it, lines size + 5%.
-:zchat:bukkit 630
+:zchat:bukkit 675
 :core:platform-fabric:zchat:1.20.1 531
 :core:platform-fabric:zchat:1.21.11 532
 :core:platform-fabric:zchat:26.3 546
+# zChat's relay on the proxies, shrunk: 390 KiB on Velocity, 386 KiB on BungeeCord; lines size + 10%.
+:zchat:velocity 425
+:zchat:bungee 420

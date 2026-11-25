@@ -34,6 +34,7 @@ Replace the jar and restart. Your `config.yml` is carried forward and the old on
 ### Added
 
 - **Spigot, CraftBukkit and Fabric**, from 1.8.8 and 1.20.1, beside Paper and Folia.
+- **Network chat** through **Velocity and BungeeCord**: with zChat on the proxy too, chat reaches every server's players, and `/msg` and `/reply` reach players on any server. Turn it on with `network.enabled` on each server. See [Network chat](https://plugins.xenastudios.co/zchat/network/).
 - **Translations:** zChat's messages in German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese, each player in their client's language.
 - **`/zchat debug`** (health checks and a report to share) and **`/zchat forget <player>`**.
 - **For other plugins:** a vanish plugin can hide players from mentions, `/msg` and its completion, and a plugin can give chat formats tags of its own (`<balance>`).

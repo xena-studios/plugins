@@ -132,13 +132,17 @@ public final class LibraryCache {
     }
 
     /**
-     * Starts {@link #fetch fetching} each library now, each on a daemon thread of its own called
-     * {@code name}, so their hashes (and, the first time, their downloads) happen while the
-     * server goes on with other things; {@link #fetch} then waits for that library's result. For
-     * a platform that makes the plugin well before it may add libraries to it (Velocity).
+     * Starts {@link #fetch fetching} each library now, so their hashes (and, the first time,
+     * their downloads) happen while the server goes on with other things; {@link #fetch} then
+     * waits for that library's result. For a platform that makes the plugin well before it may
+     * add libraries to it (Velocity). The jars already in the cache are checked one after
+     * another on one daemon thread called {@code name}, the biggest first (the stdlib, which is
+     * waited for first): SHA-256 runs interpreted until the JIT has compiled it, so the first
+     * jar's hash pays for that and the rest take a millisecond or two, where a thread each would
+     * pay it once per jar, on a machine with two cores in the server's own startup's way. Each
+     * jar that has to be downloaded gets a thread of its own, as the network is the wait there.
      */
     public void fetchAhead(List<Library> libraries, String name) {
-        // The biggest first (the stdlib), whose hash takes longest and is waited for first.
         List<Library> bySize = new ArrayList<>(libraries);
         Collections.sort(bySize, new Comparator<Library>() {
             @Override
@@ -146,6 +150,7 @@ public final class LibraryCache {
                 return Long.compare(size(b), size(a));
             }
         });
+        final List<FutureTask<Fetched>> cached = new ArrayList<>();
         for (final Library library : bySize) {
             FutureTask<Fetched> task = new FutureTask<>(new Callable<Fetched>() {
                 @Override
@@ -153,12 +158,32 @@ public final class LibraryCache {
                     return fetchNow(library);
                 }
             });
-            if (ahead.putIfAbsent(library.coordinates(), task) == null) {
-                Thread thread = new Thread(task, name);
-                thread.setDaemon(true);
-                thread.start();
+            if (ahead.putIfAbsent(library.coordinates(), task) != null) {
+                continue;
+            }
+            if (Files.isRegularFile(location(library))) {
+                cached.add(task);
+            } else {
+                start(task, name);
             }
         }
+        if (!cached.isEmpty()) {
+            start(new Runnable() {
+                @Override
+                public void run() {
+                    // A bad copy is downloaded again here, after the others' checks: rare.
+                    for (FutureTask<Fetched> task : cached) {
+                        task.run();
+                    }
+                }
+            }, name);
+        }
+    }
+
+    private static void start(Runnable work, String name) {
+        Thread thread = new Thread(work, name);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     /**

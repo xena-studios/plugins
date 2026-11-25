@@ -36,8 +36,11 @@ public class XSampleBungee(private val bootstrap: BungeeBootstrap) : PluginEntry
     @Volatile
     private var adminText: AdminText = AdminText.ENGLISH
 
+    // The plugin's messages once loaded off the proxy's thread; English until then, made on first use.
     @Volatile
-    private var translations: Translations = Translations.of(SampleMessages.catalog, emptyMap())
+    private var loaded: Translations? = null
+    private val english by lazy { Translations.of(SampleMessages.catalog, emptyMap()) }
+    private val translations: Translations get() = loaded ?: english
 
     override fun enable() {
         val started = System.nanoTime()
@@ -64,7 +67,7 @@ public class XSampleBungee(private val bootstrap: BungeeBootstrap) : PluginEntry
             val shipped = LangFolder.shipped(javaClass.classLoader, listOf(LanguageTag.of("de")))
             val look = family.look
             val translations = LangFolder(bootstrap.dataFolder.toPath(), SampleMessages.catalog, shipped).load(look.languages, look.theme).translations
-            this.translations = translations
+            loaded = translations
             adminText = AdminText.of(translations, platform::locale)
         }
         SampleNetwork.Proxy(platform.proxyChannel(), platform)
@@ -72,7 +75,10 @@ public class XSampleBungee(private val bootstrap: BungeeBootstrap) : PluginEntry
         Integer.getInteger("xsample.bstats")?.let(platform::metrics)
         val millis = (System.nanoTime() - started) / 1_000_000
         platform.log.info("xSample on ${platform.name}: ${platform.threading} threading, text as ${platform.text}, enabled in $millis ms")
-        ProxyCheck(platform, platform.events, family, cache) { bootstrap.get() === (family.board as JvmFamilyBoard).root }.start()
+        // The boot tests' checks, not the plugin's start: from the plugin's thread, after it.
+        platform.scheduler.run(Where.Global) {
+            ProxyCheck(platform, platform.events, family, cache) { bootstrap.get() === (family.board as JvmFamilyBoard).root }.start()
+        }
     }
 
     override fun disable() {

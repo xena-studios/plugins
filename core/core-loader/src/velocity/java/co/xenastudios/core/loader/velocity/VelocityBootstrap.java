@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * The main class of a Xena plugin on Velocity (3.4 on, and 4.x), in Java, so nothing of Kotlin
  * is touched before the stdlib is there. Velocity makes it with Guice, which fills in the proxy,
  * the plugin's logger and its folder; on {@link ProxyInitializeEvent} it makes the libraries in
- * the jar's {@value Manifest#RESOURCE} visible (checked against their pins on threads of their own
+ * the jar's {@value Manifest#RESOURCE} visible (checked against their pins off Velocity's threads
  * from the moment Velocity makes the plugin), then loads the plugin's Kotlin
  * {@link PluginEntry} by name, with a public constructor taking this object. A plugin's main
  * class is a one-line subclass, named in its {@code velocity-plugin.json}:
@@ -112,8 +112,8 @@ public abstract class VelocityBootstrap implements Supplier<Object> {
      * next one and well before {@link ProxyInitializeEvent}, when the plugin may first add a jar
      * to its class path: starts reading the jar's libraries and checking the cached ones against
      * their pins (about 20 ms of hashing on a fast machine, more where the JIT is slower to warm),
-     * each on a thread of its own, so that's done, or nearly, by the time it's wanted. Nothing
-     * else happens on Velocity's thread here.
+     * on a thread of its own ({@link LibraryCache#fetchAhead}), so that's done, or nearly, by the
+     * time it's wanted. Nothing else happens on Velocity's thread here.
      */
     @Inject
     private void prepare(@DataDirectory Path folder) {

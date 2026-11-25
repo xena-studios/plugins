@@ -163,10 +163,12 @@ client() {
   cat "$out"
 }
 
-# Waits up to $2 seconds for the fixed string $1 to appear in the log after line $3.
+# Waits up to $2 seconds for the fixed string $1 to appear in the log after line $3. The grep
+# reads to the end, not -q: with pipefail, a grep that stops at an early match fails the pipe
+# once tail, still writing, gets SIGPIPE.
 wait_for() {
   for ((i = 0; i < $2 * 2; i++)); do
-    tail -n "+$((${3:-0} + 1))" "$log" 2>/dev/null | grep -qF -- "$1" && return 0
+    tail -n "+$((${3:-0} + 1))" "$log" 2>/dev/null | grep -F -- "$1" >/dev/null && return 0
     kill -0 "$pid" 2>/dev/null || fail "server exited while waiting for \"$1\""
     sleep 0.5
   done

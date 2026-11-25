@@ -79,6 +79,29 @@ class LibraryCacheTest {
     }
 
     @Test
+    void fetchingAheadChecksTheCachedJarsAndReplacesADamagedOne() throws Exception {
+        try (Fixtures.Mirror mirror = new Fixtures.Mirror(Map.of("/good/", real))) {
+            // Cached and right: checked ahead, nothing downloaded.
+            LibraryCache good = new LibraryCache(dir.resolve("good"), List.of(mirror.url("/good/")), HELP);
+            Files.createDirectories(good.location(library).getParent());
+            Files.write(good.location(library), real);
+            good.fetchAhead(List.of(library), "test libraries");
+            assertNull(good.fetch(library).downloadedFrom());
+            assertEquals(0, mirror.requests.get());
+
+            // Cached but damaged: found ahead, and downloaded again there.
+            LibraryCache damaged = new LibraryCache(dir.resolve("damaged"), List.of(mirror.url("/good/")), HELP);
+            Files.createDirectories(damaged.location(library).getParent());
+            Files.write(damaged.location(library), tampered);
+            damaged.fetchAhead(List.of(library), "test libraries");
+            LibraryCache.Fetched fetched = damaged.fetch(library);
+            assertTrue(fetched.replacedBadCopy());
+            assertArrayEquals(real, Files.readAllBytes(fetched.jar()));
+            assertEquals(1, mirror.requests.get());
+        }
+    }
+
+    @Test
     void aDownloadThatDoesNotMatchIsNeverUsed() throws Exception {
         try (Fixtures.Mirror mirror = new Fixtures.Mirror(Map.of("/tampered/", tampered, "/good/", real))) {
             Path cache = dir.resolve("a");

@@ -17,7 +17,9 @@ import net.kyori.adventure.text.Component as AdventureComponent
  */
 public class VelocityText internal constructor(private val server: ProxyServer) {
     /** Draws our components to Adventure's. */
-    public val renderer: TextRenderer<AdventureComponent> = AdventureRenderer
+    // A getter, so the renderer (and Adventure's colours) start with the first message drawn,
+    // not as the platform is made on the proxy's thread.
+    public val renderer: TextRenderer<AdventureComponent> get() = AdventureRenderer
 
     /** Sends what [renderer] drew to the player [PlayerRef] names, if they're on the proxy, or the console when it's `null`. */
     public val delivery: Delivery<AdventureComponent> = Delivery { viewer, text ->

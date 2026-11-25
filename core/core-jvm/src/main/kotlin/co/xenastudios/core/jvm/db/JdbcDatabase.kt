@@ -25,6 +25,7 @@ import java.sql.Connection
 import java.sql.Driver
 import java.sql.SQLException
 import java.util.Properties
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -97,6 +98,10 @@ public class JdbcDatabase internal constructor(
     private val closed = newPending<Unit>()
     private val writer = Thread({ runWriter() }, "$name database writer").apply { isDaemon = true }
     private val readerConnection = ThreadLocal<ReaderConnection>()
+    // Every reader connection still open, so close() can be sure none is left: a reader thread
+    // closes its own as it exits, which can be after close() would otherwise have answered,
+    // and on SQLite an open connection keeps the -wal and -shm files.
+    private val openReaders: MutableSet<ReaderConnection> = ConcurrentHashMap.newKeySet()
     private val readerThreads = limits.readers ?: if (dialect.shared) 2 else 1
     private val readers = ThreadPoolExecutor(
         readerThreads, readerThreads, 60, TimeUnit.SECONDS, LinkedBlockingQueue(),
@@ -219,6 +224,16 @@ public class JdbcDatabase internal constructor(
                 left.fail(CLOSED)
                 left = queue.poll()
             }
+            // The readers stopped taking work when close() shut their pool down; wait for any
+            // read still running, then close what their threads haven't yet. Before the
+            // writer's own connection: on SQLite the last connection to close checkpoints and
+            // removes the -wal and -shm files, which a reader (query_only) can't.
+            try {
+                readers.awaitTermination(5, TimeUnit.SECONDS)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
+            openReaders.toList().forEach { it.close() }
             connection?.let { session ->
                 try {
                     session.execute(sql.delete(Migrations.Meta, Migrations.Meta.key eq marker))
@@ -434,6 +449,7 @@ public class JdbcDatabase internal constructor(
         private var lastUsed = System.nanoTime()
 
         init {
+            openReaders += this
             // Readers never write: on SQLite, say so, so a write by mistake fails here (3.8+).
             if (dialect is Dialect.Sqlite) {
                 try {
@@ -451,7 +467,10 @@ public class JdbcDatabase internal constructor(
             lastUsed = System.nanoTime()
         }
 
-        fun close() = closeQuietly(session.connection)
+        fun close() {
+            openReaders -= this
+            closeQuietly(session.connection)
+        }
     }
 
     private sealed class Job {

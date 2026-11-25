@@ -72,6 +72,23 @@ class JdbcDatabaseTest {
     }
 
     @Test
+    fun closingWaitsForTheReadersSoNoConnectionKeepsTheFiles() {
+        val database = database()
+        database.write(database.sql.upsert(account(steve, "Steve", 10.0))).await().ok()
+        // Reads on the reader threads, each opening its own connection.
+        repeat(4) { assertEquals(1, balances(database).size) }
+        database.close().await()
+        // SQLite removes the -wal and -shm files when its last connection closes: with every
+        // connection closed by the time close() answers, they're gone, and nothing writes
+        // them again afterwards.
+        val wal = file.resolveSibling("test.db-wal")
+        val shm = file.resolveSibling("test.db-shm")
+        assertTrue(!Files.exists(wal) && !Files.exists(shm), "a connection was still open after close()")
+        Thread.sleep(200)
+        assertTrue(!Files.exists(wal) && !Files.exists(shm), "a connection closed after close() answered")
+    }
+
+    @Test
     fun writesLandInOrderAndUpsertsReplace() {
         val database = database()
         database.write(database.sql.upsert(account(steve, "Steve", 10.0))).await().ok()

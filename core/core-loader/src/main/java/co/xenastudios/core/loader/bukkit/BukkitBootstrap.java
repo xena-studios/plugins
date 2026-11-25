@@ -3,17 +3,19 @@ package co.xenastudios.core.loader.bukkit;
 import co.xenastudios.core.loader.JavaVersion;
 import co.xenastudios.core.loader.Libraries;
 import co.xenastudios.core.loader.Library;
-import co.xenastudios.core.loader.LibraryCache;
 import co.xenastudios.core.loader.LibraryException;
 import co.xenastudios.core.loader.Manifest;
 import co.xenastudios.core.loader.OnDemandLibraries;
 import co.xenastudios.core.loader.PluginEntry;
 import co.xenastudios.core.loader.Strategy;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,10 +55,6 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public abstract class BukkitBootstrap extends JavaPlugin {
 
-    /** The family's shared folder, beside each plugin's own. */
-    private static final String SHARED = "Xena";
-    private static final String SETTINGS = "libraries.yml";
-
     /**
      * {@code -Dxena.startupTimes=true}: each plugin logs how long its onLoad and onEnable took,
      * for the budget check (scripts/budgets/check.sh), which can't tell from the log where the
@@ -78,6 +76,9 @@ public abstract class BukkitBootstrap extends JavaPlugin {
         "kotlin.time.DurationKt", "kotlin.uuid.Uuid", "kotlin.uuid.UuidKt", "kotlin.collections.ArrayDeque",
         "kotlin.collections.builders.MapBuilder",
     };
+
+    /** The classes a plugin loads as it starts, in the jar, written by build-logic's R8Shrink. */
+    private static final String STARTUP_CLASSES = "META-INF/xena/startup-classes.txt";
 
     private PluginEntry entry;
     /** The entry point's class, made at onEnable when it has nothing to do at onLoad. */
@@ -126,8 +127,13 @@ public abstract class BukkitBootstrap extends JavaPlugin {
                 }
                 entry.enable();
                 if (STARTUP_TIMES) {
-                    getLogger().info(String.format(Locale.ROOT, "Startup times: onLoad %.1f ms, onEnable %.1f ms",
-                        loadNanos / 1e6, (System.nanoTime() - started) / 1e6));
+                    // On Paper with paper-plugin.yml, the plugin's loader too (its libraries handed
+                    // to Paper), which no line of the server's shows.
+                    String loader = System.getProperty("xena.startupTimes.loader." + getName());
+                    String provider = loader == null ? ""
+                        : String.format(Locale.ROOT, "loader %.1f ms, ", Long.parseLong(loader) / 1e6);
+                    getLogger().info(String.format(Locale.ROOT, "Startup times: %sonLoad %.1f ms, onEnable %.1f ms",
+                        provider, loadNanos / 1e6, (System.nanoTime() - started) / 1e6));
                 }
                 return;
             } catch (Throwable e) {
@@ -165,8 +171,9 @@ public abstract class BukkitBootstrap extends JavaPlugin {
         List<Library> libraries = Manifest.read(own);
         ClassLoader loader = own;
         if (!libraries.isEmpty()) {
-            YamlConfiguration settings = settings(new File(shared(), SETTINGS));
-            loader = Libraries.load(libraries, own, getFile().toURI().toURL(), cache(settings), running, strategy(settings),
+            File plugins = getDataFolder().getParentFile();
+            YamlConfiguration settings = LoaderSettings.read(plugins);
+            loader = Libraries.load(libraries, own, getFile().toURI().toURL(), LoaderSettings.cache(plugins, settings), running, strategy(settings),
                 getLogger()).loader();
             checkKotlin(libraries, loader);
             preload(libraries, loader);
@@ -184,27 +191,35 @@ public abstract class BukkitBootstrap extends JavaPlugin {
     }
 
     /**
-     * Loads {@link #PRELOAD} on a daemon thread, without running anything in them, when the
-     * plugin uses the stdlib. Class loading is safe from any thread: if the server's thread
-     * wants a class this one is loading, it waits for that class alone, as it would have
-     * loaded it itself.
+     * Loads, without initializing, the classes the plugin needs as it starts, on a daemon thread
+     * of its own while the server prepares its worlds between onLoad and onEnable: the jar's
+     * {@value #STARTUP_CLASSES} (written at build time from a list recorded on a real server,
+     * DECISIONS.md), or {@link #PRELOAD} when the jar has none and uses the stdlib. Class
+     * loading is safe from any thread: if the server's thread wants a class this one is loading,
+     * it waits for that class alone, as it would have loaded it itself. Nothing in them runs, so
+     * no listener, task or static state of a module starts here.
      */
     private void preload(List<Library> libraries, final ClassLoader loader) {
-        boolean kotlin = false;
-        for (Library library : libraries) {
-            kotlin |= library.coordinates().startsWith("org.jetbrains.kotlin:kotlin-stdlib:");
-        }
-        if (!kotlin) {
-            return;
+        final List<String> names = startupClasses();
+        if (names.isEmpty()) {
+            boolean kotlin = false;
+            for (Library library : libraries) {
+                kotlin |= library.coordinates().startsWith("org.jetbrains.kotlin:kotlin-stdlib:");
+            }
+            if (!kotlin) {
+                return;
+            }
+            Collections.addAll(names, PRELOAD);
         }
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                for (String name : PRELOAD) {
+                for (String name : names) {
                     try {
                         Class.forName(name, false, loader);
                     } catch (Throwable ignored) {
-                        // A class another Kotlin release doesn't have: the plugin loads what it uses itself.
+                        // A class this server doesn't have (another Kotlin release, a platform path
+                        // that isn't this one's): the plugin loads what it uses itself.
                     }
                 }
             }
@@ -214,6 +229,25 @@ public abstract class BukkitBootstrap extends JavaPlugin {
         thread.start();
     }
 
+    /** The jar's {@value #STARTUP_CLASSES}, one class a line; empty when it has none. */
+    private List<String> startupClasses() {
+        List<String> names = new ArrayList<>();
+        InputStream in = getClass().getClassLoader().getResourceAsStream(STARTUP_CLASSES);
+        if (in == null) {
+            return names;
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                if (!line.trim().isEmpty()) {
+                    names.add(line.trim());
+                }
+            }
+        } catch (IOException e) {
+            names.clear();
+        }
+        return names;
+    }
+
     /**
      * The libraries the plugin fetches only when a feature needs one (its JDBC drivers), from its
      * jar's {@value OnDemandLibraries#RESOURCE}, in the family's shared cache with the owner's
@@ -221,18 +255,7 @@ public abstract class BukkitBootstrap extends JavaPlugin {
      * settings file, so call it off the server's threads, or once at startup.
      */
     public final OnDemandLibraries onDemandLibraries() throws IOException {
-        return OnDemandLibraries.read(getClass().getClassLoader(), cache(settings(new File(shared(), SETTINGS))));
-    }
-
-    /** {@code plugins/Xena/}, the family's folder, beside the plugin's own. */
-    private File shared() {
-        return new File(getDataFolder().getParentFile(), SHARED);
-    }
-
-    private LibraryCache cache(YamlConfiguration settings) {
-        String help = "If this server can't reach Maven Central, set mirror: in " + new File(shared(), SETTINGS)
-            + " to a Maven repository it can reach.";
-        return new LibraryCache(new File(shared(), "libraries").toPath(), mirrors(settings), help);
+        return OnDemandLibraries.read(getClass().getClassLoader(), LoaderSettings.cache(getDataFolder().getParentFile()));
     }
 
     /** The Java the plugin's Kotlin classes were compiled for, from the entry point's class file. */
@@ -244,24 +267,6 @@ public abstract class BukkitBootstrap extends JavaPlugin {
         try (InputStream header = in) {
             return Math.max(8, JavaVersion.ofClassFile(header));
         }
-    }
-
-    private static YamlConfiguration settings(File file) {
-        return file.isFile() ? YamlConfiguration.loadConfiguration(file) : new YamlConfiguration();
-    }
-
-    private static List<String> mirrors(YamlConfiguration settings) {
-        String flag = System.getProperty("xena.libraries.mirror");
-        if (flag != null && !flag.trim().isEmpty()) {
-            List<String> mirrors = new ArrayList<>();
-            Collections.addAll(mirrors, flag.split(","));
-            return mirrors;
-        }
-        if (settings.isList("mirror")) {
-            return settings.getStringList("mirror");
-        }
-        String mirror = settings.getString("mirror");
-        return mirror == null || mirror.trim().isEmpty() ? LibraryCache.DEFAULT_MIRRORS : Collections.singletonList(mirror);
     }
 
     private Strategy strategy(YamlConfiguration settings) {

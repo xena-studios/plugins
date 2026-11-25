@@ -345,9 +345,10 @@ jobs:
 
   # The runtime budgets (ROADMAP.md, "Fast, robust, light"; gradle/perf-budgets.txt) on Paper,
   # with xSample's R8 jar: scripts/budgets/check.sh boots it 4 times for startup, then measures
-  # heap, metaspace and an idle profile with async-profiler. Over a budget fails the job,
-  # except startup, which is only reported (a warning in the job summary) until the plugins'
-  # packaging brings it under 150 ms: 271 ms on an M1 Pro today (DECISIONS.md, "Budgets").
+  # heap, metaspace and an idle profile with async-profiler. Over any budget fails the job,
+  # startup's included: 60 ms on an M1 Pro on Paper 1.21.11, 39 ms on 26.3, with Paper handed
+  # the libraries by the core's loader and the startup classes loaded ahead (DECISIONS.md,
+  # "Startup under budget").
   # Per pull request on the newest Paper without players, a few minutes beside the boots;
   # nightly and by hand also the BotMark load, 10 mineflayer bots for a minute, on Paper
   # 1.21.11, the newest Minecraft mineflayer speaks and the version M0 measured.
@@ -389,14 +390,14 @@ jobs:
         run: |
           newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --report-only startup-first-ms,startup-ms --out build/budgets/newest \
+            --out build/budgets/newest \
             core/core-testing/sample/bukkit/build/r8/XSample.jar
       - name: BotMark load (Paper 1.21.11, 10 bots)
         if: github.event_name != 'pull_request'
         run: |
           scripts/budgets/check.sh --version 1.21.11 --java "$JAVA_HOME_21_X64" --bots 10 \
             --commands "xsample,coins,pay {other} 1" \
-            --report-only startup-first-ms,startup-ms --out build/budgets/botmark \
+            --out build/budgets/botmark \
             core/core-testing/sample/bukkit/build/r8/XSample.jar
       - if: always()
         uses: actions/upload-artifact@v7

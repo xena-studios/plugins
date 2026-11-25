@@ -3,8 +3,8 @@
 # The jar budgets are gradle/jar-budgets.txt; the benchmarks' are core/core-benchmarks/budgets.txt.
 
 # Startup: the plugin's time on the server thread at every boot (its libraries: resolved by the
-# server, onLoad, onEnable), median of the timed boots. The first Xena plugin to start pays for
-# loading the Kotlin stdlib's first classes.
+# server, or on Paper its paper-plugin.yml loader handing them over; onLoad; onEnable), median of
+# the timed boots. The first Xena plugin to start pays for loading the Kotlin stdlib's first classes.
 startup-first-ms 150
 startup-ms 100
 

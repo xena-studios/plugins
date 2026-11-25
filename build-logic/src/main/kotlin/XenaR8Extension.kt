@@ -20,4 +20,11 @@ abstract class XenaR8Extension {
 
     /** The project's own keep rules, after the shared ones: the `.pro` files in its `r8` folder unless set. */
     abstract val rules: ConfigurableFileCollection
+
+    /**
+     * The classes the plugin loads as it starts, in their own names, for the shim to load ahead
+     * (R8Shrink): the project's `startup-classes.txt` if it has one. Record it with
+     * `scripts/budgets/check.sh --record-startup`.
+     */
+    abstract val startupClasses: ConfigurableFileCollection
 }

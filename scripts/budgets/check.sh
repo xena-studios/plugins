@@ -14,7 +14,7 @@
 #
 #   scripts/budgets/check.sh [--version 1.21.11] [--boots 3] [--bots 10] [--idle 60]
 #     [--load 60] [--commands "xsample,coins,pay {other} 1"] [--java <JDK home>]
-#     [--out <folder>] [--report-only <budget>,...] plugin.jar...
+#     [--out <folder>] [--report-only <budget>,...] [--record-startup] plugin.jar...
 #
 # Run it after building the jars (./gradlew :core:core-testing:sample:bukkit:assemble for
 # xSample's shrunk jar in build/r8/). --bots 0 skips the load. The report is <out>/report.md
@@ -22,7 +22,10 @@
 # build/budgets/ unless given. --report-only names budgets from perf-budgets.txt
 # (startup-first-ms,startup-ms) that are reported when over, as a warning, but don't fail.
 # Paper, async-profiler (pinned by SHA-256 below) and the bots'
-# packages (npm ci) are fetched on first use and cached in .cache/.
+# packages (npm ci) are fetched on first use and cached in .cache/. --record-startup also logs
+# the first boot's class loading and writes each plugin's startup class list to
+# <out>/startup-classes-<plugin>.txt (startup_classes.py), to copy to the plugin's project as
+# startup-classes.txt.
 #
 # Exit codes: 0 every budget met; 1 over a budget (the report says which); 2 a usage error;
 # 3 the measurement itself failed (a download, the server not starting, the bots not joining),
@@ -42,6 +45,7 @@ commands=""
 java_home=""
 out=""
 report_only=""
+record_startup=false
 jars=()
 while (($#)); do
   case "$1" in
@@ -55,6 +59,7 @@ while (($#)); do
     --java) java_home=$2; shift 2 ;;
     --out) out=$2; shift 2 ;;
     --report-only) report_only=$2; shift 2 ;;
+    --record-startup) record_startup=true; shift ;;
     -h | --help) sed -n '2,32p' "$0"; exit 0 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) [[ -f $1 ]] || { echo "no plugin jar at $1" >&2; exit 2; }
@@ -181,12 +186,13 @@ pause-when-empty-seconds=-1
 EOF
 }
 
-# Boots the server in $dir, logging to $1, and waits for it to be up.
+# Boots the server in $dir, logging to $1, and waits for it to be up. Further arguments go to the JVM.
 boot() {
   log=$1
+  shift
   rm -f "$dir/stdin"
   mkfifo "$dir/stdin"
-  (cd "$dir" && exec "$java" -Xms1G -Xmx1G -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -Dxena.startupTimes=true \
+  (cd "$dir" && exec "$java" -Xms1G -Xmx1G -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -Dxena.startupTimes=true "$@" \
     -Dlog4j.configurationFile="$here/log4j2.xml" -Dterminal.jline=false -Dterminal.ansi=false \
     -jar "$paper" --nogui <stdin >"$log" 2>&1) &
   pid=$!
@@ -249,7 +255,15 @@ boot "$out/base-measured.log"; sleep "$settle"; snapshot "$out/base"; stop
 dir="$out/server"
 prepare "$dir" "${jars[@]}"
 echo "== Paper $version with ${names[*]}: first boot (world, configs, libraries)"
-boot "$out/boot1.log"; stop
+if $record_startup; then
+  boot "$out/boot1.log" "-Xlog:class+load=info:file=$out/classload.log:uptimemillis"; stop
+  for i in "${!jars[@]}"; do
+    python3 "$here/startup_classes.py" --log "$out/classload.log" --boot "$out/boot1.log" --jar "${jars[$i]}" \
+      --out "$out/startup-classes-${names[$i]}.txt"
+  done
+else
+  boot "$out/boot1.log"; stop
+fi
 for ((b = 2; b < boots + 1; b++)); do
   echo "== timed boot $b of $((boots + 1))"
   boot "$out/boot$b.log"; sleep 2; stop

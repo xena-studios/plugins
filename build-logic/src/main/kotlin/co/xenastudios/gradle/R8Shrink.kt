@@ -17,6 +17,7 @@ import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -41,6 +42,12 @@ import org.gradle.process.ExecOperations
  * R8 carries the jar's other files over; Maven's pom files and Kotlin's `.kotlin_builtins`
  * (read only by kotlin-reflect) are then dropped. The mapping file stays with the build, for
  * stack traces (`retrace`).
+ *
+ * [startupClasses], when given, is the list of classes the plugin loads as it starts, in their
+ * own names (recorded on a real server by `scripts/budgets/check.sh --record-startup`): it goes
+ * into the jar as [STARTUP_CLASSES] in the names R8 gave them, for the shim to load on a thread
+ * of its own before the server enables the plugin. A class R8 removed, or that the jar no longer
+ * has, is left out; the list is a hint, so a missing class only loads when it's first used.
  */
 @CacheableTask
 abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : DefaultTask() {
@@ -75,6 +82,12 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
 
     @get:OutputFile
     abstract val mapping: RegularFileProperty
+
+    /** The classes the plugin loads as it starts, one a line, in their own names: see the class's comment. */
+    @get:InputFiles
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val startupClasses: ConfigurableFileCollection
 
     /** The rules this task wrote from the jar, kept to read when a rule is missing. */
     @get:OutputFile
@@ -111,7 +124,7 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
         }
         val out = outputJar.get().asFile
         out.parentFile.mkdirs()
-        copyWithout(classes, out)
+        copyWithout(classes, out, startupList(classes))
         logger.lifecycle("%s: %.1f KiB -> %.1f KiB".format(out.name, input.length() / 1024.0, out.length() / 1024.0))
     }
 
@@ -150,21 +163,63 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
         }
     }
 
-    private fun copyWithout(from: File, to: File) {
+    /**
+     * [startupClasses] in the shrunk jar's names, or `null` when there's no list. Classes of the
+     * jar's own (`co.xenastudios.`) must be in the shrunk jar; the rest are the libraries', the
+     * stdlib's, which R8 never sees, so they keep their names.
+     */
+    private fun startupList(shrunk: File): String? {
+        val listed = startupClasses.files.filter { it.isFile }
+        if (listed.isEmpty()) return null
+        val renamed = HashMap<String, String>()
+        mapping.get().asFile.forEachLine { line ->
+            if (!line.startsWith(" ") && !line.startsWith("#") && line.endsWith(":")) {
+                val (from, to) = line.removeSuffix(":").split(" -> ").takeIf { it.size == 2 } ?: return@forEachLine
+                renamed[from] = to
+            }
+        }
+        val present = ZipFile(shrunk).use { zip ->
+            zip.entries().asSequence().filter { it.name.endsWith(".class") }
+                .map { it.name.removeSuffix(".class").replace('/', '.') }.toHashSet()
+        }
+        val names = listed.flatMap { it.readLines() }.map { it.substringBefore('#').trim() }.filter { it.isNotEmpty() }
+            .mapNotNull { name ->
+                val now = renamed[name] ?: name
+                when {
+                    now in present -> now
+                    name.startsWith("co.xenastudios.") -> null
+                    else -> now
+                }
+            }
+            .distinct()
+        logger.info("${outputJar.get().asFile.name}: ${names.size} startup classes")
+        return names.joinToString("\n", postfix = "\n")
+    }
+
+    private fun copyWithout(from: File, to: File, startup: String?) {
         ZipFile(from).use { zip ->
             ZipOutputStream(to.outputStream().buffered()).use { out ->
-                for (entry in zip.entries().asSequence().sortedBy { it.name }) {
-                    if (entry.name.startsWith("META-INF/maven/") || entry.name.endsWith(".kotlin_builtins")) continue
+                val entries = zip.entries().asSequence().map { it.name }.filter { it != STARTUP_CLASSES }.toMutableList()
+                if (startup != null) entries += STARTUP_CLASSES
+                for (name in entries.sorted()) {
+                    if (name.startsWith("META-INF/maven/") || name.endsWith(".kotlin_builtins")) continue
                     // Fixed times, so the same input gives the same jar.
-                    out.putNextEntry(ZipEntry(entry.name).apply { time = FIXED_TIME })
-                    zip.getInputStream(entry).use { it.copyTo(out) }
+                    out.putNextEntry(ZipEntry(name).apply { time = FIXED_TIME })
+                    if (name == STARTUP_CLASSES && startup != null) {
+                        out.write(startup.toByteArray())
+                    } else {
+                        zip.getInputStream(zip.getEntry(name)).use { it.copyTo(out) }
+                    }
                     out.closeEntry()
                 }
             }
         }
     }
 
-    private companion object {
+    companion object {
+        /** Where the startup list goes in the jar, which the shim reads (core-loader's BukkitBootstrap). */
+        const val STARTUP_CLASSES = "META-INF/xena/startup-classes.txt"
+
         // 1980-02-01, as Gradle's reproducible archives use.
         const val FIXED_TIME = 318_211_200_000L
     }

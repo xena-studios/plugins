@@ -396,10 +396,12 @@ jobs:
       BACKEND_VERSION: ${{ matrix.cell.backend-version }}
     steps:
       - uses: actions/checkout@v7
+      # The artifact keeps its files relative to the folder they share (the sample's), so
+      # it goes back there, not to the repo's root.
       - uses: actions/download-artifact@v8
         with:
           name: proxy-jars
-          path: .
+          path: core/core-testing/sample
       # What will boot, for the cache key: the proxy's version and build (and the Java it needs),
       # and the backend's.
       - id: server

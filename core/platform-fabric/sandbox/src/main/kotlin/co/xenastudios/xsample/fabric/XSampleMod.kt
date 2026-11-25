@@ -34,6 +34,8 @@ public object XSampleMod : ModInitializer {
             registrar = platform.commands,
             about = platform::about,
             adminText = AdminText.of(translations, platform::locale),
+            // The chat format, through Fabric API's message events.
+            chat = { platform.chat() },
         )
         platform.permissions.sync(SamplePermissions.permissions + sample.admin.permissions.permissions)
         sample.enable()

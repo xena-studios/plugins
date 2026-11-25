@@ -8,6 +8,12 @@
 # M1 Pro, a tripwire for a path that got many times slower, not a measurement.
 #
 # Today's, on the M1 Pro (ns/op, B/op), are in DECISIONS.md ("Budgets").
+ChatBenchmark.byLanguage[recipients=10] 2340 1160
+ChatBenchmark.byLanguage[recipients=100] 20760 1280
+ChatBenchmark.sameForEveryone[recipients=10] 15870 1410
+ChatBenchmark.sameForEveryone[recipients=100] 24450 1480
+ChatBenchmark.unheard[recipients=10] 100 16
+ChatBenchmark.unheard[recipients=100] 130 16
 CommandBenchmark.dispatch 3370 2024
 CommandBenchmark.noPermission 990 392
 CommandBenchmark.suggestPlayer 880 976

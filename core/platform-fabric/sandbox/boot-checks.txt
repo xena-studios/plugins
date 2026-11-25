@@ -8,7 +8,7 @@ run: xsample give Nobody 5
 expect: No player called Nobody is online.
 # The admin reload: on the global thread's next tick, so the tick scheduler ran it.
 run: xsample reload
-expect: Reloaded xSample: 1 module on.
+expect: Reloaded xSample: 2 modules on.
 # The reload put the rebuilt commands back on Brigadier in place of the old ones.
 run: coins
 expect: Only players can use this command.

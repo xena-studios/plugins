@@ -2,7 +2,8 @@
 // Joiner, an operator through the boot's seeded ops.json (scripts/boot-seeds/client), joins
 // with its client's language set to German and checks what unit tests can't, on the server it's
 // given: messages sent to a player, a player-run command, tab completion, the reply in the
-// client's language and in a new one after the client changes it. The server's side (the join
+// client's language and in a new one after the client changes it, and a chat line in xSample's
+// format, through the core's chat bridge. The server's side (the join
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
@@ -28,7 +29,9 @@ const heard = []
 // the ones mineflayer sends as it logs in, which it reads from bot.settings once its plugins load.
 const bot = mineflayer.createBot({ host: '127.0.0.1', port, username, auth: 'offline', version: false, clientSettings: { locale: 'de_de' } })
 bot.once('inject_allowed', () => { bot.settings.locale = 'de_de' })
-bot.on('messagestr', (text) => heard.push(text))
+// What a client shows: a signed chat message's unsigned content when the server sent one (a
+// chat plugin's format on Paper), which mineflayer's messagestr leaves out.
+bot.on('message', (msg) => heard.push((msg.unsigned || msg).toString()))
 bot.on('kicked', (reason) => fail(`kicked: ${JSON.stringify(reason).slice(0, 300)}`, true))
 bot.on('error', (e) => fail(`client error: ${e.message}`, true))
 const deadline = setTimeout(() => fail(`not done within ${timeout / 1000} s`, true), timeout)
@@ -95,6 +98,8 @@ async function run () {
   await sleep(3000)
   if (plugin === 'xutilities') return xutilities()
   await command('/xsample', 'You have', 'a player-run command answers the player')
+  // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
+  await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")
   const pay = await completions('/pay ')
   check('tab completion of a player argument', pay.includes(username), `/pay  completed to ${JSON.stringify(pay)}`)
   const sub = await completions('/xsample ')

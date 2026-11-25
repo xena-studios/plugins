@@ -44,6 +44,13 @@ interest:
   # How often.
   every: "1h"
 
+# A chat format, through the core's chat bridge.
+chat:
+  # Whether xSample formats chat.
+  enabled: true
+  # What goes before each player's name, in markup.
+  prefix: "<gray>[xSample]</gray>"
+
 # Telling you when a newer version is out: in the console, and to players with
 # <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
 # sending only the plugin's version, the platform and the Minecraft version.

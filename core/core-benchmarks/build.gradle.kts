@@ -7,6 +7,7 @@ import co.xenastudios.gradle.BenchmarkBudget
 //   ./gradlew :core:core-benchmarks:benchmark          every benchmark, JMH's fuller settings
 //   ./gradlew :core:core-benchmarks:checkBenchmarks    a quick run, then fails when one is
 //                                                      over its budget (CI's step)
+//   ./gradlew :core:core-benchmarks:benchmarkQuick -Pbenchmarks=ChatBenchmark   one class only
 //
 // Neither is part of `build` or `check`: a run takes minutes and wants a quiet machine.
 // `build` compiles the benchmarks and JMH's generated harness, so they can't rot.
@@ -75,7 +76,9 @@ fun benchmarkRun(name: String, description: String, report: String, vararg setti
     outputs.file(file)
     outputs.upToDateWhen { false }
     args(*settings, "-bm", "avgt", "-tu", "ns", "-f", "1", "-prof", "gc", "-rf", "json")
-    argumentProviders.add(CommandLineArgumentProvider { listOf("-rff", file.get().asFile.path) })
+    // -Pbenchmarks=<regex> runs only the benchmarks it matches, such as ChatBenchmark.
+    val only = providers.gradleProperty("benchmarks")
+    argumentProviders.add(CommandLineArgumentProvider { listOf("-rff", file.get().asFile.path) + listOfNotNull(only.orNull) })
     doFirst { file.get().asFile.parentFile.mkdirs() }
 }
 

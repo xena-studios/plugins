@@ -457,6 +457,38 @@
         ]
       },
       {
+        "path": "chat",
+        "type": "section",
+        "comment": [
+          "A chat format, through the core's chat bridge."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "chat.enabled",
+            "type": "boolean",
+            "comment": [
+              "Whether xSample formats chat."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "chat.prefix",
+            "type": "string",
+            "comment": [
+              "What goes before each player's name, in markup."
+            ],
+            "default": "<gray>[xSample]</gray>",
+            "defaultText": "\"<gray>[xSample]</gray>\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
         "path": "updates",
         "type": "section",
         "comment": [

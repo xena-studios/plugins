@@ -35,6 +35,9 @@ jobs:
     steps:
       # The script reads the build files, to find which plugins use which.
       - uses: actions/checkout@v7
+      # Its rules, checked: what it treats as the rewrite's alone is out of today's plugins'
+      # reach, and each kind of change runs what it should.
+      - run: scripts/affected-test.sh
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}

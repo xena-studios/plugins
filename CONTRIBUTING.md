@@ -81,12 +81,12 @@ The Boot workflow runs both (its `budgets` and `benchmarks` jobs): startup is re
 | `build-logic/` | The Gradle conventions: `xena.plugin` for every plugin, `xena.api` for its developer API; `xena.kmp`, `xena.kmp-api` and `xena.kotlin-jvm` for the rewrite's Kotlin modules, `xena.java8` for its Java one, `xena.fetched-libraries` for jars that download libraries at runtime, `xena.r8` for a rewrite jar shrunk with R8 against its budget in `gradle/jar-budgets.txt` |
 | `sandbox/` | A plugin that's never released, used to test the core on real servers in CI |
 | `xutilities/`, `zchat/`, `xlimbo/`, `xrewind/`, `xplots/`, `xteleport/`, `xvote/`, `xbans/`, `xmoney/`, `xbackup/`, `xstats/` | The plugins, each with its own README |
-| `scripts/` | `affected.sh`, `boot-test.sh`, `boot-fabric.sh`, `budgets/check.sh` (the runtime budgets on a real server), `server-jar.sh` (Spigot from BuildTools, and the forks' jars), `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `new-rewrite-plugin.ts` (a plugin in the rewrite's layout), `release.ts` |
+| `scripts/` | `affected.sh` and its test `affected-test.sh`, `decisions.ts` (writes DECISIONS.md), `boot-test.sh`, `boot-fabric.sh`, `budgets/check.sh` (the runtime budgets on a real server), `server-jar.sh` (Spigot from BuildTools, and the forks' jars), `changelog.sh`, `new-minecraft.sh`, `new-plugin.ts` and its template, `new-rewrite-plugin.ts` (a plugin in the rewrite's layout), `release.ts` |
 | `docs/` | plugins.xenastudios.co |
 
 A plugin extends `XenaPlugin`. It declares its config as records (`ConfigSpec`), and in `setup` says which commands and modules that config turns on. The core does the rest: registering on startup and on every reload, carrying old configs forward, the theme, the update checker and bStats.
 
-[DECISIONS.md](DECISIONS.md) explains why things are built this way. Read the parts your change touches.
+[DECISIONS.md](DECISIONS.md) explains why things are built this way, one file per decision in [`decisions/`](decisions/). Read the parts your change touches.
 
 ## What a change has to keep true
 
@@ -117,11 +117,17 @@ These keep the plugins fast and dependable on a busy server. A change that break
 3. Add a line to the plugin's `CHANGELOG.md` under `## Unreleased`. Write it for server owners: what changed for them, not how.
 4. Run `./gradlew build` and open the PR.
 
-CI builds, tests, boot-tests on Paper and Folia, compiles against the newest Paper, and runs CodeQL. `main` requires `plugins-ok` and `docs-ok`, and `boot-ok` (the rewrite's boot matrix) once it's added. Each workflow skips what a change doesn't touch, so a docs-only PR doesn't wait for boot tests. On a PR, the plugins workflow builds, tests and boots only the plugins it changes and any that use them (`sandbox` uses xRewind's API, for example); a change to the core, `build-logic/`, `gradle/`, the root build files, `scripts/` or the workflow itself checks everything, as every push to `main` does. A change only to the rewrite's modules in `core/` builds and tests just those (on the JVM and on `wasmWasi`) and whatever uses them. To see what a PR would run: `git diff --name-only main | scripts/affected.sh`, with bash 4 or newer (macOS's own is 3.2). PRs and issues get labelled by plugin automatically.
+CI builds, tests, boot-tests on Paper and Folia, compiles against the newest Paper, and runs CodeQL. `main` requires `plugins-ok` and `docs-ok`, and `boot-ok` (the rewrite's boot matrix) once it's added. Each workflow skips what a change doesn't touch, so a docs-only PR doesn't wait for boot tests. On a PR, the plugins workflow builds, tests and boots only the plugins it changes and any that use them (`sandbox` uses xRewind's API, for example); a change to today's core (`core/src`), what today's plugins build with in `build-logic/`, `gradle/`, the root build files, the scripts their boots run or the workflow itself checks everything, as every push to `main` does. A change only to the rewrite (its modules in `core/`, its conventions in `build-logic/`, its budgets and pins in `gradle/`, its boot and budget scripts) builds and tests just the rewrite's modules (on the JVM and on `wasmWasi`) and whatever uses them, and boots only the rewrite (the Boot workflow), never today's plugins on Paper and Folia. To see what a PR would run: `git diff --name-only main | scripts/affected.sh`, with bash 4 or newer (macOS's own is 3.2); `scripts/affected-test.sh` checks those rules, case by case. PRs and issues get labelled by plugin automatically.
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org) with the plugin as scope, or `core` for shared code: `fix(zchat): keep the reply target through a reload`, `feat(xlimbo): ...`, `docs: ...`, `build: ...`.
 
 Contributions are licensed under [GPL-3.0-only](LICENSE).
+
+## Decisions
+
+A choice someone will later ask "why?" about (a library, a limit, a design that rules something out) gets a decision: one file in [`decisions/`](decisions/), named `<date>-<slug>.md` for the day it's settled and a few words of its title, such as `decisions/2026-11-24-smaller-jars.md`. Its first line is `# <title> (<date>)`, with the same date; then why, and what was measured. Link one from another as `decisions/<file>.md` (`../decisions/<file>.md` from a folder).
+
+Don't edit `DECISIONS.md` in the same PR: it's the index, written by `node scripts/decisions.ts`, and leaving it alone is what keeps two PRs that each add a decision from conflicting ([why](decisions/2026-11-24-decisions-one-file-each.md)). The Docs workflow runs `node scripts/decisions.ts --check`, which fails on a misnamed file or a wrong row and notes the decisions not listed yet; release PRs (`scripts/release.ts`) list them. Changing a decision's title or file name changes its row, so then run `node scripts/decisions.ts` and commit the index too.
 
 ## Adding a plugin
 
@@ -154,7 +160,7 @@ It writes `xshop/api` (`xena.kmp-api`, its signatures committed in `xshop/api/ap
 
 For maintainers, with Node 24 and the GitHub CLI (`gh`), from an up-to-date `main` with a clean working tree:
 
-1. **Open the release PR:** `node scripts/release.ts <plugin>[@<version>]...`, such as `node scripts/release.ts xbans xvote@1.1.0`. For each plugin it renames `## Unreleased` in its `CHANGELOG.md` to `## <version>`, bumps `version` in its `build.gradle.kts` and the version its `boot-checks.txt` expects from `/<plugin> info`, and updates its docs: the "Current version" line, the API's Gradle and Maven snippets, and the note that the API reaches Maven Central with the release. Then it regenerates `docs/src/data/plugins.json`, commits on `release/<plugins>`, pushes, and opens one PR with each plugin's changelog section.
+1. **Open the release PR:** `node scripts/release.ts <plugin>[@<version>]...`, such as `node scripts/release.ts xbans xvote@1.1.0`. For each plugin it renames `## Unreleased` in its `CHANGELOG.md` to `## <version>`, bumps `version` in its `build.gradle.kts` and the version its `boot-checks.txt` expects from `/<plugin> info`, and updates its docs: the "Current version" line, the API's Gradle and Maven snippets, and the note that the API reaches Maven Central with the release. Then it regenerates `docs/src/data/plugins.json` and DECISIONS.md (`scripts/decisions.ts`, listing the decisions added since the last release), commits on `release/<plugins>`, pushes, and opens one PR with each plugin's changelog section.
    - Without `@<version>`, the version comes from the Unreleased section: only `### Fixed` (or `### Security`) is a patch, any other heading a minor. A major release, or a section that removes or breaks something, needs `@<version>`.
    - A build version that's never been tagged, like a new plugin's 1.0.0, is released as it is. If its changelog already has a `## 1.0.0` section, that's the release notes, and the changelog is left alone.
    - It refuses, changing nothing, when a plugin has nothing under `## Unreleased`, its version is already tagged or isn't newer than its last tag, or the working tree has changes.

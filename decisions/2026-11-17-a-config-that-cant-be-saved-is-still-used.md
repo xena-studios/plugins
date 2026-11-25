@@ -1,0 +1,3 @@
+# A config that can't be saved is still used (2026-11-17)
+
+Loading writes the file back whenever it changes it (carrying it forward, adding new settings). Some hosts mount plugin folders read-only, and some volumes can't replace a file in one step. Before, either case dropped the owner's whole config for the defaults. Now a failed write is a warning and the settings are used as read; a mount without atomic moves falls back to a plain replace; and a migration whose backup can't be made is carried forward in memory only and never written, so a backup can't pile up on every start. `ConfigLoader.read` peeks at the settings without writing anything, for code that runs before the plugin's own load (xLimbo's world generator).

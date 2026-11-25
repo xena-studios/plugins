@@ -1,0 +1,7 @@
+# Gradle reads Maven Central through Google's mirror (2026-11-24)
+
+Maven Central answered GitHub's runners 429 twice on 2026-11-24 (#162). BuildTools already went through Google's mirror of Central (`maven-central.storage-download.googleapis.com`, the boot matrix entry); Gradle now does too.
+
+- **The root build** lists the mirror where Central was, and Central last, for anything the mirror hasn't caught up with yet. Its `pluginManagement` and build-logic's repositories list the mirror before the plugin portal (Gradle's default), which sends most plugins' dependencies on to Central and so is the fallback there.
+- **The Fabric build** can't put the mirror first: Gradle takes a module's files from the repository that had its metadata, and Loom adds Mojang's libraries repository before Central because it has classifiers Central lacks for modules both list (LWJGL's `natives-macos-patch`). With the mirror first, LWJGL's POM came from the mirror and the patch jar wasn't found. So `core/platform-fabric/settings.gradle.kts` points every Central a project adds (Loom's and the build scripts') at the mirror before the project's script runs, and adds Central at the end of each project's repositories.
+- **Nothing else changes:** the mirror serves Central's files byte for byte, so `gradle/library-pins.txt` and the loader's pins match, and a local build works the same (the mirror is public, and a 404 there moves on). With `--refresh-dependencies` both builds resolved everything from the mirror; Central was asked only for the plugin markers it never had.

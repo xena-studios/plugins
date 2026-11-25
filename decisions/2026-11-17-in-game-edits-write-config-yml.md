@@ -1,0 +1,3 @@
+# In-game edits write config.yml (2026-11-17)
+
+`/filter` changes `filter.words` in `config.yml` rather than keeping its own file, so there's one list whether staff edit it in game or by hand, and the docs' config page stays the whole story. The edit goes through `XenaPlugin.editConfig`: on the global thread outside the command, Bukkit reads the file (keeping the owner's comments), the change is checked against the file itself (so a hand edit made without a reload counts), the file is swapped in whole, and the normal reload applies it. A file that isn't valid YAML is never touched, and a change that changes nothing writes nothing. Bukkit writes lists in block style, as the config migration already does. Any plugin can use it for in-game settings later.

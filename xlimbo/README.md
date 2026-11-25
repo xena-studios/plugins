@@ -45,7 +45,7 @@ CHANGELOG.md       one section per release; the release workflow publishes it
 modrinth.md        the Modrinth project page, published when it changes on main
 ```
 
-xLimbo only ever deletes or rebuilds a world folder carrying its `xlimbo.dat` marker; keep it that way ([DECISIONS.md](../DECISIONS.md) explains why). The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
+xLimbo only ever deletes or rebuilds a world folder carrying its `xlimbo.dat` marker; keep it that way ([its decision](../decisions/2026-10-22-xlimbo-is-paper-only.md) explains why). The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
 
 ## Licence
 

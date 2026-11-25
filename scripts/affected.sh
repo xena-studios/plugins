@@ -15,7 +15,11 @@
 #
 # The rules:
 # - Anything everything is built on (today's core, build-logic/, gradle/, the root build
-#   files, gradle.properties, the wrapper, scripts/, this workflow) means everything.
+#   files, gradle.properties, the wrapper, scripts/, this workflow) means everything, except
+#   the parts only the rewrite uses (rewriteOnly below): its conventions and their classes in
+#   build-logic/, its budgets and pins in gradle/, its boot and budget scripts. Those mean the
+#   rewrite's modules and the boots in the Boot workflow they feed, never today's plugins'
+#   builds and boots. scripts/affected-test.sh fails if today's conventions reach one of them.
 # - A file in one of the rewrite's modules inside core/ (core/core-common and the others with
 #   a build file of their own) means those modules, and every folder whose build names one
 #   in project(":core:..."). Today's plugins don't, so a change there skips their tests and
@@ -36,7 +40,8 @@
 #   plugins' code for it, or anything under them changed: core/platform-fabric/ means Fabric;
 #   core/platform-bukkit/, the loader and the samples' bukkit/ folders mean Bukkit; any other
 #   module in core/ means both, as does everything, and the Boot workflow itself.
-# - Markdown, the rest of the docs and the other workflows mean nothing.
+# - Markdown (DECISIONS.md and decisions/ among it), scripts/decisions.ts, the rest of the docs
+#   and the other workflows mean nothing.
 # - Anything else, such as a new top-level folder, means everything: unsure is never
 #   skipped.
 #
@@ -45,6 +50,50 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+
+# What only the rewrite uses, by path, and what a change to it runs: `rewrite` the rewrite's
+# modules (and whatever uses them), `bukkit` and `fabric` those boots in the Boot workflow,
+# nothing for none. Anything not listed in build-logic/, gradle/ or scripts/ means everything,
+# so a new file there is safe until it's added here.
+declare -A rewriteOnly=(
+  # The rewrite's conventions, and the classes only they use. Today's plugins use xena.plugin,
+  # xena.api and xena.java, and what those reach (scripts/affected-test.sh works it out).
+  [build-logic/src/main/kotlin/xena.fabric-mod.gradle.kts]="rewrite fabric"
+  [build-logic/src/main/kotlin/xena.fetched-libraries.gradle.kts]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/xena.java8.gradle.kts]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/xena.kmp-api.gradle.kts]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/xena.kmp.gradle.kts]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/xena.kotlin-jvm.gradle.kts]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/xena.manifest.gradle.kts]="rewrite"
+  [build-logic/src/main/kotlin/xena.r8.gradle.kts]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/xena.release.gradle.kts]="rewrite"
+  [build-logic/src/main/kotlin/XenaFabricModExtension.kt]="rewrite fabric"
+  [build-logic/src/main/kotlin/XenaR8Extension.kt]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/XenaReferenceExtension.kt]="rewrite"
+  [build-logic/src/main/kotlin/XenaReleaseExtension.kt]="rewrite"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/BenchmarkBudget.kt]="rewrite"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/GeneratedReference.kt]="rewrite"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/JarBudget.kt]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/LibraryPins.kt]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/PinnedLibraries.kt]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/R8Shrink.kt]="rewrite bukkit fabric"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/ReleaseAssemble.kt]="rewrite"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/Translations.kt]="rewrite"
+  # The rewrite's jar budgets (xena.r8), the pins of the libraries its jars download
+  # (xena.fetched-libraries), and the runtime budgets the Boot workflow measures.
+  [gradle/jar-budgets.txt]="rewrite bukkit fabric"
+  [gradle/library-pins.txt]="rewrite bukkit fabric"
+  [gradle/perf-budgets.txt]="bukkit"
+  # The Boot workflow's scripts: the budgets and the real client, the servers' seeds, Fabric's
+  # boots. scripts/boot-test.sh boots both, so it isn't here.
+  [scripts/boot-fabric.sh]="fabric"
+  # The scaffolder for the rewrite's layout, which the Scaffold workflow runs end to end.
+  [scripts/new-rewrite-plugin.ts]=""
+  # The decisions' index, which the Docs workflow checks.
+  [scripts/decisions.ts]=""
+)
+rewriteOnlyDirs=(scripts/budgets/ scripts/boot-seeds/)
 
 # The folders holding plugins (and the sandbox): top-level ones with a Gradle build,
 # other than the two everything is built on, and plugins in the rewrite's layout
@@ -96,6 +145,19 @@ if [[ $all == false ]]; then
   while IFS= read -r file; do
     [[ -n $file ]] || continue
     top=${file%%/*}
+    # What only the rewrite uses.
+    only=
+    if [[ -v rewriteOnly[$file] ]]; then
+      only=" ${rewriteOnly[$file]} "
+    else
+      for dir in "${rewriteOnlyDirs[@]}"; do [[ $file == "$dir"* ]] && only=" bukkit "; done
+    fi
+    if [[ -n $only ]]; then
+      [[ $only != *" rewrite "* ]] || rewriteChanged=true
+      [[ $only != *" bukkit "* ]] || bootBukkit=true
+      [[ $only != *" fabric "* ]] || bootFabric=true
+      continue
+    fi
     case $file in
       *.md) ;;
       # One of the rewrite's modules, if that folder has a build file; today's core otherwise.

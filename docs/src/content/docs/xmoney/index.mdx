@@ -1,0 +1,62 @@
+---
+title: xMoney
+description: "xMoney: an economy plugin with Vault built in, for Paper, Folia, Spigot and Fabric, with balances, /pay, /baltop and a ledger of every change, so shop and jobs plugins work without Vault.jar."
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import { LinkCard, CardGrid } from "@astrojs/starlight/components";
+import Reference from "../../../components/reference/Reference.astro";
+
+Current version: **2.0.0**
+
+xMoney is an economy with Vault built in. A shop, jobs or vote plugin that pays money usually needs Vault and an economy plugin behind it; xMoney is both, so plugins written for Vault find it, and the money, without Vault installed. On Fabric, mods find it through the Common Economy API.
+
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
+- **One jar instead of two.** xMoney carries Vault's API and VaultUnlocked's, and answers both. Plugins that `depend` on Vault load and work as they always have.
+- **No money goes missing unexplained.** Every change to every balance is a line in the ledger: who, how much, the balance after, and why ("ChestShop", "paid Alex", "given by Steve"). `/eco history` shows it.
+- **Amounts that add up.** Money is counted in whole numbers, not floating point, so 0.1 + 0.2 is exactly 0.30, and badly behaved plugins can't make or lose money with odd amounts.
+- **Nothing lost on a crash.** A balance and its ledger line are saved together, in order, by one writer: a server killed mid-save, or a database that goes away, never leaves them disagreeing, and nothing is saved twice.
+- **Networks (experimental).** Servers sharing one MySQL or MariaDB database share balances, and can never spend the same money twice. See [Networks](/xmoney/configuration/#networks).
+- **In your players' languages.** xMoney's messages reach each player in their client's language: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese.
+- **Easy to switch to.** One command imports from EssentialsX, CMI, or whatever economy plugin is registered with Vault now, with a dry run first. See [Switching](/xmoney/switching/).
+
+:::caution[Not released yet]
+2.0 isn't released yet: it ships with the other plugins' rewrites. Until then 1.0.1 is the release, and these pages are a preview. The [1.x docs](/xmoney/v1/) stay up while 1.x gets fixes.
+:::
+
+:::note[Coming from xMoney 1.x?]
+Replace the jar and restart: your balances and ledger are read as they are, your config is carried forward, your edited messages move to `lang/en.yml`, and the old file is kept as `config.yml.bak-v1`. See [Upgrading from 1.x](/xmoney/upgrade/).
+:::
+
+## Where it runs
+
+One jar for every Bukkit-family server from 1.8.8 to the newest, Folia included, and a jar per Minecraft line on Fabric, server-side only: players install nothing.
+
+<Reference plugin="xmoney" show="platforms" />
+
+| | |
+| --- | --- |
+| **Vault** | Paper and Folia, and Spigot from 1.15.2: xMoney stands in for Vault, so don't install Vault or VaultUnlocked beside it (Paper refuses the second jar, and xMoney names it). Below 1.15.2 the server can't let a plugin stand in for another, so put [Vault.jar](https://www.spigotmc.org/resources/vault.34315/) beside xMoney: it loads after xMoney and every plugin finds xMoney's economy. |
+| **Fabric** | Other mods find the economy through Patbox's [Common Economy API](https://github.com/Patbox/common-economy-api), which xMoney carries: one currency and one account per player. |
+| **Placeholders** | `%xmoney_balance%` and the rest with [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) on Bukkit; `<balance>` in [zChat](/zchat/)'s formats everywhere. |
+| **Each player's own language** | Bukkit from 1.8.8 (Spigot), Fabric from 1.20.2. On CraftBukkit before 1.12 and Fabric 1.20.1, players read `default-language`. |
+
+Vault also carries two other APIs, for permissions and chat prefixes. They're in xMoney too, so permissions plugins such as LuckPerms hook them as before. On a server with neither a permissions plugin nor Vault.jar, xMoney answers Vault's permission questions from the server's own permissions, as Vault did.
+
+## What else it does
+
+- **You won't feel it running.** Every balance is in memory, so a shop asking about a player, online or not, never waits on the disk. The database is opened, and every balance read, off the server's main thread. Changes are saved by one background thread as they happen, with no timer. The only listeners are for players joining.
+- **Every change applies on reload**, except `storage` and `network`, which take a restart.
+
+<CardGrid>
+  <LinkCard title="Install" href="/xmoney/install/" description="The steps for your platform." />
+  <LinkCard title="Switching" href="/xmoney/switching/" description="Bring balances from EssentialsX, CMI or any Vault economy." />
+  <LinkCard title="Commands" href="/xmoney/commands/" description="Every command, its arguments and permission." />
+  <LinkCard title="Developer API" href="/xmoney/developer-api/" description="Payments with causes, events and hooks, on every platform." />
+</CardGrid>
+
+## Licences
+
+xMoney is [GPL-3.0](https://github.com/xena-studios/plugins/blob/main/LICENSE). To stand in for Vault, its Bukkit jar includes the classes of [VaultUnlockedAPI](https://github.com/TheNewEconomy/VaultUnlockedAPI) 2.20 (which includes [Vault's API](https://github.com/MilkBowl/VaultAPI)), unmodified, under the [LGPL-3.0](https://www.gnu.org/licenses/lgpl-3.0.html); its Fabric jars include the [Common Economy API](https://github.com/Patbox/common-economy-api) (LGPL-3.0). The licence texts and a notice are in the Bukkit jar, under `META-INF/licenses/`.

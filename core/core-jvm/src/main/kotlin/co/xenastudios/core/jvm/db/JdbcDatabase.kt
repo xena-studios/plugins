@@ -27,6 +27,7 @@ import java.sql.SQLException
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
@@ -96,7 +97,8 @@ public class JdbcDatabase internal constructor(
     private var warned = false
 
     private val closed = newPending<Unit>()
-    private val writer = Thread({ runWriter() }, "$name database writer").apply { isDaemon = true }
+    private val threadName = name
+    private val writer = Thread(Runner(null), "$name database writer").apply { isDaemon = true }
     private val readerConnection = ThreadLocal<ReaderConnection>()
     // Every reader connection still open, so close() can be sure none is left: a reader thread
     // closes its own as it exits, which can be after close() would otherwise have answered,
@@ -104,17 +106,34 @@ public class JdbcDatabase internal constructor(
     private val openReaders: MutableSet<ReaderConnection> = ConcurrentHashMap.newKeySet()
     private val readerThreads = limits.readers ?: if (dialect.shared) 2 else 1
     private val readers = ThreadPoolExecutor(
-        readerThreads, readerThreads, 60, TimeUnit.SECONDS, LinkedBlockingQueue(),
-    ) { task ->
-        Thread({
+        readerThreads, readerThreads, 60, TimeUnit.SECONDS, LinkedBlockingQueue(), Runner(null),
+    ).apply { allowCoreThreadTimeOut(true) }
+
+    /**
+     * The writer's thread ([task] `null`), each reader thread (running [task], then closing its
+     * connection) and the readers' thread factory, as one class: a lambda each would be a class
+     * each, made as every plugin with a database starts (decisions/2026-11-25-a-lighter-core.md).
+     */
+    private inner class Runner(private val task: Runnable?) : Runnable, ThreadFactory {
+        override fun run() {
+            if (task == null) return runWriter()
             try {
                 task.run()
             } finally {
                 readerConnection.get()?.close()
                 readerConnection.remove()
             }
-        }, "$name database reader").apply { isDaemon = true }
-    }.apply { allowCoreThreadTimeOut(true) }
+        }
+
+        override fun newThread(task: Runnable): Thread = Thread(Runner(task), "$threadName database reader").apply { isDaemon = true }
+    }
+
+    /** One [read]'s work, on a reader thread. */
+    private inner class Read<T>(private val work: (SqlSession) -> Outcome<T, DbError>, private val done: Pending<Outcome<T, DbError>>) : Runnable {
+        override fun run() {
+            done.resolve(runRead(work))
+        }
+    }
 
     // The writer's own: only its thread touches these.
     private var connection: JdbcSession? = null
@@ -153,7 +172,7 @@ public class JdbcDatabase internal constructor(
         val done = newPending<Outcome<T, DbError>>()
         if (!accepting) return pendingOf(Outcome.Err(CLOSED))
         try {
-            readers.execute { done.resolve(runRead(work)) }
+            readers.execute(Read(work, done))
         } catch (e: java.util.concurrent.RejectedExecutionException) {
             done.resolve(Outcome.Err(CLOSED))
         }
@@ -554,7 +573,7 @@ public class JdbcDatabase internal constructor(
             name: String,
             limits: JdbcLimits,
             sqliteMinimum: SqlVersion,
-            wrap: (() -> Connection) -> () -> Connection = { it },
+            wrap: (() -> Connection) -> () -> Connection = Unwrapped,
         ): Outcome<JdbcDatabase, DbError> {
             if (!Sql.validPrefix(settings.prefix)) {
                 return Outcome.Err(DbError(DbError.Kind.BAD_STATEMENT, "storage.table-prefix can only use lowercase letters, digits and _"))
@@ -588,7 +607,7 @@ public class JdbcDatabase internal constructor(
                         continue
                     }
                 }
-                val connector = wrap { sqliteConnection(found.driver, url) }
+                val connector = wrap(Connector(found.driver, url, null))
                 val version = try {
                     connector().use { connection ->
                         val version = connection.createStatement().use { s ->
@@ -647,9 +666,7 @@ public class JdbcDatabase internal constructor(
                         continue
                     }
                 }
-                val connector = wrap {
-                    found.driver.connect(url, properties) ?: throw SQLException("the MySQL driver doesn't accept $url")
-                }
+                val connector = wrap(Connector(found.driver, url, properties))
                 try {
                     connector().close()
                 } catch (e: SQLException) {
@@ -660,6 +677,18 @@ public class JdbcDatabase internal constructor(
             }
             return Outcome.Err(DbError(DbError.Kind.NO_DRIVER, "no MySQL driver could be used" +
                 (if (reasons.isEmpty()) "; this server has none, so install mysql-connector-j" else ": " + reasons.joinToString("; "))))
+        }
+
+        // The connections' maker, and openWith's default wrap, as classes rather than lambdas
+        // (see Runner).
+        private object Unwrapped : (() -> Connection) -> () -> Connection {
+            override fun invoke(connect: () -> Connection): () -> Connection = connect
+        }
+
+        /** Connects to [url]: SQLite's way without [properties], MySQL's with them. */
+        private class Connector(private val driver: Driver, private val url: String, private val properties: Properties?) : () -> Connection {
+            override fun invoke(): Connection = if (properties == null) sqliteConnection(driver, url)
+            else driver.connect(url, properties) ?: throw SQLException("the MySQL driver doesn't accept $url")
         }
 
         private fun sqliteConnection(driver: Driver, url: String): Connection {

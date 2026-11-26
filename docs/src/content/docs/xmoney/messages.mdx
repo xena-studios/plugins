@@ -1,0 +1,18 @@
+---
+title: Messages
+description: "Every message xMoney sends, in English, with the placeholders each fills in."
+sidebar:
+  order: 5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Every message is in `plugins/xMoney/lang/` (`config/xmoney/lang/` on Fabric), one file per language: `en.yml`, `de.yml`, `es.yml`, `fr.yml`, `pt-BR.yml`, `ru.yml`, `pl.yml` and `zh-CN.yml`. Edit any of these files in place and run `/xmoney reload`: your edits are kept, and a message you haven't edited gets the new text when an update changes it. Delete a file to have it written again as shipped. A blank message (`""`) sends nothing.
+
+A message can use [the theme's tags](/xmoney/configuration/#make-it-look-like-your-server) (`<prefix>`, `<highlight>`, `<success>`, `<error>`), any [formatting](/start/formatting/), and the placeholders listed beside it. Every amount is already formatted as the [currency](/xmoney/configuration/) says. The `core.*` messages are the ones every Xena plugin shares: errors such as "You don't have permission", and the replies of `/xmoney reload` and `/xmoney debug`.
+
+:::note[The translations are drafts]
+The seven languages besides English were drafted by machine translation and haven't been read by native speakers yet. Corrections are welcome: open an issue or a pull request with the file.
+:::
+
+<Reference plugin="xmoney" show="messages" />

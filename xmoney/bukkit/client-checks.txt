@@ -1,0 +1,5 @@
+# A real client on the server (scripts/boot-test.sh --checks, with --seed scripts/boot-seeds/client
+# so the client is an operator), after boot-checks.txt: scripts/budgets/bots/client.js joins in
+# German beside a second client, Friend, and pays them: /eco and /balance in German, /pay to both
+# sides, an overdraft refused, /baltop.
+client: --plugin xmoney

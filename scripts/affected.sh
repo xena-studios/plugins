@@ -9,9 +9,8 @@
 #   tasks    Gradle tasks for the build job; empty when nothing needs building
 #   compile  Gradle tasks for the newest-API compile; empty to skip it
 #   checks   boot-checks files the main boot runs; empty to skip it
-#   xmoney   true when xMoney's own boots run
 #   boot     the rewrite's platforms the Boot workflow boots xSample and the rewritten plugins
-#            (xUtilities) on, space-separated (bukkit, fabric, proxy); empty to skip them
+#            (xUtilities, zChat, xMoney) on, space-separated (bukkit, fabric, proxy); empty to skip them
 #
 # The rules:
 # - Anything everything is built on (today's core, build-logic/, gradle/, the root build
@@ -25,8 +24,8 @@
 #   in project(":core:..."). Today's plugins don't, so a change there skips their tests and
 #   boots.
 # - A file in a plugin's folder means that folder's projects: the plugin, its API and
-#   whatever else is in there (xmoney's two consumers, or a rewritten plugin's api, common
-#   and platform folders; those skip the newest-API compile and the Paper boot, which are
+#   whatever else is in there (a rewritten plugin's api, common and platform folders, and
+#   xMoney's two test plugins; those skip the newest-API compile and the Paper boot, which are
 #   for today's Java plugins). So does its generated docs
 #   folder, docs/src/generated/<plugin>/, which its golden tests compare against.
 #   The manifest schema there, and the core's sample plugin's folder (xsample), mean the
@@ -226,13 +225,12 @@ fi
 if [[ $all == true ]]; then
   checks=()
   for unit in "${units[@]}"; do
-    [[ $unit != xmoney && -f $unit/boot-checks.txt ]] && checks+=("$unit/boot-checks.txt")
+    [[ -f $unit/boot-checks.txt ]] && checks+=("$unit/boot-checks.txt")
   done
   echo "units=${units[*]}"
   echo "tasks=build"
   echo "compile=compileJava"
   echo "checks=${checks[*]}"
-  echo "xmoney=true"
   echo "boot=bukkit fabric proxy"
   exit 0
 fi
@@ -267,7 +265,7 @@ while [[ $grew == true ]]; do
   done
 done
 
-tested=() tasks=() compile=() checks=() xmoney=false
+tested=() tasks=() compile=() checks=()
 for unit in "${units[@]}"; do
   if [[ -n ${changed[$unit]:-} ]]; then
     tested+=("$unit")
@@ -277,10 +275,8 @@ for unit in "${units[@]}"; do
       [[ -n ${kmp[$unit]:-} ]] || compile+=("$project:compileJava")
     done
     if [[ -n ${kmp[$unit]:-} ]]; then
-      # The rewrite's plugins aren't in the Paper boot yet: their jars and checks are per platform.
+      # The rewrite's plugins aren't in the Paper boot: their jars and checks are per platform.
       :
-    elif [[ $unit == xmoney ]]; then
-      xmoney=true
     elif [[ -f $unit/boot-checks.txt ]]; then
       checks+=("$unit/boot-checks.txt")
     fi
@@ -301,7 +297,6 @@ echo "units=${tested[*]}"
 echo "tasks=${tasks[*]}"
 echo "compile=${compile[*]}"
 echo "checks=${checks[*]}"
-echo "xmoney=$xmoney"
 boot=()
 [[ $bootBukkit == false ]] || boot+=(bukkit)
 [[ $bootFabric == false ]] || boot+=(fabric)

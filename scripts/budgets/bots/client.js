@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney] [--zchat]
 //     [--version 1.21.11] [--forge xena:xsample]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -15,7 +15,9 @@
 // second client, Friend, who isn't an operator: chat in zChat's format, the filter, a mention
 // with its sound, /msg and /reply between the two, and /togglechat in German), or zChat across a
 // network (zchat-network: through a proxy with two servers, Friend moves to "game" with /server,
-// and chat, /msg and /reply cross between the two).
+// and chat, /msg and /reply cross between the two), or xMoney's (Friend again: /eco and /balance in
+// German, Joiner paying Friend with /pay and Friend hearing it, an overdraft refused, /baltop; with
+// --zchat, zChat beside it with a format showing <balance>, and Joiner's chat line carrying it).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks; --version sets it instead, for a
@@ -31,6 +33,7 @@ const timeout = Number(option('--timeout', 90)) * 1000
 const plugin = option('--plugin', 'xsample')
 const version = option('--version', false)
 const forge = option('--forge', null)
+const withZChat = process.argv.includes('--zchat')
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const failures = []
 const heard = []
@@ -158,6 +161,45 @@ async function zchat () {
   finish()
 }
 
+// xMoney between two players: Joiner (an operator, in German) pays Friend (not one, in English).
+async function xmoney () {
+  const friend = mineflayer.createBot({ host: '127.0.0.1', port, username: 'Friend', auth: 'offline', version: false })
+  const friendHeard = []
+  friend.on('message', (msg) => friendHeard.push((msg.unsigned || msg).toString()))
+  friend.on('error', (e) => fail(`Friend's client error: ${e.message}`, true))
+  await new Promise((resolve) => friend.once('spawn', resolve))
+  await sleep(2000)
+  const friendHears = async (text, from, ms = 8000) => {
+    for (let waited = 0; waited < ms; waited += 100) {
+      if (friendHeard.slice(from).some((l) => l.includes(text))) return true
+      await sleep(100)
+    }
+    return false
+  }
+  // Replies from xMoney's lang/de.yml, amounts in the currency's own format.
+  await command(`/eco give ${username} 100`, `${username} $100.00`, "/eco give answers the operator in German")
+  await command('/balance', 'Kontostand: $100.00', "/balance answers in the client's language (German)")
+  // Joiner pays Friend: both sides told, the money moved.
+  let from = friendHeard.length
+  await command('/pay Friend 12.5', 'Gesendet: $12.50 an Friend. Dir bleiben $87.50.', '/pay tells the payer what they sent and have left')
+  check('/pay tells whoever is paid', await friendHears(`Received $12.50 from ${username}.`, from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  from = friendHeard.length
+  friend.chat('/balance')
+  check("the money reached the other player's balance", await friendHears('Balance: $12.50', from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  from = friendHeard.length
+  friend.chat(`/pay ${username} 1000`)
+  check('a payment over the balance is refused', await friendHears("You don't have $1,000.00. You have $12.50.", from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  await command('/baltop', ` ${username} $87.50`, '/baltop lists the payer with what they have left')
+  if (withZChat) {
+    // zChat's format with xMoney's <balance>, through zChat's placeholder seam.
+    from = friendHeard.length
+    await command('rich now', `[$87.50] ${username}: rich now`, "the sender's balance in zChat's format, to the sender")
+    check("the sender's balance in zChat's format, to another player", await friendHears(`[$87.50] ${username}: rich now`, from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  }
+  try { friend.quit() } catch {}
+  finish()
+}
+
 // zChat across a network: Joiner stays on lobby, Friend moves to game, and what each says reaches
 // the other through zChat on the proxy.
 async function zchatNetwork () {
@@ -204,6 +246,7 @@ async function run () {
   if (plugin === 'xutilities') return xutilities()
   if (plugin === 'zchat') return zchat()
   if (plugin === 'zchat-network') return zchatNetwork()
+  if (plugin === 'xmoney') return xmoney()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")

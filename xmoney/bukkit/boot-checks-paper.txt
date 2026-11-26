@@ -1,0 +1,4 @@
+# On Paper and Folia, after boot-checks.txt: hook-consumer, a Paper plugin charging through
+# today's core's Vault hook as today's xPlots and xTeleport do, with xMoney standing in for Vault.
+run: hooktest
+expect: HOOK TEST PASS

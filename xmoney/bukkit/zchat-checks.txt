@@ -1,0 +1,5 @@
+# xMoney beside zChat 4.0 (boot.sh --zchat), zChat's format seeded to show <balance>
+# (xmoney/bukkit/zchat-seed): xMoney gives zChat's formats its tags through zChat's placeholder seam.
+logged: Gave zChat's chat formats <balance>, <balance_raw>, <balance_short>.
+run: zchat info
+expect: zChat 4.0.0 on

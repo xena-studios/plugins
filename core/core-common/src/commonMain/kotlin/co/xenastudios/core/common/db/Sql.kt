@@ -105,7 +105,7 @@ public class Sql(public val dialect: Dialect, public val prefix: String) {
             if (column.rowId) "${column.name} ${rowId()}" else "${column.name} ${column.type.declaration(dialect)}"
         }
         val key = if (table.primaryKey.isNotEmpty() && table.primaryKey.none { it.rowId }) {
-            listOf("PRIMARY KEY (${table.primaryKey.joinToString(", ") { it.name }})")
+            listOf("PRIMARY KEY (${joined(table.primaryKey, ", ")})")
         } else {
             emptyList()
         }
@@ -115,10 +115,10 @@ public class Sql(public val dialect: Dialect, public val prefix: String) {
 
     /** Makes one index of [table]'s; see [createTable]. */
     public fun createIndex(table: Table, index: Index): Statement {
-        val indexName = name(table) + "_" + index.columns.joinToString("_") { it.name }
+        val indexName = name(table) + "_" + joined(index.columns, "_")
         val unique = if (index.unique) "UNIQUE " else ""
         val ifMissing = if (dialect is Dialect.Sqlite) "IF NOT EXISTS " else ""
-        return Statement("CREATE ${unique}INDEX $ifMissing$indexName ON ${name(table)} (${index.columns.joinToString(", ") { it.name }})")
+        return Statement("CREATE ${unique}INDEX $ifMissing$indexName ON ${name(table)} (${joined(index.columns, ", ")})")
     }
 
     /** Adds [column] to its table, which already exists: a migration's step. Fails with [DbError.Kind.ALREADY_EXISTS] if it's there. */
@@ -151,25 +151,25 @@ public class Sql(public val dialect: Dialect, public val prefix: String) {
         return when (dialect) {
             is Dialect.Sqlite -> if (dialect.nativeUpsert) {
                 listOf(insertStatement("INSERT", values,
-                    " ON CONFLICT (${key.joinToString(", ") { it.name }}) DO UPDATE SET " +
-                        rest.joinToString(", ") { "${it.name} = excluded.${it.name}" }))
+                    " ON CONFLICT (${joined(key, ", ")}) DO UPDATE SET " +
+                        joined(rest, ", ", "# = excluded.#")))
             } else {
-                val where = key.joinToString(" AND ") { "${it.name} = ?" }
+                val where = joined(key, " AND ", "# = ?")
                 listOf(
-                    Statement("UPDATE ${name(table)} SET ${rest.joinToString(", ") { "${it.name} = ?" }} WHERE $where",
+                    Statement("UPDATE ${name(table)} SET ${joined(rest, ", ", "# = ?")} WHERE $where",
                         rest.map { values.encoded(it) } + key.map { values.encoded(it) }),
                     insertIgnore(values),
                 )
             }
             Dialect.MySql -> listOf(insertStatement("INSERT", values,
-                " ON DUPLICATE KEY UPDATE " + rest.joinToString(", ") { "${it.name} = VALUES(${it.name})" }))
+                " ON DUPLICATE KEY UPDATE " + joined(rest, ", ", "# = VALUES(#)")))
         }
     }
 
     /** `UPDATE ... SET` the [values] `WHERE` [where]. */
     public fun update(values: Values, where: Where): Statement {
         require(values.columns.isNotEmpty()) { "an update sets something" }
-        val set = values.columns.joinToString(", ") { "${it.name} = ?" }
+        val set = joined(values.columns, ", ", "# = ?")
         return Statement("UPDATE ${name(values.table)} SET $set WHERE ${expand(where.sql)}", values.columns.map { values.encoded(it) } + where.args)
     }
 
@@ -192,7 +192,7 @@ public class Sql(public val dialect: Dialect, public val prefix: String) {
         require(offset == 0L || limit != null) { "an offset needs a limit" }
         val orderBy = if (order.isEmpty()) "" else " ORDER BY " + order.joinToString(", ") { it.sql }
         val limited = if (limit == null) "" else " LIMIT $limit" + if (offset > 0) " OFFSET $offset" else ""
-        return Statement("SELECT ${columns.joinToString(", ") { it.name }} FROM ${name(table)} WHERE ${expand(where.sql)}$orderBy$limited", where.args)
+        return Statement("SELECT ${joined(columns, ", ")} FROM ${name(table)} WHERE ${expand(where.sql)}$orderBy$limited", where.args)
     }
 
     /** `SELECT COUNT(*)` of the rows that match [where]: read it with `row.long(0)`. */
@@ -207,11 +207,23 @@ public class Sql(public val dialect: Dialect, public val prefix: String) {
 
     private fun expand(sql: String) = sql.replace("{p}", prefix)
 
+    // Each column in [pattern] (`#` for its name), joined: a loop rather than joinToString's
+    // lambda, each of which the JVM makes a class of where it's first reached, as a plugin with a
+    // database starts (decisions/2026-11-25-a-lighter-core.md).
+    private fun joined(columns: List<Column<*>>, separator: String, pattern: String = "#"): String {
+        val out = StringBuilder()
+        for ((i, column) in columns.withIndex()) {
+            if (i > 0) out.append(separator)
+            out.append(pattern.replace("#", column.name))
+        }
+        return out.toString()
+    }
+
     private fun insertStatement(verb: String, values: Values, tail: String): Statement {
         val columns = values.columns
         require(columns.isNotEmpty()) { "an insert into ${values.table} has values" }
         return Statement(
-            "$verb INTO ${name(values.table)} (${columns.joinToString(", ") { it.name }}) VALUES (${columns.joinToString(", ") { "?" }})$tail",
+            "$verb INTO ${name(values.table)} (${joined(columns, ", ")}) VALUES (${joined(columns, ", ", "?")})$tail",
             columns.map { values.encoded(it) },
         )
     }

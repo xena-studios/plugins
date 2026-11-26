@@ -2,161 +2,47 @@
 # Docs: https://plugins.xenastudios.co/xmoney/configuration/
 #
 # Apply changes with /xmoney reload. A bad value falls back to its default with a
-# warning in the console; xMoney never stops over config. Messages are MiniMessage:
-# https://plugins.xenastudios.co/start/formatting/
+# warning in the console; xMoney never stops over config. The messages are in lang/.
 
 # Managed by the plugin, to carry your settings forward on updates. Don't edit it.
-config-version: 1
+config-version: 2
 
-# The look xMoney's messages share. The default messages use these as tags, so changing
-# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#10AC79>, or <gold><bold>.
-theme:
-  # <prefix> starts the default messages. Make it your server's name, such as
-  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
-  prefix: "<#10AC79>»</#10AC79> "
-  # The colour of message text that has no tag of its own.
-  base: "<gray>"
-  # <highlight>: names and values, such as a player or a speed.
-  highlight: "<#10AC79>"
-  # <success>: something turned on or done.
-  success: "<#5EE08A>"
-  # <error>: something refused or turned off.
-  error: "<#FF6B6B>"
-
-# What players and staff are told.
+# How this plugin's messages look, and the language they're in. shared uses the
+# setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is
+# this plugin's own.
 messages:
-  error:
-    # The console or a command block ran a command only players can use.
-    player-only: "<prefix><error>Only players can use this command."
-    # The sender lacks the command's permission.
-    no-permission: "<prefix><error>You don't have permission to do that."
-    # No online player has that name. <player> is the name typed.
-    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
-    # The command was typed wrong. <usage> is how to type it.
-    usage: "<prefix><error>Usage:</error> <usage>"
-    # The command hit an error. The console has the details.
-    failed: "<prefix><error>Something went wrong. The console has the details."
+  # The language players see messages in: auto for each player's own (their client's
+  # language setting), or one language for everyone, such as de or pt-BR.
+  language: "shared"
+  # The language of the console, and of players whose language has no file in lang/.
+  default-language: "shared"
 
-  # /balance.
-  balance:
-    # Your own. <balance> is formatted, as is every amount in messages.
-    own: "<prefix>Balance: <highlight><balance>"
-    # Someone else's. <player> is their name.
-    other: "<prefix><highlight><player></highlight>'s balance: <highlight><balance>"
-    # Nobody by that name has played here. <player> is the name typed.
-    unknown: "<prefix><error><highlight><player></highlight> has never played here."
+  # The look every message shares, used in messages as tags: <prefix>, <highlight>,
+  # <success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,
+  # italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>.
+  theme:
+    # <prefix> starts the default messages. Make it your server's name, such as
+    # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+    prefix: "shared"
+    # The colour of message text that has no tag of its own.
+    base: "shared"
+    # <highlight>: names and values, such as a player or a speed.
+    highlight: "shared"
+    # <success>: something turned on or done.
+    success: "shared"
+    # <error>: something refused or turned off.
+    error: "shared"
 
-  # /pay.
-  pay:
-    # To the payer. <amount>, <player>, and <balance>: what they have left.
-    sent: "<prefix><success>Sent</success> <highlight><amount></highlight> to <highlight><player></highlight>. You have <balance> left."
-    # To whoever is paid, if they're online. <amount>, <player>: who paid.
-    received: "<prefix><success>Received</success> <highlight><amount></highlight> from <highlight><player></highlight>."
-    self: "<prefix><error>You can't pay yourself."
-    # Below the minimum. <minimum>.
-    too-little: "<prefix><error>The least you can send is <highlight><minimum></highlight>."
-    # The payer hasn't got it. <amount>, <balance>.
-    not-enough: "<prefix><error>You don't have <highlight><amount></highlight>. You have <balance>."
-    # A payment of confirm-above or more asks first. <command> runs it, confirmed; put it
-    # in a click.
-    confirm: "<prefix>Send <highlight><amount></highlight> to <highlight><player></highlight>? <click:run_command:'<command>'><hover:show_text:'<command>'><success>[Confirm]</success></hover></click>"
-    # It would take them over max-balance. <player>.
-    limit: "<prefix><error><highlight><player></highlight> can't hold that much."
-    # Another plugin refused it.
-    cancelled: "<prefix><error>That payment was refused."
-    # On a network, the shared database didn't answer in time. Nothing was sent.
-    unavailable: "<prefix><error>The bank can't be reached right now. Nothing was sent; try again in a moment."
-
-  # /baltop.
-  baltop:
-    # Above the list. <total> is every player's money added up, <count> how many players.
-    header: "<prefix>Richest players. <gray>All <count>: <total>"
-    # One player. <rank>, <player>, <balance>.
-    line: "<gray>#<rank></gray> <highlight><player></highlight> <balance>"
-    empty: "<prefix>Nobody has any money yet."
-    # Below a page, when there's more than one. <page>, <pages>, and <next>/<previous>: the commands.
-    footer: "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>"
-
-  # /eco and /eco history.
-  eco:
-    # <amount>, <player>, and <balance>: what they have now.
-    given: "<prefix><success>Gave</success> <highlight><player></highlight> <amount>. They have <balance>."
-    taken: "<prefix><success>Took</success> <amount> from <highlight><player></highlight>. They have <balance>."
-    set: "<prefix><success>Set</success> <highlight><player></highlight>'s balance to <balance>."
-    reset: "<prefix><success>Reset</success> <highlight><player></highlight>'s balance to <balance>."
-    # /eco take for more than they have. <player>, <balance>.
-    not-enough: "<prefix><error><highlight><player></highlight> only has <balance>."
-    # It would take them over max-balance. <player>.
-    limit: "<prefix><error><highlight><player></highlight> can't hold that much."
-    # Another plugin refused it.
-    cancelled: "<prefix><error>Another plugin refused that change."
-    # On a network, the shared database didn't answer in time. Nothing changed.
-    unavailable: "<prefix><error>The shared database can't be reached right now. Nothing changed."
-    # Sent while the history is read from the database.
-    working: "<prefix><gray>Looking..."
-    # Above a page of history. <player>, <count>: how many changes in all.
-    history-header: "<prefix>History of <highlight><player></highlight>: <count> changes"
-    # One change. <ago>: how long ago, <change>: + or - the amount, <what>: what it was,
-    # <balance>: the balance after.
-    history-line: "<gray><ago> ago</gray> <change> <what> <gray>→ <balance>"
-    # The player has no history.
-    history-empty: "<prefix><highlight><player></highlight> has no history."
-    history-footer: "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>"
-    # How <change> looks when money came in, and when it went out. <amount>.
-    change-in: "<success>+<amount></success>"
-    change-out: "<error>-<amount></error>"
-
-    # The words <what> shows for each kind of change. <other>: the other player, <source>: who did it, <reason>.
-    words:
-      start: "starting balance"
-      paid-to: "paid <other>"
-      paid-by: "from <other>"
-      given: "given by <source>"
-      taken: "taken by <source>"
-      set: "set by <source>"
-      # A plugin's change, without and with a reason.
-      plugin: "<source>"
-      plugin-reason: "<source>: <reason>"
-      imported: "imported from <source>"
-
-  # /xmoney import.
-  imports:
-    # A dry run: what an import would do, changing nothing. <source>, <count> accounts,
-    # <total>: their money added up, <skipped> that can't be imported, <command>: the import, confirmed.
-    dry-run: "<prefix><highlight><source></highlight> has <highlight><count></highlight> balances, <total> in all (<skipped> can't be imported). Importing sets each of those players' balance here to theirs. <click:run_command:'<command>'><hover:show_text:'<command>'><success>[Import]</success></hover></click>"
-    # <count> balances set from <source>, <skipped> skipped.
-    done: "<prefix><success>Imported</success> <highlight><count></highlight> balances from <source>. <skipped> skipped."
-    # There's nothing to import. <source>, <reason>.
-    nothing: "<prefix><error>Nothing to import from <source>: <reason>"
-    # The other plugin's data couldn't be read. <source>, <reason>.
-    failed: "<prefix><error>Couldn't read <source>: <reason>"
-    running: "<prefix><error>An import is already running."
-    reading: "<prefix><gray>Reading <source>..."
-    # Some of the accounts have changed in xMoney since (payments, /eco, other plugins), and
-    # importing would set them back. <count> of them, <source>, <command>: the import anyway.
-    overwrite: "<prefix><error><highlight><count></highlight> of these accounts have changed here since, and importing sets them back to <source>'s balances. <click:run_command:'<command>'><hover:show_text:'<command>'><error>[Import anyway]</error></hover></click>"
-
-  # Amounts typed into commands.
-  amount:
-    # Not a number. <amount> is what was typed.
-    invalid: "<prefix><error><highlight><amount></highlight> isn't an amount. Try 250, 12.5 or 1.5k."
-    # More decimals than the currency has. <decimals>.
-    too-precise: "<prefix><error>Amounts have at most <highlight><decimals></highlight> decimals."
-    # Past the most an account can hold.
-    too-large: "<prefix><error>That's more than an account can hold."
-
-# How money looks. Other plugins show it this way too, through Vault's format. Changes
-# apply on /xmoney reload.
+# How money looks. Other plugins show it this way too, through Vault's format.
 currency:
   # The currency's name for one, and for more than one.
   singular: "dollar"
   plural: "dollars"
   symbol: "$"
   # Decimal places: 2 for cents, 0 for whole coins. At most 4. Amounts are shown with
-  # these, and amounts typed into commands may have at most this many. Other plugins' amounts keep
-  # 4 places, so a payment split in two costs what it would whole. Lowering it later
-  # keeps the parts of balances it no longer shows.
+  # these, and amounts typed into commands may have at most this many. Other plugins'
+  # amounts keep 4 places, so a payment split in two costs what it would whole.
+  # Lowering it later keeps the parts of balances it no longer shows.
   decimals: 2
   # How an amount is written. {amount} is the number, {symbol} the symbol, and {name}
   # the singular or plural name: "{amount} {name}" gives "12.50 dollars".
@@ -216,11 +102,11 @@ ledger:
   # keeps them all. Balances never depend on old rows.
   keep-days: 365
 
-# Where balances and the ledger are kept. sqlite needs nothing set up. Changes apply on a
-# restart; balances aren't copied from one to the other.
+# Where this plugin keeps its data. Read at startup only: restart after changing it.
 storage:
   # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
   # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  # shared keeps it in the database every Xena plugin can share, set in plugins/Xena/config.yml.
   type: "sqlite"
   # Put in front of every table's name, so plugins and servers can share one database.
   table-prefix: "xmoney_"
@@ -235,15 +121,20 @@ storage:
     # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
     properties: ""
 
+  # The connections used to read, beside the one that writes.
+  pool:
+    # How many: 0 picks for the database (1 for SQLite, 2 for MySQL). More helps only a
+    # MySQL server that many reads wait on.
+    readers: 0
+
 # For several servers sharing balances through one MySQL or MariaDB database. Every
-# server must use the same storage settings and table-prefix. Applies on a restart.
-# Experimental in 1.0: a withdrawal is decided by the shared database, so a shop's Vault
-# call waits for it on the server thread (see network-wait-ms), and while the database
-# is away, withdrawals are refused. Money is never lost or made either way.
+# server must use the same storage settings and table-prefix. Read at startup only.
+# Experimental: a withdrawal is decided by the shared database, so a shop's Vault call
+# waits for it on the server thread (see network-wait-ms), and while the database is
+# away, withdrawals are refused. Money is never lost or made either way.
 network:
-  # On when several servers share this plugin's MySQL or MariaDB database, so a change
-  # made on one (a ban, a payment) reaches the others within a few seconds.
-  # Leave it off for a single server: it does nothing on SQLite.
+  # On when several servers share this plugin's MySQL or MariaDB database. Leave it off
+  # for a single server: it does nothing on SQLite.
   enabled: false
   # Seconds between checks for the other servers' changes.
   check-every: 3
@@ -254,11 +145,11 @@ network:
 # Commands and xMoney's API don't hold a server thread, so they wait up to 5 seconds.
 network-wait-ms: 50
 
-# Tells you when a new version is out.
-update-checker:
-  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
-  # only the plugin version, the platform and the Minecraft version.
-  enabled: true
-  # Logged, and shown to admins when they join, when a newer version is out.
-  # <plugin>, <current>, <latest> and <url> are filled in.
-  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"
+# Telling you when a newer version is out: in the console, and to players with
+# <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
+# sending only the plugin's version, the platform and the Minecraft version.
+updates:
+  # Whether to ask at all.
+  check: true
+  # Which releases to hear of: release, beta (betas and releases) or alpha (everything).
+  channel: "release"

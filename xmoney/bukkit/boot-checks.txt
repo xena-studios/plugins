@@ -1,0 +1,59 @@
+# xMoney on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks, through
+# boot.sh), beside vault-consumer, a plugin.yml plugin that depends on Vault: every command,
+# answered by the core's dispatcher and drawn from lang/en.yml, and Vault as other plugins call it.
+logged: xMoney 2.0.0 on
+logged: Loaded 0 accounts from the SQLite database money.db.
+logged: VAULT CONSUMER found xMoney
+run: xmoney info
+expect: xMoney 2.0.0 on
+
+# Vault 1 and VaultUnlocked 2 from other threads, for players who never joined, by name, and with
+# NaN, negative and huge amounts.
+run: vaulttest
+expect: VAULT TEST PASS
+
+# Without a permissions plugin, Vault's Permission API still has a provider (xMoney's, or real
+# Vault's below 1.15.2), as with real Vault.
+run: vaultperms
+expect: VAULT PERMISSION SuperPerms
+
+# The commands, on the accounts those made. VaultTestBank is a town-style account by name.
+run: baltop
+expect: Richest players.
+run: balance VaultTestBank
+expect: VaultTestBank's balance: $50.00
+run: eco give VaultTestBank 25
+expect: Gave VaultTestBank $25.00. They have $75.00.
+run: eco take VaultTestBank 1000
+expect: VaultTestBank only has $75.00.
+run: eco set VaultTestBank 10.5
+expect: Set VaultTestBank's balance to $10.50.
+run: eco history VaultTestBank
+expect: History of VaultTestBank: 3 changes
+# A name nobody has played under is refused.
+run: eco give Nobody_Here_12 5
+expect: Nobody_Here_12 has never played here.
+run: pay Alex 5
+expect: Only players can use this command.
+run: eco give VaultTestBank 1.005
+expect: Amounts have at most 2 decimals.
+
+# Imports: the old economy vault-consumer registers, and plugins that aren't installed.
+run: xmoney import vault
+expect: Nothing to import from OldEconomy
+run: xmoney import essentials
+expect: there's no plugins/Essentials/userdata folder.
+run: xmoney import cmi
+expect: there's no plugins/CMI/cmi.sqlite.db.
+
+run: xmoney status
+expect: Problem: none
+run: xmoney reload
+expect: Reloaded xMoney: 1 module on.
+run: bal VaultTestBank
+expect: VaultTestBank's balance: $10.50
+
+# The health checks, and the report written to debug/ (boot.sh turns the upload off).
+run: xmoney debug
+expect: Database: the SQLite database money.db answered in
+expect: Debug report saved as debug/debug-

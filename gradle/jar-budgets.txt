@@ -71,3 +71,16 @@
 # zChat's relay on the proxies, shrunk: 390 KiB on Velocity, 386 KiB on BungeeCord; lines size + 10%.
 :zchat:velocity 425
 :zchat:bungee 420
+
+# xMoney 2.0 (M4), shrunk: 762 KiB on Bukkit, over the 500 KiB target with the reason recorded in
+# decisions/2026-11-26-xmoney-2.md: 416 KiB the shared core (its database layer and change feed among
+# it, which xUtilities and zChat don't use), 179 KiB xMoney's own (the ledger, both Vault economies,
+# commands, importers, events, the classes made only once money moves) and 28 KiB its API, Vault's and
+# VaultUnlocked's API 25 KiB, kept whole and unrelocated so plugins find it, their LGPL and GPL texts
+# 15 KiB, seven translations 17 KiB and bStats 9 KiB. Line: size + about 10%.
+:xmoney:bukkit 838
+# On Fabric, 605-635 KiB, shrunk before Loom remaps it, its core relocated (xena.fabric-mod): the same
+# core, ledger and commands without Vault's API, with its Common Economy API provider; lines size + 5%.
+:core:platform-fabric:xmoney:1.20.1 630
+:core:platform-fabric:xmoney:1.21.11 632
+:core:platform-fabric:xmoney:26.3 662

@@ -109,14 +109,14 @@ check() {
   checks=$(sed -n 's/^checks=//p' <<< "$got")
   boot=$(sed -n 's/^boot=//p' <<< "$got")
   local old="no"
-  [[ -n $checks || $(sed -n 's/^xmoney=//p' <<< "$got") == true ]] && old="yes"
+  [[ -n $checks ]] && old="yes"
   [[ $tasks == "$rewriteTasks" ]] && tasks="the rewrite's modules"
   [[ $tasks == build ]] && tasks="everything"
   # shellcheck disable=SC2016 # Markdown's backticks
   rows+=("| $name | \`$(tr '\n' ' ' <<< "$files" | sed 's/ $//; s/ /`, `/g')\` | ${tasks:-nothing} | $old | ${boot:-none} |")
 }
-nothing=$'tasks=\nchecks=\nxmoney=false\nboot='
-rewrite="tasks=$rewriteTasks"$'\nchecks=\nxmoney=false'
+nothing=$'tasks=\nchecks=\nboot='
+rewrite="tasks=$rewriteTasks"$'\nchecks='
 
 check "Rewrite core only" core/core-common/src/commonMain/kotlin/co/xenastudios/core/common/text/Component.kt \
   "$rewrite"$'\nboot=bukkit fabric proxy'
@@ -132,27 +132,35 @@ check "xSample's Velocity plugin" core/core-testing/sample/velocity/src/main/kot
   "$rewrite"$'\nboot=proxy'
 check "The loader's shims" core/core-loader/src/velocity/java/co/xenastudios/core/loader/velocity/VelocityBootstrap.java \
   "$rewrite"$'\nboot=bukkit proxy'
-check "Proxy boot script" scripts/boot-proxy.sh $'tasks=\nchecks=\nxmoney=false\nboot=proxy'
-check "The real client" scripts/budgets/bots/client.js $'tasks=\nchecks=\nxmoney=false\nboot=bukkit proxy'
+check "Proxy boot script" scripts/boot-proxy.sh $'tasks=\nchecks=\nboot=proxy'
+check "The real client" scripts/budgets/bots/client.js $'tasks=\nchecks=\nboot=bukkit proxy'
 check "A rewritten plugin's common code" xutilities/common/src/commonMain/kotlin/co/xenastudios/xutilities/Commands.kt \
-  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nxmoney=false\nboot=bukkit fabric'
+  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nboot=bukkit fabric'
 check "A rewritten plugin's Bukkit adapter" xutilities/bukkit/src/main/kotlin/co/xenastudios/xutilities/bukkit/BukkitXServer.kt \
-  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nxmoney=false\nboot=bukkit'
+  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nboot=bukkit'
 check "A rewritten plugin's Fabric mod (platform-fabric's build)" xutilities/fabric/src/main/kotlin/co/xenastudios/xutilities/fabric/XUtilitiesMod.kt \
-  $'checks=\nxmoney=false\nboot=fabric'
+  $'checks=\nboot=fabric'
 check "zChat's common code" zchat/common/src/commonMain/kotlin/co/xenastudios/zchat/ChatModule.kt \
-  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nxmoney=false\nboot=bukkit fabric proxy'
+  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nboot=bukkit fabric proxy'
 check "zChat's Bukkit adapter" zchat/bukkit/src/main/kotlin/co/xenastudios/zchat/bukkit/ZChatBukkit.kt \
-  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nxmoney=false\nboot=bukkit'
+  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nboot=bukkit'
 check "zChat's Fabric mod (platform-fabric's build)" zchat/fabric/src/main/kotlin/co/xenastudios/zchat/fabric/ZChatMod.kt \
-  $'checks=\nxmoney=false\nboot=fabric'
+  $'checks=\nboot=fabric'
 check "zChat's Velocity relay" zchat/velocity/src/main/kotlin/co/xenastudios/zchat/velocity/ZChatVelocity.kt \
-  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nxmoney=false\nboot=proxy'
+  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nboot=proxy'
 check "zChat's real-client checks" zchat/bukkit/client-checks.txt \
-  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nxmoney=false\nboot=bukkit'
+  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nboot=bukkit'
+check "xMoney's common code" xmoney/common/src/commonMain/kotlin/co/xenastudios/xmoney/ledger/Ledger.kt \
+  $'tasks=:build :xmoney:api:build :xmoney:bukkit:build :xmoney:common:build :xmoney:hook-consumer:build :xmoney:vault-consumer:build\nchecks=\nboot=bukkit fabric'
+check "xMoney's Bukkit adapter" xmoney/bukkit/src/main/kotlin/co/xenastudios/xmoney/bukkit/vault/LegacyEconomy.kt \
+  $'tasks=:build :xmoney:api:build :xmoney:bukkit:build :xmoney:common:build :xmoney:hook-consumer:build :xmoney:vault-consumer:build\nchecks=\nboot=bukkit'
+check "xMoney's Fabric mod (platform-fabric's build)" xmoney/fabric/src/main/kotlin/co/xenastudios/xmoney/fabric/CommonEconomyProvider.kt \
+  $'checks=\nboot=fabric'
+check "xMoney's Vault test plugin" xmoney/vault-consumer/src/main/java/co/xenastudios/xmoney/vaultconsumer/VaultConsumer.java \
+  $'tasks=:build :xmoney:api:build :xmoney:bukkit:build :xmoney:common:build :xmoney:hook-consumer:build :xmoney:vault-consumer:build\nchecks=\nboot=bukkit fabric'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 check "Today's plugin" xbans/src/main/java/co/xenastudios/xbans/XBans.java \
-  $'units=xbans\ncompile=:xbans:compileJava :xbans:api:compileJava\nchecks=xbans/boot-checks.txt\nxmoney=false\nboot='
+  $'units=xbans\ncompile=:xbans:compileJava :xbans:api:compileJava\nchecks=xbans/boot-checks.txt\nboot='
 check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Today's convention" build-logic/src/main/kotlin/xena.plugin.gradle.kts everything
@@ -160,12 +168,12 @@ check "build-logic's own build" build-logic/build.gradle.kts everything
 check "Rewrite's jar budgets" gradle/jar-budgets.txt "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Rewrite's shrinking rules" build-logic/src/main/resources/xena/r8/common.pro "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Version catalog" gradle/libs.versions.toml everything
-check "Runtime budgets script" scripts/budgets/check.sh $'tasks=\nchecks=\nxmoney=false\nboot=bukkit'
+check "Runtime budgets script" scripts/budgets/check.sh $'tasks=\nchecks=\nboot=bukkit'
 check "Paper and Folia boot script" scripts/boot-test.sh everything
 check "Docs only" $'docs/src/content/docs/index.mdx\nREADME.md' "$nothing"
 check "A decision" $'decisions/2026-11-24-decisions-one-file-each.md\nDECISIONS.md\nscripts/decisions.ts' "$nothing"
 check "Plugins workflow" .github/workflows/plugins.yml everything
-check "Boot workflow" .github/workflows/boot.yml $'tasks=\nchecks=\nxmoney=false\nboot=bukkit fabric proxy'
+check "Boot workflow" .github/workflows/boot.yml $'tasks=\nchecks=\nboot=bukkit fabric proxy'
 check "Another workflow" .github/workflows/docs.yml "$nothing"
 check "A new top-level file" Makefile everything
 

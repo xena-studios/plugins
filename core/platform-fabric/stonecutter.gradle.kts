@@ -24,4 +24,6 @@ stonecutter parameters {
     constants["effect_holders"] = current.parsed >= "1.20.5"
     // 1.21.2 gave teleportTo a set of relative parts, and a player's level() its server type.
     constants["modern_teleport"] = current.parsed >= "1.21.2"
+    // The Common Economy API's amounts became BigIntegers in 2.0, its build for 26.1 on (xMoney).
+    constants["economy_bigint"] = current.parsed >= "26.1"
 }

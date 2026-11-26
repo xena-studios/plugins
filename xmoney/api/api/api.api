@@ -1,0 +1,191 @@
+public final class co/xenastudios/xmoney/api/Amount : java/lang/Comparable {
+	public static final field Companion Lco/xenastudios/xmoney/api/Amount$Companion;
+	public static final field MAX_UNITS J
+	public static final field MAX_WHOLE J
+	public static final field ONE J
+	public static final field SCALE I
+	public static final field ZERO Lco/xenastudios/xmoney/api/Amount;
+	public fun compareTo (Lco/xenastudios/xmoney/api/Amount;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getUnits ()J
+	public fun hashCode ()I
+	public final fun isNegative ()Z
+	public final fun isZero ()Z
+	public final fun minus (Lco/xenastudios/xmoney/api/Amount;)Lco/xenastudios/xmoney/api/Amount;
+	public static final fun of (J)Lco/xenastudios/xmoney/api/Amount;
+	public static final fun ofDouble (DLco/xenastudios/xmoney/api/Rounding;)Lco/xenastudios/xmoney/api/Amount;
+	public static final fun ofUnits (J)Lco/xenastudios/xmoney/api/Amount;
+	public static final fun parse (Ljava/lang/String;)Lco/xenastudios/xmoney/api/Amount;
+	public static final fun parse (Ljava/lang/String;Lco/xenastudios/xmoney/api/Rounding;)Lco/xenastudios/xmoney/api/Amount;
+	public final fun plus (Lco/xenastudios/xmoney/api/Amount;)Lco/xenastudios/xmoney/api/Amount;
+	public final fun toDouble ()D
+	public final fun toPlainString ()Ljava/lang/String;
+	public final fun toPlainString (I)Ljava/lang/String;
+	public static synthetic fun toPlainString$default (Lco/xenastudios/xmoney/api/Amount;IILjava/lang/Object;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public final fun unaryMinus ()Lco/xenastudios/xmoney/api/Amount;
+}
+
+public final class co/xenastudios/xmoney/api/Amount$Companion {
+	public final fun of (J)Lco/xenastudios/xmoney/api/Amount;
+	public final fun ofDouble (DLco/xenastudios/xmoney/api/Rounding;)Lco/xenastudios/xmoney/api/Amount;
+	public final fun ofUnits (J)Lco/xenastudios/xmoney/api/Amount;
+	public final fun parse (Ljava/lang/String;)Lco/xenastudios/xmoney/api/Amount;
+	public final fun parse (Ljava/lang/String;Lco/xenastudios/xmoney/api/Rounding;)Lco/xenastudios/xmoney/api/Amount;
+	public static synthetic fun parse$default (Lco/xenastudios/xmoney/api/Amount$Companion;Ljava/lang/String;Lco/xenastudios/xmoney/api/Rounding;ILjava/lang/Object;)Lco/xenastudios/xmoney/api/Amount;
+}
+
+public final class co/xenastudios/xmoney/api/Amounts {
+	public static final field INSTANCE Lco/xenastudios/xmoney/api/Amounts;
+	public static final fun of (Ljava/math/BigDecimal;Lco/xenastudios/xmoney/api/Rounding;)Lco/xenastudios/xmoney/api/Amount;
+	public static final fun toBigDecimal (Lco/xenastudios/xmoney/api/Amount;)Ljava/math/BigDecimal;
+	public static final fun toBigDecimal (Lco/xenastudios/xmoney/api/Amount;I)Ljava/math/BigDecimal;
+	public static synthetic fun toBigDecimal$default (Lco/xenastudios/xmoney/api/Amount;IILjava/lang/Object;)Ljava/math/BigDecimal;
+}
+
+public final class co/xenastudios/xmoney/api/Currency {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
+	public final fun getDecimals ()I
+	public final fun getId ()Ljava/lang/String;
+	public final fun getPlural ()Ljava/lang/String;
+	public final fun getSingular ()Ljava/lang/String;
+	public final fun getSymbol ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xmoney/api/HistoryEntry {
+	public fun <init> (JJLco/xenastudios/xmoney/api/Amount;Lco/xenastudios/xmoney/api/Amount;Lco/xenastudios/xmoney/api/TransactionKind;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;)V
+	public final fun getAmount ()Lco/xenastudios/xmoney/api/Amount;
+	public final fun getBalance ()Lco/xenastudios/xmoney/api/Amount;
+	public final fun getId ()J
+	public final fun getKind ()Lco/xenastudios/xmoney/api/TransactionKind;
+	public final fun getOther ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getTimeMillis ()J
+}
+
+public final class co/xenastudios/xmoney/api/HistoryPage {
+	public fun <init> (Ljava/util/List;IIJ)V
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getPage ()I
+	public final fun getPages ()I
+	public final fun getTotal ()J
+}
+
+public final class co/xenastudios/xmoney/api/Rounding : java/lang/Enum {
+	public static final field DOWN Lco/xenastudios/xmoney/api/Rounding;
+	public static final field EXACT Lco/xenastudios/xmoney/api/Rounding;
+	public static final field HALF_UP Lco/xenastudios/xmoney/api/Rounding;
+	public static final field UP Lco/xenastudios/xmoney/api/Rounding;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xmoney/api/Rounding;
+	public static fun values ()[Lco/xenastudios/xmoney/api/Rounding;
+}
+
+public final class co/xenastudios/xmoney/api/TopEntry {
+	public fun <init> (ILco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/xmoney/api/Amount;)V
+	public final fun getBalance ()Lco/xenastudios/xmoney/api/Amount;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getRank ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class co/xenastudios/xmoney/api/TransactionHook {
+	public abstract fun refuse (Lco/xenastudios/xmoney/api/event/PreTransactionEvent;)Ljava/lang/String;
+}
+
+public final class co/xenastudios/xmoney/api/TransactionKind : java/lang/Enum {
+	public static final field GIVE Lco/xenastudios/xmoney/api/TransactionKind;
+	public static final field IMPORT Lco/xenastudios/xmoney/api/TransactionKind;
+	public static final field PAY Lco/xenastudios/xmoney/api/TransactionKind;
+	public static final field PLUGIN Lco/xenastudios/xmoney/api/TransactionKind;
+	public static final field SET Lco/xenastudios/xmoney/api/TransactionKind;
+	public static final field START Lco/xenastudios/xmoney/api/TransactionKind;
+	public static final field TAKE Lco/xenastudios/xmoney/api/TransactionKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xmoney/api/TransactionKind;
+	public static fun values ()[Lco/xenastudios/xmoney/api/TransactionKind;
+}
+
+public final class co/xenastudios/xmoney/api/TransactionResult {
+	public fun <init> (Lco/xenastudios/xmoney/api/TransactionResult$Status;Lco/xenastudios/xmoney/api/Amount;Lco/xenastudios/xmoney/api/Amount;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmount ()Lco/xenastudios/xmoney/api/Amount;
+	public final fun getBalance ()Lco/xenastudios/xmoney/api/Amount;
+	public final fun getStatus ()Lco/xenastudios/xmoney/api/TransactionResult$Status;
+	public fun hashCode ()I
+	public final fun isSuccess ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xmoney/api/TransactionResult$Status : java/lang/Enum {
+	public static final field BALANCE_LIMIT Lco/xenastudios/xmoney/api/TransactionResult$Status;
+	public static final field CANCELLED Lco/xenastudios/xmoney/api/TransactionResult$Status;
+	public static final field INSUFFICIENT_FUNDS Lco/xenastudios/xmoney/api/TransactionResult$Status;
+	public static final field INVALID_AMOUNT Lco/xenastudios/xmoney/api/TransactionResult$Status;
+	public static final field SAME_ACCOUNT Lco/xenastudios/xmoney/api/TransactionResult$Status;
+	public static final field SUCCESS Lco/xenastudios/xmoney/api/TransactionResult$Status;
+	public static final field UNAVAILABLE Lco/xenastudios/xmoney/api/TransactionResult$Status;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xmoney/api/TransactionResult$Status;
+	public static fun values ()[Lco/xenastudios/xmoney/api/TransactionResult$Status;
+}
+
+public final class co/xenastudios/xmoney/api/XMoney {
+	public static final field INSTANCE Lco/xenastudios/xmoney/api/XMoney;
+	public static final fun api ()Lco/xenastudios/xmoney/api/XMoneyApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xmoney/api/XMoneyApi;)V
+}
+
+public abstract interface class co/xenastudios/xmoney/api/XMoneyApi {
+	public abstract fun balance (Lco/xenastudios/core/api/PlayerRef;)Lco/xenastudios/xmoney/api/Amount;
+	public abstract fun deposit (Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xmoney/api/Amount;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun format (Lco/xenastudios/xmoney/api/Amount;)Ljava/lang/String;
+	public abstract fun getCurrency ()Lco/xenastudios/xmoney/api/Currency;
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun has (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xmoney/api/Amount;)Z
+	public abstract fun hasAccount (Lco/xenastudios/core/api/PlayerRef;)Z
+	public abstract fun history (Lco/xenastudios/core/api/PlayerRef;I)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun registerHook (Ljava/lang/String;Lco/xenastudios/xmoney/api/TransactionHook;)V
+	public abstract fun top (II)Ljava/util/List;
+	public abstract fun transfer (Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xmoney/api/Amount;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun unregisterHook (Lco/xenastudios/xmoney/api/TransactionHook;)V
+	public abstract fun withdraw (Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xmoney/api/Amount;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class co/xenastudios/xmoney/api/event/BalanceChangedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xmoney/api/event/BalanceChangedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xmoney/api/Amount;Lco/xenastudios/xmoney/api/Amount;Lco/xenastudios/xmoney/api/TransactionKind;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;)V
+	public final fun getBalance ()Lco/xenastudios/xmoney/api/Amount;
+	public final fun getChange ()Lco/xenastudios/xmoney/api/Amount;
+	public final fun getKind ()Lco/xenastudios/xmoney/api/TransactionKind;
+	public final fun getOther ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getSource ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xmoney/api/event/BalanceChangedEvent$Companion {
+}
+
+public final class co/xenastudios/xmoney/api/event/PreTransactionEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xmoney/api/event/PreTransactionEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xmoney/api/Amount;Lco/xenastudios/xmoney/api/TransactionKind;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;)V
+	public final fun getChange ()Lco/xenastudios/xmoney/api/Amount;
+	public final fun getKind ()Lco/xenastudios/xmoney/api/TransactionKind;
+	public final fun getOther ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getSource ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xmoney/api/event/PreTransactionEvent$Companion {
+}
+

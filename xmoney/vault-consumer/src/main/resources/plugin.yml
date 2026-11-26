@@ -3,7 +3,8 @@
 name: VaultConsumer
 version: 0.0.0
 main: co.xenastudios.xmoney.vaultconsumer.VaultConsumer
-api-version: "1.21.11"
+# Ignored before 1.13; 1.13 so 1.13 to the newest all load it.
+api-version: "1.13"
 folia-supported: true
 depend: [Vault]
 commands:

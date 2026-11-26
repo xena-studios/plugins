@@ -37,7 +37,9 @@ import kotlin.test.assertTrue
 /**
  * 1.x's configs and databases, carried into 2.0, and left so the 1.x jar put back still reads
  * them: its config as a newer one (with its copy aside), its database exactly as it made it.
- * 1.0.0 and 1.0.1 shipped the same config and schema.
+ * 1.0.0 and 1.0.1 shipped the same config and schema. The configs are kept as `.yml.txt`: as
+ * shipped, their blank MySQL password is the setting owners fill in, which code scanning would
+ * take for a credential.
  */
 class MigrationTest {
     private val folder = Files.createTempDirectory("xteleport-migration")
@@ -66,7 +68,7 @@ class MigrationTest {
 
     @Test
     fun theMessagesMovedAreTheOnes1xShipped() {
-        val root = (JvmYaml.read(resource("config-1.0.1.yml")) as Outcome.Ok).value as YamlNode.Mapping
+        val root = (JvmYaml.read(resource("config-1.0.1.yml.txt")) as Outcome.Ok).value as YamlNode.Mapping
         assertEquals(emptyMap(), Legacy.messages(root), "a message 1.x shipped would be carried as if edited")
         // Every message setting 1.x had has a place in 2.0.
         val sections = listOf("error", "teleport", "homes", "tpa", "warps", "spawn", "rtp")
@@ -78,7 +80,7 @@ class MigrationTest {
 
     @Test
     fun aDefault1xConfigCarriesForwardWithNothingInLang() {
-        write("config.yml", resource("config-1.0.1.yml"))
+        write("config.yml", resource("config-1.0.1.yml.txt"))
         val loaded = files().load()
         val text = read("config.yml")
         assertTrue("config-version: 2" in text)
@@ -94,7 +96,7 @@ class MigrationTest {
 
     @Test
     fun anEdited1xConfigKeepsEveryEditAndItsMessagesGoToLang() {
-        write("config.yml", resource("config-1.0.1-edited.yml"))
+        write("config.yml", resource("config-1.0.1-edited.yml.txt"))
         val loaded = files().load()
         val config = loaded.config
         assertEquals(listOf("tpyes", "tpok"), config[XTeleportConfig.commands.tpaccept.aliases])

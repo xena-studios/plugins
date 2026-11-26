@@ -129,8 +129,7 @@ public class JdbcDatabase internal constructor(
     /** How many writes were refused because too many were waiting, since it opened. */
     public val refused: Long get() = dropped.get()
 
-    /** Whether the writer can reach the database right now. */
-    public val available: Boolean get() = down == null
+    override val available: Boolean get() = down == null
 
     override fun write(statements: List<Statement>): Pending<Outcome<Unit, DbError>> {
         val done = newPending<Outcome<Unit, DbError>>()
@@ -347,11 +346,23 @@ public class JdbcDatabase internal constructor(
     private fun landed(number: Long): Boolean {
         while (true) {
             val session = writerSession() ?: if (stopping()) return false else continue
-            when (val read = session.query(sql.select(Migrations.Meta, Migrations.Meta.key eq marker, listOf(Migrations.Meta.value)))) {
+            when (val read = session.query(markerQuery())) {
                 is Outcome.Ok -> return read.value.firstOrNull()?.get(Migrations.Meta.value) == number.toString()
                 is Outcome.Err -> if (!lost(session, read.error)) return false
             }
         }
+    }
+
+    /**
+     * This writer's row in the meta table, read to learn whether a commit landed. On MySQL a
+     * locking read (`LOCK IN SHARE MODE`): a commit the server is still making when the answer
+     * was lost (an fsync stall, semi-sync replication) holds the row it changed, so the read
+     * waits for it rather than see the old number and run the batch a second time. A plain read
+     * would take InnoDB's snapshot, from before that commit. SQLite's file lock does the same.
+     */
+    internal fun markerQuery(): Statement {
+        val select = sql.select(Migrations.Meta, Migrations.Meta.key eq marker, listOf(Migrations.Meta.value))
+        return if (dialect == Dialect.MySql) Statement(select.sql + " LOCK IN SHARE MODE", select.args) else select
     }
 
     /**
@@ -525,7 +536,13 @@ public class JdbcDatabase internal constructor(
             limits: JdbcLimits = JdbcLimits(),
         ): Outcome<JdbcDatabase, DbError> = openWith(settings, sqliteFile, drivers, log, name, limits, Dialect.Sqlite.MINIMUM)
 
-        internal fun openWith(
+        /**
+         * [open], with [wrap] around the connector: for tests that break connections on cue
+         * (a plugin's own crash and outage tests), and [sqliteMinimum] in place of
+         * [Dialect.Sqlite.MINIMUM]. Not for plugins' code.
+         */
+        @JvmStatic
+        public fun openWith(
             settings: DatabaseSettings,
             sqliteFile: Path,
             drivers: Drivers,

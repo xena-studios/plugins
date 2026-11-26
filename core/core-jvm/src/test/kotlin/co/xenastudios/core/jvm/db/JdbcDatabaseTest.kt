@@ -27,6 +27,7 @@ import java.util.concurrent.CountDownLatch
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
@@ -268,6 +269,32 @@ class JdbcDatabaseTest {
         assertEquals(DbError.Kind.NO_DRIVER, tooOld.error.kind)
         assertTrue(detail.contains("the server's SQLite is 3.") && detail.contains("downloaded org.xerial:sqlite-jdbc"), detail)
         assertEquals(2, fetched.size)
+    }
+
+    @Test
+    fun theWriterSaysWhetherItCanReachTheDatabase() {
+        val chaos = Chaos()
+        val database = database(chaos = chaos)
+        assertTrue(database.available)
+        val held = Uuid.random()
+        // The writer's connection dies, and new ones are refused: the write waits, and the database is down.
+        chaos.down = true
+        chaos.statementsLeft.set(1)
+        val write = database.write(database.sql.upsert(account(held, "Held", 1.0)))
+        val deadline = System.nanoTime() + 5_000_000_000
+        while (database.available && System.nanoTime() < deadline) Thread.sleep(10)
+        assertFalse(database.available, "the writer didn't notice the database went away")
+        chaos.down = false
+        assertEquals(Outcome.Ok(Unit), write.await())
+        assertTrue(database.available)
+    }
+
+    @Test
+    fun theLostCommitLookupLocksOnMysqlOnly() {
+        val mysql = JdbcDatabase(Dialect.MySql, "p_", "MySQL", { throw java.sql.SQLException("unused") }, RecordingLog(), JdbcLimits(), "Test")
+        assertTrue(mysql.markerQuery().sql.endsWith(" LOCK IN SHARE MODE"), mysql.markerQuery().sql)
+        val sqlite = JdbcDatabase(Dialect.Sqlite.CURRENT, "p_", "SQLite", { throw java.sql.SQLException("unused") }, RecordingLog(), JdbcLimits(), "Test")
+        assertFalse("LOCK" in sqlite.markerQuery().sql, sqlite.markerQuery().sql)
     }
 
     private fun count(database: JdbcDatabase): Long =

@@ -9,7 +9,7 @@ import co.xenastudios.core.common.proxy.ProxyJoinEvent
 import co.xenastudios.core.common.proxy.ProxyQuitEvent
 import co.xenastudios.core.common.proxy.Sent
 import co.xenastudios.core.common.proxy.ServerSwitchEvent
-import co.xenastudios.zchat.concurrentMap
+import co.xenastudios.core.common.concurrentMap
 
 /**
  * zChat on the proxy: the relay between its servers. Servers can only talk to the proxy, so a chat

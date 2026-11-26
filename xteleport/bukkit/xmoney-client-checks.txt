@@ -1,0 +1,3 @@
+# With xMoney (boot.sh --xmoney) and a real client: as client-checks.txt, then Friend, given 10,
+# pays 5 for /spawn through xMoney's API and has 5 left.
+client: --plugin xteleport --xmoney

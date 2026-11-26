@@ -1,0 +1,26 @@
+# What scripts/boot-fabric.sh checks on each Minecraft line with xTeleport, from the console.
+# Worlds are dimensions here, typed without minecraft: (the_nether); world, world_nether and
+# world_the_end name the vanilla three, as on Bukkit.
+logged: [xTeleport] xTeleport 2.0.0 on
+logged: Loaded 0 warps from the SQLite database xteleport.db.
+run: xteleport info
+expect: xTeleport 2.0.0 on
+# Real /rtp searches: Minecraft's chunk system loads and generates each candidate off the server
+# thread; the column is read on it once it's ready.
+run: xteleport rtpcheck world 5
+expect: Found a safe spot
+run: xteleport rtpcheck the_nether 3
+expect: Found a safe spot
+run: xteleport rtpcheck world_the_end 5
+expect: Found a safe spot
+run: xteleport rtpcheck nowhere
+expect: can't send anyone to nowhere
+run: warps
+expect: There are no warps yet.
+run: homes
+expect: Only players can use this command.
+run: xteleport reload
+expect: Reloaded xTeleport
+run: xteleport debug
+expect: Database: the SQLite database xteleport.db answered in
+expect: Debug report saved as debug/debug-

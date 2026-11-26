@@ -428,9 +428,16 @@ public class Warmups(private val plugin: XTeleportPlugin) {
             }
         }
 
+        // The countdown is a nicety: one that fails never stops the teleport.
         fun show(seconds: Int) {
             if (!plugin.server.features.actionBar) return
-            plugin.texts.render(player, XTeleportMessages.countdown, "seconds" to seconds)?.let { plugin.server.actionBar(player, it) }
+            try {
+                plugin.texts.render(player, XTeleportMessages.countdown, "seconds" to seconds)?.let { plugin.server.actionBar(player, it) }
+            } catch (e: Exception) {
+                plugin.log.warn("Couldn't show the warmup's countdown: $e")
+            } catch (e: LinkageError) {
+                plugin.log.warn("Couldn't show the warmup's countdown: $e")
+            }
         }
 
         fun stop(reason: Cancel) {

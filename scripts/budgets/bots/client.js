@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney] [--zchat]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -17,7 +17,9 @@
 // network (zchat-network: through a proxy with two servers, Friend moves to "game" with /server,
 // and chat, /msg and /reply cross between the two), or xMoney's (Friend again: /eco and /balance in
 // German, Joiner paying Friend with /pay and Friend hearing it, an overdraft refused, /baltop; with
-// --zchat, zChat beside it with a format showing <balance>, and Joiner's chat line carrying it).
+// --zchat, zChat beside it with a format showing <balance>, and Joiner's chat line carrying it), or
+// xTeleport's (Friend again: a home and /home, /tpa accepted and Friend arriving after the warmup,
+// /rtp; with --xmoney, Friend paying for /spawn through xMoney).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks; --version sets it instead, for a
@@ -34,6 +36,7 @@ const plugin = option('--plugin', 'xsample')
 const version = option('--version', false)
 const forge = option('--forge', null)
 const withZChat = process.argv.includes('--zchat')
+const withXMoney = process.argv.includes('--xmoney')
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const failures = []
 const heard = []
@@ -200,6 +203,68 @@ async function xmoney () {
   finish()
 }
 
+// xTeleport between two players: Joiner (an operator, in German, so no warmup or cooldown) sets a
+// home and goes back to it, accepts Friend's /tpa (Friend isn't one: a real warmup, then Friend
+// arrives beside Joiner), and /rtp's search sends Joiner somewhere new. With --xmoney, xMoney beside
+// it and /spawn costing 5: Friend is given 10, pays for /spawn, and has 5 left.
+async function xteleport () {
+  const friend = mineflayer.createBot({ host: '127.0.0.1', port, username: 'Friend', auth: 'offline', version: false })
+  const friendHeard = []
+  friend.on('message', (msg) => friendHeard.push((msg.unsigned || msg).toString()))
+  friend.on('error', (e) => fail(`Friend's client error: ${e.message}`, true))
+  await new Promise((resolve) => friend.once('spawn', resolve))
+  await sleep(2000)
+  const friendHears = async (text, from, ms = 10000) => {
+    for (let waited = 0; waited < ms; waited += 100) {
+      if (friendHeard.slice(from).some((l) => l.includes(text))) return true
+      await sleep(100)
+    }
+    return false
+  }
+  const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2)
+  // A home, then away with vanilla /tp, then /home brings Joiner back: replies from lang/de.yml.
+  await command('/sethome base', 'Zuhause gesetzt: base.', '/sethome answers the player in German')
+  const home = bot.entity.position.clone()
+  bot.chat(`/tp ${username} ~ ~ ~40`)
+  await sleep(1500)
+  check('vanilla /tp moved the player away', distance(bot.entity.position, home) > 30, `at ${bot.entity.position}, home ${home}`)
+  await command('/home base', 'Willkommen in base.', '/home teleports and says so in German')
+  await sleep(1000)
+  check('/home brought the player back', distance(bot.entity.position, home) < 1.5, `at ${bot.entity.position}, home ${home}`)
+  await command('/homes', 'Deine Zuhause (1/', '/homes lists the home')
+  // Friend asks to come to Joiner; Joiner accepts; Friend waits out the warmup and arrives.
+  let from = friendHeard.length
+  let mine = heard.length
+  friend.chat(`/tpa ${username}`)
+  check('/tpa tells whoever asked', await friendHears(`Asked ${username} if you can teleport to them.`, from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  check('/tpa reaches whoever is asked, in their language', await hear('Friend möchte sich zu dir teleportieren.', mine) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  from = friendHeard.length
+  await command('/tpaccept', 'Anfrage von Friend angenommen.', '/tpaccept accepts in German')
+  check('Friend waits out the warmup', await friendHears('Teleporting in 3s', from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  check('Friend arrives beside Joiner', await friendHears(`Teleported to ${username}.`, from, 15000), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  await sleep(1000)
+  check('Friend is where Joiner is', distance(friend.entity.position, bot.entity.position) < 2, `Friend at ${friend.entity.position}, Joiner at ${bot.entity.position}`)
+  // /rtp: a search off the server thread, then the teleport.
+  const before = bot.entity.position.clone()
+  await command('/rtp', 'Suche einen sicheren Ort...', '/rtp starts a search')
+  const landed = await hear('teleportiert', heard.length - 1, 30000)
+  check('/rtp finds a spot and teleports there', landed != null, `heard ${JSON.stringify(heard.slice(-5))}`)
+  await sleep(1500)
+  check('/rtp moved the player far', distance(bot.entity.position, before) > 250, `at ${bot.entity.position}, before ${before}`)
+  if (withXMoney) {
+    await command('/eco give Friend 10', 'Friend', '/eco gives Friend money')
+    from = friendHeard.length
+    friend.chat('/spawn')
+    check('/spawn costs Friend 5, through xMoney', await friendHears('Paid $5.00.', from, 15000), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+    check('Friend arrives at spawn', await friendHears('Welcome to spawn.', from, 15000), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+    from = friendHeard.length
+    friend.chat('/balance')
+    check("the cost left Friend's balance", await friendHears('Balance: $5.00', from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
+  }
+  try { friend.quit() } catch {}
+  finish()
+}
+
 // zChat across a network: Joiner stays on lobby, Friend moves to game, and what each says reaches
 // the other through zChat on the proxy.
 async function zchatNetwork () {
@@ -247,6 +312,7 @@ async function run () {
   if (plugin === 'zchat') return zchat()
   if (plugin === 'zchat-network') return zchatNetwork()
   if (plugin === 'xmoney') return xmoney()
+  if (plugin === 'xteleport') return xteleport()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")

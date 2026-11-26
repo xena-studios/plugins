@@ -264,7 +264,7 @@ internal class Actions(private val plugin: XTeleportPlugin) {
                 withOthersHomes(source, first) { id, ownerName, loaded -> list(source, id, ownerName, loaded, page, true) }
                 return
             }
-            val player = ctx.player
+            val player = self ?: fail(ctx, CoreMessages.commandPlayersOnly)
             val page = page(if (isNumber(first)) first else second)
             withHomes(source, player) { loaded -> list(source, player, name(player), loaded, page, false) }
         }
@@ -424,7 +424,7 @@ internal class Actions(private val plugin: XTeleportPlugin) {
                 list(ctx.source, 1)
                 return
             }
-            val player = ctx.player
+            val player = ctx.source.player ?: fail(ctx, CoreMessages.commandPlayersOnly)
             val warp = plugin.places.warp(name)
             // A warp the player may not use is one they don't need to know about.
             if (warp == null || !plugin.mayUse(ctx.source, warp.name)) fail(ctx, XTeleportMessages.warpNotFound, "warp" to name)
@@ -468,7 +468,10 @@ internal class Actions(private val plugin: XTeleportPlugin) {
             val player = ctx.player
             requireReady(ctx)
             val to = plugin.spawnPoint() ?: fail(ctx, XTeleportMessages.failed)
-            teleporter.teleport(player, Trip.of(TeleportType.SPAWN, XTeleportConfig.commands.spawn.travel(config), true, XTeleportMessages.spawnTeleported)) { pendingOf(to) }
+            val set = plugin.places.setSpawn?.location == to
+            teleporter.teleport(player, Trip.of(TeleportType.SPAWN, XTeleportConfig.commands.spawn.travel(config), true, XTeleportMessages.spawnTeleported)) {
+                if (set) pendingOf(to) else plugin.standAtSpawn(to)
+            }
         }
     }
 

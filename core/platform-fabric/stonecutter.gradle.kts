@@ -26,4 +26,10 @@ stonecutter parameters {
     constants["modern_teleport"] = current.parsed >= "1.21.2"
     // The Common Economy API's amounts became BigIntegers in 2.0, its build for 26.1 on (xMoney).
     constants["economy_bigint"] = current.parsed >= "26.1"
+    // 1.20.5 moved ChunkStatus to its own package, and a chunk future's result into ChunkResult (xTeleport).
+    constants["chunk_result"] = current.parsed >= "1.20.5"
+    // 1.21.9 kept a world's spawn and a player's respawn point as RespawnData (xTeleport).
+    constants["respawn_data"] = current.parsed >= "1.21.9"
+    // 26.1 sends action-bar text with sendOverlayMessage, not displayClientMessage (xTeleport).
+    constants["overlay_message"] = current.parsed >= "26.1"
 }

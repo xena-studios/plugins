@@ -404,6 +404,30 @@ public class XTeleportPlugin(
         return server.world(main.name)?.spawn
     }
 
+    /**
+     * Where a player stands at a world's own spawn point: the point, or on the top block above it
+     * if the point isn't safe. Servers before 1.13 keep the spawn's height below the surface and
+     * lift players as they spawn there; a teleport must do it itself. Read on the spawn's thread.
+     */
+    internal fun standAtSpawn(spawn: Location): Pending<Location?> {
+        val result = newPending<Location?>()
+        val world = server.world(spawn.world.name) ?: return pendingOf(null)
+        server.loadChunk(world.ref, spawn.chunkX, spawn.chunkZ, true).onSettled { loaded, _ ->
+            if (loaded != true) {
+                result.resolve(spawn)
+                return@onSettled
+            }
+            platform.scheduler.run(Where.At(spawn)) {
+                val blocks = server.blocks(world.ref)
+                val maxFall = config[XTeleportConfig.teleports.maxFall]
+                val top = blocks?.takeIf { !world.hasCeiling && !co.xenastudios.xteleport.teleport.Safety.arrival(it, world, spawn, maxFall) }
+                    ?.highest(spawn.blockX, spawn.blockZ)?.takeIf { it >= world.minY }
+                result.resolve(if (top == null) spawn else Location(spawn.world, spawn.blockX + 0.5, top + 1.0, spawn.blockZ + 0.5, spawn.yaw, spawn.pitch))
+            }
+        }
+        return result
+    }
+
     /** What [source] might type, for [Words]. */
     internal fun suggestions(source: CommandSource, kind: Int): List<String> {
         val player = source.player
@@ -418,8 +442,9 @@ public class XTeleportPlugin(
             }
             Words.WARPS -> places.warps().filter { mayUse(source, it.name) }.map { it.name }
             Words.REQUESTS -> if (player == null) emptyList() else requests.pending(player, config[XTeleportConfig.tpa.expireAfter] * 1000L).map { it.fromName }
-            Words.WORLDS -> server.worlds().map { it.name }
-            else -> server.worlds().filter { ref -> server.world(ref.name)?.let { rtp.allowed(source, it) } != null }.map { it.name }
+            // As a command can take them: Minecraft's own dimensions without their namespace (Fabric).
+            Words.WORLDS -> server.worlds().map { it.name.removePrefix("minecraft:") }
+            else -> server.worlds().filter { ref -> server.world(ref.name)?.let { rtp.allowed(source, it) } != null }.map { it.name.removePrefix("minecraft:") }
         }
     }
 

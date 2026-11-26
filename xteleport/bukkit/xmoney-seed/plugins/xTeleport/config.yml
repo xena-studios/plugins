@@ -1,0 +1,5 @@
+# For the family test with xMoney (boot.sh --xmoney): /spawn costs 5, taken through xMoney's API.
+config-version: 2
+commands:
+  spawn:
+    cost: 5

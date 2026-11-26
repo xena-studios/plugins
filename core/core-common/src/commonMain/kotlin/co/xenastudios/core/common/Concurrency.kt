@@ -14,3 +14,11 @@ public expect inline fun <T> locked(lock: Any, block: () -> T): T
  * containing it would only hide that: the core lets these through and contains the rest.
  */
 public expect fun isFatal(error: Throwable): Boolean
+
+/**
+ * A map safe to read and write from many threads at once, without a lock: for state a plugin
+ * reads on hot paths from many threads (chat, Folia's regions, Vault's callers). On the JVM a
+ * `ConcurrentHashMap`; on Wasm, which has one thread, a plain map. From zChat, where it began,
+ * now that xMoney needs one too.
+ */
+public expect fun <K : Any, V : Any> concurrentMap(): MutableMap<K, V>

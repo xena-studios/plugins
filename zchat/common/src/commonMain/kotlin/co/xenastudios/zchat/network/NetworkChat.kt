@@ -7,7 +7,7 @@ import co.xenastudios.core.common.proxy.ProxyChannel
 import co.xenastudios.core.common.proxy.Sent
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.text.Component
-import co.xenastudios.zchat.concurrentMap
+import co.xenastudios.core.common.concurrentMap
 import kotlin.concurrent.Volatile
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds

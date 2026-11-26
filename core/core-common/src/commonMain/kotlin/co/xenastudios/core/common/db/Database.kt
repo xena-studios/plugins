@@ -78,6 +78,14 @@ public interface Database {
     /** Where the data is, for the console: `the SQLite database homes.db`, `MySQL at host:3306/db`. */
     public val description: String
 
+    /**
+     * Whether the writer can reach the database right now: `false` once a write has failed
+     * because it went away, until one works again. For work that must not wait on an outage,
+     * such as a payment a player is standing at a shop for, which is better refused at once.
+     * `true` where the database can't go away.
+     */
+    public val available: Boolean get() = true
+
     /** Queues [statements] to run together, in order, in the writer's next batch. */
     public fun write(statements: List<Statement>): Pending<Outcome<Unit, DbError>>
 

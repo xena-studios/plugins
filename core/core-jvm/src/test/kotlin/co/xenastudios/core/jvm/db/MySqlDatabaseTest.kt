@@ -47,6 +47,42 @@ class MySqlDatabaseTest {
     }
 
     @Test
+    fun theLostCommitLookupWaitsForACommitStillBeingMade() {
+        val database = database()
+        val settings = MySqlFixture.settings(prefix)!!
+        val driver = serverDrivers.mysql().first().ok().driver
+        val properties = java.util.Properties().apply {
+            setProperty("user", settings.mysql.username)
+            setProperty("password", settings.mysql.password)
+        }
+        fun connect() = driver.connect("jdbc:mysql://${settings.mysql.host}:${settings.mysql.port}/${settings.mysql.database}", properties)
+        val lookup = database.markerQuery()
+        // A commit the server is still making: the writer's marker changed, not yet committed.
+        val committing = connect()
+        val reading = connect()
+        try {
+            committing.autoCommit = false
+            committing.prepareStatement("UPDATE ${prefix}meta SET value = '7' WHERE name = ?").use {
+                it.setString(1, (lookup.args.single() as co.xenastudios.core.common.db.SqlValue.Text).value)
+                assertEquals(1, it.executeUpdate())
+            }
+            val seen = java.util.concurrent.CompletableFuture.supplyAsync {
+                reading.prepareStatement(lookup.sql).use {
+                    it.setString(1, (lookup.args.single() as co.xenastudios.core.common.db.SqlValue.Text).value)
+                    it.executeQuery().use { rows -> rows.next(); rows.getString(1) }
+                }
+            }
+            Thread.sleep(500)
+            assertTrue(!seen.isDone, "the lookup read past a commit still being made: ${if (seen.isDone) seen.get() else ""}")
+            committing.commit()
+            assertEquals("7", seen.get(10, java.util.concurrent.TimeUnit.SECONDS))
+        } finally {
+            committing.close()
+            reading.close()
+        }
+    }
+
+    @Test
     fun aStepThatGotPartwayRunsAgain() {
         val database = database(migrate = false)
         assertEquals(Dialect.MySql, database.dialect)

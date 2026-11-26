@@ -71,6 +71,12 @@ public enum class AdminSubcommand(
  *
  * Replies are [co.xenastudios.core.common.i18n.CoreMessages], drawn by [text] in the reader's
  * language.
+ *
+ * [debug] and [playerData] are made the first time `debug` or `forget` runs, not as the plugin
+ * starts: few servers ever run them, and their classes (the report, its paste service, the
+ * health checks) would otherwise load at every start (decisions/2026-11-25-a-lighter-core.md).
+ * Pass each as an `object : () -> Debug { ... }` rather than a lambda: the JVM links a lambda
+ * as it's made, loading the class it returns, which an object's method doesn't until it runs.
  */
 public class AdminCommands(
     /** The plugin's id, which the permissions start with. */
@@ -79,14 +85,16 @@ public class AdminCommands(
     public val pluginName: String,
     private val platform: Platform,
     private val reloader: Reloader,
-    /** What `debug` checks and reports. By default, only that tasks run where they should. */
-    private val debug: Debug = Debug(platform, pluginName, listOf(HealthChecks.threading(platform))),
+    /** Makes what `debug` checks and reports, once, as it first runs. By default, only that tasks run where they should. */
+    private val debug: () -> Debug = object : () -> Debug {
+        override fun invoke() = Debug(platform, pluginName, listOf(HealthChecks.threading(platform)))
+    },
     /** The plugin's importers, for `import`; `null` if it has none. */
     private val imports: Imports? = null,
     /** How the plugin's database moves, for `migrate`; `null` if it has no database. */
     private val migration: StorageMigration? = null,
-    /** What the plugin keeps per player, for `forget`; `null` if it keeps nothing. */
-    private val playerData: PlayerDataRegistry? = null,
+    /** Makes what the plugin keeps per player, for `forget`, once, as it first runs; `null` if it keeps nothing. */
+    private val playerData: (() -> PlayerDataRegistry)? = null,
     /** Draws the replies for each reader. */
     private val text: AdminText = AdminText.ENGLISH,
 ) {
@@ -101,6 +109,15 @@ public class AdminCommands(
     }
 
     private val declared = object : PermissionSet(pluginId) {}
+
+    private var report: Debug? = null
+    private var registry: PlayerDataRegistry? = null
+
+    // Made on first use. A command runs on its source's thread, so two may race: each makes its
+    // own and one is kept, which is harmless.
+    private fun report(): Debug = report ?: debug().also { report = it }
+
+    private fun registry(make: () -> PlayerDataRegistry): PlayerDataRegistry = registry ?: make().also { registry = it }
 
     /** `<plugin>.admin`, which grants every admin subcommand's permission. */
     public val admin: Permission
@@ -155,7 +172,7 @@ public class AdminCommands(
                     val playerData = playerData!!
                     val player = argument("player", ArgumentTypes.playerNameOrUuid, "The player whose data is deleted, online or not.")
                     confirm()
-                    executes { context -> forget(context.source, playerData, context[player]) }
+                    executes { context -> forget(context.source, registry(playerData), context[player]) }
                 }
             }
         }.build()
@@ -190,6 +207,7 @@ public class AdminCommands(
 
     private fun debug(source: CommandSource) {
         reply(source, CoreMessages.debugChecking, "plugin" to pluginName)
+        val debug = report()
         debug.check().onSettled { results, _ ->
             val health = results.orEmpty()
             for (result in health) text.render(source, result.message, result.placeholders)?.let(source::reply)

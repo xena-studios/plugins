@@ -61,12 +61,20 @@ public class SimpleEventBus(private val log: Log) : EventBus {
     ): Subscription = locked(lock) {
         @Suppress("UNCHECKED_CAST")
         val entry = Entry(type, priority, ignoreCancelled, listener as EventListener<Event>, nextOrder++)
-        replace(type) { entries -> (entries + entry).sortedWith(compareBy({ it.priority.ordinal }, { it.order })) }
+        // In priority order, and in the order subscribed within one: after every entry that runs no later.
+        replace(type) { entries ->
+            val at = entries.indexOfLast { it.priority.ordinal <= entry.priority.ordinal } + 1
+            ArrayList<Entry>(entries.size + 1).apply {
+                addAll(entries.subList(0, at))
+                add(entry)
+                addAll(entries.subList(at, entries.size))
+            }
+        }
         entry
     }
 
     // Holding the lock.
-    private fun replace(type: EventType<*>, change: (List<Entry>) -> List<Entry>) {
+    private inline fun replace(type: EventType<*>, change: (List<Entry>) -> List<Entry>) {
         val changed = change(listeners[type]?.asList() ?: emptyList())
         listeners = if (changed.isEmpty()) listeners - type else listeners + (type to changed.toTypedArray())
     }

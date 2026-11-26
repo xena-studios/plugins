@@ -12,6 +12,9 @@ import kotlin.time.Duration
  *
  * Grouping uses a no-break space (U+00A0) where CLDR says a space or a narrow no-break space:
  * every Minecraft client's font draws it, and chat never wraps a number there.
+ *
+ * The plural rules and date orders are numbers and patterns, not lambdas: the JVM makes a class
+ * of every lambda (about 1.5 KB of metaspace), and every plugin loads this table as it starts.
  */
 public class Formats private constructor(
     /** The language these are for. */
@@ -20,7 +23,7 @@ public class Formats private constructor(
     private val group: Char,
     // Spanish and Polish don't group a four-digit number: 1234, but 12.345.
     private val minGrouping: Int,
-    private val pluralRule: (Long) -> Plural,
+    private val pluralRule: Int,
     private val units: Array<Array<String>>,
     private val shortUnits: Array<String>,
     private val unitSeparator: String,
@@ -28,7 +31,9 @@ public class Formats private constructor(
     // Whether a space goes between a number and its unit: `2 days`; `2w` in English's short form.
     private val unitSpace: Boolean,
     private val shortUnitSpace: Boolean,
-    private val dateFormat: (year: Int, month: Int, day: Int) -> String,
+    // `{d}`, `{dd}`, `{m}`, `{mm}`, `{y}` and `{M}`, the month's name from [months].
+    private val datePattern: String,
+    private val months: Array<String>?,
     private val twelveHour: Boolean,
     private val dateTimeSeparator: String,
 ) {
@@ -36,7 +41,22 @@ public class Formats private constructor(
     public enum class Plural { ONE, FEW, MANY, OTHER }
 
     /** The plural category of [count] in this language: `1 day`, `2 days`; `2 дня`, `5 дней`. */
-    public fun plural(count: Long): Plural = pluralRule.invoke(count)
+    public fun plural(count: Long): Plural = when (pluralRule) {
+        ONE_IS_1 -> if (count == 1L) Plural.ONE else Plural.OTHER
+        // French and Portuguese: 0 and 1 are singular.
+        ONE_IS_0_OR_1 -> if (count == 0L || count == 1L) Plural.ONE else Plural.OTHER
+        RUSSIAN, POLISH -> {
+            val ten = count % 10
+            val hundred = count % 100
+            val one = if (pluralRule == RUSSIAN) ten == 1L && hundred != 11L else count == 1L
+            when {
+                one -> Plural.ONE
+                ten in 2..4 && hundred !in 12..14 -> Plural.FEW
+                else -> Plural.MANY
+            }
+        }
+        else -> Plural.OTHER
+    }
 
     /** A whole number: `1,234,567`. */
     public fun number(value: Long): String {
@@ -129,7 +149,27 @@ public class Formats private constructor(
     /** A date: `Nov 23, 2026`, `23.11.2026`, `2026年11月23日`. [utcOffsetSeconds] is the reader's (the server's) time zone. */
     public fun date(epochMillis: Long, utcOffsetSeconds: Int = 0): String {
         val local = Local.of(epochMillis, utcOffsetSeconds)
-        return dateFormat.invoke(local.year, local.month, local.day)
+        val out = StringBuilder(datePattern.length + 8)
+        var i = 0
+        while (i < datePattern.length) {
+            val c = datePattern[i]
+            if (c != '{') {
+                out.append(c)
+                i++
+                continue
+            }
+            val close = datePattern.indexOf('}', i)
+            when (datePattern.substring(i + 1, close)) {
+                "d" -> out.append(local.day)
+                "dd" -> out.append(local.day.pad())
+                "m" -> out.append(local.month)
+                "mm" -> out.append(local.month.pad())
+                "y" -> out.append(local.year)
+                "M" -> out.append(months!![local.month - 1])
+            }
+            i = close + 1
+        }
+        return out.toString()
     }
 
     /** A time of day: `3:04 PM` in English, `15:04` elsewhere. */
@@ -188,42 +228,19 @@ public class Formats private constructor(
         private fun forms(one: String, other: String) = arrayOf(one, other, other, other)
         private fun slavic(one: String, few: String, many: String) = arrayOf(one, few, many, many)
 
-        private val ONE_IS_1: (Long) -> Plural = { if (it == 1L) Plural.ONE else Plural.OTHER }
+        private const val ONE_IS_1 = 0
+        private const val ONE_IS_0_OR_1 = 1
+        private const val RUSSIAN = 2
+        private const val POLISH = 3
+        private const val NO_PLURAL = 4
 
-        // French and Portuguese: 0 and 1 are singular.
-        private val ONE_IS_0_OR_1: (Long) -> Plural = { if (it == 0L || it == 1L) Plural.ONE else Plural.OTHER }
-
-        private val RUSSIAN: (Long) -> Plural = { n ->
-            val ten = n % 10
-            val hundred = n % 100
-            when {
-                ten == 1L && hundred != 11L -> Plural.ONE
-                ten in 2..4 && hundred !in 12..14 -> Plural.FEW
-                else -> Plural.MANY
-            }
-        }
-
-        private val POLISH: (Long) -> Plural = { n ->
-            val ten = n % 10
-            val hundred = n % 100
-            when {
-                n == 1L -> Plural.ONE
-                ten in 2..4 && hundred !in 12..14 -> Plural.FEW
-                else -> Plural.MANY
-            }
-        }
-
-        private fun months(vararg names: String): Array<out String> = names
+        private fun months(vararg names: String): Array<String> = arrayOf(*names)
 
         private val ENGLISH = Formats(
             LanguageTag.ENGLISH, '.', ',', 1, ONE_IS_1,
             arrayOf(forms("week", "weeks"), forms("day", "days"), forms("hour", "hours"), forms("minute", "minutes"), forms("second", "seconds")),
             arrayOf("w", "d", "h", "m", "s"), ", ", " ", true, false,
-            run {
-                val names = months("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-                val f: (Int, Int, Int) -> String = { y, m, d -> "${names[m - 1]} $d, $y" }
-                f
-            },
+            "{M} {d}, {y}", months("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
             twelveHour = true, dateTimeSeparator = ", ",
         )
 
@@ -233,40 +250,28 @@ public class Formats private constructor(
                 LanguageTag.of("de"), ',', '.', 1, ONE_IS_1,
                 arrayOf(forms("Woche", "Wochen"), forms("Tag", "Tage"), forms("Stunde", "Stunden"), forms("Minute", "Minuten"), forms("Sekunde", "Sekunden")),
                 arrayOf("Wo.", "Tg.", "Std.", "Min.", "Sek."), ", ", " ", true, true,
-                { y, m, d -> "${d.pad()}.${m.pad()}.$y" },
+                "{dd}.{mm}.{y}", null,
                 twelveHour = false, dateTimeSeparator = ", ",
             ),
             Formats(
                 LanguageTag.of("es"), ',', '.', 2, ONE_IS_1,
                 arrayOf(forms("semana", "semanas"), forms("día", "días"), forms("hora", "horas"), forms("minuto", "minutos"), forms("segundo", "segundos")),
                 arrayOf("sem.", "d", "h", "min", "s"), ", ", " ", true, true,
-                run {
-                    val names = months("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic")
-                    val f: (Int, Int, Int) -> String = { y, m, d -> "$d ${names[m - 1]} $y" }
-                    f
-                },
+                "{d} {M} {y}", months("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"),
                 twelveHour = false, dateTimeSeparator = ", ",
             ),
             Formats(
                 LanguageTag.of("fr"), ',', NBSP, 1, ONE_IS_0_OR_1,
                 arrayOf(forms("semaine", "semaines"), forms("jour", "jours"), forms("heure", "heures"), forms("minute", "minutes"), forms("seconde", "secondes")),
                 arrayOf("sem.", "j", "h", "min", "s"), ", ", " ", true, true,
-                run {
-                    val names = months("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc.")
-                    val f: (Int, Int, Int) -> String = { y, m, d -> "$d ${names[m - 1]} $y" }
-                    f
-                },
+                "{d} {M} {y}", months("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."),
                 twelveHour = false, dateTimeSeparator = ", ",
             ),
             Formats(
                 LanguageTag.of("pt-BR"), ',', '.', 1, ONE_IS_0_OR_1,
                 arrayOf(forms("semana", "semanas"), forms("dia", "dias"), forms("hora", "horas"), forms("minuto", "minutos"), forms("segundo", "segundos")),
                 arrayOf("sem.", "d", "h", "min", "s"), ", ", " ", true, true,
-                run {
-                    val names = months("jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez.")
-                    val f: (Int, Int, Int) -> String = { y, m, d -> "$d de ${names[m - 1]} de $y" }
-                    f
-                },
+                "{d} de {M} de {y}", months("jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez."),
                 twelveHour = false, dateTimeSeparator = " ",
             ),
             Formats(
@@ -276,11 +281,7 @@ public class Formats private constructor(
                     slavic("минута", "минуты", "минут"), slavic("секунда", "секунды", "секунд"),
                 ),
                 arrayOf("нед.", "д.", "ч", "мин", "с"), ", ", " ", true, true,
-                run {
-                    val names = months("янв.", "февр.", "мар.", "апр.", "мая", "июн.", "июл.", "авг.", "сент.", "окт.", "нояб.", "дек.")
-                    val f: (Int, Int, Int) -> String = { y, m, d -> "$d ${names[m - 1]} $y г." }
-                    f
-                },
+                "{d} {M} {y} г.", months("янв.", "февр.", "мар.", "апр.", "мая", "июн.", "июл.", "авг.", "сент.", "окт.", "нояб.", "дек."),
                 twelveHour = false, dateTimeSeparator = ", ",
             ),
             Formats(
@@ -290,18 +291,14 @@ public class Formats private constructor(
                     slavic("minuta", "minuty", "minut"), slavic("sekunda", "sekundy", "sekund"),
                 ),
                 arrayOf("tydz.", "d", "godz.", "min", "s"), ", ", " ", true, true,
-                run {
-                    val names = months("sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paź", "lis", "gru")
-                    val f: (Int, Int, Int) -> String = { y, m, d -> "$d ${names[m - 1]} $y" }
-                    f
-                },
+                "{d} {M} {y}", months("sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paź", "lis", "gru"),
                 twelveHour = false, dateTimeSeparator = ", ",
             ),
             Formats(
-                LanguageTag.of("zh-CN"), '.', ',', 1, { Plural.OTHER },
+                LanguageTag.of("zh-CN"), '.', ',', 1, NO_PLURAL,
                 arrayOf(forms("周", "周"), forms("天", "天"), forms("小时", "小时"), forms("分钟", "分钟"), forms("秒", "秒")),
                 arrayOf("周", "天", "小时", "分钟", "秒"), "", "", false, false,
-                { y, m, d -> "${y}年${m}月${d}日" },
+                "{y}年{m}月{d}日", null,
                 twelveHour = false, dateTimeSeparator = " ",
             ),
         ).associateBy { it.tag }

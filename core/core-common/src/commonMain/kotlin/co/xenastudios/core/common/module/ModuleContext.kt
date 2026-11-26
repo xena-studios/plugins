@@ -87,10 +87,11 @@ public class ModuleContext internal constructor(
     /**
      * Runs [action] under the module's containment: if it throws, the module turns off and says
      * why. For callbacks the platform calls directly, such as a Bukkit event handler. Does
-     * nothing once the module is off.
+     * nothing once the module is off. Inline, as the core's other run-now helpers are, so a
+     * call makes no lambda class.
      */
-    public fun guard(action: () -> Unit) {
-        if (!active) return
+    public inline fun guard(action: () -> Unit) {
+        if (!isActive) return
         try {
             action()
         } catch (e: Throwable) {
@@ -130,7 +131,7 @@ public class ModuleContext internal constructor(
         cleanupList.forEach { runContained("undoing something", it) }
     }
 
-    internal fun runContained(what: String, action: () -> Unit) {
+    internal inline fun runContained(what: String, action: () -> Unit) {
         try {
             action()
         } catch (e: Throwable) {
@@ -140,7 +141,7 @@ public class ModuleContext internal constructor(
     }
 
     // Adds to the module's registrations while it's on; returns false, adding nothing, if it's off.
-    private fun track(add: () -> Unit): Boolean = locked(lock) {
+    private inline fun track(add: () -> Unit): Boolean = locked(lock) {
         if (active) add()
         active
     }

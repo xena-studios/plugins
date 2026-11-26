@@ -53,7 +53,9 @@ public class ZChatProxy(
         AdminCommands(
             ZChatPlugin.PLUGIN_ID, ZChatPlugin.NAME, platform,
             Reloader { ReloadReport(reload(), emptyList(), emptyMap()) },
-            debug = Debug(platform, "${ZChatPlugin.NAME} $version", listOf(HealthChecks.threading(platform), HealthChecks.config { problems }), about = about, errors = log, files = emptyList(), paste = paste),
+            debug = object : () -> Debug {
+                override fun invoke() = Debug(platform, "${ZChatPlugin.NAME} $version", listOf(HealthChecks.threading(platform), HealthChecks.config { problems }), about = about, errors = log, files = emptyList(), paste = paste)
+            },
             text = texts.admin,
         )
     }

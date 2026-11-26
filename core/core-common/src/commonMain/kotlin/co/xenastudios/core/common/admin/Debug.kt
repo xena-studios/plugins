@@ -33,19 +33,23 @@ public interface PasteService {
     public fun upload(text: String): Pending<Outcome<String, String>>
 }
 
-/** Where a debug report went. */
-public sealed class DebugResult {
+/** Where a debug report went. *
+ * A sealed interface, not a class: the JVM's verifier loads every subclass a method hands back
+ * as a superclass, but never for an interface, so a plugin doesn't load these before `debug` runs as it starts
+ * (decisions/2026-11-25-a-lighter-core.md).
+ */
+public sealed interface DebugResult {
     /** Uploaded, at [url]. */
-    public data class Uploaded(public val url: String) : DebugResult()
+    public data class Uploaded(public val url: String) : DebugResult
 
     /**
      * Written to [file] in the plugin's folder: uploads are off ([uploadError] is `null`), or
      * the upload failed, as [uploadError] says.
      */
-    public data class Saved(public val file: String, public val uploadError: String?) : DebugResult()
+    public data class Saved(public val file: String, public val uploadError: String?) : DebugResult
 
     /** Neither uploaded nor written, as [reason] says. */
-    public data class Failed(public val reason: String) : DebugResult()
+    public data class Failed(public val reason: String) : DebugResult
 }
 
 /**

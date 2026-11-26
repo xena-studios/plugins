@@ -62,8 +62,9 @@
 # zChat 4.0 (M3), shrunk: 615 KiB on Bukkit (with bStats, the update checker, Paper's loader, its
 # startup list and the proxy layer's server end), over the 500 KiB target with the reason recorded in
 # decisions/2026-11-25-zchat-4.md, so its line is size + about 10%; 506-520 KiB on Fabric, shrunk
-# before Loom remaps it, lines size + 5%.
-:zchat:bukkit 675
+# before Loom remaps it, lines size + 5%. 612 KiB on Bukkit with the lighter core
+# (decisions/2026-11-25-a-lighter-core.md), which cut its metaspace, not its jar.
+:zchat:bukkit 673
 :core:platform-fabric:zchat:1.20.1 531
 :core:platform-fabric:zchat:1.21.11 532
 :core:platform-fabric:zchat:26.3 546

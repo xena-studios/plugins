@@ -654,20 +654,19 @@ jobs:
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
             --out build/budgets/newest \
             core/core-testing/sample/bukkit/build/r8/XSample.jar
-      # xUtilities, the first rewritten plugin, measured the same way, its startup only reported.
+      # Every rewritten plugin, measured the same way, against the same budgets (startup and
+      # metaspace failing too since decisions/2026-11-25-a-lighter-core.md).
       - name: runtime budgets, xUtilities (newest Paper)
         run: |
           newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --report-only startup-first-ms,startup-ms --out build/budgets/xutilities \
+            --out build/budgets/xutilities \
             xutilities/bukkit/build/r8/xUtilities.jar
-      # zChat, measured the same way. Its metaspace (1.64 MB on an M1 Pro, over the 1.5 MB a
-      # plugin gets) is reported, not failed, for the reason in decisions/2026-11-25-zchat-4.md.
       - name: runtime budgets, zChat (newest Paper)
         run: |
           newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --report-only metaspace-mb --out build/budgets/zchat \
+            --out build/budgets/zchat \
             zchat/bukkit/build/r8/zChat.jar
       - name: BotMark load (Paper 1.21.11, 10 bots)
         if: github.event_name != 'pull_request'

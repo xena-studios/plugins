@@ -41,44 +41,22 @@ public abstract class ConfigType<T : Any> {
 
     public companion object {
         /** Any text. */
-        public val STRING: ConfigType<String> = text("string", plain = false, empty = "") { Outcome.Ok(it) }
+        public val STRING: ConfigType<String> = Builtin(K_STRING, "string", plain = false)
 
         /** A whole number that fits in an `Int`. */
-        public val INT: ConfigType<Int> = text("integer", plain = true) { raw ->
-            when (val number = wholeNumber(raw)) {
-                null -> Outcome.Err("should be a whole number")
-                !in Int.MIN_VALUE..Int.MAX_VALUE -> Outcome.Err("is too large")
-                else -> Outcome.Ok(number.toInt())
-            }
-        }
+        public val INT: ConfigType<Int> = Builtin(K_INT, "integer", plain = true)
 
         /** A whole number that fits in a `Long`. */
-        public val LONG: ConfigType<Long> = text("integer", plain = true) { raw ->
-            wholeNumber(raw)?.let { Outcome.Ok(it) } ?: Outcome.Err("should be a whole number")
-        }
+        public val LONG: ConfigType<Long> = Builtin(K_LONG, "integer", plain = true)
 
         /** A number, which can have a fraction. Not NaN or infinite. */
-        public val DOUBLE: ConfigType<Double> = text("number", plain = true, write = ::number) { raw ->
-            val number = raw.trim().toDoubleOrNull()
-            if (number == null || number.isNaN() || number.isInfinite()) Outcome.Err("should be a number") else Outcome.Ok(number)
-        }
+        public val DOUBLE: ConfigType<Double> = Builtin(K_DOUBLE, "number", plain = true)
 
         /** `true` or `false`; `yes`, `no`, `on` and `off` are read too, as today's plugins read them. */
-        public val BOOLEAN: ConfigType<Boolean> = text("boolean", plain = true) { raw ->
-            when (raw.trim().lowercase()) {
-                "true", "yes", "on" -> Outcome.Ok(true)
-                "false", "no", "off" -> Outcome.Ok(false)
-                else -> Outcome.Err("should be true or false")
-            }
-        }
+        public val BOOLEAN: ConfigType<Boolean> = Builtin(K_BOOLEAN, "boolean", plain = true)
 
         /** A length of time as [Durations] reads it (`30s`, `1h30m`), written exactly by [Durations.write]. */
-        public val DURATION: ConfigType<Duration> = text("duration", plain = false, write = Durations::write) { raw ->
-            when (val parsed = Durations.parse(raw)) {
-                is Outcome.Ok -> Outcome.Ok(parsed.value)
-                is Outcome.Err -> Outcome.Err(durationReason(parsed.error))
-            }
-        }
+        public val DURATION: ConfigType<Duration> = Builtin(K_DURATION, "duration", plain = false)
 
         /** A message in our markup, parsed once with the theme's tags ([ConfigContext.markupTags]). */
         public val MARKUP: ConfigType<Markup> = object : ConfigType<Markup>() {
@@ -110,19 +88,24 @@ public abstract class ConfigType<T : Any> {
         private fun <T : Any> text(
             name: String,
             plain: Boolean,
-            write: (T) -> String = { it.toString() },
-            empty: T? = null,
+            write: (T) -> String,
             read: (String) -> Outcome<T, String>,
         ): ConfigType<T> = object : ConfigType<T>() {
             override val name: String get() = name
             override val plain: Boolean get() = plain
-            override fun empty(): T? = empty
             override fun decode(node: YamlNode, context: ConfigContext): Outcome<T, String> = when (node) {
                 is YamlNode.Scalar -> read(node.content)
                 else -> Outcome.Err(SINGLE)
             }
             override fun encode(value: T): YamlNode = YamlNode.Scalar(write(value))
         }
+
+        private const val K_STRING = 0
+        private const val K_INT = 1
+        private const val K_LONG = 2
+        private const val K_DOUBLE = 3
+        private const val K_BOOLEAN = 4
+        private const val K_DURATION = 5
 
         private fun wholeNumber(raw: String): Long? {
             val text = raw.trim()
@@ -140,6 +123,49 @@ public abstract class ConfigType<T : Any> {
             DurationError.Kind.UNKNOWN_UNIT -> "has a unit that isn't one (\"${error.found}\"); use ms, s, m, h, d, w, mo or y"
             else -> "should be a length of time like 30s, 5m or 1h30m"
         }
+    }
+
+    // The built-in scalar types, told apart by [kind] rather than a pair of lambdas each: the JVM
+    // makes a class of every lambda (about 1.5 KB of metaspace), and every plugin loads these.
+    private class Builtin<T : Any>(private val kind: Int, override val name: String, override val plain: Boolean) : ConfigType<T>() {
+        @Suppress("UNCHECKED_CAST")
+        override fun empty(): T? = if (kind == K_STRING) "" as T else null
+
+        @Suppress("UNCHECKED_CAST")
+        override fun decode(node: YamlNode, context: ConfigContext): Outcome<T, String> {
+            if (node !is YamlNode.Scalar) return Outcome.Err(SINGLE)
+            val raw = node.content
+            return when (kind) {
+                K_STRING -> Outcome.Ok(raw)
+                K_INT -> when (val number = wholeNumber(raw)) {
+                    null -> Outcome.Err("should be a whole number")
+                    !in Int.MIN_VALUE..Int.MAX_VALUE -> Outcome.Err("is too large")
+                    else -> Outcome.Ok(number.toInt())
+                }
+                K_LONG -> wholeNumber(raw)?.let { Outcome.Ok(it) } ?: Outcome.Err("should be a whole number")
+                K_DOUBLE -> {
+                    val number = raw.trim().toDoubleOrNull()
+                    if (number == null || number.isNaN() || number.isInfinite()) Outcome.Err("should be a number") else Outcome.Ok(number)
+                }
+                K_BOOLEAN -> when (raw.trim().lowercase()) {
+                    "true", "yes", "on" -> Outcome.Ok(true)
+                    "false", "no", "off" -> Outcome.Ok(false)
+                    else -> Outcome.Err("should be true or false")
+                }
+                else -> when (val parsed = Durations.parse(raw)) {
+                    is Outcome.Ok -> Outcome.Ok(parsed.value)
+                    is Outcome.Err -> Outcome.Err(durationReason(parsed.error))
+                }
+            } as Outcome<T, String>
+        }
+
+        override fun encode(value: T): YamlNode = YamlNode.Scalar(
+            when (kind) {
+                K_DOUBLE -> number(value as Double)
+                K_DURATION -> Durations.write(value as Duration)
+                else -> value.toString()
+            },
+        )
     }
 
     private class EnumType<E : Enum<E>>(private val values: List<E>) : ConfigType<E>() {

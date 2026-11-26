@@ -35,9 +35,10 @@
 #
 # --startup-budget boots the proxy alone three more times once the run passed, and fails if the
 # median of the plugins' own startup lines (-Dxena.startupTimes, the shim's "Startup times:") is
-# over that many milliseconds, summed over the plugins. With --record-startup, the first of those
-# boots also logs its class loading, and each plugin's startup class list (the classes it loaded
-# before the proxy was done, scripts/budgets/startup_classes.py) goes to
+# over that many milliseconds, summed over the plugins. With --record-startup, one more boot before
+# those (not timed) logs its class loading with the jars' own startup lists left out, so a class an
+# older list names isn't loaded ahead and recorded again, and each plugin's startup class list (the
+# classes it loaded before the proxy was done, scripts/budgets/startup_classes.py) goes to
 # <folder>/startup-classes-<jar name>.txt, to copy beside the plugin's build file as
 # startup-classes.txt. It needs --startup-budget.
 #
@@ -465,9 +466,20 @@ sed 's/\x1b\[[0-9;]*m//g' "$proxy_log" | grep -E "INFO\](:)? \[($ours)\]" || tru
 if [[ -n $startup_budget ]]; then
   times=()
   xena="$base/proxy/plugins/Xena"
-  for boot in 1 2 3; do
+  for boot in ${record_startup:+0} 1 2 3; do
     dir="$base/startup-$boot"
     proxy_files "$dir" "$(port)" ""
+    if [[ $boot == 0 ]]; then
+      for jar in "${jars[@]}"; do
+        python3 - "$jar" "$dir/plugins/$(basename "$jar")" <<'PY'
+import sys, zipfile
+with zipfile.ZipFile(sys.argv[1]) as src, zipfile.ZipFile(sys.argv[2], "w", zipfile.ZIP_DEFLATED) as dst:
+    for item in src.infolist():
+        if item.filename != "META-INF/xena/startup-classes.txt":
+            dst.writestr(item, src.read(item))
+PY
+      done
+    fi
     # The first run's downloads: the family's library cache, and BungeeCord's for libraries:.
     # The family's folder is moved from boot to boot, not copied, as a restarted proxy keeps it:
     # a copy is a new file to the loader (inode, modified time), which hashes it again.
@@ -477,7 +489,7 @@ if [[ -n $startup_budget ]]; then
       xena="$dir/plugins/Xena"
     fi
     [[ ! -d $base/proxy/libraries ]] || cp -R "$base/proxy/libraries" "$dir/"
-    if [[ -n $record_startup && $boot == 1 ]]; then
+    if [[ $boot == 0 ]]; then
       start_proxy "$dir" "-Xlog:class+load=info:file=$dir/classload.log:uptimemillis"
       # The JVM's uptime as the proxy said it was done, give or take the half second start_proxy polls.
       done_ms=$(tail -1 "$dir/classload.log" | sed -nE 's/^\[([0-9]+)ms\].*/\1/p')
@@ -487,12 +499,13 @@ if [[ -n $startup_budget ]]; then
     fi
     sleep 2
     stop_proxy
-    if [[ -n $record_startup && $boot == 1 ]]; then
+    if [[ $boot == 0 ]]; then
       for jar in "${jars[@]}"; do
         python3 "$root/scripts/budgets/startup_classes.py" --log "$dir/classload.log" --done-ms "$done_ms" --jar "$jar" \
           --out "$record_startup/startup-classes-$(basename "$jar" .jar).txt" || fail "couldn't write $(basename "$jar")'s startup classes"
       done
     fi
+    [[ $boot != 0 ]] || continue
     total=$(sed 's/\x1b\[[0-9;]*m//g' "$proxy_log" | grep -oE 'Startup times: .*' |
       grep -oE '[0-9]+\.[0-9]+ ms' | awk '{ sum += $1 } END { printf "%.1f", sum }')
     times+=("$total")

@@ -29,34 +29,42 @@ public annotation class CommandDsl
  * same word, required arguments come before optional ones, an argument that takes the rest of
  * the line is last, and every node either runs something or has subcommands. A plugin builds
  * its tree again on reload, from the new config.
+ *
+ * [commands], [CommandTreeBuilder.root] and [CommandBuilder.literal] are inline, so their blocks
+ * run in place: only each [CommandBuilder.executes] handler is an object, which the JVM makes a
+ * class of as the tree is built (about 1.5 KB of metaspace each; decisions/2026-11-25-a-lighter-core.md).
  */
-public fun commands(block: CommandTreeBuilder.() -> Unit): CommandTree {
-    val roots = CommandTreeBuilder().apply(block).roots
-    return CommandTree(roots.toList())
-}
+public inline fun commands(block: CommandTreeBuilder.() -> Unit): CommandTree = CommandTreeBuilder().apply(block).tree()
 
 /** Declares the root commands. See [commands]. */
 @CommandDsl
-public class CommandTreeBuilder internal constructor() {
-    internal val roots = mutableListOf<CommandNode>()
+public class CommandTreeBuilder @PublishedApi internal constructor() {
+    private val roots = mutableListOf<CommandNode>()
 
     /** A command, such as `/xhomes`, with its [aliases] and the [permission] it and everything under it needs. */
-    public fun root(
+    public inline fun root(
         name: String,
         description: String,
         permission: Permission? = null,
         aliases: List<String> = emptyList(),
         block: CommandBuilder.() -> Unit,
     ) {
-        val node = CommandBuilder(listOf(name), description, permission, aliases, builtIn = false).apply(block).build()
+        add(CommandBuilder(listOf(name), description, permission, aliases, builtIn = false).apply(block).build())
+    }
+
+    @PublishedApi
+    internal fun add(node: CommandNode) {
         checkSiblings(roots, node, "a root command")
         roots += node
     }
+
+    @PublishedApi
+    internal fun tree(): CommandTree = CommandTree(roots.toList())
 }
 
 /** Declares one command or subcommand. See [commands]. */
 @CommandDsl
-public class CommandBuilder internal constructor(
+public class CommandBuilder @PublishedApi internal constructor(
     private val path: List<String>,
     private val description: String,
     private val permission: Permission?,
@@ -87,15 +95,21 @@ public class CommandBuilder internal constructor(
     public fun <T : Any> optional(name: String, type: ArgumentType<T>, description: String): Argument<T> = add(Argument(name, type, description, required = false))
 
     /** A subcommand: `/<this> <name>`, needing [permission] on top of this one's. */
-    public fun literal(
+    public inline fun literal(
         name: String,
         description: String,
         permission: Permission? = null,
         aliases: List<String> = emptyList(),
         block: CommandBuilder.() -> Unit,
     ) {
-        child(CommandBuilder(path + name, description, permission, aliases, builtIn).apply(block).build())
+        child(CommandBuilder(subpath(name), description, permission, aliases, inherited()).apply(block).build())
     }
+
+    @PublishedApi
+    internal fun subpath(name: String): List<String> = path + name
+
+    @PublishedApi
+    internal fun inherited(): Boolean = builtIn
 
     /** What it does. A command with subcommands may run something too, when it's typed without one. */
     public fun executes(handler: CommandHandler) {
@@ -124,12 +138,14 @@ public class CommandBuilder internal constructor(
         admin.declare(path).forEach(::child)
     }
 
+    @PublishedApi
     internal fun child(node: CommandNode) {
         require(arguments.isEmpty()) { "${where()}: a command takes arguments or has subcommands, not both" }
         checkSiblings(children, node, "a subcommand of ${where()}")
         children += node
     }
 
+    @PublishedApi
     internal fun build(): CommandNode {
         require(handler != null || children.isNotEmpty()) { "${where()} neither runs anything nor has subcommands" }
         require(hooks.isEmpty() || handler != null) { "${where()} has hooks but nothing they run around" }

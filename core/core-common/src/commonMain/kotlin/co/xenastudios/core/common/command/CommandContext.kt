@@ -49,22 +49,26 @@ internal class CommandFailure(val feedback: Component) : RuntimeException(feedba
 /**
  * How running a command went. Data, not text: the adapter shows it to the source in their
  * language through [CommandFeedback], so the same result reads right on every platform.
+ *
+ * A sealed interface, not a class: the JVM's verifier loads every subclass a method hands back
+ * as a superclass, but never for an interface, so a plugin doesn't load every result before a command runs as it starts
+ * (decisions/2026-11-25-a-lighter-core.md).
  */
-public sealed class CommandResult {
+public sealed interface CommandResult {
     /** It ran. */
-    public data object Ran : CommandResult()
+    public data object Ran : CommandResult
 
     /** No command of this plugin answers to the first word. */
-    public data object Unknown : CommandResult()
+    public data object Unknown : CommandResult
 
     /** The source lacks [permission], which the command (or one above it) needs. */
-    public data class NoPermission(public val permission: String) : CommandResult()
+    public data class NoPermission(public val permission: String) : CommandResult
 
     /** Only players can run it, and the source isn't one. */
-    public data object PlayersOnly : CommandResult()
+    public data object PlayersOnly : CommandResult
 
     /** What was typed doesn't fit the command: missing or extra words. [usage] is how to type it. */
-    public data class Usage(public val usage: String) : CommandResult()
+    public data class Usage(public val usage: String) : CommandResult
 
     /** [input], typed as [argument], can't be read, for the reason in [error]. */
     public data class InvalidArgument(
@@ -72,19 +76,19 @@ public sealed class CommandResult {
         public val input: String,
         public val error: ArgumentError,
         public val usage: String,
-    ) : CommandResult()
+    ) : CommandResult
 
     /** The source used it too recently; they can again in [remaining]. */
-    public data class OnCooldown(public val remaining: Duration) : CommandResult()
+    public data class OnCooldown(public val remaining: Duration) : CommandResult
 
     /** It needs confirming: running [line] again within [window] runs it. */
-    public data class ConfirmNeeded(public val line: String, public val window: Duration) : CommandResult()
+    public data class ConfirmNeeded(public val line: String, public val window: Duration) : CommandResult
 
     /** The handler stopped with [message] ([CommandContext.fail]). */
-    public data class Failed(public val message: Component) : CommandResult()
+    public data class Failed(public val message: Component) : CommandResult
 
     /** The handler threw [cause], which is logged; the source is told something went wrong. */
-    public class Error(public val cause: Throwable) : CommandResult() {
+    public class Error(public val cause: Throwable) : CommandResult {
         override fun toString(): String = "Error(${cause::class.simpleName}: ${cause.message})"
     }
 }

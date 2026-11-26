@@ -80,19 +80,7 @@ internal class Commands(private val plugin: XUtilitiesPlugin, private val platfo
 
         // Every label a root takes, for the link commands' clash check.
         val taken = HashSet<String>()
-
-        fun CommandTreeBuilder.add(name: String, description: String, permission: Permission?, aliases: List<String>, block: CommandBuilder.() -> Unit) {
-            if (name in taken) {
-                problems += "/$name is also another of xUtilities' commands' alias, so it's skipped. Remove that alias."
-                return
-            }
-            val distinct = aliases.filter { it != name }.distinct().filter { alias ->
-                (alias !in taken).also { free -> if (!free) problems += "commands.$name.aliases: /$alias is already another xUtilities command's, so it's left out." }
-            }
-            taken += name
-            taken += distinct
-            root(name, description, permission, distinct, block)
-        }
+        building = Building(problems, taken)
 
         // A command with a [player] form whose only work is [run].
         fun CommandTreeBuilder.simple(section: CommandSection, description: String, run: (CommandContext, PlayerRef) -> Unit) {
@@ -323,9 +311,36 @@ internal class Commands(private val plugin: XUtilitiesPlugin, private val platfo
                 }
             }
         }
+        building = null
         permissions = perms
         warnings = problems
         return tree
+    }
+
+    // What [tree] is building with, for [add]: a member, not a local function, so [add] can be
+    // inline and its blocks make no lambda classes (decisions/2026-11-25-a-lighter-core.md).
+    private class Building(val problems: MutableList<String>, val taken: MutableSet<String>)
+
+    private var building: Building? = null
+
+    // A root command, unless its name is taken; aliases another command has are left out.
+    private inline fun CommandTreeBuilder.add(name: String, description: String, permission: Permission?, aliases: List<String>, block: CommandBuilder.() -> Unit) {
+        val distinct = claim(name, aliases) ?: return
+        root(name, description, permission, distinct, block)
+    }
+
+    private fun claim(name: String, aliases: List<String>): List<String>? {
+        val b = building!!
+        if (name in b.taken) {
+            b.problems += "/$name is also another of xUtilities' commands' alias, so it's skipped. Remove that alias."
+            return null
+        }
+        val distinct = aliases.filter { it != name }.distinct().filter { alias ->
+            (alias !in b.taken).also { free -> if (!free) b.problems += "commands.$name.aliases: /$alias is already another xUtilities command's, so it's left out." }
+        }
+        b.taken += name
+        b.taken += distinct
+        return distinct
     }
 
     private fun info(ctx: CommandContext) {

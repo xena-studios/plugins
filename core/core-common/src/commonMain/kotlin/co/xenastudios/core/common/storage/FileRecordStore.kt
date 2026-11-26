@@ -66,7 +66,7 @@ public class FileRecordStore<K, V> private constructor(
         Outcome.Err(DbError(DbError.Kind.CORRUPT, "$path: ${e.message}"))
     }
 
-    private fun change(apply: () -> Unit): Pending<Outcome<Unit, DbError>> {
+    private inline fun change(apply: () -> Unit): Pending<Outcome<Unit, DbError>> {
         val done = newPending<Outcome<Unit, DbError>>()
         val schedule = locked(lock) {
             apply()

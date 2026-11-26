@@ -4,22 +4,26 @@ package co.xenastudios.core.common.db
  * One value bound to a statement or read from a row: the five kinds SQLite stores, which every
  * database here can hold. A [ColumnType] turns a Kotlin value into one and back, so nothing else
  * needs to know how a type is stored.
+ *
+ * A sealed interface, not a class: the JVM's verifier loads every subclass a method hands back
+ * as a superclass, but never for an interface, so a plugin doesn't load every kind of value before one is read as it starts
+ * (decisions/2026-11-25-a-lighter-core.md).
  */
-public sealed class SqlValue {
+public sealed interface SqlValue {
     /** SQL's `NULL`. */
-    public data object Null : SqlValue()
+    public data object Null : SqlValue
 
     /** A whole number: integers, longs, booleans as 0 and 1. */
-    public data class Integer(public val value: Long) : SqlValue()
+    public data class Integer(public val value: Long) : SqlValue
 
     /** A floating-point number. */
-    public data class Real(public val value: Double) : SqlValue()
+    public data class Real(public val value: Double) : SqlValue
 
     /** Text. */
-    public data class Text(public val value: String) : SqlValue()
+    public data class Text(public val value: String) : SqlValue
 
     /** Bytes, such as a UUID's sixteen. */
-    public class Bytes(value: ByteArray) : SqlValue() {
+    public class Bytes(value: ByteArray) : SqlValue {
         private val bytes = value.copyOf()
 
         /** A copy of the bytes. */

@@ -131,18 +131,21 @@ public class ZChatPlugin(
     @Volatile
     private var problems: List<String> = emptyList()
 
-    private val playerData = PlayerDataRegistry(lookup).apply { register("settings", settings) }
-
     /** `/zchat reload`, `/zchat debug` and `/zchat forget`. */
     public val admin: AdminCommands = AdminCommands(
         PLUGIN_ID, NAME, platform,
         ModuleReloader(modules, reloadFiles = ::reload, wanted = ::wanted),
-        debug = Debug(
-            platform, "$NAME $version",
-            listOf(HealthChecks.threading(platform), HealthChecks.modules(modules), HealthChecks.config { problems }),
-            about = about, errors = log, paste = paste,
-        ),
-        playerData = playerData,
+        // Objects, not lambdas, so neither class loads until the command runs (AdminCommands).
+        debug = object : () -> Debug {
+            override fun invoke() = Debug(
+                platform, "$NAME $version",
+                listOf(HealthChecks.threading(platform), HealthChecks.modules(modules), HealthChecks.config { problems }),
+                about = about, errors = log, paste = paste,
+            )
+        },
+        playerData = object : () -> PlayerDataRegistry {
+            override fun invoke() = PlayerDataRegistry(lookup).apply { register("settings", settings) }
+        },
         text = texts.admin,
     )
 

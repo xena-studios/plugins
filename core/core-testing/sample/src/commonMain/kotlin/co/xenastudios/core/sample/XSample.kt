@@ -170,13 +170,17 @@ public class XSample(
     public val admin: AdminCommands = AdminCommands(
         "xsample", "xSample", platform,
         ModuleReloader(modules, reloadFiles = ::reloadFiles, wanted = ::wantedModules),
-        debug = Debug(
-            platform, "xSample 1.0.0",
-            listOf(HealthChecks.threading(platform), HealthChecks.modules(modules)) + listOfNotNull(dependencies?.let(HealthChecks::dependencies)),
-            about = about,
-        ),
+        debug = object : () -> Debug {
+            override fun invoke() = Debug(
+                platform, "xSample 1.0.0",
+                listOf(HealthChecks.threading(platform), HealthChecks.modules(modules)) + listOfNotNull(dependencies?.let(HealthChecks::dependencies)),
+                about = about,
+            )
+        },
         imports = if (importers.isEmpty()) null else Imports(platform, importers),
-        playerData = playerData,
+        playerData = object : () -> PlayerDataRegistry {
+            override fun invoke() = playerData
+        },
         text = adminText,
     )
 

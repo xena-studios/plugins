@@ -232,7 +232,11 @@ public class JdbcDatabase internal constructor(
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
             }
-            openReaders.toList().forEach { it.close() }
+            // A copy through toTypedArray, which a concurrent set makes safely: toList() asks the
+            // size, then the iterator, so a reader closing itself between the two (its thread
+            // ending as the pool shuts down) made it throw, the writer thread died, and close()
+            // never answered.
+            openReaders.toTypedArray().forEach { it.close() }
             connection?.let { session ->
                 try {
                     session.execute(sql.delete(Migrations.Meta, Migrations.Meta.key eq marker))

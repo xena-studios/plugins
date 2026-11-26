@@ -1,0 +1,411 @@
+# xTeleport: every teleport your server needs.
+# Docs: https://plugins.xenastudios.co/xteleport/configuration/
+#
+# Apply changes with /xteleport reload (or /xtp reload). Everything applies except
+# storage, even turning commands on or off. A bad value falls back to its default with
+# a warning in the console; xTeleport never stops over config. All text is MiniMessage:
+# https://plugins.xenastudios.co/start/formatting/
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# The look xTeleport's messages share. The default messages use these as tags, so changing
+# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
+# <#CE41E3>, or <gold><bold>.
+theme:
+  # <prefix> starts the default messages. Make it your server's name, such as
+  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+  prefix: "<#CE41E3>»</#CE41E3> "
+  # The colour of message text that has no tag of its own.
+  base: "<gray>"
+  # <highlight>: names and values, such as a player or a speed.
+  highlight: "<gold>"
+  # <success>: something turned on or done.
+  success: "<#5EE08A>"
+  # <error>: something refused or turned off.
+  error: "<#FF6B6B>"
+
+# What players are told.
+messages:
+  error:
+    # The console or a command block ran a command only players can use.
+    player-only: "<prefix><error>Only players can use this command."
+    # The sender lacks the command's permission.
+    no-permission: "<red>Nope."
+    # No online player has that name. <player> is the name typed.
+    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
+    # The command was typed wrong. <usage> is how to type it.
+    usage: "<prefix><error>Usage:</error> <usage>"
+    # The command hit an error. The console has the details.
+    failed: "<prefix><error>Something went wrong. The console has the details."
+
+  # Shared by every teleport.
+  teleport:
+    # <seconds> to stand still.
+    warmup: "<prefix>Teleporting in <highlight><seconds>s</highlight>. Don't move."
+    # On the action bar each second of the warmup. Blank for none.
+    countdown: "Teleporting in <highlight><seconds></highlight>..."
+    moved-cancelled: "<prefix><error>Teleport cancelled: you moved."
+    damage-cancelled: "<prefix><error>Teleport cancelled: you took damage."
+    # <time> until it can be used again.
+    cooldown: "<prefix><error>You can do that again in <highlight><time></highlight>."
+    # <cost> is what it costs.
+    cant-afford: "<prefix><error>That costs <highlight><cost></highlight>, which you don't have."
+    # After paying. <cost>.
+    paid: "<prefix>Paid <highlight><cost></highlight>."
+    # The teleport failed after paying. <cost>.
+    refunded: "<prefix>The teleport didn't happen, so you got back <highlight><cost></highlight>."
+    # The spot is in lava, inside blocks or over the void now.
+    unsafe: "<prefix><error>That spot isn't safe right now (lava, blocks or the void), so you stayed here."
+    # <world> isn't loaded.
+    world-missing: "<prefix><error>That spot is in <highlight><world></highlight>, which isn't loaded."
+    # The server refused the teleport, or the player left.
+    failed: "<prefix><error>The teleport didn't work. Try again."
+    # Teleports cost money, but Vault or an economy plugin is missing. The console says which.
+    no-economy: "<prefix><error>Teleports cost money here, but the economy isn't working. Tell staff."
+    # The database isn't open yet, or couldn't be opened. The console says why.
+    unavailable: "<prefix><error>Teleports aren't available right now. Try again in a moment."
+    # A home, warp, the spawn or /tptoggle couldn't be saved, so nothing changed. The
+    # console says why.
+    not-saved: "<prefix><error>Couldn't save that, so nothing changed. Try again in a moment."
+  homes:
+    # <home> is its name.
+    set: "<gold>Home <yellow><home></yellow> saved!"
+    moved: "<prefix><success>Moved home</success> <highlight><home></highlight> here."
+    deleted: "<prefix>Deleted home <highlight><home></highlight>."
+    teleported: "<prefix>Welcome to <highlight><home></highlight>."
+    not-found: "<prefix><error>You have no home called <highlight><home></highlight>. See <highlight>/homes</highlight>."
+    # <limit> is how many the player may have.
+    limit-reached: "<prefix><error>You can have <highlight><limit></highlight> homes. Delete one, or set one again to move it."
+    bad-name: "<prefix><error>A home's name is 1 to 32 letters, digits, - or _."
+    # Naming a home after bed-name, while bed-home is on.
+    reserved-name: "<prefix><error><highlight><home></highlight> is your bed's name. Pick another."
+    no-bed: "<prefix><error>You have no bed or respawn anchor to go to."
+    no-homes: "<prefix>You have no homes yet. Set one with <highlight>/sethome</highlight>."
+    # /homes, before the list. <count> and <limit>.
+    header: "<prefix>Your homes (<count>/<limit>):"
+    # One line per home. <home>, <world>, <x> <y> <z>, and <command>: the /home command
+    # for it, to click.
+    entry: " <click:run_command:'<command>'><hover:show_text:'<world> <x> <y> <z>'><highlight><home></highlight></hover></click> <dark_gray><world></dark_gray>"
+    # Under the list when it has more pages.
+    footer: " <gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>"
+    # Staff using another player's homes. <player> is whose.
+    header-others: "<prefix><highlight><player></highlight>'s homes (<count>):"
+    not-found-others: "<prefix><error><highlight><player></highlight> has no home called <highlight><home></highlight>."
+    no-homes-others: "<prefix><highlight><player></highlight> has no homes."
+    deleted-others: "<prefix>Deleted <highlight><player></highlight>'s home <highlight><home></highlight>."
+    # <player> has never joined this server.
+    never-joined: "<prefix><error><highlight><player></highlight> has never played here."
+  tpa:
+    # To whoever asked. <player> is who was asked, <seconds> how long it lasts.
+    sent: "<prefix>Asked <highlight><player></highlight> if you can teleport to them. It lasts <seconds>s."
+    sent-here: "<prefix>Asked <highlight><player></highlight> to teleport to you. It lasts <seconds>s."
+    # To whoever was asked. <player> asked; <accept> and <deny> are the commands to
+    # answer, to click.
+    received: "<prefix><highlight><player></highlight> wants to teleport to you. <click:run_command:'<accept>'><hover:show_text:'<accept>'><success>[Accept]</success></hover></click> <click:run_command:'<deny>'><hover:show_text:'<deny>'><error>[Deny]</error></hover></click>"
+    received-here: "<prefix><highlight><player></highlight> wants you to teleport to them. <click:run_command:'<accept>'><hover:show_text:'<accept>'><success>[Accept]</success></hover></click> <click:run_command:'<deny>'><hover:show_text:'<deny>'><error>[Deny]</error></hover></click>"
+    # To whoever asked.
+    accepted: "<prefix><highlight><player></highlight> <success>accepted</success> your request."
+    # To whoever accepted.
+    you-accepted: "<prefix><success>Accepted</success> <highlight><player></highlight>'s request."
+    # To whoever accepted, when whoever pays is on a cooldown or can't afford it (they're
+    # told which). The request stays, to accept again later. <player> asked.
+    not-ready: "<prefix><error><highlight><player></highlight> can't make that teleport yet. The request is still there."
+    denied: "<prefix><highlight><player></highlight> <error>denied</error> your request."
+    you-denied: "<prefix>Denied <highlight><player></highlight>'s request."
+    # To whoever was asked, when the request is taken back.
+    cancelled: "<prefix><highlight><player></highlight> took back their request."
+    # <count> requests taken back.
+    you-cancelled: "<prefix>Took back <highlight><count></highlight> request(s)."
+    no-requests: "<prefix><error>You have no teleport requests."
+    # <player> sent no request, or it ran out.
+    no-request-from: "<prefix><error><highlight><player></highlight> hasn't asked you anything, or it ran out."
+    nothing-to-cancel: "<prefix><error>You have no requests to take back."
+    not-yourself: "<prefix><error>You can't ask yourself."
+    not-taking: "<prefix><error><highlight><player></highlight> isn't taking teleport requests."
+    # Asking again while the last request to <player> is still waiting.
+    already-asked: "<prefix><error>You already asked <highlight><player></highlight>. Wait for an answer, or take it back with <highlight>/tpacancel</highlight>."
+    toggled-off: "<prefix>You won't get teleport requests now. <highlight>/tptoggle</highlight> turns them back on."
+    toggled-on: "<prefix>You'll get teleport requests again."
+    # After arriving. <player> is who they went to.
+    teleported: "<prefix>Teleported to <highlight><player></highlight>."
+  warps:
+    # <warp> is its name.
+    set: "<prefix><success>Set warp</success> <highlight><warp></highlight>."
+    moved: "<prefix><success>Moved warp</success> <highlight><warp></highlight> here."
+    deleted: "<prefix>Deleted warp <highlight><warp></highlight>."
+    teleported: "<prefix>Welcome to <highlight><warp></highlight>."
+    not-found: "<prefix><error>There's no warp called <highlight><warp></highlight>. See <highlight>/warps</highlight>."
+    bad-name: "<prefix><error>A warp's name is 1 to 32 letters, digits, - or _."
+    no-warps: "<prefix>There are no warps yet."
+    # /warps, before the list. <count>.
+    header: "<prefix>Warps (<count>):"
+    # One line per warp. <warp>, <world>, <x> <y> <z>, and <command> to click.
+    entry: " <click:run_command:'<command>'><hover:show_text:'<command>'><highlight><warp></highlight></hover></click> <dark_gray><world></dark_gray>"
+    footer: " <gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>"
+  spawn:
+    set: "<prefix><success>Set the spawn</success> here."
+    teleported: "<prefix>Welcome to spawn."
+  rtp:
+    searching: "<prefix>Looking for a safe spot..."
+    # After arriving. <world>, <x> <y> <z>.
+    teleported: "<prefix>Teleported to <highlight><x> <y> <z></highlight> in <world>."
+    not-found: "<prefix><error>Couldn't find a safe spot this time. Try again."
+    # Too many searches running at once.
+    busy: "<prefix><error>Lots of players are looking for a spot. Try again in a few seconds."
+    already-searching: "<prefix><error>Still looking for your spot."
+    # <world> isn't one /rtp may send the player to.
+    world-not-allowed: "<prefix><error>/rtp can't send you to <highlight><world></highlight>."
+
+# Every command has the same settings:
+#   enabled            false removes the command entirely, so another plugin can have its name
+#   aliases            other names for it
+#   permission         needed to use it; blank ("") lets anyone
+#   permission-others  needed to use it on another player's homes
+# Commands that teleport also have:
+#   cooldown           seconds before it can be used again; xteleport.cooldown.bypass skips it
+#   cost               what each teleport costs, through Vault; xteleport.cost.bypass skips it.
+#                      Taken once the warmup is over, and given back if the teleport fails.
+commands:
+
+  # /sethome [name]: sets a home where you stand. Setting one again moves it.
+  sethome:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.sethome"
+
+  # /home [name]: with one home, or one called home, the name can be left out.
+  home:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.home"
+    permission-others: "xteleport.homes.others"
+    cooldown: 0
+    cost: 0
+
+  # /delhome <name>
+  delhome:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.delhome"
+    permission-others: "xteleport.homes.others"
+
+  # /homes [page]: a list to click. Staff with permission-others: /homes <player>.
+  homes:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.homes"
+    permission-others: "xteleport.homes.others"
+
+  # /tpa <player>: ask to teleport to someone. The cost is paid by whoever asked.
+  tpa:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.tpa"
+    cooldown: 0
+    cost: 0
+
+  # /tpahere <player>: ask someone to teleport to you.
+  tpahere:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.tpahere"
+    cooldown: 0
+    cost: 0
+
+  # /tpaccept [player]: the newest request, or the one from that player.
+  tpaccept:
+    enabled: true
+    aliases: ["tpyes", "tpok"]
+    permission: "xteleport.command.tpaccept"
+  tpdeny:
+    enabled: true
+    aliases: ["tpno"]
+    permission: "xteleport.command.tpdeny"
+
+  # /tpacancel [player]: takes back requests you sent.
+  tpacancel:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.tpacancel"
+
+  # /tptoggle: stop or start getting requests.
+  tptoggle:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.tptoggle"
+  setwarp:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.setwarp"
+
+  # /warp [name]: without a name, lists the warps.
+  warp:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.warp"
+    cooldown: 0
+    cost: 0
+  delwarp:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.delwarp"
+  warps:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.warps"
+  setspawn:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.setspawn"
+  spawn:
+    enabled: true
+    aliases: []
+    permission: "xteleport.command.spawn"
+    cooldown: 0
+    cost: 0
+
+  # /rtp [world]
+  rtp:
+    enabled: true
+    aliases: ["wild"]
+    permission: "xteleport.command.rtp"
+    cooldown: 120
+    cost: 25.5
+
+# How every teleport behaves.
+teleports:
+  # Seconds to stand still before teleporting. 0 teleports at once. xteleport.warmup.bypass skips it.
+  warmup: 5
+  # Whether taking damage during the warmup cancels it, as moving does.
+  cancel-on-damage: true
+  # Refuse to send players somewhere that is now in lava, inside blocks, over the void,
+  # high in the air or outside the world border, with a message instead of a death:
+  # homes, warps, the spawn, and the player a TPA goes to. The spot's chunk is loaded
+  # in the background to check, never on the server's thread.
+  check-safe: true
+  # With check-safe, the most blocks a player may fall on arriving. Falls of 3 or less
+  # don't hurt. Water below is safe from any height.
+  max-fall: 3
+
+homes:
+  # How many homes a player may have. A player with xteleport.homes.<n> may have <n>
+  # instead, and xteleport.homes.unlimited any number; the highest wins.
+  default-limit: 3
+
+  # More limits, by permission. A blank permission means group.<name>, which LuckPerms
+  # gives every member of that group, so vip: below works for a LuckPerms group called vip.
+  limits:
+    vip:
+      permission: ""
+      homes: 5
+    mvp:
+      permission: "ranks.mvp"
+      homes: 12
+  # The home /sethome sets, and /home goes to, when no name is given.
+  default-name: "home"
+  # Let players go to their bed or respawn anchor with /home <bed-name>. It doesn't count
+  # towards their limit, and shows first in /homes.
+  bed-home: true
+  bed-name: "bed"
+  # Homes per page in /homes.
+  per-page: 10
+
+tpa:
+  # Seconds before a request runs out.
+  expire-after: 60
+
+warps:
+  # Each warp needs xteleport.warp.<name> (operators have them all). /warps only lists
+  # the ones a player may use.
+  per-warp-permission: false
+  # Warps per page in /warps.
+  per-page: 10
+
+spawn:
+  # Send players who join for the first time to the spawn set with /setspawn.
+  on-first-join: true
+  # Send every player there each time they join.
+  on-every-join: false
+  # Send players there when they die without a bed or respawn anchor.
+  on-respawn: true
+
+# /rtp: a random safe spot.
+rtp:
+  # Where /rtp sends players who don't name a world. Blank means the world they're in, if
+  # /rtp may send them there.
+  default-world: ""
+  # Spots tried before giving up. Each loads one chunk in the background.
+  attempts: 10
+  # Seconds before a player can start another search, whether it found a spot or not,
+  # so nobody can keep the server busy generating chunks. The cooldown under
+  # commands.rtp is the longer wait, after arriving. xteleport.cooldown.bypass skips both.
+  search-cooldown: 30
+  # How many /rtp searches may run at once, server-wide. Anyone over it is told to try
+  # again in a few seconds, so a crowd typing /rtp can't slow the server.
+  max-searches: 3
+  # Only pick chunks that already exist, so /rtp never makes the server generate terrain.
+  # Best for worlds pre-generated with a plugin such as Chunky.
+  only-generated: false
+  # Biomes /rtp never picks, as Minecraft names them.
+  blocked-biomes: ["ocean", "deep_ocean", "warm_ocean", "lukewarm_ocean", "deep_lukewarm_ocean", "cold_ocean", "deep_cold_ocean", "frozen_ocean", "deep_frozen_ocean"]
+
+  # The worlds /rtp may send players to, by name, and where. A world that isn't listed
+  # can't be picked. The Nether is searched below its roof, and the End off its main
+  # island unless allow-main-island is true.
+  worlds:
+    world:
+      enabled: true
+      permission: ""
+      center-on-spawn: true
+      center-x: 0
+      center-z: 0
+      min-radius: 300
+      max-radius: 5000
+      allow-main-island: false
+    world_nether:
+      enabled: true
+      permission: ""
+      center-on-spawn: true
+      center-x: 0
+      center-z: 0
+      min-radius: 100
+      max-radius: 1000
+      allow-main-island: false
+    world_the_end:
+      enabled: false
+      permission: ""
+      center-on-spawn: false
+      center-x: 0
+      center-z: 0
+      min-radius: 1100
+      max-radius: 4000
+      allow-main-island: false
+
+# Where homes and warps are kept. sqlite needs nothing set up. A change here applies on
+# restart: homes aren't copied across.
+storage:
+  # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
+  # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  type: "sqlite"
+  # Put in front of every table's name, so plugins and servers can share one database.
+  table-prefix: "xteleport_"
+
+  # Only for type: mysql.
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "minecraft"
+    username: "minecraft"
+    password: ""
+    # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
+    properties: ""
+
+# Tells you when a new version is out.
+update-checker:
+  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
+  # only the plugin version, the platform and the Minecraft version.
+  enabled: false
+  # Logged, and shown to admins when they join, when a newer version is out.
+  # <plugin>, <current>, <latest> and <url> are filled in.
+  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"

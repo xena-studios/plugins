@@ -30,6 +30,7 @@ import co.xenastudios.core.common.platform.SystemClock
 import co.xenastudios.core.common.platform.Threading
 import co.xenastudios.core.common.proxy.ProxyChannel
 import co.xenastudios.core.common.scheduler.Scheduler
+import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.jvm.platform.FolderStorage
 import org.bukkit.plugin.Plugin
 
@@ -165,11 +166,15 @@ public class BukkitPlatform private constructor(
      * Bukkit only: bStats has no Fabric platform. The plugin's jar carries bstats-bukkit,
      * relocated into its own package; owners turn bStats off for every plugin at once in
      * `plugins/bStats/config.yml`, which bStats reads itself. Never with `-Dxena.offline=true`.
-     * [close] shuts it down.
+     * It starts on the next tick, after the server's startup (bStats first sends after minutes,
+     * and reading its config and loading its classes would add to the plugin's startup); [close]
+     * shuts it down, or stops it from starting.
      */
     public fun metrics(serviceId: Int) {
         bStats?.close()
-        bStats = BukkitUpdates.metrics(this, serviceId)
+        val metrics = BukkitUpdates.Metrics(this, serviceId)
+        bStats = metrics
+        metrics.task = scheduler.run(Where.Global, action = metrics)
     }
 
     private val channels = ArrayList<ProxyChannel>()

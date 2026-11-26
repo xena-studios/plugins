@@ -98,4 +98,24 @@ class ProxySecretTest {
         assertNull(ProxySecret.paper(yml, JvmYaml))
         assertNull(ProxySecret.paper(folder.resolve("missing.yml"), JvmYaml))
     }
+
+    @Test
+    fun papersSecretIsReadFromItsProxiesBlockAlone() {
+        val yml = folder.resolve("paper-global.yml")
+        // As Paper writes it: sections before and after, comments, a blank line inside the block.
+        yml.writeText(
+            "_version: 31\nchunk-loading-basic:\n  autoconfig-send-distance: true\n# a comment\nproxies:\n" +
+                "  bungee-cord:\n    online-mode: true\n\n  velocity:\n    enabled: true\n" +
+                "# between\n    secret: 'Velocity-made1'\nscoreboards:\n  save-empty-scoreboard-teams: true\n",
+        )
+        assertNotNull(ProxySecret.paper(yml, JvmYaml))
+        assertEquals(
+            "proxies:\n  bungee-cord:\n    online-mode: true\n\n  velocity:\n    enabled: true\n# between\n    secret: 'Velocity-made1'",
+            ProxySecret.proxiesBlock(yml.readText()),
+        )
+        // No `proxies:` line of its own: the whole file is read.
+        assertNull(ProxySecret.proxiesBlock("{proxies: {velocity: {enabled: true, secret: Velocity-made1}}}"))
+        yml.writeText("{proxies: {velocity: {enabled: true, secret: Velocity-made1}}}")
+        assertNotNull(ProxySecret.paper(yml, JvmYaml))
+    }
 }

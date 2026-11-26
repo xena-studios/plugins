@@ -9,7 +9,7 @@ import co.xenastudios.core.common.i18n.Translations
 import co.xenastudios.core.common.platform.Log
 import co.xenastudios.core.jvm.config.CarriedMessages
 import co.xenastudios.core.jvm.config.ConfigFile
-import co.xenastudios.core.jvm.config.JvmYaml
+import co.xenastudios.core.jvm.config.RememberingYaml
 import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.xutilities.config.Legacy
 import co.xenastudios.xutilities.config.LinkCommand
@@ -34,7 +34,11 @@ public class JvmFiles(
     private val shipped: Map<LanguageTag, String>,
     private val log: Log,
 ) : Files {
-    private val file = ConfigFile(XUtilitiesConfig, folder.resolve("config.yml"))
+    // config.yml is read three ways as the plugin enables (for 2.x's messages, against the
+    // schema, for the link commands), on the server thread: one parse of the same text does.
+    private val yaml = RememberingYaml()
+
+    private val file = ConfigFile(XUtilitiesConfig, folder.resolve("config.yml"), yaml)
 
     @Volatile
     private var last: Config? = null
@@ -65,6 +69,7 @@ public class JvmFiles(
         }
         last = config
         problems += LinkCommand.problems(read()?.let { (it as? YamlNode.Mapping)?.get("info-commands") })
+        yaml.forget()
         return Loaded(config, Translations.of(XUtilitiesMessages.catalog, emptyMap()), problems)
     }
 
@@ -104,8 +109,9 @@ public class JvmFiles(
         } catch (e: Exception) {
             return null
         }
-        return (JvmYaml.read(text) as? Outcome.Ok)?.value
+        return (yaml.read(text) as? Outcome.Ok)?.value
     }
+
 
     public companion object {
         /** The languages the jar ships besides English: drafts until native speakers have read them. */

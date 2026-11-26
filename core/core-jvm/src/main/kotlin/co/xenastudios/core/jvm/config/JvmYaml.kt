@@ -77,3 +77,32 @@ public object JvmYaml : YamlReader {
         }
     }
 }
+
+/**
+ * [JvmYaml], keeping the last text it read and what that read as, so code that reads the same
+ * file several ways (a plugin's `config.yml`: an old version's messages, the schema, a section
+ * the schema leaves free) parses it once. The nodes are immutable; a text that changed between
+ * two reads is read again. Give one to a [ConfigFile], read the file's other ways through it,
+ * and [forget] once done, so the tree isn't kept between loads.
+ */
+public class RememberingYaml : YamlReader {
+    private var text: String? = null
+    private var read: Outcome<YamlNode, YamlSyntaxError>? = null
+
+    @Synchronized
+    override fun read(text: String): Outcome<YamlNode, YamlSyntaxError> {
+        val last = read
+        if (last != null && text == this.text) return last
+        return JvmYaml.read(text).also {
+            this.text = text
+            read = it
+        }
+    }
+
+    /** Lets go of the last text and its nodes. */
+    @Synchronized
+    public fun forget() {
+        text = null
+        read = null
+    }
+}

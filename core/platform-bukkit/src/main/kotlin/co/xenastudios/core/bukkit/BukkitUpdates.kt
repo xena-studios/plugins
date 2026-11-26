@@ -5,6 +5,7 @@ import co.xenastudios.core.api.toPlayerRef
 import co.xenastudios.core.common.i18n.MessageKey
 import co.xenastudios.core.common.i18n.Translations
 import co.xenastudios.core.common.text.Placeholder
+import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.update.UpdateChecker
 import co.xenastudios.core.common.update.UpdateNotices
 import co.xenastudios.core.common.update.UpdateSettings
@@ -86,6 +87,30 @@ internal object BukkitUpdates {
             // Its own check that it was relocated.
             platform.log.warn("bStats didn't start: ${e.message}", e)
             null
+        }
+    }
+
+    /**
+     * bStats for [platform]'s plugin, started on the task it's given to ([BukkitPlatform.metrics]):
+     * closed before then, it never starts. The task itself, not a lambda, so it's one class.
+     */
+    class Metrics(private val platform: BukkitPlatform, private val serviceId: Int) : AutoCloseable, (Task) -> Unit {
+        @Volatile
+        var task: Task? = null
+        private var closed = false
+        private var started: AutoCloseable? = null
+
+        @Synchronized
+        override fun invoke(task: Task) {
+            if (!closed) started = metrics(platform, serviceId)
+        }
+
+        @Synchronized
+        override fun close() {
+            closed = true
+            task?.cancel()
+            started?.close()
+            started = null
         }
     }
 

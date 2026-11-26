@@ -171,8 +171,19 @@ public class BukkitCommands internal constructor(
     internal companion object {
         /** The registrar on [server]'s command map, or why it can't be reached. */
         fun create(plugin: Plugin, server: Server, text: BukkitText, log: Log, refreshes: Boolean): BukkitCommands {
-            val map = server.javaClass.getMethod("getCommandMap").invoke(server) as CommandMap
+            val map = commandMap(server)
             return BukkitCommands(plugin, text, log, map, knownCommands(map), if (refreshes) refresher(server) else null)
+        }
+
+        // Paper has Server.getCommandMap(); Spigot only CraftServer's own, found on its class,
+        // whose thousand-odd methods take a while to look through.
+        private fun commandMap(server: Server): CommandMap {
+            val method = try {
+                Server::class.java.getMethod("getCommandMap")
+            } catch (e: NoSuchMethodException) {
+                server.javaClass.getMethod("getCommandMap")
+            }
+            return method.invoke(server) as CommandMap
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -186,9 +197,28 @@ public class BukkitCommands internal constructor(
         }
 
         // CraftServer.syncCommands(), 1.13 on: rebuilds the tree clients are sent, and sends it.
-        private fun refresher(server: Server): (() -> Unit)? {
-            val sync: Method = server.javaClass.methods.firstOrNull { it.name == "syncCommands" && it.parameterTypes.isEmpty() } ?: return null
-            return { sync.invoke(server) }
+        private fun refresher(server: Server): () -> Unit = Refresher(server)
+    }
+}
+
+/**
+ * `syncCommands()` on [server], looked up the first time it's needed, a reload's: at startup the
+ * server sends the commands itself, and CraftServer's thousand-odd methods take a while to look
+ * through. A server without it sends the new commands as players rejoin.
+ */
+private class Refresher(private val server: Server) : () -> Unit {
+    private var sync: Method? = null
+    private var missing = false
+
+    @Synchronized
+    override fun invoke() {
+        if (missing) return
+        val method = sync ?: try {
+            server.javaClass.getMethod("syncCommands").also { sync = it }
+        } catch (e: NoSuchMethodException) {
+            missing = true
+            return
         }
+        method.invoke(server)
     }
 }

@@ -94,11 +94,14 @@ public class XUtilitiesPlugin(
     public val admin: AdminCommands = AdminCommands(
         PLUGIN_ID, NAME, platform,
         ModuleReloader(modules, reloadFiles = ::reload, wanted = ::wanted),
-        debug = Debug(
-            platform, "$NAME $version",
-            listOf(HealthChecks.threading(platform), HealthChecks.modules(modules), HealthChecks.config { problems }),
-            about = about, errors = log, paste = paste,
-        ),
+        // An object, not a lambda, so Debug doesn't load until the command runs (AdminCommands).
+        debug = object : () -> Debug {
+            override fun invoke() = Debug(
+                platform, "$NAME $version",
+                listOf(HealthChecks.threading(platform), HealthChecks.modules(modules), HealthChecks.config { problems }),
+                about = about, errors = log, paste = paste,
+            )
+        },
         text = texts.admin,
     )
 

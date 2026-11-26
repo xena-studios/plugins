@@ -9,7 +9,9 @@ import co.xenastudios.core.common.config.YamlSyntaxError
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.time.Duration.Companion.minutes
 
 /** The JVM's YAML reader reads what the config system writes, and what owners write by hand. */
@@ -103,4 +105,21 @@ class JvmYamlTest {
         assertIs<Outcome.Err<YamlSyntaxError>>(JvmYaml.read("[".repeat(100_000)))
         assertIs<Outcome.Err<*>>(Configs.load(ShopConfig, "a: " + "[".repeat(100_000), JvmYaml))
     }
+
+    @Test
+    fun rememberingYamlReadsTheSameTextOnce() {
+        val yaml = RememberingYaml()
+        val first = yaml.read("a: 1\n")
+        assertSame(first, yaml.read("a: 1\n"))
+        val changed = yaml.read("a: 2\n")
+        assertEquals(YamlNode.Mapping(listOf(YamlNode.Mapping.Entry("a", YamlNode.Scalar("2")))), assertIs<Outcome.Ok<YamlNode>>(changed).value)
+        yaml.forget()
+        val again = yaml.read("a: 2\n")
+        assertNotSame(changed, again)
+        assertEquals(changed, again)
+        // Not valid YAML is remembered too, and still an error.
+        assertIs<Outcome.Err<YamlSyntaxError>>(yaml.read("a: [\n"))
+        assertIs<Outcome.Err<YamlSyntaxError>>(yaml.read("a: [\n"))
+    }
 }
+

@@ -9,7 +9,7 @@ import co.xenastudios.core.common.i18n.Translations
 import co.xenastudios.core.common.platform.Log
 import co.xenastudios.core.jvm.config.CarriedMessages
 import co.xenastudios.core.jvm.config.ConfigFile
-import co.xenastudios.core.jvm.config.JvmYaml
+import co.xenastudios.core.jvm.config.RememberingYaml
 import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.zchat.config.Group
 import co.xenastudios.zchat.config.Legacy
@@ -36,7 +36,10 @@ public class JvmFiles(
     private val log: Log,
 ) : Files {
     private val path = folder.resolve("config.yml")
-    private val file = ConfigFile(ZChatConfig, path)
+    // config.yml is read four ways as the plugin enables (zChat 1.x's, 2.x's and 3.x's messages,
+    // against the schema, for the groups), on the server thread: one parse of the same text does.
+    private val yaml = RememberingYaml()
+    private val file = ConfigFile(ZChatConfig, path, yaml)
 
     @Volatile
     private var last: Config? = null
@@ -68,6 +71,7 @@ public class JvmFiles(
         }
         last = config
         problems += Group.problems((read() as? YamlNode.Mapping)?.let { (it["formatting"] as? YamlNode.Mapping)?.get("groups") })
+        yaml.forget()
         return Loaded(config, Translations.of(ZChatMessages.catalog, emptyMap()), problems)
     }
 
@@ -133,7 +137,7 @@ public class JvmFiles(
         } catch (e: Exception) {
             return null
         }
-        return (JvmYaml.read(text) as? Outcome.Ok)?.value
+        return (yaml.read(text) as? Outcome.Ok)?.value
     }
 
     public companion object {

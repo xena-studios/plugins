@@ -59,7 +59,7 @@ class AdminCommandsTest {
         "xtest", "xTest", platform,
         ModuleReloader(modules, reloadFiles = { reloads++; fileProblems }, wanted = { wanted }),
         imports = imports,
-        playerData = playerData,
+        playerData = { playerData },
     )
     private val tree = commands {
         root("xtest", "xTest's commands.") { mount(admin) }

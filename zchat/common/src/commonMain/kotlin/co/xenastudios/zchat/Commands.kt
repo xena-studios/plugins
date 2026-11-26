@@ -76,24 +76,8 @@ internal class Commands(private val plugin: ZChatPlugin) {
         // Groups are given out on purpose, so operators don't all get the admin format.
         for ((name, group) in config[f.groups]) perms.of(group.permission(name), "Chat in the $name format.", PermissionDefault.NOBODY)
 
-        fun permission(section: CommandSettings, default: PermissionDefault = PermissionDefault.OP): Permission? =
-            perms.of(config[section.permission], "Use /${section.command}.", default)
-
         val taken = HashSet<String>()
-        fun CommandTreeBuilder.add(section: CommandSettings, description: String, default: PermissionDefault, block: CommandBuilder.() -> Unit) {
-            if (!config[section.enabled]) return
-            val name = section.command
-            if (name in taken) {
-                problems += "/$name is also another of zChat's commands' alias, so it's skipped. Remove that alias."
-                return
-            }
-            val aliases = config[section.aliases].filter { it != name }.distinct().filter { alias ->
-                (alias !in taken).also { free -> if (!free) problems += "${section.path}.aliases: /$alias is already another zChat command's, so it's left out." }
-            }
-            taken += name
-            taken += aliases
-            root(name, description, permission(section, default), aliases, block)
-        }
+        building = Building(config, perms, problems, taken)
 
         val pm = ZChatConfig.privateMessages
         val tree = commands {
@@ -173,9 +157,43 @@ internal class Commands(private val plugin: ZChatPlugin) {
                 }
             }
         }
+        building = null
         permissions = perms
         warnings = problems
         return tree
+    }
+
+    // What [tree] is building with, for [add]: a member, not a local function, so [add] can be
+    // inline and its blocks make no lambda classes (decisions/2026-11-25-a-lighter-core.md).
+    private class Building(val config: Config, val perms: ZChatPermissions, val problems: MutableList<String>, val taken: MutableSet<String>)
+
+    private var building: Building? = null
+
+    // A root command from its config section, unless it's off or its name is taken.
+    private inline fun CommandTreeBuilder.add(section: CommandSettings, description: String, default: PermissionDefault, block: CommandBuilder.() -> Unit) {
+        val b = building!!
+        val name = rootName(b, section) ?: return
+        val aliases = rootAliases(b, section, name)
+        root(name, description, b.perms.of(b.config[section.permission], "Use /${section.command}.", default), aliases, block)
+    }
+
+    private fun rootName(b: Building, section: CommandSettings): String? {
+        if (!b.config[section.enabled]) return null
+        val name = section.command
+        if (name in b.taken) {
+            b.problems += "/$name is also another of zChat's commands' alias, so it's skipped. Remove that alias."
+            return null
+        }
+        return name
+    }
+
+    private fun rootAliases(b: Building, section: CommandSettings, name: String): List<String> {
+        val aliases = b.config[section.aliases].filter { it != name }.distinct().filter { alias ->
+            (alias !in b.taken).also { free -> if (!free) b.problems += "${section.path}.aliases: /$alias is already another zChat command's, so it's left out." }
+        }
+        b.taken += name
+        b.taken += aliases
+        return aliases
     }
 
     private fun info(ctx: CommandContext) {

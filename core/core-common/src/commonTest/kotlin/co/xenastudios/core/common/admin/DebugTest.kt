@@ -68,7 +68,7 @@ class DebugTest {
     )
 
     private fun run(debug: Debug): List<String> {
-        val admin = AdminCommands("xtest", "xTest", platform, Reloader { error("") }, debug = debug)
+        val admin = AdminCommands("xtest", "xTest", platform, Reloader { error("") }, debug = { debug })
         CommandDispatcher(commands { root("xtest", "") { mount(admin) } }, platform.clock, platform.log).dispatch(console, "xtest debug")
         platform.scheduler.advance(20.seconds)
         return console.replies

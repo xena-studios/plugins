@@ -142,11 +142,32 @@ public class ProxySecret private constructor(
         @JvmStatic
         public fun paper(paperGlobal: Path, yaml: YamlReader): ProxySecret? {
             if (!Files.isRegularFile(paperGlobal)) return null
-            val root = yaml.read(String(Files.readAllBytes(paperGlobal), StandardCharsets.UTF_8)).getOrNull() as? YamlNode.Mapping ?: return null
+            val text = String(Files.readAllBytes(paperGlobal), StandardCharsets.UTF_8)
+            val root = yaml.read(proxiesBlock(text) ?: text).getOrNull() as? YamlNode.Mapping ?: return null
             val velocity = (root["proxies"] as? YamlNode.Mapping)?.get("velocity") as? YamlNode.Mapping ?: return null
             if ((velocity["enabled"] as? YamlNode.Scalar)?.content != "true") return null
             val secret = (velocity["secret"] as? YamlNode.Scalar)?.content ?: return null
             return of(secret, "Velocity's forwarding secret ($paperGlobal)")
+        }
+
+        /**
+         * The top-level `proxies:` block of a Paper config and nothing else, or `null` if it has
+         * none of its own line. Paper writes the file in block style, so the block is its line
+         * and the indented, blank or comment lines after it; reading those alone, not the whole
+         * file's hundreds of lines, keeps this off a plugin's startup (it runs as the plugin
+         * enables, and YAML that hasn't been compiled yet reads slowly).
+         */
+        internal fun proxiesBlock(text: String): String? {
+            val lines = text.lines()
+            val start = lines.indexOfFirst { it.startsWith("proxies:") }
+            if (start < 0) return null
+            var end = start + 1
+            while (end < lines.size) {
+                val line = lines[end]
+                if (line.isNotEmpty() && !line[0].isWhitespace() && !line.startsWith("#")) break
+                end++
+            }
+            return lines.subList(start, end).joinToString("\n")
         }
 
         // `key = "value"` lines before the first [table], which is all of velocity.toml this needs.

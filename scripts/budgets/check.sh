@@ -22,8 +22,8 @@
 # build/budgets/ unless given. --report-only names budgets from perf-budgets.txt
 # (startup-first-ms,startup-ms) that are reported when over, as a warning, but don't fail.
 # Paper, async-profiler (pinned by SHA-256 below) and the bots'
-# packages (npm ci) are fetched on first use and cached in .cache/. --record-startup also logs
-# the first boot's class loading and writes each plugin's startup class list to
+# packages (npm ci) are fetched on first use and cached in .cache/. --record-startup also boots
+# once more after the first boot, logging its class loading, and writes each plugin's startup class list to
 # <out>/startup-classes-<plugin>.txt (startup_classes.py), to copy to the plugin's project as
 # startup-classes.txt.
 #
@@ -259,14 +259,28 @@ boot "$out/base-measured.log"; sleep "$settle"; snapshot "$out/base"; stop
 dir="$out/server"
 prepare "$dir" "${jars[@]}"
 echo "== Paper $version with ${names[*]}: first boot (world, configs, libraries)"
+boot "$out/boot1.log"; stop
+# The list is recorded on a restart, as every boot after the first is: the first writes the
+# config and lang files and fetches the libraries, which a restart doesn't load classes for. The
+# jars boot without their own lists, so a class an older list names but nothing loads any more
+# isn't loaded ahead and recorded again.
 if $record_startup; then
-  boot "$out/boot1.log" "-Xlog:class+load=info:file=$out/classload.log:uptimemillis"; stop
+  echo "== recording boot: class loading"
+  for jar in "${jars[@]}"; do
+    python3 - "$jar" "$dir/plugins/$(basename "$jar")" <<'PY'
+import sys, zipfile
+with zipfile.ZipFile(sys.argv[1]) as src, zipfile.ZipFile(sys.argv[2], "w", zipfile.ZIP_DEFLATED) as dst:
+    for item in src.infolist():
+        if item.filename != "META-INF/xena/startup-classes.txt":
+            dst.writestr(item, src.read(item))
+PY
+  done
+  boot "$out/record.log" "-Xlog:class+load=info:file=$out/classload.log:uptimemillis"; sleep 2; stop
+  cp "${jars[@]}" "$dir/plugins/"
   for i in "${!jars[@]}"; do
-    python3 "$here/startup_classes.py" --log "$out/classload.log" --boot "$out/boot1.log" --jar "${jars[$i]}" \
+    python3 "$here/startup_classes.py" --log "$out/classload.log" --boot "$out/record.log" --jar "${jars[$i]}" \
       --out "$out/startup-classes-${names[$i]}.txt"
   done
-else
-  boot "$out/boot1.log"; stop
 fi
 for ((b = 2; b < boots + 1; b++)); do
   echo "== timed boot $b of $((boots + 1))"

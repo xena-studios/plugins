@@ -44,14 +44,17 @@ public class XTwin(
     public val modules: ModuleSet = ModuleSet(platform)
 
     /** `forget` deletes the player from the family's cache, which is all xTwin keeps. */
-    private val playerData = PlayerDataRegistry(cache.asLookup()).apply { register("family", cache.asPlayerData()) }
-
     /** `reload`, `debug` and `forget`. */
     public val admin: AdminCommands = AdminCommands(
         "xtwin", "xTwin", platform,
         ModuleReloader(modules, reloadFiles = ::syncCommands, wanted = { emptyMap() }),
-        debug = Debug(platform, "xTwin 1.0.0", listOf(HealthChecks.threading(platform)), about = about),
-        playerData = playerData,
+        debug = object : () -> Debug {
+            override fun invoke() = Debug(platform, "xTwin 1.0.0", listOf(HealthChecks.threading(platform)), about = about)
+        },
+        // `forget` deletes the player from the family's cache, which is all xTwin keeps.
+        playerData = object : () -> PlayerDataRegistry {
+            override fun invoke() = PlayerDataRegistry(cache.asLookup()).apply { register("family", cache.asPlayerData()) }
+        },
         text = adminText,
     )
 

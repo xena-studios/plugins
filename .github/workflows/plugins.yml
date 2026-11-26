@@ -31,7 +31,6 @@ jobs:
       tasks: ${{ steps.check.outputs.tasks }}
       compile: ${{ steps.check.outputs.compile }}
       checks: ${{ steps.check.outputs.checks }}
-      xmoney: ${{ steps.check.outputs.xmoney }}
     steps:
       # The script reads the build files, to find which plugins use which.
       - uses: actions/checkout@v7
@@ -101,7 +100,7 @@ jobs:
           TASKS: ${{ needs.changes.outputs.tasks }}
           XR_MYSQL: 127.0.0.1:3306:xr:root:ci
       # For the boot tests, when any run: a change to the rewrite's modules alone builds no jar.
-      - if: needs.changes.outputs.checks != '' || needs.changes.outputs.xmoney == 'true'
+      - if: needs.changes.outputs.checks != ''
         uses: actions/upload-artifact@v7
         with:
           name: jars
@@ -111,12 +110,9 @@ jobs:
             */build/libs/*.jar
             sandbox/consumer/build/libs/*.jar
             sandbox/paper-consumer/build/libs/*.jar
-            xmoney/vault-consumer/build/libs/*.jar
-            xmoney/hook-consumer/build/libs/*.jar
             !core/build/libs/*
             !build-logic/build/libs/*
             !*/build/libs/*-plain.jar
-            !xmoney/*/build/libs/*-plain.jar
           if-no-files-found: error
 
   # Compiles against the newest Paper API, failing on anything it marks for
@@ -149,7 +145,7 @@ jobs:
   # plugin they use, built for it).
   boot:
     needs: [changes, build]
-    if: needs.changes.outputs.checks != '' || needs.changes.outputs.xmoney == 'true'
+    if: needs.changes.outputs.checks != ''
     runs-on: ubuntu-26.04
     # A hung test or server fails the job instead of holding a runner for six hours.
     timeout-minutes: 20
@@ -186,36 +182,17 @@ jobs:
           key: servers-${{ matrix.project }}-${{ matrix.target.version }}-${{ steps.server.outputs.build }}
           restore-keys: servers-${{ matrix.project }}-${{ matrix.target.version }}-
       # Runs the changed modules' boot-checks.txt (every module's, for everything) against
-      # all the jars built at once, except xMoney's. xMoney stands in for Vault, so with
-      # it installed every plugin would see Vault, and the sandbox checks the core's
-      # Vault hook on a server without one.
+      # all the jars built at once. xMoney 2.0, which stands in for Vault, boots in the Boot
+      # workflow, so the sandbox's check of the core's Vault hook without Vault holds here.
       - if: needs.changes.outputs.checks != ''
         env:
           CHECKS: ${{ needs.changes.outputs.checks }}
         run: |
           checks=()
           for file in $CHECKS; do checks+=(--checks "$file"); done
-          mapfile -t jars < <(find jars -name '*.jar' -not -path 'jars/xmoney/*' | sort)
+          mapfile -t jars < <(find jars -name '*.jar' | sort)
           scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
             "${checks[@]}" "${jars[@]}"
-      # xMoney on its own, with two never-released plugins that use it as Vault.
-      - name: boot xMoney
-        if: needs.changes.outputs.xmoney == 'true'
-        run: |
-          mapfile -t jars < <(find jars/xmoney -name '*.jar' | sort)
-          scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
-            --checks xmoney/boot-checks.txt "${jars[@]}"
-      # And beside a real VaultUnlocked, which Paper refuses: the one run that allows an
-      # error, Paper's own about the duplicate (see xmoney/boot-checks-vaultunlocked.txt).
-      - name: boot xMoney beside VaultUnlocked
-        if: needs.changes.outputs.xmoney == 'true'
-        run: |
-          vu="$RUNNER_TEMP/VaultUnlocked-2.20.1.jar"
-          curl -fsSL -o "$vu" https://github.com/TheNewEconomy/VaultUnlocked/releases/download/2.20.1/VaultUnlocked-2.20.1.jar
-          echo "4ec21910767a68b2defacb121cffee9840ded8b01abcbff03779fb9ab637296a  $vu" | sha256sum -c -
-          mapfile -t jars < <(find jars/xmoney -name '*.jar' | sort)
-          scripts/boot-test.sh --project ${{ matrix.project }} --version ${{ matrix.target.version }} \
-            --checks xmoney/boot-checks-vaultunlocked.txt "${jars[@]}" "$vu"
 
   # The one check main requires: passes when every job above passed or was
   # skipped because nothing they cover changed, and fails when any that ran failed.

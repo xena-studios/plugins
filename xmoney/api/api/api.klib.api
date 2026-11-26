@@ -1,0 +1,250 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xmoney.api/Rounding : kotlin/Enum<co.xenastudios.xmoney.api/Rounding> { // co.xenastudios.xmoney.api/Rounding|null[0]
+    enum entry DOWN // co.xenastudios.xmoney.api/Rounding.DOWN|null[0]
+    enum entry EXACT // co.xenastudios.xmoney.api/Rounding.EXACT|null[0]
+    enum entry HALF_UP // co.xenastudios.xmoney.api/Rounding.HALF_UP|null[0]
+    enum entry UP // co.xenastudios.xmoney.api/Rounding.UP|null[0]
+
+    final val entries // co.xenastudios.xmoney.api/Rounding.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xmoney.api/Rounding> // co.xenastudios.xmoney.api/Rounding.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xmoney.api/Rounding // co.xenastudios.xmoney.api/Rounding.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xmoney.api/Rounding> // co.xenastudios.xmoney.api/Rounding.values|values#static(){}[0]
+}
+
+final enum class co.xenastudios.xmoney.api/TransactionKind : kotlin/Enum<co.xenastudios.xmoney.api/TransactionKind> { // co.xenastudios.xmoney.api/TransactionKind|null[0]
+    enum entry GIVE // co.xenastudios.xmoney.api/TransactionKind.GIVE|null[0]
+    enum entry IMPORT // co.xenastudios.xmoney.api/TransactionKind.IMPORT|null[0]
+    enum entry PAY // co.xenastudios.xmoney.api/TransactionKind.PAY|null[0]
+    enum entry PLUGIN // co.xenastudios.xmoney.api/TransactionKind.PLUGIN|null[0]
+    enum entry SET // co.xenastudios.xmoney.api/TransactionKind.SET|null[0]
+    enum entry START // co.xenastudios.xmoney.api/TransactionKind.START|null[0]
+    enum entry TAKE // co.xenastudios.xmoney.api/TransactionKind.TAKE|null[0]
+
+    final val entries // co.xenastudios.xmoney.api/TransactionKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xmoney.api/TransactionKind> // co.xenastudios.xmoney.api/TransactionKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xmoney.api/TransactionKind // co.xenastudios.xmoney.api/TransactionKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xmoney.api/TransactionKind> // co.xenastudios.xmoney.api/TransactionKind.values|values#static(){}[0]
+}
+
+abstract fun interface co.xenastudios.xmoney.api/TransactionHook { // co.xenastudios.xmoney.api/TransactionHook|null[0]
+    abstract fun refuse(co.xenastudios.xmoney.api.event/PreTransactionEvent): kotlin/String? // co.xenastudios.xmoney.api/TransactionHook.refuse|refuse(co.xenastudios.xmoney.api.event.PreTransactionEvent){}[0]
+}
+
+abstract interface co.xenastudios.xmoney.api/XMoneyApi { // co.xenastudios.xmoney.api/XMoneyApi|null[0]
+    abstract val currency // co.xenastudios.xmoney.api/XMoneyApi.currency|{}currency[0]
+        abstract fun <get-currency>(): co.xenastudios.xmoney.api/Currency // co.xenastudios.xmoney.api/XMoneyApi.currency.<get-currency>|<get-currency>(){}[0]
+    abstract val events // co.xenastudios.xmoney.api/XMoneyApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xmoney.api/XMoneyApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.xmoney.api/XMoneyApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xmoney.api/XMoneyApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun balance(co.xenastudios.core.api/PlayerRef): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/XMoneyApi.balance|balance(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun deposit(kotlin/String, co.xenastudios.core.api/PlayerRef, co.xenastudios.xmoney.api/Amount, kotlin/String): co.xenastudios.core.api/Pending<co.xenastudios.xmoney.api/TransactionResult> // co.xenastudios.xmoney.api/XMoneyApi.deposit|deposit(kotlin.String;co.xenastudios.core.api.PlayerRef;co.xenastudios.xmoney.api.Amount;kotlin.String){}[0]
+    abstract fun format(co.xenastudios.xmoney.api/Amount): kotlin/String // co.xenastudios.xmoney.api/XMoneyApi.format|format(co.xenastudios.xmoney.api.Amount){}[0]
+    abstract fun has(co.xenastudios.core.api/PlayerRef, co.xenastudios.xmoney.api/Amount): kotlin/Boolean // co.xenastudios.xmoney.api/XMoneyApi.has|has(co.xenastudios.core.api.PlayerRef;co.xenastudios.xmoney.api.Amount){}[0]
+    abstract fun hasAccount(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xmoney.api/XMoneyApi.hasAccount|hasAccount(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun history(co.xenastudios.core.api/PlayerRef, kotlin/Int): co.xenastudios.core.api/Pending<co.xenastudios.xmoney.api/HistoryPage> // co.xenastudios.xmoney.api/XMoneyApi.history|history(co.xenastudios.core.api.PlayerRef;kotlin.Int){}[0]
+    abstract fun registerHook(kotlin/String, co.xenastudios.xmoney.api/TransactionHook) // co.xenastudios.xmoney.api/XMoneyApi.registerHook|registerHook(kotlin.String;co.xenastudios.xmoney.api.TransactionHook){}[0]
+    abstract fun top(kotlin/Int, kotlin/Int): kotlin.collections/List<co.xenastudios.xmoney.api/TopEntry> // co.xenastudios.xmoney.api/XMoneyApi.top|top(kotlin.Int;kotlin.Int){}[0]
+    abstract fun transfer(kotlin/String, co.xenastudios.core.api/PlayerRef, co.xenastudios.core.api/PlayerRef, co.xenastudios.xmoney.api/Amount, kotlin/String): co.xenastudios.core.api/Pending<co.xenastudios.xmoney.api/TransactionResult> // co.xenastudios.xmoney.api/XMoneyApi.transfer|transfer(kotlin.String;co.xenastudios.core.api.PlayerRef;co.xenastudios.core.api.PlayerRef;co.xenastudios.xmoney.api.Amount;kotlin.String){}[0]
+    abstract fun unregisterHook(co.xenastudios.xmoney.api/TransactionHook) // co.xenastudios.xmoney.api/XMoneyApi.unregisterHook|unregisterHook(co.xenastudios.xmoney.api.TransactionHook){}[0]
+    abstract fun withdraw(kotlin/String, co.xenastudios.core.api/PlayerRef, co.xenastudios.xmoney.api/Amount, kotlin/String): co.xenastudios.core.api/Pending<co.xenastudios.xmoney.api/TransactionResult> // co.xenastudios.xmoney.api/XMoneyApi.withdraw|withdraw(kotlin.String;co.xenastudios.core.api.PlayerRef;co.xenastudios.xmoney.api.Amount;kotlin.String){}[0]
+}
+
+final class co.xenastudios.xmoney.api.event/BalanceChangedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xmoney.api.event/BalanceChangedEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xmoney.api/Amount, co.xenastudios.xmoney.api/Amount, co.xenastudios.xmoney.api/TransactionKind, kotlin/String, kotlin/String, co.xenastudios.core.api/PlayerRef?) // co.xenastudios.xmoney.api.event/BalanceChangedEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xmoney.api.Amount;co.xenastudios.xmoney.api.Amount;co.xenastudios.xmoney.api.TransactionKind;kotlin.String;kotlin.String;co.xenastudios.core.api.PlayerRef?){}[0]
+
+    final val balance // co.xenastudios.xmoney.api.event/BalanceChangedEvent.balance|{}balance[0]
+        final fun <get-balance>(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api.event/BalanceChangedEvent.balance.<get-balance>|<get-balance>(){}[0]
+    final val change // co.xenastudios.xmoney.api.event/BalanceChangedEvent.change|{}change[0]
+        final fun <get-change>(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api.event/BalanceChangedEvent.change.<get-change>|<get-change>(){}[0]
+    final val kind // co.xenastudios.xmoney.api.event/BalanceChangedEvent.kind|{}kind[0]
+        final fun <get-kind>(): co.xenastudios.xmoney.api/TransactionKind // co.xenastudios.xmoney.api.event/BalanceChangedEvent.kind.<get-kind>|<get-kind>(){}[0]
+    final val other // co.xenastudios.xmoney.api.event/BalanceChangedEvent.other|{}other[0]
+        final fun <get-other>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xmoney.api.event/BalanceChangedEvent.other.<get-other>|<get-other>(){}[0]
+    final val player // co.xenastudios.xmoney.api.event/BalanceChangedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xmoney.api.event/BalanceChangedEvent.player.<get-player>|<get-player>(){}[0]
+    final val reason // co.xenastudios.xmoney.api.event/BalanceChangedEvent.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xmoney.api.event/BalanceChangedEvent.reason.<get-reason>|<get-reason>(){}[0]
+    final val source // co.xenastudios.xmoney.api.event/BalanceChangedEvent.source|{}source[0]
+        final fun <get-source>(): kotlin/String // co.xenastudios.xmoney.api.event/BalanceChangedEvent.source.<get-source>|<get-source>(){}[0]
+
+    final object Companion { // co.xenastudios.xmoney.api.event/BalanceChangedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xmoney.api.event/BalanceChangedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xmoney.api.event/BalanceChangedEvent> // co.xenastudios.xmoney.api.event/BalanceChangedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xmoney.api.event/PreTransactionEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xmoney.api.event/PreTransactionEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xmoney.api/Amount, co.xenastudios.xmoney.api/TransactionKind, kotlin/String, kotlin/String, co.xenastudios.core.api/PlayerRef?) // co.xenastudios.xmoney.api.event/PreTransactionEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xmoney.api.Amount;co.xenastudios.xmoney.api.TransactionKind;kotlin.String;kotlin.String;co.xenastudios.core.api.PlayerRef?){}[0]
+
+    final val change // co.xenastudios.xmoney.api.event/PreTransactionEvent.change|{}change[0]
+        final fun <get-change>(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api.event/PreTransactionEvent.change.<get-change>|<get-change>(){}[0]
+    final val kind // co.xenastudios.xmoney.api.event/PreTransactionEvent.kind|{}kind[0]
+        final fun <get-kind>(): co.xenastudios.xmoney.api/TransactionKind // co.xenastudios.xmoney.api.event/PreTransactionEvent.kind.<get-kind>|<get-kind>(){}[0]
+    final val other // co.xenastudios.xmoney.api.event/PreTransactionEvent.other|{}other[0]
+        final fun <get-other>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xmoney.api.event/PreTransactionEvent.other.<get-other>|<get-other>(){}[0]
+    final val player // co.xenastudios.xmoney.api.event/PreTransactionEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xmoney.api.event/PreTransactionEvent.player.<get-player>|<get-player>(){}[0]
+    final val reason // co.xenastudios.xmoney.api.event/PreTransactionEvent.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xmoney.api.event/PreTransactionEvent.reason.<get-reason>|<get-reason>(){}[0]
+    final val source // co.xenastudios.xmoney.api.event/PreTransactionEvent.source|{}source[0]
+        final fun <get-source>(): kotlin/String // co.xenastudios.xmoney.api.event/PreTransactionEvent.source.<get-source>|<get-source>(){}[0]
+
+    final object Companion { // co.xenastudios.xmoney.api.event/PreTransactionEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xmoney.api.event/PreTransactionEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xmoney.api.event/PreTransactionEvent> // co.xenastudios.xmoney.api.event/PreTransactionEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xmoney.api/Amount : kotlin/Comparable<co.xenastudios.xmoney.api/Amount> { // co.xenastudios.xmoney.api/Amount|null[0]
+    final val isNegative // co.xenastudios.xmoney.api/Amount.isNegative|{}isNegative[0]
+        final fun <get-isNegative>(): kotlin/Boolean // co.xenastudios.xmoney.api/Amount.isNegative.<get-isNegative>|<get-isNegative>(){}[0]
+    final val isZero // co.xenastudios.xmoney.api/Amount.isZero|{}isZero[0]
+        final fun <get-isZero>(): kotlin/Boolean // co.xenastudios.xmoney.api/Amount.isZero.<get-isZero>|<get-isZero>(){}[0]
+    final val units // co.xenastudios.xmoney.api/Amount.units|{}units[0]
+        final fun <get-units>(): kotlin/Long // co.xenastudios.xmoney.api/Amount.units.<get-units>|<get-units>(){}[0]
+
+    final fun compareTo(co.xenastudios.xmoney.api/Amount): kotlin/Int // co.xenastudios.xmoney.api/Amount.compareTo|compareTo(co.xenastudios.xmoney.api.Amount){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.xmoney.api/Amount.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.xmoney.api/Amount.hashCode|hashCode(){}[0]
+    final fun minus(co.xenastudios.xmoney.api/Amount): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/Amount.minus|minus(co.xenastudios.xmoney.api.Amount){}[0]
+    final fun plus(co.xenastudios.xmoney.api/Amount): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/Amount.plus|plus(co.xenastudios.xmoney.api.Amount){}[0]
+    final fun toDouble(): kotlin/Double // co.xenastudios.xmoney.api/Amount.toDouble|toDouble(){}[0]
+    final fun toPlainString(kotlin/Int = ...): kotlin/String // co.xenastudios.xmoney.api/Amount.toPlainString|toPlainString(kotlin.Int){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.xmoney.api/Amount.toString|toString(){}[0]
+    final fun unaryMinus(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/Amount.unaryMinus|unaryMinus(){}[0]
+
+    final object Companion { // co.xenastudios.xmoney.api/Amount.Companion|null[0]
+        final const val MAX_UNITS // co.xenastudios.xmoney.api/Amount.Companion.MAX_UNITS|{}MAX_UNITS[0]
+            final fun <get-MAX_UNITS>(): kotlin/Long // co.xenastudios.xmoney.api/Amount.Companion.MAX_UNITS.<get-MAX_UNITS>|<get-MAX_UNITS>(){}[0]
+        final const val MAX_WHOLE // co.xenastudios.xmoney.api/Amount.Companion.MAX_WHOLE|{}MAX_WHOLE[0]
+            final fun <get-MAX_WHOLE>(): kotlin/Long // co.xenastudios.xmoney.api/Amount.Companion.MAX_WHOLE.<get-MAX_WHOLE>|<get-MAX_WHOLE>(){}[0]
+        final const val ONE // co.xenastudios.xmoney.api/Amount.Companion.ONE|{}ONE[0]
+            final fun <get-ONE>(): kotlin/Long // co.xenastudios.xmoney.api/Amount.Companion.ONE.<get-ONE>|<get-ONE>(){}[0]
+        final const val SCALE // co.xenastudios.xmoney.api/Amount.Companion.SCALE|{}SCALE[0]
+            final fun <get-SCALE>(): kotlin/Int // co.xenastudios.xmoney.api/Amount.Companion.SCALE.<get-SCALE>|<get-SCALE>(){}[0]
+
+        final val ZERO // co.xenastudios.xmoney.api/Amount.Companion.ZERO|{}ZERO[0]
+            final fun <get-ZERO>(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/Amount.Companion.ZERO.<get-ZERO>|<get-ZERO>(){}[0]
+
+        final fun of(kotlin/Long): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/Amount.Companion.of|of(kotlin.Long){}[0]
+        final fun ofDouble(kotlin/Double, co.xenastudios.xmoney.api/Rounding): co.xenastudios.xmoney.api/Amount? // co.xenastudios.xmoney.api/Amount.Companion.ofDouble|ofDouble(kotlin.Double;co.xenastudios.xmoney.api.Rounding){}[0]
+        final fun ofUnits(kotlin/Long): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/Amount.Companion.ofUnits|ofUnits(kotlin.Long){}[0]
+        final fun parse(kotlin/String, co.xenastudios.xmoney.api/Rounding = ...): co.xenastudios.xmoney.api/Amount? // co.xenastudios.xmoney.api/Amount.Companion.parse|parse(kotlin.String;co.xenastudios.xmoney.api.Rounding){}[0]
+    }
+}
+
+final class co.xenastudios.xmoney.api/Currency { // co.xenastudios.xmoney.api/Currency|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String, kotlin/String, kotlin/Int) // co.xenastudios.xmoney.api/Currency.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.Int){}[0]
+
+    final val decimals // co.xenastudios.xmoney.api/Currency.decimals|{}decimals[0]
+        final fun <get-decimals>(): kotlin/Int // co.xenastudios.xmoney.api/Currency.decimals.<get-decimals>|<get-decimals>(){}[0]
+    final val id // co.xenastudios.xmoney.api/Currency.id|{}id[0]
+        final fun <get-id>(): kotlin/String // co.xenastudios.xmoney.api/Currency.id.<get-id>|<get-id>(){}[0]
+    final val plural // co.xenastudios.xmoney.api/Currency.plural|{}plural[0]
+        final fun <get-plural>(): kotlin/String // co.xenastudios.xmoney.api/Currency.plural.<get-plural>|<get-plural>(){}[0]
+    final val singular // co.xenastudios.xmoney.api/Currency.singular|{}singular[0]
+        final fun <get-singular>(): kotlin/String // co.xenastudios.xmoney.api/Currency.singular.<get-singular>|<get-singular>(){}[0]
+    final val symbol // co.xenastudios.xmoney.api/Currency.symbol|{}symbol[0]
+        final fun <get-symbol>(): kotlin/String // co.xenastudios.xmoney.api/Currency.symbol.<get-symbol>|<get-symbol>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xmoney.api/Currency.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xmoney.api/HistoryEntry { // co.xenastudios.xmoney.api/HistoryEntry|null[0]
+    constructor <init>(kotlin/Long, kotlin/Long, co.xenastudios.xmoney.api/Amount, co.xenastudios.xmoney.api/Amount, co.xenastudios.xmoney.api/TransactionKind, kotlin/String, kotlin/String, co.xenastudios.core.api/PlayerRef?) // co.xenastudios.xmoney.api/HistoryEntry.<init>|<init>(kotlin.Long;kotlin.Long;co.xenastudios.xmoney.api.Amount;co.xenastudios.xmoney.api.Amount;co.xenastudios.xmoney.api.TransactionKind;kotlin.String;kotlin.String;co.xenastudios.core.api.PlayerRef?){}[0]
+
+    final val amount // co.xenastudios.xmoney.api/HistoryEntry.amount|{}amount[0]
+        final fun <get-amount>(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/HistoryEntry.amount.<get-amount>|<get-amount>(){}[0]
+    final val balance // co.xenastudios.xmoney.api/HistoryEntry.balance|{}balance[0]
+        final fun <get-balance>(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/HistoryEntry.balance.<get-balance>|<get-balance>(){}[0]
+    final val id // co.xenastudios.xmoney.api/HistoryEntry.id|{}id[0]
+        final fun <get-id>(): kotlin/Long // co.xenastudios.xmoney.api/HistoryEntry.id.<get-id>|<get-id>(){}[0]
+    final val kind // co.xenastudios.xmoney.api/HistoryEntry.kind|{}kind[0]
+        final fun <get-kind>(): co.xenastudios.xmoney.api/TransactionKind // co.xenastudios.xmoney.api/HistoryEntry.kind.<get-kind>|<get-kind>(){}[0]
+    final val other // co.xenastudios.xmoney.api/HistoryEntry.other|{}other[0]
+        final fun <get-other>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xmoney.api/HistoryEntry.other.<get-other>|<get-other>(){}[0]
+    final val reason // co.xenastudios.xmoney.api/HistoryEntry.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xmoney.api/HistoryEntry.reason.<get-reason>|<get-reason>(){}[0]
+    final val source // co.xenastudios.xmoney.api/HistoryEntry.source|{}source[0]
+        final fun <get-source>(): kotlin/String // co.xenastudios.xmoney.api/HistoryEntry.source.<get-source>|<get-source>(){}[0]
+    final val timeMillis // co.xenastudios.xmoney.api/HistoryEntry.timeMillis|{}timeMillis[0]
+        final fun <get-timeMillis>(): kotlin/Long // co.xenastudios.xmoney.api/HistoryEntry.timeMillis.<get-timeMillis>|<get-timeMillis>(){}[0]
+}
+
+final class co.xenastudios.xmoney.api/HistoryPage { // co.xenastudios.xmoney.api/HistoryPage|null[0]
+    constructor <init>(kotlin.collections/List<co.xenastudios.xmoney.api/HistoryEntry>, kotlin/Int, kotlin/Int, kotlin/Long) // co.xenastudios.xmoney.api/HistoryPage.<init>|<init>(kotlin.collections.List<co.xenastudios.xmoney.api.HistoryEntry>;kotlin.Int;kotlin.Int;kotlin.Long){}[0]
+
+    final val entries // co.xenastudios.xmoney.api/HistoryPage.entries|{}entries[0]
+        final fun <get-entries>(): kotlin.collections/List<co.xenastudios.xmoney.api/HistoryEntry> // co.xenastudios.xmoney.api/HistoryPage.entries.<get-entries>|<get-entries>(){}[0]
+    final val page // co.xenastudios.xmoney.api/HistoryPage.page|{}page[0]
+        final fun <get-page>(): kotlin/Int // co.xenastudios.xmoney.api/HistoryPage.page.<get-page>|<get-page>(){}[0]
+    final val pages // co.xenastudios.xmoney.api/HistoryPage.pages|{}pages[0]
+        final fun <get-pages>(): kotlin/Int // co.xenastudios.xmoney.api/HistoryPage.pages.<get-pages>|<get-pages>(){}[0]
+    final val total // co.xenastudios.xmoney.api/HistoryPage.total|{}total[0]
+        final fun <get-total>(): kotlin/Long // co.xenastudios.xmoney.api/HistoryPage.total.<get-total>|<get-total>(){}[0]
+}
+
+final class co.xenastudios.xmoney.api/TopEntry { // co.xenastudios.xmoney.api/TopEntry|null[0]
+    constructor <init>(kotlin/Int, co.xenastudios.core.api/PlayerRef, kotlin/String, co.xenastudios.xmoney.api/Amount) // co.xenastudios.xmoney.api/TopEntry.<init>|<init>(kotlin.Int;co.xenastudios.core.api.PlayerRef;kotlin.String;co.xenastudios.xmoney.api.Amount){}[0]
+
+    final val balance // co.xenastudios.xmoney.api/TopEntry.balance|{}balance[0]
+        final fun <get-balance>(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/TopEntry.balance.<get-balance>|<get-balance>(){}[0]
+    final val name // co.xenastudios.xmoney.api/TopEntry.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xmoney.api/TopEntry.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xmoney.api/TopEntry.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xmoney.api/TopEntry.player.<get-player>|<get-player>(){}[0]
+    final val rank // co.xenastudios.xmoney.api/TopEntry.rank|{}rank[0]
+        final fun <get-rank>(): kotlin/Int // co.xenastudios.xmoney.api/TopEntry.rank.<get-rank>|<get-rank>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xmoney.api/TopEntry.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xmoney.api/TransactionResult { // co.xenastudios.xmoney.api/TransactionResult|null[0]
+    constructor <init>(co.xenastudios.xmoney.api/TransactionResult.Status, co.xenastudios.xmoney.api/Amount, co.xenastudios.xmoney.api/Amount) // co.xenastudios.xmoney.api/TransactionResult.<init>|<init>(co.xenastudios.xmoney.api.TransactionResult.Status;co.xenastudios.xmoney.api.Amount;co.xenastudios.xmoney.api.Amount){}[0]
+
+    final val amount // co.xenastudios.xmoney.api/TransactionResult.amount|{}amount[0]
+        final fun <get-amount>(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/TransactionResult.amount.<get-amount>|<get-amount>(){}[0]
+    final val balance // co.xenastudios.xmoney.api/TransactionResult.balance|{}balance[0]
+        final fun <get-balance>(): co.xenastudios.xmoney.api/Amount // co.xenastudios.xmoney.api/TransactionResult.balance.<get-balance>|<get-balance>(){}[0]
+    final val isSuccess // co.xenastudios.xmoney.api/TransactionResult.isSuccess|{}isSuccess[0]
+        final fun <get-isSuccess>(): kotlin/Boolean // co.xenastudios.xmoney.api/TransactionResult.isSuccess.<get-isSuccess>|<get-isSuccess>(){}[0]
+    final val status // co.xenastudios.xmoney.api/TransactionResult.status|{}status[0]
+        final fun <get-status>(): co.xenastudios.xmoney.api/TransactionResult.Status // co.xenastudios.xmoney.api/TransactionResult.status.<get-status>|<get-status>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.xmoney.api/TransactionResult.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.xmoney.api/TransactionResult.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.xmoney.api/TransactionResult.toString|toString(){}[0]
+
+    final enum class Status : kotlin/Enum<co.xenastudios.xmoney.api/TransactionResult.Status> { // co.xenastudios.xmoney.api/TransactionResult.Status|null[0]
+        enum entry BALANCE_LIMIT // co.xenastudios.xmoney.api/TransactionResult.Status.BALANCE_LIMIT|null[0]
+        enum entry CANCELLED // co.xenastudios.xmoney.api/TransactionResult.Status.CANCELLED|null[0]
+        enum entry INSUFFICIENT_FUNDS // co.xenastudios.xmoney.api/TransactionResult.Status.INSUFFICIENT_FUNDS|null[0]
+        enum entry INVALID_AMOUNT // co.xenastudios.xmoney.api/TransactionResult.Status.INVALID_AMOUNT|null[0]
+        enum entry SAME_ACCOUNT // co.xenastudios.xmoney.api/TransactionResult.Status.SAME_ACCOUNT|null[0]
+        enum entry SUCCESS // co.xenastudios.xmoney.api/TransactionResult.Status.SUCCESS|null[0]
+        enum entry UNAVAILABLE // co.xenastudios.xmoney.api/TransactionResult.Status.UNAVAILABLE|null[0]
+
+        final val entries // co.xenastudios.xmoney.api/TransactionResult.Status.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xmoney.api/TransactionResult.Status> // co.xenastudios.xmoney.api/TransactionResult.Status.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): co.xenastudios.xmoney.api/TransactionResult.Status // co.xenastudios.xmoney.api/TransactionResult.Status.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<co.xenastudios.xmoney.api/TransactionResult.Status> // co.xenastudios.xmoney.api/TransactionResult.Status.values|values#static(){}[0]
+    }
+}
+
+final object co.xenastudios.xmoney.api/XMoney { // co.xenastudios.xmoney.api/XMoney|null[0]
+    final fun api(): co.xenastudios.xmoney.api/XMoneyApi // co.xenastudios.xmoney.api/XMoney.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xmoney.api/XMoney.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xmoney.api/XMoneyApi?) // co.xenastudios.xmoney.api/XMoney.register|register(co.xenastudios.xmoney.api.XMoneyApi?){}[0]
+}

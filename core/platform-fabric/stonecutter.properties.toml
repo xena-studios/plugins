@@ -14,13 +14,18 @@ deps.fabric_api = "0.92.12+1.20.1"
 # LuckPerms and other permission mods answer through it; jar-in-jar, so owners install nothing.
 # Each line's release names the Minecraft it needs.
 deps.permissions = "0.3.3"
+# Patbox's Common Economy API, which xMoney provides on Fabric: each line takes the newest build
+# for its Minecraft (1.1.x from 1.19, 1.2.x from 1.20.5, 2.x, Mojang's names and BigIntegers, from 26.1).
+deps.economy = "1.1.1"
 
 ["1.21.11"]
 mod.mc_compat = "~1.21.11"
 deps.fabric_api = "0.141.6+1.21.11"
 deps.permissions = "0.6.1"
+deps.economy = "1.2.1"
 
 ["26.3"]
 mod.mc_compat = "~26.3"
 deps.fabric_api = "0.167.0+26.3"
 deps.permissions = "0.7.0"
+deps.economy = "2.0.0"

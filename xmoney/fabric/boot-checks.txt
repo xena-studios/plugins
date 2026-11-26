@@ -1,0 +1,20 @@
+# What scripts/boot-fabric.sh checks on each Minecraft line with xMoney, from the console.
+logged: [xMoney] xMoney 2.0.0 on
+logged: Loaded 0 accounts from the SQLite database money.db.
+run: xmoney info
+expect: xMoney 2.0.0 on
+run: baltop
+expect: Nobody has any money yet.
+run: eco give Nobody_Here_12 5
+expect: Nobody_Here_12 has never played here.
+run: balance
+expect: Only players can use this command.
+run: pay Alex 5
+expect: Only players can use this command.
+run: xmoney status
+expect: Problem: none
+run: xmoney reload
+expect: Reloaded xMoney: 1 module on.
+run: xmoney debug
+expect: Database: the SQLite database money.db answered in
+expect: Debug report saved as debug/debug-

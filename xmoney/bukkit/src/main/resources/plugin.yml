@@ -1,0 +1,23 @@
+name: xMoney
+version: '${version}'
+main: co.xenastudios.xmoney.bukkit.XMoneyBootstrap
+# Ignored before 1.13; stops 1.13+ from treating the plugin as legacy.
+api-version: '1.13'
+folia-supported: true
+description: The economy, and Vault, in one plugin.
+website: https://plugins.xenastudios.co/xmoney/
+authors: [Xena Studios]
+# Plugins that depend on Vault load, and find Vault's API, in xMoney (1.15.2 on; older servers
+# ignore the key, and need Vault.jar beside xMoney).
+provides: [Vault]
+# Optional: %xmoney_balance% and the rest, when it's installed; zChat's <balance> tags.
+softdepend: [PlaceholderAPI]
+# Before Vault.jar where it's needed (below 1.15.2), as LuckPerms does: plugins that depend on
+# Vault load after it, so they find the economy as they enable. And before zChat, which hears
+# xMoney's <balance> tags as it enables.
+loadbefore: [Vault, zChat]
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+# No commands or permissions here: they're registered at runtime from config.yml, so every
+# change to them applies on /xmoney reload.

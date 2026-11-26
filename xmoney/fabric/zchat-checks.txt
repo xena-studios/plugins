@@ -1,0 +1,5 @@
+# xMoney beside zChat 4.0 on Fabric (the Boot workflow's family cell), after boot-checks.txt: once
+# the server has started, xMoney gives zChat's formats its tags through zChat's placeholder seam.
+logged: Gave zChat's chat formats <balance>, <balance_raw>, <balance_short>.
+run: zchat info
+expect: zChat 4.0.0 on

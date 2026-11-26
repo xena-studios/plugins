@@ -1,0 +1,12 @@
+---
+title: Permissions
+description: "Every xMoney permission, and who has it by default."
+sidebar:
+  order: 2.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`/balance`, `/pay` and `/baltop` are everyone's (a blank `permission` in the [config](/xmoney/configuration/)); seeing someone else's balance needs `xmoney.balance.others`. `/eco` needs `xmoney.eco` and the part's own (`xmoney.eco.give`, `.take`, `.set`, `.reset`, `.history`). Rename any command's in the config, or set one blank (`""`) to let everyone use it. On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api; without one, operators (level 2) have the operator permissions.
+
+<Reference plugin="xmoney" show="permissions" />

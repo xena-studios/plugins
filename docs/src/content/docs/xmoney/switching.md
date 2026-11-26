@@ -9,7 +9,7 @@ xMoney is an economy plugin and Vault in one, so switching means removing two th
 
 ## Bring the balances
 
-1. Install xMoney **next to** your old economy plugin, and remove Vault or VaultUnlocked (xMoney is Vault now). Start the server.
+1. Install xMoney **next to** your old economy plugin, and remove Vault or VaultUnlocked (xMoney is Vault now; below 1.15.2 keep Vault.jar). Start the server.
 2. See what an import would do. Nothing changes yet:
 
    ```
@@ -40,9 +40,11 @@ On a network, run the import on one server. It's set in steps of a hundred balan
 | --- | --- |
 | `/xmoney import essentials` | EssentialsX's `plugins/Essentials/userdata/*.yml`. Accounts EssentialsX made for other plugins (a town's bank) come across as accounts that aren't players'. |
 | `/xmoney import cmi` | CMI's SQLite database, `plugins/CMI/cmi.sqlite.db`, read-only. |
-| `/xmoney import vault` | Whatever other economy plugin is registered with Vault, while it's still installed. This covers every other economy plugin, and CMI or EssentialsX on MySQL. Economy plugins expect to be asked on the main thread, so balances are read there, a few milliseconds each tick, so the server doesn't stall. It runs from the console of an empty server too. |
+| `/xmoney import vault` | Bukkit: whatever other economy plugin is registered with Vault, while it's still installed. This covers every other economy plugin, and CMI or EssentialsX on MySQL. Economy plugins expect to be asked on the main thread, so balances are read there, a few milliseconds each tick, so the server doesn't stall. It runs from the console of an empty server too. |
 
 Only players who have joined this server are imported from a plain Vault economy, since Vault can't list accounts. An economy on VaultUnlocked's API lists its own.
+
+On Fabric, EssentialsX, CMI and Vault aren't there, so there's nothing to import from.
 
 ## Names
 

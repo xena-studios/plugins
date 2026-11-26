@@ -191,24 +191,11 @@ public open class CommandSection(
         if (others) key("permission-others", PERMISSION, "xutilities.command.$name.others") else null
 
     public companion object {
-        /** A permission node, or blank for anyone. Read in any case, as Bukkit does. */
-        public val PERMISSION: ConfigType<String> = ConfigType.scalar("permission", { it }) { raw ->
-            val node = raw.trim().lowercase()
-            if (node.isEmpty() || PermissionSet.isNode(node)) {
-                co.xenastudios.core.common.Outcome.Ok(node)
-            } else {
-                co.xenastudios.core.common.Outcome.Err("isn't a permission node (words of letters, digits, - and _ joined with .), or blank for anyone")
-            }
-        }
+        /** A permission node, or blank for anyone: the core's. */
+        public val PERMISSION: ConfigType<String> = co.xenastudios.core.common.config.CommandTypes.PERMISSION
 
-        /** A command's other name: one word. */
-        public val ALIAS: ConfigType<String> = ConfigType.scalar("alias", { it }) { raw ->
-            val word = raw.trim().lowercase().removePrefix("/")
-            if (WORD.matches(word)) co.xenastudios.core.common.Outcome.Ok(word)
-            else co.xenastudios.core.common.Outcome.Err("isn't a command name (letters, digits, - and _)")
-        }
-
-        internal val WORD = Regex("[a-z0-9][a-z0-9_-]*")
+        /** A command's other name: the core's. */
+        public val ALIAS: ConfigType<String> = co.xenastudios.core.common.config.CommandTypes.ALIAS
     }
 }
 

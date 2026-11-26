@@ -1,5 +1,15 @@
 plugins {
-    id("xena.api")
+    id("xena.kmp-api")
 }
 
-description = "xMoney's developer API: balances and the top list from memory, payments with a cause in the ledger, history, and events."
+group = "co.xenastudios"
+description = "xMoney's developer API: balances, payments with their causes, the top list, history and the economy's events, the same on every platform."
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            // Players and events, as every Xena plugin's API has them.
+            api(project(":core:core-api"))
+        }
+    }
+}

@@ -1,0 +1,84 @@
+---
+title: Developer API
+description: "Build on xMoney: balances, payments recorded with their cause, the top list, history, the economy's events and hooks that can refuse a payment, on every platform."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xMoney's API is the same on Paper, Folia, Spigot and Fabric: players are by UUID, amounts are exact, and everything says how it runs: from memory at once on any thread, or a `CompletableFuture`. Get it with `XMoney.api()` once xMoney is enabled (add it to your plugin's `depend`, or `softdepend` and check `XMoney.isEnabled()` first). On Bukkit it's also in the services manager, as `XMoneyApi`.
+
+Vault, VaultUnlocked and (on Fabric) the Common Economy API stay the universal way in, and xMoney answers them all. Use this API for what they can't say: why money moved (`/eco history` shows "xVote: vote reward" rather than an unnamed change), a result that says why a payment was refused, the top list, and a say over every payment.
+
+:::caution[Not on Maven Central yet]
+2.0's API isn't published until 2.0 is released. Its coordinates will be `co.xenastudios.xmoney:xmoney-api:2.0.0`; until then, compile against the plugin's jar. The [1.x API](/xmoney/v1/developer-api/) is on Maven Central as `1.0.1`.
+:::
+
+## Amounts
+
+An `Amount` is a whole number of ten-thousandths, so adding and taking away never drift. Make one from a number, text, a `double` or Java's `BigDecimal`, saying which way to round past four places: down for what you pay in, up for what you take, so rounding never makes money.
+
+```java
+Amount price = Amount.parse("12.50");                       // exact, or null
+Amount reward = Amount.ofDouble(config.getDouble("reward"), Rounding.DOWN);
+Amount cost = Amounts.of(bigDecimalPrice, Rounding.UP);     // from a BigDecimal
+BigDecimal back = Amounts.toBigDecimal(api.balance(player)); // 12.50, 0.995
+```
+
+## Balances and payments
+
+```java
+XMoneyApi api = XMoney.api();
+PlayerRef player = PlayerRefs.of(bukkitPlayer.getUniqueId());
+if (api.has(player, cost)) {
+    api.withdraw("MyShop", player, cost, "bought a sword").thenAccept(result -> {
+        if (result.isSuccess()) giveSword();
+        else tell(result.getStatus());   // INSUFFICIENT_FUNDS, CANCELLED, UNAVAILABLE...
+    });
+}
+api.deposit("xVote", player, Amount.of(50), "vote reward");
+api.transfer("xPlots", tenant, owner, rent, "rent for plot 12");
+```
+
+The first argument is your plugin's name, which the ledger records with the reason. A deposit makes an account for a player who has none. On a single server every result is already complete when it's returned; on a network a withdrawal completes once the shared database has taken it, off the calling thread, and is `UNAVAILABLE` (nothing taken, then or later) if it doesn't within five seconds.
+
+`top(from, count)` reads the richest players, `history(player, page)` a page of the ledger (it reads the database: a future, off the server's threads), and `format(amount)` writes an amount as the currency's config says: `$1,234.50`.
+
+## Hooks
+
+An add-on can refuse a payment and say why, for a plot plugin's frozen account, a market's trade lock, or a limit on what new players may send. Hooks are asked before every change to a balance (not imports), after the pre-transaction event, on the thread making it: answer from memory.
+
+```java
+api.registerHook("xMarket", transaction ->
+    transaction.getChange().isNegative() && isLocked(transaction.getPlayer()) ? "<error>Your account is locked during a trade." : null);
+```
+
+The first refusal wins, and the payment is `CANCELLED`. One that throws is logged and removed.
+
+## Events
+
+Fired on xMoney's bus (`api.getEvents()`), only when something listens. `PreTransactionEvent` comes before a balance changes, on the thread changing it, and can be cancelled; `BalanceChangedEvent` once the change is saved, off the server's threads, in order, one for each account of a payment.
+
+```java
+api.getEvents().subscribe(BalanceChangedEvent.TYPE, event -> log(event.getPlayer(), event.getChange(), event.getSource(), event.getReason()));
+```
+
+On Bukkit each is also a Bukkit event, for plugins and Skript scripts that listen the Bukkit way: `BukkitPreTransactionEvent` and `BukkitBalanceChangedEvent` in `co.xenastudios.xmoney.api.bukkit`, with `UUID`s and `BigDecimal`s. Cancelling the first cancels xMoney's own.
+
+<Reference plugin="xmoney" show="events" />
+
+## From 1.x
+
+| 1.x | 2.0 |
+| --- | --- |
+| `XMoneyApi.get()` | `XMoney.api()` (also in Bukkit's services manager) |
+| `UUID` players | `PlayerRef`: `PlayerRefs.of(uuid)` |
+| `BigDecimal` amounts | `Amount`, exact; `Amounts.of(BigDecimal, Rounding)` and `Amounts.toBigDecimal(Amount)` |
+| `deposit(Plugin, UUID, BigDecimal, String)` and the rest | `deposit(String source, PlayerRef, Amount, String reason)`: `CompletableFuture`s as before |
+| `TransactionResult.success()` | `isSuccess()`; the same `Status` values |
+| `HistoryEntry.time()`: an `Instant` | `getTimeMillis()` |
+| Bukkit events in `co.xenastudios.xmoney.api.event` | xMoney's own events on `api.getEvents()`, with their `TYPE`; on Bukkit also the `Bukkit*Event`s above |
+| — | `registerHook`, `getEvents()` |
+
+Inside xMoney's jar, the core's types the API uses (`PlayerRef`, `EventBus`) are relocated with its own copy of the core, as every Xena plugin's are. The published API will carry the same names.

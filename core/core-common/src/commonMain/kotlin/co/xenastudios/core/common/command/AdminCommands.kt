@@ -153,29 +153,44 @@ public class AdminCommands(
     internal fun declare(root: List<String>): List<CommandNode> = subcommands.map { sub ->
         CommandBuilder(root + sub.word, sub.description, permission(sub), emptyList(), builtIn = true).apply {
             when (sub) {
-                AdminSubcommand.RELOAD -> executes { context -> reload(context.source) }
-                AdminSubcommand.DEBUG -> executes { context -> debug(context.source) }
+                AdminSubcommand.RELOAD, AdminSubcommand.DEBUG -> executes(Handler(sub))
                 AdminSubcommand.IMPORT -> {
-                    val imports = imports!!
-                    val source = argument("source", ImportSource(imports), "The plugin to import from.")
+                    val source = argument("source", ImportSource(imports!!), "The plugin to import from.")
                     val dryRun = optional("dry-run", ArgumentTypes.choice(DRY_RUN), "Counts what would be imported, changing nothing.")
-                    executes { context -> import(context, imports, context[source], context.getOrNull(dryRun) != null) }
+                    executes(Handler(sub, source, dryRun))
                 }
                 AdminSubcommand.MIGRATE -> {
-                    val migration = migration!!
+                    checkNotNull(migration)
                     val to = argument("to", ArgumentTypes.choice("sqlite", "mysql"), "The storage type to move the data to.")
                     val force = optional("force", ArgumentTypes.choice(FORCE), "Replaces what the target database already has.")
                     confirm()
-                    executes { context -> migrate(context, migration, context[to], context.getOrNull(force) != null) }
+                    executes(Handler(sub, to, force))
                 }
                 AdminSubcommand.FORGET -> {
-                    val playerData = playerData!!
+                    checkNotNull(playerData)
                     val player = argument("player", ArgumentTypes.playerNameOrUuid, "The player whose data is deleted, online or not.")
                     confirm()
-                    executes { context -> forget(context.source, registry(playerData), context[player]) }
+                    executes(Handler(sub, player))
                 }
             }
         }.build()
+    }
+
+    /**
+     * Each subcommand's handler, one class told apart by [sub] rather than a lambda each: the JVM
+     * makes a class of every lambda where it's first made, as each plugin starts
+     * (decisions/2026-11-25-a-lighter-core.md). [args] are the subcommand's own arguments, in order.
+     */
+    private inner class Handler(private val sub: AdminSubcommand, private vararg val args: Argument<String>) : CommandHandler {
+        override fun run(context: CommandContext) {
+            when (sub) {
+                AdminSubcommand.RELOAD -> reload(context.source)
+                AdminSubcommand.DEBUG -> debug(context.source)
+                AdminSubcommand.IMPORT -> import(context, imports!!, context[args[0]], context.getOrNull(args[1]) != null)
+                AdminSubcommand.MIGRATE -> migrate(context, migration!!, context[args[0]], context.getOrNull(args[1]) != null)
+                AdminSubcommand.FORGET -> forget(context.source, registry(playerData!!), context[args[0]])
+            }
+        }
     }
 
     private fun reply(source: CommandSource, message: MessageKey, vararg placeholders: Pair<String, Any>) {

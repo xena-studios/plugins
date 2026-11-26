@@ -1,7 +1,7 @@
 name: Boot
 
 # The rewrite's boot matrix (ROADMAP.md, "Build, CI and releases"): xSample, the core's sample
-# plugin, and each rewritten plugin (xUtilities, zChat) on real servers of every platform they ship
+# plugin, and each rewritten plugin (xUtilities, zChat, xMoney) on real servers of every platform they ship
 # for, and the family test, xSample, xTwin and the rewritten plugins on one server. The Plugins workflow
 # boots today's plugins; this one boots the rewrite.
 #
@@ -122,7 +122,8 @@ jobs:
           echo "fabric=$(pick fabric "$fabric")" | tee -a "$GITHUB_OUTPUT"
           echo "proxy=$(pick proxy "$proxy")" | tee -a "$GITHUB_OUTPUT"
 
-  # xSample's, xTwin's, xUtilities' and zChat's Bukkit jars, once for every Bukkit cell.
+  # xSample's, xTwin's, xUtilities', zChat's and xMoney's Bukkit jars (with xMoney's two test
+  # plugins), once for every Bukkit cell.
   build-bukkit:
     needs: changes
     if: needs.changes.outputs.bukkit != '[]'
@@ -143,7 +144,9 @@ jobs:
       # gradle/jar-budgets.txt.
       - run: >-
           ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble :xutilities:bukkit:assemble :zchat:bukkit:assemble
+          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble
           :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget :zchat:bukkit:checkJarBudget
+          :xmoney:bukkit:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: bukkit-jars
@@ -153,6 +156,9 @@ jobs:
             core/core-testing/twin/bukkit/build/r8/XTwin.jar
             xutilities/bukkit/build/r8/xUtilities.jar
             zchat/bukkit/build/r8/zChat.jar
+            xmoney/bukkit/build/r8/xMoney.jar
+            xmoney/vault-consumer/build/libs/vault-consumer.jar
+            xmoney/hook-consumer/build/libs/hook-consumer.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -352,6 +358,45 @@ jobs:
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks zchat/bukkit/client-checks.txt)
           zchat/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
+      # upload-artifact keeps the jars at their paths from the repo's root (their common folder):
+      # the check names one that isn't where the boots look, should the artifact's files change.
+      - name: Check the Bukkit jars are in place
+        run: |
+          for jar in xmoney/bukkit/build/r8/xMoney.jar xmoney/vault-consumer/build/libs/vault-consumer.jar \
+                     xmoney/hook-consumer/build/libs/hook-consumer.jar zchat/bukkit/build/r8/zChat.jar; do
+            [[ -f $jar ]] || { echo "::error::$jar is missing: the bukkit-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/*' | head -20; exit 1; }
+          done
+      # xMoney beside vault-consumer (a plugin.yml plugin that depends on Vault) and, on Paper and
+      # Folia, hook-consumer (today's core's Vault hook): every command, Vault 1 and VaultUnlocked 2
+      # from other threads, the importers, a reload and debug; below 1.15.2 beside a real Vault.jar,
+      # which boot.sh downloads. On a `family` or `client` cell beside zChat too, its format seeded
+      # to show <balance>; on a `client` cell also two real clients, Joiner paying Friend in German
+      # and English and Joiner's chat line showing their balance (xmoney/bukkit/zchat-client-checks.txt).
+      - name: boot xMoney
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+          SEED: ${{ matrix.cell.seed }}
+          REGIONS: ${{ matrix.cell.regions }}
+          CLIENT: ${{ matrix.cell.client }}
+          FAMILY: ${{ matrix.cell.family }}
+        run: |
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          # boot.sh takes --zchat right after the server.
+          zchat=()
+          [[ $CLIENT != true && $FAMILY != true ]] || zchat=(--zchat)
+          args=()
+          [[ -z $SEED ]] || args+=(--seed "$SEED")
+          [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xmoney/bukkit/zchat-client-checks.txt)
+          xmoney/bukkit/boot.sh "${target[@]}" "${zchat[@]}" --java "$JAVA" "${args[@]}"
+      # On Paper, beside a real VaultUnlocked jar, which Paper refuses as a duplicate: the one run
+      # that allows an error, Paper's own (xmoney/bukkit/boot-checks-vaultunlocked.txt).
+      - name: boot xMoney beside VaultUnlocked
+        if: matrix.cell.server == 'paper'
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: xmoney/bukkit/boot.sh "$SERVER" "$VERSION" --vaultunlocked --java "$JAVA"
       # The family test: xTwin, xUtilities and zChat beside xSample, each with its own relocated core,
       # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),
       # and each answering its own commands.
@@ -586,6 +631,22 @@ jobs:
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks zchat/fabric/boot-checks.txt \
             core/platform-fabric/build/libs/zchat-fabric-*+"$VERSION".jar
+      - name: boot xMoney
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks xmoney/fabric/boot-checks.txt \
+            core/platform-fabric/build/libs/xmoney-fabric-*+"$VERSION".jar
+      # xMoney beside zChat: zChat's formats get xMoney's <balance> through zChat's placeholder seam.
+      - name: xMoney beside zChat
+        if: matrix.cell.family
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks xmoney/fabric/boot-checks.txt --checks xmoney/fabric/zchat-checks.txt \
+            core/platform-fabric/build/libs/xmoney-fabric-*+"$VERSION".jar core/platform-fabric/build/libs/zchat-fabric-*+"$VERSION".jar
       - name: family test
         if: matrix.cell.family
         env:
@@ -668,6 +729,12 @@ jobs:
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
             --out build/budgets/zchat \
             zchat/bukkit/build/r8/zChat.jar
+      - name: runtime budgets, xMoney (newest Paper)
+        run: |
+          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
+          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
+            --out build/budgets/xmoney \
+            xmoney/bukkit/build/r8/xMoney.jar
       # Its startup is reported, not budgeted: Paper 1.21.11 loads a plugin about 4 times
       # slower than 26.3 on these 2-core runners (its JIT threads and loader, not our code: the
       # server thread spends 6-7 ms of CPU in our enable), and startup is budgeted, failing, on

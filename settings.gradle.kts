@@ -122,9 +122,6 @@ rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" }
     ?.filter { it.resolve("build.gradle.kts").let { build -> build.isFile && "id(\"xena.plugin\")" in build.readText() } }
     ?.sortedBy { it.name }
     ?.forEach { include(it.name) }
-// Never released: a plugin.yml plugin using Vault's APIs and a Paper plugin using the core's
-// Vault hook, so CI checks that xMoney stands in for Vault on real servers.
-include("xmoney:vault-consumer", "xmoney:hook-consumer")
 // A plugin in the rewrite's layout (<plugin>/api, common and one folder per platform, from
 // scripts/new-rewrite-plugin.ts): every folder in it with a build file. A rewritten plugin's
 // folder has common/; today's have their build at the top.

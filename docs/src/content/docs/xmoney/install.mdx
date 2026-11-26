@@ -1,0 +1,22 @@
+---
+title: Install
+description: "Install xMoney on your server: the steps for Paper, Folia, Spigot and Fabric."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="xmoney" />
+
+On the first start xMoney writes `config.yml`, one file per language in `lang/`, and its SQLite database `money.db`, in `plugins/xMoney/` (Bukkit) or `config/xmoney/` (Fabric). Fabric servers have no database driver of their own, so SQLite's is downloaded once into `config/xena/libraries/`. Settings every Xena plugin shares, such as the language and the look of messages, are in `plugins/Xena/config.yml` (`config/xena/` on Fabric).
+
+- **Paper, Folia, and Spigot 1.15.2 or newer:** remove Vault and VaultUnlocked if you have them; xMoney is Vault now.
+- **Spigot or CraftBukkit before 1.15.2:** keep (or add) [Vault.jar](https://www.spigotmc.org/resources/vault.34315/) beside xMoney.
+- [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) is optional, for `%xmoney_balance%` and the rest.
+
+## Coming from 1.x
+
+Replace the jar and restart: see [Upgrading from 1.x](/xmoney/upgrade/). The [1.x docs](/xmoney/v1/) stay up while 1.x gets fixes.

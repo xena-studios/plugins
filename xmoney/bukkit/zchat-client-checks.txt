@@ -1,0 +1,3 @@
+# With zChat (boot.sh --zchat) and a real client: as client-checks.txt, then Joiner's chat line in
+# zChat's format carries their balance, to them and to Friend.
+client: --plugin xmoney --zchat

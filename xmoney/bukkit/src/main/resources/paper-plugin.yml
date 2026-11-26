@@ -1,0 +1,23 @@
+# Paper and Folia from 1.19.3 read this instead of plugin.yml; Spigot and older Paper ignore it.
+# The same plugin, with its libraries handed to Paper by the core's loader from the family's
+# cache rather than resolved by Paper from plugin.yml's libraries: at every boot (DECISIONS.md).
+name: xMoney
+version: '${version}'
+main: co.xenastudios.xmoney.bukkit.XMoneyBootstrap
+# The core's, relocated into the plugin's package with the rest of it.
+loader: co.xenastudios.xmoney.core.loader.paper.PaperLibraryLoader
+api-version: '1.19'
+folia-supported: true
+description: The economy, and Vault, in one plugin.
+website: https://plugins.xenastudios.co/xmoney/
+authors: [Xena Studios]
+# Plugins that depend on Vault load, and find Vault's API, in xMoney. Paper then refuses a real
+# Vault or VaultUnlocked jar beside it as a duplicate (DECISIONS.md).
+provides: [Vault]
+dependencies:
+  server:
+    # Optional: %xmoney_balance% and the rest, when it's installed.
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true

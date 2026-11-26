@@ -1,0 +1,24 @@
+---
+title: Commands
+description: "Every xMoney command: its arguments, aliases and permission, and its placeholders."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`<angle brackets>` are required, `[square brackets]` optional. Aliases are the defaults; change them in the [config](/xmoney/configuration/), where `/balance`, `/pay`, `/baltop` and `/eco` can also be turned off or given another permission. Commands take players who are offline, as long as they've played here.
+
+- **Amounts** can be typed `250`, `1,000`, `12.5`, `1.5k` or `2m`, with the currency's own separators (`1.000,50` where `,` marks the decimals). The thousands separator only counts between groups of three digits, so `1,5` is refused rather than read as 15, and more decimals than the currency has are refused rather than rounded.
+- **`/pay`** asks first, with a button, for payments of `confirm-above` or more.
+- **`/eco`** also works on accounts other plugins made by name, such as a town's bank: `/eco history town-Spawn`.
+- **`/xmoney import`** is a dry run until `confirm`: see [Switching](/xmoney/switching/).
+- **`/xmoney forget <player>`** deletes a player's account, balance and ledger rows, here and on a network's other servers.
+
+<Reference plugin="xmoney" show="commands" />
+
+## Placeholders
+
+Answered from memory, so scoreboards can ask as often as they like. With [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) on Bukkit they're `%xmoney_balance%` and so on; any rank from 1 to 100 works in place of `top_1`, and `_balance_raw` and `_balance_short` follow `top_<rank>` too. In [zChat](/zchat/)'s chat formats, on every platform, `<balance>`, `<balance_raw>` and `<balance_short>` show the sender's balance.
+
+<Reference plugin="xmoney" show="placeholders" />

@@ -30,31 +30,33 @@ Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQL
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xmoney:build       # compile, test, and check the jar's size budget
-./gradlew :xmoney:runServer   # a Paper server with xMoney, in xmoney/run/
-XR_MYSQL=127.0.0.1:3306:xr:root:pw ./gradlew :xmoney:test   # also two servers on a real MariaDB
+./gradlew :xmoney:common:build :xmoney:bukkit:build      # tests on the JVM and wasmWasi, the R8 jar and its budget
+XR_MYSQL=127.0.0.1:3306:xr:root:pw ./gradlew :xmoney:common:jvmTest   # also the network tests on a real MariaDB
+./gradlew :xmoney:bukkit:runServer                       # a Paper server with the jar, in xmoney/bukkit/run/
+./gradlew -p core/platform-fabric :xmoney:26.3:collect   # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+xmoney/bukkit/boot.sh paper 26.3 --java <JDK 25 home>    # the boot checks on a real server (--vaultunlocked, --zchat)
+./gradlew :xmoney:api:updateKotlinAbi                    # after a deliberate API change
+./gradlew :xmoney:common:updateXenaManifest              # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-api/                 the developer API (co.xenastudios.xmoney:xmoney-api), shipped in the jar unrelocated
-src/main/java/co/xenastudios/xmoney/
-  XMoney.java        the plugin: reads every balance at startup, registers Vault and the API, sets up commands
-  Bank.java          what Vault, the API and the commands share: the ledger, the format, the limits
-  money/             fixed-point amounts (longs of ten-thousandths), formatting and parsing
-  ledger/            accounts in memory, the ledger, its one writer thread, the tables
-  vault/             the Vault 1 and VaultUnlocked 2 economies, the Permission fallback, the leftover-jar warning
-  command/           /balance, /pay, /baltop, /eco, /xmoney import and status
-  imports/           EssentialsX, CMI and Vault balances, and import plans
-  hook/              the API, its events, and PlaceholderAPI
-  listen/            joins: the one listener
-vault-consumer/      never released: a plugin.yml plugin calling Vault the ways shops do
-hook-consumer/       never released: a Paper plugin charging through the core's VaultEconomy
-boot-checks.txt                   console commands CI runs on real Paper and Folia servers
-boot-checks-vaultunlocked.txt     the same beside a real VaultUnlocked jar, which Paper refuses
+api/             the developer API (XMoneyApi, XMoney.api(), Amount, hooks, events), platform-neutral, by uuid
+common/          everything xMoney does, in Kotlin Multiplatform: the config and its migration from 1.x, the
+                 messages (lang/ in its resources), the ledger (accounts in memory, the tables, single-server and
+                 network writes), the commands, imports and placeholders; jvmMain opens the database and reads
+                 EssentialsX's and CMI's files
+bukkit/          the Paper, Folia, Spigot and CraftBukkit jar, 1.8.8 on: Vault 1 and VaultUnlocked 2, the
+                 Permission fallback, PlaceholderAPI, zChat's tags and the Bukkit events
+fabric/          the Fabric mod, a branch of core/platform-fabric's own build: the Common Economy API
+vault-consumer/  never released: a plugin.yml plugin calling Vault the ways shops do, from 1.8.8 on
+hook-consumer/   never released: a Paper plugin charging through the core's VaultEconomy
+boot-checks*.txt, client-checks.txt, zchat-*   what the boot tests run and expect (bukkit/)
+CHANGELOG.md     one section per release; the release workflow publishes it
+modrinth.md      the Modrinth and Hangar project page, published when it changes on main
 ```
 
-The shared core (reloading, config migration, the theme, the database, the change feed, offline players, chat pages) is in [`core/`](../core).
+Every balance is in memory and every change goes through `ledger/Ledger`: keep anything on a Vault call allocation-light and off the disk. The shared core (config, messages, commands, the database and its one writer, the change feed, the family) is in [`core/`](../core).
 
 ## Licence
 
-[GPL-3.0-only](../LICENSE), like the rest of the repo. The jar also contains the classes of [VaultUnlockedAPI](https://github.com/TheNewEconomy/VaultUnlockedAPI) 2.20 (with [Vault's API](https://github.com/MilkBowl/VaultAPI)), unmodified, under the LGPL-3.0; the licence texts and a notice are in `src/main/resources/META-INF/licenses/` and in the jar.
+[GPL-3.0-only](../LICENSE), like the rest of the repo. The Bukkit jar also contains the classes of [VaultUnlockedAPI](https://github.com/TheNewEconomy/VaultUnlockedAPI) 2.20 (with [Vault's API](https://github.com/MilkBowl/VaultAPI)), unmodified, under the LGPL-3.0; the licence texts and a notice are in `bukkit/src/main/resources/META-INF/licenses/` and in the jar.

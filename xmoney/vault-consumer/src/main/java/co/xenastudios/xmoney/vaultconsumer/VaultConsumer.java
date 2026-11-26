@@ -120,7 +120,7 @@ public final class VaultConsumer extends JavaPlugin {
         CountDownLatch done = new CountDownLatch(threads);
         AtomicInteger errors = new AtomicInteger();
         for (int t = 0; t < threads; t++) {
-            Bukkit.getAsyncScheduler().runNow(this, task -> {
+            new Thread(() -> {
                 try {
                     for (int i = 0; i < each; i++) {
                         economy.depositPlayer(stranger, 1.25);
@@ -131,7 +131,7 @@ public final class VaultConsumer extends JavaPlugin {
                 } finally {
                     done.countDown();
                 }
-            });
+            }).start();
         }
         check(done.await(30, TimeUnit.SECONDS), "threads didn't finish");
         check(errors.get() == 0, errors.get() + " threads threw");
@@ -160,7 +160,7 @@ public final class VaultConsumer extends JavaPlugin {
         check(economy.getBalance(getName(), payer).compareTo(new BigDecimal("10.005")) == 0, "v2 balance is " + economy.getBalance(getName(), payer));
         check(!economy.withdraw(getName(), payer, new BigDecimal("-1")).transactionSuccess(), "v2 withdrew a negative");
         check(!economy.withdraw(getName(), payer, new BigDecimal("1000")).transactionSuccess(), "v2 overdrew");
-        var moved = economy.transfer(getName(), payer, payee, new BigDecimal("4"));
+        net.milkbowl.vault2.economy.MultiEconomyResponse moved = economy.transfer(getName(), payer, payee, new BigDecimal("4"));
         check(moved.type() == net.milkbowl.vault2.economy.EconomyResponse.ResponseType.SUCCESS, "v2 transfer failed: " + moved.errorMessage());
         check(economy.getBalance(getName(), payee).compareTo(new BigDecimal("4")) == 0, "v2 transfer didn't arrive");
         check(!economy.transfer(getName(), payer, payee, new BigDecimal("100")).type().equals(
@@ -210,7 +210,7 @@ public final class VaultConsumer extends JavaPlugin {
         @Override public EconomyResponse bankDeposit(String name, double amount) { return none(); }
         @Override public EconomyResponse isBankOwner(String name, String player) { return none(); }
         @Override public EconomyResponse isBankMember(String name, String player) { return none(); }
-        @Override public List<String> getBanks() { return List.of(); }
+        @Override public List<String> getBanks() { return java.util.Collections.emptyList(); }
         @Override public boolean createPlayerAccount(String name) { return false; }
         @Override public boolean createPlayerAccount(String name, String world) { return false; }
 

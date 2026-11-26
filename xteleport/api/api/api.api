@@ -1,0 +1,185 @@
+public abstract interface class co/xenastudios/xteleport/api/DestinationProvider {
+	public abstract fun destination (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class co/xenastudios/xteleport/api/Home {
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/core/api/Location;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLocation ()Lco/xenastudios/core/api/Location;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getOwner ()Lco/xenastudios/core/api/PlayerRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class co/xenastudios/xteleport/api/HomeProvider {
+	public abstract fun homes (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/List;
+}
+
+public final class co/xenastudios/xteleport/api/Names {
+	public static final field INSTANCE Lco/xenastudios/xteleport/api/Names;
+	public static final field MAX_LENGTH I
+	public static final fun valid (Ljava/lang/String;)Z
+}
+
+public final class co/xenastudios/xteleport/api/RtpSettings {
+	public fun <init> (IIII)V
+	public fun <init> (IIIII)V
+	public fun <init> (IIIIIZ)V
+	public synthetic fun <init> (IIIIIZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAttempts ()I
+	public final fun getCenterX ()I
+	public final fun getCenterZ ()I
+	public final fun getMaxRadius ()I
+	public final fun getMinRadius ()I
+	public final fun getOnlyGenerated ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xteleport/api/TeleportOptions {
+	public static final field Companion Lco/xenastudios/xteleport/api/TeleportOptions$Companion;
+	public fun <init> ()V
+	public fun <init> (I)V
+	public fun <init> (ILjava/lang/String;)V
+	public fun <init> (ILjava/lang/String;I)V
+	public fun <init> (ILjava/lang/String;ID)V
+	public fun <init> (ILjava/lang/String;IDZ)V
+	public synthetic fun <init> (ILjava/lang/String;IDZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun defaults ()Lco/xenastudios/xteleport/api/TeleportOptions;
+	public final fun getCheckSafe ()Z
+	public final fun getCooldownKey ()Ljava/lang/String;
+	public final fun getCooldownSeconds ()I
+	public final fun getCost ()D
+	public final fun getWarmupSeconds ()I
+	public static final fun immediate ()Lco/xenastudios/xteleport/api/TeleportOptions;
+	public fun toString ()Ljava/lang/String;
+	public final fun withCheckSafe (Z)Lco/xenastudios/xteleport/api/TeleportOptions;
+	public final fun withCooldown (Ljava/lang/String;I)Lco/xenastudios/xteleport/api/TeleportOptions;
+	public final fun withCost (D)Lco/xenastudios/xteleport/api/TeleportOptions;
+	public final fun withWarmup (I)Lco/xenastudios/xteleport/api/TeleportOptions;
+}
+
+public final class co/xenastudios/xteleport/api/TeleportOptions$Companion {
+	public final fun defaults ()Lco/xenastudios/xteleport/api/TeleportOptions;
+	public final fun immediate ()Lco/xenastudios/xteleport/api/TeleportOptions;
+}
+
+public final class co/xenastudios/xteleport/api/TeleportResult : java/lang/Enum {
+	public static final field BLOCKED Lco/xenastudios/xteleport/api/TeleportResult;
+	public static final field CANCELLED Lco/xenastudios/xteleport/api/TeleportResult;
+	public static final field CANT_AFFORD Lco/xenastudios/xteleport/api/TeleportResult;
+	public static final field FAILED Lco/xenastudios/xteleport/api/TeleportResult;
+	public static final field ON_COOLDOWN Lco/xenastudios/xteleport/api/TeleportResult;
+	public static final field TELEPORTED Lco/xenastudios/xteleport/api/TeleportResult;
+	public static final field UNSAFE Lco/xenastudios/xteleport/api/TeleportResult;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xteleport/api/TeleportResult;
+	public static fun values ()[Lco/xenastudios/xteleport/api/TeleportResult;
+}
+
+public final class co/xenastudios/xteleport/api/TeleportType : java/lang/Enum {
+	public static final field HOME Lco/xenastudios/xteleport/api/TeleportType;
+	public static final field PLUGIN Lco/xenastudios/xteleport/api/TeleportType;
+	public static final field RTP Lco/xenastudios/xteleport/api/TeleportType;
+	public static final field SPAWN Lco/xenastudios/xteleport/api/TeleportType;
+	public static final field TPA Lco/xenastudios/xteleport/api/TeleportType;
+	public static final field TPAHERE Lco/xenastudios/xteleport/api/TeleportType;
+	public static final field WARP Lco/xenastudios/xteleport/api/TeleportType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xteleport/api/TeleportType;
+	public static fun values ()[Lco/xenastudios/xteleport/api/TeleportType;
+}
+
+public abstract interface class co/xenastudios/xteleport/api/VisibilityHook {
+	public abstract fun hidden (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/PlayerRef;)Z
+}
+
+public final class co/xenastudios/xteleport/api/Warp {
+	public fun <init> (Ljava/lang/String;Lco/xenastudios/core/api/Location;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLocation ()Lco/xenastudios/core/api/Location;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xteleport/api/XTeleport {
+	public static final field INSTANCE Lco/xenastudios/xteleport/api/XTeleport;
+	public static final fun api ()Lco/xenastudios/xteleport/api/XTeleportApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xteleport/api/XTeleportApi;)V
+}
+
+public abstract interface class co/xenastudios/xteleport/api/XTeleportApi {
+	public abstract fun cachedHomes (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/List;
+	public abstract fun cooldownMillis (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)J
+	public abstract fun deleteHome (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun deleteWarp (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun findSafeLocation (Lco/xenastudios/core/api/WorldRef;Lco/xenastudios/xteleport/api/RtpSettings;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun homeLimit (Lco/xenastudios/core/api/PlayerRef;)I
+	public abstract fun homes (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun registerDestination (Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xteleport/api/DestinationProvider;)V
+	public abstract fun registerHomes (Ljava/lang/String;Lco/xenastudios/xteleport/api/HomeProvider;)V
+	public abstract fun registerVisibility (Ljava/lang/String;Lco/xenastudios/xteleport/api/VisibilityHook;)V
+	public abstract fun setHome (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/core/api/Location;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun setWarp (Ljava/lang/String;Lco/xenastudios/core/api/Location;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun spawn ()Lco/xenastudios/core/api/Location;
+	public abstract fun teleport (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/Location;Lco/xenastudios/xteleport/api/TeleportOptions;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun teleport (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/xteleport/api/TeleportOptions;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun unregisterAll (Ljava/lang/String;)V
+	public abstract fun warp (Ljava/lang/String;)Lco/xenastudios/xteleport/api/Warp;
+	public abstract fun warps ()Ljava/util/List;
+}
+
+public final class co/xenastudios/xteleport/api/event/HomeSetEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xteleport/api/event/HomeSetEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/core/api/Location;Z)V
+	public final fun getLocation ()Lco/xenastudios/core/api/Location;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getReplacing ()Z
+}
+
+public final class co/xenastudios/xteleport/api/event/HomeSetEvent$Companion {
+}
+
+public final class co/xenastudios/xteleport/api/event/PreTeleportEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xteleport/api/event/PreTeleportEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/Location;Lco/xenastudios/xteleport/api/TeleportType;)V
+	public final fun getDestination ()Lco/xenastudios/core/api/Location;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getType ()Lco/xenastudios/xteleport/api/TeleportType;
+}
+
+public final class co/xenastudios/xteleport/api/event/PreTeleportEvent$Companion {
+}
+
+public final class co/xenastudios/xteleport/api/event/TeleportEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xteleport/api/event/TeleportEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/Location;Lco/xenastudios/core/api/Location;Lco/xenastudios/xteleport/api/TeleportType;)V
+	public final fun getFrom ()Lco/xenastudios/core/api/Location;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getTo ()Lco/xenastudios/core/api/Location;
+	public final fun getType ()Lco/xenastudios/xteleport/api/TeleportType;
+}
+
+public final class co/xenastudios/xteleport/api/event/TeleportEvent$Companion {
+}
+
+public final class co/xenastudios/xteleport/api/event/TpaRequestEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xteleport/api/event/TpaRequestEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/PlayerRef;Z)V
+	public final fun getHere ()Z
+	public final fun getSender ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getTarget ()Lco/xenastudios/core/api/PlayerRef;
+}
+
+public final class co/xenastudios/xteleport/api/event/TpaRequestEvent$Companion {
+}
+

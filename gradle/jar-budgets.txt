@@ -84,3 +84,15 @@
 :core:platform-fabric:xmoney:1.20.1 630
 :core:platform-fabric:xmoney:1.21.11 632
 :core:platform-fabric:xmoney:26.3 662
+
+# xTeleport 2.0 (M5), shrunk: 727 KiB on Bukkit, over the 500 KiB target with the reason recorded in
+# decisions/2026-11-26-xteleport-2.md: about 400 KiB the shared core (its database layer among it, as
+# xMoney's), 212 KiB xTeleport's own and its API (the teleport pipeline, the RTP search, homes, TPA,
+# warps, commands, the import, the Bukkit and Paper paths, the Bukkit events), 22 KiB the seven
+# translations, 7 KiB bStats, 3 KiB the startup list. Line: size + about 10%.
+:xteleport:bukkit 800
+# On Fabric, 645-652 KiB, shrunk before Loom remaps it, its core relocated (xena.fabric-mod): the same
+# core, teleports and commands; lines size + 5%.
+:core:platform-fabric:xteleport:1.20.1 685
+:core:platform-fabric:xteleport:1.21.11 688
+:core:platform-fabric:xteleport:26.3 680

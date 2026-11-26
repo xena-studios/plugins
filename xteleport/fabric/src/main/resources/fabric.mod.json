@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "xteleport",
+  "version": "${version}",
+  "name": "xTeleport",
+  "description": "Every teleport your server needs. Server-side: players install nothing.",
+  "authors": ["Xena Studios"],
+  "contact": {
+    "homepage": "https://plugins.xenastudios.co/xteleport/",
+    "sources": "https://github.com/xena-studios/plugins",
+    "issues": "https://github.com/xena-studios/plugins/issues"
+  },
+  "license": "GPL-3.0-only",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.xteleport.fabric.XTeleportMod" }
+    ]
+  },
+  "depends": {
+    "fabricloader": "${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${flk}"
+  }
+}

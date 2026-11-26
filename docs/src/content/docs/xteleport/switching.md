@@ -63,6 +63,10 @@ Keep EssentialsSpawn out if xTeleport handles spawn, or turn off `spawn.on-first
 
 Importing from HuskHomes and CMI is planned. Until then, players can set their homes again with `/sethome`.
 
+## On Fabric
+
+EssentialsX is a Bukkit plugin, so on Fabric there's nothing to import, and `/xteleport import` isn't there.
+
 ## Commands, side by side
 
 | EssentialsX | xTeleport |
@@ -72,5 +76,5 @@ Importing from HuskHomes and CMI is planned. Until then, players can set their h
 | `/setwarp`, `/warp`, `/delwarp`, `/warps` | The same. |
 | `/setspawn`, `/spawn` | The same. |
 | `essentials.sethome.multiple.<group>` | `homes.limits` in the config, or `xteleport.homes.<n>`. |
-| `/back` | Not in xTeleport: [xUtilities](/xutilities/) has it, and returns from xTeleport's teleports. |
+| `/back` | Not in xTeleport: [xUtilities](/xutilities/) has it, and returns from xTeleport's teleports on Bukkit. |
 | `/tp`, `/tphere` | Vanilla's `/tp`. |

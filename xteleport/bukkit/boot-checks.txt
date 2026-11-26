@@ -1,0 +1,44 @@
+# xTeleport on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks,
+# through boot.sh): every command that runs without a player, answered by the core's dispatcher
+# and drawn from lang/en.yml. The database opens on an async task with the SQLite driver the
+# server ships.
+logged: xTeleport 2.0.0 on
+logged: Loaded 0 warps from the SQLite database xteleport.db.
+run: xteleport info
+expect: xTeleport 2.0.0 on
+
+# Real /rtp searches: candidate chunks load in the background (Paper and Folia) or one a tick on
+# the server thread (Spigot), and are checked on their own thread (a region's on Folia). Five
+# searches, so one unlucky search can't fail it.
+run: xteleport rtpcheck world 5
+expect: Found a safe spot
+run: xteleport rtpcheck world_nether 3
+expect: Found a safe spot
+# The End: off the main island, on the outer islands. Most columns there are void, so five
+# searches of ten tries. Paper and Folia only: Minecraft before 1.9 has no outer islands, so on
+# Spigot 1.8.8 the End beyond the main island is all void.
+paper run: xteleport rtpcheck world_the_end 5
+paper expect: Found a safe spot
+folia run: xteleport rtpcheck world_the_end 5
+folia expect: Found a safe spot
+run: xteleport rtpcheck nowhere
+expect: can't send anyone to nowhere
+
+# Lists and the import's dry run work without players.
+run: warps
+expect: There are no warps yet.
+run: homes
+expect: Only players can use this command.
+run: xteleport import essentials
+expect: No EssentialsX data found
+
+# Reloading keeps everything running.
+run: xteleport reload
+expect: Reloaded xTeleport
+run: xteleport rtpcheck world
+expect: Found a safe spot
+
+# The health checks, and the report written to debug/ (boot.sh turns the upload off).
+run: xteleport debug
+expect: Database: the SQLite database xteleport.db answered in
+expect: Debug report saved as debug/debug-

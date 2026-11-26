@@ -1,0 +1,25 @@
+---
+title: Commands
+description: "Every xTeleport command: its arguments, aliases and permission, and its placeholders."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`<angle brackets>` are required, `[square brackets]` optional. Aliases are the defaults; change them in the [config](/xteleport/configuration/), where every command can also be turned off or given another permission. Player commands are everyone's by default, `/setwarp`, `/delwarp` and `/setspawn` operators'.
+
+- **Staff and other players' homes:** with `permission-others` (`xteleport.homes.others`), `/home <player>:<home>`, `/delhome <player>:<home>` and `/homes <player>`, for players who are offline too, as long as they've played here.
+- **`/tpaccept`** and **`/tpdeny`** answer the newest request, or the named player's. **`/tpacancel`** takes back every request you sent, or the one to that player.
+- **`/rtp [world]`** goes to `rtp.default-world`, or the world you're in, without one. A short cooldown (`rtp.search-cooldown`) starts with each search, found or not, and the command's own when you arrive.
+- **`/xteleport import essentials`** is a dry run until `confirm`: see [Switching](/xteleport/switching/).
+- **`/xteleport rtpcheck <world> [searches]`** runs `/rtp`'s search, teleporting no one, and says how often it found a spot: for trying a world's settings.
+- **`/xteleport forget <player>`** deletes a player's homes and TPA setting.
+
+<Reference plugin="xteleport" show="commands" />
+
+## Placeholders
+
+Answered from memory. With [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) on Bukkit they're `%xteleport_homes%` and so on; `cooldown_` takes any command's name, or `rtp-search` for `/rtp`'s search cooldown.
+
+<Reference plugin="xteleport" show="placeholders" />

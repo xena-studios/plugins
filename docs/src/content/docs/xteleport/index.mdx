@@ -1,0 +1,71 @@
+---
+title: xTeleport
+description: "xTeleport: homes, TPA, warps, spawn and random teleport (RTP) in one plugin for Paper, Folia, Spigot and Fabric, with warmups, cooldowns, costs through xMoney and an RTP search that can't lag the server."
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import { LinkCard, CardGrid } from "@astrojs/starlight/components";
+import Reference from "../../../components/reference/Reference.astro";
+
+Current version: **2.0.0**
+
+xTeleport is homes, TPA, warps, spawn and random teleport in one plugin. It's for servers that want every teleport with one config and one look, and nothing they don't use.
+
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
+- **The whole set.** `/sethome`, `/home`, `/homes`, `/tpa`, `/tpahere`, `/tpaccept`, `/warp`, `/spawn`, `/rtp` and the rest. See [Commands](/xteleport/commands/).
+- **Switch off what you don't use.** Every command can be turned off, renamed with aliases or given its own permission, and every setting but storage applies on `/xteleport reload`.
+- **Teleports that feel good.** A warmup that moving or taking damage cancels, with a countdown on the action bar. Cooldowns per command. An optional cost, through [xMoney](/xmoney/) or any economy on Vault, taken after the warmup and given back if the teleport fails.
+- **No deaths on arrival.** A home, warp, spawn or TPA that would land a player in lava, inside blocks, over the void or high in the air is refused with a message. The spot's chunk is loaded in the background to check it.
+- **A random teleport that can't lag the server.** See [below](#you-wont-feel-it-running).
+- **In your players' languages.** Every message reaches each player in their client's language: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese.
+- **Easy to switch to.** EssentialsX's command names, so players keep typing what they know, and its homes, warps and spawn imported with one command. See [Switching from EssentialsX](/xteleport/switching/).
+
+:::caution[Not released yet]
+2.0 isn't released yet: it ships with the other plugins' rewrites. Until then 1.0.1 is the release, and these pages are a preview. The [1.x docs](/xteleport/v1/) stay up while 1.x gets fixes.
+:::
+
+:::note[Coming from xTeleport 1.x?]
+Replace the jar and restart: your homes, warps, spawn and TPA settings are read as they are, your config is carried forward, your edited messages move to `lang/en.yml`, and the old file is kept as `config.yml.bak-v1`. See [Upgrading from 1.x](/xteleport/upgrade/).
+:::
+
+## Where it runs
+
+One jar for every Bukkit-family server from 1.8.8 to the newest, Folia included, and a jar per Minecraft line on Fabric, server-side only: players install nothing.
+
+<Reference plugin="xteleport" show="platforms" />
+
+| | |
+| --- | --- |
+| **Paper and Folia** | Chunks load and players move without blocking the server (`getChunkAtAsync`, `teleportAsync`); on Folia each spot is read on the thread that owns its region. Joining players are placed at the spawn before they're in the world. |
+| **Spigot and CraftBukkit** | The server has no way to load a chunk in the background, so xTeleport loads them on the server thread, at most one that isn't loaded yet a tick. The countdown needs an action bar (Spigot 1.9 on). Minecraft before 1.9 has no End islands beyond the main one, so `/rtp` in the End finds nothing there. |
+| **Fabric** | Minecraft's own chunk system loads and generates each spot off the server thread. Worlds are dimensions: `/rtp the_nether`, and `world`, `world_nether` and `world_the_end` name the vanilla three as on Bukkit. Joining players are sent to the spawn just after they join. EssentialsX is a Bukkit plugin, so there's nothing to import. |
+| **Costs** | Through [xMoney](/xmoney/) everywhere, recorded in its ledger with the teleport as the reason; on Bukkit, through any other economy registered with Vault. |
+| **Placeholders** | `%xteleport_homes%` and the rest with [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) on Bukkit. |
+
+## How it works
+
+**Homes** belong to a player. Each player may have 3 by default; `xteleport.homes.<n>` permissions and the config's `homes.limits` raise it. With `homes.bed-home` on, `/home bed` goes to a player's bed or respawn anchor and doesn't count towards the limit.
+
+**TPA** requests last 60 seconds. A player can have several waiting at once; `/tpaccept` takes the newest, or `/tpaccept <player>` a particular one. Players can't send requests to anyone they can't see, so vanished staff stay hidden. `/tptoggle` stops requests altogether.
+
+**Warps** are shared by the whole server. Staff set them with `/setwarp`; turn on `warps.per-warp-permission` to need `xteleport.warp.<name>` for each.
+
+**Spawn** is set with `/setspawn`. New players arrive there, and players who die without a bed or anchor respawn there. Until it's set, `/spawn` goes to the main world's spawn point, on top of the ground.
+
+**RTP** picks a spot in a ring around each world's centre, between `min-radius` and `max-radius`, inside the world border. It skips lava, water, leaves, powder snow and the void, and oceans unless you change `rtp.blocked-biomes`. The Nether is searched under its roof, and the End off its main island.
+
+## You won't feel it running
+
+- **`/rtp` searches off the server thread.** One candidate at a time: its chunk loads (or generates) in the background, then one short read of its column on the thread that owns it, so each search reads at most one column a tick. At most `rtp.attempts` candidates a search, one search per player, and `rtp.max-searches` at once; a player over that is told to try again rather than queued. `rtp.only-generated` keeps it to chunks that already exist.
+- **Nothing repeats.** A warmup is a short check four times a second on the waiting player's own thread, and it ends with the warmup. Requests run out when they're next looked at, not on a timer.
+- **Listeners only for what's on.** The damage listener is only registered while someone is warming up, and the spawn listener only while a spawn option is on.
+- **Homes in memory.** A player's homes are read in the background when they join and kept until they leave. The database opens off the server's thread, and changes are saved in the background, in order, a change reported only once it's saved.
+
+<CardGrid>
+  <LinkCard title="Install" href="/xteleport/install/" description="The steps for your platform." />
+  <LinkCard title="Commands" href="/xteleport/commands/" description="Every command, its arguments and permission." />
+  <LinkCard title="Switching from EssentialsX" href="/xteleport/switching/" description="Bring homes, warps and the spawn." />
+  <LinkCard title="Developer API" href="/xteleport/developer-api/" description="Teleports, homes, destinations and events, on every platform." />
+</CardGrid>

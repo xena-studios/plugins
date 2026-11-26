@@ -1,0 +1,12 @@
+---
+title: Permissions
+description: "Every xTeleport permission, and who has it by default."
+sidebar:
+  order: 2.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Each command's permission is `xteleport.command.<command>`, everyone's for the player commands and operators' for `/setwarp`, `/delwarp` and `/setspawn`; rename any in the [config](/xteleport/configuration/), or set one blank (`""`) to let everyone use it. `xteleport.homes.<n>` lets a player have `<n>` homes, and the config's `homes.limits` gives more by permission or LuckPerms group. With `warps.per-warp-permission` on, each warp needs `xteleport.warp.<name>`. On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api; without one, operators (level 2) have the operator permissions. Fabric's permission API answers one node at a time, so `xteleport.homes.<n>` is read for 1 to 40, 50, 75, 100, 150, 200, 250, 500 and 1000 there.
+
+<Reference plugin="xteleport" show="permissions" />

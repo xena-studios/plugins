@@ -2,9 +2,12 @@
 # against its sha256). Paper loads xMoney first, as the provider of Vault, and refuses
 # VaultUnlocked as a duplicate: that one error, from Paper's loader, is expected here and
 # nowhere else, and xMoney's one warning names the jar to delete. Plugins keep working through xMoney.
-allow: Could not load plugin 'VaultUnlocked-2.20.1.jar' in folder 'plugins'
-# And refused for that reason, not another: the exception on the line after says so.
-logged: attempted to add duplicate plugin identifier xMoney
+# Which error depends on the order the server lists plugins/ in: "Could not load plugin
+# 'VaultUnlocked-2.20.1.jar'" (with Paper's duplicate-identifier exception) or "Ambiguous
+# plugin name 'Vault' for files 'plugins/VaultUnlocked-2.20.1.jar' and 'plugins/xMoney.jar'".
+# Both quote the jar's name, which this allows and nothing else logs; either way xMoney's
+# warning below and every check after it say xMoney is the one loaded.
+allow: VaultUnlocked-2.20.1.jar'
 allow: VaultUnlocked-2.20.1.jar is in plugins/. xMoney provides the Vault and VaultUnlocked APIs itself
 logged: VaultUnlocked-2.20.1.jar is in plugins/.
 run: vaulttest

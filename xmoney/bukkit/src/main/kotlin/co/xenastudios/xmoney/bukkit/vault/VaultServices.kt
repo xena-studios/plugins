@@ -90,7 +90,7 @@ internal class VaultServices(private val plugin: Plugin, private val platform: B
         if (names.isEmpty()) return
         for (jar in VaultJars.named(folder!!, names)) {
             platform.log.warn("$jar is in plugins/. xMoney provides the Vault and VaultUnlocked APIs itself, so it isn't needed" +
-                (if (realVault() == null) ", and the server didn't load it: that's the \"Could not load plugin '$jar'\" error above." else ".") +
+                (if (realVault() == null) ", and the server didn't load it: that's Paper's error above about it (\"Could not load plugin\" or \"Ambiguous plugin name 'Vault'\")." else ".") +
                 " Other plugins use xMoney instead. Delete $jar.")
         }
     }

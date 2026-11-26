@@ -10,7 +10,9 @@ import co.xenastudios.core.common.locked
  * it's in is read or added to, so a request that runs out costs nothing until someone looks. A
  * player's list goes when they leave. Each list is replaced whole on every change. Any thread.
  */
-public class Requests(private val clock: () -> Long) {
+public class Requests(private val reach: co.xenastudios.xteleport.store.Homes.Reach) {
+    private fun clock(): Long = reach.now()
+
 
     /** One request. [here] is `/tpahere`: the target goes to the sender. */
     public class Request(public val from: PlayerRef, public val fromName: String, public val here: Boolean, public val sentAt: Long)

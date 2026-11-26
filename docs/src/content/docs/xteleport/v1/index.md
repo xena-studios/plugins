@@ -9,11 +9,11 @@ sidebar:
 xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, for Paper and Folia. It's for servers that want every teleport with one config and one look, and nothing they don't use.
 
 - **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
-- **The whole set.** `/sethome`, `/home`, `/homes`, `/tpa`, `/tpahere`, `/tpaccept`, `/warp`, `/spawn`, `/rtp` and the rest. See [Commands](/xteleport/commands/).
+- **The whole set.** `/sethome`, `/home`, `/homes`, `/tpa`, `/tpahere`, `/tpaccept`, `/warp`, `/spawn`, `/rtp` and the rest. See [Commands](/xteleport/v1/commands/).
 - **Switch off what you don't use.** Every command can be turned off, renamed with aliases or given its own permission, and every setting but storage applies on `/xteleport reload`.
 - **Teleports that feel good.** A warmup that moving or taking damage cancels, with a countdown on the action bar. Cooldowns per command. An optional cost through Vault, taken after the warmup and given back if the teleport fails.
 - **No deaths on arrival.** A home, warp or TPA that would land a player in lava, inside blocks, over the void or high in the air is refused with a message. The spot is loaded in the background to check it, never on the server's thread.
-- **Easy to switch to.** EssentialsX's command names, so players keep typing what they know, and its homes, warps and spawn imported with one command. See [Switching from EssentialsX](/xteleport/switching/).
+- **Easy to switch to.** EssentialsX's command names, so players keep typing what they know, and its homes, warps and spawn imported with one command. See [Switching from EssentialsX](/xteleport/v1/switching/).
 
 ## How it works
 
@@ -35,7 +35,7 @@ xTeleport is homes, TPA, warps, spawn and random teleport in one small plugin, f
 
 ## Storage
 
-Homes and warps are kept in SQLite out of the box, in `plugins/xTeleport/xteleport.db`, or in MySQL/MariaDB. See [Configuration](/xteleport/configuration/).
+Homes and warps are kept in SQLite out of the box, in `plugins/xTeleport/xteleport.db`, or in MySQL/MariaDB. See [Configuration](/xteleport/v1/configuration/).
 
 ## What else it does
 
@@ -45,6 +45,6 @@ Homes and warps are kept in SQLite out of the box, in `plugins/xTeleport/xtelepo
 ## Getting started
 
 1. [Install it](/start/installing/). For teleport costs, add Vault and an economy plugin.
-2. Set warmups, cooldowns, limits and RTP's worlds: [Configuration](/xteleport/configuration/).
-3. Every command and permission: [Commands](/xteleport/commands/).
-4. Coming from EssentialsX? Bring everyone's homes: [Switching from EssentialsX](/xteleport/switching/).
+2. Set warmups, cooldowns, limits and RTP's worlds: [Configuration](/xteleport/v1/configuration/).
+3. Every command and permission: [Commands](/xteleport/v1/commands/).
+4. Coming from EssentialsX? Bring everyone's homes: [Switching from EssentialsX](/xteleport/v1/switching/).

@@ -1,80 +1,50 @@
 ---
 title: Configuration
-description: Every setting in xTeleport's config.yml.
+description: "Every setting in xTeleport's config.yml, with its default."
 sidebar:
-  order: 3
+  order: 4
 ---
 
-import { Code } from "@astrojs/starlight/components";
-import config from "../../../generated/xteleport/config.yml?raw";
+import Reference from "../../../components/reference/Reference.astro";
 
-The config is `plugins/xTeleport/config.yml`, written on first start. Apply changes with `/xteleport reload`; only `storage` needs a restart.
+The config is `plugins/xTeleport/config.yml` (`config/xteleport/config.yml` on Fabric), written on first start. Apply changes with `/xteleport reload`: everything applies, including turning commands on or off and changing aliases and permissions, except `storage`, which is read once at startup. A bad value falls back to its default with a warning in the console; xTeleport never stops over config. xTeleport's messages are in `lang/`: see [Messages](/xteleport/messages/).
 
-| Section | What it covers |
+| Section | What it's for |
 | --- | --- |
-| `theme` | The prefix and colours xTeleport's messages share: see [the theme](/start/formatting/#the-theme). |
-| `messages` | What players are told, and shared errors under `messages.error`. |
-| `commands` | Each command's switch, aliases and permission, and for commands that teleport, a cooldown and a cost. |
-| `teleports` | The warmup, whether damage cancels it, and the safe-arrival check with the longest fall it allows. |
-| `homes` | How many homes players may have, the default name, and the bed home. |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
+| `commands` | Each command's switch, aliases and permission, and for the teleports their cooldown and cost. |
+| `teleports` | The warmup, whether damage cancels it, and the safe-arrival check. |
+| `homes` | How many homes players may have, the default home's name, the bed home and `/homes`' page size. |
 | `tpa` | How long a request lasts. |
-| `warps` | Per-warp permissions. |
-| `spawn` | When players are sent to the spawn. |
-| `rtp` | Which worlds `/rtp` may pick, how far out, and how much searching it may do. |
-| `storage` | Where homes and warps are kept: SQLite in the plugin's folder (`xteleport.db`), or MySQL/MariaDB. |
-| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+| `warps` | Per-warp permissions and `/warps`' page size. |
+| `spawn` | Whether players arrive at the spawn when they first join, every join, and when they respawn. |
+| `rtp` | `/rtp`'s worlds, their radii, the attempts, the cooldowns and the limit on searches at once. |
+| `storage` | Where homes and warps are: SQLite, MySQL/MariaDB, or the family's shared database. |
+| `updates` | The update checker. |
 
-## Warmups, cooldowns and costs
+## Costs
 
-`teleports.warmup` is how many seconds a player stands still before any teleport: 3 by default, 0 for none. Moving half a block cancels it, and so does taking damage unless `cancel-on-damage` is false. The seconds count down on the action bar (`messages.teleport.countdown`; blank turns that off).
+A command's `cost` is taken once the warmup is over and the spot checked, from whoever asked (for `/tpahere`, the player who sent the request, not the one who moves), and given back if the teleport then fails. It goes through [xMoney](/xmoney/) when it's installed, in its ledger as "Teleport: home" and so on; on Bukkit without xMoney, through whatever economy is registered with Vault, as 1.x did. `xteleport.cost.bypass` skips every cost.
 
-Each teleporting command has a `cooldown` in seconds, which starts once the player arrives, and a `cost`. A cost needs [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin. It's checked before the warmup, taken after it, and given back if the teleport fails. If the economy is missing, players are told teleports aren't working and the console says what's missing.
+## RTP
 
-A cooldown is kept per player and per command. One that's still running refuses the command, even after you lower it in the config, until it runs out.
-
-## Safe arrival
-
-With `teleports.check-safe` on, a home, warp, spawn or TPA that would land a player in lava or fire, inside blocks, over the void, outside the world border or high in the air is refused with a message, and they stay where they are. `teleports.max-fall` is the longest drop allowed onto the ground below: 3 blocks, which doesn't hurt. Water below is safe from any height, and a ladder, vine or scaffolding counts as ground. The spot's chunk is loaded in the background first, and the check runs on the thread that owns the spot.
-
-## Home limits
-
-A player may have `homes.default-limit` homes. `homes.limits` adds more by permission:
-
-```yaml
-homes:
-  default-limit: 3
-  limits:
-    vip:
-      permission: ""   # blank: group.vip, which LuckPerms gives the vip group
-      homes: 5
-    staff:
-      permission: "myserver.staff"
-      homes: 20
-```
-
-`xteleport.homes.<n>` permissions also work, and `xteleport.homes.unlimited` lifts the limit. The highest a player has wins.
-
-## Random teleport
-
-Each world `/rtp` may use is listed under `rtp.worlds` by name. A world that isn't listed, or has `enabled: false`, can't be picked.
-
-- **Where:** a ring between `min-radius` and `max-radius` blocks from the world's spawn point, or from `center-x` and `center-z` when `center-on-spawn` is false. Spots stay inside the world border.
-- **Who:** `permission` limits a world to players who have it.
-- **The End:** spots on the main island are skipped unless `allow-main-island` is true, so players land on the outer islands. Keep `min-radius` above 1000 there.
-- **Biomes:** `rtp.blocked-biomes` are never picked. Oceans are blocked by default.
-
-Each search starts a short cooldown, `rtp.search-cooldown` (30 seconds), whether it finds a spot or not, so nobody can keep the server generating terrain by searching again and again. The longer cooldown under `commands.rtp` (5 minutes) starts once the player arrives.
-
-Each search tries up to `rtp.attempts` spots (10). Each one loads a single chunk in the background, then reads a column of blocks on the thread that owns it. At most `max-searches` run at once across the server (3); anyone over that is told to try again in a few seconds. With `only-generated: true`, `/rtp` never generates terrain: it only picks chunks that already exist, which makes it nearly free on a world pre-generated with a plugin such as Chunky.
-
-`/xteleport rtpcheck <world> 10` runs ten searches without teleporting anyone and says how many found a spot. If few do, raise `attempts`, or check the radii and blocked biomes.
+Each world under `rtp.worlds` is searched in a ring between `min-radius` and `max-radius` blocks from its spawn point (or `center-x` and `center-z`), inside the world border. A world that isn't listed, or has `enabled: false`, can't be picked. On Fabric a world's name is its dimension (`minecraft:the_nether`); `world`, `world_nether` and `world_the_end` mean the vanilla three there too, so the defaults work everywhere. Try a world's settings with `/xteleport rtpcheck <world> 10`.
 
 ## Storage
 
-`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) and fill in `mysql` to keep homes in a database server. The database is opened in the background, so a slow one never holds up the server starting; homes and warps aren't available until it's open. A change here applies on restart, and homes aren't copied between databases.
+SQLite out of the box: one file, `xteleport.db`, in the plugin's folder, with nothing to set up. `mysql` (or MariaDB) keeps homes on a database server; `shared` keeps xTeleport's tables in the database every Xena plugin can share, set in `plugins/Xena/config.yml`. Homes aren't copied from one to another when you change it. The tables are 1.x's, unchanged, so the [1.x jar](/xteleport/upgrade/#going-back-to-101) reads them too.
 
-A bad value falls back to its default with a warning in the console.
+## Make it look like your server
 
-## The full default config
+`messages.theme` sets the look of every message xTeleport sends: a prefix, the text colour, and three styles. Each is `shared` until you set it, which takes the value every Xena plugin shares, in `plugins/Xena/config.yml`.
 
-<Code code={config} lang="yaml" title="plugins/xTeleport/config.yml" />
+```yaml
+messages:
+  theme:
+    prefix: "<dark_gray>[<gradient:#CE41E3:#5EE08A>Travel</gradient>]</dark_gray> "
+    highlight: "<gold>"
+```
+
+`messages.language` is `auto` by default (through `shared`): each player reads xTeleport's messages in their client's language, and the console in `default-language`. A config carried forward from 1.x with messages you'd edited is set to `en`, so your words are what everyone sees, as before.
+
+<Reference plugin="xteleport" show="config" />

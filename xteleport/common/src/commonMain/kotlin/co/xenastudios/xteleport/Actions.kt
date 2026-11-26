@@ -153,6 +153,7 @@ internal class Actions(private val plugin: XTeleportPlugin) {
                     return@withHomes
                 }
                 val at = server.location(player) ?: return@withHomes
+                plugin.eventsReady()
                 if (plugin.bus.hasListeners(HomeSetEvent.TYPE) && plugin.bus.fire(HomeSetEvent.TYPE, HomeSetEvent(player, name, at, replacing)).isCancelled) return@withHomes
                 whenSaved(ctx.source, plugin.homes.set(Home(player, name, at))) {
                     reply(ctx.source, if (replacing) XTeleportMessages.homeMoved else XTeleportMessages.homeSet, "home" to name)
@@ -325,6 +326,7 @@ internal class Actions(private val plugin: XTeleportPlugin) {
             if (plugin.requests.asked(target, sender, expireMillis())) fail(ctx, XTeleportMessages.tpaAlreadyAsked, "player" to targetName)
             // Whoever asks pays and has the cooldown, so check now that they could.
             if (teleporter.precheck(sender, trip(here, sender).paidBy(sender)) != null) return
+            plugin.eventsReady()
             if (plugin.bus.hasListeners(TpaRequestEvent.TYPE) && plugin.bus.fire(TpaRequestEvent.TYPE, TpaRequestEvent(sender, target, here)).isCancelled) return
             val senderName = name(sender)
             if (!plugin.requests.add(target, Requests.Request(sender, senderName, here, plugin.requests.now()), expireMillis())) {

@@ -253,6 +253,7 @@ public class Teleporter(private val plugin: XTeleportPlugin) {
                 result.resolve(TeleportResult.FAILED)
                 return
             }
+            plugin.eventsReady()
             if (plugin.bus.hasListeners(PreTeleportEvent.TYPE)) {
                 val event = plugin.bus.fire(PreTeleportEvent.TYPE, PreTeleportEvent(player, to, trip.type))
                 if (event.isCancelled) {
@@ -433,9 +434,9 @@ public class Warmups(private val plugin: XTeleportPlugin) {
             if (!plugin.server.features.actionBar) return
             try {
                 plugin.texts.render(player, XTeleportMessages.countdown, "seconds" to seconds)?.let { plugin.server.actionBar(player, it) }
-            } catch (e: Exception) {
-                plugin.log.warn("Couldn't show the warmup's countdown: $e")
-            } catch (e: LinkageError) {
+            } catch (e: Throwable) {
+                // A server missing what its countdown needs (NoSuchMethodError) too: not a fatal error.
+                if (co.xenastudios.core.common.isFatal(e)) throw e
                 plugin.log.warn("Couldn't show the warmup's countdown: $e")
             }
         }

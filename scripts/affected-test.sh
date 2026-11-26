@@ -158,6 +158,16 @@ check "xMoney's Fabric mod (platform-fabric's build)" xmoney/fabric/src/main/kot
   $'checks=\nboot=fabric'
 check "xMoney's Vault test plugin" xmoney/vault-consumer/src/main/java/co/xenastudios/xmoney/vaultconsumer/VaultConsumer.java \
   $'tasks=:build :xmoney:api:build :xmoney:bukkit:build :xmoney:common:build :xmoney:hook-consumer:build :xmoney:vault-consumer:build\nchecks=\nboot=bukkit fabric'
+check "xTeleport's common code" xteleport/common/src/commonMain/kotlin/co/xenastudios/xteleport/rtp/Search.kt \
+  $'tasks=:build :xteleport:api:build :xteleport:bukkit:build :xteleport:common:build\nchecks=\nboot=bukkit fabric'
+check "xTeleport's API" xteleport/api/src/commonMain/kotlin/co/xenastudios/xteleport/api/XTeleportApi.kt \
+  $'tasks=:build :xteleport:api:build :xteleport:bukkit:build :xteleport:common:build\nchecks=\nboot=bukkit fabric'
+check "xTeleport's Bukkit adapter" xteleport/bukkit/src/main/kotlin/co/xenastudios/xteleport/bukkit/BukkitTeleportServer.kt \
+  $'tasks=:build :xteleport:api:build :xteleport:bukkit:build :xteleport:common:build\nchecks=\nboot=bukkit'
+check "xTeleport's real-client checks" xteleport/bukkit/client-checks.txt \
+  $'tasks=:build :xteleport:api:build :xteleport:bukkit:build :xteleport:common:build\nchecks=\nboot=bukkit'
+check "xTeleport's Fabric mod (platform-fabric's build)" xteleport/fabric/src/main/kotlin/co/xenastudios/xteleport/fabric/FabricTeleportServer.kt \
+  $'checks=\nboot=fabric'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 check "Today's plugin" xbans/src/main/java/co/xenastudios/xbans/XBans.java \
   $'units=xbans\ncompile=:xbans:compileJava :xbans:api:compileJava\nchecks=xbans/boot-checks.txt\nboot='

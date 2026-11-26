@@ -64,7 +64,7 @@ public class XTeleportBukkit(private val plugin: JavaPlugin) : PluginEntry, List
         this.platform = platform
         this.xteleport = xteleport
         platform.commands.feedback = xteleport.texts.feedback
-        EventBridge.bridge(plugin.server, xteleport.bus)
+        xteleport.beforeFirstEvent = EventBridge(plugin.server, xteleport.bus)
         plugin.server.servicesManager.register(XTeleportApi::class.java, xteleport, plugin, ServicePriority.Normal)
         plugin.server.pluginManager.registerEvents(this, plugin)
 

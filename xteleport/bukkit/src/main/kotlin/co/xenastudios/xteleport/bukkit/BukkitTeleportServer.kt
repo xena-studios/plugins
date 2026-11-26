@@ -52,7 +52,10 @@ import kotlin.concurrent.Volatile
 internal class BukkitTeleportServer(private val plugin: Plugin, private val platform: BukkitPlatform) : TeleportServer {
     private val bukkit = plugin.server
     private val paths = Paths.detect(platform.server)
-    private val kinds = Kinds()
+    // Made with the first block read, and Spigot's chunk queue with its first chunk: not as the server starts.
+    @Volatile
+    private var madeKinds: Kinds? = null
+    private val kinds: Kinds get() = madeKinds ?: Kinds().also { madeKinds = it }
 
     override val features: Features = Features(
         actionBar = paths.adventureBar || paths.spigotBar,
@@ -123,8 +126,19 @@ internal class BukkitTeleportServer(private val plugin: Plugin, private val plat
 
     override fun worlds(): List<WorldRef> = bukkit.worlds.map { it.ref }
 
+    // By name, or by uuid, as EssentialsX saves its worlds.
+    private fun named(name: String): World? = bukkit.getWorld(name) ?: if (name.length == 36) {
+        try {
+            bukkit.getWorld(java.util.UUID.fromString(name))
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    } else {
+        null
+    }
+
     override fun world(name: String): WorldInfo? {
-        val world = bukkit.getWorld(name) ?: return null
+        val world = named(name) ?: return null
         val border = world.worldBorder
         val center = border.center
         val min = if (paths.heights) co.xenastudios.xteleport.bukkit.modern.minHeight(world) else 0
@@ -148,7 +162,9 @@ internal class BukkitTeleportServer(private val plugin: Plugin, private val plat
         return chunks.load(loaded, chunkX, chunkZ, generate)
     }
 
-    private val chunks = SyncChunks()
+    @Volatile
+    private var madeChunks: SyncChunks? = null
+    private val chunks: SyncChunks get() = madeChunks ?: co.xenastudios.core.common.locked(this) { madeChunks ?: SyncChunks().also { madeChunks = it } }
 
     /**
      * Chunk loads on a server without Paper's: on the main thread, every chunk already loaded at

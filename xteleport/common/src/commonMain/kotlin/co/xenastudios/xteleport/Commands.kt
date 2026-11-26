@@ -65,10 +65,13 @@ internal class Commands(private val plugin: XTeleportPlugin) {
             root(XTeleportPlugin.PLUGIN_ID, "Shows xTeleport's version, and holds its admin subcommands.", aliases = listOf("xtp")) {
                 executes(Run(INFO))
                 literal("info", "Shows xTeleport's version.") { executes(Run(INFO)) }
-                literal("import", "Imports homes, warps and the spawn from EssentialsX: a dry run until confirmed.", plugin.admin.admin) {
-                    val source = argument("source", ArgumentTypes.choice("essentials"), "The plugin to import from.")
-                    val confirm = optional("confirm", ArgumentTypes.choice("confirm"), "Imports, rather than saying what it would do.")
-                    executes(Run(IMPORT, source, confirm))
+                // Where EssentialsX can be (Bukkit): Fabric has nothing to import from.
+                if (plugin.essentials != null) {
+                    literal("import", "Imports homes, warps and the spawn from EssentialsX: a dry run until confirmed.", plugin.admin.admin) {
+                        val source = argument("source", ArgumentTypes.choice("essentials"), "The plugin to import from.")
+                        val confirm = optional("confirm", ArgumentTypes.choice("confirm"), "Imports, rather than saying what it would do.")
+                        executes(Run(IMPORT, source, confirm))
+                    }
                 }
                 literal("rtpcheck", "Runs /rtp's search in a world, teleporting no one, to try its settings.", plugin.admin.admin) {
                     val world = argument("world", Words(plugin, Words.WORLDS), "The world, as rtp.worlds names it.")

@@ -4,6 +4,7 @@
     { "id": "xutilities", "newest": 3, "older": [2], "unreleased": { "version": "2.1.0", "jarBudgetKb": 200 } },
     { "id": "zchat", "newest": 4, "older": [3], "unreleased": { "version": "3.2.0", "jarBudgetKb": 210 } },
     { "id": "xmoney", "newest": 2, "older": [1], "unreleased": { "version": "1.0.1", "jarBudgetKb": 400 } },
+    { "id": "xteleport", "newest": 2, "older": [1], "unreleased": { "version": "1.0.1", "jarBudgetKb": 330 } },
     { "id": "xsample", "name": "xSample", "hidden": true, "newest": 1, "older": [0] }
   ]
 }

@@ -47,7 +47,20 @@ public class Loaded(public val homes: Map<String, Home>, public val tpaOff: Bool
  * (staff with `/homes <player>`) are read from the database each time unless that player is
  * online.
  */
-public class Homes(private val store: () -> Store?, private val online: (PlayerRef) -> Boolean, private val now: () -> Long) {
+public class Homes(private val reach: Reach) {
+    /** Where the database is, who's online and the time: the plugin's, for each store in memory. */
+    public interface Reach {
+        public fun store(): Store?
+        public fun online(player: PlayerRef): Boolean
+        public fun now(): Long
+    }
+
+    private fun store(): Store? = reach.store()
+
+    private fun online(player: PlayerRef): Boolean = reach.online(player)
+
+    private fun now(): Long = reach.now()
+
     private val loaded = concurrentMap<PlayerRef, Loaded>()
     private val loading = concurrentMap<PlayerRef, Pending<Loaded>>()
 
@@ -146,7 +159,11 @@ public class Homes(private val store: () -> Store?, private val online: (PlayerR
  * The warps and the spawn, which the whole server shares: read once when the database opens,
  * kept in memory, changed here and written through. Safe from any thread.
  */
-public class Places(private val store: () -> Store?, private val now: () -> Long) {
+public class Places(private val reach: Homes.Reach) {
+    private fun store(): Store? = reach.store()
+
+    private fun now(): Long = reach.now()
+
     // Replaced whole on each change.
     @Volatile
     private var warps: Map<String, Warp> = emptyMap()

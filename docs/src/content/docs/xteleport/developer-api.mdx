@@ -1,0 +1,82 @@
+---
+title: Developer API
+description: "Build on xTeleport: teleports with its warmup, cooldown, cost and safe arrival, homes and warps, the RTP search, named destinations, plot homes, visibility hooks and events, on every platform."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xTeleport's API is the same on Paper, Folia, Spigot and Fabric: players are `PlayerRef`s (by UUID), places are the core's `Location`s, and everything says how it runs: from memory at once on any thread, or a `CompletableFuture`. Get it with `XTeleport.api()` once xTeleport is enabled (add it to your plugin's `depend`, or `softdepend` and check `XTeleport.isEnabled()` first). On Bukkit it's also in the services manager, as `XTeleportApi`.
+
+:::caution[Not on Maven Central yet]
+2.0's API isn't published until 2.0 is released. Its coordinates will be `co.xenastudios.xteleport:xteleport-api:2.0.0`; until then, compile against the plugin's jar. The [1.x API](/xteleport/v1/developer-api/) is on Maven Central as `1.0.1`.
+:::
+
+## Teleports
+
+A teleport through the API behaves like xTeleport's own: the cooldown and cost checked, the warmup (moving cancels it, and damage if the config says so), the destination's chunk loaded in the background and the spot checked, `PreTeleportEvent`, the cost taken, then the teleport, without blocking where the server can. A teleport that fails after paying is refunded, and the player is told each step in their language.
+
+```java
+XTeleportApi api = XTeleport.api();
+PlayerRef player = PlayerRefs.of(bukkitPlayer.getUniqueId());
+Location arena = new Location(WorldRef.of("world"), 100.5, 64, -20.5);
+api.teleport(player, arena, TeleportOptions.defaults().withCost(25).withCooldown("arena", 60))
+    .thenAccept(result -> { if (result == TeleportResult.TELEPORTED) startMatch(player); });
+api.teleport(player, arena, TeleportOptions.immediate());   // no warmup: a plugin sending someone back
+```
+
+`TeleportResult` says how it ended: `TELEPORTED`, `CANCELLED`, `ON_COOLDOWN`, `CANT_AFFORD`, `UNSAFE`, `BLOCKED` (a listener cancelled it) or `FAILED`. `cooldownMillis(player, key)` reads any cooldown, a command's (`home`) or your own.
+
+## Homes, warps, the spawn and RTP
+
+`cachedHomes(player)` answers from memory for online players; `homes(player)`, `setHome`, `deleteHome`, `setWarp` and `deleteWarp` are futures that complete once the database has the change (exceptionally if it couldn't save it, and then nothing changed). `warps()`, `warp(name)`, `spawn()` and `homeLimit(player)` answer from memory. `findSafeLocation(world, new RtpSettings(0, 0, 500, 3000))` runs `/rtp`'s search with your settings and the config's blocked biomes: a spot, or `null`.
+
+## For add-ons
+
+Three seams, each registered with your plugin's name, and taken away with `unregisterAll(name)` as it disables:
+
+```java
+// A destination others can send players to by name: xLimbo's way back, a plot's entrance.
+api.registerDestination("xLimbo", "limbo-return", player -> lastSpotOf(player));
+api.teleport(player, "limbo-return", TeleportOptions.immediate());
+
+// Homes from another plugin, in /homes and /home <name>, not counted towards the limit.
+api.registerHomes("xPlots", player -> plotHomesOf(player));
+
+// Who's hidden from whom (a vanish plugin): hidden players can't be sent /tpa requests or completed.
+api.registerVisibility("xVanish", (viewer, target) -> isVanished(target) && !canSeeVanished(viewer));
+```
+
+A player vanished in the family's player cache is hidden too, and on Bukkit so is anyone the server's own `canSee` hides.
+
+## Events
+
+Fired on xTeleport's bus (`api.getEvents()`), only when something listens, on the player's thread. `PreTeleportEvent` comes after the warmup and the safety check, before the cost is taken, and can be cancelled (a combat tag, an arena); `TeleportEvent` once they've arrived; `HomeSetEvent` before `/sethome` saves, and `TpaRequestEvent` before a request is sent, both cancellable.
+
+```java
+api.getEvents().subscribe(PreTeleportEvent.TYPE, event -> { if (inCombat(event.getPlayer())) event.setCancelled(true); });
+```
+
+On Bukkit each is also a Bukkit event, for plugins and Skript scripts that listen the Bukkit way: `BukkitPreTeleportEvent`, `BukkitTeleportEvent`, `BukkitHomeSetEvent` and `BukkitTpaRequestEvent` in `co.xenastudios.xteleport.api.bukkit`, with Bukkit's `Player` and `Location`. Cancelling one cancels xTeleport's own.
+
+<Reference plugin="xteleport" show="events" />
+
+## From 1.x
+
+| 1.x | 2.0 |
+| --- | --- |
+| `XTeleportApi.get()` | `XTeleport.api()` (also in Bukkit's services manager) |
+| `Player`, `UUID` players | `PlayerRef`: `PlayerRefs.of(uuid)` |
+| Bukkit `Location`, `World` | The core's `Location` and `WorldRef`, by world name |
+| `Home(UUID, name, world, x, y, z, yaw, pitch)`, `Warp(...)` | `Home(PlayerRef, name, Location)`, `Warp(name, Location)` |
+| `teleport(Player, Location, TeleportOptions)` | `teleport(PlayerRef, Location, TeleportOptions)`; `TeleportOptions.defaults().withWarmup(0)` and the rest replace the record's `warmup()`, `cooldown()`, `cost()` and `checkSafe()` |
+| `cooldown(UUID, key)`: a `Duration` | `cooldownMillis(PlayerRef, key)` |
+| `cachedHomes`: `Optional<List<Home>>` | `List<Home>`, or `null` |
+| `homeLimit(Player)` | `homeLimit(PlayerRef)` |
+| `warp(name)`, `spawn()`: `Optional`s | The value, or `null` |
+| `findSafeLocation(World, RtpSettings)`: `Optional<Location>` | `findSafeLocation(WorldRef, RtpSettings)`: the `Location`, or `null` |
+| Bukkit events in `co.xenastudios.xteleport.api.event` | xTeleport's own events on `api.getEvents()`, with their `TYPE`; on Bukkit also the `Bukkit*Event`s above |
+| — | `teleport(player, destinationName, options)`, `registerDestination`, `registerHomes`, `registerVisibility`, `unregisterAll` |
+
+Inside xTeleport's jar, the core's types the API uses (`PlayerRef`, `Location`, `EventBus`) are relocated with its own copy of the core, as every Xena plugin's are. The published API will carry the same names.

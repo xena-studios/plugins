@@ -5,7 +5,7 @@ sidebar:
   order: 2
 ---
 
-Every player command is on for everyone by default, and every staff command for operators. Each command can be turned off, renamed with `aliases` or given another permission under `commands` in the [config](/xteleport/configuration/).
+Every player command is on for everyone by default, and every staff command for operators. Each command can be turned off, renamed with `aliases` or given another permission under `commands` in the [config](/xteleport/v1/configuration/).
 
 ## Homes
 
@@ -55,7 +55,7 @@ Whoever sends the request pays its cost and has its cooldown, whichever of the t
 | --- | --- | --- |
 | `/xteleport reload` (`/xtp`) | Reloads the config. Everything applies except `storage`. | `xteleport.admin` |
 | `/xteleport info` | The version, the commands that are on, and any config problems. | `xteleport.admin` |
-| `/xteleport import essentials [confirm]` | Imports homes, warps and the spawn from EssentialsX. Without `confirm`, only says what it found. See [Switching](/xteleport/switching/). | `xteleport.admin` |
+| `/xteleport import essentials [confirm]` | Imports homes, warps and the spawn from EssentialsX. Without `confirm`, only says what it found. See [Switching](/xteleport/v1/switching/). | `xteleport.admin` |
 | `/xteleport rtpcheck <world> [searches]` | Searches like `/rtp` without teleporting anyone, and says how often it found a spot and how long it took. For checking a world's RTP settings. | `xteleport.admin` |
 
 ## Other permissions

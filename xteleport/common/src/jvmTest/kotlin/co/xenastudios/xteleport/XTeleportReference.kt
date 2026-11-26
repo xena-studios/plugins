@@ -22,7 +22,7 @@ object XTeleportReference : ManifestSource {
             val platform = FakePlatform()
             val server = FakeTeleportServer(platform.scheduler)
             val loaded = Loaded(XTeleportConfig.defaults, Translations.of(XTeleportMessages.catalog, emptyMap()))
-            val plugin = XTeleportPlugin(platform, server, { loaded }, server, server)
+            val plugin = XTeleportPlugin(platform, server, { loaded }, server, server, essentials = EssentialsFiles(java.nio.file.Paths.get("Essentials")))
             platform.scheduler.runAs(Where.Global) { plugin.start(loaded) }
             return PluginReference(
                 XTeleportPlugin.PLUGIN_ID, XTeleportPlugin.NAME, "Every teleport your server needs.",

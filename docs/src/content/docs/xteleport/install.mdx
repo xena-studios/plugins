@@ -1,0 +1,21 @@
+---
+title: Install
+description: "Install xTeleport on your server: the steps for Paper, Folia, Spigot and Fabric."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="xteleport" />
+
+On the first start xTeleport writes `config.yml`, one file per language in `lang/`, and its SQLite database `xteleport.db`, in `plugins/xTeleport/` (Bukkit) or `config/xteleport/` (Fabric). Fabric servers have no database driver of their own, so SQLite's is downloaded once into `config/xena/libraries/`. Settings every Xena plugin shares, such as the language and the look of messages, are in `plugins/Xena/config.yml` (`config/xena/` on Fabric).
+
+- For teleport costs, install [xMoney](/xmoney/), or on Bukkit Vault and any economy plugin.
+- [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) is optional, for `%xteleport_homes%` and the rest.
+
+## Coming from 1.x
+
+Replace the jar and restart: see [Upgrading from 1.x](/xteleport/upgrade/). The [1.x docs](/xteleport/v1/) stay up while 1.x gets fixes.

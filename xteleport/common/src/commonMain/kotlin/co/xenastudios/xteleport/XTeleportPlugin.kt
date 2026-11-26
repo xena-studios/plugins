@@ -143,9 +143,19 @@ public class XTeleportPlugin(
     public var running: Boolean = false
         private set
 
-    public val homes: Homes = Homes({ store }, server::isOnline, ::now)
-    public val places: Places = Places({ store }, ::now)
-    public val requests: Requests = Requests(::now)
+    // The stores' callbacks: where the database is, who's online and the time, as one class
+    // rather than a lambda each (each would be a class made as the server starts).
+    private inner class Reach : Homes.Reach {
+        override fun store(): Store? = this@XTeleportPlugin.store
+        override fun online(player: co.xenastudios.core.api.PlayerRef): Boolean = server.isOnline(player)
+        override fun now(): Long = this@XTeleportPlugin.now()
+    }
+
+    private val reach = Reach()
+
+    public val homes: Homes = Homes(reach)
+    public val places: Places = Places(reach)
+    public val requests: Requests = Requests(reach)
     public val homeLimits: HomeLimits = HomeLimits(this)
 
     // Made on first use: a server that's just started hasn't teleported anyone.
@@ -160,7 +170,7 @@ public class XTeleportPlugin(
     /** `/xteleport reload`, `debug` and `forget`. */
     public val admin: AdminCommands = AdminCommands(
         PLUGIN_ID, NAME, platform,
-        ModuleReloader(modules, reloadFiles = ::reload, wanted = ::wanted),
+        reloader(),
         // Objects, not lambdas, so neither class loads until the command runs (AdminCommands).
         debug = object : () -> Debug {
             override fun invoke() = AdminParts.debug(this@XTeleportPlugin, about, paste)
@@ -189,8 +199,12 @@ public class XTeleportPlugin(
 
     public val updateSettings: UpdateSettings get() = XTeleportConfig.updates.settings(config)
 
-    /** The placeholders, which read from memory. */
-    public val placeholders: Placeholders by lazy { Placeholders(this) }
+    /** The placeholders, which read from memory: made when PlaceholderAPI first asks, not as the server starts. */
+    public val placeholders: Placeholders
+        get() = madePlaceholders ?: Placeholders(this).also { madePlaceholders = it }
+
+    @Volatile
+    private var madePlaceholders: Placeholders? = null
 
     // The add-ons' seams, by owner.
     private val destinations = concurrentMap<String, Pair<String, DestinationProvider>>()
@@ -272,8 +286,29 @@ public class XTeleportPlugin(
         return store.close()
     }
 
-    // /xteleport reload: the files again, then everything built from them.
-    private fun reload(): List<String> = apply(files.load())
+    @Suppress("UNCHECKED_CAST")
+    private fun reloader(): ModuleReloader =
+        ModuleReloader(modules, reloadFiles = Reloading(0) as () -> List<String>, wanted = Reloading(1) as () -> Map<String, () -> Module>)
+
+    // /xteleport reload: the files again, then everything built from them; and the modules then.
+    // One class for both, rather than a function reference each.
+    private inner class Reloading(private val kind: Int) : () -> Any {
+        override fun invoke(): Any = if (kind == 0) apply(files.load()) else wanted()
+    }
+
+    /**
+     * What the adapter does just before the first event could be heard: Bukkit's bridges the API's
+     * events to Bukkit events there, so their classes don't load as the server starts.
+     */
+    @Volatile
+    public var beforeFirstEvent: (() -> Unit)? = null
+
+    /** Runs [beforeFirstEvent], once, before an event is fired or a listener asked for. */
+    internal fun eventsReady() {
+        val bridge = beforeFirstEvent ?: return
+        val run = co.xenastudios.core.common.locked(this) { if (beforeFirstEvent === bridge) true.also { beforeFirstEvent = null } else false }
+        if (run) bridge()
+    }
 
     /** Uses what [Files] read: the commands rebuilt, the limits forgotten. On the global thread. */
     public fun apply(loaded: Loaded): List<String> {

@@ -31,29 +31,31 @@ Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQL
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xteleport:build       # compile, test, and check the jar's size budget
-./gradlew :xteleport:runServer   # a Paper server with xTeleport, in xteleport/run/
+./gradlew :xteleport:common:build :xteleport:bukkit:build      # tests on the JVM and wasmWasi, the R8 jar and its budget
+./gradlew :xteleport:bukkit:runServer                          # a Paper server with the jar, in xteleport/bukkit/run/
+./gradlew -p core/platform-fabric :xteleport:26.3:collect      # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+xteleport/bukkit/boot.sh paper 26.3 --java <JDK 25 home>       # the boot checks on a real server (--xmoney for the cost test)
+./gradlew :xteleport:api:updateKotlinAbi                       # after a deliberate API change
+./gradlew :xteleport:common:updateXenaManifest                 # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-api/                   the developer API (co.xenastudios.xteleport:xteleport-api), shipped inside the jar
-src/main/java/co/xenastudios/xteleport/
-  XTeleport.java       the plugin: opens the database, and in setup turns on its listeners and commands
-  Api.java             the API, registered with the services manager
-  teleport/            every teleport's steps: cooldown, cost, warmup, safe arrival, teleportAsync, refund
-  home/                online players' homes in memory, and home limits
-  tpa/                 pending requests, which run out when read
-  warp/                warps and the spawn, in memory for everyone
-  rtp/                 the random-spot search and its caps
-  storage/             the tables, and the one thread that reads and writes them in order
-  imports/             reading EssentialsX's homes, warps and spawn
-  command/             the commands, and /xteleport's import and rtpcheck
-  hook/                PlaceholderAPI, loaded only when installed
-boot-checks.txt        console commands CI runs on real Paper and Folia servers, and what each must log
-CHANGELOG.md           one section per release; the release workflow publishes it
+api/             the developer API (XTeleportApi, XTeleport.api(), TeleportOptions, the add-on seams, events),
+                 platform-neutral, by uuid
+common/          everything xTeleport does, in Kotlin Multiplatform: the config and its migration from 1.x, the
+                 messages (lang/ in its resources), the teleport pipeline and warmups, the safety check and the
+                 RTP search (on block kinds the adapter reads), homes, TPA, warps, the store and its 1.x tables,
+                 the commands and placeholders; jvmMain opens the database, reads EssentialsX's files and calls
+                 xMoney's API
+bukkit/          the Paper, Folia, Spigot and CraftBukkit jar, 1.8.8 on: Paper's async chunks and teleports where
+                 they exist (modern/), Spigot's chunk queue, Vault costs, PlaceholderAPI and the Bukkit events
+fabric/          the Fabric mod, a branch of core/platform-fabric's own build
+boot-checks.txt, client-checks.txt, xmoney-*   what the boot tests run and expect (bukkit/, fabric/)
+CHANGELOG.md     one section per release; the release workflow publishes it
+modrinth.md      the Modrinth and Hangar project page, published when it changes on main
 ```
 
-The shared core (reloading, config migration, the theme, warmups, Vault, chat pages, offline players, the database) is in [`core/`](../core).
+Every teleport goes through `teleport/Teleporter`, and nothing in it waits on the disk or a chunk on a server thread. The shared core (config, messages, commands, the database and its one writer, the scheduler, the family) is in [`core/`](../core).
 
 ## Licence
 

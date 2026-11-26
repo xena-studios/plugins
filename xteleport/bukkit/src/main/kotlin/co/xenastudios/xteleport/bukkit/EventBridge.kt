@@ -15,12 +15,13 @@ import co.xenastudios.xteleport.api.event.TpaRequestEvent
 import org.bukkit.Server
 
 /**
- * Fires the API's events as Bukkit events too, made only when a Bukkit plugin listens. The Bukkit
- * events are named only in [Fire], which loads with the first event a listener could hear, not as
- * the server starts (decisions/2026-11-25-a-lighter-core.md).
+ * Fires the API's events as Bukkit events too, made only when a Bukkit plugin listens. Bridged just
+ * before the first event could be heard ([co.xenastudios.xteleport.XTeleportPlugin.beforeFirstEvent]),
+ * not as the server starts, and the Bukkit events are named only in [Fire]: neither the API's events
+ * nor Bukkit's load until someone teleports (decisions/2026-11-25-a-lighter-core.md).
  */
-internal object EventBridge {
-    fun bridge(server: Server, bus: SimpleEventBus) {
+internal class EventBridge(private val server: Server, private val bus: SimpleEventBus) : () -> Unit {
+    override fun invoke() {
         for (kind in 0..3) {
             val forward = Forward(server, kind)
             when (kind) {

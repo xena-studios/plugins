@@ -12,6 +12,7 @@ import co.xenastudios.core.common.command.commands
 import co.xenastudios.core.common.config.Config
 import co.xenastudios.core.common.i18n.CoreMessages
 import co.xenastudios.core.common.permission.Permission
+import co.xenastudios.core.common.permission.PermissionDefault
 import co.xenastudios.core.common.permission.PermissionSet
 import co.xenastudios.xvanish.api.VanishCause
 import co.xenastudios.xvanish.api.XVanish
@@ -27,7 +28,7 @@ public class XVanishPermissions internal constructor(otherPlugins: Boolean) : Pe
     public val others: Permission = permission("vanish.others", "Vanish and show other players: /vanish <player>, /vanish on <player>.")
     public val list: Permission = permission("list", "See who's vanished with /vanish list.")
     public val see: Permission = node(XVanish.SEE_PERMISSION, "See vanished players whose level is at most yours.")
-    public val join: Permission = permission("join", "Join vanished, and silently, every time.")
+    public val join: Permission = permission("join", "Join vanished, and silently, every time. No one has it until it's given, operators included.", PermissionDefault.NOBODY)
     public val login: Permission = permission("login", "Send a fake join or quit message with /vanish login and /vanish logout.")
     public val pickup: Permission = permission("pickup", "Pick up items and experience while vanished, with /vanish pickup.")
 
@@ -41,7 +42,7 @@ public class XVanishPermissions internal constructor(otherPlugins: Boolean) : Pe
                 node("$plugin.logout", "Theirs: /vanish logout.", children = grants(login))
                 node("$plugin.toggleitems", "Theirs: /vanish pickup.", children = grants(pickup))
                 node("$plugin.others", "Theirs: vanish other players.", children = grants(others))
-                node("$plugin.joinvanished", "Theirs: join vanished.", children = grants(join))
+                node("$plugin.joinvanished", "Theirs: join vanished. No one has it until it's given.", PermissionDefault.NOBODY, children = grants(join))
             }
         }
     }

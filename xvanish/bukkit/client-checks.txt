@@ -1,0 +1,6 @@
+# Real clients on the server (scripts/boot-test.sh --checks, with --seed scripts/boot-seeds/client
+# so the client is an operator), after boot-checks.txt, with zChat and xTeleport beside xVanish
+# (boot.sh --family): scripts/budgets/bots/client.js joins in German beside Friend, vanishes, and
+# checks Friend can't find them in the tab list, the world, xTeleport's /tpa, zChat's mentions and
+# /msg or a completion, even after Friend relogs; then shows again.
+client: --plugin xvanish

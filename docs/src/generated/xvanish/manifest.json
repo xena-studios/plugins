@@ -263,8 +263,8 @@
     },
     {
       "node": "xvanish.join",
-      "description": "Join vanished, and silently, every time.",
-      "default": "op",
+      "description": "Join vanished, and silently, every time. No one has it until it's given, operators included.",
+      "default": "nobody",
       "children": {},
       "commands": [],
       "builtIn": false
@@ -523,6 +523,18 @@
             "choices": [],
             "min": 1,
             "max": 100,
+            "entries": []
+          },
+          {
+            "path": "vanish.xbans-staff-see",
+            "type": "boolean",
+            "comment": [
+              "With xBans installed, the players it counts as staff (xbans.staff) see vanished",
+              "players of level 1, as if they had xvanish.see."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
             "entries": []
           },
           {

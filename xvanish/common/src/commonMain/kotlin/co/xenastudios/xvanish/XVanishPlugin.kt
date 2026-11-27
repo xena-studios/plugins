@@ -310,7 +310,12 @@ public class XVanishPlugin(
             }
         }
         levels[player] = level
-        sees[player] = if (has(player, "see", "see")) level else 0
+        sees[player] = when {
+            has(player, "see", "see") -> level
+            // xBans' staff layer: whom it counts as staff see the first level.
+            config[XVanishConfig.vanish.xbansStaffSee] && server.hasPermission(player, XBANS_STAFF) -> 1
+            else -> 0
+        }
         return level
     }
 
@@ -573,6 +578,9 @@ public class XVanishPlugin(
 
         /** xVanish's version. The adapters' builds check theirs is the same. */
         public const val VERSION: String = "1.0.0"
+
+        /** xBans' staff permission (its API's `XBans.STAFF_PERMISSION`), which operators have. */
+        internal const val XBANS_STAFF: String = "xbans.staff"
 
         /** How long a held-back chat message waits to be said again. */
         internal const val CHAT_CONFIRM_MILLIS: Long = 15_000

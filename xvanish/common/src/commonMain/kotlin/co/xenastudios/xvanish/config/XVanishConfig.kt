@@ -64,6 +64,11 @@ public object XVanishConfig : ConfigSchema(
             "with xvanish.see and a level at least theirs; without a level, a player's is 1.",
             min = 1, max = 100,
         )
+        public val xbansStaffSee: ConfigKey<Boolean> = boolean(
+            "xbans-staff-see", true,
+            "With xBans installed, the players it counts as staff (xbans.staff) see vanished",
+            "players of level 1, as if they had xvanish.see.",
+        )
         public val notifyStaff: ConfigKey<Boolean> = boolean(
             "notify-staff", true,
             "Tell the players who can see a vanished player when they vanish or show again.",

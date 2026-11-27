@@ -1,4 +1,4 @@
-![xLimbo by Xena Studios. A purple pixel cube icon and the xLimbo name over a stepped horizon in purple, with the headline "Never drop a player again."](../.github/assets/xlimbo-banner.png)
+![xLimbo by Xena Studios. A purple pixel cube icon and the xLimbo name over a stepped horizon in purple, with the headline "Never drop a player again."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/plugins/xlimbo/banner.png)
 
 **Never drop a player again.**
 

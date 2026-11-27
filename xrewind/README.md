@@ -1,4 +1,4 @@
-![xRewind by Xena Studios. A teal pixel rewind icon and the xRewind name over a stepped horizon in teal, with the headline "Every change, logged. Any of it, undone."](../.github/assets/xrewind-banner.png)
+![xRewind by Xena Studios. A teal pixel rewind icon and the xRewind name over a stepped horizon in teal, with the headline "Every change, logged. Any of it, undone."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/plugins/xrewind/banner.png)
 
 **Every change, logged. Any of it, undone.**
 

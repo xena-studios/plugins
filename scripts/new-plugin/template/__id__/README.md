@@ -1,4 +1,4 @@
-![{{display}} by Xena Studios. The {{display}} icon and name over a stepped horizon, with the headline "{{tagline}}"](../.github/assets/{{id}}-banner.png)
+![{{display}} by Xena Studios. The {{display}} icon and name over a stepped horizon, with the headline "{{tagline}}"](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/plugins/{{id}}/banner.png)
 
 **{{tagline}}**
 

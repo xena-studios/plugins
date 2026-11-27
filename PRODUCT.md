@@ -39,7 +39,7 @@ Confirmed binding (owner, 2026-11-18): keep the plugin family brand from xena-st
 ## Evidence on Hand
 
 - Real numbers from the build: each plugin's jar budget (`jarBudgetKb`, largest 530 KB), which run on Folia (9 of 11), Modrinth version history and download sizes (the GitHub releases' for a plugin still in Modrinth's review).
-- Brand assets: icons, banners and social cards in xena-studios/brand (`plugins/<id>/`); `pnpm brand:sync` copies the icons to `docs/src/assets/plugins/` and the banners to `.github/assets/`.
+- Brand assets: icons, banners and social cards in xena-studios/brand (`plugins/<id>/`); `pnpm brand:sync` copies the icons to `docs/src/assets/plugins/`; the READMEs link the banners from the brand's v1 release.
 - No testimonials, customer logos, benchmarks beyond the docs' own measured pages (for example xBackup's performance page), or download counts are curated for the site: don't invent any.
 
 ## Product Principles

@@ -26,16 +26,13 @@ const files: [string, string][] = [
   // Every plugin's name, words and colours: scripts/catalog.ts builds the lists from it.
   ["tokens/plugins-catalog.json", "src/data/catalog.json"],
   ["social/docs-og.png", "public/og.png"],
-  // The READMEs' banners, for the repo, the docs and each plugin.
-  ["github/plugins-banner.png", "../.github/assets/banner.png"],
-  ["github/plugin-docs-banner.png", "../.github/assets/docs-banner.png"],
 ];
 
-// Each plugin's icon (docs) and banner (its README), for every plugin in the brand catalog.
+// Each plugin's icon, for every plugin in the brand catalog. The READMEs' banners aren't
+// copied: they link the brand's v1 release through jsDelivr, as its guide says.
 const catalog: { plugins: { id: string }[] } = JSON.parse(fs.readFileSync(path.join(BRAND, "tokens/plugins-catalog.json"), "utf8"));
 for (const { id } of catalog.plugins) {
   files.push([`plugins/${id}/icon.svg`, `src/assets/plugins/${id}.svg`]);
-  files.push([`plugins/${id}/banner.png`, `../.github/assets/${id}-banner.png`]);
 }
 
 for (const [from, to] of files) {

@@ -1,4 +1,4 @@
-![xStats by Xena Studios. A green pixel podium icon and the xStats name over a stepped horizon in green, with the headline "Every player's stats, on your own website."](../.github/assets/xstats-banner.png)
+![xStats by Xena Studios. A green pixel podium icon and the xStats name over a stepped horizon in green, with the headline "Every player's stats, on your own website."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/plugins/xstats/banner.png)
 
 **Every player's stats, on your own website.**
 

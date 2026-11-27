@@ -1,4 +1,4 @@
-![xBackup by Xena Studios. An ice blue pixel safe icon and the xBackup name over a stepped horizon in ice blue, with the headline "Backups that cost nothing. Restores you can trust."](../.github/assets/xbackup-banner.png)
+![xBackup by Xena Studios. An ice blue pixel safe icon and the xBackup name over a stepped horizon in ice blue, with the headline "Backups that cost nothing. Restores you can trust."](https://cdn.jsdelivr.net/gh/xena-studios/brand@1/plugins/xbackup/banner.png)
 
 **Backups that cost nothing. Restores you can trust.**
 

@@ -276,6 +276,22 @@ abstract class XVanishCases(byDefault: Boolean) {
     }
 
     @Test
+    fun xbansStaffSeeTheFirstLevel() {
+        steve.permissions += "xbans.staff"
+        join(steve)
+        run(staff, "vanish")
+        assertTrue(server.sees(steve, staff), "xBans' staff see level 1")
+        staff.permissions += "xvanish.level.2"
+        run(staff, "vanish")
+        run(staff, "vanish")
+        assertFalse(server.sees(steve, staff), "but not level 2")
+        reconfigure("vanish:\n  xbans-staff-see: false\n")
+        staff.permissions -= "xvanish.level.2"
+        reconfigure("vanish:\n  xbans-staff-see: false\n")
+        assertFalse(server.sees(steve, staff))
+    }
+
+    @Test
     fun forgetTakesThemOffTheFile() {
         run(staff, "vanish")
         // It asks to be typed twice.

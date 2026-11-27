@@ -113,7 +113,12 @@
 :core:platform-fabric:xbans:1.20.1 758
 :core:platform-fabric:xbans:1.21.11 760
 :core:platform-fabric:xbans:26.3 750
-:xvanish:bukkit 900
-:core:platform-fabric:xvanish:1.20.1 900
-:core:platform-fabric:xvanish:1.21.11 900
-:core:platform-fabric:xvanish:26.3 900
+
+# xVanish 1.0, over the 500 KiB target with the reason in decisions/2026-11-27-xvanish-1.md: about
+# 400 KiB the shared core it reaches (its database layer among it, for network mode), about 100 KiB
+# xVanish's own with its API, about 25 KiB the seven translations. 598 KiB shrunk; line size + 10%.
+:xvanish:bukkit 660
+# On Fabric, 524-531 KiB, shrunk before Loom remaps it, its core relocated (xena.fabric-mod); lines size + 5%.
+:core:platform-fabric:xvanish:1.20.1 556
+:core:platform-fabric:xvanish:1.21.11 558
+:core:platform-fabric:xvanish:26.3 551

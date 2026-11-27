@@ -139,33 +139,12 @@ public class Tokens private constructor(tokens: Map<String, String>) {
 
     /** Writes `tokens.yml` in [folder], readable by the server's user only, through a temporary file moved into place. */
     public fun save(folder: Path) {
-        Files.createDirectories(folder)
-        val text = StringBuilder()
-        for (line in HEADER) text.append("# ").append(line).append('\n')
-        text.append("tokens:\n")
-        for ((name, token) in all) text.append("  ").append(quote(name)).append(": ").append(quote(token)).append('\n')
-        val file = folder.resolve(FILE)
-        val temporary = folder.resolve("$FILE.tmp")
-        // Owner-only, like rsa/private.key: anyone with a token can send votes as that list.
-        Secrets.write(temporary, text.toString())
-        try {
-            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        } catch (e: AtomicMoveNotSupportedException) {
-            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING)
-        }
+        TokensFile.save(all, folder)
     }
 
     public companion object {
         public const val FILE: String = "tokens.yml"
         public const val DEFAULT: String = "default"
-
-        private val HEADER = listOf(
-            "xVote's Votifier tokens, one per server list, by the name the list sends (its",
-            "service name). \"default\" is used by every list without its own. Give a list its",
-            "token when you add your server; /xvote token shows them.",
-            "Keep these secret: anyone with a token can send votes as that list.",
-            "This is NuVotifier's tokens section, so tokens can be copied across either way.",
-        )
 
         public fun of(tokens: Map<String, String>): Tokens = Tokens(tokens)
 
@@ -198,17 +177,45 @@ public class Tokens private constructor(tokens: Map<String, String>) {
             }
             return out
         }
+    }
+}
 
-        private fun quote(text: String): String = buildString {
-            append('"')
-            for (c in text) {
-                when (c) {
-                    '"' -> append("\\\"")
-                    '\\' -> append("\\\\")
-                    else -> if (c.code < 0x20) append(' ') else append(c)
-                }
-            }
-            append('"')
+/** Writing `tokens.yml`: apart from [Tokens], so it loads only when a token is made or added. */
+internal object TokensFile {
+    private val HEADER = listOf(
+        "xVote's Votifier tokens, one per server list, by the name the list sends (its",
+        "service name). \"default\" is used by every list without its own. Give a list its",
+        "token when you add your server; /xvote token shows them.",
+        "Keep these secret: anyone with a token can send votes as that list.",
+        "This is NuVotifier's tokens section, so tokens can be copied across either way.",
+    )
+
+    fun save(all: Map<String, String>, folder: Path) {
+        Files.createDirectories(folder)
+        val text = StringBuilder()
+        for (line in HEADER) text.append("# ").append(line).append('\n')
+        text.append("tokens:\n")
+        for ((name, token) in all) text.append("  ").append(quote(name)).append(": ").append(quote(token)).append('\n')
+        val file = folder.resolve(Tokens.FILE)
+        val temporary = folder.resolve("${Tokens.FILE}.tmp")
+        // Owner-only, like rsa/private.key: anyone with a token can send votes as that list.
+        Secrets.write(temporary, text.toString())
+        try {
+            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+        } catch (e: AtomicMoveNotSupportedException) {
+            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING)
         }
+    }
+
+    private fun quote(text: String): String = buildString {
+        append('"')
+        for (c in text) {
+            when (c) {
+                '"' -> append("\\\"")
+                '\\' -> append("\\\\")
+                else -> if (c.code < 0x20) append(' ') else append(c)
+            }
+        }
+        append('"')
     }
 }

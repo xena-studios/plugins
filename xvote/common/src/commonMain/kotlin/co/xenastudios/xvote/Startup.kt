@@ -15,24 +15,19 @@ import co.xenastudios.xvote.store.Tables
  * migration): one class for them all rather than a lambda each, each lambda being a class of its
  * own in metaspace (decisions/2026-11-25-a-lighter-core.md).
  */
-internal class Startup private constructor(private val kind: Int) : (Any?) -> Any? {
+internal class Startup(private val kind: Int) : (Any?) -> Any? {
     override fun invoke(value: Any?): Any? = when (kind) {
-        TABLES -> Tables.first(value as Sql)
-        ADDRESSES -> Tables.second(value as Sql)
+        STARTUP_TABLES -> Tables.first(value as Sql)
+        STARTUP_ADDRESSES -> Tables.second(value as Sql)
         else -> Legacy.toTwo(value as MigrationScope)
     }
-
-    @Suppress("UNCHECKED_CAST")
-    internal companion object {
-        private const val TABLES = 0
-        private const val ADDRESSES = 1
-        private const val CONFIG_ONE = 2
-
-        val tables: (Sql) -> List<Statement> get() = Startup(TABLES) as (Sql) -> List<Statement>
-        val addresses: (Sql) -> List<Statement> get() = Startup(ADDRESSES) as (Sql) -> List<Statement>
-        val configOne: MigrationScope.() -> Unit get() = Startup(CONFIG_ONE) as MigrationScope.() -> Unit
-    }
 }
+
+// Its kinds: constants, compiled into the callers, rather than a companion (one more class at startup).
+// Each caller casts Startup(kind) to the function type it hands the core.
+internal const val STARTUP_TABLES: Int = 0
+internal const val STARTUP_ADDRESSES: Int = 1
+internal const val STARTUP_CONFIG_ONE: Int = 2
 
 /**
  * The proxy layer's end on a server behind a proxy (decisions/2026-11-25-the-proxy-layer.md): the

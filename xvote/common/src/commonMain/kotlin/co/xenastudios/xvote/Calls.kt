@@ -2,6 +2,8 @@ package co.xenastudios.xvote
 
 import co.xenastudios.core.api.Pending
 import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.api.newPending
+import co.xenastudios.core.api.resolve
 import co.xenastudios.core.api.onSettled
 import co.xenastudios.core.common.Outcome
 import co.xenastudios.core.common.scheduler.Where
@@ -21,6 +23,28 @@ import kotlin.time.Duration.Companion.seconds
  * of its own, loaded with the first of them, not as the server starts (decisions/2026-11-25-a-lighter-core.md).
  */
 internal object Calls {
+    /** The rest of [XVotePlugin.stop], off the server's threads: closing the receiver waits for its thread. */
+    fun stop(plugin: XVotePlugin): Pending<Unit> {
+        val done = newPending<Unit>()
+        val receiver = plugin.receiver
+        val votes = plugin.madeVotes
+        val backend = plugin.backend
+        plugin.platform.scheduler.run(Where.Async) { _ ->
+            receiver?.close()
+            if (backend == null) {
+                done.resolve(Unit)
+                return@run
+            }
+            backend.feed?.close()
+            if (votes == null) {
+                backend.database.close().onSettled { _, _ -> done.resolve(Unit) }
+            } else {
+                votes.shutdown().onSettled { _, _ -> backend.database.close().onSettled { _, _ -> done.resolve(Unit) } }
+            }
+        }
+        return done
+    }
+
     fun stats(plugin: XVotePlugin, player: PlayerRef): VoterStats {
         val voter = plugin.voters[player] ?: return VoterStats(player, "", 0, 0, 0, 0, 0, 0, emptyMap())
         val now = plugin.now()

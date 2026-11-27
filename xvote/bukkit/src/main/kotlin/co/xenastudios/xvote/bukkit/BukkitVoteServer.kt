@@ -28,9 +28,12 @@ import org.bukkit.util.io.BukkitObjectOutputStream
  * and an optional `:data` below. What doesn't fit is kept as Paper's own bytes where Paper can write
  * them (1.x's format, so the 1.x jar reads them back), or Bukkit's serialised item below that.
  */
-internal class BukkitVoteServer(private val platform: BukkitPlatform, private val cache: PlayerCache) : VoteServer {
+internal class BukkitVoteServer(private val platform: BukkitPlatform, private val cache: PlayerCache) : VoteServer, () -> Map<String, String> {
     private val server = platform.plugin.server
     private val log = platform.log
+
+    /** What `/xvote debug`'s report says about the server: the platform's (as a function, rather than a reference of its own). */
+    override fun invoke(): Map<String, String> = platform.about()
 
     override fun online(): List<PlayerRef> = server.onlinePlayers.map { it.ref }
 
@@ -119,8 +122,30 @@ internal class BukkitVoteServer(private val platform: BukkitPlatform, private va
         return if (data != null) ItemStack(material, 1, data) else ItemStack(material, 1)
     }
 
+    // Giving items, apart (ItemsOut), so it loads with the first reward paid, not as the server starts.
     override fun give(player: PlayerRef, items: List<Any>): Pair<List<ByteArray>, Int> {
         val online = player.online(server) ?: return emptyList<ByteArray>() to 0
+        return ItemsOut.give(online, items)
+    }
+
+    override fun handOut(player: PlayerRef, held: List<ByteArray>): Triple<Int, List<ByteArray>, Int> {
+        val online = player.online(server) ?: return Triple(0, held, 0)
+        return ItemsOut.handOut(online, held, log)
+    }
+
+    override fun playSound(player: PlayerRef, sound: Sound) {
+        if (sound.isNone) return
+        val online = player.online(server) ?: return
+        online.playSound(online.location, sound.name, sound.volume, sound.pitch)
+    }
+
+    // Bukkit's sound names changed in 1.9 and its registry in 1.21: there's no one way to ask.
+    override fun knowsSound(sound: Sound): Boolean? = null
+}
+
+/** Items into a player's inventory, and what didn't fit as bytes for `/vote claim`. */
+internal object ItemsOut {
+    fun give(online: org.bukkit.entity.Player, items: List<Any>): Pair<List<ByteArray>, Int> {
         val leftover = ArrayList<ItemStack>()
         for (item in items) {
             for (stack in split(item as ItemStack)) leftover += online.inventory.addItem(stack).values
@@ -128,8 +153,7 @@ internal class BukkitVoteServer(private val platform: BukkitPlatform, private va
         return leftover.map(::bytes) to leftover.sumOf { it.amount }
     }
 
-    override fun handOut(player: PlayerRef, held: List<ByteArray>): Triple<Int, List<ByteArray>, Int> {
-        val online = player.online(server) ?: return Triple(0, held, 0)
+    fun handOut(online: org.bukkit.entity.Player, held: List<ByteArray>, log: co.xenastudios.core.common.platform.Log): Triple<Int, List<ByteArray>, Int> {
         var given = 0
         val leftover = ArrayList<ItemStack>()
         for (bytes in held) {
@@ -180,15 +204,6 @@ internal class BukkitVoteServer(private val platform: BukkitPlatform, private va
         val method = ItemStack::class.java.getMethod("deserializeBytes", ByteArray::class.java)
         return method.invoke(null, bytes) as ItemStack
     }
-
-    override fun playSound(player: PlayerRef, sound: Sound) {
-        if (sound.isNone) return
-        val online = player.online(server) ?: return
-        online.playSound(online.location, sound.name, sound.volume, sound.pitch)
-    }
-
-    // Bukkit's sound names changed in 1.9 and its registry in 1.21: there's no one way to ask.
-    override fun knowsSound(sound: Sound): Boolean? = null
 }
 
 /**
@@ -208,9 +223,8 @@ internal class VaultEconomy private constructor(private val provider: Any, priva
     }
 
     companion object {
-        fun find(platform: BukkitPlatform): VaultEconomy? {
-            val services = platform.plugin.server.servicesManager
-            val type = services.knownServices.firstOrNull { it.name == "net.milkbowl.vault.economy.Economy" } ?: return null
+        /** Vault's economy, registered as [type] (`net.milkbowl.vault.economy.Economy`), or `null` if nothing provides one. */
+        fun find(services: org.bukkit.plugin.ServicesManager, type: Class<*>): VaultEconomy? {
             val registration = services.getRegistration(type) ?: return null
             val provider = registration.provider ?: return null
             return try {

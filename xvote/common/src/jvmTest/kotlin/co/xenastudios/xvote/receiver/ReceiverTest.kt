@@ -460,6 +460,71 @@ class ReceiverHostTest {
         assertNull(host.status)
     }
 
+    // Sends a v1 vote to [port] and waits for the receiver to hang up.
+    private fun sendV1(port: Int, text: String) {
+        Socket("127.0.0.1", port).use { socket ->
+            socket.soTimeout = 2000
+            // The greeting, to its end.
+            var b = socket.getInputStream().read()
+            while (b != -1 && b != '\n'.code) b = socket.getInputStream().read()
+            socket.getOutputStream().write(Fixtures.nuVotifierV1(Fixtures.keys(), text))
+            socket.getOutputStream().flush()
+            try {
+                socket.getInputStream().read()
+            } catch (reset: IOException) {
+                // Hung up before reading it all.
+            }
+        }
+    }
+
+    private fun keysIn(folder: Path) {
+        Files.createDirectories(folder.resolve("rsa"))
+        for (name in listOf("public.key", "private.key")) Files.copy(Fixtures.FOLDER.resolve("rsa/$name"), folder.resolve("rsa/$name"))
+    }
+
+    @Test
+    fun keysOnDiskAreReadWithTheFirstV1Vote() {
+        keysIn(folder)
+        val votes = LinkedBlockingQueue<IncomingVote>()
+        val host = ReceiverHost(folder, log, "rsa/public.key", sink = { votes += it })
+        try {
+            host.apply(ReceiverSettings("127.0.0.1", 0, true, 8, 4, 5, 60))
+            assertTrue(host.status!!.listening)
+            assertTrue(log.lines.none { "RSA key pair" in it }, log.lines.toList().toString())
+            sendV1(host.status!!.port, "VOTE\nList\nAlex\n5.6.7.8\n12\n")
+            assertEquals("Alex", votes.poll(2, TimeUnit.SECONDS)!!.username)
+            assertEquals(Keys.publicText(Fixtures.keys()), host.publicKey())
+            // A token saved keeps the keys.
+            assertNull(host.saveToken("New List", "secret-ish"))
+            sendV1(host.status!!.port, "VOTE\nList\nSteve\n5.6.7.8\n13\n")
+            assertEquals("Steve", votes.poll(2, TimeUnit.SECONDS)!!.username)
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
+    fun brokenKeysRefuseV1OnlyAndSaySoOnce() {
+        Files.createDirectories(folder.resolve("rsa"))
+        Files.write(folder.resolve("rsa/public.key"), "not a key".toByteArray())
+        Files.write(folder.resolve("rsa/private.key"), "not a key".toByteArray())
+        val votes = LinkedBlockingQueue<IncomingVote>()
+        val host = ReceiverHost(folder, log, "rsa/public.key", sink = { votes += it })
+        try {
+            host.apply(ReceiverSettings("127.0.0.1", 0, true, 8, 4, 5, 60))
+            assertTrue(host.status!!.listening, "v2 votes still arrive")
+            assertNull(host.sendTest("List", "Steve", "1"))
+            assertEquals("Steve", votes.poll(2, TimeUnit.SECONDS)!!.username)
+            sendV1(host.status!!.port, "VOTE\nList\nAlex\n5.6.7.8\n12\n")
+            sendV1(host.status!!.port, "VOTE\nList\nAlex\n5.6.7.8\n12\n")
+            assertNull(votes.poll(300, TimeUnit.MILLISECONDS))
+            assertNull(host.publicKey())
+            assertEquals(1, log.lines.count { "Couldn't read the Votifier keys" in it }, log.lines.toList().toString())
+        } finally {
+            host.close()
+        }
+    }
+
     @Test
     fun aFreshFolderGetsAKeyAndADefaultToken() {
         val host = ReceiverHost(folder, log, "rsa/public.key")

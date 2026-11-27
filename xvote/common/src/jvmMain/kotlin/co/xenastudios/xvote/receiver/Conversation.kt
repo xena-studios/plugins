@@ -8,12 +8,58 @@ import java.io.OutputStream
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * One conversation with a list: greet, read one vote, reply. Apart from [Receiver], so it loads with
- * the first connection, not as the receiver starts listening.
+ * Taking a connection, and one conversation with a list: greet, read one vote, reply. Apart from
+ * [Receiver], so it loads with the first connection, not as the receiver starts listening.
  */
 internal object Conversation {
+    // Checks a new connection against the limits and hands it to a thread of its own.
+    fun take(receiver: Receiver, connection: Socket) {
+        val settings = receiver.settings
+        val key = RateLimiter.key(connection.inetAddress)
+        val limiter = receiver.limiter ?: RateLimiter(settings.perIpPerMinute).also { receiver.limiter = it }
+        if (!limiter.allow(key, System.currentTimeMillis())) {
+            receiver.noise("rate", false, "An address connected more than ${settings.perIpPerMinute} times in a minute, so it's turned away for now. If every list reaches you through one address (a" +
+                " tunnel such as playit.gg or TCPShield), raise receiver.per-ip-per-minute, or set it to 0.")
+            return Receiver.quietClose(connection)
+        }
+        val counted = settings.perIpConnections > 0
+        if (counted && receiver.openFrom.computeIfAbsent(key) { AtomicInteger() }.incrementAndGet() > settings.perIpConnections) {
+            receiver.release(key, true)
+            receiver.noise("busy", false, "An address had more than ${settings.perIpConnections} connections open at once, so more were turned away. If every list reaches you through one address (a" +
+                " tunnel such as playit.gg or TCPShield), raise receiver.per-ip-connections, or set it to 0.")
+            return Receiver.quietClose(connection)
+        }
+        if (receiver.inFlight.incrementAndGet() > settings.maxConnections) {
+            receiver.inFlight.decrementAndGet()
+            receiver.release(key, counted)
+            receiver.noise("full", false, "More than ${settings.maxConnections} votes arrived at once, so some were turned away. Raise receiver.max-connections if your lists are that busy.")
+            return Receiver.quietClose(connection)
+        }
+        receiver.open += connection
+        val done = Runnable {
+            receiver.open -= connection
+            Receiver.quietClose(connection)
+            receiver.inFlight.decrementAndGet()
+            receiver.release(key, counted)
+        }
+        try {
+            receiver.workers().execute {
+                try {
+                    handle(receiver, connection)
+                } finally {
+                    done.run()
+                }
+            }
+        } catch (e: Exception) {
+            done.run()
+        } catch (e: OutOfMemoryError) {
+            done.run()
+        }
+    }
+
     /** One conversation: greet, read one vote, reply. */
     fun handle(receiver: Receiver, connection: Socket) {
         val settings = receiver.settings

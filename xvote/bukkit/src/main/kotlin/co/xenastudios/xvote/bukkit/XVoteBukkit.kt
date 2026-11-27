@@ -74,9 +74,9 @@ public class XVoteBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
             opener = JvmDatabase(family, folder, plugins.resolve("Xena"), drivers, platform.log),
             registrar = platform.commands,
             permissionRegistrar = platform.permissions,
-            about = platform::about,
+            about = server,
             // -Dxena.debug.paste=false writes debug reports to the plugin's folder instead (boot tests do).
-            paste = if (System.getProperty("xena.debug.paste") == "false") null else MclogsPaste(),
+            paste = if (System.getProperty("xena.debug.paste") == "false") null else Mclogs,
             receiver = receiver,
             imports = DeferredImports(plugins, folder, drivers, platform.log, files, server),
             // Behind a proxy, read at startup: the channel opens once.
@@ -96,7 +96,7 @@ public class XVoteBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
         listenToNuVotifier(xvote, config.config[XVoteConfig.receiver.nuvotifierChannel].trim())
         xvote.open()
         platform.scheduler.run(Where.Async, action = Steps(platform, xvote, cache, files, config))
-        xvote.updates = platform.checkUpdates(XVotePlugin.PLUGIN_ID, xvote.admin.updates, XVoteConfig.updates.settings(config.config)) { xvote.texts.translations }
+        xvote.updates = platform.checkUpdates(XVotePlugin.PLUGIN_ID, xvote.admin.updates, XVoteConfig.updates.settings(config.config), translations = xvote.texts)
         platform.metrics(BSTATS)
         val millis = (System.nanoTime() - started) / 1_000_000
         platform.log.info("xVote ${xvote.version} on ${platform.name}: ${platform.threading} threading, text as ${platform.text}, enabled in $millis ms")
@@ -163,7 +163,10 @@ public class XVoteBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
             }
             xvote.log.warn("Couldn't pay money rewards through xMoney: $why")
         }
-        xvote.economy = VaultEconomy.find(platform ?: return)
+        if (platform == null) return
+        // Looked for here, so VaultEconomy loads only where Vault has an economy.
+        val vault = services.knownServices.firstOrNull { it.name == "net.milkbowl.vault.economy.Economy" }
+        xvote.economy = if (vault == null) null else VaultEconomy.find(services, vault)
     }
 
     private fun hookPlaceholders(xvote: XVotePlugin) {
@@ -244,6 +247,13 @@ public class XVoteBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
                 if (plugin.server.pluginManager.isPluginEnabled("PlaceholderAPI")) hookPlaceholders(xvote)
             }
         }
+    }
+
+    // mclo.gs, made with the first /xvote debug, not as the plugin enables.
+    private object Mclogs : co.xenastudios.core.common.admin.PasteService {
+        override val name: String get() = "mclo.gs"
+
+        override fun upload(text: String) = MclogsPaste().upload(text)
     }
 
     private companion object {

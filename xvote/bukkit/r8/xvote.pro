@@ -16,3 +16,14 @@
 -keep,allowobfuscation class co.xenastudios.xvote.DeferredImports { *; }
 -keep,allowobfuscation class co.xenastudios.xvote.receiver.Conversation { *; }
 -keep,allowobfuscation class co.xenastudios.xvote.store.Ledger { *; }
+# The receiver's v1 keys load with the first v1 vote (Receiver$Credentials), its limiter with the
+# first connection (Conversation), writing tokens.yml with the first token made, NuVotifier's
+# takeover on the first start, /vote test's client with the first test; reward items with the
+# first reward given; Vault's economy only where Vault has one.
+-keep,allowobfuscation class co.xenastudios.xvote.receiver.Keys { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.receiver.RateLimiter { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.receiver.TokensFile { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.bukkit.ItemsOut { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.bukkit.VaultEconomy$Companion { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.receiver.NuVotifier { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.receiver.VoteClient { *; }

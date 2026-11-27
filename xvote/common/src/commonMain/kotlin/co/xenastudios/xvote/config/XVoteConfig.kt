@@ -74,7 +74,8 @@ public object XVoteConfig : ConfigSchema(
 
     init {
         // 2.0: messages go to lang/ (Legacy carries the edited ones there), the theme into messages.
-        migrate(1, co.xenastudios.xvote.Startup.configOne)
+        @Suppress("UNCHECKED_CAST")
+        migrate(1, co.xenastudios.xvote.Startup(co.xenastudios.xvote.STARTUP_CONFIG_ONE) as co.xenastudios.core.common.config.MigrationScope.() -> Unit)
     }
 
     public class Receiver(parent: ConfigGroup) : ConfigSection(

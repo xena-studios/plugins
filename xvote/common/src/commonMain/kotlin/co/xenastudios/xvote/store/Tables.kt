@@ -30,9 +30,10 @@ import co.xenastudios.core.common.db.Statement
  */
 public object Tables {
     /** 1.x's two steps, as its `Schema.STEPS`. */
+    @Suppress("UNCHECKED_CAST")
     public val MIGRATIONS: List<Migration> = listOf(
-        Migration(1, "the first tables", co.xenastudios.xvote.Startup.tables),
-        Migration(2, "voters' addresses aren't kept", co.xenastudios.xvote.Startup.addresses),
+        Migration(1, "the first tables", co.xenastudios.xvote.Startup(co.xenastudios.xvote.STARTUP_TABLES) as (Sql) -> List<Statement>),
+        Migration(2, "voters' addresses aren't kept", co.xenastudios.xvote.Startup(co.xenastudios.xvote.STARTUP_ADDRESSES) as (Sql) -> List<Statement>),
     )
 
     private val STEP_1 = listOf(

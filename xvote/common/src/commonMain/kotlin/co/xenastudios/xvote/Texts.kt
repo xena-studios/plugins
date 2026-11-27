@@ -16,9 +16,10 @@ import kotlin.concurrent.Volatile
 /**
  * xVote's messages, drawn for each reader in their language from the lang files, built again on
  * every reload ([translations]). A player's language is their client's; the console reads
- * `default-language`. Texts is its own [AdminText], for the admin subcommands' replies.
+ * `default-language`. Texts is its own [AdminText], for the admin subcommands' replies, and gives
+ * the update checker the current [translations] (as a function, rather than a lambda of its own).
  */
-public class Texts(private val languages: LanguageSource, internal val server: VoteServer?) : AdminText {
+public class Texts(private val languages: LanguageSource, internal val server: VoteServer?) : AdminText, () -> Translations {
     @Volatile
     private var loaded: Translations? = null
 
@@ -34,6 +35,8 @@ public class Texts(private val languages: LanguageSource, internal val server: V
         set(value) {
             loaded = value
         }
+
+    override fun invoke(): Translations = translations
 
     /** The admin subcommands' replies, from the same files. */
     public val admin: AdminText get() = this

@@ -15,6 +15,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
+import java.nio.file.Path
 import java.security.KeyPair
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
@@ -46,25 +47,68 @@ public class Receiver(
     internal val sink: (IncomingVote) -> Unit,
     internal val log: Log,
     private val sockets: ServerSocketFactory = ServerSocketFactory.getDefault(),
-) : AutoCloseable {
-    /** The keys and tokens votes are checked with, swapped whole on reload. */
-    public class Credentials(public val keys: KeyPair?, public val tokens: Tokens)
+) : AutoCloseable, Runnable {
+    /**
+     * The keys and tokens votes are checked with, swapped whole on reload. Given [rsa] instead of
+     * [keys], the key pair is read from that folder the first time it's needed (the first v1 vote,
+     * `/xvote key`), not as the receiver starts: a v2-only server never loads RSA at all. If it can't
+     * be read, that's logged to [log] once and v1 votes are refused until a reload.
+     */
+    public class Credentials(keys: KeyPair?, public val tokens: Tokens, private val rsa: Path? = null, private val log: Log? = null) {
+        @Volatile
+        private var loaded: KeyPair? = keys
+
+        @Volatile
+        private var read = rsa == null
+
+        /** The v1 key pair, or `null` if there's none or it couldn't be read. */
+        public val keys: KeyPair?
+            get() {
+                if (read) return loaded
+                synchronized(this) {
+                    if (!read) {
+                        loaded = try {
+                            Keys.load(rsa!!)
+                        } catch (e: Exception) {
+                            log?.error("Couldn't read the Votifier keys: ${e.message}")
+                            null
+                        }
+                        read = true
+                    }
+                }
+                return loaded
+            }
+
+        /** These keys, read or not yet, with [tokens]. */
+        public fun with(tokens: Tokens): Credentials = synchronized(this) { if (read) Credentials(loaded, tokens) else Credentials(null, tokens, rsa, log) }
+    }
 
     @Volatile
     public var credentials: Credentials = credentials
 
-    private val open = ConcurrentHashMap.newKeySet<Socket>()
-    private val openFrom = ConcurrentHashMap<String, AtomicInteger>()
-    private val inFlight = AtomicInteger()
+    internal val open = ConcurrentHashMap.newKeySet<Socket>()
+    internal val openFrom = ConcurrentHashMap<String, AtomicInteger>()
+    internal val inFlight = AtomicInteger()
     private val noise = ConcurrentHashMap.newKeySet<String>()
     private val voteErrors = ConcurrentHashMap.newKeySet<String>()
     private val voteErrorsQuiet = AtomicBoolean()
-    private val limiter = RateLimiter(settings.perIpPerMinute)
+    // The limiter and the threads are made with the first connection, on the accepting thread, so
+    // their classes don't load as the server starts.
+    internal var limiter: RateLimiter? = null
+
+    @Volatile
+    private var workers: ThreadPoolExecutor? = null
+
     // As many threads as connections allowed at once, each ending a minute after its last vote; the
     // count of votes in flight keeps the queue from ever holding one.
-    private val workers = ThreadPoolExecutor(settings.maxConnections, settings.maxConnections, 60, TimeUnit.SECONDS, LinkedBlockingQueue()) { runnable ->
+    internal fun workers(): ThreadPoolExecutor = workers ?: ThreadPoolExecutor(settings.maxConnections, settings.maxConnections, 60, TimeUnit.SECONDS, LinkedBlockingQueue()) { runnable ->
         Thread(runnable, "xVote vote").also { it.isDaemon = true }
-    }.also { it.allowCoreThreadTimeOut(true) }
+    }.also {
+        it.allowCoreThreadTimeOut(true)
+        workers = it
+        // Closed while it was made: what's handed to it now is refused, and dropped.
+        if (closed) it.shutdownNow()
+    }
 
     @Volatile
     private var server: ServerSocket? = null
@@ -91,7 +135,7 @@ public class Receiver(
         }
         server = socket
         running = true
-        acceptor = Thread({ accept(socket) }, "xVote receiver").also {
+        acceptor = Thread(this, "xVote receiver").also {
             it.isDaemon = true
             it.start()
         }
@@ -112,7 +156,7 @@ public class Receiver(
             // Closing anyway.
         }
         for (connection in open) quietClose(connection)
-        workers.shutdownNow()
+        workers?.shutdownNow()
         acceptor?.let {
             it.interrupt()
             try {
@@ -121,6 +165,11 @@ public class Receiver(
                 Thread.currentThread().interrupt()
             }
         }
+    }
+
+    /** The accepting thread's loop, which [start] runs: not to be called otherwise. */
+    override fun run() {
+        accept(server ?: return)
     }
 
     private fun accept(socket: ServerSocket) {
@@ -143,58 +192,16 @@ public class Receiver(
                     }
                     continue
                 }
-                take(connection)
+                // With the first connection, Conversation loads, and the limiter and threads are made.
+                Conversation.take(this, connection)
             }
         } finally {
             running = false
         }
     }
 
-    // Checks a new connection against the limits and hands it to a thread of its own.
-    private fun take(connection: Socket) {
-        val key = RateLimiter.key(connection.inetAddress)
-        if (!limiter.allow(key, System.currentTimeMillis())) {
-            noise("rate", false, "An address connected more than ${settings.perIpPerMinute} times in a minute, so it's turned away for now. If every list reaches you through one address (a" +
-                " tunnel such as playit.gg or TCPShield), raise receiver.per-ip-per-minute, or set it to 0.")
-            return quietClose(connection)
-        }
-        val counted = settings.perIpConnections > 0
-        if (counted && openFrom.computeIfAbsent(key) { AtomicInteger() }.incrementAndGet() > settings.perIpConnections) {
-            release(key, true)
-            noise("busy", false, "An address had more than ${settings.perIpConnections} connections open at once, so more were turned away. If every list reaches you through one address (a" +
-                " tunnel such as playit.gg or TCPShield), raise receiver.per-ip-connections, or set it to 0.")
-            return quietClose(connection)
-        }
-        if (inFlight.incrementAndGet() > settings.maxConnections) {
-            inFlight.decrementAndGet()
-            release(key, counted)
-            noise("full", false, "More than ${settings.maxConnections} votes arrived at once, so some were turned away. Raise receiver.max-connections if your lists are that busy.")
-            return quietClose(connection)
-        }
-        open += connection
-        val done = Runnable {
-            open -= connection
-            quietClose(connection)
-            inFlight.decrementAndGet()
-            release(key, counted)
-        }
-        try {
-            workers.execute {
-                try {
-                    Conversation.handle(this, connection)
-                } finally {
-                    done.run()
-                }
-            }
-        } catch (e: Exception) {
-            done.run()
-        } catch (e: OutOfMemoryError) {
-            done.run()
-        }
-    }
-
     // One fewer open from the address; at none, it's forgotten.
-    private fun release(key: String, counted: Boolean) {
+    internal fun release(key: String, counted: Boolean) {
         if (!counted) return
         val count = openFrom[key] ?: return
         if (count.decrementAndGet() <= 0) openFrom.remove(key, count)

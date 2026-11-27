@@ -61,7 +61,8 @@ public class ReceiverHost(
             if (closed) return
             if (!tookOver) {
                 tookOver = true
-                takeOverNuVotifier()
+                // On the first start only (no keys or tokens of xVote's own yet), NuVotifier's are taken over.
+                if (nuVotifierIn != null && !Files.exists(folder.resolve("rsa")) && !Files.exists(folder.resolve(Tokens.FILE))) NuVotifier.takeOver(nuVotifierIn, folder, files, log)
             }
             loadCredentials()?.let { credentials = it }
             val current = credentials
@@ -122,58 +123,38 @@ public class ReceiverHost(
         } catch (e: IOException) {
             return@synchronized e.message ?: e.toString()
         }
-        val made = Receiver.Credentials(current.keys, next)
+        val made = current.with(next)
         credentials = made
         receiver?.credentials = made
         null
     }
 
-    override fun sendTest(service: String, username: String, timestamp: String): TestSend? {
-        val running = running ?: return TestSend(true, "the receiver isn't running")
-        val tokens = running.credentials.tokens
-        val token = tokens.forService(service) ?: tokens.forService(Tokens.DEFAULT) ?: ""
-        val host = running.settings.host.let { if (it.isBlank() || it == "0.0.0.0") "127.0.0.1" else it }
-        return try {
-            VoteClient.sendV2(host, running.port, token, service, username, "127.0.0.1", timestamp, 5000)?.let { TestSend(false, it) }
-        } catch (e: IOException) {
-            TestSend(true, e.message ?: e.toString())
-        }
-    }
+    override fun sendTest(service: String, username: String, timestamp: String): TestSend? = VoteClient.test(running, service, username, timestamp)
 
+    // The keys are read with the first v1 vote (Receiver.Credentials); only a missing pair is made here.
     private fun loadCredentials(): Receiver.Credentials? {
         val rsa = folder.resolve("rsa")
-        val keys: KeyPair = try {
-            val made = !Keys.exist(rsa)
-            Keys.loadOrCreate(rsa).also {
-                if (made) log.info("Made a new RSA key pair for Votifier v1 in rsa/. Lists that ask for a public key get it with /$command key.")
+        // Keys.exist, without loading Keys.
+        val exist = Files.isRegularFile(rsa.resolve(Keys.PUBLIC)) && Files.isRegularFile(rsa.resolve(Keys.PRIVATE))
+        val keys: KeyPair? = if (exist) {
+            null
+        } else {
+            try {
+                Keys.loadOrCreate(rsa).also {
+                    log.info("Made a new RSA key pair for Votifier v1 in rsa/. Lists that ask for a public key get it with /$command key.")
+                }
+            } catch (e: Exception) {
+                log.error("Couldn't make the Votifier keys: ${e.message}")
+                return null
             }
-        } catch (e: Exception) {
-            log.error("Couldn't read the Votifier keys: ${e.message}")
-            return null
         }
         return try {
             val (tokens, created) = Tokens.loadOrCreate(folder)
             if (created) log.info("Made a Votifier token in tokens.yml. Lists that ask for a token get it with /$command token.")
-            Receiver.Credentials(keys, tokens)
+            if (exist) Receiver.Credentials(null, tokens, rsa, log) else Receiver.Credentials(keys, tokens)
         } catch (e: Exception) {
             log.error("Couldn't read ${Tokens.FILE}: ${e.message}")
             null
-        }
-    }
-
-    // On the first start only (no keys or tokens of xVote's own yet), NuVotifier's are taken over.
-    private fun takeOverNuVotifier() {
-        val plugins = nuVotifierIn ?: return
-        if (Files.exists(folder.resolve("rsa")) || Files.exists(folder.resolve(Tokens.FILE))) return
-        val found = NuVotifier.find(plugins) ?: return
-        try {
-            val read = NuVotifier.read(found)
-            NuVotifier.write(read, folder)
-            val what = listOfNotNull(if (read.keys != null) "keys" else null, if (read.tokens != null) "tokens" else null).joinToString(" and ")
-            log.info("Took over NuVotifier's $what from plugins/${found.fileName}, so your lists keep working.")
-            read.usePort(files)?.let { log.warn("Couldn't set receiver.port to NuVotifier's ${read.port}: $it") }
-        } catch (e: IOException) {
-            log.warn("Couldn't take over NuVotifier's setup from plugins/${found.fileName}: ${e.message}")
         }
     }
 }
@@ -184,6 +165,19 @@ public class ReceiverHost(
  * socket, protocol and token as a real one.
  */
 public object VoteClient {
+    /** `/vote test`: a v2 vote to [running], this server's receiver, with the list's token. */
+    internal fun test(running: Receiver?, service: String, username: String, timestamp: String): TestSend? {
+        if (running == null) return TestSend(true, "the receiver isn't running")
+        val tokens = running.credentials.tokens
+        val token = tokens.forService(service) ?: tokens.forService(Tokens.DEFAULT) ?: ""
+        val host = running.settings.host.let { if (it.isBlank() || it == "0.0.0.0") "127.0.0.1" else it }
+        return try {
+            sendV2(host, running.port, token, service, username, "127.0.0.1", timestamp, 5000)?.let { TestSend(false, it) }
+        } catch (e: IOException) {
+            TestSend(true, e.message ?: e.toString())
+        }
+    }
+
     /** Sends a v2 vote signed with [token], and reads the reply: `null` if it was accepted, otherwise the error. Throws [IOException] if it can't be reached or doesn't answer like Votifier. */
     public fun sendV2(host: String, port: Int, token: String, service: String, username: String, address: String, timestamp: String, timeoutMs: Int): String? {
         Socket().use { socket ->
@@ -254,6 +248,20 @@ public object NuVotifier {
             tokens?.let { "${it.all.size} tokens" } ?: "no tokens",
             if (port > 0) "port $port" else null,
         ).joinToString(", ")
+    }
+
+    /** Takes over NuVotifier's setup in [plugins], if there's one, into xVote's [folder], and points `config.yml` at its port: on the first start only. */
+    internal fun takeOver(plugins: Path, folder: Path, files: co.xenastudios.xvote.Files?, log: Log) {
+        val found = find(plugins) ?: return
+        try {
+            val read = read(found)
+            write(read, folder)
+            val what = listOfNotNull(if (read.keys != null) "keys" else null, if (read.tokens != null) "tokens" else null).joinToString(" and ")
+            log.info("Took over NuVotifier's $what from plugins/${found.fileName}, so your lists keep working.")
+            read.usePort(files)?.let { log.warn("Couldn't set receiver.port to NuVotifier's ${read.port}: $it") }
+        } catch (e: IOException) {
+            log.warn("Couldn't take over NuVotifier's setup from plugins/${found.fileName}: ${e.message}")
+        }
     }
 
     /** NuVotifier's folder in [plugins], or `null` if there's none with keys or a config. */

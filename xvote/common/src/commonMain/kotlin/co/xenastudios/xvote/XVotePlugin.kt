@@ -156,7 +156,8 @@ public class XVotePlugin(
     internal var party: Reads.PartyState = Reads.PartyState(0, 0)
 
     @Volatile
-    private var madeVotes: Votes? = null
+    internal var madeVotes: Votes? = null
+        private set
 
     /**
      * Where votes go, made with the first vote, join or news from another server, not as the server
@@ -192,11 +193,12 @@ public class XVotePlugin(
     internal fun payout(): Payout = madePayout ?: locked(this) { madePayout ?: Payout(this).also { madePayout = it } }
 
     /** `/xvote reload`, `debug` and `forget`, or on a proxy `/xvoteproxy`'s. */
+    @Suppress("UNCHECKED_CAST")
     public val admin: AdminCommands = AdminCommands(
         PLUGIN_ID, NAME, platform, reloader(),
         // Neither part loads until its command runs (AdminCommands).
-        debug = AdminPart(this, true),
-        playerData = AdminPart(this, false),
+        debug = Reloading(2) as () -> co.xenastudios.core.common.admin.Debug,
+        playerData = Reloading(3) as () -> co.xenastudios.core.common.admin.PlayerDataRegistry,
         text = texts.admin,
     )
 
@@ -251,9 +253,9 @@ public class XVotePlugin(
                     if (value !is Outcome.Ok<*>) return fail("Couldn't bring ${db.description}'s tables up to date: ${(value as? Outcome.Err<*>)?.error ?: error}", true)
                     // The feed first, so it starts from before the load: a vote counted while the
                     // voters load is read again from the feed's news, which changes nothing.
+                    if (!config[XVoteConfig.network.enabled]) return invoke(Outcome.Ok(null), null)
                     val settings = XVoteConfig.network.read(config)
                     when {
-                        !settings.enabled -> invoke(Outcome.Ok(null), null)
                         plugin.networkOnAnyDatabase -> ChangeFeed.openOnAny(db, settings, plugin.platform.scheduler, plugin.platform.clock, plugin.log, kotlin.uuid.Uuid.random().toHexString().substring(0, 16)).onSettled(this)
                         else -> ChangeFeed.open(db, settings, plugin.platform.scheduler, plugin.platform.clock, plugin.log).onSettled(this)
                     }
@@ -376,34 +378,23 @@ public class XVotePlugin(
         registrar?.clear()
         permissionRegistrar?.sync(emptyList())
         channel?.close()
-        val done = newPending<Unit>()
-        val receiver = receiver
-        val votes = madeVotes
-        val backend = backend
-        // Off the server's threads: closing the receiver waits for its thread.
-        platform.scheduler.run(Where.Async) { _ ->
-            receiver?.close()
-            if (backend == null) {
-                done.resolve(Unit)
-                return@run
-            }
-            backend.feed?.close()
-            if (votes == null) {
-                backend.database.close().onSettled { _, _ -> done.resolve(Unit) }
-            } else {
-                votes.shutdown().onSettled { _, _ -> backend.database.close().onSettled { _, _ -> done.resolve(Unit) } }
-            }
-        }
-        return done
+        return Calls.stop(this)
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun reloader(): ModuleReloader =
         ModuleReloader(modules, reloadFiles = Reloading(0) as () -> List<String>, wanted = Reloading(1) as () -> Map<String, () -> Module>)
 
-    // /xvote reload: the files again, then everything built from them; and the modules then.
+    // /xvote reload: the files again, then everything built from them; and the modules then. And
+    // /xvote debug's report and forget's player data, made when the command first asks. One class,
+    // told apart by kind, not one each.
     private inner class Reloading(private val kind: Int) : () -> Any {
-        override fun invoke(): Any = if (kind == 0) apply(files.load()) else wantedModules()
+        override fun invoke(): Any = when (kind) {
+            0 -> apply(files.load())
+            1 -> wantedModules()
+            2 -> AdminParts.debug(this@XVotePlugin)
+            else -> AdminParts.playerData(this@XVotePlugin)
+        }
     }
 
     /** The modules the config turns on: the repeating reminder, only while `reminders.every-minutes` is above 0. */
@@ -435,9 +426,9 @@ public class XVotePlugin(
         config = loaded.config
         texts.translations = loaded.translations
         val warnings = ArrayList<String>()
-        rewards = Rewards.of(config, server, Collect(warnings), Collect(null, log))
+        rewards = Rewards.of(config, server, Later(into = warnings), Later(log = log))
         // The items are read on the next tick, not as the plugin enables (Rewards.RewardEntry).
-        if (!server.proxy) platform.scheduler.run(Where.Global, delay = co.xenastudios.core.common.scheduler.TICK, action = Check(rewards))
+        if (!server.proxy) platform.scheduler.run(Where.Global, delay = co.xenastudios.core.common.scheduler.TICK, action = Later(rewards = rewards))
         val zoneText = config[XVoteConfig.counting.timeZone].trim()
         val zone = if (zoneText.isEmpty() || zoneText.equals("server", ignoreCase = true)) zones.server else zones.of(zoneText) ?: zones.server.also {
             warnings += "config.yml: counting.time-zone (\"$zoneText\") isn't a time zone, such as Europe/London; using the server's."
@@ -466,7 +457,7 @@ public class XVotePlugin(
 
     /** The receiver made to match the config, off the server's threads: one change at a time, in the receiver. */
     internal fun applyReceiver() {
-        val receiver = receiver ?: return
+        if (receiver == null) return
         val r = XVoteConfig.receiver
         val c = config
         val wanted = if (c[r.enabled]) {
@@ -474,7 +465,7 @@ public class XVotePlugin(
         } else {
             null
         }
-        platform.scheduler.run(Where.Async) { _ -> if (running) receiver.apply(wanted) }
+        platform.scheduler.run(Where.Async, action = Later(plugin = this, wanted = wanted))
     }
 
     internal fun now(): Long = platform.clock.now().toEpochMilliseconds()
@@ -543,26 +534,25 @@ public class XVotePlugin(
 }
 
 /**
- * A warning, into a list as the config loads or to the console later, and reading every reward's
- * items a tick after a load: one class, not a lambda each.
+ * What [XVotePlugin.apply] hands on, as one class rather than a lambda each: a warning, into [into]
+ * as the config loads or to [log] later; reading [rewards]' items a tick after a load; or moving
+ * [plugin]'s receiver to [wanted], off the server's threads. Taking `Any?`, it's each of their types.
  */
-private class Collect(private val into: MutableList<String>?, private val log: co.xenastudios.core.common.platform.Log? = null) : (String) -> Unit {
-    override fun invoke(warning: String) {
-        if (into != null) into += "config.yml: $warning" else log?.warn(warning)
+private class Later(
+    private val into: MutableList<String>? = null,
+    private val log: co.xenastudios.core.common.platform.Log? = null,
+    private val rewards: Rewards? = null,
+    private val plugin: XVotePlugin? = null,
+    private val wanted: ReceiverSettings? = null,
+) : (Any?) -> Unit {
+    override fun invoke(value: Any?) {
+        when {
+            plugin != null -> if (plugin.running) plugin.receiver?.apply(wanted)
+            rewards != null -> rewards.check()
+            into != null -> into += "config.yml: $value"
+            else -> log?.warn(value.toString())
+        }
     }
-}
-
-/** Reads every reward's items, a tick after a load. */
-private class Check(private val rewards: Rewards) : (Task) -> Unit {
-    override fun invoke(task: Task) {
-        rewards.check()
-    }
-}
-
-/** `/xvote debug`'s report or `forget`'s player data, made when the command first asks. */
-private class AdminPart<T>(private val plugin: XVotePlugin, private val debug: Boolean) : () -> T {
-    @Suppress("UNCHECKED_CAST")
-    override fun invoke(): T = (if (debug) AdminParts.debug(plugin) else AdminParts.playerData(plugin)) as T
 }
 
 /** Reminds everyone online who can vote, every [minutes]: xVote's only repeating task, and only while `reminders.every-minutes` is above 0. */

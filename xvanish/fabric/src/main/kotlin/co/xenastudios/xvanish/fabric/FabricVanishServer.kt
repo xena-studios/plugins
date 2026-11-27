@@ -1,6 +1,7 @@
 package co.xenastudios.xvanish.fabric
 
 import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.text.Component
 import co.xenastudios.core.fabric.FabricPlatform
 import co.xenastudios.core.fabric.MinecraftRenderer
@@ -80,10 +81,12 @@ internal class FabricVanishServer(private val platform: FabricPlatform) : Vanish
             val player = handler.player
             joining.remove(player.uuid)
             // Placed: what was decided as they connected is sent now, both ways.
-            for ((viewer, targets) in hidden) {
-                if (viewer == player.uuid) targets.forEach { send(player, it, hide = true) }
-                else if (player.uuid in targets) platform.server?.playerList?.getPlayer(viewer)?.let { send(it, player.uuid, hide = true) }
-            }
+            hideAround(player)
+            // Fabric's JOIN comes as Minecraft makes the player's connection, before it sends them
+            // everyone's tab list entries and everyone theirs: the entries are taken off again on
+            // the next tick, or a viewer joining would list a vanished player (the real-client
+            // boot on Fabric found it).
+            platform.scheduler.run(Where.Global) { platform.server?.playerList?.getPlayer(player.uuid)?.let(::hideAround) }
             waiting.remove(player.uuid)?.forEach { it() }
         }
         ServerPlayConnectionEvents.DISCONNECT.register { handler, _ ->
@@ -176,6 +179,14 @@ internal class FabricVanishServer(private val platform: FabricPlatform) : Vanish
         val shown = server.playerList.getPlayer(t) ?: return
         placed.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(listOf(shown)))
         retrack(shown)
+    }
+
+    // What [player] mustn't see taken off their view, and [player] off the view of whoever mustn't see them.
+    private fun hideAround(player: ServerPlayer) {
+        for ((viewer, targets) in hidden) {
+            if (viewer == player.uuid) targets.forEach { send(player, it, hide = true) }
+            else if (player.uuid in targets) platform.server?.playerList?.getPlayer(viewer)?.let { send(it, player.uuid, hide = true) }
+        }
     }
 
     private fun send(viewer: ServerPlayer, target: UUID, hide: Boolean) {

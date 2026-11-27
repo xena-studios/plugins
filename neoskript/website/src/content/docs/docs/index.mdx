@@ -10,7 +10,7 @@ import { Aside, Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 NeoSkript runs [Skript](https://github.com/SkriptLang/Skript) scripts. It isn't a fork: it's a clean-room rewrite that treats Skript's behaviour as the spec, so the `.sk` files you have today load and behave the same way. What changes is underneath. Each trigger is compiled to JVM bytecode, so the JIT can optimise across a whole script instead of stepping through syntax one element at a time, and the threading model is built for Folia from the start.
 
 <Aside type="caution" title="Public beta">
-NeoSkript is in public beta: [download it](/download/) from Modrinth or GitHub, and try it on a test server before your live one. [Check your scripts](/docs/moving-from-skript/#check-your-scripts-first) before you switch. Where each milestone stands is in [the progress log](https://github.com/xena-studios/neoskript/blob/main/docs/PROGRESS.md).
+NeoSkript is in public beta: [download it](/download/) from Modrinth or GitHub, and try it on a test server before your live one. [Check your scripts](/docs/moving-from-skript/#check-your-scripts-first) before you switch. Where each milestone stands is in [the progress log](https://github.com/xena-studios/plugins/blob/main/neoskript/docs/PROGRESS.md).
 </Aside>
 
 <CardGrid>
@@ -31,7 +31,7 @@ NeoSkript is in public beta: [download it](/download/) from Modrinth or GitHub, 
 ## How we check it's a drop-in
 
 - **Skript's own test suite.** Every test in Skript 2.17's suite runs on NeoSkript, and all 862 pass.
-- **Side by side with real Skript.** A [differential test harness](https://github.com/xena-studios/neoskript/tree/main/test-harness) runs the same scripts on a real Skript server and a NeoSkript server and compares what they do, message by message. All 1,613 units, every example in Skript's documentation and NeoSkript's own probes, print the same messages and save the same `variables.csv`.
+- **Side by side with real Skript.** A [differential test harness](https://github.com/xena-studios/plugins/tree/main/neoskript/test-harness) runs the same scripts on a real Skript server and a NeoSkript server and compares what they do, message by message. All 1,613 units, every example in Skript's documentation and NeoSkript's own probes, print the same messages and save the same `variables.csv`.
 - **Your variables, byte for byte.** NeoSkript reads and writes Skript's `variables.csv` exactly, so you can switch back.
 
 ## What it runs on

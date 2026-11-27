@@ -16,7 +16,7 @@ import run from "../data/differential.json";
 import suite from "../data/suite.json";
 import { latestRelease } from "../lib/release";
 
-const repo = "https://github.com/xena-studios/neoskript";
+const repo = "https://github.com/xena-studios/plugins";
 const release = await latestRelease();
 const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const date = day(run.date);
@@ -291,7 +291,7 @@ const faq = [
           over the same server with no scripts ({bench.ticks.noScriptsMs.toFixed(1)} ms a tick); each trigger fired
           {" "}{fmt(bench.events.count)} times in a row, {bench.events.rounds} rounds. Load, ticks and triggers each have their own
           scale. {bench.machine.replace(/^an? /, "").replace(/^./, (c) => c.toUpperCase())}, {day(bench.date)}.
-          Measured by the <a href={`${repo}/tree/main/test-harness`}>test harness<External /></a>.
+          Measured by the <a href={`${repo}/tree/main/neoskript/test-harness`}>test harness<External /></a>.
         </figcaption>
       </figure>
     </div>
@@ -331,17 +331,17 @@ const faq = [
           </div>
         </div>
         <figcaption>
-          From <a href={`${repo}/blob/main/${run.file}`}>{file}<External /></a>. Point at a line to see it on both servers.
+          From <a href={`${repo}/blob/main/neoskript/${run.file}`}>{file}<External /></a>. Point at a line to see it on both servers.
         </figcaption>
       </figure>
       <div class="facts">
         <p>
           <strong>{suite.passed} of {suite.total}</strong> of Skript {suite.skript}'s own tests pass on NeoSkript.
-          <a href={`${repo}/blob/main/docs/PROGRESS.md`}>Progress<External /></a>
+          <a href={`${repo}/blob/main/neoskript/docs/PROGRESS.md`}>Progress<External /></a>
         </p>
         <p>
           <strong>{run.percent}%</strong> of {fmt(run.units)} side-by-side checks print and save exactly what Skript does.
-          <a href={`${repo}/blob/main/test-harness/src/main/java/co/xenastudios/neoskript/harness/scenario/DifferentialScenario.java`}>The checks<External /></a>
+          <a href={`${repo}/blob/main/neoskript/test-harness/src/main/java/co/xenastudios/neoskript/harness/scenario/DifferentialScenario.java`}>The checks<External /></a>
         </p>
         <p>
           <strong>Folia</strong> runs NeoSkript, with each region's rules kept for you. Skript doesn't run there.

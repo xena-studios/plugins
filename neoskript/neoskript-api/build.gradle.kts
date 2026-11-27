@@ -94,13 +94,13 @@ mavenPublishing {
             url = "https://xenastudios.co"
         }
         scm {
-            url = "https://github.com/xena-studios/neoskript"
-            connection = "scm:git:https://github.com/xena-studios/neoskript.git"
-            developerConnection = "scm:git:ssh://git@github.com/xena-studios/neoskript.git"
+            url = "https://github.com/xena-studios/plugins/tree/main/neoskript"
+            connection = "scm:git:https://github.com/xena-studios/plugins.git"
+            developerConnection = "scm:git:ssh://git@github.com/xena-studios/plugins.git"
         }
         issueManagement {
             system = "GitHub"
-            url = "https://github.com/xena-studios/neoskript/issues"
+            url = "https://github.com/xena-studios/plugins/issues"
         }
     }
 }

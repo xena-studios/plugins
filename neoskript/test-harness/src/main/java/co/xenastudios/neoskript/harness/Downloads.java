@@ -38,7 +38,7 @@ public final class Downloads {
         Files.createDirectories(cacheDir);
         System.out.println("[harness] Downloading " + url);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .header("User-Agent", "neoskript-test-harness (https://github.com/xena-studios/neoskript)")
+                .header("User-Agent", "neoskript-test-harness (https://github.com/xena-studios/plugins/tree/main/neoskript)")
                 .build();
         Path partial = cacheDir.resolve(fileName + ".part");
         HttpResponse<Path> response = client.send(request, HttpResponse.BodyHandlers.ofFile(partial));

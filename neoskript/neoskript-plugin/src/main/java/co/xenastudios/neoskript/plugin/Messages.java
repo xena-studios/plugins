@@ -27,8 +27,8 @@ final class Messages {
     static final String DOCS = "https://neoskript.dev/docs/";
     static final String SYNTAX = "https://neoskript.dev/syntax/";
     static final String DOWNLOAD = "https://neoskript.dev/download/";
-    static final String ISSUES = "https://github.com/xena-studios/neoskript/issues";
-    static final String RELEASES = "https://github.com/xena-studios/neoskript/releases";
+    static final String ISSUES = "https://github.com/xena-studios/plugins/issues";
+    static final String RELEASES = "https://github.com/xena-studios/plugins/releases?q=neoskript&expanded=true";
 
     // --- shared ---
 

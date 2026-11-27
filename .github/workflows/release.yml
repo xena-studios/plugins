@@ -27,7 +27,8 @@ name: Release
 # copy of this file.
 on:
   push:
-    tags: ["*-v*"]
+    # NeoSkript's tags (neoskript-v...) aren't a plugin's: it's released by hand until N1 (#203).
+    tags: ["*-v*", "!neoskript-*"]
   pull_request:
     paths:
       - .github/workflows/release.yml

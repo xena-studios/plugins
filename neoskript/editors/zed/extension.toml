@@ -3,11 +3,11 @@ name = "NeoSkript"
 version = "0.1.0"
 schema_version = 1
 description = "Skript (.sk) for Skript and NeoSkript servers: highlighting, problems as you type, hover docs, completion, an outline and go to definition, from NeoSkript's own parser."
-repository = "https://github.com/xena-studios/neoskript"
+repository = "https://github.com/xena-studios/plugins/tree/main/neoskript"
 authors = ["Xena Studios"]
 
 [grammars.skript]
-repository = "https://github.com/xena-studios/neoskript"
+repository = "https://github.com/xena-studios/plugins/tree/main/neoskript"
 rev = "5043913cbc61d9738d02e84c4cfc9730432e2f18"
 path = "editors/tree-sitter-skript"
 

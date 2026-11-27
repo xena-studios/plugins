@@ -14,6 +14,6 @@ await build({
   format: "cjs",
   minify: true,
   legalComments: "none",
-  banner: { js: `#!/usr/bin/env node\n// NeoSkript language server ${pkg.version}. GPL-3.0-only. https://github.com/xena-studios/neoskript` },
+  banner: { js: `#!/usr/bin/env node\n// NeoSkript language server ${pkg.version}. GPL-3.0-only. https://github.com/xena-studios/plugins/tree/main/neoskript` },
   logLevel: "info",
 });

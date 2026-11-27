@@ -106,7 +106,7 @@ A value with a tag nobody knows, a location in a world that isn't loaded, or a `
 
 ## Differences from skript-yaml
 
-Scripts behave the same, except where skript-yaml 1.7.2 is broken. The [test harness](https://github.com/xena-studios/neoskript/tree/main/test-harness) runs the same script on Skript 2.17 with skript-yaml and on NeoSkript with NeoSkriptYaml, and compares what each prints and every file each writes, byte for byte. It also runs the parts skript-yaml can't save on Minecraft 26 on Paper 1.21.11, where they match it byte for byte. These are the differences, each on purpose:
+Scripts behave the same, except where skript-yaml 1.7.2 is broken. The [test harness](https://github.com/xena-studios/plugins/tree/main/neoskript/test-harness) runs the same script on Skript 2.17 with skript-yaml and on NeoSkript with NeoSkriptYaml, and compares what each prints and every file each writes, byte for byte. It also runs the parts skript-yaml can't save on Minecraft 26 on Paper 1.21.11, where they match it byte for byte. These are the differences, each on purpose:
 
 - **Broken files.** A file that isn't valid YAML, or whose top level isn't keys, isn't loaded, and is left alone. skript-yaml loads it empty, and its next save overwrites the file.
 - **Files ending in a comment.** skript-yaml adds the text `null` after a file's last line when it's a comment, so the file fails to load. These load.

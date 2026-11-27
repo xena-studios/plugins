@@ -98,7 +98,7 @@ NeoSkript versions without native storage, and Skript, only read `variables.csv`
 
 ### How fast
 
-The [variable benchmark](https://github.com/xena-studios/neoskript/blob/main/test-harness/README.md) has Skript make 140,000 variables of the kinds servers keep (numbers, texts, booleans, locations and lists), then times loading them when the server starts, as each logs it (median of 3, Paper 26.3):
+The [variable benchmark](https://github.com/xena-studios/plugins/blob/main/neoskript/test-harness/README.md) has Skript make 140,000 variables of the kinds servers keep (numbers, texts, booleans, locations and lists), then times loading them when the server starts, as each logs it (median of 3, Paper 26.3):
 
 | | Load | File |
 |---|---|---|
@@ -196,5 +196,5 @@ NeoSkript never stalls the server waiting for a database, never writes to one it
 `/sk info` shows each database: connected and how many variables it has, down since when, why, and how many changes are waiting, or not reached yet. A password is never shown, in the console or `/sk info`.
 
 <Aside type="note">
-The variable store and backups changed after 0.1.0-beta.1: backups, skipping lines that can't be read, and never saving over a file that didn't load are in the [development build](https://github.com/xena-studios/neoskript/releases/tag/dev) and the next release.
+The variable store and backups changed after 0.1.0-beta.1: backups, skipping lines that can't be read, and never saving over a file that didn't load are in the [development build](https://github.com/xena-studios/plugins/releases/tag/neoskript-dev) and the next release.
 </Aside>

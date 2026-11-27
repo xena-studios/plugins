@@ -16,17 +16,17 @@ Open your server's `plugins/Skript/scripts` (or `plugins/NeoSkript/scripts`) fol
 
 ## VS Code
 
-Download `neoskript-<version>.vsix` from [GitHub Releases](https://github.com/xena-studios/neoskript/releases?q=language-server&expanded=true), then run **Extensions: Install from VSIX…** in the command palette and pick it. It's on its way to the Marketplace and Open VSX. It works in VS Code 1.90 or newer, and in editors built on it (VSCodium, Cursor). If you have another Skript extension, turn it off, so the two don't both check `.sk` files.
+Download `neoskript-<version>.vsix` from [GitHub Releases](https://github.com/xena-studios/plugins/releases?q=neoskript-language-server&expanded=true), then run **Extensions: Install from VSIX…** in the command palette and pick it. It's on its way to the Marketplace and Open VSX. It works in VS Code 1.90 or newer, and in editors built on it (VSCodium, Cursor). If you have another Skript extension, turn it off, so the two don't both check `.sk` files.
 
 **NeoSkript: Restart the language server** in the command palette starts it again.
 
 ## Zed
 
-It's on its way to Zed's extension list. Until then, install it from a copy of [the repository](https://github.com/xena-studios/neoskript): run **zed: install dev extension** and pick its `editors/zed` folder (Zed needs Rust, from rustup, to build it). It runs the language server with Zed's own Node.js, downloading it from GitHub the first time.
+It's on its way to Zed's extension list. Until then, install it from a copy of [the repository](https://github.com/xena-studios/plugins/tree/main/neoskript): run **zed: install dev extension** and pick its `editors/zed` folder (Zed needs Rust, from rustup, to build it). It runs the language server with Zed's own Node.js, downloading it from GitHub the first time.
 
 ## Other editors
 
-The language server works in any editor that speaks the Language Server Protocol, such as Neovim, Helix or Sublime Text. Download `neoskript-language-server.cjs` from [GitHub Releases](https://github.com/xena-studios/neoskript/releases), run it with `node neoskript-language-server.cjs --stdio`, and use it for `.sk` files.
+The language server works in any editor that speaks the Language Server Protocol, such as Neovim, Helix or Sublime Text. Download `neoskript-language-server.cjs` from [GitHub Releases](https://github.com/xena-studios/plugins/releases?q=neoskript&expanded=true), run it with `node neoskript-language-server.cjs --stdio`, and use it for `.sk` files.
 
 ## What it knows
 

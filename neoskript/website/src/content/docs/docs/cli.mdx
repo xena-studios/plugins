@@ -13,7 +13,7 @@ import { Aside, Steps } from "@astrojs/starlight/components";
 
 <Steps>
 
-1. Download `neoskript-cli-0.1.0.jar` from [its release](https://github.com/xena-studios/neoskript/releases/tag/cli-v0.1.0). It needs Java 21, or Java 25 to check against Minecraft 26.3.
+1. Download `neoskript-cli-0.1.0.jar` from [its release](https://github.com/xena-studios/plugins/releases/tag/neoskript-cli-v0.1.0). It needs Java 21, or Java 25 to check against Minecraft 26.3.
 
 2. Point it at a scripts folder, or one `.sk` file:
 
@@ -108,11 +108,11 @@ SkBee-3.26.0.jar: 677 of 1029 classes use 156 of Skript's classes
 
 Each line is how many of the addon's classes use the class, and how: what it extends and implements, calls, reads, creates, casts to, and names in signatures and annotations. `--members` lists each method and field, and `--json` writes it all with the addon's classes that use each.
 
-Skript addons don't run on NeoSkript yet: a compatibility layer is being built, SkBee first, and this is how it finds what an addon needs. The list for SkBee is in the repository's [docs/compat](https://github.com/xena-studios/neoskript/tree/main/docs/compat).
+Skript addons don't run on NeoSkript yet: a compatibility layer is being built, SkBee first, and this is how it finds what an addon needs. The list for SkBee is in the repository's [docs/compat](https://github.com/xena-studios/plugins/tree/main/neoskript/docs/compat).
 
 ## Building it
 
-From a copy of [the repository](https://github.com/xena-studios/neoskript), with JDK 21:
+From a copy of [the repository](https://github.com/xena-studios/plugins/tree/main/neoskript), with JDK 21:
 
 ```sh
 ./gradlew :neoskript-cli:shadowJar

@@ -55,4 +55,4 @@ Scripts written for Skript 2.17 with no addons run on both Skript and NeoSkript.
 ## Optional
 
 - [Download](https://neoskript.dev/download/): the public beta, and the development build
-- [Source code](https://github.com/xena-studios/neoskript): the repository, issues and progress
+- [Source code](https://github.com/xena-studios/plugins/tree/main/neoskript): the repository, issues and progress

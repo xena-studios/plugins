@@ -10,13 +10,13 @@
 
 NeoSkript is a fast, modern drop-in replacement for [Skript](https://github.com/SkriptLang/Skript), by [Xena Studios](https://xenastudios.co). Your `.sk` scripts run unchanged, only faster, on Paper and Folia.
 
-> **Status:** public beta, [0.1.0-beta.1](https://github.com/xena-studios/neoskript/releases/tag/v0.1.0-beta.1). Skript's whole test suite passes on NeoSkript. See [progress](docs/PROGRESS.md).
+> **Status:** public beta, [0.1.0-beta.1](https://github.com/xena-studios/plugins/releases/tag/neoskript-v0.1.0-beta.1). Skript's whole test suite passes on NeoSkript. See [progress](docs/PROGRESS.md).
 
 **Website:** [neoskript.dev](https://neoskript.dev), with the docs, the syntax reference and an in-browser script checker.
 
 ## Installing
 
-1. Download the jar from [Modrinth](https://modrinth.com/plugin/neoskript), [GitHub Releases](https://github.com/xena-studios/neoskript/releases) or [neoskript.dev](https://neoskript.dev/download/).
+1. Download the jar from [Modrinth](https://modrinth.com/plugin/neoskript), [GitHub Releases](https://github.com/xena-studios/plugins/releases?q=neoskript&expanded=true) or [neoskript.dev](https://neoskript.dev/download/).
 2. Take `Skript.jar` out of `plugins/` (NeoSkript won't start next to it) and put NeoSkript's jar in.
 3. Start the server. Your scripts, variables and alias files are copied from `plugins/Skript`, which is never changed.
 
@@ -26,7 +26,7 @@ Paper or Folia, Minecraft 1.21.4 to 26.3, Java 21 or newer. It's a beta: try it 
 
 Before switching, see what NeoSkript makes of your scripts:
 
-Download `neoskript-cli-<version>.jar` from the [releases](https://github.com/xena-studios/neoskript/releases?q=cli&expanded=true) (it needs Java 21, or 25 to check against Minecraft 26.3), then:
+Download `neoskript-cli-<version>.jar` from the [releases](https://github.com/xena-studios/plugins/releases?q=neoskript-cli&expanded=true) (it needs Java 21, or 25 to check against Minecraft 26.3), then:
 
 ```sh
 java -jar neoskript-cli-0.1.0.jar check plugins/Skript/scripts
@@ -69,12 +69,14 @@ NeoSkript's parser in VS Code and Zed: problems as you type, hover docs, complet
 The `skript` skill teaches coding agents to write Skript that loads on Skript and NeoSkript. In Claude Code:
 
 ```
-/plugin install skript --marketplace xena-studios/neoskript
+/plugin install skript --marketplace xena-studios/plugins
 ```
 
 For Codex and other agents, see [Writing scripts with AI](https://neoskript.dev/docs/ai/).
 
 ## Building
+
+NeoSkript lives in `neoskript/` of [xena-studios/plugins](https://github.com/xena-studios/plugins), as its own Gradle build until it moves onto the shared core ([#201](https://github.com/xena-studios/plugins/issues/201)). Run these in `neoskript/`.
 
 Needs JDK 21, plus JDK 25 for the test harness's 26.x servers.
 
@@ -88,7 +90,7 @@ The plugin jar ends up in `neoskript-plugin/build/libs/`. The real-server tests 
 
 ## Contributing
 
-Bugs and ideas go in [issues](https://github.com/xena-studios/neoskript/issues/new/choose). For pull requests, see the [contributing guide](https://github.com/xena-studios/.github/blob/main/CONTRIBUTING.md). Report security problems through the [security policy](https://github.com/xena-studios/.github/blob/main/SECURITY.md), never a public issue.
+Bugs and ideas go in [issues](https://github.com/xena-studios/plugins/issues/new/choose). For pull requests, see the [contributing guide](https://github.com/xena-studios/.github/blob/main/CONTRIBUTING.md). Report security problems through the [security policy](https://github.com/xena-studios/.github/blob/main/SECURITY.md), never a public issue.
 
 ## Licence
 

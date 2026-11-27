@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "author": { "name": "Xena Studios", "url": "https://neoskript.dev" },
   "homepage": "https://neoskript.dev/docs/ai/",
-  "repository": "https://github.com/xena-studios/neoskript",
+  "repository": "https://github.com/xena-studios/plugins/tree/main/neoskript",
   "license": "GPL-3.0-only",
   "keywords": ["skript", "neoskript", "minecraft"]
 }

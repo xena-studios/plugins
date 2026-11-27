@@ -17,7 +17,7 @@ type Addon = {
   links?: { modrinth?: string; source?: string; docs?: string };
 };
 const official = addons.official as Addon[];
-const repo = "https://github.com/xena-studios/neoskript";
+const repo = "https://github.com/xena-studios/plugins";
 
 const builtIn = [
   {
@@ -114,7 +114,7 @@ const builtIn = [
       </p>
       <p class="section-lead">
         The <a href="/docs/addon-api/">Addon API guide</a> shows how, and the{" "}
-        <a href={`${repo}/tree/main/examples/example-addon`}>example addon<External /></a> uses all of it. What's
+        <a href={`${repo}/tree/main/neoskript/examples/example-addon`}>example addon<External /></a> uses all of it. What's
         stable is checked in every build, so an addon built against 1.0 runs on every 1.x.
       </p>
     </div>

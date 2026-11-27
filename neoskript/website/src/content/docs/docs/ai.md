@@ -5,18 +5,18 @@ description: A skill that teaches Claude Code, Codex and other coding agents to 
 
 Coding agents write plausible English that isn't Skript, and Skript only accepts its registered patterns. The NeoSkript skill gives an agent the rules that matter: how scripts are shaped, how variables, commands, functions and events work, what keeps scripts fast, and that syntax it isn't sure of has to be looked up, not guessed. It points the agent at the [syntax reference](/syntax/) and at this site's [`llms.txt`](/llms.txt).
 
-The skill is one file, [`SKILL.md`](https://github.com/xena-studios/neoskript/blob/main/plugins/skript/skills/skript/SKILL.md). It targets Skript 2.17 syntax with no addons, so what it writes runs on Skript and on NeoSkript.
+The skill is one file, [`SKILL.md`](https://github.com/xena-studios/plugins/blob/main/neoskript/plugins/skript/skills/skript/SKILL.md). It targets Skript 2.17 syntax with no addons, so what it writes runs on Skript and on NeoSkript.
 
 ## Claude Code
 
 ```sh
-/plugin install skript --marketplace xena-studios/neoskript
+/plugin install skript --marketplace xena-studios/plugins
 ```
 
 On versions of Claude Code before 2.1.275, add the marketplace first, then install:
 
 ```sh
-/plugin marketplace add xena-studios/neoskript
+/plugin marketplace add xena-studios/plugins
 /plugin install skript@neoskript
 ```
 

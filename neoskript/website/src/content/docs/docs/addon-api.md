@@ -7,7 +7,7 @@ An addon is a Paper plugin that adds syntax to NeoSkript: its own types, events,
 
 This is NeoSkript's own API. Skript addons, built against Skript's `ch.njol.skript` classes, don't load on NeoSkript yet. A compatibility layer for them is planned, SkBee first.
 
-The [example addon](https://github.com/xena-studios/neoskript/tree/main/examples/example-addon) in the repository uses every part of this page. The harness runs it on Paper and Folia with every change to NeoSkript. NeoSkript's own addons, which replace community Skript addons, live in the repository's [`addons/`](https://github.com/xena-studios/neoskript/tree/main/addons) folder, with how they're built and released.
+The [example addon](https://github.com/xena-studios/plugins/tree/main/neoskript/examples/example-addon) in the repository uses every part of this page. The harness runs it on Paper and Folia with every change to NeoSkript. NeoSkript's own addons, which replace community Skript addons, live in the repository's [`addons/`](https://github.com/xena-studios/plugins/tree/main/neoskript/addons) folder, with how they're built and released.
 
 ## Getting started
 
@@ -45,7 +45,7 @@ With Maven:
 ```
 
 :::note
-The first release on Maven Central is coming. Until it's there, build the API from [the repository](https://github.com/xena-studios/neoskript) with `./gradlew :neoskript-api:publishToMavenLocal`, and add `mavenLocal()` to your repositories.
+The first release on Maven Central is coming. Until it's there, build the API from [the repository](https://github.com/xena-studios/plugins/tree/main/neoskript) with `./gradlew :neoskript-api:publishToMavenLocal`, and add `mavenLocal()` to your repositories.
 :::
 
 Make NeoSkript a dependency in `plugin.yml`, so your addon enables after it. It has to be `depend`: NeoSkript only waits for the plugins that depend on it, so with `softdepend` alone your syntax may come too late.

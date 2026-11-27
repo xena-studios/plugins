@@ -18,6 +18,6 @@ The parser runs inside the extension, with no Java or server needed. It knows Sk
 ## More
 
 - [neoskript.dev](https://neoskript.dev): the docs, the syntax reference and an in-browser parser
-- [Report a problem](https://github.com/xena-studios/neoskript/issues/new/choose)
+- [Report a problem](https://github.com/xena-studios/plugins/issues/new/choose)
 
 GPL-3.0-only. Made by [Xena Studios](https://xenastudios.co). Not affiliated with SkriptLang.

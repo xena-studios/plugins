@@ -1,7 +1,7 @@
 // The site's navigation, shared by the custom pages' header and footer
 // (Base.astro, SiteFooter.astro) and the guides' header and mobile menu
 // (components/starlight/SocialIcons.astro), so the two can't drift apart.
-export const repo = "https://github.com/xena-studios/neoskript";
+export const repo = "https://github.com/xena-studios/plugins";
 
 // `wide` links leave the header where it's narrowest (a phone, or the guides'
 // header beside the search); the footer always has them.

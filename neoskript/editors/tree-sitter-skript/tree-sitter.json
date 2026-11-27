@@ -14,6 +14,6 @@
     "license": "GPL-3.0-only",
     "description": "Skript (.sk) for tree-sitter",
     "authors": [{ "name": "Xena Studios" }],
-    "links": { "repository": "https://github.com/xena-studios/neoskript" }
+    "links": { "repository": "https://github.com/xena-studios/plugins/tree/main/neoskript" }
   }
 }

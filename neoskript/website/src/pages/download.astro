@@ -9,9 +9,9 @@ import Base from "../layouts/Base.astro";
 import External from "../components/External.astro";
 import { devBuild, latestRelease } from "../lib/release";
 
-const repo = "https://github.com/xena-studios/neoskript";
+const repo = "https://github.com/xena-studios/plugins";
 const modrinth = "https://modrinth.com/plugin/neoskript";
-const cli = `${repo}/releases/tag/cli-v0.1.0`;
+const cli = `${repo}/releases/tag/neoskript-cli-v0.1.0`;
 const release = await latestRelease();
 const build = await devBuild();
 const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
@@ -126,7 +126,7 @@ const main = release
             <p>
               NeoSkript tells you when a newer version is on Modrinth: in the console, and to players with
               <code>skript.admin</code> when they join. <code>update-checker: false</code> in its config turns that off.
-              Every version is on <a href={`${repo}/releases`}>GitHub Releases<External /></a> too.
+              Every version is on <a href={`${repo}/releases?q=neoskript&expanded=true`}>GitHub Releases<External /></a> too.
             </p>
           </div>
         </details>

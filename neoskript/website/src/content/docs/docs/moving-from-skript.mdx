@@ -9,7 +9,7 @@ Swapping the jar is the whole move.
 
 ## Check your scripts first
 
-The script checker, `neoskript-cli`, tells you before you switch what NeoSkript makes of your scripts. Download `neoskript-cli-0.1.0.jar` from [its release](https://github.com/xena-studios/neoskript/releases/tag/cli-v0.1.0) (it needs Java 21, or 25 to check against Minecraft 26.3), then point it at Skript's scripts folder:
+The script checker, `neoskript-cli`, tells you before you switch what NeoSkript makes of your scripts. Download `neoskript-cli-0.1.0.jar` from [its release](https://github.com/xena-studios/plugins/releases/tag/neoskript-cli-v0.1.0) (it needs Java 21, or 25 to check against Minecraft 26.3), then point it at Skript's scripts folder:
 
 ```sh
 java -jar neoskript-cli-0.1.0.jar check plugins/Skript/scripts
@@ -69,7 +69,7 @@ Skript's `config.sk` settings that change how scripts behave carry over to NeoSk
 
 ## What's different
 
-NeoSkript aims to behave exactly as Skript does, scripts' messages included. A few things are different on purpose: a reload with errors keeps the old script running, and some of Skript's bugs are fixed. The [differences from Skript](/docs/reference/differences/) page lists them, and the [progress log](https://github.com/xena-studios/neoskript/blob/main/docs/PROGRESS.md) has the detail of each batch's known differences.
+NeoSkript aims to behave exactly as Skript does, scripts' messages included. A few things are different on purpose: a reload with errors keeps the old script running, and some of Skript's bugs are fixed. The [differences from Skript](/docs/reference/differences/) page lists them, and the [progress log](https://github.com/xena-studios/plugins/blob/main/neoskript/docs/PROGRESS.md) has the detail of each batch's known differences.
 
 <Aside type="caution">
 Skript addons don't load on NeoSkript yet. If your scripts need SkBee, skript-reflect or another addon, the lines that use it won't load. The script checker shows which lines those are.

@@ -9,7 +9,7 @@
       "status": "beta",
       "links": {
         "docs": "/docs/addons/yaml/",
-        "source": "https://github.com/xena-studios/neoskript/tree/main/addons/yaml"
+        "source": "https://github.com/xena-studios/plugins/tree/main/neoskript/addons/yaml"
       }
     },
     {
@@ -20,7 +20,7 @@
       "status": "beta",
       "links": {
         "docs": "/docs/addons/web/",
-        "source": "https://github.com/xena-studios/neoskript/tree/main/addons/web"
+        "source": "https://github.com/xena-studios/plugins/tree/main/neoskript/addons/web"
       }
     },
     {
@@ -31,7 +31,7 @@
       "status": "beta",
       "links": {
         "docs": "/docs/addons/reflect/",
-        "source": "https://github.com/xena-studios/neoskript/tree/main/addons/reflect"
+        "source": "https://github.com/xena-studios/plugins/tree/main/neoskript/addons/reflect"
       }
     }
   ]

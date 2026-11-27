@@ -8,8 +8,8 @@
 use std::fs;
 use zed_extension_api::{self as zed, LanguageServerId, Result};
 
-const REPO: &str = "xena-studios/neoskript";
-const TAG: &str = concat!("language-server-v", env!("CARGO_PKG_VERSION"));
+const REPO: &str = "xena-studios/plugins";
+const TAG: &str = concat!("neoskript-language-server-v", env!("CARGO_PKG_VERSION"));
 const ASSET: &str = "neoskript-language-server.cjs";
 
 struct NeoSkript {

@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "skript",
-      "source": "./plugins/skript",
+      "source": "./neoskript/plugins/skript",
       "description": "Write, fix and review Skript scripts for Skript and NeoSkript servers."
     }
   ]

@@ -93,7 +93,7 @@ export default defineConfig({
         Footer: "./src/components/starlight/Footer.astro",
         PageTitle: "./src/components/starlight/PageTitle.astro",
       },
-      editLink: { baseUrl: "https://github.com/xena-studios/neoskript/edit/main/website/" },
+      editLink: { baseUrl: "https://github.com/xena-studios/plugins/edit/main/neoskript/website/" },
       lastUpdated: true,
       // Custom pages (src/pages) can't be validated; the rest of the site is.
       plugins: [starlightLinksValidator({ exclude: ["/", "/download/", "/addons/", "/syntax/", "/syntax/**", "/parser/", "/llms.txt"] })],

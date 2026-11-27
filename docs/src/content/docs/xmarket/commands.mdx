@@ -1,0 +1,24 @@
+---
+title: Commands
+description: "Every xMarket command: its arguments, aliases and permission."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`<angle brackets>` are required, `[square brackets]` optional. Every command can be turned off, renamed with aliases or given another permission in the [config](/xmarket/configuration/).
+
+- **`/shop`** opens the menu of categories; **`/shop <category>`** one category. In a category, **left click** an item to buy it and **right click** to sell it, each on the amount screen; **shift-right click** sells all of that item you have.
+- **`/shop buy <item> [amount]`** buys without the menu: `/shop buy diamond 16`.
+- **`/shop history [page]`**: your trades, newest first. With `xmarket.history.others`, **`/shop history <player> [page]`**.
+- **`/shop stats [days]`** (`xmarket.stats`): over the last 7 days (or as many as you say), what players paid and were paid in each currency, so what the shop added to or took out of the economy, and what sold most.
+- **`/shop audit`** (`xmarket.audit`): see [The price list](/xmarket/price-list/#the-audit).
+- **`/shop edit`** (`xmarket.edit`): see [The price list](/xmarket/price-list/#editing-in-game).
+- **`/sell hand [amount]`**, **`/sell all`** and **`/sell <item> [amount]`**. With `sell.confirm-all`, `/sell all` asks to be typed again within 10 seconds.
+- **`/sellgui`** opens a chest: drop items in, and they're sold as it closes. Anything without a price comes back.
+- **`/worth [item]`**: what the item in your hand (or one named) sells for, each and for the stack.
+- **`/xmarket import <economyshopgui|shopguiplus|essentials> [--dry-run]`**: see [Switching](/xmarket/switching/).
+- **`/xmarket forget <player>`** deletes a player's history and limits.
+
+<Reference plugin="xmarket" show="commands" />

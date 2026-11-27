@@ -1,0 +1,17 @@
+name: xMarket
+version: '${version}'
+main: co.xenastudios.xmarket.bukkit.XMarketBootstrap
+# Ignored before 1.13; stops 1.13+ from treating the plugin as legacy.
+api-version: '1.13'
+folia-supported: true
+description: A server shop, with sell and worth.
+website: https://plugins.xenastudios.co/xmarket/
+authors: [Xena Studios]
+# Optional, each found when it's needed: money through xMoney (or any economy registered with
+# Vault), requirements' placeholders with PlaceholderAPI. Loaded first when they're there.
+softdepend: [xMoney, Vault, PlaceholderAPI]
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+# No commands or permissions here: they're registered at runtime from config.yml, so every
+# change to them applies on /xmarket reload.

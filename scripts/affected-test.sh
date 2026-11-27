@@ -192,6 +192,18 @@ check "xVanish's real-client checks" xvanish/bukkit/client-checks.txt \
   $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit'
 check "xVanish's Fabric mod (platform-fabric's build)" xvanish/fabric/src/main/kotlin/co/xenastudios/xvanish/fabric/FabricVanishServer.kt \
   $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=fabric'
+check "xMarket's common code" xmarket/common/src/commonMain/kotlin/co/xenastudios/xmarket/Trades.kt \
+  $'tasks=:build :xmarket:api:build :xmarket:bukkit:build :xmarket:common:build\nchecks=\nboot=bukkit fabric'
+check "xMarket's API" xmarket/api/src/commonMain/kotlin/co/xenastudios/xmarket/api/XMarketApi.kt \
+  $'tasks=:build :xmarket:api:build :xmarket:bukkit:build :xmarket:common:build\nchecks=\nboot=bukkit fabric'
+check "xMarket's price list sources" xmarket/prices/base.txt \
+  $'tasks=:build :xmarket:api:build :xmarket:bukkit:build :xmarket:common:build\nchecks=\nboot=bukkit fabric'
+check "xMarket's Bukkit adapter" xmarket/bukkit/src/main/kotlin/co/xenastudios/xmarket/bukkit/BukkitMarketServer.kt \
+  $'tasks=:build :xmarket:api:build :xmarket:bukkit:build :xmarket:common:build\nchecks=\nboot=bukkit'
+check "xMarket's real-client checks" xmarket/bukkit/xmoney-client-checks.txt \
+  $'tasks=:build :xmarket:api:build :xmarket:bukkit:build :xmarket:common:build\nchecks=\nboot=bukkit'
+check "xMarket's Fabric mod (platform-fabric's build)" xmarket/fabric/src/main/kotlin/co/xenastudios/xmarket/fabric/FabricMarketServer.kt \
+  $'tasks=:build :xmarket:api:build :xmarket:bukkit:build :xmarket:common:build\nchecks=\nboot=fabric'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 check "Today's plugin" xvote/src/main/java/co/xenastudios/xvote/XVote.java \
   $'units=xvote\ncompile=:xvote:compileJava :xvote:api:compileJava\nchecks=xvote/boot-checks.txt\nboot='

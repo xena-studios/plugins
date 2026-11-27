@@ -1,0 +1,26 @@
+# One of xMarket's categories: its items, what each costs to buy and what it sells for.
+# Made from xMarket's price list, where every crafted item costs what its recipe does,
+# so nothing can be bought, crafted and sold for a profit (/shop audit checks your edits).
+# Prices are for one item, before the multiplier in config.yml. Leave buy or sell out to
+# stop an item being bought or sold. https://plugins.xenastudios.co/xmarket/price-list/
+name: "<dark_purple>The End"
+icon: end_stone
+slot: 25
+currency: money
+items:
+  purpur_slab: {buy: 2, sell: 0.6}
+  end_rod: {buy: 8.5, sell: 2.55}
+  chorus_flower: {buy: 10, sell: 3}
+  purpur_block: {buy: 4, sell: 1.2}
+  purpur_pillar: {buy: 4, sell: 1.2}
+  purpur_stairs: {buy: 4, sell: 1.2}
+  end_stone: {buy: 2, sell: 0.6}
+  end_stone_bricks: {buy: 2, sell: 0.6}
+  dragon_egg: {sell: 15000}
+  ender_chest: {buy: 175, sell: 52.5}
+  end_stone_brick_wall: {buy: 2, sell: 0.6}
+  end_stone_brick_stairs: {buy: 2, sell: 0.6}
+  end_stone_brick_slab: {buy: 1, sell: 0.3}
+  end_crystal: {buy: 129, sell: 38.7}
+  chorus_fruit: {buy: 4, sell: 1.2}
+  popped_chorus_fruit: {buy: 4, sell: 1.2}

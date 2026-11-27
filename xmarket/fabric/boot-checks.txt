@@ -1,0 +1,25 @@
+# What scripts/boot-fabric.sh checks on each Minecraft line with xMarket, from the console: the
+# price list written to config/xmarket/shops/ and read back off the server thread, prices from
+# memory, the audit against this line's own item registry, the stats, a reload and debug.
+logged: [xMarket] xMarket 1.0.0 on
+logged: Wrote the price list to shops/: 16 categories, one file each.
+logged: Loaded 1812 items in 16 categories.
+logged: History and limits are kept in the SQLite database xmarket.db.
+run: xmarket info
+expect: xMarket 1.0.0 on
+run: worth diamond
+expect: 60.00 each.
+run: worth bedrock
+expect: Bedrock has no price here.
+# Older lines' renamed items (1.20.1's grass and scute) are the list's by their new names.
+run: shop audit
+expect: Audit: 1,812 entries in 16 categories.
+expect: Every item this server has is priced.
+expect: No loops:
+run: shop stats
+expect: No trades in the last 7 days.
+run: xmarket reload
+expect: Reloaded xMarket
+run: xmarket debug
+expect: Database: the SQLite database xmarket.db answered in
+expect: Debug report saved as debug/debug-

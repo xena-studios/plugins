@@ -1,0 +1,26 @@
+---
+title: Configuration
+description: "Every setting in xMarket's config.yml, with its default, and the category files in shops/."
+sidebar:
+  order: 4
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+The config is `plugins/xMarket/config.yml` (`config/xmarket/config.yml` on Fabric), written on first start. The shop itself, its categories, items and prices, is in `shops/`, one file per category: see [The price list](/xmarket/price-list/). Apply changes to either with `/xmarket reload`: everything applies but `storage`.
+
+| Section | What it's for |
+| --- | --- |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
+| `commands` | Each command's switch, aliases and permission. |
+| `shop` | The `multiplier` for every price, `/shop`'s rows and title, the default currency, which economy money goes through, and whether history is kept. |
+| `sell` | `/sellgui`'s rows, whether a renamed item sells as the plain one, and `/sell all`'s confirmation. |
+| `rules` | Discounts and sell boosts by permission, the time zone limits start again in, and requirements. |
+| `storage` | Where history and limits are: SQLite, MySQL/MariaDB, or the family's shared database. A network sharing one MySQL database shares them. |
+| `updates` | The update checker. |
+
+## Currencies
+
+`shop.currency` is what a category is paid in unless its file says (`currency:`): `money`, through xMoney when it's installed (each trade in its ledger, `/eco history` shows "xMarket: bought 16 diamond"), otherwise Vault's economy on Bukkit or the Common Economy API on Fabric (`shop.economy` picks one); `xp`, experience levels; or an item, `item:diamond`, which needs no economy at all. Items and levels are paid in whole numbers: a total is rounded up when buying and down when selling.
+
+<Reference plugin="xmarket" show="config" />

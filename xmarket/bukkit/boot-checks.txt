@@ -1,0 +1,40 @@
+# xMarket on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks,
+# through boot.sh): the price list written to shops/ and read back on an async task, every
+# console command, answered by the core's dispatcher and drawn from lang/en.yml. The database
+# opens on an async task with the SQLite driver the server ships.
+logged: xMarket 1.0.0 on
+logged: Wrote the price list to shops/: 16 categories, one file each.
+logged: Loaded 1812 items in 16 categories.
+logged: History and limits are kept in the SQLite database xmarket.db.
+run: xmarket info
+expect: xMarket 1.0.0 on
+
+# Prices from memory, as the console asks for them: in the economy's format with xMoney, plain numbers without one.
+run: worth diamond
+expect: 60.00 each.
+run: worth bedrock
+expect: Bedrock has no price here.
+
+# The audit: off the server thread, against the newest version's recipes and what players do by
+# hand. The list was made with no loop under any supported version's recipes.
+run: shop audit
+expect: Audit: 1,812 entries in 16 categories.
+expect: Every item this server has is priced.
+expect: No loops:
+
+# Stats and the import's dry run work without players.
+run: shop stats
+expect: No trades in the last 7 days.
+run: xmarket import economyshopgui --dry-run
+expect: no EconomyShopGUI data here to import
+
+# Reloading reads shops/ again and keeps everything running.
+run: xmarket reload
+expect: Reloaded xMarket
+run: worth diamond
+expect: 60.00 each.
+
+# The health checks, and the report written to debug/ (boot.sh turns the upload off).
+run: xmarket debug
+expect: Database: the SQLite database xmarket.db answered in
+expect: Debug report saved as debug/debug-

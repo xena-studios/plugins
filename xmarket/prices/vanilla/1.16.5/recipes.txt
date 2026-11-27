@@ -1,0 +1,838 @@
+# Minecraft 1.16.5's recipes, from xmarket/prices/extract.ts.
+#acacia_logs acacia_log acacia_wood stripped_acacia_log stripped_acacia_wood
+#birch_logs birch_log birch_wood stripped_birch_log stripped_birch_wood
+#coals coal charcoal
+#crimson_stems crimson_stem stripped_crimson_stem crimson_hyphae stripped_crimson_hyphae
+#dark_oak_logs dark_oak_log dark_oak_wood stripped_dark_oak_log stripped_dark_oak_wood
+#gold_ores gold_ore nether_gold_ore
+#jungle_logs jungle_log jungle_wood stripped_jungle_log stripped_jungle_wood
+#logs dark_oak_log dark_oak_wood stripped_dark_oak_log stripped_dark_oak_wood oak_log oak_wood stripped_oak_log stripped_oak_wood acacia_log acacia_wood stripped_acacia_log stripped_acacia_wood birch_log birch_wood stripped_birch_log stripped_birch_wood jungle_log jungle_wood stripped_jungle_log stripped_jungle_wood spruce_log spruce_wood stripped_spruce_log stripped_spruce_wood crimson_stem stripped_crimson_stem crimson_hyphae stripped_crimson_hyphae warped_stem stripped_warped_stem warped_hyphae stripped_warped_hyphae
+#logs_that_burn dark_oak_log dark_oak_wood stripped_dark_oak_log stripped_dark_oak_wood oak_log oak_wood stripped_oak_log stripped_oak_wood acacia_log acacia_wood stripped_acacia_log stripped_acacia_wood birch_log birch_wood stripped_birch_log stripped_birch_wood jungle_log jungle_wood stripped_jungle_log stripped_jungle_wood spruce_log spruce_wood stripped_spruce_log stripped_spruce_wood
+#oak_logs oak_log oak_wood stripped_oak_log stripped_oak_wood
+#planks oak_planks spruce_planks birch_planks jungle_planks acacia_planks dark_oak_planks crimson_planks warped_planks
+#sand sand red_sand
+#soul_fire_base_blocks soul_sand soul_soil
+#spruce_logs spruce_log spruce_wood stripped_spruce_log stripped_spruce_wood
+#stone_crafting_materials cobblestone blackstone
+#stone_tool_materials cobblestone blackstone
+#warped_stems warped_stem stripped_warped_stem warped_hyphae stripped_warped_hyphae
+#wooden_slabs oak_slab spruce_slab birch_slab jungle_slab acacia_slab dark_oak_slab crimson_slab warped_slab
+#wool white_wool orange_wool magenta_wool light_blue_wool yellow_wool lime_wool pink_wool gray_wool light_gray_wool cyan_wool purple_wool blue_wool brown_wool green_wool red_wool black_wool
+c acacia_boat 1 acacia_planks*5
+c acacia_button 1 acacia_planks
+c acacia_door 3 acacia_planks*6
+c acacia_fence 3 acacia_planks*4 stick*2
+c acacia_fence_gate 1 stick*4 acacia_planks*2
+c acacia_planks 4 #acacia_logs
+c acacia_pressure_plate 1 acacia_planks*2
+c acacia_sign 3 acacia_planks*6 stick
+c acacia_slab 6 acacia_planks*3
+c acacia_stairs 4 acacia_planks*6
+c acacia_trapdoor 2 acacia_planks*6
+c acacia_wood 3 acacia_log*4
+c activator_rail 6 iron_ingot*6 stick*2 redstone_torch
+c andesite 2 diorite cobblestone
+c andesite_slab 6 andesite*3
+c andesite_stairs 4 andesite*6
+c andesite_wall 6 andesite*6
+c anvil 1 iron_block*3 iron_ingot*4
+c armor_stand 1 stick*6 smooth_stone_slab
+c arrow 4 flint stick feather
+c barrel 1 #planks*6 #wooden_slabs*2
+c beacon 1 glass*5 nether_star obsidian*3
+c beehive 1 #planks*6 honeycomb*3
+c beetroot_soup 1 bowl beetroot*6
+c birch_boat 1 birch_planks*5
+c birch_button 1 birch_planks
+c birch_door 3 birch_planks*6
+c birch_fence 3 birch_planks*4 stick*2
+c birch_fence_gate 1 stick*4 birch_planks*2
+c birch_planks 4 #birch_logs
+c birch_pressure_plate 1 birch_planks*2
+c birch_sign 3 birch_planks*6 stick
+c birch_slab 6 birch_planks*3
+c birch_stairs 4 birch_planks*6
+c birch_trapdoor 2 birch_planks*6
+c birch_wood 3 birch_log*4
+c black_banner 1 black_wool*6 stick
+c black_bed 1 black_wool*3 #planks*3
+c black_bed 1 white_bed black_dye
+c black_carpet 3 black_wool*2
+c black_carpet 8 white_carpet*8 black_dye
+c black_concrete_powder 8 black_dye sand*4 gravel*4
+c black_dye 1 ink_sac
+c black_dye 1 wither_rose
+c black_stained_glass 8 glass*8 black_dye
+c black_stained_glass_pane 16 black_stained_glass*6
+c black_stained_glass_pane 8 glass_pane*8 black_dye
+c black_terracotta 8 terracotta*8 black_dye
+c black_wool 1 black_dye white_wool
+c blackstone_slab 6 blackstone*3
+c blackstone_stairs 4 blackstone*6
+c blackstone_wall 6 blackstone*6
+c blast_furnace 1 iron_ingot*5 furnace smooth_stone*3
+c blaze_powder 2 blaze_rod
+c blue_banner 1 blue_wool*6 stick
+c blue_bed 1 blue_wool*3 #planks*3
+c blue_bed 1 white_bed blue_dye
+c blue_carpet 3 blue_wool*2
+c blue_carpet 8 white_carpet*8 blue_dye
+c blue_concrete_powder 8 blue_dye sand*4 gravel*4
+c blue_dye 1 cornflower
+c blue_dye 1 lapis_lazuli
+c blue_ice 1 packed_ice*9
+c blue_stained_glass 8 glass*8 blue_dye
+c blue_stained_glass_pane 16 blue_stained_glass*6
+c blue_stained_glass_pane 8 glass_pane*8 blue_dye
+c blue_terracotta 8 terracotta*8 blue_dye
+c blue_wool 1 blue_dye white_wool
+c bone_block 1 bone_meal*9
+c bone_meal 3 bone
+c bone_meal 9 bone_block
+c book 1 paper*3 leather
+c bookshelf 1 #planks*6 book*3
+c bow 1 stick*3 string*3
+c bowl 4 #planks*3
+c bread 1 wheat*3
+c brewing_stand 1 blaze_rod #stone_crafting_materials*3
+c brick_slab 6 bricks*3
+c brick_stairs 4 bricks*6
+c brick_wall 6 bricks*6
+c bricks 1 brick*4
+c brown_banner 1 brown_wool*6 stick
+c brown_bed 1 brown_wool*3 #planks*3
+c brown_bed 1 white_bed brown_dye
+c brown_carpet 3 brown_wool*2
+c brown_carpet 8 white_carpet*8 brown_dye
+c brown_concrete_powder 8 brown_dye sand*4 gravel*4
+c brown_dye 1 cocoa_beans
+c brown_stained_glass 8 glass*8 brown_dye
+c brown_stained_glass_pane 16 brown_stained_glass*6
+c brown_stained_glass_pane 8 glass_pane*8 brown_dye
+c brown_terracotta 8 terracotta*8 brown_dye
+c brown_wool 1 brown_dye white_wool
+c bucket 1 iron_ingot*3
+c cake 1 milk_bucket*3 sugar*2 egg wheat*3
+c campfire 1 stick*3 #coals #logs*3
+c carrot_on_a_stick 1 fishing_rod carrot
+c cartography_table 1 paper*2 #planks*4
+c cauldron 1 iron_ingot*7
+c chain 1 iron_nugget*2 iron_ingot
+c chest 1 #planks*8
+c chest_minecart 1 chest minecart
+c chiseled_nether_bricks 1 nether_brick_slab*2
+c chiseled_polished_blackstone 1 polished_blackstone_slab*2
+c chiseled_quartz_block 1 quartz_slab*2
+c chiseled_red_sandstone 1 red_sandstone_slab*2
+c chiseled_sandstone 1 sandstone_slab*2
+c chiseled_stone_bricks 1 stone_brick_slab*2
+c clay 1 clay_ball*4
+c clock 1 gold_ingot*4 redstone
+c coal 9 coal_block
+c coal_block 1 coal*9
+c coarse_dirt 4 dirt*2 gravel*2
+c cobblestone_slab 6 cobblestone*3
+c cobblestone_stairs 4 cobblestone*6
+c cobblestone_wall 6 cobblestone*6
+c comparator 1 redstone_torch*3 quartz stone*3
+c compass 1 iron_ingot*4 redstone
+c composter 1 #wooden_slabs*7
+c conduit 1 nautilus_shell*8 heart_of_the_sea
+c cookie 8 wheat*2 cocoa_beans
+c crafting_table 1 #planks*4
+c creeper_banner_pattern 1 paper creeper_head
+c crimson_button 1 crimson_planks
+c crimson_door 3 crimson_planks*6
+c crimson_fence 3 crimson_planks*4 stick*2
+c crimson_fence_gate 1 stick*4 crimson_planks*2
+c crimson_hyphae 3 crimson_stem*4
+c crimson_planks 4 #crimson_stems
+c crimson_pressure_plate 1 crimson_planks*2
+c crimson_sign 3 crimson_planks*6 stick
+c crimson_slab 6 crimson_planks*3
+c crimson_stairs 4 crimson_planks*6
+c crimson_trapdoor 2 crimson_planks*6
+c crossbow 1 stick*3 iron_ingot string*2 tripwire_hook
+c cut_red_sandstone 4 red_sandstone*4
+c cut_red_sandstone_slab 6 cut_red_sandstone*3
+c cut_sandstone 4 sandstone*4
+c cut_sandstone_slab 6 cut_sandstone*3
+c cyan_banner 1 cyan_wool*6 stick
+c cyan_bed 1 cyan_wool*3 #planks*3
+c cyan_bed 1 white_bed cyan_dye
+c cyan_carpet 3 cyan_wool*2
+c cyan_carpet 8 white_carpet*8 cyan_dye
+c cyan_concrete_powder 8 cyan_dye sand*4 gravel*4
+c cyan_dye 2 blue_dye green_dye
+c cyan_stained_glass 8 glass*8 cyan_dye
+c cyan_stained_glass_pane 16 cyan_stained_glass*6
+c cyan_stained_glass_pane 8 glass_pane*8 cyan_dye
+c cyan_terracotta 8 terracotta*8 cyan_dye
+c cyan_wool 1 cyan_dye white_wool
+c dark_oak_boat 1 dark_oak_planks*5
+c dark_oak_button 1 dark_oak_planks
+c dark_oak_door 3 dark_oak_planks*6
+c dark_oak_fence 3 dark_oak_planks*4 stick*2
+c dark_oak_fence_gate 1 stick*4 dark_oak_planks*2
+c dark_oak_planks 4 #dark_oak_logs
+c dark_oak_pressure_plate 1 dark_oak_planks*2
+c dark_oak_sign 3 dark_oak_planks*6 stick
+c dark_oak_slab 6 dark_oak_planks*3
+c dark_oak_stairs 4 dark_oak_planks*6
+c dark_oak_trapdoor 2 dark_oak_planks*6
+c dark_oak_wood 3 dark_oak_log*4
+c dark_prismarine 1 prismarine_shard*8 black_dye
+c dark_prismarine_slab 6 dark_prismarine*3
+c dark_prismarine_stairs 4 dark_prismarine*6
+c daylight_detector 1 glass*3 quartz*3 #wooden_slabs*3
+c detector_rail 6 iron_ingot*6 stone_pressure_plate redstone
+c diamond 9 diamond_block
+c diamond_axe 1 diamond*3 stick*2
+c diamond_block 1 diamond*9
+c diamond_boots 1 diamond*4
+c diamond_chestplate 1 diamond*8
+c diamond_helmet 1 diamond*5
+c diamond_hoe 1 diamond*2 stick*2
+c diamond_leggings 1 diamond*7
+c diamond_pickaxe 1 diamond*3 stick*2
+c diamond_shovel 1 diamond stick*2
+c diamond_sword 1 diamond*2 stick
+c diorite 2 cobblestone*2 quartz*2
+c diorite_slab 6 diorite*3
+c diorite_stairs 4 diorite*6
+c diorite_wall 6 diorite*6
+c dispenser 1 cobblestone*7 bow redstone
+c dried_kelp 9 dried_kelp_block
+c dried_kelp_block 1 dried_kelp*9
+c dropper 1 cobblestone*7 redstone
+c emerald 9 emerald_block
+c emerald_block 1 emerald*9
+c enchanting_table 1 book diamond*2 obsidian*4
+c end_crystal 1 glass*7 ender_eye ghast_tear
+c end_rod 4 blaze_rod popped_chorus_fruit
+c end_stone_brick_slab 6 end_stone_bricks*3
+c end_stone_brick_stairs 4 end_stone_bricks*6
+c end_stone_brick_wall 6 end_stone_bricks*6
+c end_stone_bricks 4 end_stone*4
+c ender_chest 1 obsidian*8 ender_eye
+c ender_eye 1 ender_pearl blaze_powder
+c fermented_spider_eye 1 spider_eye brown_mushroom sugar
+c fire_charge 3 gunpowder blaze_powder coal|charcoal
+c firework_rocket 3 paper gunpowder
+c fishing_rod 1 stick*3 string*2
+c fletching_table 1 flint*2 #planks*4
+c flint_and_steel 1 iron_ingot flint
+c flower_banner_pattern 1 paper oxeye_daisy
+c flower_pot 1 brick*3
+c furnace 1 #stone_crafting_materials*8
+c furnace_minecart 1 furnace minecart
+c glass_bottle 3 glass*3
+c glass_pane 16 glass*6
+c glistering_melon_slice 1 gold_nugget*8 melon_slice
+c glowstone 1 glowstone_dust*4
+c gold_block 1 gold_ingot*9
+c gold_ingot 1 gold_nugget*9
+c gold_ingot 9 gold_block
+c gold_nugget 9 gold_ingot
+c golden_apple 1 gold_ingot*8 apple
+c golden_axe 1 gold_ingot*3 stick*2
+c golden_boots 1 gold_ingot*4
+c golden_carrot 1 gold_nugget*8 carrot
+c golden_chestplate 1 gold_ingot*8
+c golden_helmet 1 gold_ingot*5
+c golden_hoe 1 gold_ingot*2 stick*2
+c golden_leggings 1 gold_ingot*7
+c golden_pickaxe 1 gold_ingot*3 stick*2
+c golden_shovel 1 gold_ingot stick*2
+c golden_sword 1 gold_ingot*2 stick
+c granite 1 diorite quartz
+c granite_slab 6 granite*3
+c granite_stairs 4 granite*6
+c granite_wall 6 granite*6
+c gray_banner 1 gray_wool*6 stick
+c gray_bed 1 gray_wool*3 #planks*3
+c gray_bed 1 white_bed gray_dye
+c gray_carpet 3 gray_wool*2
+c gray_carpet 8 white_carpet*8 gray_dye
+c gray_concrete_powder 8 gray_dye sand*4 gravel*4
+c gray_dye 2 black_dye white_dye
+c gray_stained_glass 8 glass*8 gray_dye
+c gray_stained_glass_pane 16 gray_stained_glass*6
+c gray_stained_glass_pane 8 glass_pane*8 gray_dye
+c gray_terracotta 8 terracotta*8 gray_dye
+c gray_wool 1 gray_dye white_wool
+c green_banner 1 green_wool*6 stick
+c green_bed 1 green_wool*3 #planks*3
+c green_bed 1 white_bed green_dye
+c green_carpet 3 green_wool*2
+c green_carpet 8 white_carpet*8 green_dye
+c green_concrete_powder 8 green_dye sand*4 gravel*4
+c green_stained_glass 8 glass*8 green_dye
+c green_stained_glass_pane 16 green_stained_glass*6
+c green_stained_glass_pane 8 glass_pane*8 green_dye
+c green_terracotta 8 terracotta*8 green_dye
+c green_wool 1 green_dye white_wool
+c grindstone 1 stick*2 stone_slab #planks*2
+c hay_block 1 wheat*9
+c heavy_weighted_pressure_plate 1 iron_ingot*2
+c honey_block 1 honey_bottle*4
+c honey_bottle 4 honey_block glass_bottle*4
+c honeycomb_block 1 honeycomb*4
+c hopper 1 iron_ingot*5 chest
+c hopper_minecart 1 hopper minecart
+c iron_axe 1 iron_ingot*3 stick*2
+c iron_bars 16 iron_ingot*6
+c iron_block 1 iron_ingot*9
+c iron_boots 1 iron_ingot*4
+c iron_chestplate 1 iron_ingot*8
+c iron_door 3 iron_ingot*6
+c iron_helmet 1 iron_ingot*5
+c iron_hoe 1 iron_ingot*2 stick*2
+c iron_ingot 1 iron_nugget*9
+c iron_ingot 9 iron_block
+c iron_leggings 1 iron_ingot*7
+c iron_nugget 9 iron_ingot
+c iron_pickaxe 1 iron_ingot*3 stick*2
+c iron_shovel 1 iron_ingot stick*2
+c iron_sword 1 iron_ingot*2 stick
+c iron_trapdoor 1 iron_ingot*4
+c item_frame 1 stick*8 leather
+c jack_o_lantern 1 carved_pumpkin torch
+c jukebox 1 #planks*8 diamond
+c jungle_boat 1 jungle_planks*5
+c jungle_button 1 jungle_planks
+c jungle_door 3 jungle_planks*6
+c jungle_fence 3 jungle_planks*4 stick*2
+c jungle_fence_gate 1 stick*4 jungle_planks*2
+c jungle_planks 4 #jungle_logs
+c jungle_pressure_plate 1 jungle_planks*2
+c jungle_sign 3 jungle_planks*6 stick
+c jungle_slab 6 jungle_planks*3
+c jungle_stairs 4 jungle_planks*6
+c jungle_trapdoor 2 jungle_planks*6
+c jungle_wood 3 jungle_log*4
+c ladder 3 stick*7
+c lantern 1 iron_nugget*8 torch
+c lapis_block 1 lapis_lazuli*9
+c lapis_lazuli 9 lapis_block
+c lead 2 string*4 slime_ball
+c leather 1 rabbit_hide*4
+c leather_boots 1 leather*4
+c leather_chestplate 1 leather*8
+c leather_helmet 1 leather*5
+c leather_horse_armor 1 leather*7
+c leather_leggings 1 leather*7
+c lectern 1 #wooden_slabs*4 bookshelf
+c lever 1 stick cobblestone
+c light_blue_banner 1 light_blue_wool*6 stick
+c light_blue_bed 1 light_blue_wool*3 #planks*3
+c light_blue_bed 1 white_bed light_blue_dye
+c light_blue_carpet 3 light_blue_wool*2
+c light_blue_carpet 8 white_carpet*8 light_blue_dye
+c light_blue_concrete_powder 8 light_blue_dye sand*4 gravel*4
+c light_blue_dye 1 blue_orchid
+c light_blue_dye 2 blue_dye white_dye
+c light_blue_stained_glass 8 glass*8 light_blue_dye
+c light_blue_stained_glass_pane 16 light_blue_stained_glass*6
+c light_blue_stained_glass_pane 8 glass_pane*8 light_blue_dye
+c light_blue_terracotta 8 terracotta*8 light_blue_dye
+c light_blue_wool 1 light_blue_dye white_wool
+c light_gray_banner 1 light_gray_wool*6 stick
+c light_gray_bed 1 light_gray_wool*3 #planks*3
+c light_gray_bed 1 white_bed light_gray_dye
+c light_gray_carpet 3 light_gray_wool*2
+c light_gray_carpet 8 white_carpet*8 light_gray_dye
+c light_gray_concrete_powder 8 light_gray_dye sand*4 gravel*4
+c light_gray_dye 1 azure_bluet
+c light_gray_dye 1 oxeye_daisy
+c light_gray_dye 1 white_tulip
+c light_gray_dye 2 gray_dye white_dye
+c light_gray_dye 3 black_dye white_dye*2
+c light_gray_stained_glass 8 glass*8 light_gray_dye
+c light_gray_stained_glass_pane 16 light_gray_stained_glass*6
+c light_gray_stained_glass_pane 8 glass_pane*8 light_gray_dye
+c light_gray_terracotta 8 terracotta*8 light_gray_dye
+c light_gray_wool 1 light_gray_dye white_wool
+c light_weighted_pressure_plate 1 gold_ingot*2
+c lime_banner 1 lime_wool*6 stick
+c lime_bed 1 lime_wool*3 #planks*3
+c lime_bed 1 white_bed lime_dye
+c lime_carpet 3 lime_wool*2
+c lime_carpet 8 white_carpet*8 lime_dye
+c lime_concrete_powder 8 lime_dye sand*4 gravel*4
+c lime_dye 2 green_dye white_dye
+c lime_stained_glass 8 glass*8 lime_dye
+c lime_stained_glass_pane 16 lime_stained_glass*6
+c lime_stained_glass_pane 8 glass_pane*8 lime_dye
+c lime_terracotta 8 terracotta*8 lime_dye
+c lime_wool 1 lime_dye white_wool
+c lodestone 1 chiseled_stone_bricks*8 netherite_ingot
+c loom 1 string*2 #planks*2
+c magenta_banner 1 magenta_wool*6 stick
+c magenta_bed 1 magenta_wool*3 #planks*3
+c magenta_bed 1 white_bed magenta_dye
+c magenta_carpet 3 magenta_wool*2
+c magenta_carpet 8 white_carpet*8 magenta_dye
+c magenta_concrete_powder 8 magenta_dye sand*4 gravel*4
+c magenta_dye 1 allium
+c magenta_dye 2 lilac
+c magenta_dye 2 purple_dye pink_dye
+c magenta_dye 3 blue_dye red_dye pink_dye
+c magenta_dye 4 blue_dye red_dye*2 white_dye
+c magenta_stained_glass 8 glass*8 magenta_dye
+c magenta_stained_glass_pane 16 magenta_stained_glass*6
+c magenta_stained_glass_pane 8 glass_pane*8 magenta_dye
+c magenta_terracotta 8 terracotta*8 magenta_dye
+c magenta_wool 1 magenta_dye white_wool
+c magma_block 1 magma_cream*4
+c magma_cream 1 blaze_powder slime_ball
+c map 1 paper*8 compass
+c melon 1 melon_slice*9
+c melon_seeds 1 melon_slice
+c minecart 1 iron_ingot*5
+c mojang_banner_pattern 1 paper enchanted_golden_apple
+c mossy_cobblestone 1 cobblestone vine
+c mossy_cobblestone_slab 6 mossy_cobblestone*3
+c mossy_cobblestone_stairs 4 mossy_cobblestone*6
+c mossy_cobblestone_wall 6 mossy_cobblestone*6
+c mossy_stone_brick_slab 6 mossy_stone_bricks*3
+c mossy_stone_brick_stairs 4 mossy_stone_bricks*6
+c mossy_stone_brick_wall 6 mossy_stone_bricks*6
+c mossy_stone_bricks 1 stone_bricks vine
+c mushroom_stew 1 brown_mushroom red_mushroom bowl
+c nether_brick_fence 6 nether_bricks*4 nether_brick*2
+c nether_brick_slab 6 nether_bricks*3
+c nether_brick_stairs 4 nether_bricks*6
+c nether_brick_wall 6 nether_bricks*6
+c nether_bricks 1 nether_brick*4
+c nether_wart_block 1 nether_wart*9
+c netherite_block 1 netherite_ingot*9
+c netherite_ingot 1 netherite_scrap*4 gold_ingot*4
+c netherite_ingot 9 netherite_block
+c note_block 1 #planks*8 redstone
+c oak_boat 1 oak_planks*5
+c oak_button 1 oak_planks
+c oak_door 3 oak_planks*6
+c oak_fence 3 oak_planks*4 stick*2
+c oak_fence_gate 1 stick*4 oak_planks*2
+c oak_planks 4 #oak_logs
+c oak_pressure_plate 1 oak_planks*2
+c oak_sign 3 oak_planks*6 stick
+c oak_slab 6 oak_planks*3
+c oak_stairs 4 oak_planks*6
+c oak_trapdoor 2 oak_planks*6
+c oak_wood 3 oak_log*4
+c observer 1 cobblestone*6 redstone*2 quartz
+c orange_banner 1 orange_wool*6 stick
+c orange_bed 1 orange_wool*3 #planks*3
+c orange_bed 1 white_bed orange_dye
+c orange_carpet 3 orange_wool*2
+c orange_carpet 8 white_carpet*8 orange_dye
+c orange_concrete_powder 8 orange_dye sand*4 gravel*4
+c orange_dye 1 orange_tulip
+c orange_dye 2 red_dye yellow_dye
+c orange_stained_glass 8 glass*8 orange_dye
+c orange_stained_glass_pane 16 orange_stained_glass*6
+c orange_stained_glass_pane 8 glass_pane*8 orange_dye
+c orange_terracotta 8 terracotta*8 orange_dye
+c orange_wool 1 orange_dye white_wool
+c packed_ice 1 ice*9
+c painting 1 stick*8 #wool
+c paper 3 sugar_cane*3
+c pink_banner 1 pink_wool*6 stick
+c pink_bed 1 pink_wool*3 #planks*3
+c pink_bed 1 white_bed pink_dye
+c pink_carpet 3 pink_wool*2
+c pink_carpet 8 white_carpet*8 pink_dye
+c pink_concrete_powder 8 pink_dye sand*4 gravel*4
+c pink_dye 1 pink_tulip
+c pink_dye 2 peony
+c pink_dye 2 red_dye white_dye
+c pink_stained_glass 8 glass*8 pink_dye
+c pink_stained_glass_pane 16 pink_stained_glass*6
+c pink_stained_glass_pane 8 glass_pane*8 pink_dye
+c pink_terracotta 8 terracotta*8 pink_dye
+c pink_wool 1 pink_dye white_wool
+c piston 1 #planks*3 cobblestone*4 iron_ingot redstone
+c polished_andesite 4 andesite*4
+c polished_andesite_slab 6 polished_andesite*3
+c polished_andesite_stairs 4 polished_andesite*6
+c polished_basalt 4 basalt*4
+c polished_blackstone 4 blackstone*4
+c polished_blackstone_brick_slab 6 polished_blackstone_bricks*3
+c polished_blackstone_brick_stairs 4 polished_blackstone_bricks*6
+c polished_blackstone_brick_wall 6 polished_blackstone_bricks*6
+c polished_blackstone_bricks 4 polished_blackstone*4
+c polished_blackstone_button 1 polished_blackstone
+c polished_blackstone_pressure_plate 1 polished_blackstone*2
+c polished_blackstone_slab 6 polished_blackstone*3
+c polished_blackstone_stairs 4 polished_blackstone*6
+c polished_blackstone_wall 6 polished_blackstone*6
+c polished_diorite 4 diorite*4
+c polished_diorite_slab 6 polished_diorite*3
+c polished_diorite_stairs 4 polished_diorite*6
+c polished_granite 4 granite*4
+c polished_granite_slab 6 polished_granite*3
+c polished_granite_stairs 4 polished_granite*6
+c powered_rail 6 gold_ingot*6 stick redstone
+c prismarine 1 prismarine_shard*4
+c prismarine_brick_slab 6 prismarine_bricks*3
+c prismarine_brick_stairs 4 prismarine_bricks*6
+c prismarine_bricks 1 prismarine_shard*9
+c prismarine_slab 6 prismarine*3
+c prismarine_stairs 4 prismarine*6
+c prismarine_wall 6 prismarine*6
+c pumpkin_pie 1 pumpkin sugar egg
+c pumpkin_seeds 4 pumpkin
+c purple_banner 1 purple_wool*6 stick
+c purple_bed 1 purple_wool*3 #planks*3
+c purple_bed 1 white_bed purple_dye
+c purple_carpet 3 purple_wool*2
+c purple_carpet 8 white_carpet*8 purple_dye
+c purple_concrete_powder 8 purple_dye sand*4 gravel*4
+c purple_dye 2 blue_dye red_dye
+c purple_stained_glass 8 glass*8 purple_dye
+c purple_stained_glass_pane 16 purple_stained_glass*6
+c purple_stained_glass_pane 8 glass_pane*8 purple_dye
+c purple_terracotta 8 terracotta*8 purple_dye
+c purple_wool 1 purple_dye white_wool
+c purpur_block 4 popped_chorus_fruit*4
+c purpur_pillar 1 purpur_slab*2
+c purpur_slab 6 purpur_block|purpur_pillar*3
+c purpur_stairs 4 purpur_block|purpur_pillar*6
+c quartz_block 1 quartz*4
+c quartz_bricks 4 quartz_block*4
+c quartz_pillar 2 quartz_block*2
+c quartz_slab 6 chiseled_quartz_block|quartz_block|quartz_pillar*3
+c quartz_stairs 4 chiseled_quartz_block|quartz_block|quartz_pillar*6
+c rabbit_stew 1 baked_potato cooked_rabbit bowl carrot brown_mushroom
+c rabbit_stew 1 baked_potato cooked_rabbit bowl carrot red_mushroom
+c rail 16 iron_ingot*6 stick
+c red_banner 1 red_wool*6 stick
+c red_bed 1 red_wool*3 #planks*3
+c red_bed 1 white_bed red_dye
+c red_carpet 3 red_wool*2
+c red_carpet 8 white_carpet*8 red_dye
+c red_concrete_powder 8 red_dye sand*4 gravel*4
+c red_dye 1 beetroot
+c red_dye 1 poppy
+c red_dye 1 red_tulip
+c red_dye 2 rose_bush
+c red_nether_brick_slab 6 red_nether_bricks*3
+c red_nether_brick_stairs 4 red_nether_bricks*6
+c red_nether_brick_wall 6 red_nether_bricks*6
+c red_nether_bricks 1 nether_brick*2 nether_wart*2
+c red_sandstone 1 red_sand*4
+c red_sandstone_slab 6 red_sandstone|chiseled_red_sandstone*3
+c red_sandstone_stairs 4 red_sandstone|chiseled_red_sandstone|cut_red_sandstone*6
+c red_sandstone_wall 6 red_sandstone*6
+c red_stained_glass 8 glass*8 red_dye
+c red_stained_glass_pane 16 red_stained_glass*6
+c red_stained_glass_pane 8 glass_pane*8 red_dye
+c red_terracotta 8 terracotta*8 red_dye
+c red_wool 1 red_dye white_wool
+c redstone 9 redstone_block
+c redstone_block 1 redstone*9
+c redstone_lamp 1 redstone*4 glowstone
+c redstone_torch 1 redstone stick
+c repeater 1 redstone_torch*2 redstone stone*3
+c respawn_anchor 1 crying_obsidian*6 glowstone*3
+c sandstone 1 sand*4
+c sandstone_slab 6 sandstone|chiseled_sandstone*3
+c sandstone_stairs 4 sandstone|chiseled_sandstone|cut_sandstone*6
+c sandstone_wall 6 sandstone*6
+c scaffolding 6 bamboo*6 string
+c sea_lantern 1 prismarine_shard*4 prismarine_crystals*5
+c shears 1 iron_ingot*2
+c shield 1 #planks*6 iron_ingot
+c shulker_box 1 shulker_shell*2 chest
+c skull_banner_pattern 1 paper wither_skeleton_skull
+c slime_ball 9 slime_block
+c slime_block 1 slime_ball*9
+c smithing_table 1 iron_ingot*2 #planks*4
+c smoker 1 #logs*4 furnace
+c smooth_quartz_slab 6 smooth_quartz*3
+c smooth_quartz_stairs 4 smooth_quartz*6
+c smooth_red_sandstone_slab 6 smooth_red_sandstone*3
+c smooth_red_sandstone_stairs 4 smooth_red_sandstone*6
+c smooth_sandstone_slab 6 smooth_sandstone*3
+c smooth_sandstone_stairs 4 smooth_sandstone*6
+c smooth_stone_slab 6 smooth_stone*3
+c snow 6 snow_block*3
+c snow_block 1 snowball*4
+c soul_campfire 1 stick*3 #soul_fire_base_blocks #logs*3
+c soul_lantern 1 iron_nugget*8 soul_torch
+c soul_torch 4 coal|charcoal stick #soul_fire_base_blocks
+c spectral_arrow 2 glowstone_dust*4 arrow
+c spruce_boat 1 spruce_planks*5
+c spruce_button 1 spruce_planks
+c spruce_door 3 spruce_planks*6
+c spruce_fence 3 spruce_planks*4 stick*2
+c spruce_fence_gate 1 stick*4 spruce_planks*2
+c spruce_planks 4 #spruce_logs
+c spruce_pressure_plate 1 spruce_planks*2
+c spruce_sign 3 spruce_planks*6 stick
+c spruce_slab 6 spruce_planks*3
+c spruce_stairs 4 spruce_planks*6
+c spruce_trapdoor 2 spruce_planks*6
+c spruce_wood 3 spruce_log*4
+c stick 1 bamboo*2
+c stick 4 #planks*2
+c sticky_piston 1 slime_ball piston
+c stone_axe 1 #stone_tool_materials*3 stick*2
+c stone_brick_slab 6 stone_bricks*3
+c stone_brick_stairs 4 stone_bricks*6
+c stone_brick_wall 6 stone_bricks*6
+c stone_bricks 4 stone*4
+c stone_button 1 stone
+c stone_hoe 1 #stone_tool_materials*2 stick*2
+c stone_pickaxe 1 #stone_tool_materials*3 stick*2
+c stone_pressure_plate 1 stone*2
+c stone_shovel 1 #stone_tool_materials stick*2
+c stone_slab 6 stone*3
+c stone_stairs 4 stone*6
+c stone_sword 1 #stone_tool_materials*2 stick
+c stonecutter 1 iron_ingot stone*3
+c stripped_acacia_wood 3 stripped_acacia_log*4
+c stripped_birch_wood 3 stripped_birch_log*4
+c stripped_crimson_hyphae 3 stripped_crimson_stem*4
+c stripped_dark_oak_wood 3 stripped_dark_oak_log*4
+c stripped_jungle_wood 3 stripped_jungle_log*4
+c stripped_oak_wood 3 stripped_oak_log*4
+c stripped_spruce_wood 3 stripped_spruce_log*4
+c stripped_warped_hyphae 3 stripped_warped_stem*4
+c sugar 1 sugar_cane
+c sugar 3 honey_bottle
+c target 1 redstone*4 hay_block
+c tnt 1 gunpowder*5 sand|red_sand*4
+c tnt_minecart 1 tnt minecart
+c torch 4 coal|charcoal stick
+c trapped_chest 1 chest tripwire_hook
+c tripwire_hook 2 iron_ingot stick #planks
+c turtle_helmet 1 scute*5
+c warped_button 1 warped_planks
+c warped_door 3 warped_planks*6
+c warped_fence 3 warped_planks*4 stick*2
+c warped_fence_gate 1 stick*4 warped_planks*2
+c warped_fungus_on_a_stick 1 fishing_rod warped_fungus
+c warped_hyphae 3 warped_stem*4
+c warped_planks 4 #warped_stems
+c warped_pressure_plate 1 warped_planks*2
+c warped_sign 3 warped_planks*6 stick
+c warped_slab 6 warped_planks*3
+c warped_stairs 4 warped_planks*6
+c warped_trapdoor 2 warped_planks*6
+c wheat 9 hay_block
+c white_banner 1 white_wool*6 stick
+c white_bed 1 white_wool*3 #planks*3
+c white_carpet 3 white_wool*2
+c white_concrete_powder 8 white_dye sand*4 gravel*4
+c white_dye 1 bone_meal
+c white_dye 1 lily_of_the_valley
+c white_stained_glass 8 glass*8 white_dye
+c white_stained_glass_pane 16 white_stained_glass*6
+c white_stained_glass_pane 8 glass_pane*8 white_dye
+c white_terracotta 8 terracotta*8 white_dye
+c white_wool 1 string*4
+c wooden_axe 1 #planks*3 stick*2
+c wooden_hoe 1 #planks*2 stick*2
+c wooden_pickaxe 1 #planks*3 stick*2
+c wooden_shovel 1 #planks stick*2
+c wooden_sword 1 #planks*2 stick
+c writable_book 1 book ink_sac feather
+c yellow_banner 1 yellow_wool*6 stick
+c yellow_bed 1 white_bed yellow_dye
+c yellow_bed 1 yellow_wool*3 #planks*3
+c yellow_carpet 3 yellow_wool*2
+c yellow_carpet 8 white_carpet*8 yellow_dye
+c yellow_concrete_powder 8 yellow_dye sand*4 gravel*4
+c yellow_dye 1 dandelion
+c yellow_dye 2 sunflower
+c yellow_stained_glass 8 glass*8 yellow_dye
+c yellow_stained_glass_pane 16 yellow_stained_glass*6
+c yellow_stained_glass_pane 8 glass_pane*8 yellow_dye
+c yellow_terracotta 8 terracotta*8 yellow_dye
+c yellow_wool 1 yellow_dye white_wool
+f baked_potato 1 potato
+f black_glazed_terracotta 1 black_terracotta
+f blue_glazed_terracotta 1 blue_terracotta
+f brick 1 clay_ball
+f brown_glazed_terracotta 1 brown_terracotta
+f charcoal 1 #logs_that_burn
+f coal 1 coal_ore
+f cooked_beef 1 beef
+f cooked_chicken 1 chicken
+f cooked_cod 1 cod
+f cooked_mutton 1 mutton
+f cooked_porkchop 1 porkchop
+f cooked_rabbit 1 rabbit
+f cooked_salmon 1 salmon
+f cracked_nether_bricks 1 nether_bricks
+f cracked_polished_blackstone_bricks 1 polished_blackstone_bricks
+f cracked_stone_bricks 1 stone_bricks
+f cyan_glazed_terracotta 1 cyan_terracotta
+f diamond 1 diamond_ore
+f dried_kelp 1 kelp
+f emerald 1 emerald_ore
+f glass 1 #sand
+f gold_ingot 1 #gold_ores
+f gold_nugget 1 golden_pickaxe|golden_shovel|golden_axe|golden_hoe|golden_sword|golden_helmet|golden_chestplate|golden_leggings|golden_boots|golden_horse_armor
+f gray_glazed_terracotta 1 gray_terracotta
+f green_dye 1 cactus
+f green_glazed_terracotta 1 green_terracotta
+f iron_ingot 1 iron_ore
+f iron_nugget 1 iron_pickaxe|iron_shovel|iron_axe|iron_hoe|iron_sword|iron_helmet|iron_chestplate|iron_leggings|iron_boots|iron_horse_armor|chainmail_helmet|chainmail_chestplate|chainmail_leggings|chainmail_boots
+f lapis_lazuli 1 lapis_ore
+f light_blue_glazed_terracotta 1 light_blue_terracotta
+f light_gray_glazed_terracotta 1 light_gray_terracotta
+f lime_dye 1 sea_pickle
+f lime_glazed_terracotta 1 lime_terracotta
+f magenta_glazed_terracotta 1 magenta_terracotta
+f nether_brick 1 netherrack
+f netherite_scrap 1 ancient_debris
+f orange_glazed_terracotta 1 orange_terracotta
+f pink_glazed_terracotta 1 pink_terracotta
+f popped_chorus_fruit 1 chorus_fruit
+f purple_glazed_terracotta 1 purple_terracotta
+f quartz 1 nether_quartz_ore
+f red_glazed_terracotta 1 red_terracotta
+f redstone 1 redstone_ore
+f smooth_quartz 1 quartz_block
+f smooth_red_sandstone 1 red_sandstone
+f smooth_sandstone 1 sandstone
+f smooth_stone 1 stone
+f sponge 1 wet_sponge
+f stone 1 cobblestone
+f terracotta 1 clay
+f white_glazed_terracotta 1 white_terracotta
+f yellow_glazed_terracotta 1 yellow_terracotta
+m netherite_axe 1 diamond_axe netherite_ingot
+m netherite_boots 1 diamond_boots netherite_ingot
+m netherite_chestplate 1 diamond_chestplate netherite_ingot
+m netherite_helmet 1 diamond_helmet netherite_ingot
+m netherite_hoe 1 diamond_hoe netherite_ingot
+m netherite_leggings 1 diamond_leggings netherite_ingot
+m netherite_pickaxe 1 diamond_pickaxe netherite_ingot
+m netherite_shovel 1 diamond_shovel netherite_ingot
+m netherite_sword 1 diamond_sword netherite_ingot
+s andesite_slab 2 andesite
+s andesite_stairs 1 andesite
+s andesite_wall 1 andesite
+s blackstone_slab 2 blackstone
+s blackstone_stairs 1 blackstone
+s blackstone_wall 1 blackstone
+s brick_slab 2 bricks
+s brick_stairs 1 bricks
+s brick_wall 1 bricks
+s chiseled_nether_bricks 1 nether_bricks
+s chiseled_polished_blackstone 1 blackstone
+s chiseled_polished_blackstone 1 polished_blackstone
+s chiseled_quartz_block 1 quartz_block
+s chiseled_red_sandstone 1 red_sandstone
+s chiseled_sandstone 1 sandstone
+s chiseled_stone_bricks 1 stone
+s chiseled_stone_bricks 1 stone_bricks
+s cobblestone_slab 2 cobblestone
+s cobblestone_stairs 1 cobblestone
+s cobblestone_wall 1 cobblestone
+s cut_red_sandstone 1 red_sandstone
+s cut_red_sandstone_slab 2 cut_red_sandstone
+s cut_red_sandstone_slab 2 red_sandstone
+s cut_sandstone 1 sandstone
+s cut_sandstone_slab 2 cut_sandstone
+s cut_sandstone_slab 2 sandstone
+s dark_prismarine_slab 2 dark_prismarine
+s dark_prismarine_stairs 1 dark_prismarine
+s diorite_slab 2 diorite
+s diorite_stairs 1 diorite
+s diorite_wall 1 diorite
+s end_stone_brick_slab 2 end_stone
+s end_stone_brick_slab 2 end_stone_bricks
+s end_stone_brick_stairs 1 end_stone
+s end_stone_brick_stairs 1 end_stone_bricks
+s end_stone_brick_wall 1 end_stone
+s end_stone_brick_wall 1 end_stone_bricks
+s end_stone_bricks 1 end_stone
+s granite_slab 2 granite
+s granite_stairs 1 granite
+s granite_wall 1 granite
+s mossy_cobblestone_slab 2 mossy_cobblestone
+s mossy_cobblestone_stairs 1 mossy_cobblestone
+s mossy_cobblestone_wall 1 mossy_cobblestone
+s mossy_stone_brick_slab 2 mossy_stone_bricks
+s mossy_stone_brick_stairs 1 mossy_stone_bricks
+s mossy_stone_brick_wall 1 mossy_stone_bricks
+s nether_brick_slab 2 nether_bricks
+s nether_brick_stairs 1 nether_bricks
+s nether_brick_wall 1 nether_bricks
+s polished_andesite 1 andesite
+s polished_andesite_slab 2 andesite
+s polished_andesite_slab 2 polished_andesite
+s polished_andesite_stairs 1 andesite
+s polished_andesite_stairs 1 polished_andesite
+s polished_basalt 1 basalt
+s polished_blackstone 1 blackstone
+s polished_blackstone_brick_slab 2 blackstone
+s polished_blackstone_brick_slab 2 polished_blackstone
+s polished_blackstone_brick_slab 2 polished_blackstone_bricks
+s polished_blackstone_brick_stairs 1 blackstone
+s polished_blackstone_brick_stairs 1 polished_blackstone
+s polished_blackstone_brick_stairs 1 polished_blackstone_bricks
+s polished_blackstone_brick_wall 1 blackstone
+s polished_blackstone_brick_wall 1 polished_blackstone
+s polished_blackstone_brick_wall 1 polished_blackstone_bricks
+s polished_blackstone_bricks 1 blackstone
+s polished_blackstone_bricks 1 polished_blackstone
+s polished_blackstone_slab 2 blackstone
+s polished_blackstone_slab 2 polished_blackstone
+s polished_blackstone_stairs 1 blackstone
+s polished_blackstone_stairs 1 polished_blackstone
+s polished_blackstone_wall 1 blackstone
+s polished_blackstone_wall 1 polished_blackstone
+s polished_diorite 1 diorite
+s polished_diorite_slab 2 diorite
+s polished_diorite_slab 2 polished_diorite
+s polished_diorite_stairs 1 diorite
+s polished_diorite_stairs 1 polished_diorite
+s polished_granite 1 granite
+s polished_granite_slab 2 granite
+s polished_granite_slab 2 polished_granite
+s polished_granite_stairs 1 granite
+s polished_granite_stairs 1 polished_granite
+s prismarine_brick_slab 2 prismarine_bricks
+s prismarine_brick_stairs 1 prismarine_bricks
+s prismarine_slab 2 prismarine
+s prismarine_stairs 1 prismarine
+s prismarine_wall 1 prismarine
+s purpur_pillar 1 purpur_block
+s purpur_slab 2 purpur_block
+s purpur_stairs 1 purpur_block
+s quartz_bricks 1 quartz_block
+s quartz_pillar 1 quartz_block
+s quartz_slab 2 quartz_block
+s quartz_stairs 1 quartz_block
+s red_nether_brick_slab 2 red_nether_bricks
+s red_nether_brick_stairs 1 red_nether_bricks
+s red_nether_brick_wall 1 red_nether_bricks
+s red_sandstone_slab 2 red_sandstone
+s red_sandstone_stairs 1 red_sandstone
+s red_sandstone_wall 1 red_sandstone
+s sandstone_slab 2 sandstone
+s sandstone_stairs 1 sandstone
+s sandstone_wall 1 sandstone
+s smooth_quartz_slab 2 smooth_quartz
+s smooth_quartz_stairs 1 smooth_quartz
+s smooth_red_sandstone_slab 2 smooth_red_sandstone
+s smooth_red_sandstone_stairs 1 smooth_red_sandstone
+s smooth_sandstone_slab 2 smooth_sandstone
+s smooth_sandstone_stairs 1 smooth_sandstone
+s smooth_stone_slab 2 smooth_stone
+s stone_brick_slab 2 stone
+s stone_brick_slab 2 stone_bricks
+s stone_brick_stairs 1 stone
+s stone_brick_stairs 1 stone_bricks
+s stone_brick_wall 1 stone
+s stone_brick_wall 1 stone_bricks
+s stone_bricks 1 stone
+s stone_slab 2 stone
+s stone_stairs 1 stone

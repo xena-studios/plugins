@@ -1,0 +1,64 @@
+---
+title: Developer API
+description: "Build on xMarket: prices from memory, purchases and sales with every rule applied, price modifiers and providers, and the shop's events, on every platform."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xMarket's API is the same on Paper, Folia, Spigot and Fabric: players are `PlayerRef`s (by UUID), items are `ItemKey`s (an id such as `minecraft:diamond`, an amount, a potion type, stored enchantments), and money is `Money`, an exact amount in 1/10,000ths, never a double. Get it with `XMarket.api()` once xMarket is enabled (add it to your plugin's `depend`, or `softdepend` and check `XMarket.isEnabled()` first). On Bukkit it's also in the services manager, as `XMarketApi`.
+
+:::caution[Not on Maven Central yet]
+The API isn't published until 1.0 is released. Its coordinates will be `co.xenastudios.xmarket:xmarket-api:1.0.0`; until then, compile against the plugin's jar.
+:::
+
+## Prices, from memory
+
+On any thread, from the price list in memory; `null` until it's loaded (`isLoaded()`) or for an item it doesn't price.
+
+```java
+XMarketApi api = XMarket.api();
+Money each = api.sellPrice(ItemKey.of("diamond"));                         // before anyone's boost
+Money mine = api.sellPrice(PlayerRefs.of(player.getUniqueId()), ItemKey.of("diamond"));   // with theirs
+Money cost = api.buyPrice(new ItemKey("minecraft:potion", 1, "long_swiftness"));
+// On Bukkit, from an item stack:
+Money worth = api.sellPrice(BukkitItemKeys.key(stack));
+```
+
+`entry(item)`, `entry(category, id)` and `entries()` give the shop's entries (`ShopEntry`): its category and id, item, prices for one, currency and whether it runs commands.
+
+## Trades
+
+`sell(player, items)` and `buy(player, entry, amount)` are futures, run on the player's own thread with every rule a `/shop` click has: permissions, requirements, limits, discounts and boosts, the events, the currency, history. For a sell wand, a sell chest, an NPC or a jobs plugin:
+
+```java
+// The caller has taken the items out of the chest already; it gives back what wasn't sold.
+api.sell(player, keys).thenAccept(result -> {
+    for (int i = 0; i < keys.size(); i++) {
+        int left = keys.get(i).getAmount() - result.getSold().get(i);
+        if (left > 0) giveBack(keys.get(i), left);
+    }
+});
+api.buy(player, api.entry("ores", "diamond"), 16).thenAccept(result -> { /* result.getStatus(), result.getPaid() */ });
+```
+
+## Price modifiers and providers
+
+```java
+// A booster or an event weekend, applied to every price after xMarket's own discounts and boosts.
+api.registerPriceModifier("MyBoosters", (player, entry, kind, price) -> kind == TradeKind.SELL && weekend() ? price.percent(150) : price);
+// Prices for items the list doesn't have: another plugin's items. Sold in money, never bought.
+api.registerPriceProvider("MyItems", item -> isMyGem(item) ? Money.of(500) : null);
+api.unregisterAll("MyBoosters");
+```
+
+## Events
+
+On xMarket's bus (`api.getEvents()`), only when something listens, on the player's thread: `ShopBuyEvent` and `ShopSellEvent` before a trade (cancel it, or set its price: the total), `ShopBoughtEvent` and `ShopSoldEvent` after. On Bukkit each is also a Bukkit event in `co.xenastudios.xmarket.api.bukkit` (`BukkitShopBuyEvent` and the rest), for plugins and Skript scripts listening the Bukkit way.
+
+```java
+api.getEvents().subscribe(ShopSellEvent.TYPE, event -> { if (inCombat(event.getPlayer())) event.setCancelled(true); });
+```
+
+<Reference plugin="xmarket" show="events" />

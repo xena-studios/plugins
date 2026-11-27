@@ -1,0 +1,65 @@
+# Items no survival player can get: the price list leaves them out, and /shop audit doesn't ask for their prices: creative and operator
+# items, blocks that can't be picked up even with Silk Touch, and items that are their data
+# (maps, written books, firework stars), which a plain entry would misprice. Spawn eggs are left
+# out by name (*_spawn_egg). Potions, tipped arrows and enchanted books are listed by type
+# instead (brewing.txt, enchantments.txt); their plain ids are here.
+air
+barrier
+bedrock
+budding_amethyst
+chain_command_block
+chorus_plant
+command_block
+command_block_minecart
+debug_stick
+dirt_path
+end_portal_frame
+farmland
+filled_map
+firework_star
+frogspawn
+infested_chiseled_stone_bricks
+infested_cobblestone
+infested_cracked_stone_bricks
+infested_deepslate
+infested_mossy_stone_bricks
+infested_stone
+infested_stone_bricks
+jigsaw
+knowledge_book
+light
+petrified_oak_slab
+player_head
+reinforced_deepslate
+repeating_command_block
+spawner
+structure_block
+structure_void
+suspicious_gravel
+suspicious_sand
+test_block
+test_instance_block
+trial_spawner
+vault
+written_book
+enchanted_book
+potion
+splash_potion
+lingering_potion
+tipped_arrow
+abandoned_camp_map
+buried_ancient_city_map
+buried_mineshaft_map
+buried_treasure_map
+buried_trial_chambers_map
+desert_pyramid_map
+desert_village_map
+jungle_pyramid_map
+ocean_monument_map
+plains_village_map
+savanna_village_map
+snowy_village_map
+swamp_hut_map
+taiga_village_map
+warm_ocean_ruins_map
+woodland_mansion_map

@@ -1,0 +1,53 @@
+# One of xMarket's categories: its items, what each costs to buy and what it sells for.
+# Made from xMarket's price list, where every crafted item costs what its recipe does,
+# so nothing can be bought, crafted and sold for a profit (/shop audit checks your edits).
+# Prices are for one item, before the multiplier in config.yml. Leave buy or sell out to
+# stop an item being bought or sold. https://plugins.xenastudios.co/xmarket/price-list/
+name: "<white>Armour"
+icon: iron_chestplate
+slot: 21
+currency: money
+items:
+  elytra: {buy: 20000, sell: 6000}
+  turtle_helmet: {buy: 100, sell: 30}
+  wolf_armor: {buy: 60, sell: 18}
+  leather_helmet: {buy: 40, sell: 12}
+  leather_chestplate: {buy: 64, sell: 19.2}
+  leather_leggings: {buy: 56, sell: 16.8}
+  leather_boots: {buy: 32, sell: 9.6}
+  copper_helmet: {buy: 30, sell: 9}
+  copper_chestplate: {buy: 48, sell: 14.4}
+  copper_leggings: {buy: 42, sell: 12.6}
+  copper_boots: {buy: 24, sell: 7.2}
+  chainmail_helmet: {buy: 100, sell: 30}
+  chainmail_chestplate: {buy: 160, sell: 48}
+  chainmail_leggings: {buy: 140, sell: 42}
+  chainmail_boots: {buy: 80, sell: 24}
+  iron_helmet: {buy: 100, sell: 30}
+  iron_chestplate: {buy: 160, sell: 48}
+  iron_leggings: {buy: 140, sell: 42}
+  iron_boots: {buy: 80, sell: 24}
+  diamond_helmet: {buy: 1000, sell: 300}
+  diamond_chestplate: {buy: 1600, sell: 480}
+  diamond_leggings: {buy: 1400, sell: 420}
+  diamond_boots: {buy: 800, sell: 240}
+  golden_helmet: {buy: 60, sell: 18}
+  golden_chestplate: {buy: 96, sell: 28.8}
+  golden_leggings: {buy: 84, sell: 25.2}
+  golden_boots: {buy: 48, sell: 14.4}
+  netherite_helmet: {buy: 6449, sell: 1934.7}
+  netherite_chestplate: {buy: 7049, sell: 2114.7}
+  netherite_leggings: {buy: 6849, sell: 2054.7}
+  netherite_boots: {buy: 6249, sell: 1874.7}
+  copper_horse_armor: {buy: 60, sell: 18}
+  iron_horse_armor: {buy: 150, sell: 45}
+  golden_horse_armor: {buy: 250, sell: 75}
+  diamond_horse_armor: {buy: 1000, sell: 300}
+  netherite_horse_armor: {buy: 6449, sell: 1934.7}
+  leather_horse_armor: {buy: 56, sell: 16.8}
+  totem_of_undying: {buy: 2500, sell: 750}
+  iron_nautilus_armor: {buy: 150, sell: 45}
+  golden_nautilus_armor: {buy: 250, sell: 75}
+  diamond_nautilus_armor: {buy: 1000, sell: 300}
+  netherite_nautilus_armor: {buy: 6449, sell: 1934.7}
+  copper_nautilus_armor: {buy: 60, sell: 18}

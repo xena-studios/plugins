@@ -1,0 +1,280 @@
+# What players make by hand, outside any crafting grid, and brewing: the same compact form as
+# vanilla/<version>/recipes.txt (p: by hand, b: a brewing stand's 3 bottles and 1 ingredient).
+# They're recipes as far as prices go: buying one thing and turning it into another must never
+# pay, so the price list and /shop audit count them too.
+# Concrete powder set in water.
+p white_concrete 1 white_concrete_powder
+p orange_concrete 1 orange_concrete_powder
+p magenta_concrete 1 magenta_concrete_powder
+p light_blue_concrete 1 light_blue_concrete_powder
+p yellow_concrete 1 yellow_concrete_powder
+p lime_concrete 1 lime_concrete_powder
+p pink_concrete 1 pink_concrete_powder
+p gray_concrete 1 gray_concrete_powder
+p light_gray_concrete 1 light_gray_concrete_powder
+p cyan_concrete 1 cyan_concrete_powder
+p purple_concrete 1 purple_concrete_powder
+p blue_concrete 1 blue_concrete_powder
+p brown_concrete 1 brown_concrete_powder
+p green_concrete 1 green_concrete_powder
+p red_concrete 1 red_concrete_powder
+p black_concrete 1 black_concrete_powder
+# Logs and wood stripped with an axe.
+p stripped_oak_log 1 oak_log
+p stripped_oak_wood 1 oak_wood
+p stripped_spruce_log 1 spruce_log
+p stripped_spruce_wood 1 spruce_wood
+p stripped_birch_log 1 birch_log
+p stripped_birch_wood 1 birch_wood
+p stripped_jungle_log 1 jungle_log
+p stripped_jungle_wood 1 jungle_wood
+p stripped_acacia_log 1 acacia_log
+p stripped_acacia_wood 1 acacia_wood
+p stripped_dark_oak_log 1 dark_oak_log
+p stripped_dark_oak_wood 1 dark_oak_wood
+p stripped_mangrove_log 1 mangrove_log
+p stripped_mangrove_wood 1 mangrove_wood
+p stripped_cherry_log 1 cherry_log
+p stripped_cherry_wood 1 cherry_wood
+p stripped_pale_oak_log 1 pale_oak_log
+p stripped_pale_oak_wood 1 pale_oak_wood
+p stripped_poplar_log 1 poplar_log
+p stripped_poplar_wood 1 poplar_wood
+p stripped_crimson_stem 1 crimson_stem
+p stripped_crimson_hyphae 1 crimson_hyphae
+p stripped_warped_stem 1 warped_stem
+p stripped_warped_hyphae 1 warped_hyphae
+p stripped_bamboo_block 1 bamboo_block
+# Copper left to weather.
+p exposed_copper 1 copper_block
+p weathered_copper 1 exposed_copper
+p oxidized_copper 1 weathered_copper
+p exposed_cut_copper 1 cut_copper
+p weathered_cut_copper 1 exposed_cut_copper
+p oxidized_cut_copper 1 weathered_cut_copper
+p exposed_chiseled_copper 1 chiseled_copper
+p weathered_chiseled_copper 1 exposed_chiseled_copper
+p oxidized_chiseled_copper 1 weathered_chiseled_copper
+p exposed_copper_grate 1 copper_grate
+p weathered_copper_grate 1 exposed_copper_grate
+p oxidized_copper_grate 1 weathered_copper_grate
+p exposed_copper_bulb 1 copper_bulb
+p weathered_copper_bulb 1 exposed_copper_bulb
+p oxidized_copper_bulb 1 weathered_copper_bulb
+p exposed_copper_door 1 copper_door
+p weathered_copper_door 1 exposed_copper_door
+p oxidized_copper_door 1 weathered_copper_door
+p exposed_copper_trapdoor 1 copper_trapdoor
+p weathered_copper_trapdoor 1 exposed_copper_trapdoor
+p oxidized_copper_trapdoor 1 weathered_copper_trapdoor
+p exposed_copper_bars 1 copper_bars
+p weathered_copper_bars 1 exposed_copper_bars
+p oxidized_copper_bars 1 weathered_copper_bars
+p exposed_copper_chain 1 copper_chain
+p weathered_copper_chain 1 exposed_copper_chain
+p oxidized_copper_chain 1 weathered_copper_chain
+p exposed_copper_chest 1 copper_chest
+p weathered_copper_chest 1 exposed_copper_chest
+p oxidized_copper_chest 1 weathered_copper_chest
+p exposed_copper_lantern 1 copper_lantern
+p weathered_copper_lantern 1 exposed_copper_lantern
+p oxidized_copper_lantern 1 weathered_copper_lantern
+p exposed_copper_golem_statue 1 copper_golem_statue
+p weathered_copper_golem_statue 1 exposed_copper_golem_statue
+p oxidized_copper_golem_statue 1 weathered_copper_golem_statue
+p exposed_lightning_rod 1 lightning_rod
+p weathered_lightning_rod 1 exposed_lightning_rod
+p oxidized_lightning_rod 1 weathered_lightning_rod
+p exposed_cut_copper_slab 1 cut_copper_slab
+p weathered_cut_copper_slab 1 exposed_cut_copper_slab
+p oxidized_cut_copper_slab 1 weathered_cut_copper_slab
+p exposed_cut_copper_stairs 1 cut_copper_stairs
+p weathered_cut_copper_stairs 1 exposed_cut_copper_stairs
+p oxidized_cut_copper_stairs 1 weathered_cut_copper_stairs
+# Buckets filled.
+p water_bucket 1 bucket
+p lava_bucket 1 bucket
+p powder_snow_bucket 1 bucket
+p milk_bucket 1 bucket
+p cod_bucket 1 water_bucket cod
+p salmon_bucket 1 water_bucket salmon
+p pufferfish_bucket 1 water_bucket pufferfish
+p tropical_fish_bucket 1 water_bucket tropical_fish
+# Mud from dirt and a water bottle; a bottle filled.
+p mud 1 dirt
+p potion{water} 1 glass_bottle
+# Brewing.
+b potion{mundane} 3 potion{water}*3 redstone
+b potion{thick} 3 potion{water}*3 glowstone_dust
+b potion{awkward} 3 potion{water}*3 nether_wart
+b potion{night_vision} 3 potion{awkward}*3 golden_carrot
+b potion{long_night_vision} 3 potion{night_vision}*3 redstone
+b potion{invisibility} 3 potion{night_vision}*3 fermented_spider_eye
+b potion{long_invisibility} 3 potion{invisibility}*3 redstone
+b potion{fire_resistance} 3 potion{awkward}*3 magma_cream
+b potion{long_fire_resistance} 3 potion{fire_resistance}*3 redstone
+b potion{leaping} 3 potion{awkward}*3 rabbit_foot
+b potion{long_leaping} 3 potion{leaping}*3 redstone
+b potion{strong_leaping} 3 potion{leaping}*3 glowstone_dust
+b potion{swiftness} 3 potion{awkward}*3 sugar
+b potion{long_swiftness} 3 potion{swiftness}*3 redstone
+b potion{strong_swiftness} 3 potion{swiftness}*3 glowstone_dust
+b potion{slowness} 3 potion{swiftness}*3 fermented_spider_eye
+b potion{long_slowness} 3 potion{slowness}*3 redstone
+b potion{strong_slowness} 3 potion{slowness}*3 glowstone_dust
+b potion{turtle_master} 3 potion{awkward}*3 turtle_helmet
+b potion{long_turtle_master} 3 potion{turtle_master}*3 redstone
+b potion{strong_turtle_master} 3 potion{turtle_master}*3 glowstone_dust
+b potion{water_breathing} 3 potion{awkward}*3 pufferfish
+b potion{long_water_breathing} 3 potion{water_breathing}*3 redstone
+b potion{healing} 3 potion{awkward}*3 glistering_melon_slice
+b potion{strong_healing} 3 potion{healing}*3 glowstone_dust
+b potion{harming} 3 potion{healing}*3 fermented_spider_eye
+b potion{strong_harming} 3 potion{harming}*3 glowstone_dust
+b potion{poison} 3 potion{awkward}*3 spider_eye
+b potion{long_poison} 3 potion{poison}*3 redstone
+b potion{strong_poison} 3 potion{poison}*3 glowstone_dust
+b potion{regeneration} 3 potion{awkward}*3 ghast_tear
+b potion{long_regeneration} 3 potion{regeneration}*3 redstone
+b potion{strong_regeneration} 3 potion{regeneration}*3 glowstone_dust
+b potion{strength} 3 potion{awkward}*3 blaze_powder
+b potion{long_strength} 3 potion{strength}*3 redstone
+b potion{strong_strength} 3 potion{strength}*3 glowstone_dust
+b potion{weakness} 3 potion{water}*3 fermented_spider_eye
+b potion{long_weakness} 3 potion{weakness}*3 redstone
+b potion{slow_falling} 3 potion{awkward}*3 phantom_membrane
+b potion{long_slow_falling} 3 potion{slow_falling}*3 redstone
+b potion{wind_charged} 3 potion{awkward}*3 breeze_rod
+b potion{weaving} 3 potion{awkward}*3 cobweb
+b potion{oozing} 3 potion{awkward}*3 slime_block
+b potion{infested} 3 potion{awkward}*3 stone
+# Splash and lingering potions, and tipped arrows.
+b splash_potion{water} 3 potion{water}*3 gunpowder
+b splash_potion{mundane} 3 potion{mundane}*3 gunpowder
+b splash_potion{thick} 3 potion{thick}*3 gunpowder
+b splash_potion{awkward} 3 potion{awkward}*3 gunpowder
+b splash_potion{night_vision} 3 potion{night_vision}*3 gunpowder
+b splash_potion{long_night_vision} 3 potion{long_night_vision}*3 gunpowder
+b splash_potion{invisibility} 3 potion{invisibility}*3 gunpowder
+b splash_potion{long_invisibility} 3 potion{long_invisibility}*3 gunpowder
+b splash_potion{fire_resistance} 3 potion{fire_resistance}*3 gunpowder
+b splash_potion{long_fire_resistance} 3 potion{long_fire_resistance}*3 gunpowder
+b splash_potion{leaping} 3 potion{leaping}*3 gunpowder
+b splash_potion{long_leaping} 3 potion{long_leaping}*3 gunpowder
+b splash_potion{strong_leaping} 3 potion{strong_leaping}*3 gunpowder
+b splash_potion{swiftness} 3 potion{swiftness}*3 gunpowder
+b splash_potion{long_swiftness} 3 potion{long_swiftness}*3 gunpowder
+b splash_potion{strong_swiftness} 3 potion{strong_swiftness}*3 gunpowder
+b splash_potion{slowness} 3 potion{slowness}*3 gunpowder
+b splash_potion{long_slowness} 3 potion{long_slowness}*3 gunpowder
+b splash_potion{strong_slowness} 3 potion{strong_slowness}*3 gunpowder
+b splash_potion{turtle_master} 3 potion{turtle_master}*3 gunpowder
+b splash_potion{long_turtle_master} 3 potion{long_turtle_master}*3 gunpowder
+b splash_potion{strong_turtle_master} 3 potion{strong_turtle_master}*3 gunpowder
+b splash_potion{water_breathing} 3 potion{water_breathing}*3 gunpowder
+b splash_potion{long_water_breathing} 3 potion{long_water_breathing}*3 gunpowder
+b splash_potion{healing} 3 potion{healing}*3 gunpowder
+b splash_potion{strong_healing} 3 potion{strong_healing}*3 gunpowder
+b splash_potion{harming} 3 potion{harming}*3 gunpowder
+b splash_potion{strong_harming} 3 potion{strong_harming}*3 gunpowder
+b splash_potion{poison} 3 potion{poison}*3 gunpowder
+b splash_potion{long_poison} 3 potion{long_poison}*3 gunpowder
+b splash_potion{strong_poison} 3 potion{strong_poison}*3 gunpowder
+b splash_potion{regeneration} 3 potion{regeneration}*3 gunpowder
+b splash_potion{long_regeneration} 3 potion{long_regeneration}*3 gunpowder
+b splash_potion{strong_regeneration} 3 potion{strong_regeneration}*3 gunpowder
+b splash_potion{strength} 3 potion{strength}*3 gunpowder
+b splash_potion{long_strength} 3 potion{long_strength}*3 gunpowder
+b splash_potion{strong_strength} 3 potion{strong_strength}*3 gunpowder
+b splash_potion{weakness} 3 potion{weakness}*3 gunpowder
+b splash_potion{long_weakness} 3 potion{long_weakness}*3 gunpowder
+b splash_potion{slow_falling} 3 potion{slow_falling}*3 gunpowder
+b splash_potion{long_slow_falling} 3 potion{long_slow_falling}*3 gunpowder
+b splash_potion{wind_charged} 3 potion{wind_charged}*3 gunpowder
+b splash_potion{weaving} 3 potion{weaving}*3 gunpowder
+b splash_potion{oozing} 3 potion{oozing}*3 gunpowder
+b splash_potion{infested} 3 potion{infested}*3 gunpowder
+b lingering_potion{water} 3 splash_potion{water}*3 dragon_breath
+c tipped_arrow{water} 8 arrow*8 lingering_potion{water}
+b lingering_potion{night_vision} 3 splash_potion{night_vision}*3 dragon_breath
+c tipped_arrow{night_vision} 8 arrow*8 lingering_potion{night_vision}
+b lingering_potion{long_night_vision} 3 splash_potion{long_night_vision}*3 dragon_breath
+c tipped_arrow{long_night_vision} 8 arrow*8 lingering_potion{long_night_vision}
+b lingering_potion{invisibility} 3 splash_potion{invisibility}*3 dragon_breath
+c tipped_arrow{invisibility} 8 arrow*8 lingering_potion{invisibility}
+b lingering_potion{long_invisibility} 3 splash_potion{long_invisibility}*3 dragon_breath
+c tipped_arrow{long_invisibility} 8 arrow*8 lingering_potion{long_invisibility}
+b lingering_potion{fire_resistance} 3 splash_potion{fire_resistance}*3 dragon_breath
+c tipped_arrow{fire_resistance} 8 arrow*8 lingering_potion{fire_resistance}
+b lingering_potion{long_fire_resistance} 3 splash_potion{long_fire_resistance}*3 dragon_breath
+c tipped_arrow{long_fire_resistance} 8 arrow*8 lingering_potion{long_fire_resistance}
+b lingering_potion{leaping} 3 splash_potion{leaping}*3 dragon_breath
+c tipped_arrow{leaping} 8 arrow*8 lingering_potion{leaping}
+b lingering_potion{long_leaping} 3 splash_potion{long_leaping}*3 dragon_breath
+c tipped_arrow{long_leaping} 8 arrow*8 lingering_potion{long_leaping}
+b lingering_potion{strong_leaping} 3 splash_potion{strong_leaping}*3 dragon_breath
+c tipped_arrow{strong_leaping} 8 arrow*8 lingering_potion{strong_leaping}
+b lingering_potion{swiftness} 3 splash_potion{swiftness}*3 dragon_breath
+c tipped_arrow{swiftness} 8 arrow*8 lingering_potion{swiftness}
+b lingering_potion{long_swiftness} 3 splash_potion{long_swiftness}*3 dragon_breath
+c tipped_arrow{long_swiftness} 8 arrow*8 lingering_potion{long_swiftness}
+b lingering_potion{strong_swiftness} 3 splash_potion{strong_swiftness}*3 dragon_breath
+c tipped_arrow{strong_swiftness} 8 arrow*8 lingering_potion{strong_swiftness}
+b lingering_potion{slowness} 3 splash_potion{slowness}*3 dragon_breath
+c tipped_arrow{slowness} 8 arrow*8 lingering_potion{slowness}
+b lingering_potion{long_slowness} 3 splash_potion{long_slowness}*3 dragon_breath
+c tipped_arrow{long_slowness} 8 arrow*8 lingering_potion{long_slowness}
+b lingering_potion{strong_slowness} 3 splash_potion{strong_slowness}*3 dragon_breath
+c tipped_arrow{strong_slowness} 8 arrow*8 lingering_potion{strong_slowness}
+b lingering_potion{turtle_master} 3 splash_potion{turtle_master}*3 dragon_breath
+c tipped_arrow{turtle_master} 8 arrow*8 lingering_potion{turtle_master}
+b lingering_potion{long_turtle_master} 3 splash_potion{long_turtle_master}*3 dragon_breath
+c tipped_arrow{long_turtle_master} 8 arrow*8 lingering_potion{long_turtle_master}
+b lingering_potion{strong_turtle_master} 3 splash_potion{strong_turtle_master}*3 dragon_breath
+c tipped_arrow{strong_turtle_master} 8 arrow*8 lingering_potion{strong_turtle_master}
+b lingering_potion{water_breathing} 3 splash_potion{water_breathing}*3 dragon_breath
+c tipped_arrow{water_breathing} 8 arrow*8 lingering_potion{water_breathing}
+b lingering_potion{long_water_breathing} 3 splash_potion{long_water_breathing}*3 dragon_breath
+c tipped_arrow{long_water_breathing} 8 arrow*8 lingering_potion{long_water_breathing}
+b lingering_potion{healing} 3 splash_potion{healing}*3 dragon_breath
+c tipped_arrow{healing} 8 arrow*8 lingering_potion{healing}
+b lingering_potion{strong_healing} 3 splash_potion{strong_healing}*3 dragon_breath
+c tipped_arrow{strong_healing} 8 arrow*8 lingering_potion{strong_healing}
+b lingering_potion{harming} 3 splash_potion{harming}*3 dragon_breath
+c tipped_arrow{harming} 8 arrow*8 lingering_potion{harming}
+b lingering_potion{strong_harming} 3 splash_potion{strong_harming}*3 dragon_breath
+c tipped_arrow{strong_harming} 8 arrow*8 lingering_potion{strong_harming}
+b lingering_potion{poison} 3 splash_potion{poison}*3 dragon_breath
+c tipped_arrow{poison} 8 arrow*8 lingering_potion{poison}
+b lingering_potion{long_poison} 3 splash_potion{long_poison}*3 dragon_breath
+c tipped_arrow{long_poison} 8 arrow*8 lingering_potion{long_poison}
+b lingering_potion{strong_poison} 3 splash_potion{strong_poison}*3 dragon_breath
+c tipped_arrow{strong_poison} 8 arrow*8 lingering_potion{strong_poison}
+b lingering_potion{regeneration} 3 splash_potion{regeneration}*3 dragon_breath
+c tipped_arrow{regeneration} 8 arrow*8 lingering_potion{regeneration}
+b lingering_potion{long_regeneration} 3 splash_potion{long_regeneration}*3 dragon_breath
+c tipped_arrow{long_regeneration} 8 arrow*8 lingering_potion{long_regeneration}
+b lingering_potion{strong_regeneration} 3 splash_potion{strong_regeneration}*3 dragon_breath
+c tipped_arrow{strong_regeneration} 8 arrow*8 lingering_potion{strong_regeneration}
+b lingering_potion{strength} 3 splash_potion{strength}*3 dragon_breath
+c tipped_arrow{strength} 8 arrow*8 lingering_potion{strength}
+b lingering_potion{long_strength} 3 splash_potion{long_strength}*3 dragon_breath
+c tipped_arrow{long_strength} 8 arrow*8 lingering_potion{long_strength}
+b lingering_potion{strong_strength} 3 splash_potion{strong_strength}*3 dragon_breath
+c tipped_arrow{strong_strength} 8 arrow*8 lingering_potion{strong_strength}
+b lingering_potion{weakness} 3 splash_potion{weakness}*3 dragon_breath
+c tipped_arrow{weakness} 8 arrow*8 lingering_potion{weakness}
+b lingering_potion{long_weakness} 3 splash_potion{long_weakness}*3 dragon_breath
+c tipped_arrow{long_weakness} 8 arrow*8 lingering_potion{long_weakness}
+b lingering_potion{slow_falling} 3 splash_potion{slow_falling}*3 dragon_breath
+c tipped_arrow{slow_falling} 8 arrow*8 lingering_potion{slow_falling}
+b lingering_potion{long_slow_falling} 3 splash_potion{long_slow_falling}*3 dragon_breath
+c tipped_arrow{long_slow_falling} 8 arrow*8 lingering_potion{long_slow_falling}
+b lingering_potion{wind_charged} 3 splash_potion{wind_charged}*3 dragon_breath
+c tipped_arrow{wind_charged} 8 arrow*8 lingering_potion{wind_charged}
+b lingering_potion{weaving} 3 splash_potion{weaving}*3 dragon_breath
+c tipped_arrow{weaving} 8 arrow*8 lingering_potion{weaving}
+b lingering_potion{oozing} 3 splash_potion{oozing}*3 dragon_breath
+c tipped_arrow{oozing} 8 arrow*8 lingering_potion{oozing}
+b lingering_potion{infested} 3 splash_potion{infested}*3 dragon_breath
+c tipped_arrow{infested} 8 arrow*8 lingering_potion{infested}

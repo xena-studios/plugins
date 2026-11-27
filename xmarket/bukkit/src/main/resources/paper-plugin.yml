@@ -1,0 +1,28 @@
+# Paper and Folia from 1.19.3 read this instead of plugin.yml; Spigot and older Paper ignore it.
+# The same plugin, with its libraries handed to Paper by the core's loader from the family's
+# cache rather than resolved by Paper from plugin.yml's libraries: at every boot (DECISIONS.md).
+name: xMarket
+version: '${version}'
+main: co.xenastudios.xmarket.bukkit.XMarketBootstrap
+# The core's, relocated into the plugin's package with the rest of it.
+loader: co.xenastudios.xmarket.core.loader.paper.PaperLibraryLoader
+api-version: '1.19'
+folia-supported: true
+description: A server shop, with sell and worth.
+website: https://plugins.xenastudios.co/xmarket/
+authors: [Xena Studios]
+dependencies:
+  server:
+    # Optional: money. xMoney's API and Vault's are called by name, through their own class
+    # loaders, so neither joins xMarket's classpath.
+    xMoney:
+      load: BEFORE
+      required: false
+    Vault:
+      load: BEFORE
+      required: false
+    # Optional: requirements' placeholders, when it's installed.
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true

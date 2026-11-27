@@ -36,6 +36,8 @@ stonecutter parameters {
     constants["container_input"] = current.parsed >= "26.1"
     // 26.1 gave a player's drop and the like a Prediction (the menus).
     constants["item_prediction"] = current.parsed >= "26.1"
+    // 1.21.5 made the player's selected hotbar slot a getter, not a field (xMarket).
+    constants["selected_slot"] = current.parsed >= "1.21.5"
     // 26.1 sends action-bar text with sendOverlayMessage, not displayClientMessage (xTeleport).
     constants["overlay_message"] = current.parsed >= "26.1"
 }

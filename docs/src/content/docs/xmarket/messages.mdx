@@ -1,0 +1,16 @@
+---
+title: Messages
+description: "Every message xMarket sends, in English, with the placeholders each fills in."
+sidebar:
+  order: 5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Every message is in `plugins/xMarket/lang/` (`config/xmarket/lang/` on Fabric), one file per language: `en.yml`, `de.yml`, `es.yml`, `fr.yml`, `pt-BR.yml`, `ru.yml`, `pl.yml` and `zh-CN.yml`. Edit any in place and run `/xmarket reload`. The menus' buttons and lore are messages too. Item names in a menu are each player's own client's; in chat they're written from the item's id.
+
+:::note[The translations are drafts]
+The seven languages besides English were drafted by machine translation and haven't been read by native speakers yet. Corrections are welcome.
+:::
+
+<Reference plugin="xmarket" show="messages" />

@@ -1,0 +1,66 @@
+# One of xMarket's categories: its items, what each costs to buy and what it sells for.
+# Made from xMarket's price list, where every crafted item costs what its recipe does,
+# so nothing can be bought, crafted and sold for a profit (/shop audit checks your edits).
+# Prices are for one item, before the multiplier in config.yml. Leave buy or sell out to
+# stop an item being bought or sold. https://plugins.xenastudios.co/xmarket/price-list/
+name: "<aqua>Ores & minerals"
+icon: diamond
+slot: 14
+currency: money
+items:
+  coal_ore: {buy: 6, sell: 1.8}
+  deepslate_coal_ore: {buy: 6, sell: 1.8}
+  iron_ore: {buy: 22, sell: 6.6}
+  deepslate_iron_ore: {buy: 22, sell: 6.6}
+  copper_ore: {buy: 7, sell: 2.1}
+  deepslate_copper_ore: {buy: 7, sell: 2.1}
+  gold_ore: {buy: 44, sell: 13.2}
+  deepslate_gold_ore: {buy: 44, sell: 13.2}
+  redstone_ore: {buy: 20, sell: 6}
+  deepslate_redstone_ore: {buy: 20, sell: 6}
+  emerald_ore: {buy: 110, sell: 33}
+  deepslate_emerald_ore: {buy: 110, sell: 33}
+  lapis_ore: {buy: 40, sell: 12}
+  deepslate_lapis_ore: {buy: 40, sell: 12}
+  diamond_ore: {buy: 220, sell: 66}
+  deepslate_diamond_ore: {buy: 220, sell: 66}
+  nether_gold_ore: {buy: 12, sell: 3.6}
+  nether_quartz_ore: {buy: 8, sell: 2.4}
+  ancient_debris: {buy: 1000, sell: 300}
+  coal_block: {buy: 45, sell: 13.5}
+  raw_iron_block: {buy: 180, sell: 54}
+  raw_copper_block: {buy: 54, sell: 16.2}
+  raw_gold_block: {buy: 360, sell: 108}
+  amethyst_block: {buy: 40, sell: 12}
+  iron_block: {buy: 180, sell: 54}
+  copper_block: {buy: 54, sell: 16.2}
+  gold_block: {buy: 108, sell: 32.4}
+  diamond_block: {buy: 1800, sell: 540}
+  netherite_block: {buy: 36432, sell: 10929.6}
+  lapis_block: {buy: 72, sell: 21.6}
+  emerald_block: {buy: 900, sell: 270}
+  coal: {buy: 5, sell: 1.5}
+  charcoal: {buy: 4, sell: 1.2}
+  diamond: {buy: 200, sell: 60}
+  emerald: {buy: 100, sell: 30}
+  lapis_lazuli: {buy: 8, sell: 2.4}
+  quartz: {buy: 6, sell: 1.8}
+  amethyst_shard: {buy: 10, sell: 3}
+  raw_iron: {buy: 20, sell: 6}
+  iron_ingot: {buy: 20, sell: 6}
+  raw_copper: {buy: 6, sell: 1.8}
+  copper_ingot: {buy: 6, sell: 1.8}
+  raw_gold: {buy: 40, sell: 12}
+  gold_ingot: {buy: 12, sell: 3.6}
+  netherite_ingot: {buy: 4048, sell: 1214.4}
+  netherite_scrap: {buy: 1000, sell: 300}
+  flint: {buy: 3, sell: 0.9}
+  glowstone_dust: {buy: 4, sell: 1.2}
+  gold_nugget: {buy: 1.34, sell: 0.4}
+  iron_nugget: {buy: 2.23, sell: 0.66}
+  copper_nugget: {buy: 0.67, sell: 0.2}
+  small_amethyst_bud: {buy: 5, sell: 1.5}
+  medium_amethyst_bud: {buy: 8, sell: 2.4}
+  large_amethyst_bud: {buy: 12, sell: 3.6}
+  amethyst_cluster: {buy: 15, sell: 4.5}
+  echo_shard: {buy: 100, sell: 30}

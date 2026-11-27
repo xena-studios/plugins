@@ -133,6 +133,17 @@ public class FabricPlatform(
      */
     public val family: FabricFamily by lazy { FabricFamily(this) }
 
+    @Volatile
+    private var madeMenus: FabricMenus? = null
+
+    /**
+     * The plugin's chest menus ([co.xenastudios.core.common.menu.Menus]), made the first time
+     * they're asked for: a mod that never opens one never loads them. Every one still open is
+     * closed as the server stops, a deposit's items handed to its handler first.
+     */
+    public val menus: FabricMenus
+        get() = madeMenus ?: synchronized(this) { madeMenus ?: FabricMenus({ running }, log).also { madeMenus = it } }
+
     /**
      * Starts hearing chat for the plugin at [priority] among other mods, through Fabric API's
      * message events (DECISIONS.md, "The chat bridge"); nothing listens until this is called.
@@ -239,7 +250,10 @@ public class FabricPlatform(
     init {
         ServerLifecycleEvents.SERVER_STARTING.register { server -> running = server }
         ServerLifecycleEvents.SERVER_STARTED.register { _ -> fire(ServerStartedEvent.TYPE) { ServerStartedEvent() } }
-        ServerLifecycleEvents.SERVER_STOPPING.register { _ -> fire(ServerStoppingEvent.TYPE) { ServerStoppingEvent() } }
+        ServerLifecycleEvents.SERVER_STOPPING.register { _ ->
+            madeMenus?.closeAll()
+            fire(ServerStoppingEvent.TYPE) { ServerStoppingEvent() }
+        }
         ServerLifecycleEvents.SERVER_STOPPED.register { _ ->
             updates?.let { (checker, subscription) -> subscription.cancel(); checker.close() }
             updates = null

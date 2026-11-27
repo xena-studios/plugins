@@ -44,6 +44,9 @@ internal object FakeServer {
     @Volatile var primaryThread: Thread? = null
     @Volatile var scheduler: BukkitScheduler? = null
     @Volatile var players: List<Player> = emptyList()
+    /** What `Bukkit.createInventory` makes in this test (BukkitMenusTest); `null` refuses. */
+    @Volatile var inventories: ((Array<out Any?>) -> Any?)? = null
+    @Volatile var itemFactory: Any? = null
     lateinit var commandMap: SimpleCommandMap
     lateinit var pluginManager: SimplePluginManager
     lateinit var services: SimpleServicesManager
@@ -72,6 +75,8 @@ internal object FakeServer {
             "getWorld" to { _ -> null },
             "getServicesManager" to { _ -> services },
             "getConsoleSender" to { _ -> consoleSender },
+            "getItemFactory" to { _ -> itemFactory ?: throw UnsupportedOperationException("no item factory in this test") },
+            "createInventory" to { args -> inventories?.invoke(args) ?: throw UnsupportedOperationException("no inventories in this test") },
         ),
     )
 
@@ -85,6 +90,8 @@ internal object FakeServer {
         primaryThread = Thread.currentThread()
         scheduler = null
         players = emptyList()
+        inventories = null
+        itemFactory = null
         commandMap = SimpleCommandMap(server)
         pluginManager = SimplePluginManager(server, commandMap)
         services = SimpleServicesManager()

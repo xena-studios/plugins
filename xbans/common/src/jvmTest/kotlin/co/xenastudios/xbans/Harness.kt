@@ -172,6 +172,8 @@ class Harness(
     config: String = "",
     network: Boolean = false,
     val platform: TestPlatform = TestPlatform(if (server.proxy) Threading.PROXY else Threading.MAIN_THREAD),
+    /** The proxy layer's channel, from a FakeNetwork, for tests of the proxy's fast path. */
+    channel: ((Platform) -> co.xenastudios.core.common.proxy.ProxyChannel)? = null,
 ) {
     private var text = config
     private val files = Files {
@@ -188,7 +190,7 @@ class Harness(
             }
     }
 
-    val plugin: XBansPlugin = XBansPlugin(platform, server, files, server, server, null, opener).also {
+    val plugin: XBansPlugin = XBansPlugin(platform, server, files, server, server, null, opener, channel = channel?.invoke(platform)).also {
         it.networkOnAnyDatabase = network
     }
 

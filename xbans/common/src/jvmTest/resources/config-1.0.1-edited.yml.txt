@@ -1,0 +1,442 @@
+# xBans: bans, mutes and warnings, the LiteBans way.
+# Docs: https://plugins.xenastudios.co/xbans/configuration/
+#
+# Apply changes with /xbans reload. A bad value falls back to its default with a
+# warning in the console; xBans never stops over config. All text is MiniMessage:
+# https://plugins.xenastudios.co/start/formatting/
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# The look xBans' messages share. The default messages use these as tags, so changing
+# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
+# <#EB2F4A>, or <gold><bold>.
+theme:
+  # <prefix> starts the default messages. Make it your server's name, such as
+  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+  prefix: "<gold>[Bans]</gold> "
+  # The colour of message text that has no tag of its own.
+  base: "<gray>"
+  # <highlight>: names and values, such as a player or a speed.
+  highlight: "<#EB2F4A>"
+  # <success>: something turned on or done.
+  success: "<#5EE08A>"
+  # <error>: something refused or turned off.
+  error: "<#FF6B6B>"
+
+# What punished players see. <reason>, <staff>, <id>, <expires> (a date), <time-left>,
+# <duration> and <appeal> (appeal-link below) work in each.
+screens:
+  # A permanent ban, shown when they're kicked and each time they try to join.
+  ban: "<red>Banned: <reason>, by <staff>. Appeal at <appeal>"
+  temp-ban: "<#FF6B6B><bold>You are banned from this server.</bold>\n\n<gray>Reason: <white><reason>\n<gray>Ends in <white><time-left></white> (<expires>)\n\n<gray>Appeal at <white><appeal></white>\n<dark_gray>ID #<id>"
+  # A ban on their IP rather than their account.
+  ip-ban: "<#FF6B6B><bold>Your IP is banned from this server.</bold>\n\n<gray>Reason: <white><reason>\n<gray>Ends: <white><expires>\n\n<gray>Appeal at <white><appeal></white>\n<dark_gray>ID #<id>"
+  kick: "<#EB2F4A><bold>You were kicked.</bold>\n\n<gray>Reason: <white><reason>"
+  # <appeal> in the screens.
+  appeal-link: "https://forum.example.net/appeals"
+  # Shown when they can't join because xBans is still loading its bans (only in the first
+  # seconds after a start, or while the database can't be reached at startup).
+  not-ready: "<#EB2F4A>The server is still starting.</#EB2F4A>\n<gray>Try again in a few seconds."
+  # Told to a muted player who tries to chat.
+  muted: "<prefix><error>You're muted:</error> <reason>"
+  temp-muted: "<prefix><error>You're muted</error> for <highlight><time-left></highlight>: <reason>"
+  # Told to a player when they're muted, warned or unmuted, if they're online.
+  you-were-muted: "<prefix><error>You were muted</error> by <highlight><staff></highlight> <duration>: <reason>"
+  you-were-warned: "<prefix><error>You were warned</error> by <highlight><staff></highlight>: <reason>"
+  you-were-unmuted: "<prefix><success>You can chat again.</success>"
+
+# Told to the server when someone is punished. <player>, <staff>, <reason>, <duration>
+# ("for 7d" or "permanently", from the words below) and <id>. Silent punishments (-s)
+# go only to staff with xbans.notify.silent, with silent-prefix in front.
+broadcasts:
+  ban: "<prefix><highlight><staff></highlight> banned <highlight><player></highlight> <duration>: <reason>"
+  ip-ban: "<prefix><highlight><staff></highlight> IP-banned <highlight><player></highlight> <duration>: <reason>"
+  mute: "<prefix><highlight><staff></highlight> muted <highlight><player></highlight> <duration>: <reason>"
+  ip-mute: "<prefix><highlight><staff></highlight> IP-muted <highlight><player></highlight> <duration>: <reason>"
+  warn: "<prefix><highlight><staff></highlight> warned <highlight><player></highlight>: <reason>"
+  kick: "<prefix><highlight><staff></highlight> kicked <highlight><player></highlight>: <reason>"
+  unban: "<prefix><highlight><staff></highlight> unbanned <highlight><player></highlight>."
+  unmute: "<prefix><highlight><staff></highlight> unmuted <highlight><player></highlight>."
+  unwarn: "<prefix><highlight><staff></highlight> removed a warning from <highlight><player></highlight>."
+  silent-prefix: "<dark_gray>[Silent]</dark_gray> "
+  # <duration> for a permanent punishment, and for one with an end (<time> is how long).
+  permanently: "permanently"
+  for-time: "for <time>"
+  # Told to staff with xbans.notify.banned-join when a banned player tries to join. <player>,
+  # <reason>. Blank for none.
+  banned-join: "<prefix><highlight><player></highlight> tried to join but is banned: <reason>"
+  # Told to staff with xbans.notify.alts when a player joins who shares an IP with a banned
+  # account. <player>, and <alts>: the banned accounts. Blank for none.
+  alt-join: "<prefix><highlight><player></highlight> shares an IP with banned <highlight><alts></highlight>."
+
+# Replies to staff, and lookups.
+messages:
+  error:
+    # The console or a command block ran a command only players can use.
+    player-only: "<prefix><error>Only players can use this command."
+    # The sender lacks the command's permission.
+    no-permission: "<prefix><error>You don't have permission to do that."
+    # No online player has that name. <player> is the name typed.
+    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
+    # The command was typed wrong. <usage> is how to type it.
+    usage: "<prefix><error>Usage:</error> <usage>"
+    # The command hit an error. The console has the details.
+    failed: "<prefix><error>Something went wrong. The console has the details."
+  # xBans is still opening its database, just after a start.
+  not-ready: "<prefix>Hang on, xBans is loading."
+  # <player> is the name typed.
+  never-joined: "<prefix><error><highlight><player></highlight> has never joined this server."
+  bad-ip: "<prefix><error>That isn't an IP address."
+  # <player>'s IP isn't known (they haven't joined since IPs were recorded).
+  no-ip: "<prefix><error>xBans doesn't know <highlight><player></highlight>'s IP yet."
+  # IP commands are off because ips.enabled is false.
+  ips-off: "<prefix><error>IP punishments are off on this server."
+  # <input> isn't a length of time.
+  bad-duration: "<prefix><error><highlight><input></highlight> isn't a length of time.</error> Use 30m, 1d12h, 2mo or perm."
+  # <player> is already banned or muted, longer than this would. <expires> is when it ends.
+  already-banned: "<prefix><error><highlight><player></highlight> is already banned until <expires>.</error> Unban them first to shorten it."
+  already-muted: "<prefix><error><highlight><player></highlight> is already muted until <expires>.</error> Unmute them first to shorten it."
+  not-banned: "<prefix><error><highlight><player></highlight> isn't banned."
+  not-muted: "<prefix><error><highlight><player></highlight> isn't muted."
+  no-warnings: "<prefix><error><highlight><player></highlight> has no active warnings."
+  # <id> isn't a punishment, or isn't one this command can revoke.
+  no-such-id: "<prefix><error>There's no punishment <highlight>#<id></highlight> to do that to."
+  # <player> has xbans.exempt.
+  exempt: "<prefix><error><highlight><player></highlight> can't be punished."
+  # <player>'s weight (xbans.weight.<n>) is as high as the sender's or higher.
+  outranks: "<prefix><error><highlight><player></highlight> outranks you."
+  # Revoking a punishment made by someone whose weight was higher than the sender's (the
+  # console's is highest), or replacing one with a ban or mute that's no longer. Staff can
+  # always revoke their own; xbans.unban.override revokes any. <player>, <expires>, <id>.
+  cant-lift: "<prefix><error>That was given by someone who outranks you.</error> <dark_gray>#<id>"
+  # Over the sender's staff-limits. <max> is the longest they may give.
+  over-limit: "<prefix><error>You can give at most <highlight><max></highlight>."
+  # /tempban or /tempmute with a template whose next step is permanent. <template> is its name.
+  temp-permanent: "<prefix><error>The <highlight><template></highlight> template's next step is permanent, so it needs /ban or /mute."
+  # A template's permission is missing. <template> is its name.
+  template-no-permission: "<prefix><error>You can't use the <highlight><template></highlight> template."
+  # Choosing a server: needs xbans.scope.
+  scope-no-permission: "<prefix><error>You can't choose the server."
+  extra-silent-no-permission: "<prefix><error>You can't use -S."
+  # Another plugin stopped the punishment.
+  cancelled: "<prefix><error>Another plugin stopped that."
+  # Couldn't be saved. The console says why.
+  failed: "<prefix><error>That couldn't be saved.</error> The console says why."
+  # /prunehistory. <count> entries of <player>'s were removed.
+  pruned: "<prefix><success>Removed</success> <highlight><count></highlight> inactive entries from <player>'s history."
+  # /prunehistory without confirming. <count> would be removed.
+  prune-confirm: "<prefix>That removes <highlight><count></highlight> inactive entries from <player>'s history for good. Run it again with <highlight>confirm</highlight> on the end."
+  # /history and /staffhistory. <player>, <count>.
+  history-header: "<prefix><highlight><player></highlight>'s history (<count>):"
+  staff-history-header: "<prefix>Punishments by <highlight><player></highlight> (<count>):"
+  # One punishment in a list. <id>, <date>, <type> (from types below), <player>, <staff>,
+  # <reason>, <length> ("7d", "permanent"), <status> (from the words below), <scope>.
+  history-line: "<dark_gray>#<id></dark_gray> <gray><date></gray> <type> <highlight><player></highlight> <dark_gray>·</dark_gray> <length> <dark_gray>·</dark_gray> <white><reason></white> <dark_gray>by</dark_gray> <staff> <status>"
+  history-empty: "<prefix>Nothing found."
+  footer: "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>"
+
+  # <status> words. <time> is how long is left; <staff> who revoked it.
+  status:
+    active: "<#5EE08A>(active, <time> left)</#5EE08A>"
+    ended: "<dark_gray>(ended)</dark_gray>"
+    revoked: "<dark_gray>(revoked by <staff>)</dark_gray>"
+    kick: ""
+  types:
+    ban: "<#FF6B6B>Ban</#FF6B6B>"
+    ip-ban: "<#FF6B6B>IP ban</#FF6B6B>"
+    mute: "<#FFB86B>Mute</#FFB86B>"
+    ip-mute: "<#FFB86B>IP mute</#FFB86B>"
+    warn: "<#F5D76B>Warn</#F5D76B>"
+    kick: "<#B48CFF>Kick</#B48CFF>"
+  # /checkban and /checkmute: a line per active one, then its details.
+  check-none: "<prefix><highlight><player></highlight> has nothing active of that kind."
+  check: "<prefix><type> <highlight>#<id></highlight> on <highlight><player></highlight>, <length>, ends <expires>\n<gray>Reason: <white><reason></white>\n<gray>By <staff> on <date>, scope <scope>"
+  # /warnings. <player>, <count> active.
+  warnings-header: "<prefix><highlight><player></highlight> has <count> active warnings:"
+  warnings-none: "<prefix><highlight><player></highlight> has no active warnings."
+  # /banlist and /mutelist. <count> on this server.
+  banlist-header: "<prefix>Banned on this server (<count>):"
+  mutelist-header: "<prefix>Muted on this server (<count>):"
+  list-empty: "<prefix>Nobody."
+  # /alts. <player>, <count>. Each account: <name>, with <state> from alt-states (banned,
+  # muted, online or offline).
+  alts-header: "<prefix>Accounts sharing an IP with <highlight><player></highlight> (<count>):"
+  alts-line: "<gray>- <name> <state>"
+  alts-none: "<prefix><highlight><player></highlight> shares no IP with anyone."
+  alt-states:
+    banned: "<#FF6B6B>(banned)</#FF6B6B>"
+    muted: "<#FFB86B>(muted)</#FFB86B>"
+    online: "<#5EE08A>(online)</#5EE08A>"
+    offline: ""
+  # /iphistory. <player>, <count>. Each line: <ip>, <first>, <last> (dates).
+  ip-history-header: "<prefix><highlight><player></highlight>'s IPs (<count>):"
+  ip-history-line: "<gray>- <white><ip></white>, first <first>, last <last>"
+  ip-history-none: "<prefix>No IPs recorded for <highlight><player></highlight>."
+  imports:
+    # A dry run. <source>, <bans>, <mutes>, <warnings>, <kicks>, <players> found.
+    counted: "<prefix>Found in <highlight><source></highlight>: <bans> bans, <mutes> mutes, <warnings> warnings, <kicks> kicks and <players> players. Nothing was imported yet: run it again with <highlight>confirm</highlight> on the end."
+    started: "<prefix>Importing from <highlight><source></highlight>…"
+    # <source>, <added> new punishments, <skipped> already imported.
+    done: "<prefix><success>Imported</success> <highlight><added></highlight> punishments from <source> (<skipped> already there)."
+    # <reason> it couldn't.
+    failed: "<prefix><error>Couldn't import:</error> <reason>"
+    # A dry run or an import that found LiteBans wildcard IP bans (192.168.1.*), which aren't imported. <count>.
+    wildcards: "<prefix><highlight><count></highlight> wildcard IP bans (such as 192.168.1.*) aren't imported: xBans bans whole addresses only."
+    running: "<prefix><error>An import is already running."
+    # <sources>: the ones xBans knows.
+    unknown-source: "<prefix><error>Import from what?</error> One of: <sources>"
+
+# Each command can be turned off (it isn't registered, so another plugin can have its
+# name), given aliases, or a different permission. xBans takes over vanilla /ban,
+# /pardon, /ban-ip, /pardon-ip, /kick and /banlist, and gives them back when its own
+# are off.
+commands:
+  ban:
+    enabled: true
+    aliases: []
+    permission: "xbans.ban"
+  tempban:
+    enabled: true
+    aliases: []
+    permission: "xbans.tempban"
+  ipban:
+    enabled: true
+    aliases: ["banip", "ban-ip"]
+    permission: "xbans.ipban"
+  tempipban:
+    enabled: true
+    aliases: ["tempbanip"]
+    permission: "xbans.ipban"
+  unban:
+    enabled: true
+    aliases: ["pardon", "unbanip", "pardon-ip"]
+    permission: "xbans.unban"
+  mute:
+    enabled: true
+    aliases: []
+    permission: "xbans.mute"
+  tempmute:
+    enabled: true
+    aliases: []
+    permission: "xbans.tempmute"
+  ipmute:
+    enabled: true
+    aliases: ["muteip"]
+    permission: "xbans.ipmute"
+  tempipmute:
+    enabled: true
+    aliases: ["tempmuteip"]
+    permission: "xbans.ipmute"
+  unmute:
+    enabled: true
+    aliases: ["unmuteip"]
+    permission: "xbans.unmute"
+  warn:
+    enabled: true
+    aliases: []
+    permission: "xbans.warn"
+  unwarn:
+    enabled: true
+    aliases: []
+    permission: "xbans.unwarn"
+  kick:
+    enabled: true
+    aliases: []
+    permission: "xbans.kick"
+  history:
+    enabled: true
+    aliases: ["hist"]
+    permission: "xbans.history"
+  staffhistory:
+    enabled: true
+    aliases: ["staffhist"]
+    permission: "xbans.staffhistory"
+  checkban:
+    enabled: true
+    aliases: []
+    permission: "xbans.checkban"
+  checkmute:
+    enabled: true
+    aliases: []
+    permission: "xbans.checkmute"
+
+  # Players see their own warnings with this; others' need xbans.warnings.others.
+  warnings:
+    enabled: true
+    aliases: []
+    permission: "xbans.warnings"
+  banlist:
+    enabled: true
+    aliases: []
+    permission: "xbans.banlist"
+  mutelist:
+    enabled: true
+    aliases: []
+    permission: "xbans.mutelist"
+  prunehistory:
+    enabled: true
+    aliases: []
+    permission: "xbans.prunehistory"
+
+  # Accounts that share an IP with a player: LiteBans' /dupeip.
+  alts:
+    enabled: true
+    aliases: ["dupeip", "checkalts"]
+    permission: "xbans.alts"
+  iphistory:
+    enabled: true
+    aliases: []
+    permission: "xbans.iphistory"
+
+# How punishing works.
+punishing:
+  # The reason when none is given.
+  default-reason: "Breaking the rules"
+  # Punishments are silent (-s) unless -p (public) is given.
+  silent-by-default: false
+
+# What a mute blocks besides chat.
+mutes:
+  # Commands a muted player can't use. Aliases and namespaced forms (/essentials:msg) are
+  # blocked too.
+  blocked-commands: ["msg", "tell", "w", "whisper", "r", "reply", "me", "say", "mail", "m", "t", "pm", "dm", "message", "teammsg", "tm"]
+  # Muted players can't write on signs.
+  block-signs: true
+  # Muted players can't write or sign books.
+  block-books: true
+  # Muted players can't rename items on an anvil.
+  block-anvils: true
+
+warnings:
+  # How long a warning lasts when /warn isn't given a duration.
+  default-duration: "30d"
+
+  # Commands the console runs when a player reaches a number of active warnings. <player>
+  # is their name; each key is the count.
+  actions:
+    3:
+      commands: ["tempmute <player> 1h -s Reached 3 warnings"]
+    5:
+      commands: ["tempban <player> 1d -s Reached 5 warnings"]
+
+# Templates: /ban Steve hacking follows the "hacking" template. Each time the same
+# player gets the same template, the next step of its ladder applies (the last step
+# repeats). type is ban, mute or warn. A past punishment counts toward the ladder
+# until expire-ladder has passed since it was made, unless it was revoked. ip makes
+# it an IP punishment. A template's permission is needed to use it (blank:
+# xbans.template.<name>); operators have it. Its lengths are held to the sender's
+# staff-limits like typed ones, unless they have xbans.limit.bypass-templates.
+templates:
+  hacking:
+    type: "ban"
+    reason: "Hacking"
+    ladder: ["1w", "30d", "permanent"]
+    expire-ladder: "180d"
+    ip: false
+    silent: false
+    permission: "xbans.template.hacking"
+  spam:
+    type: "mute"
+    reason: "Spamming"
+    ladder: ["1h", "1d", "1w"]
+    expire-ladder: "180d"
+    ip: false
+    silent: false
+    permission: "xbans.template.spam"
+  language:
+    type: "warn"
+    reason: "Inappropriate language"
+    ladder: ["30d"]
+    expire-ladder: "180d"
+    ip: false
+    silent: false
+    permission: "xbans.template.language"
+
+# Who can punish whom, and for how long.
+staff-limits:
+  # Weights: a player with xbans.weight.<n> can only be punished by someone with a higher
+  # weight. Players without one can be punished by anyone with the command. A player's
+  # weight is the one they had when they last joined, if they're offline.
+  weights: true
+
+  # Longest ban and mute each group may give. A staff member with a group's permission
+  # gets its limits; with several, the longest. Staff in no group have none. The
+  # permissions aren't given to operators by default.
+  groups:
+    helper:
+      permission: "xbans.limit.helper"
+      ban: "1d"
+      mute: "1d"
+    moderator:
+      permission: "xbans.limit.moderator"
+      ban: "30d"
+      mute: "30d"
+
+# IP addresses: for IP bans and mutes, /alts and /iphistory. IP addresses are personal
+# data: see https://plugins.xenastudios.co/xbans/privacy/
+ips:
+  # Record players' IPs. Off: no IP bans or mutes, /alts or /iphistory, and nothing is
+  # stored.
+  enabled: true
+  # Store a salted hash instead of the IP: alts and IP bans still work, but there's no list
+  # of addresses to leak. The salt is in ip-salt.txt in xBans' folder; copy it to every
+  # server of a network, and turn it on with every server stopped. Once on, it stays on
+  # for that database: addresses already stored are hashed. A lost salt: see the privacy
+  # page (reset-ip-salt.txt).
+  hash: false
+  # Tell staff when a player joins who shares an IP with a banned account.
+  alt-alerts: true
+
+# Server scopes, for networks: a punishment can apply on every server (global) or on one.
+# /ban Steve server:survival bans Steve on survival only.
+scopes:
+  # This server's name, for server:<name>. Each server of a network needs its own.
+  server-name: "server"
+  # global: punishments apply on every server unless server: says otherwise. local: on this one.
+  default-scope: "global"
+
+# Lists: /history, /staffhistory, /warnings, /banlist, /mutelist, /alts.
+lists:
+  per-page: 10
+  # How dates are written, as in Java's DateTimeFormatter. The server's time zone.
+  date-format: "yyyy-MM-dd HH:mm"
+
+# Where punishments are kept. sqlite needs nothing set up. Networks point every server
+# at the same MySQL or MariaDB database and turn network on. A change here applies on
+# reload: the new database's bans are loaded before it's used.
+storage:
+  # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
+  # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  type: "sqlite"
+  # Put in front of every table's name, so plugins and servers can share one database.
+  table-prefix: "xbans_"
+
+  # Only for type: mysql.
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "minecraft"
+    username: "minecraft"
+    password: ""
+    # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
+    properties: ""
+
+# Network mode: a ban made on one server kicks the player from the others and reaches
+# their ban lists within check-every seconds.
+network:
+  # On when several servers share this plugin's MySQL or MariaDB database, so a change
+  # made on one (a ban, a payment) reaches the others within a few seconds.
+  # Leave it off for a single server: it does nothing on SQLite.
+  enabled: false
+  # Seconds between checks for the other servers' changes.
+  check-every: 3
+
+# Tells you when a new version is out.
+update-checker:
+  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
+  # only the plugin version, the platform and the Minecraft version.
+  enabled: true
+  # Logged, and shown to admins when they join, when a newer version is out.
+  # <plugin>, <current>, <latest> and <url> are filled in.
+  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"

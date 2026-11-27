@@ -1,7 +1,7 @@
 name: Boot
 
 # The rewrite's boot matrix (ROADMAP.md, "Build, CI and releases"): xSample, the core's sample
-# plugin, and each rewritten plugin (xUtilities, zChat, xMoney, xTeleport) on real servers of every platform they ship
+# plugin, and each rewritten plugin (xUtilities, zChat, xMoney, xTeleport, xBans) on real servers of every platform they ship
 # for, and the family test, xSample, xTwin and the rewritten plugins on one server. The Plugins workflow
 # boots today's plugins; this one boots the rewrite.
 #
@@ -122,8 +122,8 @@ jobs:
           echo "fabric=$(pick fabric "$fabric")" | tee -a "$GITHUB_OUTPUT"
           echo "proxy=$(pick proxy "$proxy")" | tee -a "$GITHUB_OUTPUT"
 
-  # xSample's, xTwin's, xUtilities', zChat's, xMoney's and xTeleport's Bukkit jars (with xMoney's two
-  # test plugins), once for every Bukkit cell.
+  # xSample's, xTwin's, xUtilities', zChat's, xMoney's, xTeleport's and xBans' Bukkit jars (with xMoney's
+  # two test plugins), once for every Bukkit cell.
   build-bukkit:
     needs: changes
     if: needs.changes.outputs.bukkit != '[]'
@@ -144,9 +144,9 @@ jobs:
       # gradle/jar-budgets.txt.
       - run: >-
           ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble :xutilities:bukkit:assemble :zchat:bukkit:assemble
-          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble
+          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble
           :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget :zchat:bukkit:checkJarBudget
-          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget
+          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: bukkit-jars
@@ -160,6 +160,7 @@ jobs:
             xmoney/vault-consumer/build/libs/vault-consumer.jar
             xmoney/hook-consumer/build/libs/hook-consumer.jar
             xteleport/bukkit/build/r8/xTeleport.jar
+            xbans/bukkit/build/r8/xBans.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -198,7 +199,7 @@ jobs:
           path: core/platform-fabric/build/libs/*.jar
           if-no-files-found: error
 
-  # xSample's and zChat's proxy jars, and their Bukkit jars for the backends, once for every proxy cell.
+  # xSample's, zChat's and xBans' proxy jars, and their Bukkit jars for the backends, once for every proxy cell.
   build-proxy:
     needs: changes
     if: needs.changes.outputs.proxy != '[]'
@@ -218,8 +219,9 @@ jobs:
       - run: >-
           ./gradlew :core:core-testing:sample:velocity:assemble :core:core-testing:sample:bungee:assemble :core:core-testing:sample:bukkit:assemble
           :zchat:velocity:assemble :zchat:bungee:assemble :zchat:bukkit:assemble
+          :xbans:velocity:assemble :xbans:bungee:assemble :xbans:bukkit:assemble
           :core:core-testing:sample:velocity:checkJarBudget :core:core-testing:sample:bungee:checkJarBudget
-          :zchat:velocity:checkJarBudget :zchat:bungee:checkJarBudget
+          :zchat:velocity:checkJarBudget :zchat:bungee:checkJarBudget :xbans:velocity:checkJarBudget :xbans:bungee:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: proxy-jars
@@ -230,6 +232,9 @@ jobs:
             zchat/velocity/build/r8/zChat-Velocity.jar
             zchat/bungee/build/r8/zChat-Bungee.jar
             zchat/bukkit/build/r8/zChat.jar
+            xbans/velocity/build/r8/xBans-Velocity.jar
+            xbans/bungee/build/r8/xBans-Bungee.jar
+            xbans/bukkit/build/r8/xBans.jar
           if-no-files-found: error
 
   bukkit:
@@ -365,7 +370,7 @@ jobs:
         run: |
           for jar in xmoney/bukkit/build/r8/xMoney.jar xmoney/vault-consumer/build/libs/vault-consumer.jar \
                      xmoney/hook-consumer/build/libs/hook-consumer.jar zchat/bukkit/build/r8/zChat.jar \
-                     xteleport/bukkit/build/r8/xTeleport.jar; do
+                     xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar; do
             [[ -f $jar ]] || { echo "::error::$jar is missing: the bukkit-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/*' | head -20; exit 1; }
           done
       # xMoney beside vault-consumer (a plugin.yml plugin that depends on Vault) and, on Paper and
@@ -420,7 +425,30 @@ jobs:
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xteleport/bukkit/xmoney-client-checks.txt)
           xteleport/bukkit/boot.sh "${target[@]}" "${xmoney[@]}" --java "$JAVA" "${args[@]}"
-      # The family test: xTwin, xUtilities, zChat and xTeleport beside xSample, each with its own relocated core,
+      # xBans alone: every command from the console, a ban's life, the imports' dry runs, a reload and
+      # debug; on a `family` or `client` cell beside zChat, which asks xBans who's muted
+      # (xbans/bukkit/zchat-checks.txt); on a `client` cell also two real clients: a tempban that
+      # kicks Friend and keeps them out until it ends, a mute stopping their chat and zChat's /msg,
+      # a kick, and Joiner's replies in German (xbans/bukkit/zchat-client-checks.txt).
+      - name: boot xBans
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+          SEED: ${{ matrix.cell.seed }}
+          REGIONS: ${{ matrix.cell.regions }}
+          CLIENT: ${{ matrix.cell.client }}
+          FAMILY: ${{ matrix.cell.family }}
+        run: |
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          # boot.sh takes --zchat right after the server.
+          zchat=()
+          [[ $CLIENT != true && $FAMILY != true ]] || zchat=(--zchat)
+          args=()
+          [[ -z $SEED ]] || args+=(--seed "$SEED")
+          [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xbans/bukkit/zchat-client-checks.txt)
+          xbans/bukkit/boot.sh "${target[@]}" "${zchat[@]}" --java "$JAVA" "${args[@]}"
+      # The family test: xTwin, xUtilities, zChat, xTeleport and xBans beside xSample, each with its own relocated core,
       # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),
       # and each answering its own commands.
       - name: family test
@@ -432,9 +460,9 @@ jobs:
           if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
             --checks core/core-testing/twin/family-checks.txt --checks xutilities/bukkit/boot-checks.txt --checks zchat/bukkit/boot-checks.txt \
-            --checks xteleport/bukkit/boot-checks.txt \
+            --checks xteleport/bukkit/boot-checks.txt --checks xbans/bukkit/boot-checks.txt \
             core/core-testing/twin/bukkit/build/r8/XTwin.jar xutilities/bukkit/build/r8/xUtilities.jar zchat/bukkit/build/r8/zChat.jar \
-            xteleport/bukkit/build/r8/xTeleport.jar
+            xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar
       # The runtime budgets are the `budgets` job's, on a server of their own: a boot test's
       # server is shared with its checks, which would skew the numbers.
       - if: failure()
@@ -472,7 +500,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # upload-artifact keeps files relative to the folder they share, which for these jars
-      # (the sample's and zChat's) is the repo's root, so they go back there. The check after
+      # (the sample's, zChat's and xBans') is the repo's root, so they go back there. The check after
       # names a jar that isn't where the boots look, should that folder ever change.
       - uses: actions/download-artifact@v8
         with:
@@ -484,7 +512,8 @@ jobs:
                      core/core-testing/sample/bungee/build/r8/XSample-Bungee.jar \
                      core/core-testing/sample/bukkit/build/r8/XSample.jar \
                      zchat/velocity/build/r8/zChat-Velocity.jar zchat/bungee/build/r8/zChat-Bungee.jar \
-                     zchat/bukkit/build/r8/zChat.jar; do
+                     zchat/bukkit/build/r8/zChat.jar xbans/velocity/build/r8/xBans-Velocity.jar \
+                     xbans/bungee/build/r8/xBans-Bungee.jar xbans/bukkit/build/r8/xBans.jar; do
             [[ -f $jar ]] || { echo "::error::$jar is missing: the proxy-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/r8*' | head -20; exit 1; }
           done
       # What will boot, for the cache key: the proxy's version and build (and the Java it needs),
@@ -592,6 +621,33 @@ jobs:
             --backend-plugin zchat/bukkit/build/r8/zChat.jar --two-backends --backend-seed zchat/velocity/network-seed \
             --grant Friend=bungeecord.command.server --jvm -Dxena.debug.paste=false \
             --checks "zchat/$SIDE/network-checks.txt" "zchat/$SIDE/build/r8/zChat-${SIDE^}.jar"
+      # xBans on the proxy alone, with its startup against the budget; then, where the cell has a
+      # backend, the network test: two servers with xBans behind the proxy, all on one MariaDB (a
+      # container network.sh starts), a real client on each: a mute made on lobby stopping chat on
+      # game, a ban made on lobby taking the player off the network and the proxy turning them away
+      # at its door, and an unban letting them back (xbans/<side>/network-checks.txt).
+      - name: boot xBans
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          VERSION: ${{ steps.server.outputs.version }}
+        run: |
+          version=()
+          [[ $VERSION == latest ]] || version=(--version "$VERSION")
+          budget=$(sed -n 's/^startup-first-ms //p' gradle/perf-budgets.txt)
+          scripts/boot-proxy.sh --proxy "$PROXY" "${version[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
+            --checks "xbans/$SIDE/boot-checks.txt" --startup-budget "$budget" "xbans/$SIDE/build/r8/xBans-${SIDE^}.jar"
+      - name: xBans network test
+        if: matrix.cell.backend != ''
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          VERSION: ${{ steps.server.outputs.version }}
+          BACKEND_JAVA: ${{ steps.backend-java.outputs.path }}
+          BACKEND_JAR: ${{ steps.backend-jar.outputs.jar }}
+        run: |
+          version=()
+          [[ $VERSION == latest ]] || version=(--version "$VERSION")
+          xbans/velocity/network.sh "$PROXY" "${version[@]}" --java "$JAVA" --backend "${BACKEND_JAR:-$BACKEND}" \
+            --backend-version "$BACKEND_VERSION" --backend-java "$BACKEND_JAVA"
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
@@ -670,6 +726,13 @@ jobs:
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks xteleport/fabric/boot-checks.txt \
             core/platform-fabric/build/libs/xteleport-fabric-*+"$VERSION".jar
+      - name: boot xBans
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks xbans/fabric/boot-checks.txt \
+            core/platform-fabric/build/libs/xbans-fabric-*+"$VERSION".jar
       # xMoney beside zChat: zChat's formats get xMoney's <balance> through zChat's placeholder seam.
       - name: xMoney beside zChat
         if: matrix.cell.family
@@ -774,6 +837,12 @@ jobs:
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
             --out build/budgets/xteleport \
             xteleport/bukkit/build/r8/xTeleport.jar
+      - name: runtime budgets, xBans (newest Paper)
+        run: |
+          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
+          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
+            --out build/budgets/xbans \
+            xbans/bukkit/build/r8/xBans.jar
       # Its startup is reported, not budgeted: Paper 1.21.11 loads a plugin about 4 times
       # slower than 26.3 on these 2-core runners (its JIT threads and loader, not our code: the
       # server thread spends 6-7 ms of CPU in our enable), and startup is budgeted, failing, on

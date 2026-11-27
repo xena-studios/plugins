@@ -13,7 +13,7 @@ xBans is a punishment plugin for Paper and Folia: bans, temporary bans, IP bans,
 - **Nothing is ever deleted.** An unban is recorded next to the ban, with who, when and why. Only `/prunehistory` deletes, when you ask it to.
 - **Templates and escalation.** `/ban Steve hacking` gives 7 days, then 30, then permanent. Three warnings can mute for an hour. All in the config.
 - **Staff limits.** Weights so helpers can't ban moderators, and longest durations per group.
-- **Easy to switch to.** LiteBans' command syntax: `/ban Steve -s 7d server:survival Hacking`, `/tempmute Alex 1d2h`, `/unban #123`, with silent (`-s`), extra silent (`-S`) and public (`-p`) punishments and server scopes, so staff habits carry over. Your LiteBans, vanilla and EssentialsX bans come across with one command: see [Switching](/xbans/switching/).
+- **Easy to switch to.** LiteBans' command syntax: `/ban Steve -s 7d server:survival Hacking`, `/tempmute Alex 1d2h`, `/unban #123`, with silent (`-s`), extra silent (`-S`) and public (`-p`) punishments and server scopes, so staff habits carry over. Your LiteBans, vanilla and EssentialsX bans come across with one command: see [Switching](/xbans/v1/switching/).
 
 ## You won't feel it running
 
@@ -21,18 +21,18 @@ The join check and the chat check are a couple of lookups in memory each: no dat
 
 ## Storage
 
-SQLite out of the box, in one file in the plugin's folder, or MySQL/MariaDB for networks. No driver is bundled: Paper and Folia already ship them. See [Configuration](/xbans/configuration/).
+SQLite out of the box, in one file in the plugin's folder, or MySQL/MariaDB for networks. No driver is bundled: Paper and Folia already ship them. See [Configuration](/xbans/v1/configuration/).
 
 ## What else it does
 
-- **IP privacy.** IPs can be stored as salted hashes: alts and IP bans still work, with no list of addresses to leak. See [Privacy](/xbans/privacy/).
-- **Networks without a proxy plugin.** Servers that share a MySQL database share bans: a ban on one kicks the player from the others within seconds. See [Networks](/xbans/networks/).
+- **IP privacy.** IPs can be stored as salted hashes: alts and IP bans still work, with no list of addresses to leak. See [Privacy](/xbans/v1/privacy/).
+- **Networks without a proxy plugin.** Servers that share a MySQL database share bans: a ban on one kicks the player from the others within seconds. See [Networks](/xbans/v1/networks/).
 - **Replaces vanilla** `/ban`, `/pardon`, `/ban-ip`, `/pardon-ip`, `/kick` and `/banlist`.
 - **Every change applies on reload**, even switching to another database. No restarts.
 
 ## Getting started
 
 1. [Install it](/start/installing/). It works out of the box with SQLite.
-2. Give your staff the permissions they need: [Commands](/xbans/commands/).
-3. Set up templates, staff limits and what mutes block: [Configuration](/xbans/configuration/).
-4. Coming from LiteBans, EssentialsX or vanilla bans? Bring them: [Switching](/xbans/switching/).
+2. Give your staff the permissions they need: [Commands](/xbans/v1/commands/).
+3. Set up templates, staff limits and what mutes block: [Configuration](/xbans/v1/configuration/).
+4. Coming from LiteBans, EssentialsX or vanilla bans? Bring them: [Switching](/xbans/v1/switching/).

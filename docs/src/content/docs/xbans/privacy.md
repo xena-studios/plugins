@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-xBans keeps punishments and what it needs to enforce them in your own database. Nothing of it leaves your server; network mode only shares it with the other servers that use the same database.
+xBans keeps punishments and what it needs to enforce them in your own database. Nothing of it leaves your server; network mode only shares it with the other servers and the proxy that use the same database.
 
 ## What's stored
 
@@ -40,8 +40,12 @@ Full addresses are shown only to staff with `/iphistory` and `/alts`. An IP ban 
 
 xBans never records loopback addresses (`127.0.0.1`), which are what every player seems to come from behind a proxy that doesn't forward their address. Set up your proxy's forwarding so xBans sees players' real addresses. If many players online share one address, xBans warns in the console that the proxy may not be forwarding them.
 
-## Deleting a player's history
+## Deleting a player's data
 
-`/prunehistory <player> confirm` deletes every punishment of theirs that's no longer in force: ended, revoked, and kicks. With a duration (`/prunehistory Steve 30d confirm`), only those made in that time. Each prune is written to the console: who, whose and how many. Their IP records and name stay; for a full erasure request, delete their rows from the `ips` and `players` tables too, by uuid.
+`/xbans forget <player>` deletes what xBans keeps about a player beyond their punishments: every IP they joined from and their name, by uuid. Their alts can't be found through them afterwards. It's what to run for an erasure request.
+
+**Their punishments stay.** A ban is a record of something they did on your server, kept so they can't come back on it: keeping it is the legitimate interest that lets you keep it (and a ban plugin that let anyone erase their own ban by asking would ban no one). The ban keeps their uuid and the name they had, and the reason staff wrote; what's in a reason is up to your staff. To delete punishments too, see below.
+
+`/prunehistory <player> confirm` deletes every punishment of theirs that's no longer in force: ended, revoked, and kicks. With a duration (`/prunehistory Steve 30d confirm`), only those made in that time. Each prune is written to the console: who, whose and how many. A ban in force is never pruned: lift it first.
 
 See also [Privacy](/start/privacy/) for what every Xena plugin sends.

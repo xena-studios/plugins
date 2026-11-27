@@ -2372,7 +2372,7 @@
             "path": "mutes.block-anvils",
             "type": "boolean",
             "comment": [
-              "Muted players can't rename items on an anvil (Bukkit, 1.9 on)."
+              "Muted players can't rename items on an anvil (Bukkit, from 1.11)."
             ],
             "default": true,
             "defaultText": "true",

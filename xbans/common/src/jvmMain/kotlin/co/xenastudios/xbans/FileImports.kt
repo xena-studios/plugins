@@ -350,7 +350,7 @@ public class FileImports(
      * AdvancedBan's database: every punishment in its `PunishmentHistory`, those still in
      * `Punishments` in force, from MySQL or MariaDB with the settings in
      * `plugins/AdvancedBan/MySQL.yml` (`UseMySQL: true` in its config). Its default HSQLDB file
-     * needs a driver servers don't have, so it's moved to MySQL first, as for LiteBans.
+     * needs a driver servers don't have.
      */
     public class AdvancedBan(private val folder: Path, drivers: Drivers, log: Log) : SqlSource(drivers, log) {
         override val name: String get() = "AdvancedBan"
@@ -359,7 +359,7 @@ public class FileImports(
             val config = folder.resolve("config.yml")
             if (!NioFiles.exists(config)) return Haul.failed("there's no plugins/AdvancedBan/config.yml.")
             if (setting(config, "UseMySQL")?.toBoolean() != true) {
-                return Haul.failed("AdvancedBan uses its own HSQLDB file. xBans reads AdvancedBan from MySQL or MariaDB: set UseMySQL: true in its config, let it move there, then import.")
+                return Haul.failed("AdvancedBan keeps its punishments in its own HSQLDB file, which xBans can't read: it reads AdvancedBan from MySQL or MariaDB (UseMySQL: true in AdvancedBan's config).")
             }
             val mysql = folder.resolve("MySQL.yml")
             if (!NioFiles.exists(mysql)) return Haul.failed("there's no plugins/AdvancedBan/MySQL.yml.")

@@ -172,7 +172,7 @@ mutes:
   block-signs: true
   # Muted players can't write or sign books (Bukkit).
   block-books: true
-  # Muted players can't rename items on an anvil (Bukkit, 1.9 on).
+  # Muted players can't rename items on an anvil (Bukkit, from 1.11).
   block-anvils: true
 
 warnings:

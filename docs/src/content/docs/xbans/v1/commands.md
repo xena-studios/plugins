@@ -40,7 +40,7 @@ Flags can go anywhere after the player's name. Everything after `--` is the reas
 | `-p` | Public, when `punishing.silent-by-default` is on. | |
 | `-g` | Every server: the same as `server:*`. | `xbans.scope` |
 | `-I` | By IP as well, as `/ipban` and `/ipmute` do. | `xbans.ipban` or `xbans.ipmute` |
-| `server:<name>` | Only on that server (see [Networks](/xbans/networks/)). `server:*`, `server:global` or `server:all` for every server, `server:local` or `server:this` for this one. | `xbans.scope` |
+| `server:<name>` | Only on that server (see [Networks](/xbans/v1/networks/)). `server:*`, `server:global` or `server:all` for every server, `server:local` or `server:this` for this one. | `xbans.scope` |
 
 ```
 /ban Bob -s 10d server:survival Cheating
@@ -64,7 +64,7 @@ A number and a unit, units added up in any order: `30m`, `1d2h`, `1.5h`, `2w`, `
 
 ### Templates
 
-`/ban Steve hacking` follows the `hacking` template: its reason, and a duration that climbs each time the same player gets it, 7 days, then 30, then permanent. A duration typed with a template (`/ban Steve 3d hacking`) is used instead of the ladder's. Each template needs `xbans.template.<name>` (operators have it), and its durations are held to the sender's staff limits. Templates are set in the [configuration](/xbans/configuration/#templates). Tab completion lists the ones you may use.
+`/ban Steve hacking` follows the `hacking` template: its reason, and a duration that climbs each time the same player gets it, 7 days, then 30, then permanent. A duration typed with a template (`/ban Steve 3d hacking`) is used instead of the ladder's. Each template needs `xbans.template.<name>` (operators have it), and its durations are held to the sender's staff limits. Templates are set in the [configuration](/xbans/v1/configuration/#templates). Tab completion lists the ones you may use.
 
 ### Replacing a punishment
 
@@ -113,7 +113,7 @@ Staff limits apply to everyone on the IP: if any account seen on it, or online o
 
 | Command | What it does | Permission |
 | --- | --- | --- |
-| `/xbans import <vanilla\|essentials\|litebans> [confirm]` | Counts what a source holds, then imports it with `confirm`. See [Switching](/xbans/switching/). | `xbans.admin` |
+| `/xbans import <vanilla\|essentials\|litebans> [confirm]` | Counts what a source holds, then imports it with `confirm`. See [Switching](/xbans/v1/switching/). | `xbans.admin` |
 | `/xbans reload`, `/xbans info` | Reload the config, or show the version and settings. | `xbans.admin` |
 
 ## Staff limits

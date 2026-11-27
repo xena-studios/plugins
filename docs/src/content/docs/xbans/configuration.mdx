@@ -1,22 +1,19 @@
 ---
 title: Configuration
-description: Every setting in xBans' config.yml.
+description: "Every setting in xBans' config.yml, with its default."
 sidebar:
-  order: 3
+  order: 4
 ---
 
-import { Code } from "@astrojs/starlight/components";
-import config from "../../../generated/xbans/config.yml?raw";
+import Reference from "../../../components/reference/Reference.astro";
 
-The config is `plugins/xBans/config.yml`, written on first start. Apply changes with `/xbans reload`: everything applies, even switching to another database.
+The config is `plugins/xBans/config.yml` (`plugins/xbans/` on Velocity, `config/xbans/config.yml` on Fabric), written on first start. Apply changes with `/xbans reload` (`/xbansproxy reload` on the proxy): everything applies, even switching to another database. A bad value falls back to its default with a warning in the console; xBans never stops over config. xBans' messages, the ban screens among them, are in `lang/`: see [Messages](/xbans/messages/).
 
-| Section | What it covers |
+| Section | What it's for |
 | --- | --- |
-| `theme` | The prefix and colours xBans' messages share: see [the theme](/start/formatting/#the-theme). |
-| `screens` | What punished players see: the ban and kick screens, and what a muted player is told. |
-| `broadcasts` | What everyone (or, for silent ones, staff) is told about a punishment. |
-| `messages` | Replies to staff, lookups and imports. |
-| `commands` | Each command on or off, its aliases and permission. |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
+| `screens` | The appeal link the ban screens show. The screens themselves are in `lang/`. |
+| `commands` | Each command's switch, aliases and permission. |
 | `punishing` | The default reason, and whether punishments are silent unless `-p` is given. |
 | `mutes` | Which commands a mute blocks, and signs, books and anvil renames. |
 | `warnings` | How long a warning lasts, and what happens at 3 or 5. |
@@ -25,9 +22,9 @@ The config is `plugins/xBans/config.yml`, written on first start. Apply changes 
 | `ips` | Whether IPs are recorded, hashed, and checked for banned alts. |
 | `scopes` | This server's name, and whether punishments are global or local by default: [Networks](/xbans/networks/). |
 | `lists` | How many to a page, and how dates are written. |
-| `storage` | Where punishments are kept: SQLite in the plugin's folder (`punishments.db`), or MySQL/MariaDB. |
-| `network` | Sharing bans between servers: [Networks](/xbans/networks/). |
-| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+| `storage` | Where punishments are: SQLite in the plugin's folder (`punishments.db`), MySQL/MariaDB, or the family's shared database. |
+| `network` | Sharing bans between servers and the proxy: [Networks](/xbans/networks/). |
+| `updates` | The update checker: [Privacy](/start/privacy/). |
 
 ## Templates
 
@@ -58,7 +55,7 @@ When a player reaches a number of active warnings, the console runs that number'
 
 ## Mutes
 
-`mutes.blocked-commands` lists the commands a muted player can't use. A command's aliases and namespaced forms are blocked too: blocking `msg` blocks `/tell`, `/essentials:msg` and EssentialsX's `/emsg`. Muted players also can't write on signs (`block-signs`) or in books (`block-books`), or rename items on an anvil (`block-anvils`).
+`mutes.blocked-commands` lists the commands a muted player can't use. A command's aliases and namespaced forms are blocked too: blocking `msg` blocks `/tell`, `/essentials:msg` and EssentialsX's `/emsg`. Muted players also can't write on signs (`block-signs`) or in books (`block-books`), or rename items on an anvil (`block-anvils`, from 1.11). On Fabric, Minecraft has no event before a command runs, so a mute blocks Minecraft's `/me` and `/say` and [zChat](/zchat/)'s `/msg` and `/reply` there, and signs, books and anvils not at all.
 
 ## Staff limits
 
@@ -76,12 +73,12 @@ A staff member with a group's permission can't ban or mute for longer than its l
 
 ## Storage
 
-`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) for a network, or point several servers at one database. `table-prefix` goes in front of every table's name.
+`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) for a network, or point several servers at one database; `shared` keeps xBans' tables in the database every Xena plugin can share, set in `plugins/Xena/config.yml`. `table-prefix` goes in front of every table's name. The tables are 1.x's, unchanged, so the [1.x jar](/xbans/upgrade/#going-back-to-101) reads them too.
 
-The database is opened in the background, and every ban and mute in force is read into memory before it's used. Until then, players trying to join wait up to 10 seconds, then see `screens.not-ready`; that's only in the first moments after a start. If the database can't be opened at startup, xBans tries again every 15 seconds, and nobody can join until it opens: a ban plugin that lets everyone in when its database is down would let banned players in too. Changing `storage` on a reload switches to the new database once its bans are loaded; a reload that can't open the new one keeps using the old one. Punishments aren't copied between databases.
+The database is opened in the background, and every ban and mute in force is read into memory before it's used. Until then, players trying to join wait up to 10 seconds, then see the `screens.not-ready` message; that's only in the first moments after a start. If the database can't be opened at startup, xBans tries again every 15 seconds, and nobody can join until it opens: a ban plugin that lets everyone in when its database is down would let banned players in too. Changing `storage` on a reload switches to the new database once its bans are loaded; a reload that can't open the new one keeps using the old one. Punishments aren't copied between databases.
 
-A bad value falls back to its default with a warning in the console.
+## Make it look like your server
 
-## The full default config
+`messages.theme` sets the look of every message xBans sends: a prefix, the text colour, and three styles. Each is `shared` until you set it, which takes the value every Xena plugin shares, in `plugins/Xena/config.yml`. `messages.language` is `auto` by default (through `shared`): each player reads xBans' messages, ban screens included, in their client's language, and the console in `default-language`. A config carried forward from 1.x with messages you'd edited is set to `en`, so your words are what everyone sees, as before.
 
-<Code code={config} lang="yaml" title="plugins/xBans/config.yml" />
+<Reference plugin="xbans" show="config" />

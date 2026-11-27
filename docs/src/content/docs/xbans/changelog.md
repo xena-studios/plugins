@@ -7,6 +7,38 @@ sidebar:
   order: 90
 ---
 
+## 2.0.0 (unreleased)
+
+Not released yet: 2.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 1.0.1 is the release, and 1.x gets its fixes.
+
+The rewrite: the same commands, flags, permissions, settings and punishments as 1.0.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), and **Velocity and BungeeCord**, with xBans' messages and ban screens in eight languages. Keep the 1.0.1 jar to go back to.
+
+### New
+
+- **Bans for the whole network, at the proxy.** With xBans on Velocity or BungeeCord sharing the servers' MySQL database, a banned player is turned away as they log in and never reaches a server; a ban scoped to one server keeps them off that one. A ban or kick made on any server takes the player off the network at once. If the database can't be read, nobody gets in until it can: xBans fails closed, and says so. See [Networks](https://plugins.xenastudios.co/xbans/networks/).
+- **Imports from AdvancedBan** (on MySQL or MariaDB), beside LiteBans, EssentialsX and the server's own lists: `/xbans import advancedban`.
+- **`/xbans forget <player>`** deletes the IPs and name xBans keeps for a player, for an erasure request. Their punishments stay: see [Privacy](https://plugins.xenastudios.co/xbans/privacy/#deleting-a-players-data).
+- **`/xbans debug`** writes a report to share when asking for help.
+- **zChat reads xBans' mutes**, so a muted player can't chat or `/msg` through zChat either, on every server of a network.
+- **Ban screens in the player's language**, the one they last played in, as every other message.
+- **A staff layer in the API** for vanish and moderation plugins: who's staff, staff notifications (with an event that can change who hears them), silent punishments.
+
+### Upgrading from 1.x
+
+Replace the jar and restart. Your `config.yml` is carried forward and the old one is kept beside it as `config.yml.bak-v1`; your punishments, history and IP records stay where they are (`punishments.db`, or your MySQL tables), untouched: 2.0 reads and writes them exactly as 1.x does. See [Upgrading from 1.x](https://plugins.xenastudios.co/xbans/upgrade/).
+
+- **Messages are in `lang/` now**, one file per language, no longer in `config.yml`; the ban screens and broadcasts too. Every message you changed in 1.x is copied into `lang/en.yml` on the first start, and then xBans sends English to everyone (`messages.language: en`), as 1.x did. Set it to `auto` to give each player their own language.
+- **`theme` moved into `messages.theme`**, shared with the other Xena plugins in `plugins/Xena/config.yml` unless you set it here. Colours you changed in 1.x stay xBans' own.
+- The error messages (`messages.error.*`) are the core's now: `core.command.*` in `lang/`. "No player named Alex is online" reads "No player called Alex is online" unless you'd changed it.
+- `update-checker` is `updates` now: `update-checker.enabled` is carried to `updates.check`.
+- **Going back to 1.0.1:** stop the server, put the 1.0.1 jar back, and rename `config.yml.bak-v1` to `config.yml` (keep 2.0's as `config.yml.v2`). Your punishments need nothing: 1.0.1 reads the database as 2.0 left it. If you don't rename the config, 1.0.1 still starts and keeps every setting, with its own default messages.
+
+### For developers: the API's breaking changes
+
+- `XBans.api()` replaces `XBansApi.get()`; it's in Bukkit's services manager as before. Players are `PlayerRef`s (by UUID), so one API works on every platform and the proxies: from Java, `PlayerRefs.of(player.getUniqueId())`.
+- `activeBan` and `activeMute` return the punishment or `null` rather than an `Optional`; `punish` and `pardon` (which replaces `revoke`) complete with a `PunishResult` saying how it ended, rather than failing; `PunishRequest.withDurationMillis` replaces `withDuration`.
+- The events are xBans' own, on `api.getEvents()` (`PunishEvent`, `PunishedEvent`, `PardonEvent`, `PardonedEvent`, `LoginDeniedEvent`, `StaffNotifyEvent`, each with its `TYPE`), and on Bukkit also Bukkit events in `co.xenastudios.xbans.api.bukkit` (`BukkitPunishEvent` and the rest), which replace 1.x's. `RevokedEvent` is `PardonedEvent`.
+
 ## 1.0.1
 
 ### Fixed

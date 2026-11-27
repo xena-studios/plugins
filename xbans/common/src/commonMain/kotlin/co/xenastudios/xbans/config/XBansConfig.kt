@@ -123,7 +123,7 @@ public object XBansConfig : ConfigSchema(
         )
         public val blockSigns: ConfigKey<Boolean> = boolean("block-signs", true, "Muted players can't write on signs (Bukkit).")
         public val blockBooks: ConfigKey<Boolean> = boolean("block-books", true, "Muted players can't write or sign books (Bukkit).")
-        public val blockAnvils: ConfigKey<Boolean> = boolean("block-anvils", true, "Muted players can't rename items on an anvil (Bukkit, 1.9 on).")
+        public val blockAnvils: ConfigKey<Boolean> = boolean("block-anvils", true, "Muted players can't rename items on an anvil (Bukkit, from 1.11).")
     }
 
     public class Warnings(parent: ConfigGroup) : ConfigSection(parent, "warnings") {

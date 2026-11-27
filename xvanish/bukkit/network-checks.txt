@@ -1,0 +1,5 @@
+# xVanish on two servers behind Velocity or BungeeCord, all on one MariaDB with network mode on
+# (xvanish/bukkit/network.sh): real clients, Joiner on lobby, Friend and Watcher on game.
+backend: Network mode: 0 vanished on the network
+game: Network mode: 0 vanished on the network
+# Then the client (network.sh adds it, in the backend's version).

@@ -16,8 +16,8 @@ The first release: vanish for staff on **Paper, Folia, Spigot and CraftBukkit fr
 - **Levels:** `xvanish.see` and `xvanish.level.<n>`; with xBans, its staff see level 1.
 - **Stays on** through relogs, restarts and crashes (`vanished.txt`); `xvanish.join` joins vanished every time.
 - **A held-back first chat message** while vanished, sent when said again.
-- **Networks:** who's vanished shared through one MySQL or MariaDB database.
+- **Networks:** who's vanished shared through one MySQL or MariaDB database: a player vanished on one server switches to the next still hidden, `/vanish list` names those on other servers, staff see them by level there too, and a server that can't reach the database keeps everyone vanished as they were last known.
 - **The family:** zChat, xTeleport and the other Xena plugins leave vanished players out.
 - **For other plugins:** the `vanished` metadata, PlaceholderAPI's `%xvanish_vanished%`, `%xvanish_online%`, `%xvanish_count%` and `%xvanish_level%`, and a developer API with events.
-- **Switching:** `/xvanish import supervanish` and `premiumvanish`, and their `sv.*` and `pv.*` permissions honoured on request.
+- **Switching:** `/xvanish import supervanish` and `premiumvanish`, and their `sv.*` and `pv.*` permissions honoured on request, their layered `sv.use.level<n>` and `sv.see.level<n>` among them.
 - `/xvanish reload`, `debug` and `forget`.

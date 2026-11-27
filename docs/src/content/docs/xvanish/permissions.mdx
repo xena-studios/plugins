@@ -11,6 +11,6 @@ Operators have every permission but `xvanish.join`, which nobody has until it's 
 
 **Levels.** `xvanish.level.<n>`, from 2 up to `vanish.max-level` (5 by default), gives a player level `<n>`; without one it's 1. A vanished player is seen only by players with `xvanish.see` and a level at least theirs, so a level-3 admin stays hidden from level-1 moderators.
 
-**SuperVanish's and PremiumVanish's permissions.** With `vanish.other-plugins-permissions: true`, `sv.use`, `sv.see`, `sv.list`, `sv.login`, `sv.logout`, `sv.toggleitems`, `sv.others`, `sv.joinvanished` (and the same under `pv.`), and `pv.level.<n>`, grant xVanish's.
+**SuperVanish's and PremiumVanish's permissions.** With `vanish.other-plugins-permissions: true`, `sv.use`, `sv.see`, `sv.list`, `sv.login`, `sv.logout`, `sv.toggleitems`, `sv.others`, `sv.joinvanished` (and the same under `pv.`), grant xVanish's, as do their layered levels: `sv.use.level<n>` (or `pv.use.level<n>`) as `xvanish.level.<n>`, and `sv.see.level<n>` (or `pv.see.level<n>`) seeing vanished players up to level `<n>`, with or without `sv.see`. Checked against SuperVanish's own `plugin.yml` and `LayeredPermissionChecker`; PremiumVanish's config documents the same layered names under `pv.`. A layered level alone doesn't let a player use `/vanish`: give them `sv.use` (or `xvanish.vanish`) too.
 
 <Reference plugin="xvanish" show="permissions" />

@@ -76,7 +76,8 @@ public object XVanishConfig : ConfigSchema(
         public val otherPluginsPermissions: ConfigKey<Boolean> = boolean(
             "other-plugins-permissions", false,
             "Honour SuperVanish's sv.* and PremiumVanish's pv.* permissions too (sv.use, sv.see,",
-            "sv.list, sv.login, sv.logout, sv.toggleitems, sv.others, sv.joinvanished, and pv.level.<n>),",
+            "sv.list, sv.login, sv.logout, sv.toggleitems, sv.others, sv.joinvanished, and the layered",
+            "sv.use.level<n> and sv.see.level<n>),",
             "so a permissions setup made for them works unchanged.",
         )
     }

@@ -8,7 +8,8 @@ name: Boot
 # Per pull request, the platforms it touches (scripts/affected.sh's `boot`: a change in core/
 # or the samples) at their floor and newest: Spigot 1.8.8 and Paper for Bukkit, the oldest and
 # newest lines for Fabric, with the family test on the newest of each and Spigot 1.8.8, and a
-# real client joining Spigot 1.8.8 and Paper 1.21.11, the newest Minecraft mineflayer speaks;
+# real client joining Spigot 1.8.8 and Paper 1.21.11, the newest Minecraft mineflayer speaks, and
+# Fabric 1.20.1 and 1.21.11 (mineflayer can't join 26.3 yet: decisions/2026-11-27-real-clients-on-fabric.md);
 # for the proxies, Velocity's floor (3.4.0) and newest and BungeeCord, the newest Velocity in
 # front of Paper 1.21.11 and BungeeCord in front of Spigot 1.8.8 with a real client joining
 # through the proxy (scripts/boot-proxy.sh). The whole matrix nightly and by hand, Waterfall
@@ -93,13 +94,16 @@ jobs:
             {id: "shreddedpaper", name: "ShreddedPaper", server: "shreddedpaper", regions: true},
             {id: "canvas", name: "Canvas", server: "canvas", regions: true, "allow-failure": true}
           ] | map({version: "", buildtools: 0, pr: false, family: false, client: false, seed: "", regions: false, "allow-failure": false} + .)')
-          # Quilt runs the newest line's Fabric jar through its own loader and installer.
+          # Quilt runs the newest line's Fabric jar through its own loader and installer. Real
+          # clients join the oldest line and 1.21.11, the newest mineflayer speaks (it can't join
+          # 26.x past 26.1 yet, so the newest line has none).
           fabric=$(jq -nc --arg oldest "$fabric_oldest" --arg newest "$fabric_newest" \
             --argjson oldJava "$(java_for "$fabric_oldest")" --argjson newJava "$(java_for "$fabric_newest")" '[
-            {id: "fabric-\($oldest)", name: "Fabric \($oldest)", loader: "fabric", version: $oldest, java: $oldJava, pr: true},
+            {id: "fabric-\($oldest)", name: "Fabric \($oldest)", loader: "fabric", version: $oldest, java: $oldJava, pr: true, client: true},
+            {id: "fabric-1.21.11", name: "Fabric 1.21.11", loader: "fabric", version: "1.21.11", java: 21, pr: true, client: true},
             {id: "fabric-\($newest)", name: "Fabric \($newest)", loader: "fabric", version: $newest, java: $newJava, pr: true, family: true},
             {id: "quilt-\($newest)", name: "Quilt \($newest)", loader: "quilt", version: $newest, java: $newJava}
-          ] | map({pr: false, family: false, "allow-failure": false} + .)')
+          ] | map({pr: false, family: false, client: false, "allow-failure": false} + .)')
           # The proxies: each boots xSample's proxy side alone, with its startup against the
           # first-plugin budget; a cell with a `backend` also runs the pair test, xSample on that
           # backend behind the proxy and a real client joining through it. Velocity's newest
@@ -755,62 +759,110 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ matrix.cell.java }}
+      # The real clients' Node.js and mineflayer packages, which boot-fabric.sh installs into .cache.
+      - if: matrix.cell.client
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - if: matrix.cell.client
+        uses: actions/cache@v6
+        with:
+          path: .cache/budget-bots
+          key: client-bots-${{ hashFiles('scripts/budgets/bots/package-lock.json') }}
+      # Each plugin alone, its console checks and a clean stop; on a `client` cell also real
+      # clients (scripts/budgets/bots/client.js, as on Bukkit, with --fabric), Joiner an operator
+      # through the seeded ops.json, with the plugins each scenario needs beside it. On 1.20.1,
+      # where Minecraft keeps no client language, they read English (boot-fabric.sh's header).
       - name: boot xSample
         env:
           JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks core/platform-fabric/sandbox/client-checks.txt)
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
-            --checks core/platform-fabric/sandbox/boot-checks.txt \
+            --checks core/platform-fabric/sandbox/boot-checks.txt "${args[@]}" \
             core/platform-fabric/build/libs/xsample-fabric-*+"$VERSION".jar
       - name: boot xUtilities
         env:
           JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
+          libs=core/platform-fabric/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xutilities/fabric/client-checks.txt)
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
-            --checks xutilities/fabric/boot-checks.txt \
-            core/platform-fabric/build/libs/xutilities-fabric-*+"$VERSION".jar
+            --checks xutilities/fabric/boot-checks.txt "${args[@]}" \
+            "$libs"/xutilities-fabric-*+"$VERSION".jar
       - name: boot zChat
         env:
           JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
+          libs=core/platform-fabric/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks zchat/fabric/client-checks.txt)
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
-            --checks zchat/fabric/boot-checks.txt \
-            core/platform-fabric/build/libs/zchat-fabric-*+"$VERSION".jar
+            --checks zchat/fabric/boot-checks.txt "${args[@]}" \
+            "$libs"/zchat-fabric-*+"$VERSION".jar
       - name: boot xMoney
         env:
           JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
+          libs=core/platform-fabric/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --seed xmoney/fabric/zchat-seed --checks xmoney/fabric/zchat-checks.txt
+            --checks xmoney/fabric/zchat-client-checks.txt "$libs"/zchat-fabric-*+"$VERSION".jar)
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
-            --checks xmoney/fabric/boot-checks.txt \
-            core/platform-fabric/build/libs/xmoney-fabric-*+"$VERSION".jar
+            --checks xmoney/fabric/boot-checks.txt "${args[@]}" \
+            "$libs"/xmoney-fabric-*+"$VERSION".jar
       - name: boot xTeleport
         env:
           JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
+          libs=core/platform-fabric/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --seed xteleport/fabric/xmoney-seed
+            --checks xteleport/fabric/xmoney-client-checks.txt "$libs"/xmoney-fabric-*+"$VERSION".jar)
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
-            --checks xteleport/fabric/boot-checks.txt \
-            core/platform-fabric/build/libs/xteleport-fabric-*+"$VERSION".jar
+            --checks xteleport/fabric/boot-checks.txt "${args[@]}" \
+            "$libs"/xteleport-fabric-*+"$VERSION".jar
       - name: boot xBans
         env:
           JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
+          libs=core/platform-fabric/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xbans/fabric/zchat-client-checks.txt "$libs"/zchat-fabric-*+"$VERSION".jar)
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
-            --checks xbans/fabric/boot-checks.txt \
-            core/platform-fabric/build/libs/xbans-fabric-*+"$VERSION".jar
+            --checks xbans/fabric/boot-checks.txt "${args[@]}" \
+            "$libs"/xbans-fabric-*+"$VERSION".jar
       - name: boot xVanish
         env:
           JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
+          libs=core/platform-fabric/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xvanish/fabric/client-checks.txt
+            "$libs"/zchat-fabric-*+"$VERSION".jar "$libs"/xteleport-fabric-*+"$VERSION".jar)
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
-            --checks xvanish/fabric/boot-checks.txt \
-            core/platform-fabric/build/libs/xvanish-fabric-*+"$VERSION".jar
+            --checks xvanish/fabric/boot-checks.txt "${args[@]}" \
+            "$libs"/xvanish-fabric-*+"$VERSION".jar
       - name: boot xMarket
         env:
           JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
+          libs=core/platform-fabric/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xmarket/fabric/xmoney-client-checks.txt "$libs"/xmoney-fabric-*+"$VERSION".jar)
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
-            --checks xmarket/fabric/boot-checks.txt \
-            core/platform-fabric/build/libs/xmarket-fabric-*+"$VERSION".jar
+            --checks xmarket/fabric/boot-checks.txt "${args[@]}" \
+            "$libs"/xmarket-fabric-*+"$VERSION".jar
       # xMoney beside zChat: zChat's formats get xMoney's <balance> through zChat's placeholder seam.
       - name: xMoney beside zChat
         if: matrix.cell.family
@@ -839,7 +891,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: boot-logs-${{ matrix.cell.id }}
-          path: build/boot/*/console.log
+          path: |
+            build/boot/*/console.log
+            build/boot/*/client.log
           if-no-files-found: ignore
 
   # The runtime budgets (ROADMAP.md, "Fast, robust, light"; gradle/perf-budgets.txt) on Paper,

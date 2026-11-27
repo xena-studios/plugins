@@ -2,7 +2,11 @@ name: Store pages
 
 # Publishes <plugin>/modrinth.md as the plugin's Modrinth and Hangar project pages
 # when it changes on main, or every page when run by hand. Releases publish it too.
-# Hangar is skipped for a plugin with no Hangar project yet (xena.hangarId).
+# Hangar is skipped for a plugin with no Hangar project yet (xena.hangarId, or a rewrite's
+# xenaRelease hangarId). A rewritten plugin's page goes through its release project's
+# releaseStorePage (xena.release), which checks it against both stores' limits first; a new
+# plugin's page is modrinth.draft.md, which nothing publishes, until its release pull request
+# renames it.
 on:
   push:
     branches: [main]
@@ -35,7 +39,20 @@ jobs:
           else
             changed=$(printf '%s\n' ./*/modrinth.md | sed 's#^\./##')
           fi
-          tasks=$(for f in $changed; do printf ':%s:modrinthSyncBody :%s:syncAllPagesToHangar ' "${f%/modrinth.md}" "${f%/modrinth.md}"; done)
+          tasks=""
+          for f in $changed; do
+            plugin=${f%/modrinth.md}
+            if [[ -f $plugin/common/build.gradle.kts && ! -f $plugin/build.gradle.kts ]]; then
+              # The rewrite's layout: the project on xena.release, found the way release.yml does
+              # (a "<plugin> <path> <version> <folder>" line from releaseInfo), without Gradle here:
+              # the one build file under the plugin's folder that applies it.
+              build=$(grep -l 'id("xena.release")' "$plugin"/*/build.gradle.kts)
+              project=":${build%/build.gradle.kts}"
+              tasks+="${project//\//:}:releaseStorePage "
+            else
+              tasks+=":$plugin:modrinthSyncBody :$plugin:syncAllPagesToHangar "
+            fi
+          done
           echo "tasks=$tasks" >> "$GITHUB_OUTPUT"
       - if: steps.plugins.outputs.tasks != ''
         uses: actions/setup-java@v6

@@ -85,11 +85,18 @@ abstract class ModrinthPublish : DefaultTask() {
         val manifest = ReleaseManifest.read(dir)
         val jars = manifest.files.filter { it.loaders.isNotEmpty() }
         val slug = projectSlug.get()
+        // Every jar's payload is checked before the first is sent.
+        val (loaders, gameVersions) = if (jars.isEmpty()) emptySet<String>() to emptySet() else StoreReference.modrinth
+        StoreChecks.require("${manifest.title} on Modrinth", jars.flatMap { jar ->
+            StoreChecks.modrinth(Modrinth.data(manifest, jar, "<the id of $slug>"), dir.resolve(jar.file), loaders, gameVersions)
+                .map { "${jar.file}: $it" }
+        })
         if (dryRun.get()) {
             val report = jars.joinToString("\n") { jar ->
                 upload(Modrinth.data(manifest, jar, "<the id of $slug>"), "<token>", dir.resolve(jar.file)).describe()
             }
-            DryRun.report(dir, "modrinth", report.ifEmpty { "no jar of this release goes to Modrinth\n" }, logger)
+            DryRun.report(dir, "modrinth", report.ifEmpty { "no jar of this release goes to Modrinth\n" } +
+                (if (jars.isEmpty()) "" else "  checked: Modrinth's version schema, its loaders and its Minecraft versions\n"), logger)
             return
         }
         val token = token.orNull?.takeIf { it.isNotBlank() } ?: throw GradleException("MODRINTH_TOKEN isn't set")
@@ -138,6 +145,40 @@ object Hangar {
     }
 
     /**
+     * A jar's versions for its Hangar platform: [ReleaseFile.hangarFrom] on, or its
+     * [ReleaseFile.hangarVersions], or its Minecraft versions (Paper's are Minecraft's), each
+     * narrowed to the ones Hangar lists. Waterfall's are its own lines, never guessed.
+     */
+    fun platformVersions(jar: ReleaseFile, known: Set<String>?): List<String> {
+        val platform = jar.platform.hangar!!
+        val from = jar.hangarFrom
+        val wanted = when {
+            from != null -> {
+                val listed = known ?: throw GradleException("${jar.file}: hangarFrom needs Hangar's $platform versions")
+                listed.filter { compareVersions(it, from) >= 0 }.sortedWith(::compareVersions)
+            }
+            jar.hangarVersions.isNotEmpty() -> jar.hangarVersions
+            jar.platform == ReleasePlatform.BUNGEECORD ->
+                throw GradleException("${jar.file}: set hangarVersions (or hangarFrom) for Waterfall, whose versions are its own lines (1.21), not Minecraft's")
+            else -> jar.gameVersions
+        }
+        val listed = known?.let { k -> wanted.filter { it in k } } ?: wanted
+        if (listed.isEmpty()) throw GradleException("Hangar lists none of ${jar.file}'s versions for $platform ($wanted)")
+        return listed
+    }
+
+    /** `3.4` < `3.4.0` < `3.5` < `4.0.0`, number by number. */
+    fun compareVersions(a: String, b: String): Int {
+        val x = a.split('.').map { it.toIntOrNull() ?: 0 }
+        val y = b.split('.').map { it.toIntOrNull() ?: 0 }
+        for (i in 0 until maxOf(x.size, y.size)) {
+            val c = (x.getOrNull(i) ?: -1).compareTo(y.getOrNull(i) ?: -1)
+            if (c != 0) return c
+        }
+        return 0
+    }
+
+    /**
      * The `versionUpload` part. Hangar refuses versions it doesn't list (it has 1.8.8 but not
      * 1.8.9), so each jar's are narrowed to [known]'s for its platform.
      */
@@ -148,10 +189,7 @@ object Hangar {
         }
         val versions = jars.associate { jar ->
             val platform = jar.platform.hangar!!
-            val wanted = jar.hangarVersions.ifEmpty { jar.gameVersions }
-            val listed = known[platform]?.let { k -> wanted.filter { it in k } } ?: wanted
-            if (listed.isEmpty()) throw GradleException("Hangar lists none of ${jar.file}'s versions for $platform")
-            platform to listed
+            platform to platformVersions(jar, known[platform])
         }
         return JsonOutput.toJson(linkedMapOf(
             "version" to manifest.version,
@@ -192,18 +230,21 @@ abstract class HangarPublish : DefaultTask() {
             return
         }
         val known = jars.map { it.platform.hangar!! }.associateWith { Hangar.fetchPlatformVersions(it) }
+        val versionUpload = Hangar.versionUpload(manifest, jars, known)
+        StoreChecks.require("${manifest.title} on Hangar", StoreChecks.hangar(versionUpload, jars.map { dir.resolve(it.file) }, known))
         val upload = { jwt: String ->
             Upload(
                 store = "Hangar",
                 url = "${Hangar.API}projects/${slug ?: "<no project yet>"}/upload",
                 headers = mapOf("Authorization" to jwt),
-                fields = mapOf("versionUpload" to Hangar.versionUpload(manifest, jars, known)),
+                fields = mapOf("versionUpload" to versionUpload),
                 files = jars.map { "files" to dir.resolve(it.file) },
                 secretHeaders = setOf("Authorization"),
             )
         }
         if (dryRun) {
             DryRun.report(dir, "hangar", upload("<token>").describe() +
+                "  checked: Hangar's VersionUpload schema, its limits and its versions per platform\n" +
                 (if (slug == null) "  (no Hangar project yet: a real release skips this)\n" else ""), logger)
             return
         }

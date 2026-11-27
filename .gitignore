@@ -23,6 +23,8 @@ bin/
 .gradle/
 build/
 .kotlin/
+# A release set, as release.yml and a local dry run assemble it (-Pxena.release.root=release)
+/release/
 # Paper servers for boot tests and runServer
 .cache/
 run/

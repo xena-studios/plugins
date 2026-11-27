@@ -180,6 +180,7 @@ abstract class CurseForgePublish : DefaultTask() {
             }
             val displayName = if (jars.size > 1) "${manifest.title} (${jar.label})" else manifest.title
             val metadata = CurseForge.metadata(displayName, manifest.changelog, manifest.type, resolved?.ids)
+            StoreChecks.require("${jar.file} on CurseForge (${cls.name})", StoreChecks.curseForge(metadata, dir.resolve(jar.file), resolved != null))
             val upload = CurseForge.upload(host, id ?: 0, token ?: "", metadata, dir.resolve(jar.file))
             if (dryRun) {
                 report.append(upload.describe())

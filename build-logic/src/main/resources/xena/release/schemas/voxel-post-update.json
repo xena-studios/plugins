@@ -1,0 +1,14 @@
+{
+  "//": "voxel.shop's POST /v1/postUpdate form fields, as VoxelPublish has used them since today's plugins' releases (api_key, resource_id, version, title, message in BBCode, beta=1 for a pre-release). voxel.shop publishes no schema, so this checks the fields are there and well-formed.",
+  "type": "object",
+  "required": ["api_key", "resource_id", "version", "title", "message"],
+  "additionalProperties": false,
+  "properties": {
+    "api_key": { "type": "string", "minLength": 1 },
+    "resource_id": { "type": "string", "pattern": "^[0-9]+$" },
+    "version": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "message": { "type": "string", "minLength": 1 },
+    "beta": { "type": "string", "enum": ["1"] }
+  }
+}

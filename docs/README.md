@@ -89,7 +89,7 @@ Write every page as it will be after the release: the new major's links as `/<pl
 
 **A new plugin's first major** (xVanish 1.0) has no old major to show meanwhile: its line is `{ "id": "xvanish", "name": "xVanish", "newest": 1, "older": [], "unreleased": {} }`, with no last release's facts. Nothing is served at `/<plugin>/` until it ships, and its pages, in `src/content/docs/<plugin>/`, are built at `/<plugin>/next/`, hidden, as a rewrite's are. It needs a `name` until its brand catalog entry is there, at its release.
 
-**The switch, in the release's pull request, is one line:** delete `"unreleased": {...}` from the plugin's line in `src/data/versions.json`, then run `pnpm catalog`, which brings the build's version and jar budget into the catalog. The rest of that pull request is the release's own: `src/data/releases/<plugin>.json` for the download picker (the build fails without it once the plugin is released), `(unreleased)` and its note off the changelog's heading, and the start pages' requirements.
+**The switch, in the release's pull request, is one line** (`node scripts/release.ts --together` makes the whole pull request, below): delete `"unreleased": {...}` from the plugin's line in `src/data/versions.json`, then run `pnpm catalog`, which brings the build's version and jar budget into the catalog. The rest of that pull request is the release's own: `src/data/releases/<plugin>.json` for the download picker (the build fails without it once the plugin is released), `(unreleased)` and its note off the changelog's heading, and the start pages' requirements.
 
 ## Look
 

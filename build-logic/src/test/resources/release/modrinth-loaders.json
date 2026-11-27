@@ -1,0 +1,113 @@
+[
+ {
+  "name": "bukkit",
+  "supported_project_types": [
+   "plugin",
+   "project",
+   "mod"
+  ]
+ },
+ {
+  "name": "bungeecord",
+  "supported_project_types": [
+   "plugin",
+   "project",
+   "mod"
+  ]
+ },
+ {
+  "name": "datapack",
+  "supported_project_types": [
+   "datapack",
+   "project",
+   "mod"
+  ]
+ },
+ {
+  "name": "fabric",
+  "supported_project_types": [
+   "mod",
+   "project",
+   "modpack"
+  ]
+ },
+ {
+  "name": "folia",
+  "supported_project_types": [
+   "plugin",
+   "project",
+   "mod"
+  ]
+ },
+ {
+  "name": "forge",
+  "supported_project_types": [
+   "mod",
+   "project",
+   "modpack"
+  ]
+ },
+ {
+  "name": "minecraft",
+  "supported_project_types": [
+   "resourcepack",
+   "project"
+  ]
+ },
+ {
+  "name": "neoforge",
+  "supported_project_types": [
+   "mod",
+   "project",
+   "modpack"
+  ]
+ },
+ {
+  "name": "paper",
+  "supported_project_types": [
+   "plugin",
+   "project",
+   "mod"
+  ]
+ },
+ {
+  "name": "purpur",
+  "supported_project_types": [
+   "plugin",
+   "project",
+   "mod"
+  ]
+ },
+ {
+  "name": "spigot",
+  "supported_project_types": [
+   "plugin",
+   "project",
+   "mod"
+  ]
+ },
+ {
+  "name": "sponge",
+  "supported_project_types": [
+   "plugin",
+   "project",
+   "mod"
+  ]
+ },
+ {
+  "name": "velocity",
+  "supported_project_types": [
+   "plugin",
+   "project",
+   "mod"
+  ]
+ },
+ {
+  "name": "waterfall",
+  "supported_project_types": [
+   "plugin",
+   "project",
+   "mod"
+  ]
+ }
+]

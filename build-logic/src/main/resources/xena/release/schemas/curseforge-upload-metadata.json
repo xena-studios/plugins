@@ -1,0 +1,16 @@
+{
+  "//": "CurseForge's POST /api/projects/{projectId}/upload-file `metadata` part, as its upload API documents it (https://support.curseforge.com/en/support/solutions/articles/9000197321-curseforge-upload-api): changelog, changelogType text/html/markdown, an optional displayName and parentFileID, gameVersions (ids from /api/game/versions, needed unless parentFileID is set), releaseType alpha/beta/release, isMarkedForManualRelease, relations. CurseForge publishes no schema of its own. Read 2026-11-27.",
+  "type": "object",
+  "required": ["changelog", "releaseType"],
+  "additionalProperties": false,
+  "properties": {
+    "changelog": { "type": "string" },
+    "changelogType": { "type": "string", "enum": ["text", "html", "markdown"] },
+    "displayName": { "type": "string", "minLength": 1 },
+    "parentFileID": { "type": "integer" },
+    "gameVersions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "integer", "minimum": 1 } },
+    "releaseType": { "type": "string", "enum": ["alpha", "beta", "release"] },
+    "isMarkedForManualRelease": { "type": "boolean" },
+    "relations": { "type": "object" }
+  }
+}

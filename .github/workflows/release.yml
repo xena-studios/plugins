@@ -1,61 +1,92 @@
 name: Release
 
-# The rewrite's release (ROADMAP.md, "Build, CI and releases"). Push a tag named
-# <plugin>-v<version> on main, such as xbans-v2.0.0, to publish every jar that plugin's
-# build declares (xenaRelease in build-logic's xena.release) to GitHub Releases, Modrinth,
-# Hangar, voxel.shop and CurseForge, with checksums and build attestations, and to write the
-# SpigotMC and BuiltByBit update posts to paste. A store the plugin has no project on yet is
-# skipped. The version must match the plugin's build, and its CHANGELOG.md must have a
-# "## <version>" section.
+# The rewrite's release (ROADMAP.md, "Build, CI and releases"; decisions/2026-11-27-the-release-set.md).
+# One run releases one or more plugins, each as <plugin>-v<version>, such as xbans-v2.0.0, with
+# every jar its build declares (xenaRelease in build-logic's xena.release), to GitHub Releases,
+# Modrinth, Hangar, voxel.shop and CurseForge, with checksums and build attestations, and writes
+# the SpigotMC and BuiltByBit update posts to paste. A store the plugin has no project on yet is
+# skipped. Each version must match its plugin's build, its CHANGELOG.md must have a released
+# "## <version>" section, and its line in docs/src/data/versions.json must have no "unreleased".
 #
-# Run it by hand for a dry run: everything but the uploads, from the branch it's run on, with
-# each store's request printed in the run's summary. The tag needn't exist. Unticking
-# "dry-run" releases an existing tag again, as its push would.
+# All or nothing, as far as stores allow: every plugin's jars are built, checksummed and
+# assembled, and every store's payload for every plugin is checked against that store's schema
+# and lists (the verify job, sending nothing), before any job uploads anything. A run that fails
+# there has published nothing. Once uploads start, each store is its own job: rerun the one that
+# failed; each skips versions it already has.
+#
+# - `node scripts/release.ts --tag <release pull request>` runs it for every plugin that pull
+#   request releases, at its merge commit (`tags` and `sha`). The github job then makes each tag on
+#   that commit with its release. Releasing several plugins is always one run: GitHub starts no
+#   workflow for a push of more than three tags.
+# - Pushing one <plugin>-v<version> tag on main releases that plugin.
+# - Run it by hand with `dry-run` ticked (the default), or let a pull request that touches the
+#   release code run it: everything but the uploads, each store's checked request printed in the
+#   run's summary. `tags: all` is every rewritten plugin's release set at its build's version.
 #
 # Today's plugins release from `maintenance`: a tag on a commit there runs that branch's own
 # copy of this file.
 on:
   push:
     tags: ["*-v*"]
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - build-logic/src/main/kotlin/xena.release.gradle.kts
+      - build-logic/src/main/kotlin/XenaReleaseExtension.kt
+      - build-logic/src/main/kotlin/co/xenastudios/gradle/BbCode.kt
+      - build-logic/src/main/kotlin/co/xenastudios/gradle/CurseForgePublish.kt
+      - build-logic/src/main/kotlin/co/xenastudios/gradle/Release*.kt
+      - build-logic/src/main/kotlin/co/xenastudios/gradle/Site.kt
+      - build-logic/src/main/kotlin/co/xenastudios/gradle/Store*.kt
+      - build-logic/src/main/kotlin/co/xenastudios/gradle/Upload.kt
+      - build-logic/src/main/kotlin/co/xenastudios/gradle/VoxelPublish.kt
+      - build-logic/src/main/resources/xena/release/**
+      - scripts/release.ts
+      - docs/src/data/releases/**
+      - docs/src/data/versions.json
   workflow_dispatch:
     inputs:
-      tag:
-        description: "<plugin>-v<version>, such as loadersandbox-v0.0.0"
+      tags:
+        description: "<plugin>-v<version>, space-separated (xbans-v2.0.0 zchat-v4.0.0), or all"
         required: true
+        default: all
+        type: string
+      sha:
+        description: "The commit on main to release (empty: the branch this runs on)"
+        required: false
         type: string
       dry-run:
-        description: "Send nothing: print what each store would get"
+        description: "Send nothing: check and print what each store would get"
         type: boolean
         default: true
 
 # Nothing by default; each job asks for what it needs. The jobs that run the project's own
 # Gradle scripts can only read the repo, and each store's job gets only its own token; the
-# jobs that can write (the GitHub release, the attestations) run no project code.
+# jobs that can write (the GitHub releases, the attestations) run no project code.
 permissions: {}
 
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
-  cancel-in-progress: false
+  group: release-${{ github.event_name == 'pull_request' && github.ref || inputs.tags || github.ref_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
     runs-on: ubuntu-26.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       contents: read
     outputs:
-      project: ${{ steps.tag.outputs.project }}
-      dir: ${{ steps.tag.outputs.dir }}
-      tag: ${{ steps.tag.outputs.tag }}
-      sha: ${{ steps.tag.outputs.sha }}
-      dry-run: ${{ steps.tag.outputs.dry-run }}
+      tags: ${{ steps.tags.outputs.tags }}
+      projects: ${{ steps.tags.outputs.projects }}
+      sha: ${{ steps.tags.outputs.sha }}
+      dry-run: ${{ steps.tags.outputs.dry-run }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-          # All of main, to check the tag is on it. A dispatched real release checks out its tag.
+          # All of main and its tags, to check each release is on main and not tagged elsewhere.
           fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry-run && format('refs/tags/{0}', inputs.tag) || '' }}
+          ref: ${{ inputs.sha || '' }}
       # Java 25 runs Gradle; platform-fabric's 1.20.1 and 1.21.11 lines compile on 17 and 21.
       - uses: actions/setup-java@v6
         with:
@@ -67,38 +98,53 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-read-only: true
-      - name: Read the tag
-        id: tag
+      - name: Read the releases
+        id: tags
         env:
-          INPUT_TAG: ${{ inputs.tag }}
-          INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+          INPUT_TAGS: ${{ github.event_name == 'pull_request' && 'all' || inputs.tags || github.ref_name }}
+          DRY_RUN: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry-run) }}
         run: |
-          tag=${INPUT_TAG:-$GITHUB_REF_NAME}
-          dry_run=$([[ $INPUT_DRY_RUN == true ]] && echo true || echo false)
-          plugin=${tag%-v*}
-          version=${tag##*-v}
-          [[ $tag =~ ^[a-z0-9-]+-v[0-9A-Za-z.+-]+$ ]] \
-            || { echo "::error::$tag isn't <plugin>-v<version>"; exit 1; }
+          dry_run=$([[ $DRY_RUN == true ]] && echo true || echo false)
           # Each project on xena.release prints "<plugin> <path> <version> <release folder>".
-          info=$(./gradlew -q releaseInfo)
-          read -r _ project built dir <<<"$(awk -v p="$plugin" '$1 == p' <<<"$info")"
-          [[ -n $project ]] \
-            || { echo "::error::no project on main releases $plugin (xena.release); today's plugins release from maintenance"; exit 1; }
-          [[ $built == "$version" ]] \
-            || { echo "::error::the tag says $version but $project's build says $built"; exit 1; }
-          # Only what's been reviewed and merged is released: a tag on a branch's commit isn't.
+          info=$(./gradlew -q releaseInfo -Pxena.release.root=release)
+          if [[ $INPUT_TAGS == all ]]; then
+            [[ $dry_run == true ]] || { echo "::error::tags: all is for dry runs; name the tags to release"; exit 1; }
+            # Every rewritten plugin: each one the site lists (docs/src/data/versions.json), not the sandboxes.
+            listed=$(jq -r '.plugins[] | select(.hidden != true) | .id' docs/src/data/versions.json)
+            INPUT_TAGS=$(awk 'NR == FNR { listed[$1] = 1; next } $1 in listed { printf "%s-v%s ", $1, $3 }' <(echo "$listed") <(echo "$info"))
+          fi
+          tags=() projects=()
+          for tag in $INPUT_TAGS; do
+            plugin=${tag%-v*}
+            version=${tag##*-v}
+            [[ $tag =~ ^[a-z0-9-]+-v[0-9A-Za-z.+-]+$ ]] \
+              || { echo "::error::$tag isn't <plugin>-v<version>"; exit 1; }
+            read -r _ project built _ <<<"$(awk -v p="$plugin" '$1 == p' <<<"$info")"
+            [[ -n $project ]] \
+              || { echo "::error::no project on main releases $plugin (xena.release); today's plugins release from maintenance"; exit 1; }
+            [[ $built == "$version" ]] \
+              || { echo "::error::$tag says $version but $project's build says $built"; exit 1; }
+            # A rerun may find the tag its first run made, on this commit; anywhere else is a mistake.
+            if existing=$(git rev-parse -q --verify "refs/tags/$tag^{commit}"); then
+              [[ $existing == "$(git rev-parse HEAD)" ]] \
+                || { echo "::error::$tag is already tagged, on ${existing:0:7}"; exit 1; }
+            fi
+            tags+=("$tag") projects+=("$project")
+          done
+          [[ ${#tags[@]} -gt 0 ]] || { echo "::error::nothing to release"; exit 1; }
+          # Only what's been reviewed and merged is released.
           if [[ $dry_run == false ]]; then
             git merge-base --is-ancestor HEAD origin/main \
-              || { echo "::error::$tag isn't on main; release from a merged commit"; exit 1; }
+              || { echo "::error::$(git rev-parse --short HEAD) isn't on main; release from a merged commit"; exit 1; }
           fi
           {
-            echo "tag=$tag"
-            echo "project=$project"
-            echo "dir=$dir"
+            echo "tags=${tags[*]}"
+            echo "projects=${projects[*]}"
             echo "sha=$(git rev-parse HEAD)"
             echo "dry-run=$dry_run"
           } >>"$GITHUB_OUTPUT"
-      # A plugin with Fabric jars has them built by platform-fabric's own build (DECISIONS.md,
+          echo "Releasing ${tags[*]} from $(git rev-parse --short HEAD) (dry run: $dry_run)"
+      # Plugins with Fabric jars have them built by platform-fabric's own build (DECISIONS.md,
       # "platform-fabric"), which the root build's releaseAssemble then reads from its build/libs.
       - uses: actions/cache/restore@v6
         with:
@@ -107,40 +153,122 @@ jobs:
           restore-keys: fabric-loom-
       - name: Build the Fabric jars
         env:
-          DIR: ${{ steps.tag.outputs.dir }}
+          PROJECTS: ${{ steps.tags.outputs.projects }}
         run: |
-          project_dir=${DIR%/build/release}
-          if grep -q 'ReleasePlatform.FABRIC' "$project_dir/build.gradle.kts"; then
-            ./gradlew -p core/platform-fabric collect
-          else
-            echo "No Fabric jars in $project_dir's release"
-          fi
-      - name: Build every jar
-        # The jars, SHA256SUMS, release.json, the changelog section and the update posts, in
-        # the project's build/release. Reads the brand catalog for the store listing.
-        env:
-          PROJECT: ${{ steps.tag.outputs.project }}
-          DRY_RUN: ${{ steps.tag.outputs.dry-run }}
-        run: ./gradlew "$PROJECT:releaseAssemble" -Pxena.release.dryRun="$DRY_RUN"
-      - name: Summarize
-        env:
-          DIR: ${{ steps.tag.outputs.dir }}
-        run: |
-          cat "$DIR/summary.md" >>"$GITHUB_STEP_SUMMARY"
-          for post in "$DIR"/*-update.txt; do
-            [[ -f $post ]] || continue
-            { echo; echo '```text'; cat "$post"; echo '```'; } >>"$GITHUB_STEP_SUMMARY"
+          for project in $PROJECTS; do
+            dir=${project#:}
+            if grep -q 'ReleasePlatform.FABRIC' "${dir//://}/build.gradle.kts"; then
+              ./gradlew -p core/platform-fabric collect
+              exit 0
+            fi
           done
+          echo "No Fabric jars in this release"
+      - name: Build every jar
+        # Each plugin's jars, SHA256SUMS, release.json, changelog section, update posts and the
+        # site's entry, in release/<plugin>/. Reads the brand catalog for the store listing.
+        env:
+          PROJECTS: ${{ steps.tags.outputs.projects }}
+          DRY_RUN: ${{ steps.tags.outputs.dry-run }}
+        run: |
+          read -ra projects <<<"$PROJECTS"
+          ./gradlew "${projects[@]/%/:releaseAssemble}" -Pxena.release.root=release -Pxena.release.dryRun="$DRY_RUN"
+      - name: Summarize
+        if: ${{ !cancelled() }}
+        run: |
+          for dir in release/*/; do
+            [[ -f $dir/summary.md ]] || continue
+            cat "$dir/summary.md" >>"$GITHUB_STEP_SUMMARY"
+            for post in "$dir"/*-update.txt; do
+              [[ -f $post ]] || continue
+              { echo; echo '```text'; cat "$post"; echo '```'; } >>"$GITHUB_STEP_SUMMARY"
+            done
+          done
+      # Kept even when a check failed: its site-release.json files are what
+      # `node scripts/release.ts --site-data` takes when the site's releases files need writing again.
       - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
         with:
           name: release
-          path: ${{ steps.tag.outputs.dir }}/
+          path: release/
           if-no-files-found: error
           retention-days: 30
 
+  # Every store's request for every plugin, checked against the store's schema and its lists,
+  # sending nothing and with no token: a release goes no further unless all of them pass. A dry
+  # run ends here, with each request in the summary. No environment, so it needs no approval.
+  verify:
+    needs: build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ needs.build.outputs.sha }}
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: release
+      - name: Check the jars
+        run: for dir in release/*/; do (cd "$dir" && sha256sum -c SHA256SUMS); done
+      - name: Check every store's request, sending nothing
+        env:
+          PROJECTS: ${{ needs.build.outputs.projects }}
+        run: |
+          read -ra projects <<<"$PROJECTS"
+          ./gradlew "${projects[@]/%/:releasePublish}" "${projects[@]/%/:releaseStorePage}" \
+            -Pxena.release.root=release -Pxena.release.dryRun=true --continue
+      - name: Summarize
+        if: ${{ !cancelled() }}
+        env:
+          TAGS: ${{ needs.build.outputs.tags }}
+          SHA: ${{ needs.build.outputs.sha }}
+          DRY_RUN: ${{ needs.build.outputs.dry-run }}
+        run: |
+          {
+            if [[ $DRY_RUN == true ]]; then
+              echo "## Dry run of ${TAGS// /, } at ${SHA:0:7}: nothing was sent"
+            else
+              echo "## Checked ${TAGS// /, } at ${SHA:0:7}: every store's request passes"
+            fi
+            for dir in release/*/; do
+              plugin=$(jq -r .tag "$dir/release.json")
+              echo
+              echo "### $plugin"
+              echo
+              echo "GitHub Releases would get a release $plugin with:"
+              echo
+              for file in "$dir"*.jar "$dir"SHA256SUMS "$dir"*-update.txt; do
+                if [[ -f $file ]]; then echo "- ${file##*/}"; fi
+              done
+              echo
+              echo "The site's download picker (docs/src/data/releases/${plugin%-v*}.json) gets:"
+              echo
+              echo '```json'
+              cat "$dir/site-release.json"
+              echo '```'
+              for report in "$dir"dry-run/*.txt; do
+                [[ -f $report ]] || continue
+                echo
+                echo '```text'
+                cat "$report"
+                echo '```'
+              done
+            done
+          } >>"$GITHUB_STEP_SUMMARY"
+
   # SLSA build provenance for every jar, from the bytes the build job made.
   attest:
-    needs: build
+    needs: [build, verify]
     if: needs.build.outputs.dry-run == 'false'
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -155,17 +283,17 @@ jobs:
           path: release
       - uses: actions/attest-build-provenance@v4
         with:
-          subject-path: release/*.jar
+          subject-path: release/*/*.jar
 
   # One job per store, each with only its own token, so a store that fails can be rerun alone
-  # (re-run failed jobs) and a build script can't reach the other stores' tokens. Each store
-  # task first asks whether the store has the version already, except CurseForge, which
-  # can't say.
+  # (re-run failed jobs) and a build script can't reach the other stores' tokens. Each publishes
+  # every plugin of the run, going on past a plugin that fails (--continue), and first asks
+  # whether the store has the version already, except CurseForge, which can't say.
   stores:
-    needs: [build, attest]
+    needs: [build, verify, attest]
     if: needs.build.outputs.dry-run == 'false'
     runs-on: ubuntu-26.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     environment: release
     permissions:
       contents: read
@@ -201,73 +329,22 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: release
-          path: ${{ needs.build.outputs.dir }}
+          path: release
       - name: Check the jars
-        working-directory: ${{ needs.build.outputs.dir }}
-        run: sha256sum -c SHA256SUMS
+        run: for dir in release/*/; do (cd "$dir" && sha256sum -c SHA256SUMS); done
       - name: Publish to ${{ matrix.store }}
         env:
-          PROJECT: ${{ needs.build.outputs.project }}
+          PROJECTS: ${{ needs.build.outputs.projects }}
           TASK: ${{ matrix.task }}
-        run: ./gradlew "$PROJECT:$TASK"
-
-  # A dry run: every store's task, sending nothing and with no token, each printing the
-  # request it would send. No environment, so it needs no approval.
-  dry-run:
-    needs: build
-    if: needs.build.outputs.dry-run == 'true'
-    runs-on: ubuntu-26.04
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-          ref: ${{ needs.build.outputs.sha }}
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: 25
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-read-only: true
-      - uses: actions/download-artifact@v8
-        with:
-          name: release
-          path: ${{ needs.build.outputs.dir }}
-      - name: Check the jars
-        working-directory: ${{ needs.build.outputs.dir }}
-        run: sha256sum -c SHA256SUMS
-      - name: Publish, sending nothing
-        env:
-          PROJECT: ${{ needs.build.outputs.project }}
-        run: ./gradlew "$PROJECT:releasePublish" -Pxena.release.dryRun=true
-      - name: Summarize
-        env:
-          DIR: ${{ needs.build.outputs.dir }}
-          TAG: ${{ needs.build.outputs.tag }}
         run: |
-          {
-            echo "## Dry run of $TAG: nothing was sent"
-            echo
-            echo "GitHub Releases would get a release $TAG with:"
-            echo
-            for file in "$DIR"/*.jar "$DIR"/SHA256SUMS "$DIR"/*-update.txt; do
-              if [[ -f $file ]]; then echo "- ${file##*/}"; fi
-            done
-            for report in "$DIR"/dry-run/*.txt; do
-              echo
-              echo '```text'
-              cat "$report"
-              echo '```'
-            done
-          } >>"$GITHUB_STEP_SUMMARY"
+          read -ra projects <<<"$PROJECTS"
+          ./gradlew "${projects[@]/%/:$TASK}" -Pxena.release.root=release --continue
 
-  # The GitHub release: every jar, the checksums and the update posts. Runs no project code
-  # (no checkout, no Gradle), so it's the only job that can write to the repo.
+  # Each GitHub release, with its tag on the released commit: every jar, the checksums and the
+  # update posts. Runs no project code (no checkout, no Gradle), so it's the only job that can
+  # write to the repo. A tag made here with the workflow's token starts no other workflow.
   github:
-    needs: [build, attest]
+    needs: [build, verify, attest]
     if: needs.build.outputs.dry-run == 'false'
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -279,28 +356,34 @@ jobs:
           name: release
           path: release
       - name: Publish to GitHub
-        working-directory: release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.build.outputs.tag }}
+          SHA: ${{ needs.build.outputs.sha }}
         run: |
-          sha256sum -c SHA256SUMS
-          files=(*.jar SHA256SUMS)
-          for post in *-update.txt; do if [[ -f $post ]]; then files+=("$post"); fi; done
-          # A rerun replaces the files of a release the first run created.
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber "${files[@]}"
-            exit 0
-          fi
-          prerelease=()
-          [[ $(jq -r .type release.json) != release ]] && prerelease=(--prerelease)
-          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag \
-            --title "$(cat title.txt)" \
-            --notes-file changelog.md \
-            "${prerelease[@]}" \
-            "${files[@]}"
+          for dir in release/*/; do
+            (
+              cd "$dir"
+              sha256sum -c SHA256SUMS
+              tag=$(jq -r .tag release.json)
+              files=(*.jar SHA256SUMS)
+              for post in *-update.txt; do if [[ -f $post ]]; then files+=("$post"); fi; done
+              # A rerun replaces the files of a release the first run created.
+              if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+                gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber "${files[@]}"
+                exit 0
+              fi
+              prerelease=()
+              [[ $(jq -r .type release.json) != release ]] && prerelease=(--prerelease)
+              # Makes the tag on the released commit, unless it was pushed (then it's that commit).
+              gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$SHA" \
+                --title "$(cat title.txt)" \
+                --notes-file changelog.md \
+                "${prerelease[@]}" \
+                "${files[@]}"
+            )
+          done
 
-  # Redeploys the plugin site once the release is out, so its version info is current.
+  # Redeploys the plugin site once the releases are out, so its version info is current.
   # Only starts the Docs workflow: no checkout and no project code, and the one
   # permission it needs, to dispatch a workflow.
   docs:

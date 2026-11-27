@@ -163,12 +163,15 @@ xenaRelease {
         file = project(":xbans:velocity").tasks.named<co.xenastudios.gradle.R8Shrink>("shrinkJar").flatMap { it.outputJar }
         // A proxy fronts servers of every version, as the backends' jar runs on them.
         minecraft("1.8.8")
-        // Hangar lists Velocity's own versions: 3.4 (the first on Java 21) on.
-        hangarVersions = listOf("3.4", "3.5")
+        // Hangar lists Velocity's own versions: every one from 3.4 (the first on Java 21) on, as
+        // Hangar lists them at the release (CI boots 3.4.0 and the newest 4.x).
+        hangarFrom = "3.4"
         java = 21
     }
     jar("bungeecord") {
         platform = ReleasePlatform.BUNGEECORD
+        // Hangar takes it as Waterfall's, whose versions are its own lines: 1.21, the one CI boots.
+        hangarVersions = listOf("1.21")
         file = project(":xbans:bungee").tasks.named<co.xenastudios.gradle.R8Shrink>("shrinkJar").flatMap { it.outputJar }
         minecraft("1.8.8")
         java = 17

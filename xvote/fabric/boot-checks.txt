@@ -1,0 +1,50 @@
+# What scripts/boot-fabric.sh checks on each Minecraft line with xVote, from the console: the
+# Bukkit checks (xvote/bukkit/boot-checks.txt) on Fabric. The database opens with the SQLite driver
+# xVote downloads (a Fabric server ships none), the receiver listens, and test votes go through its
+# socket, signed with the token it made, end to end.
+logged: [xVote] xVote 2.0.0 on
+logged: Loaded 0 voters from the SQLite database votes.db.
+logged: Listening for votes on 0.0.0.0:8192 (Votifier v1 and v2).
+run: xvote info
+expect: xVote 2.0.0 on
+run: xvote reload
+expect: Reloaded xVote
+run: xvote status
+expect: listening on port 8192
+
+# Test votes go through the receiver's socket, signed with the token, end to end. Steve and Alex
+# have never joined, so their votes wait for them.
+run: vote test Steve
+expect: Test vote for Steve from test stored through the receiver on port 8192. Nobody by that name has joined
+# A test without a site has no cooldown, so it can be sent again.
+run: vote test Steve
+expect: Test vote for Steve from test stored through the receiver on port 8192
+run: vote test Alex planetminecraft
+expect: Test vote for Alex from PlanetMinecraft.com stored
+# The same site again, within its cooldown: a repeat, dropped.
+run: vote test Alex planetminecraft
+expect: dropped as a repeat
+run: vote test Not-a-name
+expect: can't be a Minecraft name.
+
+# Votes for names that haven't joined don't count toward the leaderboards yet.
+run: vote top all
+expect: No votes of all time yet.
+run: vote
+expect: Planet Minecraft
+run: xvote status
+expect: 3 for names that haven't joined
+run: xvote key
+expect: The public key for lists that use Votifier v1
+run: xvote token
+expect: Votifier v2 tokens
+run: xvote party
+expect: The vote party is off.
+run: xvote import nuvotifier
+expect: There's no NuVotifier folder
+run: xvote import superbvote
+expect: there's no plugins/SuperbVote/votes.json.
+run: xvote import votingplugin
+expect: there's no plugins/VotingPlugin/Users.db.
+run: xvote debug
+expect: Debug report saved as

@@ -1,0 +1,7 @@
+# SuperVanish's data.yml, as it keeps who's vanished: the boot test's import reads this list.
+InvisiblePlayers:
+- 0f7c3c58-6d4c-4f0e-9f7a-2a1b3c4d5e6f
+- 6b0e4c1a-1111-4a2b-8c3d-9e8f7a6b5c4d
+PlayerData:
+  0f7c3c58-6d4c-4f0e-9f7a-2a1b3c4d5e6f:
+    name: OldStaff

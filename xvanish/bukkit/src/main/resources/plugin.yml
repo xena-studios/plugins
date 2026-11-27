@@ -1,0 +1,16 @@
+name: xVanish
+version: '${version}'
+main: co.xenastudios.xvanish.bukkit.XVanishBootstrap
+# Ignored before 1.13; stops 1.13+ from treating the plugin as legacy.
+api-version: '1.13'
+folia-supported: true
+description: "Vanish for staff: hidden everywhere a player could notice, on Folia too."
+website: https://plugins.xenastudios.co/xvanish/
+authors: [Xena Studios]
+# Optional: %xvanish_vanished% and the rest with PlaceholderAPI, loaded first when it's there.
+softdepend: [PlaceholderAPI]
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+# No commands or permissions here: they're registered at runtime from config.yml, so every
+# change to them applies on /xvanish reload.

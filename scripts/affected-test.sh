@@ -182,6 +182,16 @@ check "xBans' Velocity door" xbans/velocity/src/main/kotlin/co/xenastudios/xbans
   $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=proxy'
 check "xBans' network test" xbans/bungee/network-checks.txt \
   $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=proxy'
+check "xVanish's common code" xvanish/common/src/commonMain/kotlin/co/xenastudios/xvanish/XVanishPlugin.kt \
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit fabric'
+check "xVanish's API" xvanish/api/src/commonMain/kotlin/co/xenastudios/xvanish/api/XVanishApi.kt \
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit fabric'
+check "xVanish's Bukkit adapter" xvanish/bukkit/src/main/kotlin/co/xenastudios/xvanish/bukkit/Listeners.kt \
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit'
+check "xVanish's real-client checks" xvanish/bukkit/client-checks.txt \
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit'
+check "xVanish's Fabric mod (platform-fabric's build)" xvanish/fabric/src/main/kotlin/co/xenastudios/xvanish/fabric/FabricVanishServer.kt \
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=fabric'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 check "Today's plugin" xvote/src/main/java/co/xenastudios/xvote/XVote.java \
   $'units=xvote\ncompile=:xvote:compileJava :xvote:api:compileJava\nchecks=xvote/boot-checks.txt\nboot='

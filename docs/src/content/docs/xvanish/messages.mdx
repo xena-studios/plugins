@@ -1,0 +1,12 @@
+---
+title: Messages
+description: "Every message xVanish sends, in lang/en.yml, with its placeholders."
+sidebar:
+  order: 5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Every message is in `lang/<language>.yml`, English as the fallback, with German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese drafted by machine and waiting for native speakers. Each player reads them in their client's language. Blank a message to send nothing. The fake join and quit messages (`fake.join`, `fake.quit`) look like Minecraft's: change them to match your join format.
+
+<Reference plugin="xvanish" show="messages" />

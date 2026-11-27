@@ -1,0 +1,68 @@
+public final class co/xenastudios/xvanish/api/VanishCause : java/lang/Enum {
+	public static final field API Lco/xenastudios/xvanish/api/VanishCause;
+	public static final field COMMAND Lco/xenastudios/xvanish/api/VanishCause;
+	public static final field JOIN Lco/xenastudios/xvanish/api/VanishCause;
+	public static final field NETWORK Lco/xenastudios/xvanish/api/VanishCause;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xvanish/api/VanishCause;
+	public static fun values ()[Lco/xenastudios/xvanish/api/VanishCause;
+}
+
+public final class co/xenastudios/xvanish/api/XVanish {
+	public static final field INSTANCE Lco/xenastudios/xvanish/api/XVanish;
+	public static final field LEVEL_PERMISSION Ljava/lang/String;
+	public static final field METADATA_KEY Ljava/lang/String;
+	public static final field SEE_PERMISSION Ljava/lang/String;
+	public static final fun api ()Lco/xenastudios/xvanish/api/XVanishApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xvanish/api/XVanishApi;)V
+}
+
+public abstract interface class co/xenastudios/xvanish/api/XVanishApi {
+	public abstract fun canSee (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/PlayerRef;)Z
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun isVanished (Lco/xenastudios/core/api/PlayerRef;)Z
+	public abstract fun level (Lco/xenastudios/core/api/PlayerRef;)I
+	public abstract fun setVanished (Lco/xenastudios/core/api/PlayerRef;ZZ)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun vanished ()Ljava/util/List;
+	public abstract fun visibleOnlineCount ()I
+}
+
+public final class co/xenastudios/xvanish/api/event/UnvanishedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xvanish/api/event/UnvanishedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;ZLco/xenastudios/xvanish/api/VanishCause;)V
+	public final fun getCause ()Lco/xenastudios/xvanish/api/VanishCause;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getSilent ()Z
+}
+
+public final class co/xenastudios/xvanish/api/event/UnvanishedEvent$Companion {
+}
+
+public final class co/xenastudios/xvanish/api/event/VanishEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xvanish/api/event/VanishEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;ZZLco/xenastudios/xvanish/api/VanishCause;)V
+	public final fun getCause ()Lco/xenastudios/xvanish/api/VanishCause;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getSilent ()Z
+	public final fun getVanishing ()Z
+}
+
+public final class co/xenastudios/xvanish/api/event/VanishEvent$Companion {
+}
+
+public final class co/xenastudios/xvanish/api/event/VanishedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xvanish/api/event/VanishedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;ZLco/xenastudios/xvanish/api/VanishCause;)V
+	public final fun getCause ()Lco/xenastudios/xvanish/api/VanishCause;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getSilent ()Z
+}
+
+public final class co/xenastudios/xvanish/api/event/VanishedEvent$Companion {
+}
+

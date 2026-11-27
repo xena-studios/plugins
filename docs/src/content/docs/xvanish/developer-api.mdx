@@ -1,0 +1,43 @@
+---
+title: Developer API
+description: "Build on xVanish: who's vanished, who can see whom, vanishing a player, and the events, the same on every platform."
+sidebar:
+  order: 10
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xVanish's API is the same on Paper, Folia, Spigot and Fabric: players are `PlayerRef`s (by UUID). Get it with `XVanish.api()` once xVanish is enabled (add it to your plugin's `depend`, or `softdepend` and check `XVanish.isEnabled()` first). On Bukkit it's also in the services manager, as `XVanishApi`.
+
+:::caution[Not on Maven Central yet]
+The API isn't published until 1.0 is released. Its coordinates will be `co.xenastudios.xvanish:xvanish-api:1.0.0`; until then, compile against the plugin's jar.
+:::
+
+## Reading
+
+Every read answers from memory, on any thread:
+
+```java
+XVanishApi api = XVanish.api();
+PlayerRef player = PlayerRefs.of(bukkitPlayer.getUniqueId());
+if (api.isVanished(player)) { /* leave them out */ }
+boolean shown = api.canSee(viewerRef, player);   // levels and xvanish.see included
+int online = api.visibleOnlineCount();           // what a player list should show
+List<PlayerRef> vanished = api.vanished();
+```
+
+## Changing
+
+`setVanished(player, vanished, silent)` vanishes or shows an online player as `/vanish` does, firing the events; `silent` leaves out the fake join or quit message. It returns a `CompletableFuture<Boolean>`, `true` once it's done, on the player's own thread.
+
+## Events
+
+`VanishEvent` (before, cancellable), `VanishedEvent` and `UnvanishedEvent` (after), on `api.getEvents()`, only fired when something listens. On Bukkit they're also Bukkit events, `BukkitVanishEvent`, `BukkitVanishedEvent` and `BukkitUnvanishedEvent` in `co.xenastudios.xvanish.api.bukkit`, so Skript and plain listeners see them.
+
+```java
+api.getEvents().subscribe(VanishEvent.TYPE, event -> {
+    if (event.getVanishing() && inArena(event.getPlayer())) event.setCancelled(true);
+});
+```
+
+<Reference plugin="xvanish" show="events" />

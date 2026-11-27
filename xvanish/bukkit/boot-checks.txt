@@ -1,0 +1,21 @@
+# xVanish on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks,
+# through boot.sh): every command that runs without a player, answered by the core's dispatcher
+# and drawn from lang/en.yml, a reload, debug, and a clean stop. No database: a single server
+# keeps who's vanished in vanished.txt. The import is import-checks.txt's, which needs its seed.
+logged: xVanish 1.0.0 on
+run: xvanish info
+expect: xVanish 1.0.0 on
+run: vanish list
+expect: Nobody is vanished.
+# The console can't vanish itself, and finds no one by a name nobody has.
+run: vanish
+expect: Only players can use this command.
+run: vanish on Nobody
+expect: No player called Nobody is online.
+
+# Reloading keeps everything running: every switch's listener comes back.
+run: xvanish reload
+expect: Reloaded xVanish
+run: xvanish debug
+expect: Modules:
+expect: Debug report saved as debug/debug-

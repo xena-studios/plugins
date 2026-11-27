@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -24,7 +24,10 @@
 // with --zchat zChat's /msg too, until it's lifted; a kick; Joiner's replies in German), or xBans
 // across a network (xbans-network: through a proxy with two servers, Friend on "game": a mute made on
 // lobby stops Friend's chat on game, and a ban made on lobby takes Friend off the network and turns
-// them away at the proxy).
+// them away at the proxy), or xVanish's with zChat and xTeleport beside it (xvanish: Friend again, not
+// an operator: Joiner vanishes, and Friend no longer has them in the tab list or the world, hears a
+// fake quit, can't /tpa or /msg them nor complete their name, and mentioning them pings no one; a
+// relog of Friend's keeps them hidden; showing again brings them back with a fake join).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks; --version sets it instead, for a
@@ -395,6 +398,61 @@ async function xbansNetwork () {
   finish()
 }
 
+// xVanish with zChat and xTeleport: Joiner (an operator, so xvanish.vanish and xvanish.see, in
+// German) vanishes; Friend (not one) mustn't find them anywhere.
+async function xvanish () {
+  let friend = friendBot({ version: false })
+  check('Friend joins', await friend.until(() => friend.spawned), 'Friend never spawned')
+  await sleep(2000)
+  // No mobs to make noise (or kill Friend) while it listens for zChat's ping.
+  bot.chat('/difficulty peaceful')
+  let joinerSounds = 0
+  // zChat's ping is the experience orb's sound; others (a hurt mob) don't count.
+  const ping = (name) => /orb/.test(String(name?.name ?? name))
+  bot.on('soundEffectHeard', (name) => { if (ping(name)) joinerSounds++ })
+  bot.on('hardcodedSoundEffectHeard', (id) => { if (ping(bot.registry?.sounds?.[id]?.name ?? id)) joinerSounds++ })
+  const listed = (f) => Object.keys(f.bot.players).includes(username)
+  const inWorld = (f) => Object.values(f.bot.entities).some((e) => e.type === 'player' && e.username === username)
+  check('Friend sees Joiner before', listed(friend) && inWorld(friend), `listed ${listed(friend)}, in the world ${inWorld(friend)}`)
+  let from = friend.heard.length
+  await command('/vanish', 'Du bist unsichtbar.', '/vanish answers in German')
+  check('Friend hears a fake quit', await friend.hears(`${username} left the game`, from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  check('Joiner is gone from Friend\'s tab list', await friend.until(() => !listed(friend), 5000), 'still listed')
+  check('and from Friend\'s world', await friend.until(() => !inWorld(friend), 5000), 'still in the world')
+  // xTeleport: /tpa as if Joiner weren't there.
+  from = friend.heard.length
+  friend.bot.chat(`/tpa ${username}`)
+  check("xTeleport's /tpa can't find a vanished player", await friend.hears(`No player called ${username} is online.`, from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  // zChat: a mention isn't highlighted and pings no one; /msg finds no one.
+  await sleep(3500)
+  let mine = heard.length
+  const sounds = joinerSounds
+  friend.bot.chat(`hey ${username.toLowerCase()} look`)
+  check('a mention of a vanished player isn\'t highlighted', await hear(`Friend: hey ${username.toLowerCase()} look`, mine) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  await sleep(1500)
+  check('and pings no one', joinerSounds === sounds, `${joinerSounds - sounds} sounds`)
+  from = friend.heard.length
+  mine = heard.length
+  friend.bot.chat(`/msg ${username} psst`)
+  check("zChat's /msg can't reach a vanished player", (await hear('psst', mine, 3000)) == null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  const tpa = await (async () => { await sleep(250); return (await friend.bot.tabComplete('/tpa ', false, false, 8000)).map((m) => (typeof m === 'string' ? m : m.match)) })()
+  check('nor is their name completed', !tpa.includes(username), `/tpa  completed to ${JSON.stringify(tpa)}`)
+  // Friend relogs: still nothing to see.
+  try { friend.bot.quit() } catch {}
+  await sleep(2000)
+  friend = friendBot({ version: false })
+  check('Friend joins again', await friend.until(() => friend.spawned), 'Friend never spawned')
+  await sleep(2000)
+  check('a vanished player stays hidden from a player joining', !listed(friend) && !inWorld(friend), `listed ${listed(friend)}, in the world ${inWorld(friend)}`)
+  // Visible again: a fake join, and back in the list.
+  from = friend.heard.length
+  await command('/vanish', 'wieder sichtbar', '/vanish again shows Joiner')
+  check('Friend hears a fake join', await friend.hears(`${username} joined the game`, from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  check('Joiner is back in Friend\'s tab list and world', await friend.until(() => listed(friend) && inWorld(friend), 5000), `listed ${listed(friend)}, in the world ${inWorld(friend)}`)
+  try { friend.bot.quit() } catch {}
+  finish()
+}
+
 async function run () {
   if (forge) {
     // Looks like a frame of ours ('X', version 1), signed with nothing the network knows.
@@ -410,6 +468,7 @@ async function run () {
   if (plugin === 'xteleport') return xteleport()
   if (plugin === 'xbans') return xbans()
   if (plugin === 'xbans-network') return xbansNetwork()
+  if (plugin === 'xvanish') return xvanish()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")

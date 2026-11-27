@@ -1,0 +1,1893 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xvanish",
+    "name": "xVanish",
+    "version": "unspecified",
+    "description": "Vanish for staff."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "spigot",
+      "name": "Spigot",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "neoforge",
+      "name": "NeoForge",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "id": "sponge",
+      "name": "Sponge",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    },
+    {
+      "id": "pumpkin",
+      "name": "Pumpkin",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    },
+    {
+      "id": "hytale",
+      "name": "Hytale",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "xvanish",
+      "usage": "/xvanish [info|reload|debug|import|forget]",
+      "aliases": [],
+      "description": "Shows xVanish's version, and holds its admin subcommands.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xvanish info",
+          "usage": "/xvanish info",
+          "aliases": [],
+          "description": "Shows xVanish's version.",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xvanish reload",
+          "usage": "/xvanish reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "xvanish.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xvanish debug",
+          "usage": "/xvanish debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "xvanish.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xvanish import",
+          "usage": "/xvanish import <source> [dry-run]",
+          "aliases": [],
+          "description": "Imports data from another plugin.",
+          "permission": "xvanish.admin.import",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "source",
+              "type": "choice",
+              "required": true,
+              "greedy": false,
+              "description": "The plugin to import from.",
+              "choices": [
+                "supervanish",
+                "premiumvanish"
+              ]
+            },
+            {
+              "name": "dry-run",
+              "type": "choice",
+              "required": false,
+              "greedy": false,
+              "description": "Counts what would be imported, changing nothing.",
+              "choices": [
+                "--dry-run"
+              ]
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xvanish forget",
+          "usage": "/xvanish forget <player>",
+          "aliases": [],
+          "description": "Deletes everything kept about one player.",
+          "permission": "xvanish.admin.forget",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player name or UUID",
+              "required": true,
+              "greedy": false,
+              "description": "The player whose data is deleted, online or not.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": true,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "vanish",
+      "usage": "/vanish [what] [player]",
+      "aliases": [
+        "v",
+        "sv",
+        "pv"
+      ],
+      "description": "Vanish, show again, or see who's vanished.",
+      "permission": "xvanish.vanish",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "what",
+          "type": "word",
+          "required": false,
+          "greedy": false,
+          "description": "on, off, list, login, logout or pickup; or a player, to vanish or show them.",
+          "choices": []
+        },
+        {
+          "name": "player",
+          "type": "word",
+          "required": false,
+          "greedy": false,
+          "description": "With on or off: whom.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xvanish.vanish",
+      "description": "Vanish and show again with /vanish.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "vanish"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xvanish.vanish.others",
+      "description": "Vanish and show other players: /vanish <player>, /vanish on <player>.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xvanish.list",
+      "description": "See who's vanished with /vanish list.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xvanish.see",
+      "description": "See vanished players whose level is at most yours.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xvanish.join",
+      "description": "Join vanished, and silently, every time. No one has it until it's given, operators included.",
+      "default": "nobody",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xvanish.login",
+      "description": "Send a fake join or quit message with /vanish login and /vanish logout.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xvanish.pickup",
+      "description": "Pick up items and experience while vanished, with /vanish pickup.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xvanish.admin",
+      "description": "Every admin subcommand of xVanish, and its update notices.",
+      "default": "op",
+      "children": {
+        "xvanish.admin.reload": true,
+        "xvanish.admin.debug": true,
+        "xvanish.admin.import": true,
+        "xvanish.admin.forget": true,
+        "xvanish.admin.update": true
+      },
+      "commands": [],
+      "builtIn": true
+    },
+    {
+      "node": "xvanish.admin.reload",
+      "description": "Use /xvanish reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xvanish reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xvanish.admin.debug",
+      "description": "Use /xvanish debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xvanish debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xvanish.admin.import",
+      "description": "Use /xvanish import.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xvanish import"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xvanish.admin.forget",
+      "description": "Use /xvanish forget.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xvanish forget"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xvanish.admin.update",
+      "description": "Hear about newer versions of xVanish when joining.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 1,
+    "header": [
+      "xVanish: vanish for staff.",
+      "Docs: https://plugins.xenastudios.co/xvanish/configuration/",
+      "",
+      "Apply changes with /xvanish reload. Everything applies except network and storage.",
+      "A bad value falls back to its default with a warning in the console. The messages are",
+      "in lang/."
+    ],
+    "entries": [
+      {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "vanish",
+        "type": "section",
+        "comment": [
+          "Vanishing itself."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "vanish.aliases",
+            "type": "list<string>",
+            "comment": [
+              "Other names for /vanish. sv and pv keep SuperVanish's and PremiumVanish's habits:",
+              "/sv on, /sv off, /sv list, /sv login, /sv logout."
+            ],
+            "default": [
+              "v",
+              "sv",
+              "pv"
+            ],
+            "defaultText": "[\"v\", \"sv\", \"pv\"]",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "vanish.remember",
+            "type": "boolean",
+            "comment": [
+              "Stay vanished through a relog and a restart. Kept in vanished.txt in this folder,",
+              "written as it changes, so a crash can't unvanish anyone."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "vanish.fake-messages",
+            "type": "boolean",
+            "comment": [
+              "Vanishing sends a fake quit message and showing again a fake join message, so it",
+              "looks as if you left and came back (lang/: fake.quit and fake.join). /vanish login",
+              "and /vanish logout send them by hand."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "vanish.max-level",
+            "type": "integer",
+            "comment": [
+              "The highest xvanish.level.<n> looked for. A vanished player is seen only by players",
+              "with xvanish.see and a level at least theirs; without a level, a player's is 1."
+            ],
+            "default": 5,
+            "defaultText": "5",
+            "choices": [],
+            "min": 1,
+            "max": 100,
+            "entries": []
+          },
+          {
+            "path": "vanish.xbans-staff-see",
+            "type": "boolean",
+            "comment": [
+              "With xBans installed, the players it counts as staff (xbans.staff) see vanished",
+              "players of level 1, as if they had xvanish.see."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "vanish.notify-staff",
+            "type": "boolean",
+            "comment": [
+              "Tell the players who can see a vanished player when they vanish or show again."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "vanish.other-plugins-permissions",
+            "type": "boolean",
+            "comment": [
+              "Honour SuperVanish's sv.* and PremiumVanish's pv.* permissions too (sv.use, sv.see,",
+              "sv.list, sv.login, sv.logout, sv.toggleitems, sv.others, sv.joinvanished, and pv.level.<n>),",
+              "so a permissions setup made for them works unchanged."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "hide",
+        "type": "section",
+        "comment": [
+          "Where else a vanished player is left out. They're always gone from the world and the",
+          "tab list for anyone who can't see them, and from every Xena plugin."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "hide.server-list",
+            "type": "boolean",
+            "comment": [
+              "Not counted in the server list's player count, nor shown in its sample."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "hide.death-messages",
+            "type": "boolean",
+            "comment": [
+              "Their death message isn't broadcast."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "hide.advancement-messages",
+            "type": "boolean",
+            "comment": [
+              "Their advancements aren't announced. Paper and Folia only: Spigot has no way to."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "hide.sleeping",
+            "type": "boolean",
+            "comment": [
+              "Not counted when the server checks whether everyone's asleep."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "hide.mob-spawning",
+            "type": "boolean",
+            "comment": [
+              "Mobs don't spawn because of them. Paper and Folia only."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "hide.locator-bar",
+            "type": "boolean",
+            "comment": [
+              "Not on other players' locator bar (Minecraft 1.21.6 on)."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "no-trace",
+        "type": "section",
+        "comment": [
+          "Nothing in the world gives a vanished player away."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "no-trace.mob-targeting",
+            "type": "boolean",
+            "comment": [
+              "Mobs don't target them."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "no-trace.pickup",
+            "type": "boolean",
+            "comment": [
+              "They don't pick up items or experience. /vanish pickup lets one player pick up again."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "no-trace.physical",
+            "type": "boolean",
+            "comment": [
+              "They don't press pressure plates, trip tripwires, trample farmland or break turtle eggs."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "no-trace.sculk",
+            "type": "boolean",
+            "comment": [
+              "Sculk sensors and shriekers don't hear them (Minecraft 1.17 on)."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "no-trace.collisions",
+            "type": "boolean",
+            "comment": [
+              "Players and mobs don't push them (Minecraft 1.9 on)."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "no-trace.projectiles",
+            "type": "boolean",
+            "comment": [
+              "Arrows and other projectiles pass through them, where the server allows (Paper, and Spigot 1.20.4 on); elsewhere they do no harm."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "no-trace.raids",
+            "type": "boolean",
+            "comment": [
+              "They don't start raids (Minecraft 1.14 on)."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "while-vanished",
+        "type": "section",
+        "comment": [
+          "What vanishing gives the player themselves."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "while-vanished.night-vision",
+            "type": "boolean",
+            "comment": [
+              "Night vision."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "while-vanished.fly",
+            "type": "boolean",
+            "comment": [
+              "Flight; it's taken away again as they show, unless they could fly before."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "while-vanished.invulnerable",
+            "type": "boolean",
+            "comment": [
+              "No damage, and no hunger."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "while-vanished.boss-bar",
+            "type": "boolean",
+            "comment": [
+              "A boss bar saying they're vanished (lang/: boss-bar). Minecraft 1.9 on."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "silent-containers",
+        "type": "section",
+        "comment": [
+          "A vanished player opening a chest, barrel or shulker box sees a read-only copy of it,",
+          "with no lid moving and no sound. Sneaking opens it as usual. An ender chest opens",
+          "their own, silently. Bukkit only."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "silent-containers.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "chat",
+        "type": "section",
+        "comment": [],
+        "choices": [],
+        "entries": [
+          {
+            "path": "chat.confirm-public",
+            "type": "boolean",
+            "comment": [
+              "A vanished player's first public chat message is held back with a warning; saying the",
+              "same again within 15 seconds sends it."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "network",
+        "type": "section",
+        "comment": [
+          "For a network: several servers sharing this plugin's MySQL or MariaDB database.",
+          "Read at startup only: restart after changing it."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "network.enabled",
+            "type": "boolean",
+            "comment": [
+              "On so a change made on one server (a ban, a payment) reaches the others within a few",
+              "seconds. Leave it off for a single server: it does nothing on SQLite."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "network.check-every",
+            "type": "duration",
+            "comment": [
+              "How often to check for the other servers' changes."
+            ],
+            "default": "3s",
+            "defaultText": "\"3s\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "storage",
+        "type": "section",
+        "comment": [
+          "Where this plugin keeps its data. Read at startup only: restart after changing it."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "storage.type",
+            "type": "enum",
+            "comment": [
+              "sqlite keeps everything in one file in the plugin's folder, with nothing to set up.",
+              "mysql (or MariaDB) is for networks, or servers with a lot of history.",
+              "shared keeps it in the database every Xena plugin can share, set in plugins/Xena/config.yml."
+            ],
+            "default": "sqlite",
+            "defaultText": "\"sqlite\"",
+            "choices": [
+              "sqlite",
+              "mysql",
+              "shared"
+            ],
+            "entries": []
+          },
+          {
+            "path": "storage.table-prefix",
+            "type": "string",
+            "comment": [
+              "Put in front of every table's name, so plugins and servers can share one database."
+            ],
+            "default": "xvanish_",
+            "defaultText": "\"xvanish_\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "storage.mysql",
+            "type": "section",
+            "comment": [
+              "Only for type: mysql."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "storage.mysql.host",
+                "type": "string",
+                "comment": [],
+                "default": "localhost",
+                "defaultText": "\"localhost\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.port",
+                "type": "integer",
+                "comment": [],
+                "default": 3306,
+                "defaultText": "3306",
+                "choices": [],
+                "min": 1,
+                "max": 65535,
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.database",
+                "type": "string",
+                "comment": [],
+                "default": "minecraft",
+                "defaultText": "\"minecraft\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.username",
+                "type": "string",
+                "comment": [],
+                "default": "minecraft",
+                "defaultText": "\"minecraft\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.password",
+                "type": "string",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.properties",
+                "type": "string",
+                "comment": [
+                  "Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC."
+                ],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "storage.pool",
+            "type": "section",
+            "comment": [
+              "The connections used to read, beside the one that writes."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "storage.pool.readers",
+                "type": "integer",
+                "comment": [
+                  "How many: 0 picks for the database (1 for SQLite, 2 for MySQL). More helps only a",
+                  "MySQL server that many reads wait on."
+                ],
+                "default": 0,
+                "defaultText": "0",
+                "choices": [],
+                "min": 0,
+                "max": 16,
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "updates",
+        "type": "section",
+        "comment": [
+          "Telling you when a newer version is out: in the console, and to players with",
+          "<plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,",
+          "sending only the plugin's version, the platform and the Minecraft version."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "updates.check",
+            "type": "boolean",
+            "comment": [
+              "Whether to ask at all."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "updates.channel",
+            "type": "enum",
+            "comment": [
+              "Which releases to hear of: release, beta (betas and releases) or alpha (everything)."
+            ],
+            "default": "release",
+            "defaultText": "\"release\"",
+            "choices": [
+              "release",
+              "beta",
+              "alpha"
+            ],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [
+    {
+      "name": "vanished",
+      "description": "Whether the player is vanished: true or false.",
+      "example": "false",
+      "needsPlayer": true,
+      "forms": {
+        "PlaceholderAPI": "%xvanish_vanished%",
+        "MiniPlaceholders": "<xvanish_vanished>",
+        "Text Placeholder API": "%xvanish:vanished%"
+      }
+    },
+    {
+      "name": "online",
+      "description": "Players online, less the vanished: what a scoreboard or tab header should show.",
+      "example": "12",
+      "needsPlayer": false,
+      "forms": {
+        "PlaceholderAPI": "%xvanish_online%",
+        "MiniPlaceholders": "<xvanish_online>",
+        "Text Placeholder API": "%xvanish:online%"
+      }
+    },
+    {
+      "name": "count",
+      "description": "How many players are vanished here.",
+      "example": "1",
+      "needsPlayer": false,
+      "forms": {
+        "PlaceholderAPI": "%xvanish_count%",
+        "MiniPlaceholders": "<xvanish_count>",
+        "Text Placeholder API": "%xvanish:count%"
+      }
+    },
+    {
+      "name": "level",
+      "description": "The player's vanish level (xvanish.level.<n>), 1 without one.",
+      "example": "1",
+      "needsPlayer": true,
+      "forms": {
+        "PlaceholderAPI": "%xvanish_level%",
+        "MiniPlaceholders": "<xvanish_level>",
+        "Text Placeholder API": "%xvanish:level%"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.update.available",
+      "english": "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+      "comment": [
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page."
+      ],
+      "placeholders": [
+        "plugin",
+        "current",
+        "latest",
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
+      ],
+      "placeholders": [
+        "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "core.reload.done",
+      "english": "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+      "comment": [
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise."
+      ],
+      "placeholders": [
+        "plugin",
+        "count",
+        "has_one",
+        "has_many"
+      ]
+    },
+    {
+      "key": "core.reload.problem",
+      "english": "<gold>!</gold> Problem: <problem>",
+      "comment": [
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too."
+      ],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "core.reload.module-off",
+      "english": "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+      "comment": [
+        "/<plugin> reload: a module that failed, and why, in English."
+      ],
+      "placeholders": [
+        "module",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.reload.failed",
+      "english": "<prefix><error>Reloading <plugin> failed; the console has the details.",
+      "comment": [
+        "/<plugin> reload: something went wrong; the settings from before are still in use."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.command.unknown",
+      "english": "<prefix><error>Unknown command.",
+      "comment": [
+        "Rare: a command that went away as it was typed."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.no-permission",
+      "english": "<prefix><error>You don't have permission to do that.",
+      "comment": [
+        "The sender lacks the command's permission."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.players-only",
+      "english": "<prefix><error>Only players can use this command.",
+      "comment": [
+        "The console or a command block ran a command only players can use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.usage",
+      "english": "<prefix><error>Usage:</error> <usage>",
+      "comment": [
+        "The command was typed with missing or extra words. <usage> is how to type it."
+      ],
+      "placeholders": [
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.unknown-player",
+      "english": "<prefix><error>No player called <highlight><player></highlight> is online.",
+      "comment": [
+        "No player the sender can see is online by the name typed (<player>)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.command.not-a-number",
+      "english": "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+      "comment": [
+        "A number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-an-integer",
+      "english": "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+      "comment": [
+        "A whole number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-small",
+      "english": "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+      "comment": [
+        "A number below the least the command takes (<min>)."
+      ],
+      "placeholders": [
+        "input",
+        "min",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-large",
+      "english": "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+      "comment": [
+        "A number above the most the command takes (<max>)."
+      ],
+      "placeholders": [
+        "input",
+        "max",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-a-choice",
+      "english": "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+      "comment": [
+        "A word that isn't one of those the command takes (<choices>, comma-separated)."
+      ],
+      "placeholders": [
+        "input",
+        "choices",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.invalid",
+      "english": "<prefix><error><reason></error> Usage: <usage>",
+      "comment": [
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.cooldown",
+      "english": "<prefix><error>You can use that again in <time>.",
+      "comment": [
+        "The command has a cooldown. <time> is how long is left."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.confirm",
+      "english": "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+      "comment": [
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is."
+      ],
+      "placeholders": [
+        "line",
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.error",
+      "english": "<prefix><error>Something went wrong running that command; the console has the details.",
+      "comment": [
+        "The command hit an error. The console has what happened."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "info",
+      "english": "<prefix>xVanish <highlight><version></highlight> on <platform>: <count> vanished. <gray>/xvanish reload | debug | forget | import",
+      "comment": [
+        "/xvanish on its own."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "count"
+      ]
+    },
+    {
+      "key": "vanish.on",
+      "english": "<prefix><success>You're vanished.</success> Only staff who may see you can.",
+      "comment": [
+        "To a player who vanished."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "vanish.off",
+      "english": "<prefix>You're <highlight>visible</highlight> again.",
+      "comment": [
+        "To a player who showed again."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "vanish.on-other",
+      "english": "<prefix><highlight><player></highlight> is vanished now.",
+      "comment": [
+        "To whoever vanished another player."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "vanish.off-other",
+      "english": "<prefix><highlight><player></highlight> is visible again.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "vanish.already-on",
+      "english": "<prefix><error><highlight><player></highlight> is already vanished.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "vanish.already-off",
+      "english": "<prefix><error><highlight><player></highlight> isn't vanished.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "vanish.refused",
+      "english": "<prefix><error>Another plugin stopped that.",
+      "comment": [
+        "A plugin cancelled the vanish or unvanish."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "vanish.joined",
+      "english": "<prefix>You joined <success>vanished</success>. Nobody was told.",
+      "comment": [
+        "To a player who joined vanished."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "staff.vanished",
+      "english": "<prefix><gray><player> vanished.",
+      "comment": [
+        "To the players who can see them, with vanish.notify-staff."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "staff.shown",
+      "english": "<prefix><gray><player> is visible again.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "list.header",
+      "english": "<prefix>Vanished (<count>):",
+      "comment": [
+        "/vanish list, before the names."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "list.entry",
+      "english": " <highlight><player></highlight> <dark_gray>level <level></dark_gray>",
+      "comment": [
+        "One line per vanished player here."
+      ],
+      "placeholders": [
+        "player",
+        "level"
+      ]
+    },
+    {
+      "key": "list.elsewhere",
+      "english": " <gray><player></gray> <dark_gray>not on this server</dark_gray>",
+      "comment": [
+        "A player the network has vanished who isn't on this server."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "list.none",
+      "english": "<prefix>Nobody is vanished.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "fake.join",
+      "english": "<yellow><player> joined the game",
+      "comment": [
+        "What everyone sees as a vanished player shows again, or with /vanish login. Blank for nothing."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "fake.quit",
+      "english": "<yellow><player> left the game",
+      "comment": [
+        "What everyone sees as a player vanishes, or with /vanish logout."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "vanish.login-sent",
+      "english": "<prefix>Sent a fake join message.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "vanish.logout-sent",
+      "english": "<prefix>Sent a fake quit message.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "boss-bar",
+      "english": "You are vanished",
+      "comment": [
+        "The boss bar's title while vanished. Blank for no boss bar."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "pickup.on",
+      "english": "<prefix>You <success>pick up</success> items and experience while vanished now.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "pickup.off",
+      "english": "<prefix>You no longer pick up items and experience while vanished.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "chat.held",
+      "english": "<prefix><error>You're vanished: everyone would see that.</error> Say it again within 15 seconds to send it.",
+      "comment": [
+        "A vanished player's public chat message, held back (chat.confirm-public)."
+      ],
+      "placeholders": []
+    }
+  ],
+  "events": [
+    {
+      "key": "xvanish:vanish",
+      "className": "co.xenastudios.xvanish.api.event.VanishEvent",
+      "description": "A player is about to vanish or show again. Cancel it to refuse.",
+      "cancellable": true,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xvanish:vanished",
+      "className": "co.xenastudios.xvanish.api.event.VanishedEvent",
+      "description": "A player vanished.",
+      "cancellable": false,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xvanish:unvanished",
+      "className": "co.xenastudios.xvanish.api.event.UnvanishedEvent",
+      "description": "A player showed again.",
+      "cancellable": false,
+      "since": "1.0.0"
+    }
+  ]
+}

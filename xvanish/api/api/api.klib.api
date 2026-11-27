@@ -1,0 +1,98 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xvanish.api/VanishCause : kotlin/Enum<co.xenastudios.xvanish.api/VanishCause> { // co.xenastudios.xvanish.api/VanishCause|null[0]
+    enum entry API // co.xenastudios.xvanish.api/VanishCause.API|null[0]
+    enum entry COMMAND // co.xenastudios.xvanish.api/VanishCause.COMMAND|null[0]
+    enum entry JOIN // co.xenastudios.xvanish.api/VanishCause.JOIN|null[0]
+    enum entry NETWORK // co.xenastudios.xvanish.api/VanishCause.NETWORK|null[0]
+
+    final val entries // co.xenastudios.xvanish.api/VanishCause.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xvanish.api/VanishCause> // co.xenastudios.xvanish.api/VanishCause.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xvanish.api/VanishCause // co.xenastudios.xvanish.api/VanishCause.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xvanish.api/VanishCause> // co.xenastudios.xvanish.api/VanishCause.values|values#static(){}[0]
+}
+
+abstract interface co.xenastudios.xvanish.api/XVanishApi { // co.xenastudios.xvanish.api/XVanishApi|null[0]
+    abstract val events // co.xenastudios.xvanish.api/XVanishApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xvanish.api/XVanishApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.xvanish.api/XVanishApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xvanish.api/XVanishApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun canSee(co.xenastudios.core.api/PlayerRef, co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xvanish.api/XVanishApi.canSee|canSee(co.xenastudios.core.api.PlayerRef;co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun isVanished(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xvanish.api/XVanishApi.isVanished|isVanished(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun level(co.xenastudios.core.api/PlayerRef): kotlin/Int // co.xenastudios.xvanish.api/XVanishApi.level|level(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun setVanished(co.xenastudios.core.api/PlayerRef, kotlin/Boolean, kotlin/Boolean): co.xenastudios.core.api/Pending<kotlin/Boolean> // co.xenastudios.xvanish.api/XVanishApi.setVanished|setVanished(co.xenastudios.core.api.PlayerRef;kotlin.Boolean;kotlin.Boolean){}[0]
+    abstract fun vanished(): kotlin.collections/List<co.xenastudios.core.api/PlayerRef> // co.xenastudios.xvanish.api/XVanishApi.vanished|vanished(){}[0]
+    abstract fun visibleOnlineCount(): kotlin/Int // co.xenastudios.xvanish.api/XVanishApi.visibleOnlineCount|visibleOnlineCount(){}[0]
+}
+
+final class co.xenastudios.xvanish.api.event/UnvanishedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xvanish.api.event/UnvanishedEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/Boolean, co.xenastudios.xvanish.api/VanishCause) // co.xenastudios.xvanish.api.event/UnvanishedEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.Boolean;co.xenastudios.xvanish.api.VanishCause){}[0]
+
+    final val cause // co.xenastudios.xvanish.api.event/UnvanishedEvent.cause|{}cause[0]
+        final fun <get-cause>(): co.xenastudios.xvanish.api/VanishCause // co.xenastudios.xvanish.api.event/UnvanishedEvent.cause.<get-cause>|<get-cause>(){}[0]
+    final val player // co.xenastudios.xvanish.api.event/UnvanishedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xvanish.api.event/UnvanishedEvent.player.<get-player>|<get-player>(){}[0]
+    final val silent // co.xenastudios.xvanish.api.event/UnvanishedEvent.silent|{}silent[0]
+        final fun <get-silent>(): kotlin/Boolean // co.xenastudios.xvanish.api.event/UnvanishedEvent.silent.<get-silent>|<get-silent>(){}[0]
+
+    final object Companion { // co.xenastudios.xvanish.api.event/UnvanishedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xvanish.api.event/UnvanishedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xvanish.api.event/UnvanishedEvent> // co.xenastudios.xvanish.api.event/UnvanishedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xvanish.api.event/VanishEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xvanish.api.event/VanishEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/Boolean, kotlin/Boolean, co.xenastudios.xvanish.api/VanishCause) // co.xenastudios.xvanish.api.event/VanishEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.Boolean;kotlin.Boolean;co.xenastudios.xvanish.api.VanishCause){}[0]
+
+    final val cause // co.xenastudios.xvanish.api.event/VanishEvent.cause|{}cause[0]
+        final fun <get-cause>(): co.xenastudios.xvanish.api/VanishCause // co.xenastudios.xvanish.api.event/VanishEvent.cause.<get-cause>|<get-cause>(){}[0]
+    final val player // co.xenastudios.xvanish.api.event/VanishEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xvanish.api.event/VanishEvent.player.<get-player>|<get-player>(){}[0]
+    final val silent // co.xenastudios.xvanish.api.event/VanishEvent.silent|{}silent[0]
+        final fun <get-silent>(): kotlin/Boolean // co.xenastudios.xvanish.api.event/VanishEvent.silent.<get-silent>|<get-silent>(){}[0]
+    final val vanishing // co.xenastudios.xvanish.api.event/VanishEvent.vanishing|{}vanishing[0]
+        final fun <get-vanishing>(): kotlin/Boolean // co.xenastudios.xvanish.api.event/VanishEvent.vanishing.<get-vanishing>|<get-vanishing>(){}[0]
+
+    final object Companion { // co.xenastudios.xvanish.api.event/VanishEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xvanish.api.event/VanishEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xvanish.api.event/VanishEvent> // co.xenastudios.xvanish.api.event/VanishEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xvanish.api.event/VanishedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xvanish.api.event/VanishedEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/Boolean, co.xenastudios.xvanish.api/VanishCause) // co.xenastudios.xvanish.api.event/VanishedEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.Boolean;co.xenastudios.xvanish.api.VanishCause){}[0]
+
+    final val cause // co.xenastudios.xvanish.api.event/VanishedEvent.cause|{}cause[0]
+        final fun <get-cause>(): co.xenastudios.xvanish.api/VanishCause // co.xenastudios.xvanish.api.event/VanishedEvent.cause.<get-cause>|<get-cause>(){}[0]
+    final val player // co.xenastudios.xvanish.api.event/VanishedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xvanish.api.event/VanishedEvent.player.<get-player>|<get-player>(){}[0]
+    final val silent // co.xenastudios.xvanish.api.event/VanishedEvent.silent|{}silent[0]
+        final fun <get-silent>(): kotlin/Boolean // co.xenastudios.xvanish.api.event/VanishedEvent.silent.<get-silent>|<get-silent>(){}[0]
+
+    final object Companion { // co.xenastudios.xvanish.api.event/VanishedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xvanish.api.event/VanishedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xvanish.api.event/VanishedEvent> // co.xenastudios.xvanish.api.event/VanishedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final object co.xenastudios.xvanish.api/XVanish { // co.xenastudios.xvanish.api/XVanish|null[0]
+    final const val LEVEL_PERMISSION // co.xenastudios.xvanish.api/XVanish.LEVEL_PERMISSION|{}LEVEL_PERMISSION[0]
+        final fun <get-LEVEL_PERMISSION>(): kotlin/String // co.xenastudios.xvanish.api/XVanish.LEVEL_PERMISSION.<get-LEVEL_PERMISSION>|<get-LEVEL_PERMISSION>(){}[0]
+    final const val SEE_PERMISSION // co.xenastudios.xvanish.api/XVanish.SEE_PERMISSION|{}SEE_PERMISSION[0]
+        final fun <get-SEE_PERMISSION>(): kotlin/String // co.xenastudios.xvanish.api/XVanish.SEE_PERMISSION.<get-SEE_PERMISSION>|<get-SEE_PERMISSION>(){}[0]
+
+    final val METADATA_KEY // co.xenastudios.xvanish.api/XVanish.METADATA_KEY|{}METADATA_KEY[0]
+        final fun <get-METADATA_KEY>(): kotlin/String // co.xenastudios.xvanish.api/XVanish.METADATA_KEY.<get-METADATA_KEY>|<get-METADATA_KEY>(){}[0]
+
+    final fun api(): co.xenastudios.xvanish.api/XVanishApi // co.xenastudios.xvanish.api/XVanish.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xvanish.api/XVanish.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xvanish.api/XVanishApi?) // co.xenastudios.xvanish.api/XVanish.register|register(co.xenastudios.xvanish.api.XVanishApi?){}[0]
+}

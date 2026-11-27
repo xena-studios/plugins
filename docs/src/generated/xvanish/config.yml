@@ -1,0 +1,155 @@
+# xVanish: vanish for staff.
+# Docs: https://plugins.xenastudios.co/xvanish/configuration/
+#
+# Apply changes with /xvanish reload. Everything applies except network and storage.
+# A bad value falls back to its default with a warning in the console. The messages are
+# in lang/.
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# How this plugin's messages look, and the language they're in. shared uses the
+# setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is
+# this plugin's own.
+messages:
+  # The language players see messages in: auto for each player's own (their client's
+  # language setting), or one language for everyone, such as de or pt-BR.
+  language: "shared"
+  # The language of the console, and of players whose language has no file in lang/.
+  default-language: "shared"
+
+  # The look every message shares, used in messages as tags: <prefix>, <highlight>,
+  # <success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,
+  # italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>.
+  theme:
+    # <prefix> starts the default messages. Make it your server's name, such as
+    # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+    prefix: "shared"
+    # The colour of message text that has no tag of its own.
+    base: "shared"
+    # <highlight>: names and values, such as a player or a speed.
+    highlight: "shared"
+    # <success>: something turned on or done.
+    success: "shared"
+    # <error>: something refused or turned off.
+    error: "shared"
+
+# Vanishing itself.
+vanish:
+  # Other names for /vanish. sv and pv keep SuperVanish's and PremiumVanish's habits:
+  # /sv on, /sv off, /sv list, /sv login, /sv logout.
+  aliases: ["v", "sv", "pv"]
+  # Stay vanished through a relog and a restart. Kept in vanished.txt in this folder,
+  # written as it changes, so a crash can't unvanish anyone.
+  remember: true
+  # Vanishing sends a fake quit message and showing again a fake join message, so it
+  # looks as if you left and came back (lang/: fake.quit and fake.join). /vanish login
+  # and /vanish logout send them by hand.
+  fake-messages: true
+  # The highest xvanish.level.<n> looked for. A vanished player is seen only by players
+  # with xvanish.see and a level at least theirs; without a level, a player's is 1.
+  max-level: 5
+  # Tell the players who can see a vanished player when they vanish or show again.
+  notify-staff: true
+  # Honour SuperVanish's sv.* and PremiumVanish's pv.* permissions too (sv.use, sv.see,
+  # sv.list, sv.login, sv.logout, sv.toggleitems, sv.others, sv.joinvanished, and pv.level.<n>),
+  # so a permissions setup made for them works unchanged.
+  other-plugins-permissions: false
+
+# Where else a vanished player is left out. They're always gone from the world and the
+# tab list for anyone who can't see them, and from every Xena plugin.
+hide:
+  # Not counted in the server list's player count, nor shown in its sample.
+  server-list: true
+  # Their death message isn't broadcast.
+  death-messages: true
+  # Their advancements aren't announced. Paper and Folia only: Spigot has no way to.
+  advancement-messages: true
+  # Not counted when the server checks whether everyone's asleep.
+  sleeping: true
+  # Mobs don't spawn because of them. Paper and Folia only.
+  mob-spawning: true
+  # Not on other players' locator bar (Minecraft 1.21.6 on).
+  locator-bar: true
+
+# Nothing in the world gives a vanished player away.
+no-trace:
+  # Mobs don't target them.
+  mob-targeting: true
+  # They don't pick up items or experience. /vanish pickup lets one player pick up again.
+  pickup: true
+  # They don't press pressure plates, trip tripwires, trample farmland or break turtle eggs.
+  physical: true
+  # Sculk sensors and shriekers don't hear them (Minecraft 1.17 on).
+  sculk: true
+  # Players and mobs don't push them (Minecraft 1.9 on).
+  collisions: true
+  # Arrows and other projectiles pass through them, where the server allows (Paper, and Spigot 1.20.4 on); elsewhere they do no harm.
+  projectiles: true
+  # They don't start raids (Minecraft 1.14 on).
+  raids: true
+
+# What vanishing gives the player themselves.
+while-vanished:
+  # Night vision.
+  night-vision: false
+  # Flight; it's taken away again as they show, unless they could fly before.
+  fly: true
+  # No damage, and no hunger.
+  invulnerable: true
+  # A boss bar saying they're vanished (lang/: boss-bar). Minecraft 1.9 on.
+  boss-bar: true
+
+# A vanished player opening a chest, barrel or shulker box sees a read-only copy of it,
+# with no lid moving and no sound. Sneaking opens it as usual. An ender chest opens
+# their own, silently. Bukkit only.
+silent-containers:
+  enabled: true
+
+chat:
+  # A vanished player's first public chat message is held back with a warning; saying the
+  # same again within 15 seconds sends it.
+  confirm-public: true
+
+# For a network: several servers sharing this plugin's MySQL or MariaDB database.
+# Read at startup only: restart after changing it.
+network:
+  # On so a change made on one server (a ban, a payment) reaches the others within a few
+  # seconds. Leave it off for a single server: it does nothing on SQLite.
+  enabled: false
+  # How often to check for the other servers' changes.
+  check-every: "3s"
+
+# Where this plugin keeps its data. Read at startup only: restart after changing it.
+storage:
+  # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
+  # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  # shared keeps it in the database every Xena plugin can share, set in plugins/Xena/config.yml.
+  type: "sqlite"
+  # Put in front of every table's name, so plugins and servers can share one database.
+  table-prefix: "xvanish_"
+
+  # Only for type: mysql.
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "minecraft"
+    username: "minecraft"
+    password: ""
+    # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
+    properties: ""
+
+  # The connections used to read, beside the one that writes.
+  pool:
+    # How many: 0 picks for the database (1 for SQLite, 2 for MySQL). More helps only a
+    # MySQL server that many reads wait on.
+    readers: 0
+
+# Telling you when a newer version is out: in the console, and to players with
+# <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
+# sending only the plugin's version, the platform and the Minecraft version.
+updates:
+  # Whether to ask at all.
+  check: true
+  # Which releases to hear of: release, beta (betas and releases) or alpha (everything).
+  channel: "release"

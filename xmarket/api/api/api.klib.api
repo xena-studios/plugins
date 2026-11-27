@@ -1,0 +1,277 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xmarket.api/TradeKind : kotlin/Enum<co.xenastudios.xmarket.api/TradeKind> { // co.xenastudios.xmarket.api/TradeKind|null[0]
+    enum entry BUY // co.xenastudios.xmarket.api/TradeKind.BUY|null[0]
+    enum entry SELL // co.xenastudios.xmarket.api/TradeKind.SELL|null[0]
+
+    final val entries // co.xenastudios.xmarket.api/TradeKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xmarket.api/TradeKind> // co.xenastudios.xmarket.api/TradeKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xmarket.api/TradeKind // co.xenastudios.xmarket.api/TradeKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xmarket.api/TradeKind> // co.xenastudios.xmarket.api/TradeKind.values|values#static(){}[0]
+}
+
+abstract fun interface co.xenastudios.xmarket.api/PriceModifier { // co.xenastudios.xmarket.api/PriceModifier|null[0]
+    abstract fun modify(co.xenastudios.core.api/PlayerRef?, co.xenastudios.xmarket.api/ShopEntry, co.xenastudios.xmarket.api/TradeKind, co.xenastudios.xmarket.api/Money): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/PriceModifier.modify|modify(co.xenastudios.core.api.PlayerRef?;co.xenastudios.xmarket.api.ShopEntry;co.xenastudios.xmarket.api.TradeKind;co.xenastudios.xmarket.api.Money){}[0]
+}
+
+abstract fun interface co.xenastudios.xmarket.api/PriceProvider { // co.xenastudios.xmarket.api/PriceProvider|null[0]
+    abstract fun sellPrice(co.xenastudios.xmarket.api/ItemKey): co.xenastudios.xmarket.api/Money? // co.xenastudios.xmarket.api/PriceProvider.sellPrice|sellPrice(co.xenastudios.xmarket.api.ItemKey){}[0]
+}
+
+abstract interface co.xenastudios.xmarket.api/XMarketApi { // co.xenastudios.xmarket.api/XMarketApi|null[0]
+    abstract val events // co.xenastudios.xmarket.api/XMarketApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xmarket.api/XMarketApi.events.<get-events>|<get-events>(){}[0]
+    abstract val isLoaded // co.xenastudios.xmarket.api/XMarketApi.isLoaded|{}isLoaded[0]
+        abstract fun <get-isLoaded>(): kotlin/Boolean // co.xenastudios.xmarket.api/XMarketApi.isLoaded.<get-isLoaded>|<get-isLoaded>(){}[0]
+    abstract val version // co.xenastudios.xmarket.api/XMarketApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xmarket.api/XMarketApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun buy(co.xenastudios.core.api/PlayerRef, co.xenastudios.xmarket.api/ShopEntry, kotlin/Int): co.xenastudios.core.api/Pending<co.xenastudios.xmarket.api/PurchaseResult> // co.xenastudios.xmarket.api/XMarketApi.buy|buy(co.xenastudios.core.api.PlayerRef;co.xenastudios.xmarket.api.ShopEntry;kotlin.Int){}[0]
+    abstract fun buyPrice(co.xenastudios.xmarket.api/ItemKey): co.xenastudios.xmarket.api/Money? // co.xenastudios.xmarket.api/XMarketApi.buyPrice|buyPrice(co.xenastudios.xmarket.api.ItemKey){}[0]
+    abstract fun entries(): kotlin.collections/List<co.xenastudios.xmarket.api/ShopEntry> // co.xenastudios.xmarket.api/XMarketApi.entries|entries(){}[0]
+    abstract fun entry(co.xenastudios.xmarket.api/ItemKey): co.xenastudios.xmarket.api/ShopEntry? // co.xenastudios.xmarket.api/XMarketApi.entry|entry(co.xenastudios.xmarket.api.ItemKey){}[0]
+    abstract fun entry(kotlin/String, kotlin/String): co.xenastudios.xmarket.api/ShopEntry? // co.xenastudios.xmarket.api/XMarketApi.entry|entry(kotlin.String;kotlin.String){}[0]
+    abstract fun isSellable(co.xenastudios.xmarket.api/ItemKey): kotlin/Boolean // co.xenastudios.xmarket.api/XMarketApi.isSellable|isSellable(co.xenastudios.xmarket.api.ItemKey){}[0]
+    abstract fun registerPriceModifier(kotlin/String, co.xenastudios.xmarket.api/PriceModifier) // co.xenastudios.xmarket.api/XMarketApi.registerPriceModifier|registerPriceModifier(kotlin.String;co.xenastudios.xmarket.api.PriceModifier){}[0]
+    abstract fun registerPriceProvider(kotlin/String, co.xenastudios.xmarket.api/PriceProvider) // co.xenastudios.xmarket.api/XMarketApi.registerPriceProvider|registerPriceProvider(kotlin.String;co.xenastudios.xmarket.api.PriceProvider){}[0]
+    abstract fun sell(co.xenastudios.core.api/PlayerRef, kotlin.collections/List<co.xenastudios.xmarket.api/ItemKey>): co.xenastudios.core.api/Pending<co.xenastudios.xmarket.api/SaleResult> // co.xenastudios.xmarket.api/XMarketApi.sell|sell(co.xenastudios.core.api.PlayerRef;kotlin.collections.List<co.xenastudios.xmarket.api.ItemKey>){}[0]
+    abstract fun sellPrice(co.xenastudios.core.api/PlayerRef, co.xenastudios.xmarket.api/ItemKey): co.xenastudios.xmarket.api/Money? // co.xenastudios.xmarket.api/XMarketApi.sellPrice|sellPrice(co.xenastudios.core.api.PlayerRef;co.xenastudios.xmarket.api.ItemKey){}[0]
+    abstract fun sellPrice(co.xenastudios.xmarket.api/ItemKey): co.xenastudios.xmarket.api/Money? // co.xenastudios.xmarket.api/XMarketApi.sellPrice|sellPrice(co.xenastudios.xmarket.api.ItemKey){}[0]
+    abstract fun unregisterAll(kotlin/String) // co.xenastudios.xmarket.api/XMarketApi.unregisterAll|unregisterAll(kotlin.String){}[0]
+}
+
+final class co.xenastudios.xmarket.api.event/ShopBoughtEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xmarket.api.event/ShopBoughtEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xmarket.api/ShopEntry, kotlin/Int, co.xenastudios.xmarket.api/Money) // co.xenastudios.xmarket.api.event/ShopBoughtEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xmarket.api.ShopEntry;kotlin.Int;co.xenastudios.xmarket.api.Money){}[0]
+
+    final val amount // co.xenastudios.xmarket.api.event/ShopBoughtEvent.amount|{}amount[0]
+        final fun <get-amount>(): kotlin/Int // co.xenastudios.xmarket.api.event/ShopBoughtEvent.amount.<get-amount>|<get-amount>(){}[0]
+    final val entry // co.xenastudios.xmarket.api.event/ShopBoughtEvent.entry|{}entry[0]
+        final fun <get-entry>(): co.xenastudios.xmarket.api/ShopEntry // co.xenastudios.xmarket.api.event/ShopBoughtEvent.entry.<get-entry>|<get-entry>(){}[0]
+    final val paid // co.xenastudios.xmarket.api.event/ShopBoughtEvent.paid|{}paid[0]
+        final fun <get-paid>(): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api.event/ShopBoughtEvent.paid.<get-paid>|<get-paid>(){}[0]
+    final val player // co.xenastudios.xmarket.api.event/ShopBoughtEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xmarket.api.event/ShopBoughtEvent.player.<get-player>|<get-player>(){}[0]
+
+    final object Companion { // co.xenastudios.xmarket.api.event/ShopBoughtEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xmarket.api.event/ShopBoughtEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xmarket.api.event/ShopBoughtEvent> // co.xenastudios.xmarket.api.event/ShopBoughtEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xmarket.api.event/ShopBuyEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xmarket.api.event/ShopBuyEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xmarket.api/ShopEntry, kotlin/Int, co.xenastudios.xmarket.api/Money) // co.xenastudios.xmarket.api.event/ShopBuyEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xmarket.api.ShopEntry;kotlin.Int;co.xenastudios.xmarket.api.Money){}[0]
+
+    final val amount // co.xenastudios.xmarket.api.event/ShopBuyEvent.amount|{}amount[0]
+        final fun <get-amount>(): kotlin/Int // co.xenastudios.xmarket.api.event/ShopBuyEvent.amount.<get-amount>|<get-amount>(){}[0]
+    final val entry // co.xenastudios.xmarket.api.event/ShopBuyEvent.entry|{}entry[0]
+        final fun <get-entry>(): co.xenastudios.xmarket.api/ShopEntry // co.xenastudios.xmarket.api.event/ShopBuyEvent.entry.<get-entry>|<get-entry>(){}[0]
+    final val player // co.xenastudios.xmarket.api.event/ShopBuyEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xmarket.api.event/ShopBuyEvent.player.<get-player>|<get-player>(){}[0]
+
+    final var price // co.xenastudios.xmarket.api.event/ShopBuyEvent.price|{}price[0]
+        final fun <get-price>(): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api.event/ShopBuyEvent.price.<get-price>|<get-price>(){}[0]
+        final fun <set-price>(co.xenastudios.xmarket.api/Money) // co.xenastudios.xmarket.api.event/ShopBuyEvent.price.<set-price>|<set-price>(co.xenastudios.xmarket.api.Money){}[0]
+
+    final object Companion { // co.xenastudios.xmarket.api.event/ShopBuyEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xmarket.api.event/ShopBuyEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xmarket.api.event/ShopBuyEvent> // co.xenastudios.xmarket.api.event/ShopBuyEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xmarket.api.event/ShopSellEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xmarket.api.event/ShopSellEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xmarket.api/ShopEntry, kotlin/Int, co.xenastudios.xmarket.api/Money) // co.xenastudios.xmarket.api.event/ShopSellEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xmarket.api.ShopEntry;kotlin.Int;co.xenastudios.xmarket.api.Money){}[0]
+
+    final val amount // co.xenastudios.xmarket.api.event/ShopSellEvent.amount|{}amount[0]
+        final fun <get-amount>(): kotlin/Int // co.xenastudios.xmarket.api.event/ShopSellEvent.amount.<get-amount>|<get-amount>(){}[0]
+    final val entry // co.xenastudios.xmarket.api.event/ShopSellEvent.entry|{}entry[0]
+        final fun <get-entry>(): co.xenastudios.xmarket.api/ShopEntry // co.xenastudios.xmarket.api.event/ShopSellEvent.entry.<get-entry>|<get-entry>(){}[0]
+    final val player // co.xenastudios.xmarket.api.event/ShopSellEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xmarket.api.event/ShopSellEvent.player.<get-player>|<get-player>(){}[0]
+
+    final var price // co.xenastudios.xmarket.api.event/ShopSellEvent.price|{}price[0]
+        final fun <get-price>(): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api.event/ShopSellEvent.price.<get-price>|<get-price>(){}[0]
+        final fun <set-price>(co.xenastudios.xmarket.api/Money) // co.xenastudios.xmarket.api.event/ShopSellEvent.price.<set-price>|<set-price>(co.xenastudios.xmarket.api.Money){}[0]
+
+    final object Companion { // co.xenastudios.xmarket.api.event/ShopSellEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xmarket.api.event/ShopSellEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xmarket.api.event/ShopSellEvent> // co.xenastudios.xmarket.api.event/ShopSellEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xmarket.api.event/ShopSoldEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xmarket.api.event/ShopSoldEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xmarket.api/ShopEntry, kotlin/Int, co.xenastudios.xmarket.api/Money) // co.xenastudios.xmarket.api.event/ShopSoldEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xmarket.api.ShopEntry;kotlin.Int;co.xenastudios.xmarket.api.Money){}[0]
+
+    final val amount // co.xenastudios.xmarket.api.event/ShopSoldEvent.amount|{}amount[0]
+        final fun <get-amount>(): kotlin/Int // co.xenastudios.xmarket.api.event/ShopSoldEvent.amount.<get-amount>|<get-amount>(){}[0]
+    final val entry // co.xenastudios.xmarket.api.event/ShopSoldEvent.entry|{}entry[0]
+        final fun <get-entry>(): co.xenastudios.xmarket.api/ShopEntry // co.xenastudios.xmarket.api.event/ShopSoldEvent.entry.<get-entry>|<get-entry>(){}[0]
+    final val paid // co.xenastudios.xmarket.api.event/ShopSoldEvent.paid|{}paid[0]
+        final fun <get-paid>(): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api.event/ShopSoldEvent.paid.<get-paid>|<get-paid>(){}[0]
+    final val player // co.xenastudios.xmarket.api.event/ShopSoldEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xmarket.api.event/ShopSoldEvent.player.<get-player>|<get-player>(){}[0]
+
+    final object Companion { // co.xenastudios.xmarket.api.event/ShopSoldEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xmarket.api.event/ShopSoldEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xmarket.api.event/ShopSoldEvent> // co.xenastudios.xmarket.api.event/ShopSoldEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xmarket.api/ItemKey { // co.xenastudios.xmarket.api/ItemKey|null[0]
+    constructor <init>(kotlin/String, kotlin/Int = ..., kotlin/String? = ..., kotlin.collections/Map<kotlin/String, kotlin/Int> = ..., kotlin/Boolean = ..., kotlin/String? = ...) // co.xenastudios.xmarket.api/ItemKey.<init>|<init>(kotlin.String;kotlin.Int;kotlin.String?;kotlin.collections.Map<kotlin.String,kotlin.Int>;kotlin.Boolean;kotlin.String?){}[0]
+
+    final val amount // co.xenastudios.xmarket.api/ItemKey.amount|{}amount[0]
+        final fun <get-amount>(): kotlin/Int // co.xenastudios.xmarket.api/ItemKey.amount.<get-amount>|<get-amount>(){}[0]
+    final val data // co.xenastudios.xmarket.api/ItemKey.data|{}data[0]
+        final fun <get-data>(): kotlin/String? // co.xenastudios.xmarket.api/ItemKey.data.<get-data>|<get-data>(){}[0]
+    final val enchantments // co.xenastudios.xmarket.api/ItemKey.enchantments|{}enchantments[0]
+        final fun <get-enchantments>(): kotlin.collections/Map<kotlin/String, kotlin/Int> // co.xenastudios.xmarket.api/ItemKey.enchantments.<get-enchantments>|<get-enchantments>(){}[0]
+    final val id // co.xenastudios.xmarket.api/ItemKey.id|{}id[0]
+        final fun <get-id>(): kotlin/String // co.xenastudios.xmarket.api/ItemKey.id.<get-id>|<get-id>(){}[0]
+    final val plain // co.xenastudios.xmarket.api/ItemKey.plain|{}plain[0]
+        final fun <get-plain>(): kotlin/Boolean // co.xenastudios.xmarket.api/ItemKey.plain.<get-plain>|<get-plain>(){}[0]
+    final val potion // co.xenastudios.xmarket.api/ItemKey.potion|{}potion[0]
+        final fun <get-potion>(): kotlin/String? // co.xenastudios.xmarket.api/ItemKey.potion.<get-potion>|<get-potion>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xmarket.api/ItemKey.toString|toString(){}[0]
+    final fun withAmount(kotlin/Int): co.xenastudios.xmarket.api/ItemKey // co.xenastudios.xmarket.api/ItemKey.withAmount|withAmount(kotlin.Int){}[0]
+
+    final object Companion { // co.xenastudios.xmarket.api/ItemKey.Companion|null[0]
+        final fun namespaced(kotlin/String): kotlin/String // co.xenastudios.xmarket.api/ItemKey.Companion.namespaced|namespaced(kotlin.String){}[0]
+        final fun of(kotlin/String): co.xenastudios.xmarket.api/ItemKey // co.xenastudios.xmarket.api/ItemKey.Companion.of|of(kotlin.String){}[0]
+    }
+}
+
+final class co.xenastudios.xmarket.api/Money : kotlin/Comparable<co.xenastudios.xmarket.api/Money> { // co.xenastudios.xmarket.api/Money|null[0]
+    final val isNegative // co.xenastudios.xmarket.api/Money.isNegative|{}isNegative[0]
+        final fun <get-isNegative>(): kotlin/Boolean // co.xenastudios.xmarket.api/Money.isNegative.<get-isNegative>|<get-isNegative>(){}[0]
+    final val isZero // co.xenastudios.xmarket.api/Money.isZero|{}isZero[0]
+        final fun <get-isZero>(): kotlin/Boolean // co.xenastudios.xmarket.api/Money.isZero.<get-isZero>|<get-isZero>(){}[0]
+    final val units // co.xenastudios.xmarket.api/Money.units|{}units[0]
+        final fun <get-units>(): kotlin/Long // co.xenastudios.xmarket.api/Money.units.<get-units>|<get-units>(){}[0]
+    final val whole // co.xenastudios.xmarket.api/Money.whole|{}whole[0]
+        final fun <get-whole>(): kotlin/Long // co.xenastudios.xmarket.api/Money.whole.<get-whole>|<get-whole>(){}[0]
+    final val wholeUp // co.xenastudios.xmarket.api/Money.wholeUp|{}wholeUp[0]
+        final fun <get-wholeUp>(): kotlin/Long // co.xenastudios.xmarket.api/Money.wholeUp.<get-wholeUp>|<get-wholeUp>(){}[0]
+
+    final fun compareTo(co.xenastudios.xmarket.api/Money): kotlin/Int // co.xenastudios.xmarket.api/Money.compareTo|compareTo(co.xenastudios.xmarket.api.Money){}[0]
+    final fun divide(kotlin/Long, kotlin/Boolean): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/Money.divide|divide(kotlin.Long;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.xmarket.api/Money.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.xmarket.api/Money.hashCode|hashCode(){}[0]
+    final fun minus(co.xenastudios.xmarket.api/Money): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/Money.minus|minus(co.xenastudios.xmarket.api.Money){}[0]
+    final fun percent(kotlin/Long): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/Money.percent|percent(kotlin.Long){}[0]
+    final fun percentUp(kotlin/Long): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/Money.percentUp|percentUp(kotlin.Long){}[0]
+    final fun plus(co.xenastudios.xmarket.api/Money): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/Money.plus|plus(co.xenastudios.xmarket.api.Money){}[0]
+    final fun times(kotlin/Long): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/Money.times|times(kotlin.Long){}[0]
+    final fun toPlainString(kotlin/Int): kotlin/String // co.xenastudios.xmarket.api/Money.toPlainString|toPlainString(kotlin.Int){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.xmarket.api/Money.toString|toString(){}[0]
+
+    final object Companion { // co.xenastudios.xmarket.api/Money.Companion|null[0]
+        final const val MAX_UNITS // co.xenastudios.xmarket.api/Money.Companion.MAX_UNITS|{}MAX_UNITS[0]
+            final fun <get-MAX_UNITS>(): kotlin/Long // co.xenastudios.xmarket.api/Money.Companion.MAX_UNITS.<get-MAX_UNITS>|<get-MAX_UNITS>(){}[0]
+        final const val ONE // co.xenastudios.xmarket.api/Money.Companion.ONE|{}ONE[0]
+            final fun <get-ONE>(): kotlin/Long // co.xenastudios.xmarket.api/Money.Companion.ONE.<get-ONE>|<get-ONE>(){}[0]
+        final const val SCALE // co.xenastudios.xmarket.api/Money.Companion.SCALE|{}SCALE[0]
+            final fun <get-SCALE>(): kotlin/Int // co.xenastudios.xmarket.api/Money.Companion.SCALE.<get-SCALE>|<get-SCALE>(){}[0]
+
+        final val ZERO // co.xenastudios.xmarket.api/Money.Companion.ZERO|{}ZERO[0]
+            final fun <get-ZERO>(): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/Money.Companion.ZERO.<get-ZERO>|<get-ZERO>(){}[0]
+
+        final fun of(kotlin/Long): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/Money.Companion.of|of(kotlin.Long){}[0]
+        final fun ofUnits(kotlin/Long): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/Money.Companion.ofUnits|ofUnits(kotlin.Long){}[0]
+        final fun parse(kotlin/String): co.xenastudios.xmarket.api/Money? // co.xenastudios.xmarket.api/Money.Companion.parse|parse(kotlin.String){}[0]
+    }
+}
+
+final class co.xenastudios.xmarket.api/PurchaseResult { // co.xenastudios.xmarket.api/PurchaseResult|null[0]
+    constructor <init>(co.xenastudios.xmarket.api/PurchaseResult.Status, kotlin/Int, co.xenastudios.xmarket.api/Money) // co.xenastudios.xmarket.api/PurchaseResult.<init>|<init>(co.xenastudios.xmarket.api.PurchaseResult.Status;kotlin.Int;co.xenastudios.xmarket.api.Money){}[0]
+
+    final val amount // co.xenastudios.xmarket.api/PurchaseResult.amount|{}amount[0]
+        final fun <get-amount>(): kotlin/Int // co.xenastudios.xmarket.api/PurchaseResult.amount.<get-amount>|<get-amount>(){}[0]
+    final val isSuccess // co.xenastudios.xmarket.api/PurchaseResult.isSuccess|{}isSuccess[0]
+        final fun <get-isSuccess>(): kotlin/Boolean // co.xenastudios.xmarket.api/PurchaseResult.isSuccess.<get-isSuccess>|<get-isSuccess>(){}[0]
+    final val paid // co.xenastudios.xmarket.api/PurchaseResult.paid|{}paid[0]
+        final fun <get-paid>(): co.xenastudios.xmarket.api/Money // co.xenastudios.xmarket.api/PurchaseResult.paid.<get-paid>|<get-paid>(){}[0]
+    final val status // co.xenastudios.xmarket.api/PurchaseResult.status|{}status[0]
+        final fun <get-status>(): co.xenastudios.xmarket.api/PurchaseResult.Status // co.xenastudios.xmarket.api/PurchaseResult.status.<get-status>|<get-status>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xmarket.api/PurchaseResult.toString|toString(){}[0]
+
+    final enum class Status : kotlin/Enum<co.xenastudios.xmarket.api/PurchaseResult.Status> { // co.xenastudios.xmarket.api/PurchaseResult.Status|null[0]
+        enum entry CANCELLED // co.xenastudios.xmarket.api/PurchaseResult.Status.CANCELLED|null[0]
+        enum entry CANT_AFFORD // co.xenastudios.xmarket.api/PurchaseResult.Status.CANT_AFFORD|null[0]
+        enum entry LIMIT_REACHED // co.xenastudios.xmarket.api/PurchaseResult.Status.LIMIT_REACHED|null[0]
+        enum entry NOT_ALLOWED // co.xenastudios.xmarket.api/PurchaseResult.Status.NOT_ALLOWED|null[0]
+        enum entry NOT_FOR_SALE // co.xenastudios.xmarket.api/PurchaseResult.Status.NOT_FOR_SALE|null[0]
+        enum entry NO_ROOM // co.xenastudios.xmarket.api/PurchaseResult.Status.NO_ROOM|null[0]
+        enum entry SUCCESS // co.xenastudios.xmarket.api/PurchaseResult.Status.SUCCESS|null[0]
+        enum entry UNAVAILABLE // co.xenastudios.xmarket.api/PurchaseResult.Status.UNAVAILABLE|null[0]
+
+        final val entries // co.xenastudios.xmarket.api/PurchaseResult.Status.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xmarket.api/PurchaseResult.Status> // co.xenastudios.xmarket.api/PurchaseResult.Status.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): co.xenastudios.xmarket.api/PurchaseResult.Status // co.xenastudios.xmarket.api/PurchaseResult.Status.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<co.xenastudios.xmarket.api/PurchaseResult.Status> // co.xenastudios.xmarket.api/PurchaseResult.Status.values|values#static(){}[0]
+    }
+}
+
+final class co.xenastudios.xmarket.api/SaleResult { // co.xenastudios.xmarket.api/SaleResult|null[0]
+    constructor <init>(co.xenastudios.xmarket.api/SaleResult.Status, kotlin.collections/List<kotlin/Int>, kotlin.collections/Map<kotlin/String, co.xenastudios.xmarket.api/Money>) // co.xenastudios.xmarket.api/SaleResult.<init>|<init>(co.xenastudios.xmarket.api.SaleResult.Status;kotlin.collections.List<kotlin.Int>;kotlin.collections.Map<kotlin.String,co.xenastudios.xmarket.api.Money>){}[0]
+
+    final val isSuccess // co.xenastudios.xmarket.api/SaleResult.isSuccess|{}isSuccess[0]
+        final fun <get-isSuccess>(): kotlin/Boolean // co.xenastudios.xmarket.api/SaleResult.isSuccess.<get-isSuccess>|<get-isSuccess>(){}[0]
+    final val paid // co.xenastudios.xmarket.api/SaleResult.paid|{}paid[0]
+        final fun <get-paid>(): kotlin.collections/Map<kotlin/String, co.xenastudios.xmarket.api/Money> // co.xenastudios.xmarket.api/SaleResult.paid.<get-paid>|<get-paid>(){}[0]
+    final val sold // co.xenastudios.xmarket.api/SaleResult.sold|{}sold[0]
+        final fun <get-sold>(): kotlin.collections/List<kotlin/Int> // co.xenastudios.xmarket.api/SaleResult.sold.<get-sold>|<get-sold>(){}[0]
+    final val status // co.xenastudios.xmarket.api/SaleResult.status|{}status[0]
+        final fun <get-status>(): co.xenastudios.xmarket.api/SaleResult.Status // co.xenastudios.xmarket.api/SaleResult.status.<get-status>|<get-status>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xmarket.api/SaleResult.toString|toString(){}[0]
+
+    final enum class Status : kotlin/Enum<co.xenastudios.xmarket.api/SaleResult.Status> { // co.xenastudios.xmarket.api/SaleResult.Status|null[0]
+        enum entry CANCELLED // co.xenastudios.xmarket.api/SaleResult.Status.CANCELLED|null[0]
+        enum entry NOTHING_SELLABLE // co.xenastudios.xmarket.api/SaleResult.Status.NOTHING_SELLABLE|null[0]
+        enum entry SUCCESS // co.xenastudios.xmarket.api/SaleResult.Status.SUCCESS|null[0]
+        enum entry UNAVAILABLE // co.xenastudios.xmarket.api/SaleResult.Status.UNAVAILABLE|null[0]
+
+        final val entries // co.xenastudios.xmarket.api/SaleResult.Status.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xmarket.api/SaleResult.Status> // co.xenastudios.xmarket.api/SaleResult.Status.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): co.xenastudios.xmarket.api/SaleResult.Status // co.xenastudios.xmarket.api/SaleResult.Status.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<co.xenastudios.xmarket.api/SaleResult.Status> // co.xenastudios.xmarket.api/SaleResult.Status.values|values#static(){}[0]
+    }
+}
+
+final class co.xenastudios.xmarket.api/ShopEntry { // co.xenastudios.xmarket.api/ShopEntry|null[0]
+    constructor <init>(kotlin/String, kotlin/String, co.xenastudios.xmarket.api/ItemKey, co.xenastudios.xmarket.api/Money?, co.xenastudios.xmarket.api/Money?, kotlin/String, kotlin/Boolean) // co.xenastudios.xmarket.api/ShopEntry.<init>|<init>(kotlin.String;kotlin.String;co.xenastudios.xmarket.api.ItemKey;co.xenastudios.xmarket.api.Money?;co.xenastudios.xmarket.api.Money?;kotlin.String;kotlin.Boolean){}[0]
+
+    final val buyPrice // co.xenastudios.xmarket.api/ShopEntry.buyPrice|{}buyPrice[0]
+        final fun <get-buyPrice>(): co.xenastudios.xmarket.api/Money? // co.xenastudios.xmarket.api/ShopEntry.buyPrice.<get-buyPrice>|<get-buyPrice>(){}[0]
+    final val category // co.xenastudios.xmarket.api/ShopEntry.category|{}category[0]
+        final fun <get-category>(): kotlin/String // co.xenastudios.xmarket.api/ShopEntry.category.<get-category>|<get-category>(){}[0]
+    final val commands // co.xenastudios.xmarket.api/ShopEntry.commands|{}commands[0]
+        final fun <get-commands>(): kotlin/Boolean // co.xenastudios.xmarket.api/ShopEntry.commands.<get-commands>|<get-commands>(){}[0]
+    final val currency // co.xenastudios.xmarket.api/ShopEntry.currency|{}currency[0]
+        final fun <get-currency>(): kotlin/String // co.xenastudios.xmarket.api/ShopEntry.currency.<get-currency>|<get-currency>(){}[0]
+    final val id // co.xenastudios.xmarket.api/ShopEntry.id|{}id[0]
+        final fun <get-id>(): kotlin/String // co.xenastudios.xmarket.api/ShopEntry.id.<get-id>|<get-id>(){}[0]
+    final val item // co.xenastudios.xmarket.api/ShopEntry.item|{}item[0]
+        final fun <get-item>(): co.xenastudios.xmarket.api/ItemKey // co.xenastudios.xmarket.api/ShopEntry.item.<get-item>|<get-item>(){}[0]
+    final val sellPrice // co.xenastudios.xmarket.api/ShopEntry.sellPrice|{}sellPrice[0]
+        final fun <get-sellPrice>(): co.xenastudios.xmarket.api/Money? // co.xenastudios.xmarket.api/ShopEntry.sellPrice.<get-sellPrice>|<get-sellPrice>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xmarket.api/ShopEntry.toString|toString(){}[0]
+}
+
+final object co.xenastudios.xmarket.api/XMarket { // co.xenastudios.xmarket.api/XMarket|null[0]
+    final fun api(): co.xenastudios.xmarket.api/XMarketApi // co.xenastudios.xmarket.api/XMarket.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xmarket.api/XMarket.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xmarket.api/XMarketApi?) // co.xenastudios.xmarket.api/XMarket.register|register(co.xenastudios.xmarket.api.XMarketApi?){}[0]
+}

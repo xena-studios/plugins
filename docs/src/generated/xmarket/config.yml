@@ -1,0 +1,142 @@
+# xMarket: a server shop, with sell and worth.
+# Docs: https://plugins.xenastudios.co/xmarket/configuration/
+#
+# Apply changes with /xmarket reload: everything applies, the shops/ files too, but
+# storage. A bad value falls back to its default with a warning in the console. The
+# categories, items and prices are in shops/, one file per category; the messages in lang/.
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# How this plugin's messages look, and the language they're in. shared uses the
+# setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is
+# this plugin's own.
+messages:
+  # The language players see messages in: auto for each player's own (their client's
+  # language setting), or one language for everyone, such as de or pt-BR.
+  language: "shared"
+  # The language of the console, and of players whose language has no file in lang/.
+  default-language: "shared"
+
+  # The look every message shares, used in messages as tags: <prefix>, <highlight>,
+  # <success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,
+  # italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>.
+  theme:
+    # <prefix> starts the default messages. Make it your server's name, such as
+    # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+    prefix: "shared"
+    # The colour of message text that has no tag of its own.
+    base: "shared"
+    # <highlight>: names and values, such as a player or a speed.
+    highlight: "shared"
+    # <success>: something turned on or done.
+    success: "shared"
+    # <error>: something refused or turned off.
+    error: "shared"
+
+# Every command has the same settings:
+#   enabled     false removes the command entirely, so another plugin can have its name
+#   aliases     other names for it
+#   permission  needed to use it; blank ("") lets anyone
+commands:
+
+  # /shop [category]: the shop's menu, or one category's.
+  shop:
+    enabled: true
+    aliases: ["market"]
+    permission: "xmarket.command.shop"
+
+  # /sell hand|all|<item> [amount]
+  sell:
+    enabled: true
+    aliases: []
+    permission: "xmarket.command.sell"
+
+  # /sellgui: a chest to drop items into; they're sold as it closes.
+  sellgui:
+    enabled: true
+    aliases: []
+    permission: "xmarket.command.sellgui"
+
+  # /worth [item]: what the item in your hand (or one named) sells for.
+  worth:
+    enabled: true
+    aliases: []
+    permission: "xmarket.command.worth"
+
+# The shop's menus and prices.
+shop:
+  # Scales every price in shops/: 2 doubles them all, 0.5 halves them, for a server with
+  # bigger or smaller numbers. The files keep their own numbers.
+  multiplier: "1"
+  # Rows in /shop's menu of categories, 1 to 6.
+  rows: 4
+  # The title of /shop's menu. Markup.
+  title: "<dark_gray>Shop"
+  # What a category is paid in unless its file says: money (through xMoney, or any economy
+  # with Vault, or the Common Economy API on Fabric), xp (experience levels), or an item,
+  # such as item:diamond, which needs no economy at all.
+  currency: "money"
+  # Which economy money goes through: auto (xMoney if it's installed, otherwise Vault's or
+  # the Common Economy API's), xmoney, or vault.
+  economy: "auto"
+  # Keep each purchase and sale, for /shop history and /shop stats.
+  history: true
+
+# /sell, /sellgui and /worth.
+sell:
+  # Rows in /sellgui's chest, 1 to 6.
+  gui-rows: 6
+  # Whether an item a player only renamed sells as the plain item. Items with lore or a
+  # custom model (other plugins' items) never sell as a plain item: add them in game with
+  # /shop edit add to price them.
+  renamed: true
+  # Whether /sell all asks to be run again within 10 seconds before selling.
+  confirm-all: false
+
+# Discounts, sell boosts, limits and requirements.
+rules:
+  # Whether xmarket.discount.<n> takes n percent off what a player pays (the highest they
+  # have), and xmarket.sellboost.<n> adds n percent to what they're paid. n is 1 to 100.
+  discounts: true
+  # Hours ahead of UTC for when a day's and a week's limits start again (a week starts on
+  # Monday): 0 is UTC, -5 New York in winter, 1 Paris in winter.
+  timezone: 0
+  # Whether entries' requires: (placeholders, such as "%player_level% >= 10") are
+  # checked. They need PlaceholderAPI on Bukkit; without it an entry with requirements
+  # can't be used.
+  requirements: true
+
+# Where this plugin keeps its data. Read at startup only: restart after changing it.
+storage:
+  # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
+  # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  # shared keeps it in the database every Xena plugin can share, set in plugins/Xena/config.yml.
+  type: "sqlite"
+  # Put in front of every table's name, so plugins and servers can share one database.
+  table-prefix: "xmarket_"
+
+  # Only for type: mysql.
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "minecraft"
+    username: "minecraft"
+    password: ""
+    # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
+    properties: ""
+
+  # The connections used to read, beside the one that writes.
+  pool:
+    # How many: 0 picks for the database (1 for SQLite, 2 for MySQL). More helps only a
+    # MySQL server that many reads wait on.
+    readers: 0
+
+# Telling you when a newer version is out: in the console, and to players with
+# <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
+# sending only the plugin's version, the platform and the Minecraft version.
+updates:
+  # Whether to ask at all.
+  check: true
+  # Which releases to hear of: release, beta (betas and releases) or alpha (everything).
+  channel: "release"

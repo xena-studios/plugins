@@ -1,0 +1,33 @@
+# One of xMarket's categories: its items, what each costs to buy and what it sells for.
+# Made from xMarket's price list, where every crafted item costs what its recipe does,
+# so nothing can be bought, crafted and sold for a profit (/shop audit checks your edits).
+# Prices are for one item, before the multiplier in config.yml. Leave buy or sell out to
+# stop an item being bought or sold. https://plugins.xenastudios.co/xmarket/price-list/
+name: "<gray>Miscellaneous"
+icon: music_disc_cat
+slot: 29
+currency: money
+items:
+  paper: {buy: 2, sell: 0.6}
+  writable_book: {buy: 20, sell: 6}
+  firework_rocket: {buy: 3.34, sell: 1}
+  sentry_armor_trim_smithing_template: {buy: 300, sell: 90}
+  dune_armor_trim_smithing_template: {buy: 300, sell: 90}
+  coast_armor_trim_smithing_template: {buy: 300, sell: 90}
+  wild_armor_trim_smithing_template: {buy: 300, sell: 90}
+  ward_armor_trim_smithing_template: {buy: 600, sell: 180}
+  eye_armor_trim_smithing_template: {buy: 600, sell: 180}
+  vex_armor_trim_smithing_template: {buy: 600, sell: 180}
+  tide_armor_trim_smithing_template: {buy: 300, sell: 90}
+  snout_armor_trim_smithing_template: {buy: 300, sell: 90}
+  rib_armor_trim_smithing_template: {buy: 300, sell: 90}
+  spire_armor_trim_smithing_template: {buy: 600, sell: 180}
+  wayfinder_armor_trim_smithing_template: {buy: 300, sell: 90}
+  shaper_armor_trim_smithing_template: {buy: 300, sell: 90}
+  silence_armor_trim_smithing_template: {buy: 1401, sell: 420.3}
+  raiser_armor_trim_smithing_template: {buy: 300, sell: 90}
+  host_armor_trim_smithing_template: {buy: 300, sell: 90}
+  flow_armor_trim_smithing_template: {buy: 300, sell: 90}
+  bolt_armor_trim_smithing_template: {buy: 300, sell: 90}
+  trial_key: {buy: 50, sell: 15}
+  ominous_trial_key: {buy: 250, sell: 75}

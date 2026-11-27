@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "xmarket",
+  "version": "${version}",
+  "name": "xMarket",
+  "description": "A server shop, with sell and worth. Server-side: players install nothing.",
+  "authors": ["Xena Studios"],
+  "contact": {
+    "homepage": "https://plugins.xenastudios.co/xmarket/",
+    "sources": "https://github.com/xena-studios/plugins",
+    "issues": "https://github.com/xena-studios/plugins/issues"
+  },
+  "license": "GPL-3.0-only",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.xmarket.fabric.XMarketMod" }
+    ]
+  },
+  "suggests": {
+    "xmoney": "*"
+  },
+  "depends": {
+    "fabricloader": "${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${flk}"
+  }
+}

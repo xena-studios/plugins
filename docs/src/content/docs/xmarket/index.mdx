@@ -1,0 +1,46 @@
+---
+title: xMarket
+description: "xMarket: a server shop for Paper, Folia, Spigot and Fabric, with sell, sellgui and worth, and a complete price list where every crafted item costs what its recipe does, so no buy-craft-sell loop pays."
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Current version: **1.0.0**
+
+xMarket is a server shop: players buy and sell items in a menu, with a complete, balanced price list out of the box and every feature free.
+
+- **A price list you don't have to write.** Every item a survival player can get, 1,812 of them in 16 categories, potions, tipped arrows and enchanted books by type. Raw materials have hand-set prices, and every crafted item costs what its recipe does, so nothing can be bought, crafted and sold for a profit. See [The price list](/xmarket/price-list/).
+- **`/shop`, `/sell`, `/sellgui` and `/worth`.** A menu of categories, then items; left click to buy and right click to sell, with an amount screen. `/sell hand`, `/sell all` and `/sell <item>`; `/sellgui`, a chest to drop items into; `/worth` for the item in your hand. See [Commands](/xmarket/commands/).
+- **Every feature free.** Items with their full data (a named sword, another plugin's item), command entries (ranks, kits, keys), item and experience-level currencies, limits per player or for the whole server, discounts and sell boosts by permission, requirements through PlaceholderAPI, history and stats.
+- **Works out of the box.** Install it with [xMoney](/xmoney/), or any economy on Vault, and `/shop` works. No economy plugin at all? Price a category in diamonds.
+- **No dupes by design.** See [below](#no-dupes-by-design).
+- **Edit it in game.** `/shop edit add` adds the item in your hand; `price`, `move` and `remove` the rest. The files stay readable, one per category.
+- **Tune your economy.** `/shop stats` says how much money the shop added to or took out of the economy, and what sold most; `/shop audit` lists items with no price and any loop your own edits make. One `shop.multiplier` scales every price.
+- **Easy to switch to.** `/xmarket import` reads EconomyShopGUI's and ShopGUI+'s shops and EssentialsX's worth.yml. See [Switching](/xmarket/switching/).
+- **In your players' languages:** English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese, each player in their client's.
+
+:::caution[Not released yet]
+1.0 isn't released yet: it ships with the other plugins' rewrites. These pages are a preview.
+:::
+
+## Where it runs
+
+One jar for every Bukkit-family server from 1.8.8 to the newest, Folia included, and a jar per Minecraft line on Fabric, server-side only: players install nothing.
+
+<Reference plugin="xmarket" show="platforms" />
+
+## No dupes by design
+
+- **Shop menus hold no real items.** Every click in them is cancelled, the inventory below included; items are made only once a purchase is paid for.
+- **Buying takes the money, then gives the items,** refunding what didn't fit. **Selling takes the items, then pays;** if the payment fails, the items come back.
+- **`/sellgui` is the one chest with real items in it,** and it sells or gives back everything as it closes: closed, a quit or kick, a death, or the server stopping.
+- **One trade at a time per player,** on their own thread, so two clicks in one tick can't spend the same money twice.
+
+## You won't feel it running
+
+- **No repeating tasks.** A limit's day or week starts again by comparing dates as it's read.
+- **Prices from memory.** `/worth`, `/sell all` and the API look prices up in a map built as the price list loads; items match by type first, then by their data only for entries that need it.
+- **Nothing on the game's threads that can wait.** The price list is read, and history and limits written, off them, one writer in order. On Folia every trade runs on the player's own thread.

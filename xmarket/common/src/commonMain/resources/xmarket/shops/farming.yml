@@ -1,0 +1,81 @@
+# One of xMarket's categories: its items, what each costs to buy and what it sells for.
+# Made from xMarket's price list, where every crafted item costs what its recipe does,
+# so nothing can be bought, crafted and sold for a profit (/shop audit checks your edits).
+# Prices are for one item, before the multiplier in config.yml. Leave buy or sell out to
+# stop an item being bought or sold. https://plugins.xenastudios.co/xmarket/price-list/
+name: "<yellow>Farming & food"
+icon: wheat
+slot: 15
+currency: money
+items:
+  sugar_cane: {buy: 2, sell: 0.6}
+  pumpkin: {buy: 6, sell: 1.8}
+  carved_pumpkin: {buy: 6, sell: 1.8}
+  jack_o_lantern: {buy: 7.13, sell: 2.13}
+  melon: {buy: 9, sell: 2.7}
+  hay_block: {buy: 18, sell: 5.4}
+  bowl: {buy: 0.75, sell: 0.22}
+  apple: {buy: 4, sell: 1.2}
+  mushroom_stew: {buy: 6.75, sell: 2.02}
+  wheat_seeds: {buy: 1, sell: 0.3}
+  wheat: {buy: 2, sell: 0.6}
+  bread: {buy: 6, sell: 1.8}
+  porkchop: {buy: 4, sell: 1.2}
+  cooked_porkchop: {buy: 4, sell: 1.2}
+  golden_apple: {buy: 100, sell: 30}
+  enchanted_golden_apple: {buy: 3000, sell: 900}
+  water_bucket: {buy: 60, sell: 18}
+  lava_bucket: {buy: 60, sell: 18}
+  powder_snow_bucket: {buy: 60, sell: 18}
+  milk_bucket: {buy: 60, sell: 18}
+  pufferfish_bucket: {buy: 6, sell: 1.8}
+  salmon_bucket: {buy: 4, sell: 1.2}
+  cod_bucket: {buy: 3, sell: 0.9}
+  tropical_fish_bucket: {buy: 6, sell: 1.8}
+  axolotl_bucket: {buy: 60, sell: 18}
+  sulfur_cube_bucket: {buy: 60, sell: 18}
+  tadpole_bucket: {buy: 30, sell: 9}
+  dried_kelp_block: {buy: 9, sell: 2.7}
+  blue_egg: {buy: 2, sell: 0.6}
+  brown_egg: {buy: 2, sell: 0.6}
+  cod: {buy: 3, sell: 0.9}
+  salmon: {buy: 4, sell: 1.2}
+  tropical_fish: {buy: 6, sell: 1.8}
+  pufferfish: {buy: 6, sell: 1.8}
+  cooked_cod: {buy: 3, sell: 0.9}
+  cooked_salmon: {buy: 4, sell: 1.2}
+  cocoa_beans: {buy: 3, sell: 0.9}
+  sugar: {buy: 2, sell: 0.6}
+  cake: {buy: 12, sell: 3.6}
+  cookie: {buy: 0.88, sell: 0.26}
+  melon_slice: {buy: 1, sell: 0.3}
+  dried_kelp: {buy: 1, sell: 0.3}
+  pumpkin_seeds: {buy: 1.5, sell: 0.45}
+  melon_seeds: {buy: 1, sell: 0.3}
+  beef: {buy: 4, sell: 1.2}
+  cooked_beef: {buy: 4, sell: 1.2}
+  chicken: {buy: 3, sell: 0.9}
+  cooked_chicken: {buy: 3, sell: 0.9}
+  carrot: {buy: 2, sell: 0.6}
+  potato: {buy: 2, sell: 0.6}
+  baked_potato: {buy: 2, sell: 0.6}
+  poisonous_potato: {buy: 1, sell: 0.3}
+  golden_carrot: {buy: 12.67, sell: 3.8}
+  pumpkin_pie: {buy: 10, sell: 3}
+  rabbit: {buy: 4, sell: 1.2}
+  cooked_rabbit: {buy: 4, sell: 1.2}
+  rabbit_stew: {buy: 11.75, sell: 3.52}
+  mutton: {buy: 3, sell: 0.9}
+  cooked_mutton: {buy: 3, sell: 0.9}
+  torchflower_seeds: {buy: 5, sell: 1.5}
+  pitcher_pod: {buy: 5, sell: 1.5}
+  beetroot: {buy: 2, sell: 0.6}
+  beetroot_seeds: {buy: 1, sell: 0.3}
+  beetroot_soup: {buy: 12.75, sell: 3.82}
+  suspicious_stew: {buy: 8.75, sell: 2.62}
+  composter: {buy: 3.5, sell: 1.05}
+  sweet_berries: {buy: 1, sell: 0.3}
+  glow_berries: {buy: 2, sell: 0.6}
+  bee_nest: {buy: 100, sell: 30}
+  beehive: {buy: 24, sell: 7.2}
+  honey_bottle: {buy: 8, sell: 2.4}

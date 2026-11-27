@@ -1,0 +1,17 @@
+---
+title: Permissions
+description: "Every xMarket permission, and who has it by default."
+sidebar:
+  order: 2.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Each command's permission is `xmarket.command.<command>`, everyone's by default; `/shop stats`, `audit` and `edit`, and other players' history, are operators'. A category or an entry can have a `permission:` of its own, which players need to see and use it.
+
+- **`xmarket.discount.<n>`** takes `<n>` percent off what a player pays, the highest they have (1 to 100).
+- **`xmarket.sellboost.<n>`** adds `<n>` percent to what a player is paid.
+
+Both are read only when a permissions plugin gives them outright, never because a player is an operator, and kept for 30 seconds (there's no event for a permission changing). `rules.discounts: false` turns both off. On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api.
+
+<Reference plugin="xmarket" show="permissions" />

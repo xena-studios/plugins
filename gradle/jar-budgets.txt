@@ -122,3 +122,17 @@
 :core:platform-fabric:xvanish:1.20.1 556
 :core:platform-fabric:xvanish:1.21.11 558
 :core:platform-fabric:xvanish:26.3 551
+
+# xMarket 1.0 (M9), shrunk: 778 KiB on Bukkit, over the 500 KiB target with the reason recorded in
+# decisions/2026-11-27-xmarket.md: about 400 KiB the shared core (its database layer, commands,
+# config, messages, the family, and the menus), about 300 KiB xMarket's own and its API (trades,
+# currencies, limits, the menus and amount screen, the price list's model, reader and loop audit,
+# three importers, editing, history, the Bukkit items from 1.8.8 on and the four Bukkit events),
+# about 60 KiB data: the price list (16 categories, 1,812 items, 24 KiB compressed), the newest
+# version's recipes for /shop audit (17 KiB), the 1.8 to 1.12 item names (4 KiB), and the seven
+# translations (21 KiB). Line: size + about 10%.
+:xmarket:bukkit 855
+# On Fabric, 682-691 KiB, shrunk before Loom remaps it, its core relocated (xena.fabric-mod); lines size + 5-10%.
+:core:platform-fabric:xmarket:1.20.1 755
+:core:platform-fabric:xmarket:1.21.11 760
+:core:platform-fabric:xmarket:26.3 750

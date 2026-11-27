@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvote|xvote-network] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvote|xvote-network|xmarket] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -32,7 +32,9 @@
 // before Friend has ever joined, paid as Friend joins; one for Joiner, paid at once; /vote in
 // German; with --xmoney, the money reward in Joiner's /balance), or xVote across a network
 // (xvote-network: the votes sent to the proxy's receiver, Friend paid on lobby as Friend first
-// joins, then on game, where Friend moved, and Joiner on lobby).
+// joins, then on game, where Friend moved, and Joiner on lobby), or xMarket's (with --xmoney: /shop's
+// menus, a category and the amount screen clicked through to a purchase that xMoney debits, /sell
+// hand that it credits, /shop buy and /worth, all in German).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks; --version sets it instead, for a
@@ -555,6 +557,7 @@ async function run () {
   if (plugin === 'xvanish') return xvanish()
   if (plugin === 'xvote') return xvote()
   if (plugin === 'xvote-network') return xvoteNetwork()
+  if (plugin === 'xmarket') return xmarket()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")
@@ -568,6 +571,64 @@ async function run () {
   bot.setSettings({ locale: 'en_us' })
   await sleep(2000)
   await command('/xsample debug', 'Checking xSample', 'a reply in the language the client changed to (English)')
+  finish()
+}
+
+// xMarket as a player uses it, through its menus: Joiner (an operator, in German) is given money
+// through xMoney, opens /shop, clicks into the ores, picks the diamond, and buys one on the amount
+// screen; then sells it with /sell hand, buys stone with /shop buy, and asks /worth. Every click
+// in a menu is cancelled by the server, which sends the client the truth back, so what Joiner ends
+// up holding is only what xMarket gave after payment.
+async function xmarket () {
+  const title = (w) => JSON.stringify(w && w.title)
+  const opened = (ms = 8000) => new Promise((resolve) => {
+    const timer = setTimeout(() => { bot.removeListener('windowOpen', on); resolve(null) }, ms)
+    const on = (w) => { clearTimeout(timer); resolve(w) }
+    bot.once('windowOpen', on)
+  })
+  const click = async (slot) => {
+    try { await bot.clickWindow(slot, 0, 0) } catch (e) { /* a refused click is the point */ }
+  }
+  const count = (name) => bot.inventory.items().filter((i) => i.name === name).reduce((n, i) => n + i.count, 0)
+  if (withXMoney) await command(`/eco give ${username} 1000`, username, '/eco gives the client money through xMoney')
+  let w = opened()
+  bot.chat('/shop')
+  w = await w
+  check('/shop opens its menu of categories', w != null && title(w).includes('Shop'), `window ${title(w)}`)
+  if (!w) return finish()
+  // The ores sit at slot 14 (shops/ores.yml).
+  let next = opened()
+  await click(14)
+  w = await next
+  check('a category opens from its icon', w != null && title(w).includes('Ores'), `window ${title(w)}`)
+  if (!w) return finish()
+  const slot = w.slots.findIndex((s, i) => i < 45 && s && s.name === 'diamond')
+  check('the category shows the diamond', slot >= 0, `slots ${JSON.stringify(w.slots.slice(0, 45).filter(Boolean).map((s) => s.name)).slice(0, 300)}`)
+  if (slot < 0) return finish()
+  next = opened()
+  await click(slot)
+  w = await next
+  check('the amount screen opens, in German', w != null && title(w).includes('kaufen'), `window ${title(w)}`)
+  if (!w) return finish()
+  const from = heard.length
+  await click(40)
+  check('buying on the amount screen pays and gives', await hear('Gekauft: 1× Diamond für $200.00', from) != null, `heard ${JSON.stringify(heard.slice(from))}`)
+  await sleep(1000)
+  check('the client holds the one diamond bought, no more', count('diamond') === 1, `holds ${count('diamond')}`)
+  if (bot.currentWindow) bot.closeWindow(bot.currentWindow)
+  await sleep(500)
+  // It went to the hotbar's first free slot, the one held.
+  bot.setQuickBarSlot(bot.inventory.items().find((i) => i.name === 'diamond').slot - 36)
+  await sleep(500)
+  await command('/sell hand', 'Verkauft: 1× Diamond für $60.00.', '/sell hand takes the diamond and pays')
+  await sleep(500)
+  check('the diamond is gone', count('diamond') === 0, `holds ${count('diamond')}`)
+  await command('/shop buy stone 64', 'Gekauft: 64× Stone für $64.00.', '/shop buy buys without the menu')
+  await sleep(500)
+  bot.setQuickBarSlot(bot.inventory.items().find((i) => i.name === 'stone').slot - 36)
+  await sleep(500)
+  await command('/worth', 'Stone verkauft sich für $0.30 pro Stück, $19.20 für 64.', '/worth prices the held stack')
+  if (withXMoney) await command('/balance', 'Kontostand: $796.00', 'xMoney took 200 and 64, and paid 60')
   finish()
 }
 

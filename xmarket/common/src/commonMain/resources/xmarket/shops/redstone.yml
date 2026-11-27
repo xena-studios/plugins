@@ -1,0 +1,93 @@
+# One of xMarket's categories: its items, what each costs to buy and what it sells for.
+# Made from xMarket's price list, where every crafted item costs what its recipe does,
+# so nothing can be bought, crafted and sold for a profit (/shop audit checks your edits).
+# Prices are for one item, before the multiplier in config.yml. Leave buy or sell out to
+# stop an item being bought or sold. https://plugins.xenastudios.co/xmarket/price-list/
+name: "<red>Redstone"
+icon: redstone
+slot: 19
+currency: money
+items:
+  jukebox: {buy: 208, sell: 62.4}
+  redstone: {buy: 4, sell: 1.2}
+  redstone_torch: {buy: 4.5, sell: 1.35}
+  redstone_block: {buy: 36, sell: 10.8}
+  repeater: {buy: 16, sell: 4.8}
+  comparator: {buy: 22.5, sell: 6.75}
+  piston: {buy: 31, sell: 9.3}
+  sticky_piston: {buy: 41, sell: 12.3}
+  slime_block: {buy: 90, sell: 27}
+  honey_block: {buy: 24, sell: 7.2}
+  observer: {buy: 20, sell: 6}
+  hopper: {buy: 108, sell: 32.4}
+  dispenser: {buy: 24.5, sell: 7.35}
+  dropper: {buy: 11, sell: 3.3}
+  lectern: {buy: 50, sell: 15}
+  target: {buy: 34, sell: 10.2}
+  lever: {buy: 1.5, sell: 0.45}
+  lightning_rod: {buy: 18, sell: 5.4}
+  exposed_lightning_rod: {buy: 18, sell: 5.4}
+  weathered_lightning_rod: {buy: 18, sell: 5.4}
+  oxidized_lightning_rod: {buy: 18, sell: 5.4}
+  waxed_lightning_rod: {buy: 24, sell: 7.2}
+  waxed_exposed_lightning_rod: {buy: 24, sell: 7.2}
+  waxed_weathered_lightning_rod: {buy: 24, sell: 7.2}
+  waxed_oxidized_lightning_rod: {buy: 24, sell: 7.2}
+  daylight_detector: {buy: 25.5, sell: 7.65}
+  sculk_sensor: {buy: 40, sell: 12}
+  calibrated_sculk_sensor: {buy: 70, sell: 21}
+  tripwire_hook: {buy: 10.75, sell: 3.22}
+  trapped_chest: {buy: 18.75, sell: 5.62}
+  tnt: {buy: 48, sell: 14.4}
+  redstone_lamp: {buy: 32, sell: 9.6}
+  note_block: {buy: 12, sell: 3.6}
+  stone_button: {buy: 1, sell: 0.3}
+  polished_blackstone_button: {buy: 1, sell: 0.3}
+  oak_button: {buy: 1, sell: 0.3}
+  spruce_button: {buy: 1, sell: 0.3}
+  birch_button: {buy: 1, sell: 0.3}
+  jungle_button: {buy: 1, sell: 0.3}
+  acacia_button: {buy: 1, sell: 0.3}
+  cherry_button: {buy: 1, sell: 0.3}
+  dark_oak_button: {buy: 1, sell: 0.3}
+  pale_oak_button: {buy: 1, sell: 0.3}
+  mangrove_button: {buy: 1, sell: 0.3}
+  poplar_button: {buy: 1, sell: 0.3}
+  bamboo_button: {buy: 4.5, sell: 1.35}
+  crimson_button: {buy: 1, sell: 0.3}
+  warped_button: {buy: 1, sell: 0.3}
+  stone_pressure_plate: {buy: 2, sell: 0.6}
+  polished_blackstone_pressure_plate: {buy: 2, sell: 0.6}
+  light_weighted_pressure_plate: {buy: 24, sell: 7.2}
+  heavy_weighted_pressure_plate: {buy: 40, sell: 12}
+  oak_pressure_plate: {buy: 2, sell: 0.6}
+  spruce_pressure_plate: {buy: 2, sell: 0.6}
+  birch_pressure_plate: {buy: 2, sell: 0.6}
+  jungle_pressure_plate: {buy: 2, sell: 0.6}
+  acacia_pressure_plate: {buy: 2, sell: 0.6}
+  cherry_pressure_plate: {buy: 2, sell: 0.6}
+  dark_oak_pressure_plate: {buy: 2, sell: 0.6}
+  pale_oak_pressure_plate: {buy: 2, sell: 0.6}
+  mangrove_pressure_plate: {buy: 2, sell: 0.6}
+  poplar_pressure_plate: {buy: 2, sell: 0.6}
+  bamboo_pressure_plate: {buy: 9, sell: 2.7}
+  crimson_pressure_plate: {buy: 2, sell: 0.6}
+  warped_pressure_plate: {buy: 2, sell: 0.6}
+  powered_rail: {buy: 12.75, sell: 3.82}
+  detector_rail: {buy: 21, sell: 6.3}
+  rail: {buy: 7.54, sell: 2.26}
+  activator_rail: {buy: 20.92, sell: 6.27}
+  minecart: {buy: 100, sell: 30}
+  chest_minecart: {buy: 108, sell: 32.4}
+  furnace_minecart: {buy: 108, sell: 32.4}
+  tnt_minecart: {buy: 148, sell: 44.4}
+  hopper_minecart: {buy: 208, sell: 62.4}
+  crafter: {buy: 123, sell: 36.9}
+  copper_bulb: {buy: 49, sell: 14.7}
+  exposed_copper_bulb: {buy: 49, sell: 14.7}
+  weathered_copper_bulb: {buy: 49, sell: 14.7}
+  oxidized_copper_bulb: {buy: 49, sell: 14.7}
+  waxed_copper_bulb: {buy: 53.5, sell: 16.05}
+  waxed_exposed_copper_bulb: {buy: 53.5, sell: 16.05}
+  waxed_weathered_copper_bulb: {buy: 53.5, sell: 16.05}
+  waxed_oxidized_copper_bulb: {buy: 53.5, sell: 16.05}

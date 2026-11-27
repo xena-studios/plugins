@@ -1,0 +1,3 @@
+# Items the shop buys from players but doesn't sell: one per world, so selling them would take
+# away what a server's players work towards. An owner can give them a buy price in game.
+dragon_egg

@@ -1,0 +1,4 @@
+# With xMoney (boot.sh --xmoney) and a real client (scripts/budgets/bots/client.js, with --seed
+# scripts/boot-seeds/client so the client is an operator): /shop's menus clicked through to a
+# purchase xMoney debits, /sell hand that it credits, /shop buy and /worth, in German.
+client: --plugin xmarket --xmoney

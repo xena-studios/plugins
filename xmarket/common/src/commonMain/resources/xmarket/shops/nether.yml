@@ -1,0 +1,105 @@
+# One of xMarket's categories: its items, what each costs to buy and what it sells for.
+# Made from xMarket's price list, where every crafted item costs what its recipe does,
+# so nothing can be bought, crafted and sold for a profit (/shop audit checks your edits).
+# Prices are for one item, before the multiplier in config.yml. Leave buy or sell out to
+# stop an item being bought or sold. https://plugins.xenastudios.co/xmarket/price-list/
+name: "<dark_red>Nether"
+icon: netherrack
+slot: 24
+currency: money
+items:
+  crimson_nylium: {buy: 3, sell: 0.9}
+  warped_nylium: {buy: 3, sell: 0.9}
+  crimson_planks: {buy: 1, sell: 0.3}
+  warped_planks: {buy: 1, sell: 0.3}
+  crimson_stem: {buy: 4, sell: 1.2}
+  warped_stem: {buy: 4, sell: 1.2}
+  stripped_crimson_stem: {buy: 4, sell: 1.2}
+  stripped_warped_stem: {buy: 4, sell: 1.2}
+  stripped_crimson_hyphae: {buy: 5.34, sell: 1.6}
+  stripped_warped_hyphae: {buy: 5.34, sell: 1.6}
+  crimson_hyphae: {buy: 5.34, sell: 1.6}
+  warped_hyphae: {buy: 5.34, sell: 1.6}
+  wither_rose: {buy: 30, sell: 9}
+  crimson_fungus: {buy: 3, sell: 0.9}
+  warped_fungus: {buy: 3, sell: 0.9}
+  crimson_roots: {buy: 2, sell: 0.6}
+  warped_roots: {buy: 2, sell: 0.6}
+  nether_sprouts: {buy: 1, sell: 0.3}
+  weeping_vines: {buy: 2, sell: 0.6}
+  twisting_vines: {buy: 2, sell: 0.6}
+  crimson_slab: {buy: 0.5, sell: 0.15}
+  warped_slab: {buy: 0.5, sell: 0.15}
+  nether_brick_slab: {buy: 2, sell: 0.6}
+  quartz_slab: {buy: 12, sell: 3.6}
+  smooth_quartz: {buy: 24, sell: 7.2}
+  crimson_shelf: {buy: 4, sell: 1.2}
+  warped_shelf: {buy: 4, sell: 1.2}
+  obsidian: {buy: 15, sell: 4.5}
+  crimson_fence: {buy: 1.67, sell: 0.5}
+  warped_fence: {buy: 1.67, sell: 0.5}
+  netherrack: {buy: 1, sell: 0.3}
+  soul_sand: {buy: 2, sell: 0.6}
+  soul_soil: {buy: 2, sell: 0.6}
+  basalt: {buy: 1, sell: 0.3}
+  polished_basalt: {buy: 1, sell: 0.3}
+  smooth_basalt: {buy: 1, sell: 0.3}
+  soul_torch: {buy: 1.63, sell: 0.48}
+  glowstone: {buy: 16, sell: 4.8}
+  nether_bricks: {buy: 4, sell: 1.2}
+  cracked_nether_bricks: {buy: 4, sell: 1.2}
+  chiseled_nether_bricks: {buy: 4, sell: 1.2}
+  nether_brick_fence: {buy: 3, sell: 0.9}
+  nether_brick_stairs: {buy: 4, sell: 1.2}
+  crimson_stairs: {buy: 1.5, sell: 0.45}
+  warped_stairs: {buy: 1.5, sell: 0.45}
+  nether_brick_wall: {buy: 4, sell: 1.2}
+  red_nether_brick_wall: {buy: 10, sell: 3}
+  blackstone_wall: {buy: 1, sell: 0.3}
+  polished_blackstone_wall: {buy: 1, sell: 0.3}
+  polished_blackstone_brick_wall: {buy: 1, sell: 0.3}
+  chiseled_quartz_block: {buy: 24, sell: 7.2}
+  quartz_block: {buy: 24, sell: 7.2}
+  quartz_bricks: {buy: 24, sell: 7.2}
+  quartz_pillar: {buy: 24, sell: 7.2}
+  quartz_stairs: {buy: 24, sell: 7.2}
+  magma_block: {buy: 4, sell: 1.2}
+  nether_wart_block: {buy: 36, sell: 10.8}
+  warped_wart_block: {buy: 4, sell: 1.2}
+  red_nether_bricks: {buy: 10, sell: 3}
+  dried_ghast: {buy: 482, sell: 144.6}
+  smooth_quartz_stairs: {buy: 24, sell: 7.2}
+  red_nether_brick_stairs: {buy: 10, sell: 3}
+  smooth_quartz_slab: {buy: 12, sell: 3.6}
+  red_nether_brick_slab: {buy: 5, sell: 1.5}
+  crimson_door: {buy: 2, sell: 0.6}
+  warped_door: {buy: 2, sell: 0.6}
+  crimson_trapdoor: {buy: 3, sell: 0.9}
+  warped_trapdoor: {buy: 3, sell: 0.9}
+  crimson_fence_gate: {buy: 4, sell: 1.2}
+  warped_fence_gate: {buy: 4, sell: 1.2}
+  crimson_sign: {buy: 2.17, sell: 0.65}
+  warped_sign: {buy: 2.17, sell: 0.65}
+  crimson_hanging_sign: {buy: 12.15, sell: 3.64}
+  warped_hanging_sign: {buy: 12.15, sell: 3.64}
+  nether_brick: {buy: 1, sell: 0.3}
+  piglin_banner_pattern: {buy: 50, sell: 15}
+  soul_lantern: {buy: 19.41, sell: 5.82}
+  soul_campfire: {buy: 15.5, sell: 4.65}
+  shroomlight: {buy: 10, sell: 3}
+  lodestone: {buy: 28, sell: 8.4}
+  crying_obsidian: {buy: 25, sell: 7.5}
+  blackstone: {buy: 1, sell: 0.3}
+  blackstone_slab: {buy: 0.5, sell: 0.15}
+  blackstone_stairs: {buy: 1, sell: 0.3}
+  gilded_blackstone: {buy: 60, sell: 18}
+  polished_blackstone: {buy: 1, sell: 0.3}
+  polished_blackstone_slab: {buy: 0.5, sell: 0.15}
+  polished_blackstone_stairs: {buy: 1, sell: 0.3}
+  chiseled_polished_blackstone: {buy: 1, sell: 0.3}
+  polished_blackstone_bricks: {buy: 1, sell: 0.3}
+  polished_blackstone_brick_slab: {buy: 0.5, sell: 0.15}
+  polished_blackstone_brick_stairs: {buy: 1, sell: 0.3}
+  cracked_polished_blackstone_bricks: {buy: 1, sell: 0.3}
+  respawn_anchor: {buy: 198, sell: 59.4}
+  netherite_upgrade_smithing_template: {buy: 1401, sell: 420.3}

@@ -1,0 +1,20 @@
+/* The site's styles: Tailwind and Fumadocs' layouts and typography, then the plugin family's
+   brand: its tokens (tokens.css, from xena-studios/brand by pnpm brand:sync), its game GUI
+   (gui.css) and how the docs wear it (theme.css). */
+@import "tailwindcss";
+@import "fumadocs-ui/css/lib/default-colors.css";
+@import "fumadocs-ui/css/lib/base.css";
+@import "fumadocs-ui/css/lib/shiki.css";
+@plugin "../../node_modules/fumadocs-ui/dist/tailwind/typography.js";
+@import "fumadocs-ui/css/generated/home.css";
+@import "fumadocs-ui/css/generated/notebook.css";
+@import "fumadocs-ui/css/generated/shared.css";
+@source "../";
+
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/jetbrains-mono";
+@import "./tokens.css";
+@import "./gui.css";
+@import "./theme.css";
+@import "./components.css";
+@import "./home.css";

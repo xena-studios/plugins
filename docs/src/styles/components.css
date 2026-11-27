@@ -1,0 +1,720 @@
+/* The site's components (src/components): title rows, the plugin switcher and version switch,
+   Starlight's components as the pages use them, the reference tables and the downloads. */
+
+/* --- Title rows (PageTitle.tsx) --- */
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+.page-title h1 {
+  margin: 0;
+  font-size: clamp(1.85rem, 1.4rem + 1.6vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.page-description {
+  text-wrap: pretty;
+  margin: 0.55rem 0 0;
+  max-width: 60ch;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--color-fd-muted-foreground);
+}
+.small-slot {
+  flex: none;
+  align-self: flex-start;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin-top: 0.1rem;
+}
+.small-slot img {
+  width: 76%;
+  height: 76%;
+  border-radius: 8%;
+}
+
+/* A plugin's overview: the plugin as an item in a large slot, with its stats and Download. */
+.product {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(1.25rem, 3vw, 2.25rem);
+  align-items: center;
+  margin: 0.5rem 0 2rem;
+  padding-bottom: 2rem;
+  border-bottom: var(--gui-px) solid var(--gui-panel-lo);
+  box-shadow: 0 1px 0 var(--gui-panel-hi);
+}
+.big-slot {
+  width: clamp(6rem, 4rem + 6vw, 9rem);
+  aspect-ratio: 1;
+}
+.big-slot img {
+  width: 74%;
+  height: 74%;
+  border-radius: 8%;
+}
+.product h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 1.5rem + 3vw, 3.9rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  color: var(--accent-ink);
+}
+.product-tagline {
+  margin: 0.55rem 0 0;
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.product-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.25rem;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.35rem 0 0;
+}
+.soon {
+  margin: 1rem 0 0;
+  font-weight: 600;
+  color: var(--gui-attribute);
+}
+.soon a {
+  color: var(--color-fd-foreground);
+}
+/* The overview's opening list of features reads as the item's lore, in tooltip material,
+   flowing in two columns on wide screens. Titles are attribute lines. */
+.is-overview .prose > ul:first-of-type {
+  columns: 2 18rem;
+  column-gap: 2.25rem;
+  margin-block: 1.75rem;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  list-style: none;
+  color: var(--gui-tooltip-lore);
+  background: var(--gui-tooltip);
+  border: var(--gui-px) solid;
+  border-image: linear-gradient(var(--gui-tooltip-top), var(--gui-tooltip-bottom)) 1;
+  outline: var(--gui-px) solid #050208;
+}
+.is-overview .prose > ul:first-of-type > li {
+  break-inside: avoid;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  color: var(--gui-tooltip-lore);
+  line-height: 1.55;
+}
+.is-overview .prose > ul:first-of-type > li::marker {
+  content: none;
+}
+.is-overview .prose > ul:first-of-type > li > strong:first-child {
+  color: var(--gui-tooltip-attribute);
+}
+.is-overview .prose > ul:first-of-type code {
+  color: var(--gui-tooltip-text);
+  background: #1d1726 !important;
+  box-shadow: none !important;
+}
+@media (max-width: 40rem) {
+  .product {
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items: start;
+    margin-top: 0;
+  }
+  .big-slot {
+    width: 4.75rem;
+  }
+  .product h1 {
+    font-size: 2.4rem;
+  }
+  .product-text > :not(h1) {
+    grid-column: 1 / -1;
+  }
+  .product-text {
+    display: contents;
+  }
+  .product-tagline,
+  .product-stats,
+  .product-actions,
+  .soon {
+    grid-column: 1 / -1;
+  }
+  .product h1 {
+    align-self: center;
+  }
+  .product-tagline {
+    margin-top: 0;
+  }
+  .product-stats {
+    gap: 0.2rem 1rem;
+    margin-top: 0;
+  }
+  .product-actions {
+    margin-top: 0.25rem;
+  }
+  .product-actions .gui-button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+/* --- The version switch --- */
+.version-switch {
+  position: relative;
+  margin: -0.75rem 0 1.5rem;
+}
+.version-switch summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+  background: var(--gui-slot);
+  border: var(--gui-px) solid var(--gui-edge);
+}
+.version-switch summary::-webkit-details-marker {
+  display: none;
+}
+.version-switch summary::after {
+  content: "▾";
+  color: var(--color-fd-muted-foreground);
+}
+.version-switch .label {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-fd-muted-foreground);
+}
+.version-switch ul {
+  position: absolute;
+  z-index: 10;
+  display: grid;
+  gap: 0.1rem;
+  margin: 0.4rem 0 0;
+  padding: 0.3rem;
+  list-style: none;
+  width: max-content;
+  background: var(--gui-panel);
+  border: var(--gui-px) solid var(--gui-edge);
+}
+.version-switch li a {
+  display: block;
+  padding: 0.3rem 0.6rem;
+  color: var(--gui-lore);
+  text-decoration: none;
+}
+.version-switch li a:hover {
+  color: var(--color-fd-foreground);
+  background: var(--gui-slot);
+}
+.version-switch li a[aria-current="page"] {
+  color: var(--accent-ink);
+}
+.version-switch .hint {
+  font-size: 0.8rem;
+  color: var(--color-fd-muted-foreground);
+}
+
+/* --- The plugin switcher above a plugin's sidebar --- */
+.switcher {
+  display: grid;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-fd-border);
+}
+.switcher summary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.6rem 0.4rem 0.4rem;
+  cursor: pointer;
+  list-style: none;
+}
+.switcher summary::-webkit-details-marker {
+  display: none;
+}
+.switcher summary:hover {
+  filter: brightness(1.12);
+}
+.switcher .mini {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+}
+.switcher .mini img {
+  width: 72%;
+  height: 72%;
+  border-radius: 8%;
+}
+.switcher .name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: color-mix(in oklab, var(--item) 80%, white);
+}
+.switcher .hint {
+  margin-inline-start: auto;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gui-hint);
+}
+.switcher ul {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.switcher li a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.2rem 0.4rem;
+  color: var(--gui-lore);
+  text-decoration: none;
+}
+.switcher li a:hover {
+  color: var(--color-fd-foreground);
+  background: var(--gui-slot);
+}
+.switcher li a[aria-current="page"] {
+  color: var(--color-fd-foreground);
+  font-weight: 600;
+}
+.switcher li .mini {
+  width: 1.65rem;
+  height: 1.65rem;
+}
+.switcher .soon {
+  margin: 0 0 0 auto;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gui-hint);
+}
+.switcher .all {
+  font-size: 0.8125rem;
+  color: var(--gui-hint);
+  text-decoration: none;
+}
+.switcher .all:hover {
+  color: var(--color-fd-foreground);
+}
+
+/* --- Starlight's components (starlight.tsx) --- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.75rem;
+  margin-block: 1.5rem;
+}
+.link-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1.1rem;
+  color: var(--color-fd-foreground);
+  text-decoration: none;
+  transition: filter 120ms var(--ease);
+}
+.link-card:hover {
+  filter: brightness(1.14);
+}
+.link-card-text {
+  display: grid;
+  gap: 0.25rem;
+}
+.link-card-title {
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+}
+.link-card-description {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--gui-lore);
+}
+.link-card-arrow {
+  flex: none;
+  color: var(--accent-ink);
+  transition: transform 160ms var(--ease);
+}
+.link-card:hover .link-card-arrow {
+  transform: translateX(3px);
+}
+.card {
+  padding: 1rem 1.15rem;
+}
+.card-title {
+  margin: 0 0 0.4rem !important;
+  font-weight: 700;
+}
+.card-body > :last-child {
+  margin-bottom: 0;
+}
+.badge {
+  display: inline-block;
+  margin-inline: 0.15rem;
+  padding: 0.05rem 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  vertical-align: 0.1em;
+  color: var(--gui-lore);
+  background: var(--gui-slot);
+  border: 1px solid var(--gui-panel-lo);
+}
+.badge-note {
+  color: var(--gui-attribute);
+}
+.badge-caution {
+  color: #f0b54a;
+}
+.badge-danger {
+  color: #ff7a8c;
+}
+.badge-tip,
+.badge-success {
+  color: #5ee08a;
+}
+.steps > ol {
+  counter-reset: step;
+  list-style: none;
+  padding-inline-start: 0;
+}
+.steps > ol > li {
+  position: relative;
+  counter-increment: step;
+  padding-inline-start: 2.75rem;
+}
+.steps > ol > li::before {
+  content: counter(step);
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background: var(--gui-slot);
+  box-shadow:
+    inset var(--gui-px) var(--gui-px) 0 var(--gui-slot-lo),
+    inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -1) 0 var(--gui-slot-hi);
+}
+.file-tree {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+}
+.fallback-code {
+  border: 1px solid var(--color-fd-border);
+  background: var(--code-ground);
+}
+.fallback-code figcaption {
+  padding: 0.5rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--color-fd-border);
+}
+/* Tabs (install steps): square, the chosen tab a slot. */
+.prose [role="tablist"] {
+  border-radius: 0;
+}
+.prose [role="tab"] {
+  border-radius: 0;
+  font-weight: 600;
+}
+.prose [role="tab"][data-state="active"] {
+  color: var(--color-fd-foreground);
+  box-shadow: inset 0 calc(var(--gui-px) * -1) 0 var(--accent);
+}
+.prose div:has(> [role="tablist"]) {
+  border-radius: 0;
+}
+
+/* --- The reference tables (reference/Reference.tsx) --- */
+.ref-table {
+  margin-block: 1.25rem;
+  overflow-x: auto;
+  border: 1px solid var(--color-fd-border);
+}
+.ref-table table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.ref-table :is(th, td) {
+  padding: 0.6rem 0.85rem;
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-fd-border);
+}
+.ref-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.ref-table th {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gui-lore);
+  background: var(--gui-panel);
+  box-shadow: inset 0 calc(var(--gui-px) * -1) 0 var(--gui-panel-lo);
+}
+.ref-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--gui-slot) 35%, transparent);
+}
+.ref-table td:first-child {
+  min-width: 13ch;
+}
+.ref-table td:first-child > code:first-child {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ref-hint {
+  margin-top: 0.2rem;
+  color: var(--gui-hint);
+  font-size: 0.8125rem;
+}
+.ref-args {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 0.75rem;
+  margin: 0.55rem 0 0;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.8125rem;
+  background: color-mix(in srgb, var(--gui-slot) 30%, transparent);
+  border-inline-start: var(--gui-px) solid var(--gui-panel-lo);
+}
+.ref-args :is(dt, dd) {
+  margin: 0;
+}
+.ref-section td {
+  background: color-mix(in srgb, var(--gui-panel) 55%, transparent);
+}
+.ref-platforms .planned td:not(:last-child) {
+  color: var(--color-fd-muted-foreground);
+}
+.api-list .api-plugin,
+.ref-table .api-plugin {
+  white-space: nowrap;
+}
+.api-plugin img {
+  display: inline;
+  margin: 0 0.5rem 0 0;
+  vertical-align: middle;
+  border-radius: 8%;
+}
+
+/* --- Downloads (Downloads.tsx, plugin/DownloadPicker.tsx) --- */
+.downloads-latest {
+  display: grid;
+  gap: 0.55rem;
+  margin-block: 0.5rem 2.5rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+.downloads-latest p {
+  margin: 0;
+}
+.downloads-version {
+  font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--item);
+}
+.downloads-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-block: 0.6rem 0.2rem !important;
+}
+.downloads-latest .gui-button:not(.primary) {
+  --gui-panel: #1b1a21;
+  --gui-panel-hi: #46434f;
+  --gui-panel-lo: #08070b;
+  --gui-edge: #050407;
+  color: var(--gui-tooltip-text);
+}
+.downloads-needs {
+  font-size: 0.875rem;
+  color: var(--gui-tooltip-lore);
+}
+.size {
+  font-weight: 500;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.downloads-versions td {
+  white-space: nowrap;
+}
+.downloads-type {
+  margin-inline-start: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--gui-hint);
+}
+.picker {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1.5rem 2rem;
+}
+.picker p {
+  margin: 0;
+}
+.picker-version {
+  font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--accent-ink);
+}
+.picker-head .gui-stat {
+  margin-top: 0.4rem;
+}
+.picker-choose {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+.picker-choose label {
+  display: grid;
+  gap: 0.3rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-fd-muted-foreground);
+}
+.picker-choose select {
+  min-width: 11rem;
+  min-height: 2.5rem;
+  padding: 0 0.6rem;
+  font: inherit;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--color-fd-foreground);
+  background: var(--gui-slot);
+  border: var(--gui-px) solid var(--gui-edge);
+  border-radius: 0;
+}
+.picker-jars {
+  width: 100%;
+  border-collapse: collapse;
+}
+.picker-jars :is(th, td) {
+  padding: 0.6rem 0.75rem 0.6rem 0;
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-fd-border);
+}
+.picker-jars th {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-fd-muted-foreground);
+}
+.picker-jars td:nth-child(2) {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.picker-jars .gui-button {
+  overflow-wrap: anywhere;
+}
+.picker-stores {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--gui-hint);
+}
+.picker-stores a {
+  color: var(--color-fd-foreground);
+}
+.picker-none {
+  font-weight: 600;
+}
+.picker-earlier ul {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+@media (max-width: 40rem) {
+  .picker-jars thead {
+    display: none;
+  }
+  .picker-jars tr {
+    display: grid;
+    gap: 0.25rem;
+    padding-block: 0.6rem;
+    border-bottom: 1px solid var(--color-fd-border);
+  }
+  .picker-jars tr[hidden] {
+    display: none;
+  }
+  .picker-jars td {
+    padding: 0;
+    border: 0;
+  }
+}
+
+/* --- The language table --- */
+.languages td .bar {
+  display: block;
+  width: 100%;
+  min-width: 5rem;
+  height: 0.5rem;
+  margin-top: 0.4rem;
+  background: var(--gui-slot);
+  box-shadow: inset 1px 1px 0 var(--gui-slot-lo);
+}
+.languages td .bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* --- Not found --- */
+.not-found {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: clamp(3rem, 10vw, 7rem) 1rem 2rem;
+}
+.not-found h1 {
+  margin: 0.25rem 0 0.75rem;
+  font-size: clamp(2.2rem, 1.6rem + 2.4vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.not-found p {
+  color: var(--color-fd-muted-foreground);
+  line-height: 1.6;
+}

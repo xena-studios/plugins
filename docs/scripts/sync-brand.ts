@@ -16,10 +16,11 @@ if (!fs.existsSync(path.join(BRAND, "tokens/plugins-catalog.json"))) {
 }
 
 // [from (in brand), to (relative to docs/)]
-// XENA is the footer's alone (the brand's docs/xena.md: on a product's own site the studio
-// appears only there), so the header's XENA STUDIOS logos aren't copied.
-const files = [
+// The header carries the XENA STUDIOS logo and the footer the XENA mark: the owner's call for
+// this site (decisions/2026-11-27-the-site-on-fumadocs.md), over the brand's footer-only rule.
+const files: [string, string][] = [
   ["logo/xena.svg", "src/assets/xena.svg"],
+  ["logo/xena-studios.svg", "src/assets/xena-studios.svg"],
   ["avatar/favicon.svg", "public/favicon.svg"],
   ["plugins/horizon.svg", "src/assets/horizon.svg"],
   // Every plugin's name, words and colours: scripts/catalog.ts builds the lists from it.

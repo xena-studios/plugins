@@ -1,0 +1,1075 @@
+/* The home, download and not-found pages are laid out as the other Xena sites are
+   (xenastudios.co's DESIGN.md): a quiet sticky header with the logo, the // kicker over the title,
+   hairline rows instead of card grids, and the horizon at the top and the bottom. They wear the
+   plugin family's design system, as the docs do: deepslate, Space Grotesk with mono labels, the
+   lavender accent and the game GUI's buttons and tooltips. The horizon is interactive here, with
+   every plugin standing on it (Showcase.tsx). Everything is scoped to .xena; the header
+   (.xena-header) is every page's. */
+
+.xena {
+  --bg: var(--plugin-bg);
+  --raised: var(--plugin-raised);
+  --surface: var(--plugin-raised);
+  --rule: var(--plugin-rule);
+  --muted: var(--plugin-muted);
+  --text: var(--plugin-text);
+  --font: var(--font-sans);
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+  --s-8: clamp(4rem, 3rem + 4vw, 6rem);
+  --t-label: 0.75rem;
+  --t-small: 0.875rem;
+  --t-lead: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+  --t-h3: clamp(1.125rem, 1.05rem + 0.4vw, 1.35rem);
+  --t-h2: clamp(1.75rem, 1.3rem + 1.9vw, 2.75rem);
+  --page: clamp(1.25rem, 4vw, 3rem);
+  --max: 76rem;
+  /* About 75 characters in Space Grotesk. */
+  --measure: 58ch;
+  --radius: 12px;
+  --horizon-top: #1b1a21;
+  --horizon-bottom: var(--plugin-bg);
+  --s-gap: 0;
+  --color-fd-foreground: var(--text);
+
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+.xena main {
+  flex: 1;
+}
+.xena :is(h1, h2, h3) {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.xena p {
+  margin: 0;
+  text-wrap: pretty;
+}
+.xena a {
+  color: inherit;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+.xena :focus-visible {
+  outline: var(--gui-px) solid var(--text);
+  outline-offset: 3px;
+  border-radius: 0;
+}
+.xena ::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.xena .wrap {
+  width: 100%;
+  max-width: calc(var(--max) + var(--page) * 2);
+  margin-inline: auto;
+  padding-inline: var(--page);
+}
+.xena .label {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.xena .kicker {
+  font-family: var(--mono);
+  margin-bottom: var(--s-5);
+  font-size: var(--t-label);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.xena .lead {
+  max-width: var(--measure);
+  margin-top: var(--s-5);
+  font-size: var(--t-lead);
+  line-height: 1.75;
+  color: var(--muted);
+}
+.xena .section {
+  padding-block: var(--s-8);
+  border-top: 1px solid var(--rule);
+}
+.xena .section h2 {
+  font-size: var(--t-h2);
+}
+.xena .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  margin-top: var(--s-6);
+}
+.xena .gui-button.small {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.875rem;
+}
+.xena .gui-button kbd {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--gui-hint);
+}
+
+/* A link deeper into this site: a chevron drawn in CSS, nudging right on hover. */
+.xena .more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: var(--t-small);
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+}
+.xena .more::after {
+  content: "";
+  width: 0.45em;
+  height: 0.45em;
+  border-top: 1.4px solid currentColor;
+  border-right: 1.4px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 200ms var(--ease);
+}
+.xena .more:hover::after {
+  transform: translateX(0.2em) rotate(45deg);
+}
+.xena .skip {
+  position: absolute;
+  left: var(--s-4);
+  top: -4rem;
+  z-index: 20;
+  padding: var(--s-2) var(--s-4);
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 6px;
+}
+.xena .skip:focus {
+  top: var(--s-4);
+}
+
+/* --- The first screen --- */
+.hero {
+  position: relative;
+  padding-top: var(--s-8);
+  overflow: hidden;
+  isolation: isolate;
+  --mx: 0;
+  --my: 0;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: var(--s-7);
+  align-items: center;
+}
+.hero h1 {
+  max-width: 14ch;
+  font-size: clamp(2.1rem, 1.1rem + 3.6vw, 4.5rem);
+  line-height: 1.04;
+}
+.hero-copy > * {
+  animation: settle 1000ms var(--ease) both;
+}
+.hero-copy > :nth-child(2) {
+  animation-delay: 90ms;
+}
+.hero-copy > :nth-child(n + 3) {
+  animation-delay: 180ms;
+}
+@keyframes settle {
+  from {
+    transform: translateY(0.75rem);
+    opacity: 0;
+  }
+}
+.hero .horizon {
+  animation: rise 1800ms var(--ease) both;
+}
+@keyframes rise {
+  from {
+    transform: translateY(14%);
+    opacity: 0.2;
+  }
+}
+
+/* The horizon: the planet's body fades into the page. */
+.horizon {
+  pointer-events: none;
+}
+.horizon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+.horizon .rim {
+  transition: opacity 400ms var(--ease);
+}
+.horizon.interactive .rim:not([data-lit]) {
+  opacity: 0.55;
+}
+.horizon .rim-glow {
+  fill: none;
+  opacity: 0;
+  transition: opacity 500ms var(--ease);
+}
+.horizon .rim-glow[data-lit] {
+  opacity: 0.85;
+}
+.horizon.interactive .rim-hit {
+  fill: transparent;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+/* The stage: the chosen plugin's tooltip beside the copy. */
+.hero-stage {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+/* The horizon, at its own proportions, with every plugin standing on its stretch of the rim. */
+.hero-horizon {
+  position: relative;
+  width: 100vw;
+  --c: clamp(1.4rem, 3.4vw, 3.6rem);
+  /* Room above the rim for the blocks and the chosen one's lift. */
+  margin: calc(var(--c) * 2.2) calc(50% - 50vw) 0;
+}
+.hero-horizon .horizon {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2400 / 520;
+}
+.blocks {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.block-slot {
+  position: absolute;
+  width: var(--c);
+  height: var(--c);
+  translate: -50% -118%;
+  perspective: 600px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.block {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(-22deg) rotateY(calc(-32deg + var(--mx) * 26deg));
+  animation: bob 4.5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.41s);
+  transition:
+    transform 700ms var(--ease),
+    translate 700ms var(--ease),
+    scale 700ms var(--ease);
+}
+.block-slot:hover .block {
+  translate: 0 -14%;
+}
+.block-slot[data-active] .block {
+  translate: 0 -38%;
+  scale: 1.3;
+  animation: bob 4.5s ease-in-out infinite, turn 9s linear infinite;
+}
+@keyframes bob {
+  50% {
+    margin-top: -0.25rem;
+  }
+}
+@keyframes turn {
+  from {
+    transform: rotateX(-22deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(-22deg) rotateY(360deg);
+  }
+}
+.face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+  background: color-mix(in srgb, var(--item) 22%, #0e0d12);
+  box-shadow:
+    inset 2px 2px 0 color-mix(in srgb, var(--item) 45%, transparent),
+    inset -2px -2px 0 rgb(0 0 0 / 0.45);
+}
+.face img {
+  width: 86%;
+  height: 86%;
+  image-rendering: pixelated;
+  border-radius: 6%;
+}
+.face.front {
+  transform: translateZ(calc(var(--c) / 2));
+}
+.face.back {
+  transform: rotateY(180deg) translateZ(calc(var(--c) / 2));
+}
+.face.right {
+  transform: rotateY(90deg) translateZ(calc(var(--c) / 2));
+  background: color-mix(in srgb, var(--item) 55%, #050407);
+}
+.face.left {
+  transform: rotateY(-90deg) translateZ(calc(var(--c) / 2));
+  background: color-mix(in srgb, var(--item) 40%, #050407);
+}
+.face.top {
+  transform: rotateX(90deg) translateZ(calc(var(--c) / 2));
+  background: color-mix(in srgb, var(--item) 70%, #1b1a21);
+}
+.face.bottom {
+  transform: rotateX(-90deg) translateZ(calc(var(--c) / 2));
+  background: #050407;
+}
+.block-slot[data-active] .face.front,
+.block-slot[data-active] .face.back {
+  outline: 2px solid var(--item);
+  outline-offset: -1px;
+}
+
+/* The chosen plugin's tooltip: the family's own GUI, here and nowhere else on the page. */
+.stage-card {
+  width: min(100%, 30rem);
+  padding: 1rem 1.15rem 1.1rem;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+.stage-card .item-name {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: color-mix(in oklab, var(--item) 80%, white);
+}
+.stage-card .item-tagline {
+  margin: 0.2rem 0 0;
+  font-weight: 600;
+  color: var(--gui-tooltip-text);
+}
+.stage-count {
+  margin: 0 0 0.35rem !important;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.stage-stats {
+  margin-top: 0.6rem !important;
+  font-size: 0.75rem;
+}
+.stage-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.stage-card .item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+.stage-card .gui-button {
+  font-family: var(--font-sans);
+}
+.stage-card .gui-button:not(.primary) {
+  --gui-panel: #1b1a21;
+  --gui-panel-hi: #46434f;
+  --gui-panel-lo: #08070b;
+  --gui-edge: #050407;
+  color: var(--gui-tooltip-text);
+}
+.stage-controls {
+  display: flex;
+  gap: 0.4rem;
+}
+.gui-button.arrow {
+  min-width: 2.75rem;
+  justify-content: center;
+  padding-inline: 0;
+  font-size: 1.35rem;
+}
+.stage-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+}
+/* Each dot is a 24px target around a small slot. */
+.dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+}
+.dot::before {
+  content: "";
+  display: block;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin: auto;
+  background: var(--gui-slot);
+  box-shadow:
+    inset 1px 1px 0 var(--gui-slot-lo),
+    inset -1px -1px 0 var(--gui-slot-hi);
+}
+.dot:hover::before {
+  background: color-mix(in srgb, var(--item) 45%, var(--gui-slot));
+}
+.dot[aria-current="true"]::before {
+  background: var(--item);
+  box-shadow: none;
+}
+
+/* --- Every plugin, and every download: hairline rows --- */
+.plugin-list {
+  margin: var(--s-7) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+.plugin {
+  display: grid;
+  grid-template-columns: 3rem 10rem minmax(0, 1fr) 8rem auto;
+  gap: var(--s-2) var(--s-5);
+  align-items: center;
+  padding-block: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+}
+.plugin-icon {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 10px;
+  image-rendering: pixelated;
+}
+.plugin-name {
+  display: grid;
+}
+.plugin h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.plugin h3 a {
+  text-decoration: none;
+}
+.plugin h3 a:hover {
+  color: var(--accent);
+}
+.plugin .what {
+  max-width: var(--measure);
+  color: var(--muted);
+  font-size: var(--t-small);
+}
+.plugin .where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  font-size: var(--t-small);
+}
+.plugin-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1) var(--s-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-small);
+}
+@media (max-width: 52rem) {
+  .plugin {
+    grid-template-columns: 3rem minmax(0, 1fr);
+    align-items: start;
+  }
+  .plugin > :not(.plugin-icon) {
+    grid-column: 2;
+  }
+  .plugin-icon {
+    grid-row: span 4;
+  }
+  .plugin .where {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--s-3);
+  }
+  .plugin-links {
+    flex-direction: row;
+  }
+}
+
+/* --- Principles and steps: statement left, explanation right --- */
+.principle-list,
+.step-list,
+.more-list {
+  margin: var(--s-7) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+.principle {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--s-3) var(--s-7);
+  padding-block: var(--s-6);
+  border-bottom: 1px solid var(--rule);
+}
+.principle h3,
+.step h3 {
+  font-size: var(--t-h3);
+}
+.principle p,
+.step p {
+  max-width: var(--measure);
+  color: var(--muted);
+}
+.step {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 4fr) minmax(0, 6fr) auto;
+  gap: var(--s-3) var(--s-5);
+  align-items: baseline;
+  padding-block: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+}
+.more-list li {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: var(--s-2) var(--s-5);
+  align-items: baseline;
+  padding-block: var(--s-4);
+  border-bottom: 1px solid var(--rule);
+}
+.more-list a {
+  font-weight: 600;
+  text-decoration: none;
+}
+.more-list a:hover {
+  color: var(--accent);
+}
+.more-list p {
+  color: var(--muted);
+}
+@media (max-width: 52rem) {
+  .principle,
+  .step,
+  .more-list li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- The closing band, over the horizon --- */
+.cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding-block: var(--s-8) clamp(11rem, 24vw, 18rem);
+  border-top: 1px solid var(--rule);
+}
+.cta h2 {
+  font-size: var(--t-h2);
+}
+.cta .horizon {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: -1;
+  width: 100%;
+  height: clamp(9rem, 22vw, 16rem);
+  margin: 0;
+}
+.cta .mail {
+  margin-top: var(--s-6);
+  font-size: clamp(1.1rem, 0.9rem + 1.2vw, 1.75rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.cta .mail a {
+  color: var(--accent);
+}
+
+/* --- A page's top, as xenastudios.co's inner pages: kicker, title, lead --- */
+.page-hero {
+  padding-block: var(--s-8) var(--s-7);
+}
+.page-hero h1 {
+  font-size: clamp(2rem, 1.2rem + 3vw, 3.5rem);
+}
+
+/* --- The downloads --- */
+.download-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+.download {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 13rem) minmax(0, 1fr) auto;
+  gap: var(--s-3) var(--s-5);
+  align-items: center;
+  padding-block: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+}
+.download-name {
+  display: grid;
+}
+.download-name h2 {
+  font-size: 1.125rem;
+}
+.download-name h2 a {
+  text-decoration: none;
+}
+.download-name h2 a:hover {
+  color: var(--accent);
+}
+.download-facts {
+  display: grid;
+  gap: var(--s-1);
+  font-size: var(--t-small);
+  color: var(--muted);
+}
+.download-facts strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.download-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+.download-older {
+  grid-column: 2 / -1;
+  font-size: var(--t-small);
+}
+.download-older summary {
+  cursor: pointer;
+  color: var(--muted);
+  list-style: none;
+}
+.download-older summary::-webkit-details-marker {
+  display: none;
+}
+.download-older summary::before {
+  content: "+ ";
+  color: var(--muted);
+}
+.download-older[open] summary::before {
+  content: "− ";
+}
+.download-older table {
+  width: 100%;
+  margin-top: var(--s-3);
+  border-collapse: collapse;
+}
+.download-older :is(th, td) {
+  padding: var(--s-2) var(--s-4) var(--s-2) 0;
+  text-align: start;
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 70%, transparent);
+  white-space: nowrap;
+}
+.download-older th {
+  font-weight: 400;
+}
+.download-older td:last-child a + a {
+  margin-inline-start: var(--s-3);
+}
+.download-note {
+  margin-top: var(--s-6) !important;
+  max-width: var(--measure);
+  font-size: var(--t-small);
+  color: var(--muted);
+}
+@media (max-width: 52rem) {
+  .download {
+    grid-template-columns: 3rem minmax(0, 1fr);
+    align-items: start;
+  }
+  .download > :not(.plugin-icon) {
+    grid-column: 2;
+  }
+  .download .plugin-icon {
+    grid-row: span 4;
+  }
+  .download-actions {
+    justify-content: flex-start;
+  }
+  .download-older {
+    overflow-x: auto;
+  }
+}
+
+/* --- The footer, as every Xena site's --- */
+.xena-footer {
+  padding-top: var(--s-7);
+  border-top: 1px solid var(--rule);
+}
+.xena-footer .foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-6);
+  align-items: start;
+  padding-bottom: var(--s-7);
+}
+.foot-about {
+  max-width: 34ch;
+  font-size: var(--t-small);
+  color: var(--muted);
+}
+.foot-cols {
+  display: grid;
+  grid-template-columns: auto repeat(2, minmax(8rem, auto));
+  gap: var(--s-6);
+}
+.foot-cols h2 {
+  margin-bottom: var(--s-3);
+}
+.foot-cols ul {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-small);
+}
+.foot-cols ul.two {
+  grid-template-columns: repeat(2, auto);
+  column-gap: var(--s-5);
+}
+.foot-cols a,
+.legal a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.foot-cols a:hover {
+  color: var(--text);
+}
+.legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3) var(--s-5);
+  padding-block: var(--s-5);
+  border-top: 1px solid var(--rule);
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.legal .studio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-5);
+}
+.legal .studio a {
+  display: block;
+  color: var(--text);
+}
+.legal .studio a:hover {
+  color: var(--accent);
+}
+.foot-logo {
+  display: block;
+  height: 0.75rem;
+  width: auto;
+}
+@media (max-width: 48rem) {
+  .xena-footer .foot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .foot-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .foot-cols > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.not-found h1 {
+  font-size: clamp(2rem, 1.2rem + 3vw, 3.5rem);
+}
+
+@media (max-width: 64rem) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 40rem) {
+  .xena .actions .gui-button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  .xena .actions kbd,
+  .hero-search {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .block,
+  .hero-copy > *,
+  .hero .horizon {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* --- Every page's header (SiteHeader.tsx), as every Xena site's --- */
+.xena-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  grid-area: header;
+  font-family: var(--font-sans);
+  background: color-mix(in srgb, var(--plugin-bg) 82%, transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+  border-bottom: 1px solid color-mix(in srgb, var(--plugin-rule) 70%, transparent);
+}
+#nd-notebook-layout {
+  --fd-header-height: 4rem;
+}
+.xena-bar {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  max-width: calc(76rem + clamp(1.25rem, 4vw, 3rem) * 2);
+  min-height: 4rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 3rem);
+}
+.docs-header .xena-bar {
+  max-width: none;
+}
+.xena-home {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.75rem;
+  color: var(--plugin-text);
+  text-decoration: none;
+}
+.xena-home .logo {
+  height: 0.8125rem;
+  width: auto;
+}
+.xena-rule {
+  width: 1px;
+  height: 1.1rem;
+  background: var(--plugin-rule);
+}
+.xena-site {
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.xena-nav {
+  margin-inline-start: auto;
+}
+.xena-nav ul {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+.xena-nav a {
+  display: inline-flex;
+  align-items: center;
+  padding-block: 0.5rem;
+  white-space: nowrap;
+  color: var(--plugin-muted);
+  text-decoration: none;
+  transition: color 160ms var(--ease);
+}
+.xena-nav a:hover,
+.xena-nav a[aria-current="page"] {
+  color: var(--plugin-text);
+}
+.xena-nav a[aria-current="page"] {
+  color: var(--plugin-text);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.6em;
+}
+.xena-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.xena-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--plugin-muted);
+  background: transparent;
+  border: 1px solid var(--plugin-rule);
+  border-radius: 0;
+  cursor: pointer;
+  transition:
+    color 160ms var(--ease),
+    border-color 160ms var(--ease);
+}
+.xena-search:hover {
+  color: var(--plugin-text);
+  border-color: color-mix(in oklch, var(--accent) 55%, var(--plugin-rule));
+}
+.xena-search kbd {
+  font: inherit;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--plugin-muted) 75%, transparent);
+}
+.xena-menu,
+.xena-sidebar-trigger {
+  display: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  color: var(--plugin-muted);
+  background: transparent;
+  border: 1px solid var(--plugin-rule);
+  border-radius: 0;
+  cursor: pointer;
+}
+.xena-header :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+@media (max-width: 56rem) {
+  .xena-header .wide {
+    display: none;
+  }
+  .xena-search {
+    width: 2.25rem;
+    padding: 0;
+    justify-content: center;
+  }
+  .xena-menu {
+    display: grid;
+  }
+  .xena-tools {
+    margin-inline-start: auto;
+  }
+  /* The sections fold into a menu under the bar. */
+  .xena-nav {
+    display: none;
+    position: absolute;
+    inset: 100% 0 auto 0;
+    margin: 0;
+    padding: 0.5rem clamp(1.25rem, 4vw, 3rem) 1rem;
+    background: var(--plugin-bg);
+    border-bottom: 1px solid var(--plugin-rule);
+  }
+  .xena-header[data-open] .xena-nav {
+    display: block;
+  }
+  .xena-nav ul {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    font-size: 1rem;
+  }
+  .xena-nav li + li {
+    border-top: 1px solid color-mix(in srgb, var(--plugin-rule) 60%, transparent);
+  }
+  .xena-nav a {
+    display: flex;
+    padding-block: 0.8rem;
+  }
+  .xena-nav a[aria-current="page"] {
+    text-decoration: none;
+    color: var(--accent);
+  }
+}
+@media (max-width: 48rem) {
+  .docs-header .xena-sidebar-trigger {
+    display: grid;
+  }
+}
+@media (max-width: 26rem) {
+  .xena-home .logo {
+    height: 0.6875rem;
+  }
+  .xena-home {
+    gap: 0.55rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  .xena-bar {
+    gap: 0.5rem;
+  }
+  .xena-home {
+    gap: 0.45rem;
+  }
+  .xena-home .logo {
+    height: 0.6rem;
+  }
+  .xena-site {
+    font-size: 0.8125rem;
+  }
+  .xena-tools {
+    gap: 0.35rem;
+  }
+  .xena-search,
+  .xena-menu,
+  .xena-sidebar-trigger {
+    width: 2.1rem;
+    height: 2.1rem;
+    min-height: 2.1rem;
+  }
+}
+
+/* The site's name beside the logo, as brand.xenastudios.co's "| Brand". */
+.xena-label {
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--plugin-rule);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--plugin-muted);
+}
+@media (max-width: 30rem) {
+  .xena-label {
+    display: none;
+  }
+}

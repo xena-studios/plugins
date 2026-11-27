@@ -4,29 +4,38 @@ description: "Small, fast Minecraft plugins for Paper and Folia servers by Xena 
 template: splash
 ---
 
-import Horizon from "../../components/Horizon.astro";
-import Inventory from "../../components/Inventory.astro";
+import GetStarted from "../../components/GetStarted.astro";
+import HelpBand from "../../components/HelpBand.astro";
+import PluginList from "../../components/PluginList.astro";
 import Reasons from "../../components/Reasons.astro";
+import Showcase from "../../components/Showcase.astro";
 
-<Inventory />
+<Showcase />
 
-<Horizon />
+<PluginList />
 
 <Reasons />
 
-<h2 class="more-label">More from Xena Studios</h2>
+<GetStarted />
 
-<ul class="more-list">
-  <li>
-    <a href="https://docs.raptorpanel.net">Raptor docs</a>
-    <p>Run game servers on your own machine with Raptor: install, nodes, servers, backups and the command line.</p>
-  </li>
-  <li>
-    <a href="https://neoskript.dev">NeoSkript</a>
-    <p>A fast, modern drop-in replacement for Skript, in public beta. Its site has the docs and the syntax reference.</p>
-  </li>
-  <li>
-    <a href="https://xenastudios.co">xenastudios.co</a>
-    <p>The studio behind all of it.</p>
-  </li>
-</ul>
+<section class="section">
+  <div class="wrap">
+    <h2>More from Xena Studios</h2>
+    <ul class="more-list">
+      <li>
+        <a href="https://docs.raptorpanel.net">Raptor docs</a>
+        <p>Run game servers on your own machine with Raptor: install, nodes, servers, backups and the command line.</p>
+      </li>
+      <li>
+        <a href="https://neoskript.dev">NeoSkript</a>
+        <p>A fast, modern drop-in replacement for Skript, in public beta. Its site has the docs and the syntax reference.</p>
+      </li>
+      <li>
+        <a href="https://xenastudios.co">xenastudios.co</a>
+        <p>The studio behind all of it.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<HelpBand />

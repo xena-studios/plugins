@@ -177,7 +177,7 @@ Everything that lists the plugins (slots, rows, the horizon's rim, accents) is g
 A deepslate family of violet-tinted near-blacks, one cool attribute blue, the tooltip's violet border, and one accent per page supplied by the brand catalog.
 
 ### Primary
-- **Family Lavender** (`family-lavender`): the accent on every page that does not belong to a plugin (home, Get started, Developers). Its low and high steps (`family-lavender-low`, `family-lavender-high`) are Starlight's accent tints.
+- **Family Lavender** (`family-lavender`): the accent on every page that does not belong to a plugin (home, Get started, Developers). Its low and high steps (`family-lavender-low`, `family-lavender-high`) are its tints.
 - **The plugin's accent** (no fixed value): on a plugin's pages, `public/accents/<id>.css` replaces the lavender with that plugin's colour. On the home inventory each slot and tooltip carries its own item's accent as `--item`. Values are the catalog's `accentText` (`src/data/plugins.json`, written by `scripts/catalog.ts` from xena-studios/brand). Where the brand colour is too dark for text on deepslate, the catalog carries a lighter text value (xBans uses a lighter red than its brand red); the horizon keeps the brand value.
 
 ### Secondary
@@ -220,7 +220,7 @@ A deepslate family of violet-tinted near-blacks, one cool attribute blue, the to
 - **Title** (700, `clamp(1.75rem, 1.3rem + 1.9vw, 2.75rem)`, 1.12, -0.02em): every other page's h1; h2 to h4 in the reading column share the weight and tracking, balanced.
 - **Item Name** (700, 1.375rem, -0.01em): the name at the top of a docked tooltip, in the item's accent; 1rem on the floating tooltip. The download page's version line is a larger cousin (`clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem)`).
 - **Lead** (400, `clamp(1.0625rem, 1rem + 0.35vw, 1.25rem)`, 1.6): the home pitch, in lore grey, held to 34ch.
-- **Body** (400, 1rem, Starlight's line height): the reading column, at Starlight's default measure, with pretty wrapping.
+- **Body** (400, 1rem, 1.72 line height): the reading column, capped at 64ch, with pretty wrapping.
 - **Lore** (400, 0.9375rem, 1.55): tooltip lore, in `lore`. Overview lore lines use the same colour and line height at the body size.
 - **Button** (700, 0.9375rem, 1.2): every GUI button.
 - **Stat** (mono 400, 0.8125rem, 1.7, tabular figures): attribute lines in `attribute`.
@@ -237,18 +237,18 @@ The home page's first screen stacks the pitch over the workbench with a `clamp(1
 
 The horizon runs edge to edge (100vw) under the inventory as the floor the chest rests on; the page clips horizontal overflow so it never adds a sideways scroll.
 
-Plugin pages use Starlight's three-part frame: the GUI header bar, a sidebar showing only that plugin's pages under a plugin switcher, and the content. Home, overview and download pages drop the contents column, the previous/next pager and the edit/last-updated line; reading pages keep all three.
+Plugin pages use a three-part frame: the site header, a sidebar showing only that plugin's pages under a plugin switcher, and the content. Home, overview and download pages drop the contents column, the previous/next pager and the edit/last-updated line; reading pages keep all three.
 
 Spacing steps in the build: 2px is the pixel unit for every bevel, border and frame; 0.25rem between slots; 0.6rem between actions; 0.7rem between inventory rows; about 1.1rem of padding inside tooltips; `clamp(1.25rem, 3vw, 2rem)` inside large tooltip panels. Breakpoints in use: 40rem, 44rem, 50rem (header navigation moves to the menu), 72rem.
 
 ### Named Rules
-**The Calm Column Rule.** Reading pages keep a calm column inside the GUI frame: plain text on deepslate at Starlight's measure. GUI material goes on the frame, code, tables, asides and section openers, never behind running prose.
+**The Calm Column Rule.** Reading pages keep a calm column inside the GUI frame: plain text on deepslate at a 64ch measure. GUI material goes on the frame, code, tables, asides and section openers, never behind running prose.
 
 **The Selling Pages Rule.** Home, overview and download pages have no contents column, pager or edit line. They sell or hand over the plugin; they are not reading pages.
 
 ## Elevation & Depth
 
-Depth is pixel bevel, not light. A raised surface has a 2px inset highlight on its top and left (`panel-highlight`) and a 2px inset shade on its bottom and right (`panel-shade`), inside a 2px `edge` border. A slot inverts it (shade top-left, highlight bottom-right), so it reads as cut into the panel. Buttons carry a deeper 6px bottom shade so they stand up, and press flat. Starlight's soft shadows are turned off; the one soft shadow in the system is under the item tooltip, which floats over the GUI.
+Depth is pixel bevel, not light. A raised surface has a 2px inset highlight on its top and left (`panel-highlight`) and a 2px inset shade on its bottom and right (`panel-shade`), inside a 2px `edge` border. A slot inverts it (shade top-left, highlight bottom-right), so it reads as cut into the panel. Buttons carry a deeper 6px bottom shade so they stand up, and press flat. Soft shadows are turned off; the one soft shadow in the system is under the item tooltip, which floats over the GUI.
 
 ### Shadow Vocabulary
 - **Raised bevel** (`box-shadow: inset 2px 2px 0 #46434F, inset -2px -2px 0 #08070B`): panels, the chest, pager links, the plugin switcher.
@@ -277,7 +277,7 @@ Raised GUI blocks that press in.
 - **Primary:** filled with the page's accent (or the item's accent on the home tooltip), `on-accent` ink, bevel mixed from the accent. One per surface: Download, or the link to every version on GitHub when the download page has no version to show. On the download page, Download is the jar itself: from Modrinth, or from the plugin's GitHub release while it's still in Modrinth's review.
 - **Secondary:** `panel` with `text`: How it works, Commands, Configuration, What's new, and Modrinth or GitHub (wherever the download page's versions came from).
 - **Hover:** brightness 1.18 over 120ms. **Active:** presses 2px down with the bevel inverted (80ms). **Focus:** a 2px `text` outline, 2px offset. **Disabled:** desaturated and dimmed, not clickable.
-- Starlight's link buttons wear the same material.
+- Link buttons and link cards wear the same material.
 
 ### Slots
 - **Style:** `slot` with the inset bevel; a 16px glyph centred, pixelated.
@@ -305,7 +305,8 @@ The family's planet horizon, drawn at build time from the catalog. The rim is st
 - **Focus:** a 2px outline around the whole slot.
 
 ### Navigation
-- **Header:** one solid `panel` bar with a 2px `edge` under it. XENA STUDIOS, then "Plugins" as a mono label; site links in `lore` 600 that turn `text` on a slot ground on hover. The current section is an inset slot. Below 50rem the links and source icon move into Starlight's menu.
+- **Header:** laid out as every Xena site's (xenastudios.co): a quiet sticky bar on deepslate with a hairline under it, the XENA STUDIOS logo alone on the left, then Plugins, Download, Guides, Developers and GitHub, and search. The current section is underlined in the accent. Below 56rem the sections fold into a menu, and on a docs page a second button opens its sidebar.
+- **Home, download and not-found pages:** the other Xena sites' layout (the `//` kicker over the title, hairline rows rather than card grids, the horizon at the top and the bottom) in this design system. The home page's horizon is interactive: every plugin stands on its own stretch of the rim as a pixel block; the chosen one lifts and turns, its stretch lights up, and its item tooltip sits beside the copy.
 - **Sidebar:** links in `muted`, `text` on hover. The current page is the chosen slot: inset ground, inset bevel, a 2px accent ring, weight 600. Group names are mono labels. Outbound links get a small arrow.
 - **Plugin switcher:** on a plugin's pages, a raised panel above the sidebar with the plugin's glyph in a mini slot, its name in its accent and a mono "Switch" hint; it opens (a `<details>`) to every plugin, each name in its own accent when current.
 - **Pager:** previous and next as raised panels, brightened on hover.

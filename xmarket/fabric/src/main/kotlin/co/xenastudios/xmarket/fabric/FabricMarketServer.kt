@@ -111,7 +111,9 @@ internal class FabricMarketServer(private val platform: FabricPlatform) : Market
         stack.get(DataComponents.STORED_ENCHANTMENTS)?.let { stored ->
             for (e in stored.entrySet()) e.key.unwrapKey().ifPresent { k -> enchantments[k.identifier().toString()] = e.intValue }
         }
-        if (stack.has(DataComponents.LORE) || stack.has(DataComponents.CUSTOM_MODEL_DATA) || stack.has(DataComponents.CUSTOM_DATA)) plain = false
+        // Every item has a lore component, empty unless something wrote lines (it's in each item's
+        // defaults), so lore counts only with lines in it.
+        if (stack.get(DataComponents.LORE)?.lines()?.isNotEmpty() == true || stack.has(DataComponents.CUSTOM_MODEL_DATA) || stack.has(DataComponents.CUSTOM_DATA)) plain = false
         if (stack.has(DataComponents.CUSTOM_NAME) && !renamedIsPlain) plain = false
         //?} else {
         /*if (id.endsWith("potion") || id == "minecraft:tipped_arrow") potion = BuiltInRegistries.POTION.getKey(PotionUtils.getPotion(stack)).path

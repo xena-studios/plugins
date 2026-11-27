@@ -19,6 +19,12 @@
 # nothing reads it at runtime (no kotlin-reflect).
 -keep public class !**.core.**,co.xenastudios.**.api.** { public protected *; }
 -keep class kotlin.Metadata { *; }
+# core-api's Java helpers for a player, PlayerRefs.of(java.util.UUID) and PlayerRefs.javaUuid(ref),
+# which every plugin's API page tells Java callers to use: no API names them, so R8Shrink's rules
+# for the exposed core types don't reach them. Kept, in the plugin's relocated core, wherever its
+# API exposes PlayerRef.
+-if public class **.core.api.PlayerRef
+-keep public class <1>.core.api.PlayerRefs { public static *; }
 
 # The core's loader makes a plugin's Kotlin entry point by name (BukkitBootstrap.entryPoint()),
 # relocated into each plugin's package, and the platform makes the shim (plugin.yml's main).

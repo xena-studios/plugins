@@ -12,6 +12,7 @@ Every plugin is rewritten once more, so the same plugin runs on every server sof
 - **One site**, plugins.xenastudios.co, its reference pages generated from the code.
 - **One release** publishes every jar to every store.
 - **One plugin at a time:** each is finished and merged, every check green, before the next starts. Then they're all released together.
+- **NeoSkript too:** it moves into this repo and gets the same servers, the core and Kotlin, on a track of its own (N0–N6, [below](#neoskript)).
 
 Boot-tested with no code of their own: Quilt, PandaSpigot, Leaf, Leaves, Canvas, ShreddedPaper and Waterfall. Best effort, not in CI: hybrid servers (Arclight, Mohist, Youer, Ketting). To revisit after Hytale: Bedrock servers (PowerNukkitX or Allay).
 
@@ -51,6 +52,7 @@ core/
   platform-vine      Kotlin/Wasm, Pumpkin's proxy
   platform-minestom  plugins shipped as libraries
   platform-hytale    the Java 25 server API
+neoskript/   NeoSkript: its engine, standard library, add-ons, CLI, editors and site (#201)
 <plugin>/
   api/      the public API, platform-neutral
   common/   KMP: all the plugin's logic
@@ -203,6 +205,15 @@ Each one meets its exit before the next starts. A plugin's milestone ends when i
 | M14 | xLimits 1.0 (#111) | xRewind's block and entity hooks |
 | M15 | xLimbo 3.0 | Paper only: core, translations, pipeline |
 
+### NeoSkript
+
+NeoSkript moves into `neoskript/` and is rewritten in Kotlin on the core, on a track of its own beside the plugins; why, and each milestone's exit, are in [decisions/2026-11-27-neoskript-joins-the-rewrite.md](decisions/2026-11-27-neoskript-joins-the-rewrite.md). Tracked in #201.
+
+- **N0 and N1 now:** the move (history, CI, deploys, issues) and a spike, then the engine in Kotlin. Neither touches the core.
+- **N2 onward after M15:** the standard library on the core, after xRewind, xPlots and xLimits have shaped its blocks, regions and entities. Then Spigot and the forks (N3), down to 1.8.8 (N4), Fabric (N5) and the proxies (N6), which is NeoSkript 1.0.
+- **Always releasable:** converted in place, with Skript's test suite and the differential tests at 100% on every pull request, so NeoSkript keeps shipping betas from `main` and isn't held for the release milestone below.
+- **Later platforms** follow the core's: NeoForge, Forge and Sponge after M16, Pumpkin after M17, Minestom after M18, Hytale after M19.
+
 **Release: every new major at once.** After M15, before the platform waves (their minors build on released majors). Every rewritten plugin runs on our own servers first, long enough to trust it; then one release pull request ships them all: each version set, each changelog's `(unreleased)` taken off, each plugin's docs switched to the new major (one line each in `docs/src/data/versions.json`) with its releases file for the download picker, the release tooling taught the rewrite's layout (`scripts/release.ts` reads `<plugin>/build.gradle.kts` today), then the tags, which publish to every store. Until then `maintenance` keeps shipping fixes to today's versions. *Exit:* every new major released everywhere, its pages live.
 
 **M16: NeoForge, Forge 1.20.1 and Sponge.** The three platforms, then each plugin as a minor. Forge is 1.20.1 only, where Forge modpack servers stay.
@@ -237,3 +248,4 @@ Running on our own servers and the release to every store are the release milest
 - **Pumpkin, Vine and Hytale are still moving.** They're late waves of their own, so neither can block a release.
 - **Kotlin/Wasm limits `common`.** Enforced from the first commit.
 - **Build time** grows with each plugin and platform. CI has a budget for it.
+- **NeoSkript's size.** About 1,200 files converted and every platform's standard library. Its heavy tests run only when `neoskript/` or the core changes, and its platform work waits for M15 so the core is settled under it.

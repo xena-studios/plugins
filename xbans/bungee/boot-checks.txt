@@ -1,0 +1,14 @@
+# xBans on a proxy alone (scripts/boot-proxy.sh --checks): the database opens, /xbansproxy answers
+# with its admin subcommands, and a ban made on the proxy's console is in force at its door.
+logged: xBans 2.0.0 on
+logged: Loaded 0 bans and mutes in force from the SQLite database punishments.db, schema 1.
+run: xbansproxy
+expect: enforced at the proxy's login
+run: ban 5627dd98-e6be-3c21-b8a8-e92344183641 boot test on the proxy
+expect: banned 5627dd98-e6be-3c21-b8a8-e92344183641 permanently: boot test on the proxy
+run: banlist
+expect: Banned on this server (1)
+run: xbp reload
+expect: Reloaded xBans
+run: xbansproxy debug
+expect: Debug report saved as

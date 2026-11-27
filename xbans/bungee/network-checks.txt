@@ -1,0 +1,10 @@
+# xBans on BungeeCord in front of two Spigot servers, all on one MariaDB with network mode on
+# (xbans/velocity/network.sh): real clients, Joiner on lobby and Friend on game.
+logged: sharing changes with the network
+backend: sharing changes with the network
+game: sharing changes with the network
+client: --plugin xbans-network --version 1.8.8 --timeout 150
+# The ban made on lobby, heard by game and the proxy from the database.
+backend: banned Friend permanently: banned on lobby
+run: xbansproxy
+expect: enforced at the proxy's login

@@ -1,0 +1,16 @@
+---
+title: Permissions
+description: "Every xBans permission, and who has it by default."
+sidebar:
+  order: 2.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Each command's permission is `xbans.<command>` (`xbans.ban`, `xbans.history`), operators' by default but `/warnings`, which everyone has for their own. Rename any in the [config](/xbans/configuration/), or set one blank (`""`) to let everyone use it. The staff limits (`xbans.weight.<n>`, `xbans.limit.<group>`, `xbans.exempt`) are nobody's by default, so an operator isn't held to a helper's limit, and isn't exempt: see [Commands](/xbans/commands/#staff-limits).
+
+`xbans.staff` marks a player as staff for other plugins ([the API's `isStaff`](/xbans/developer-api/#the-staff-layer)), as does any permission to ban, mute, warn or kick.
+
+On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api; without one, operators (level 2) have the operator permissions. Fabric's and Velocity's permission APIs answer one node at a time, so `xbans.weight.<n>` is read there for 1 to 100, and 150 to 1000 in steps of 50. On Velocity and BungeeCord, the proxy's own permissions (LuckPerms on the proxy) answer for `/xbansproxy` and for who's told of a banned player trying to join.
+
+<Reference plugin="xbans" show="permissions" />

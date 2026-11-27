@@ -96,3 +96,20 @@
 :core:platform-fabric:xteleport:1.20.1 685
 :core:platform-fabric:xteleport:1.21.11 688
 :core:platform-fabric:xteleport:26.3 680
+
+# xBans 2.0 (M6), shrunk: 815 KiB on Bukkit, over the 500 KiB target with the reason recorded in
+# decisions/2026-11-26-xbans-2.md: about 420 KiB the shared core xBans reaches (its database layer
+# and change feed, the proxy layer's server end, commands, config, messages, the family), about
+# 300 KiB xBans' own and its API (1.x's punishing rules, what's in force, the store and its 1.x
+# statements, network mode, every command, four importers, IP keys with their HMAC, the Bukkit and
+# Paper guards and the five Bukkit events), 36 KiB the seven translations, 7 KiB bStats, 3 KiB the
+# startup list. Line: size + about 8%.
+:xbans:bukkit 880
+# Its proxy side, the same plugin on Velocity and BungeeCord (the network's door, commands,
+# importers, the database): 741 and 732 KiB, shrunk, with their startup lists; lines size + 9%.
+:xbans:velocity 810
+:xbans:bungee 800
+# On Fabric, 718-727 KiB, shrunk before Loom remaps it, its core relocated (xena.fabric-mod); lines size + 5%.
+:core:platform-fabric:xbans:1.20.1 758
+:core:platform-fabric:xbans:1.21.11 760
+:core:platform-fabric:xbans:26.3 750

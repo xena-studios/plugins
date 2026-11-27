@@ -1,0 +1,9 @@
+name: xBans
+version: '${version}'
+main: co.xenastudios.xbans.bungee.XBansBungeeBootstrap
+author: Xena Studios
+description: "Bans, mutes and warnings. Nothing slips through. On the proxy: banned players turned away at the network's door."
+# BungeeCord and Waterfall download these (2021 builds on); older proxies ignore the key, and the
+# shim downloads them instead.
+libraries:${libraries}
+# No commands: they're registered at runtime, from the plugin's code.

@@ -1,5 +1,15 @@
 plugins {
-    id("xena.api")
+    id("xena.kmp-api")
 }
 
-description = "xBans' developer API: check bans and mutes from memory, punish and revoke, read history, and punishment events."
+group = "co.xenastudios"
+description = "xBans' developer API: punishments, their history, the staff layer and the events, the same on every platform and on the proxies."
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            // Players and events, as every Xena plugin's API has them.
+            api(project(":core:core-api"))
+        }
+    }
+}

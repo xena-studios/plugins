@@ -1,0 +1,21 @@
+---
+title: Install
+description: "Install xBans on your server or proxy: the steps for Paper, Folia, Spigot, Fabric, Velocity and BungeeCord."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="xbans" />
+
+On the first start xBans writes `config.yml`, one file per language in `lang/`, and its SQLite database `punishments.db`, in `plugins/xBans/` (Bukkit and BungeeCord), `plugins/xbans/` (Velocity) or `config/xbans/` (Fabric). Fabric servers and the proxies have no database driver of their own, so the one xBans needs (SQLite's, or MySQL's) is downloaded once into the family's `libraries/` folder. Settings every Xena plugin shares, such as the language and the look of messages, are in `plugins/Xena/config.yml` (`config/xena/` on Fabric).
+
+- On a network, install it on the proxy too, with every server on one MySQL or MariaDB database: see [Networks](/xbans/networks/).
+- [zChat](/zchat/) reads xBans' mutes with nothing to set up.
+
+## Coming from 1.x
+
+Replace the jar and restart: see [Upgrading from 1.x](/xbans/upgrade/). The [1.x docs](/xbans/v1/) stay up while 1.x gets fixes.

@@ -30,28 +30,33 @@ Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQL
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xbans:build       # compile, test, and check the jar's size budget
-./gradlew :xbans:runServer   # a Paper server with xBans, in xbans/run/
+./gradlew :xbans:common:build :xbans:bukkit:build               # tests on the JVM and wasmWasi, the R8 jars and their budgets
+./gradlew :xbans:bukkit:runServer                               # a Paper server with the jar, in xbans/bukkit/run/
+./gradlew -p core/platform-fabric :xbans:26.3:collect           # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+xbans/bukkit/boot.sh paper 26.3 --java <JDK 25 home>            # the boot checks on a real server (--zchat for the mute seam)
+xbans/velocity/network.sh                                       # Velocity in front of two Paper servers on one MariaDB, with real clients
+./gradlew :xbans:api:updateKotlinAbi                            # after a deliberate API change
+./gradlew :xbans:common:updateXenaManifest                      # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-api/                 the developer API (co.xenastudios.xbans:xbans-api), shipped inside the jar
-src/main/java/co/xenastudios/xbans/
-  XBans.java         the plugin: opens the database, and in setup turns on enforcement and the commands
-  Punisher.java      makes and revokes punishments for commands, the API and the network alike
-  model/             what's in force, in memory; punishments as kept; lengths as staff type them
-  storage/           the tables, the database thread, and every query (keyset history pages)
-  enforce/           the join checks, the mute checks, and online players' IP keys
-  command/           the commands, LiteBans-style argument parsing, and who a name or #id means
-  lookup/            placeholders for messages, and history page cursors
-  ip/                IP keys (raw or salted hashes) and the alt alert
-  network/           other servers' changes, from the core's change feed
-  importer/          vanilla, EssentialsX and LiteBans
-boot-checks.txt      console commands CI runs on real Paper and Folia servers, and what each must log
-CHANGELOG.md         one section per release; the release workflow publishes it
+api/             the developer API (XBansApi, XBans.api(), PunishRequest, the staff layer, events), platform-neutral,
+                 by uuid
+common/          everything xBans does, in Kotlin Multiplatform: the config and its migration from 1.x, the messages
+                 (lang/ in its resources), what's in force (model/Active), the punisher, the commands and their
+                 LiteBans-style arguments, IP keys and hashing, the store and its 1.x tables (store/), the network
+                 (the change feed, and the proxy's fast path); jvmMain opens the database and reads the importers'
+                 sources (vanilla, EssentialsX, LiteBans, AdvancedBan) and zChat's mute seam
+bukkit/          the Paper, Folia, Spigot and CraftBukkit jar, 1.8.8 on: the join gate, the mute guards (Paper's chat
+                 where it exists, modern/), the Bukkit events, and the release of every jar
+velocity/, bungee/   the proxies' jars: logins refused before a server, scoped bans at the server switch
+fabric/          the Fabric mod, a branch of core/platform-fabric's own build
+*-checks.txt, boot.sh, network.sh   what the boot, client and network tests run and expect
+CHANGELOG.md     one section per release; the release workflow publishes it
+modrinth.md      the Modrinth and Hangar project page, published when it changes on main
 ```
 
-The shared core (reloading, config migration, the theme, the update checker, bStats, the database and its change feed, offline players and chat pages) is in [`core/`](../core).
+Every punishment goes through `Punisher`, and nothing on a join or chat waits on the database: what's in force is in memory. The shared core (config, messages, commands, the database and its one writer, the change feed and the proxy channel, the family) is in [`core/`](../core).
 
 ## Licence
 

@@ -55,12 +55,13 @@ stonecutter {
         // xMoney's Fabric mod, from xmoney/fabric.
         branch("xmoney")
         branch("xteleport")
+        branch("xbans")
     }
 }
 
 // A plugin's Fabric adapter lives in its own folder; its branch here is pointed at it, and each
 // Minecraft line's node at its versions/ folder there, as Stonecutter puts a branch's nodes.
-for (plugin in listOf("xutilities", "zchat", "xmoney", "xteleport")) {
+for (plugin in listOf("xutilities", "zchat", "xmoney", "xteleport", "xbans")) {
     val folder = file("../../$plugin/fabric")
     project(":$plugin").projectDir = folder
     for (node in project(":$plugin").children) node.projectDir = folder.resolve("versions/${node.name}").also { it.mkdirs() }
@@ -108,5 +109,6 @@ includeBuild("../..") {
         substitute(module("co.xenastudios:zchat-common")).using(project(":zchat:common"))
         substitute(module("co.xenastudios:xmoney-common")).using(project(":xmoney:common"))
         substitute(module("co.xenastudios:xteleport-common")).using(project(":xteleport:common"))
+        substitute(module("co.xenastudios:xbans-common")).using(project(":xbans:common"))
     }
 }

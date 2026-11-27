@@ -1,0 +1,75 @@
+# xBans on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks, through
+# boot.sh): 1.x's checks, on 2.0. The server is in offline mode, so any name has a uuid without
+# asking Mojang. The database opens on an async task with the SQLite driver the server ships.
+logged: xBans 2.0.0 on
+logged: Loaded 0 bans and mutes in force from the SQLite database punishments.db, schema 1.
+run: xbans info
+expect: xBans 2.0.0 on
+
+# xBans' /ban takes over vanilla's, with LiteBans' flags and lengths.
+run: ban Steve -s 7d griefing the spawn
+expect: [Silent] Console banned Steve for 1w: griefing the spawn
+run: checkban Steve
+expect: Reason: griefing the spawn
+run: banlist
+expect: Banned on this server (1)
+# A longer ban replaces it, and so does one as long, to change the reason.
+run: ban Steve for good
+expect: Console banned Steve permanently: for good
+run: ban Steve for good, and why
+expect: Console banned Steve permanently: for good, and why
+run: banlist
+expect: Banned on this server (1)
+# A shorter ban doesn't replace a longer one.
+run: tempban Steve 1d shorter
+expect: is already banned until
+run: pardon Steve appealed
+expect: Console unbanned Steve.
+run: history Steve
+expect: Steve's history (3)
+
+# Templates, mutes and warnings.
+run: mute Alex spam
+expect: Console muted Alex for 1h: Spamming
+run: checkmute Alex
+expect: Reason: Spamming
+run: warn Alex 1h language
+expect: Console warned Alex: Inappropriate language
+run: warnings Alex
+expect: Alex has 1 active warnings
+run: unwarn Alex
+expect: Console removed a warning from Alex.
+run: unmute Alex
+expect: Console unmuted Alex.
+
+# IP bans by address, and lookups. The broadcast shows half the address at most.
+run: ipban 198.51.100.7 boot test
+expect: Console IP-banned 198.51.x.x permanently: boot test
+run: ban-ip 127.0.0.1 never loopback
+expect: That isn't an IP address.
+run: unban 198.51.100.7
+expect: Console unbanned 198.51.x.x.
+run: staffhistory console bans
+expect: Punishments by Console (4)
+run: alts Steve
+expect: Steve shares no IP with anyone.
+run: prunehistory Steve
+expect: That removes 3 inactive entries from Steve's history
+run: prunehistory Steve confirm
+expect: Removed 3 inactive entries from Steve's history.
+expect: pruned 3 inactive entries from Steve's history
+run: kick Nobody
+expect: No player called Nobody is online.
+
+# Imports: a dry run reads the source first.
+run: xbans import vanilla
+expect: Couldn't import: the server's ban lists are empty.
+run: xbans import litebans
+expect: Couldn't import: there's no plugins/LiteBans/config.yml.
+run: xbans import advancedban
+expect: Couldn't import: there's no plugins/AdvancedBan/config.yml.
+
+run: xbans reload
+expect: Reloaded xBans
+run: xbans debug
+expect: Debug report saved as

@@ -1,0 +1,4 @@
+# Two real clients on the server (boot.sh ... --seed scripts/boot-seeds/client --checks client-checks.txt):
+# Joiner, an operator in German, punishes Friend: a tempban that kicks and keeps them out until it
+# ends, a mute that stops their chat until it's lifted, a kick (scripts/budgets/bots/client.js, xbans).
+client: --plugin xbans --timeout 150

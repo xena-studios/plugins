@@ -6,7 +6,7 @@
 #
 #   scripts/boot-proxy.sh --proxy velocity|bungeecord|waterfall [--version 4.3.1] [--java <JDK home>] \
 #     [--backend paper|<server.jar>] [--backend-version 1.21.11] [--backend-java <JDK home>] \
-#     [--backend-plugin backend.jar]... [--two-backends] [--backend-seed <folder>] [--grant Joiner=node,node]... [--jvm -Dflag]... \
+#     [--backend-plugin backend.jar]... [--two-backends] [--backend-seed <folder>] [--proxy-seed <folder>] [--grant Joiner=node,node]... [--jvm -Dflag]... \
 #     [--checks file]... [--startup-budget <ms>] [--record-startup <folder>] plugin.jar...
 #
 # The proxy comes from scripts/server-jar.sh (its newest release unless --version says), or
@@ -21,7 +21,8 @@
 # which the proxy calls "game": for a network plugin's test, a message crossing servers (a client
 # moves there with /server game). "game: <text>" waits for text it logged, as "backend:" does.
 # --backend-seed copies a folder's contents into each backend's before it starts (a plugin's
-# config.yml, such as plugins/zChat/config.yml turning network chat on).
+# config.yml, such as plugins/zChat/config.yml turning network chat on), and --proxy-seed into the
+# proxy's (xBans' network test points the proxy and both backends at one database).
 #
 # With --backend, the proxy forwards players to it as "lobby": Paper behind Velocity through
 # Velocity's modern forwarding (one forwarding secret, written to both, which the Xena plugins'
@@ -54,6 +55,7 @@ backend_version=1.21.11
 backend_java=""
 two_backends=false
 backend_seed=""
+proxy_seed=""
 startup_budget=""
 record_startup=""
 jvm=()
@@ -72,6 +74,7 @@ while (($#)); do
     --backend-java) backend_java=$2; shift 2 ;;
     --two-backends) two_backends=true; shift ;;
     --backend-seed) backend_seed=$(cd "$2" && pwd); shift 2 ;;
+    --proxy-seed) proxy_seed=$(cd "$2" && pwd); shift 2 ;;
     --backend-plugin) backend_jars+=("$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"); shift 2 ;;
     --grant) grants+=("$2"); shift 2 ;;
     --jvm) jvm+=("$2"); shift 2 ;;
@@ -223,6 +226,7 @@ proxy_files() {
   fi
   mkdir -p "$dir/plugins"
   cp "${jars[@]}" "$dir/plugins/"
+  [[ -z $proxy_seed ]] || cp -R "$proxy_seed/." "$dir/"
   if [[ $proxy == velocity ]]; then
     local mode=none
     [[ -z $to ]] || mode=modern

@@ -1,0 +1,324 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xbans.api/PunishmentType : kotlin/Enum<co.xenastudios.xbans.api/PunishmentType> { // co.xenastudios.xbans.api/PunishmentType|null[0]
+    enum entry BAN // co.xenastudios.xbans.api/PunishmentType.BAN|null[0]
+    enum entry KICK // co.xenastudios.xbans.api/PunishmentType.KICK|null[0]
+    enum entry MUTE // co.xenastudios.xbans.api/PunishmentType.MUTE|null[0]
+    enum entry WARN // co.xenastudios.xbans.api/PunishmentType.WARN|null[0]
+
+    final val entries // co.xenastudios.xbans.api/PunishmentType.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xbans.api/PunishmentType> // co.xenastudios.xbans.api/PunishmentType.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val lasts // co.xenastudios.xbans.api/PunishmentType.lasts|{}lasts[0]
+        final fun <get-lasts>(): kotlin/Boolean // co.xenastudios.xbans.api/PunishmentType.lasts.<get-lasts>|<get-lasts>(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xbans.api/PunishmentType // co.xenastudios.xbans.api/PunishmentType.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xbans.api/PunishmentType> // co.xenastudios.xbans.api/PunishmentType.values|values#static(){}[0]
+}
+
+abstract interface co.xenastudios.xbans.api/XBansApi { // co.xenastudios.xbans.api/XBansApi|null[0]
+    abstract val events // co.xenastudios.xbans.api/XBansApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xbans.api/XBansApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.xbans.api/XBansApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xbans.api/XBansApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun activeBan(co.xenastudios.core.api/PlayerRef): co.xenastudios.xbans.api/Punishment? // co.xenastudios.xbans.api/XBansApi.activeBan|activeBan(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun activeMute(co.xenastudios.core.api/PlayerRef): co.xenastudios.xbans.api/Punishment? // co.xenastudios.xbans.api/XBansApi.activeMute|activeMute(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun alts(co.xenastudios.core.api/PlayerRef): co.xenastudios.core.api/Pending<kotlin.collections/List<co.xenastudios.xbans.api/Alt>> // co.xenastudios.xbans.api/XBansApi.alts|alts(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun history(co.xenastudios.core.api/PlayerRef, kotlin/Int, kotlin/Int): co.xenastudios.core.api/Pending<co.xenastudios.xbans.api/HistoryPage> // co.xenastudios.xbans.api/XBansApi.history|history(co.xenastudios.core.api.PlayerRef;kotlin.Int;kotlin.Int){}[0]
+    abstract fun isStaff(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xbans.api/XBansApi.isStaff|isStaff(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun notifyStaff(kotlin/String, kotlin/Boolean) // co.xenastudios.xbans.api/XBansApi.notifyStaff|notifyStaff(kotlin.String;kotlin.Boolean){}[0]
+    abstract fun onlineStaff(): kotlin.collections/List<co.xenastudios.core.api/PlayerRef> // co.xenastudios.xbans.api/XBansApi.onlineStaff|onlineStaff(){}[0]
+    abstract fun pardon(co.xenastudios.core.api/PlayerRef, co.xenastudios.xbans.api/PunishmentType, co.xenastudios.core.api/PlayerRef?, kotlin/String, kotlin/String): co.xenastudios.core.api/Pending<co.xenastudios.xbans.api/PunishResult> // co.xenastudios.xbans.api/XBansApi.pardon|pardon(co.xenastudios.core.api.PlayerRef;co.xenastudios.xbans.api.PunishmentType;co.xenastudios.core.api.PlayerRef?;kotlin.String;kotlin.String){}[0]
+    abstract fun punish(co.xenastudios.xbans.api/PunishRequest): co.xenastudios.core.api/Pending<co.xenastudios.xbans.api/PunishResult> // co.xenastudios.xbans.api/XBansApi.punish|punish(co.xenastudios.xbans.api.PunishRequest){}[0]
+    abstract fun staffHistory(co.xenastudios.core.api/PlayerRef?, kotlin/Int, kotlin/Int): co.xenastudios.core.api/Pending<co.xenastudios.xbans.api/HistoryPage> // co.xenastudios.xbans.api/XBansApi.staffHistory|staffHistory(co.xenastudios.core.api.PlayerRef?;kotlin.Int;kotlin.Int){}[0]
+    open fun isBanned(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xbans.api/XBansApi.isBanned|isBanned(co.xenastudios.core.api.PlayerRef){}[0]
+    open fun isMuted(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xbans.api/XBansApi.isMuted|isMuted(co.xenastudios.core.api.PlayerRef){}[0]
+}
+
+final class co.xenastudios.xbans.api.event/LoginDeniedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xbans.api.event/LoginDeniedEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, co.xenastudios.xbans.api/Punishment?, kotlin/Boolean) // co.xenastudios.xbans.api.event/LoginDeniedEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;co.xenastudios.xbans.api.Punishment?;kotlin.Boolean){}[0]
+
+    final val ban // co.xenastudios.xbans.api.event/LoginDeniedEvent.ban|{}ban[0]
+        final fun <get-ban>(): co.xenastudios.xbans.api/Punishment? // co.xenastudios.xbans.api.event/LoginDeniedEvent.ban.<get-ban>|<get-ban>(){}[0]
+    final val name // co.xenastudios.xbans.api.event/LoginDeniedEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xbans.api.event/LoginDeniedEvent.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xbans.api.event/LoginDeniedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xbans.api.event/LoginDeniedEvent.player.<get-player>|<get-player>(){}[0]
+    final val proxy // co.xenastudios.xbans.api.event/LoginDeniedEvent.proxy|{}proxy[0]
+        final fun <get-proxy>(): kotlin/Boolean // co.xenastudios.xbans.api.event/LoginDeniedEvent.proxy.<get-proxy>|<get-proxy>(){}[0]
+
+    final object Companion { // co.xenastudios.xbans.api.event/LoginDeniedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xbans.api.event/LoginDeniedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xbans.api.event/LoginDeniedEvent> // co.xenastudios.xbans.api.event/LoginDeniedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbans.api.event/PardonEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xbans.api.event/PardonEvent|null[0]
+    constructor <init>(co.xenastudios.xbans.api/Punishment, co.xenastudios.core.api/PlayerRef?, kotlin/String, kotlin/String) // co.xenastudios.xbans.api.event/PardonEvent.<init>|<init>(co.xenastudios.xbans.api.Punishment;co.xenastudios.core.api.PlayerRef?;kotlin.String;kotlin.String){}[0]
+
+    final val punishment // co.xenastudios.xbans.api.event/PardonEvent.punishment|{}punishment[0]
+        final fun <get-punishment>(): co.xenastudios.xbans.api/Punishment // co.xenastudios.xbans.api.event/PardonEvent.punishment.<get-punishment>|<get-punishment>(){}[0]
+    final val reason // co.xenastudios.xbans.api.event/PardonEvent.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xbans.api.event/PardonEvent.reason.<get-reason>|<get-reason>(){}[0]
+    final val staff // co.xenastudios.xbans.api.event/PardonEvent.staff|{}staff[0]
+        final fun <get-staff>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xbans.api.event/PardonEvent.staff.<get-staff>|<get-staff>(){}[0]
+    final val staffName // co.xenastudios.xbans.api.event/PardonEvent.staffName|{}staffName[0]
+        final fun <get-staffName>(): kotlin/String // co.xenastudios.xbans.api.event/PardonEvent.staffName.<get-staffName>|<get-staffName>(){}[0]
+
+    final object Companion { // co.xenastudios.xbans.api.event/PardonEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xbans.api.event/PardonEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xbans.api.event/PardonEvent> // co.xenastudios.xbans.api.event/PardonEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbans.api.event/PardonedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xbans.api.event/PardonedEvent|null[0]
+    constructor <init>(co.xenastudios.xbans.api/Punishment, kotlin/Boolean) // co.xenastudios.xbans.api.event/PardonedEvent.<init>|<init>(co.xenastudios.xbans.api.Punishment;kotlin.Boolean){}[0]
+
+    final val fromOtherServer // co.xenastudios.xbans.api.event/PardonedEvent.fromOtherServer|{}fromOtherServer[0]
+        final fun <get-fromOtherServer>(): kotlin/Boolean // co.xenastudios.xbans.api.event/PardonedEvent.fromOtherServer.<get-fromOtherServer>|<get-fromOtherServer>(){}[0]
+    final val punishment // co.xenastudios.xbans.api.event/PardonedEvent.punishment|{}punishment[0]
+        final fun <get-punishment>(): co.xenastudios.xbans.api/Punishment // co.xenastudios.xbans.api.event/PardonedEvent.punishment.<get-punishment>|<get-punishment>(){}[0]
+
+    final object Companion { // co.xenastudios.xbans.api.event/PardonedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xbans.api.event/PardonedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xbans.api.event/PardonedEvent> // co.xenastudios.xbans.api.event/PardonedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbans.api.event/PunishEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xbans.api.event/PunishEvent|null[0]
+    constructor <init>(co.xenastudios.xbans.api/PunishmentType, co.xenastudios.core.api/PlayerRef?, kotlin/String, kotlin/String, kotlin/Long, co.xenastudios.core.api/PlayerRef?, kotlin/String, kotlin/Boolean, kotlin/Boolean, kotlin/String) // co.xenastudios.xbans.api.event/PunishEvent.<init>|<init>(co.xenastudios.xbans.api.PunishmentType;co.xenastudios.core.api.PlayerRef?;kotlin.String;kotlin.String;kotlin.Long;co.xenastudios.core.api.PlayerRef?;kotlin.String;kotlin.Boolean;kotlin.Boolean;kotlin.String){}[0]
+
+    final val durationMillis // co.xenastudios.xbans.api.event/PunishEvent.durationMillis|{}durationMillis[0]
+        final fun <get-durationMillis>(): kotlin/Long // co.xenastudios.xbans.api.event/PunishEvent.durationMillis.<get-durationMillis>|<get-durationMillis>(){}[0]
+    final val ipBased // co.xenastudios.xbans.api.event/PunishEvent.ipBased|{}ipBased[0]
+        final fun <get-ipBased>(): kotlin/Boolean // co.xenastudios.xbans.api.event/PunishEvent.ipBased.<get-ipBased>|<get-ipBased>(){}[0]
+    final val reason // co.xenastudios.xbans.api.event/PunishEvent.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xbans.api.event/PunishEvent.reason.<get-reason>|<get-reason>(){}[0]
+    final val scope // co.xenastudios.xbans.api.event/PunishEvent.scope|{}scope[0]
+        final fun <get-scope>(): kotlin/String // co.xenastudios.xbans.api.event/PunishEvent.scope.<get-scope>|<get-scope>(){}[0]
+    final val silent // co.xenastudios.xbans.api.event/PunishEvent.silent|{}silent[0]
+        final fun <get-silent>(): kotlin/Boolean // co.xenastudios.xbans.api.event/PunishEvent.silent.<get-silent>|<get-silent>(){}[0]
+    final val staff // co.xenastudios.xbans.api.event/PunishEvent.staff|{}staff[0]
+        final fun <get-staff>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xbans.api.event/PunishEvent.staff.<get-staff>|<get-staff>(){}[0]
+    final val staffName // co.xenastudios.xbans.api.event/PunishEvent.staffName|{}staffName[0]
+        final fun <get-staffName>(): kotlin/String // co.xenastudios.xbans.api.event/PunishEvent.staffName.<get-staffName>|<get-staffName>(){}[0]
+    final val target // co.xenastudios.xbans.api.event/PunishEvent.target|{}target[0]
+        final fun <get-target>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xbans.api.event/PunishEvent.target.<get-target>|<get-target>(){}[0]
+    final val targetName // co.xenastudios.xbans.api.event/PunishEvent.targetName|{}targetName[0]
+        final fun <get-targetName>(): kotlin/String // co.xenastudios.xbans.api.event/PunishEvent.targetName.<get-targetName>|<get-targetName>(){}[0]
+    final val type // co.xenastudios.xbans.api.event/PunishEvent.type|{}type[0]
+        final fun <get-type>(): co.xenastudios.xbans.api/PunishmentType // co.xenastudios.xbans.api.event/PunishEvent.type.<get-type>|<get-type>(){}[0]
+
+    final object Companion { // co.xenastudios.xbans.api.event/PunishEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xbans.api.event/PunishEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xbans.api.event/PunishEvent> // co.xenastudios.xbans.api.event/PunishEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbans.api.event/PunishedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xbans.api.event/PunishedEvent|null[0]
+    constructor <init>(co.xenastudios.xbans.api/Punishment, kotlin/Boolean) // co.xenastudios.xbans.api.event/PunishedEvent.<init>|<init>(co.xenastudios.xbans.api.Punishment;kotlin.Boolean){}[0]
+
+    final val fromOtherServer // co.xenastudios.xbans.api.event/PunishedEvent.fromOtherServer|{}fromOtherServer[0]
+        final fun <get-fromOtherServer>(): kotlin/Boolean // co.xenastudios.xbans.api.event/PunishedEvent.fromOtherServer.<get-fromOtherServer>|<get-fromOtherServer>(){}[0]
+    final val punishment // co.xenastudios.xbans.api.event/PunishedEvent.punishment|{}punishment[0]
+        final fun <get-punishment>(): co.xenastudios.xbans.api/Punishment // co.xenastudios.xbans.api.event/PunishedEvent.punishment.<get-punishment>|<get-punishment>(){}[0]
+
+    final object Companion { // co.xenastudios.xbans.api.event/PunishedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xbans.api.event/PunishedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xbans.api.event/PunishedEvent> // co.xenastudios.xbans.api.event/PunishedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbans.api.event/StaffNotifyEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xbans.api.event/StaffNotifyEvent|null[0]
+    constructor <init>(kotlin/String, kotlin/Boolean, kotlin.collections/MutableList<co.xenastudios.core.api/PlayerRef>) // co.xenastudios.xbans.api.event/StaffNotifyEvent.<init>|<init>(kotlin.String;kotlin.Boolean;kotlin.collections.MutableList<co.xenastudios.core.api.PlayerRef>){}[0]
+
+    final val message // co.xenastudios.xbans.api.event/StaffNotifyEvent.message|{}message[0]
+        final fun <get-message>(): kotlin/String // co.xenastudios.xbans.api.event/StaffNotifyEvent.message.<get-message>|<get-message>(){}[0]
+    final val recipients // co.xenastudios.xbans.api.event/StaffNotifyEvent.recipients|{}recipients[0]
+        final fun <get-recipients>(): kotlin.collections/MutableList<co.xenastudios.core.api/PlayerRef> // co.xenastudios.xbans.api.event/StaffNotifyEvent.recipients.<get-recipients>|<get-recipients>(){}[0]
+    final val silent // co.xenastudios.xbans.api.event/StaffNotifyEvent.silent|{}silent[0]
+        final fun <get-silent>(): kotlin/Boolean // co.xenastudios.xbans.api.event/StaffNotifyEvent.silent.<get-silent>|<get-silent>(){}[0]
+
+    final object Companion { // co.xenastudios.xbans.api.event/StaffNotifyEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xbans.api.event/StaffNotifyEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xbans.api.event/StaffNotifyEvent> // co.xenastudios.xbans.api.event/StaffNotifyEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbans.api/Alt { // co.xenastudios.xbans.api/Alt|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin.time/Instant) // co.xenastudios.xbans.api/Alt.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.time.Instant){}[0]
+
+    final val lastSeen // co.xenastudios.xbans.api/Alt.lastSeen|{}lastSeen[0]
+        final fun <get-lastSeen>(): kotlin.time/Instant // co.xenastudios.xbans.api/Alt.lastSeen.<get-lastSeen>|<get-lastSeen>(){}[0]
+    final val name // co.xenastudios.xbans.api/Alt.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xbans.api/Alt.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xbans.api/Alt.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xbans.api/Alt.player.<get-player>|<get-player>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.xbans.api/Alt.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.xbans.api/Alt.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.xbans.api/Alt.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xbans.api/HistoryPage { // co.xenastudios.xbans.api/HistoryPage|null[0]
+    constructor <init>(kotlin.collections/List<co.xenastudios.xbans.api/Punishment>, kotlin/Int, kotlin/Int, kotlin/Long) // co.xenastudios.xbans.api/HistoryPage.<init>|<init>(kotlin.collections.List<co.xenastudios.xbans.api.Punishment>;kotlin.Int;kotlin.Int;kotlin.Long){}[0]
+
+    final val page // co.xenastudios.xbans.api/HistoryPage.page|{}page[0]
+        final fun <get-page>(): kotlin/Int // co.xenastudios.xbans.api/HistoryPage.page.<get-page>|<get-page>(){}[0]
+    final val pages // co.xenastudios.xbans.api/HistoryPage.pages|{}pages[0]
+        final fun <get-pages>(): kotlin/Int // co.xenastudios.xbans.api/HistoryPage.pages.<get-pages>|<get-pages>(){}[0]
+    final val punishments // co.xenastudios.xbans.api/HistoryPage.punishments|{}punishments[0]
+        final fun <get-punishments>(): kotlin.collections/List<co.xenastudios.xbans.api/Punishment> // co.xenastudios.xbans.api/HistoryPage.punishments.<get-punishments>|<get-punishments>(){}[0]
+    final val total // co.xenastudios.xbans.api/HistoryPage.total|{}total[0]
+        final fun <get-total>(): kotlin/Long // co.xenastudios.xbans.api/HistoryPage.total.<get-total>|<get-total>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xbans.api/HistoryPage.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xbans.api/PunishRequest { // co.xenastudios.xbans.api/PunishRequest|null[0]
+    final val durationMillis // co.xenastudios.xbans.api/PunishRequest.durationMillis|{}durationMillis[0]
+        final fun <get-durationMillis>(): kotlin/Long // co.xenastudios.xbans.api/PunishRequest.durationMillis.<get-durationMillis>|<get-durationMillis>(){}[0]
+    final val extraSilent // co.xenastudios.xbans.api/PunishRequest.extraSilent|{}extraSilent[0]
+        final fun <get-extraSilent>(): kotlin/Boolean // co.xenastudios.xbans.api/PunishRequest.extraSilent.<get-extraSilent>|<get-extraSilent>(){}[0]
+    final val ipBased // co.xenastudios.xbans.api/PunishRequest.ipBased|{}ipBased[0]
+        final fun <get-ipBased>(): kotlin/Boolean // co.xenastudios.xbans.api/PunishRequest.ipBased.<get-ipBased>|<get-ipBased>(){}[0]
+    final val reason // co.xenastudios.xbans.api/PunishRequest.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xbans.api/PunishRequest.reason.<get-reason>|<get-reason>(){}[0]
+    final val scope // co.xenastudios.xbans.api/PunishRequest.scope|{}scope[0]
+        final fun <get-scope>(): kotlin/String? // co.xenastudios.xbans.api/PunishRequest.scope.<get-scope>|<get-scope>(){}[0]
+    final val silent // co.xenastudios.xbans.api/PunishRequest.silent|{}silent[0]
+        final fun <get-silent>(): kotlin/Boolean // co.xenastudios.xbans.api/PunishRequest.silent.<get-silent>|<get-silent>(){}[0]
+    final val staff // co.xenastudios.xbans.api/PunishRequest.staff|{}staff[0]
+        final fun <get-staff>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xbans.api/PunishRequest.staff.<get-staff>|<get-staff>(){}[0]
+    final val staffName // co.xenastudios.xbans.api/PunishRequest.staffName|{}staffName[0]
+        final fun <get-staffName>(): kotlin/String // co.xenastudios.xbans.api/PunishRequest.staffName.<get-staffName>|<get-staffName>(){}[0]
+    final val target // co.xenastudios.xbans.api/PunishRequest.target|{}target[0]
+        final fun <get-target>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xbans.api/PunishRequest.target.<get-target>|<get-target>(){}[0]
+    final val type // co.xenastudios.xbans.api/PunishRequest.type|{}type[0]
+        final fun <get-type>(): co.xenastudios.xbans.api/PunishmentType // co.xenastudios.xbans.api/PunishRequest.type.<get-type>|<get-type>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xbans.api/PunishRequest.toString|toString(){}[0]
+    final fun withDurationMillis(kotlin/Long): co.xenastudios.xbans.api/PunishRequest // co.xenastudios.xbans.api/PunishRequest.withDurationMillis|withDurationMillis(kotlin.Long){}[0]
+    final fun withExtraSilent(kotlin/Boolean): co.xenastudios.xbans.api/PunishRequest // co.xenastudios.xbans.api/PunishRequest.withExtraSilent|withExtraSilent(kotlin.Boolean){}[0]
+    final fun withIpBased(kotlin/Boolean): co.xenastudios.xbans.api/PunishRequest // co.xenastudios.xbans.api/PunishRequest.withIpBased|withIpBased(kotlin.Boolean){}[0]
+    final fun withScope(kotlin/String?): co.xenastudios.xbans.api/PunishRequest // co.xenastudios.xbans.api/PunishRequest.withScope|withScope(kotlin.String?){}[0]
+    final fun withSilent(kotlin/Boolean): co.xenastudios.xbans.api/PunishRequest // co.xenastudios.xbans.api/PunishRequest.withSilent|withSilent(kotlin.Boolean){}[0]
+    final fun withStaff(co.xenastudios.core.api/PlayerRef?, kotlin/String = ...): co.xenastudios.xbans.api/PunishRequest // co.xenastudios.xbans.api/PunishRequest.withStaff|withStaff(co.xenastudios.core.api.PlayerRef?;kotlin.String){}[0]
+
+    final object Companion { // co.xenastudios.xbans.api/PunishRequest.Companion|null[0]
+        final fun of(co.xenastudios.xbans.api/PunishmentType, co.xenastudios.core.api/PlayerRef, kotlin/String): co.xenastudios.xbans.api/PunishRequest // co.xenastudios.xbans.api/PunishRequest.Companion.of|of(co.xenastudios.xbans.api.PunishmentType;co.xenastudios.core.api.PlayerRef;kotlin.String){}[0]
+    }
+}
+
+final class co.xenastudios.xbans.api/PunishResult { // co.xenastudios.xbans.api/PunishResult|null[0]
+    constructor <init>(co.xenastudios.xbans.api/PunishResult.Outcome, co.xenastudios.xbans.api/Punishment?, kotlin/String) // co.xenastudios.xbans.api/PunishResult.<init>|<init>(co.xenastudios.xbans.api.PunishResult.Outcome;co.xenastudios.xbans.api.Punishment?;kotlin.String){}[0]
+
+    final val message // co.xenastudios.xbans.api/PunishResult.message|{}message[0]
+        final fun <get-message>(): kotlin/String // co.xenastudios.xbans.api/PunishResult.message.<get-message>|<get-message>(){}[0]
+    final val outcome // co.xenastudios.xbans.api/PunishResult.outcome|{}outcome[0]
+        final fun <get-outcome>(): co.xenastudios.xbans.api/PunishResult.Outcome // co.xenastudios.xbans.api/PunishResult.outcome.<get-outcome>|<get-outcome>(){}[0]
+    final val punishment // co.xenastudios.xbans.api/PunishResult.punishment|{}punishment[0]
+        final fun <get-punishment>(): co.xenastudios.xbans.api/Punishment? // co.xenastudios.xbans.api/PunishResult.punishment.<get-punishment>|<get-punishment>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xbans.api/PunishResult.toString|toString(){}[0]
+
+    final enum class Outcome : kotlin/Enum<co.xenastudios.xbans.api/PunishResult.Outcome> { // co.xenastudios.xbans.api/PunishResult.Outcome|null[0]
+        enum entry CANCELLED // co.xenastudios.xbans.api/PunishResult.Outcome.CANCELLED|null[0]
+        enum entry DONE // co.xenastudios.xbans.api/PunishResult.Outcome.DONE|null[0]
+        enum entry FAILED // co.xenastudios.xbans.api/PunishResult.Outcome.FAILED|null[0]
+        enum entry REFUSED // co.xenastudios.xbans.api/PunishResult.Outcome.REFUSED|null[0]
+
+        final val entries // co.xenastudios.xbans.api/PunishResult.Outcome.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xbans.api/PunishResult.Outcome> // co.xenastudios.xbans.api/PunishResult.Outcome.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): co.xenastudios.xbans.api/PunishResult.Outcome // co.xenastudios.xbans.api/PunishResult.Outcome.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<co.xenastudios.xbans.api/PunishResult.Outcome> // co.xenastudios.xbans.api/PunishResult.Outcome.values|values#static(){}[0]
+    }
+
+    final object Companion { // co.xenastudios.xbans.api/PunishResult.Companion|null[0]
+        final val CANCELLED // co.xenastudios.xbans.api/PunishResult.Companion.CANCELLED|{}CANCELLED[0]
+            final fun <get-CANCELLED>(): co.xenastudios.xbans.api/PunishResult // co.xenastudios.xbans.api/PunishResult.Companion.CANCELLED.<get-CANCELLED>|<get-CANCELLED>(){}[0]
+
+        final fun done(co.xenastudios.xbans.api/Punishment): co.xenastudios.xbans.api/PunishResult // co.xenastudios.xbans.api/PunishResult.Companion.done|done(co.xenastudios.xbans.api.Punishment){}[0]
+    }
+}
+
+final class co.xenastudios.xbans.api/Punishment { // co.xenastudios.xbans.api/Punishment|null[0]
+    constructor <init>(kotlin/Long, co.xenastudios.xbans.api/PunishmentType, co.xenastudios.core.api/PlayerRef?, kotlin/String, kotlin/Boolean, kotlin/String, co.xenastudios.core.api/PlayerRef?, kotlin/String, kotlin.time/Instant, kotlin.time/Instant?, kotlin/String, kotlin/Boolean, kotlin/String?, co.xenastudios.xbans.api/Removal?) // co.xenastudios.xbans.api/Punishment.<init>|<init>(kotlin.Long;co.xenastudios.xbans.api.PunishmentType;co.xenastudios.core.api.PlayerRef?;kotlin.String;kotlin.Boolean;kotlin.String;co.xenastudios.core.api.PlayerRef?;kotlin.String;kotlin.time.Instant;kotlin.time.Instant?;kotlin.String;kotlin.Boolean;kotlin.String?;co.xenastudios.xbans.api.Removal?){}[0]
+
+    final val created // co.xenastudios.xbans.api/Punishment.created|{}created[0]
+        final fun <get-created>(): kotlin.time/Instant // co.xenastudios.xbans.api/Punishment.created.<get-created>|<get-created>(){}[0]
+    final val expires // co.xenastudios.xbans.api/Punishment.expires|{}expires[0]
+        final fun <get-expires>(): kotlin.time/Instant? // co.xenastudios.xbans.api/Punishment.expires.<get-expires>|<get-expires>(){}[0]
+    final val id // co.xenastudios.xbans.api/Punishment.id|{}id[0]
+        final fun <get-id>(): kotlin/Long // co.xenastudios.xbans.api/Punishment.id.<get-id>|<get-id>(){}[0]
+    final val ipBased // co.xenastudios.xbans.api/Punishment.ipBased|{}ipBased[0]
+        final fun <get-ipBased>(): kotlin/Boolean // co.xenastudios.xbans.api/Punishment.ipBased.<get-ipBased>|<get-ipBased>(){}[0]
+    final val isGlobal // co.xenastudios.xbans.api/Punishment.isGlobal|{}isGlobal[0]
+        final fun <get-isGlobal>(): kotlin/Boolean // co.xenastudios.xbans.api/Punishment.isGlobal.<get-isGlobal>|<get-isGlobal>(){}[0]
+    final val isPermanent // co.xenastudios.xbans.api/Punishment.isPermanent|{}isPermanent[0]
+        final fun <get-isPermanent>(): kotlin/Boolean // co.xenastudios.xbans.api/Punishment.isPermanent.<get-isPermanent>|<get-isPermanent>(){}[0]
+    final val reason // co.xenastudios.xbans.api/Punishment.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xbans.api/Punishment.reason.<get-reason>|<get-reason>(){}[0]
+    final val removal // co.xenastudios.xbans.api/Punishment.removal|{}removal[0]
+        final fun <get-removal>(): co.xenastudios.xbans.api/Removal? // co.xenastudios.xbans.api/Punishment.removal.<get-removal>|<get-removal>(){}[0]
+    final val scope // co.xenastudios.xbans.api/Punishment.scope|{}scope[0]
+        final fun <get-scope>(): kotlin/String // co.xenastudios.xbans.api/Punishment.scope.<get-scope>|<get-scope>(){}[0]
+    final val silent // co.xenastudios.xbans.api/Punishment.silent|{}silent[0]
+        final fun <get-silent>(): kotlin/Boolean // co.xenastudios.xbans.api/Punishment.silent.<get-silent>|<get-silent>(){}[0]
+    final val staff // co.xenastudios.xbans.api/Punishment.staff|{}staff[0]
+        final fun <get-staff>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xbans.api/Punishment.staff.<get-staff>|<get-staff>(){}[0]
+    final val staffName // co.xenastudios.xbans.api/Punishment.staffName|{}staffName[0]
+        final fun <get-staffName>(): kotlin/String // co.xenastudios.xbans.api/Punishment.staffName.<get-staffName>|<get-staffName>(){}[0]
+    final val target // co.xenastudios.xbans.api/Punishment.target|{}target[0]
+        final fun <get-target>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xbans.api/Punishment.target.<get-target>|<get-target>(){}[0]
+    final val targetName // co.xenastudios.xbans.api/Punishment.targetName|{}targetName[0]
+        final fun <get-targetName>(): kotlin/String // co.xenastudios.xbans.api/Punishment.targetName.<get-targetName>|<get-targetName>(){}[0]
+    final val template // co.xenastudios.xbans.api/Punishment.template|{}template[0]
+        final fun <get-template>(): kotlin/String? // co.xenastudios.xbans.api/Punishment.template.<get-template>|<get-template>(){}[0]
+    final val type // co.xenastudios.xbans.api/Punishment.type|{}type[0]
+        final fun <get-type>(): co.xenastudios.xbans.api/PunishmentType // co.xenastudios.xbans.api/Punishment.type.<get-type>|<get-type>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.xbans.api/Punishment.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.xbans.api/Punishment.hashCode|hashCode(){}[0]
+    final fun isActive(kotlin.time/Instant): kotlin/Boolean // co.xenastudios.xbans.api/Punishment.isActive|isActive(kotlin.time.Instant){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.xbans.api/Punishment.toString|toString(){}[0]
+    final fun withRemoval(co.xenastudios.xbans.api/Removal?): co.xenastudios.xbans.api/Punishment // co.xenastudios.xbans.api/Punishment.withRemoval|withRemoval(co.xenastudios.xbans.api.Removal?){}[0]
+
+    final object Companion { // co.xenastudios.xbans.api/Punishment.Companion|null[0]
+        final const val GLOBAL // co.xenastudios.xbans.api/Punishment.Companion.GLOBAL|{}GLOBAL[0]
+            final fun <get-GLOBAL>(): kotlin/String // co.xenastudios.xbans.api/Punishment.Companion.GLOBAL.<get-GLOBAL>|<get-GLOBAL>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbans.api/Removal { // co.xenastudios.xbans.api/Removal|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef?, kotlin/String, kotlin.time/Instant, kotlin/String) // co.xenastudios.xbans.api/Removal.<init>|<init>(co.xenastudios.core.api.PlayerRef?;kotlin.String;kotlin.time.Instant;kotlin.String){}[0]
+
+    final val at // co.xenastudios.xbans.api/Removal.at|{}at[0]
+        final fun <get-at>(): kotlin.time/Instant // co.xenastudios.xbans.api/Removal.at.<get-at>|<get-at>(){}[0]
+    final val reason // co.xenastudios.xbans.api/Removal.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xbans.api/Removal.reason.<get-reason>|<get-reason>(){}[0]
+    final val staff // co.xenastudios.xbans.api/Removal.staff|{}staff[0]
+        final fun <get-staff>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xbans.api/Removal.staff.<get-staff>|<get-staff>(){}[0]
+    final val staffName // co.xenastudios.xbans.api/Removal.staffName|{}staffName[0]
+        final fun <get-staffName>(): kotlin/String // co.xenastudios.xbans.api/Removal.staffName.<get-staffName>|<get-staffName>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.xbans.api/Removal.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.xbans.api/Removal.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.xbans.api/Removal.toString|toString(){}[0]
+}
+
+final object co.xenastudios.xbans.api/XBans { // co.xenastudios.xbans.api/XBans|null[0]
+    final const val STAFF_PERMISSION // co.xenastudios.xbans.api/XBans.STAFF_PERMISSION|{}STAFF_PERMISSION[0]
+        final fun <get-STAFF_PERMISSION>(): kotlin/String // co.xenastudios.xbans.api/XBans.STAFF_PERMISSION.<get-STAFF_PERMISSION>|<get-STAFF_PERMISSION>(){}[0]
+
+    final fun api(): co.xenastudios.xbans.api/XBansApi // co.xenastudios.xbans.api/XBans.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xbans.api/XBans.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xbans.api/XBansApi?) // co.xenastudios.xbans.api/XBans.register|register(co.xenastudios.xbans.api.XBansApi?){}[0]
+}

@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -19,7 +19,12 @@
 // German, Joiner paying Friend with /pay and Friend hearing it, an overdraft refused, /baltop; with
 // --zchat, zChat beside it with a format showing <balance>, and Joiner's chat line carrying it), or
 // xTeleport's (Friend again: a home and /home, /tpa accepted and Friend arriving after the warmup,
-// /rtp; with --xmoney, Friend paying for /spawn through xMoney).
+// /rtp; with --xmoney, Friend paying for /spawn through xMoney), or xBans' (Friend again: a tempban
+// kicks them and keeps them out until it ends, then lets them back in; a mute stops their chat, and
+// with --zchat zChat's /msg too, until it's lifted; a kick; Joiner's replies in German), or xBans
+// across a network (xbans-network: through a proxy with two servers, Friend on "game": a mute made on
+// lobby stops Friend's chat on game, and a ban made on lobby takes Friend off the network and turns
+// them away at the proxy).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks; --version sets it instead, for a
@@ -300,6 +305,96 @@ async function zchatNetwork () {
   finish()
 }
 
+// A second player for xBans' checks, who can be kicked and come back: their lines, whether and why
+// they were kicked, and a way to wait for either.
+function friendBot (opts = {}) {
+  const friend = mineflayer.createBot({ host: '127.0.0.1', port, username: 'Friend', auth: 'offline', version: opts.version ?? version })
+  const state = { bot: friend, heard: [], kicked: null, spawned: false, ended: false }
+  friend.on('message', (msg) => state.heard.push((msg.unsigned || msg).toString()))
+  friend.on('kicked', (reason) => { state.kicked = typeof reason === 'string' ? reason : JSON.stringify(reason) })
+  friend.on('error', () => {})
+  friend.once('spawn', () => { state.spawned = true })
+  friend.on('end', () => { state.ended = true })
+  state.until = async (test, ms = 15000) => {
+    for (let waited = 0; waited < ms; waited += 100) {
+      if (test()) return true
+      await sleep(100)
+    }
+    return false
+  }
+  state.hears = (text, from, ms = 10000) => state.until(() => state.heard.slice(from).some((l) => l.includes(text)), ms)
+  return state
+}
+
+// xBans as staff use it on one server: Joiner (an operator, in German) punishes Friend.
+async function xbans () {
+  let friend = friendBot({ version: false })
+  check('Friend joins', await friend.until(() => friend.spawned), 'Friend never spawned')
+  await sleep(1500)
+  // A tempban kicks them, with the ban screen, and keeps them out until it ends.
+  bot.chat('/tempban Friend 15s testing expiry')
+  check('a tempban kicks Friend with the ban screen', await friend.until(() => friend.kicked != null) && /banned/i.test(friend.kicked), `kicked: ${friend.kicked}`)
+  await sleep(1000)
+  friend = friendBot({ version: false })
+  check('the tempban keeps Friend out', await friend.until(() => friend.kicked != null || friend.ended) && !friend.spawned && /banned/i.test(friend.kicked || ''), `spawned ${friend.spawned}, kicked: ${friend.kicked}`)
+  await sleep(15000)
+  friend = friendBot({ version: false })
+  check('once it ends, Friend joins again', await friend.until(() => friend.spawned), `kicked: ${friend.kicked}`)
+  await sleep(1500)
+  // A mute stops their chat (and zChat's /msg) until it's lifted.
+  await command('/mute Friend 1h spam test', 'Friend', 'Joiner mutes Friend (the broadcast, in German)')
+  await sleep(500)
+  let mine = heard.length
+  let from = friend.heard.length
+  friend.bot.chat('can anyone hear me')
+  check('a muted player is told so', await friend.hears("You're muted", from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  check('nobody hears a muted player', (await hear('can anyone hear me', mine, 2000)) == null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  if (withZChat) {
+    from = friend.heard.length
+    friend.bot.chat(`/msg ${username} psst`)
+    check("zChat's /msg is refused to a muted player", await friend.hears('muted', from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+    check("zChat delivers nothing", (await hear('psst', mine, 2000)) == null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  }
+  bot.chat('/unmute Friend')
+  await sleep(1500)
+  mine = heard.length
+  friend.bot.chat('free at last')
+  check('an unmuted player is heard again', (await hear('free at last', mine, 8000)) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  // A reply in Joiner's language.
+  await command('/history Friend', 'Verlauf', "a lookup answers in the client's language (German)")
+  bot.chat('/kick Friend bye for now')
+  check('a kick takes Friend off with the kick screen', await friend.until(() => friend.kicked != null) && /kicked/i.test(friend.kicked), `kicked: ${friend.kicked}`)
+  finish()
+}
+
+// xBans across a network: Joiner on lobby, Friend on game, through the proxy. The proxy's own
+// punishment commands are off in this test, so Joiner's reach lobby.
+async function xbansNetwork () {
+  let friend = friendBot()
+  check('Friend joins through the proxy', await friend.until(() => friend.spawned), `kicked: ${friend.kicked}`)
+  await sleep(2000)
+  friend.bot.chat('/server game')
+  await sleep(5000)
+  bot.chat('/mute Friend 1h muted on lobby')
+  // Network mode: game hears of it from the database within its check, a second here.
+  await sleep(4000)
+  const from = friend.heard.length
+  friend.bot.chat('hello from game')
+  check('a mute made on lobby stops chat on game', await friend.hears("You're muted", from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  bot.chat('/ban Friend banned on lobby')
+  check('a ban made on lobby takes Friend off the network', await friend.until(() => friend.kicked != null || friend.ended, 20000), `Friend is still on: ${JSON.stringify(friend.heard.slice(-3))}`)
+  check('with the ban screen', /banned/i.test(friend.kicked || ''), `kicked: ${friend.kicked}`)
+  await sleep(1000)
+  friend = friendBot()
+  check('the proxy turns Friend away at the door', await friend.until(() => friend.kicked != null || friend.ended) && !friend.spawned && /banned/i.test(friend.kicked || ''), `spawned ${friend.spawned}, kicked: ${friend.kicked}`)
+  bot.chat('/unban Friend')
+  await sleep(4000)
+  friend = friendBot()
+  check('once unbanned, Friend gets back on', await friend.until(() => friend.spawned), `kicked: ${friend.kicked}`)
+  try { friend.bot.quit() } catch {}
+  finish()
+}
+
 async function run () {
   if (forge) {
     // Looks like a frame of ours ('X', version 1), signed with nothing the network knows.
@@ -313,6 +408,8 @@ async function run () {
   if (plugin === 'zchat-network') return zchatNetwork()
   if (plugin === 'xmoney') return xmoney()
   if (plugin === 'xteleport') return xteleport()
+  if (plugin === 'xbans') return xbans()
+  if (plugin === 'xbans-network') return xbansNetwork()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")

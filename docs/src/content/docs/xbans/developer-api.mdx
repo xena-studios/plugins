@@ -1,0 +1,101 @@
+---
+title: Developer API
+description: "Build on xBans: check bans and mutes from memory, punish and pardon, read histories and alts, the staff layer for vanish and moderation plugins, and cancellable events, on every server and the proxy."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xBans' API is the same on Paper, Folia, Spigot, Fabric, Velocity and BungeeCord: players are `PlayerRef`s (by UUID), and every method says how it runs: from memory at once on any thread, or a `CompletableFuture` that completes off the server's threads. Get it with `XBans.api()` once xBans is enabled (add it to your plugin's `depend`, or `softdepend` and check `XBans.isEnabled()` first). On Bukkit it's also in the services manager, as `XBansApi`.
+
+:::caution[Not on Maven Central yet]
+2.0's API isn't published until 2.0 is released. Its coordinates will be `co.xenastudios.xbans:xbans-api:2.0.0`; until then, compile against the plugin's jar. The [1.x API](/xbans/v1/developer-api/) is on Maven Central as `1.0.1`.
+:::
+
+## Check
+
+```java
+XBansApi xbans = XBans.api();
+PlayerRef player = PlayerRefs.of(bukkitPlayer.getUniqueId());
+if (xbans.isMuted(player)) {
+    Punishment mute = xbans.activeMute(player);
+    bukkitPlayer.sendMessage("Muted " + (mute.isPermanent() ? "for good" : "until " + mute.getExpires()));
+}
+```
+
+`isBanned`, `isMuted`, `activeBan` and `activeMute` answer from memory, on any thread, cheaply enough for a chat or join listener. They answer for this server: a ban scoped to another server of a network doesn't count here, and on the proxy only a global one does. `isMuted` also counts an IP mute on the IP an online player joined from.
+
+## Punish and pardon
+
+```java
+xbans.punish(PunishRequest.of(PunishmentType.BAN, player, "Kill aura")
+        .withDurationMillis(Duration.ofDays(30).toMillis())
+        .withStaff(null, "AntiCheat")
+        .withSilent(true))
+    .thenAccept(result -> {
+        if (result.getOutcome() == PunishResult.Outcome.DONE) getLogger().info("Banned as #" + result.getPunishment().getId());
+        else getLogger().info("Not banned: " + result.getMessage());
+    });
+xbans.pardon(player, PunishmentType.MUTE, null, "Discord", "Appeal accepted");
+```
+
+A punishment made through the API is made the way staff commands make one: it replaces one it outlasts and is refused over one that already covers it, `PunishEvent` comes first, then it's saved, enforced (the player kicked or told, at once on the proxy too) and announced, on every server of a network. None of the staff limits apply, so your plugin decides who may punish whom. `PunishResult` says how it ended: `DONE` with the punishment, `REFUSED` with why (in English), `CANCELLED` (a listener cancelled it) or `FAILED` (the database, say). `pardon` lifts the player's ban or mute on every scope, or their newest warning; it's `REFUSED` if there's nothing to lift.
+
+## History and alts
+
+```java
+xbans.history(player, 1, 10).thenAccept(page -> {
+    for (Punishment p : page.getPunishments()) { /* newest first; p.getRemoval() is who lifted it, or null */ }
+});
+xbans.staffHistory(staff, 1, 10);   // null for the console
+xbans.alts(player);                  // accounts that shared an IP, the most recent first
+```
+
+The API never shows IP addresses.
+
+## The staff layer
+
+For vanish, staff chat and moderation plugins to build on:
+
+- **`isStaff(player)`**: whether an online player is staff here: they have `xbans.staff` (operators do), or a permission to ban, mute, warn or kick. `onlineStaff()` lists them. From memory, any thread.
+- **`notifyStaff(message, silent)`** tells staff a line in xBans' markup, with the theme's tags, the way xBans tells them of a punishment: everyone with `xbans.notify.broadcast`, or with `silent` only those with `xbans.notify.silent`, and the console.
+- **`StaffNotifyEvent`** comes before every staff notification, xBans' own and yours, with its recipients, which a listener can change (a vanish plugin keeping a vanished player's punishment from staff who can't see them) or cancel.
+- **Silent punishments** are `PunishRequest.withSilent(true)` (staff are told) and `withExtraSilent(true)` (only the console).
+
+```java
+xbans.getEvents().subscribe(StaffNotifyEvent.TYPE, event -> event.getRecipients().removeIf(staff -> !canSeeVanished(staff)));
+```
+
+## Events
+
+Fired on xBans' bus (`api.getEvents()`), only when something listens, on the thread the punishment or login is handled on: off the server's threads but for logins Bukkit checks on its own.
+
+| Event | When | Cancellable |
+| --- | --- | --- |
+| `PunishEvent` | A punishment is about to be made, before the database is touched. Not fired for one made on another server. | Yes: it isn't made, and the staff member is told another plugin stopped it. |
+| `PunishedEvent` | A punishment was saved. `getFromOtherServer()` for one made elsewhere on the network. | No |
+| `PardonEvent` | A punishment is about to be lifted. | Yes |
+| `PardonedEvent` | A punishment was lifted. | No |
+| `LoginDeniedEvent` | A banned player was turned away at login, here or (`getProxy()`) at the proxy, with their ban (`null` while the database is still opening). | No: a ban plugin's refusal isn't another plugin's to undo; lift the ban instead. |
+| `StaffNotifyEvent` | Staff are about to be told something. | Yes, and its recipients can be changed. |
+
+On Bukkit each is also a Bukkit event, for plugins and Skript scripts that listen the Bukkit way: `BukkitPunishEvent`, `BukkitPunishedEvent`, `BukkitPardonEvent`, `BukkitPardonedEvent` and `BukkitLoginDeniedEvent` in `co.xenastudios.xbans.api.bukkit`, async when fired off the server thread. Cancelling one cancels xBans' own.
+
+<Reference plugin="xbans" show="events" />
+
+## From 1.x
+
+| 1.x | 2.0 |
+| --- | --- |
+| `XBansApi.get()` | `XBans.api()` (also in Bukkit's services manager) |
+| `UUID` players | `PlayerRef`: `PlayerRefs.of(uuid)` |
+| `getActiveBan(UUID)`, `getActiveMute(UUID)`: `Optional`s | `activeBan(PlayerRef)`, `activeMute(PlayerRef)`: the punishment, or `null` |
+| `punish(PunishRequest)`: the `Punishment`, failing with an `IllegalStateException` or `CancellationException` | `punish(PunishRequest)`: a `PunishResult` with its `Outcome`, never failing |
+| `PunishRequest.withDuration(Duration)` | `withDurationMillis(long)` |
+| `revoke(UUID, type, staff, staffName, reason)`: an `Optional` | `pardon(PlayerRef, type, staff, staffName, reason)`: a `PunishResult` |
+| `Punishment.expires()`, `created()`: `Instant`s (java.time) | `getExpires()`, `getCreated()`: Kotlin's `Instant`s; `toEpochMilliseconds()` from Java |
+| Bukkit events `PunishEvent`, `PunishedEvent`, `RevokedEvent` in `co.xenastudios.xbans.api.event` | xBans' own events on `api.getEvents()`, with their `TYPE`; on Bukkit also the `Bukkit*Event`s above. `RevokedEvent` is `PardonedEvent`, and there's a cancellable `PardonEvent` before it |
+| — | `isStaff`, `onlineStaff`, `notifyStaff`, `StaffNotifyEvent`, `LoginDeniedEvent`, `getVersion()` |
+
+Inside xBans' jar, the core's types the API uses (`PlayerRef`, `EventBus`, `Pending`) are relocated with its own copy of the core, as every Xena plugin's are. The published API will carry the same names.

@@ -1,6 +1,6 @@
 ---
 title: Switching
-description: Move to xBans from LiteBans, EssentialsX or vanilla bans, and keep your bans, mutes and history.
+description: "Move to xBans from LiteBans, AdvancedBan, EssentialsX or vanilla bans, and keep your bans, mutes and history."
 sidebar:
   order: 5
 ---
@@ -10,17 +10,18 @@ xBans uses LiteBans' commands, flags and durations, so staff can carry on as bef
 | Source | What comes across |
 | --- | --- |
 | `litebans` | Bans, IP bans, mutes, warnings and kicks, with who made and revoked each, their scopes and silent flags; and LiteBans' login history, for names, `/alts` and `/iphistory`. |
+| `advancedban` | AdvancedBan's history: bans, IP bans, mutes, warnings and kicks, with who made each, and which were lifted early. |
 | `vanilla` | `banned-players.json` and `banned-ips.json`: the server's own lists, which vanilla's and EssentialsX's `/ban` write. |
 | `essentials` | EssentialsX's mutes, and each player's last name and IP. (EssentialsX keeps its bans in the server's lists: import `vanilla` for those.) |
 
 Every import works the same way:
 
-1. Run `/xbans import <source>` from the console. It reads everything and says how much it found, without importing anything.
+1. Run `/xbans import <source>` from the console (`/xbansproxy import <source>` on the proxy). It reads everything and says how much it found, without importing anything.
 2. Run `/xbans import <source> confirm` to import it. It runs in the background.
 
 Importing twice adds nothing: each row remembers where it came from. Bans and mutes in force are enforced as soon as they're in, and in [network mode](/xbans/networks/) the other servers take them in too, without a broadcast for each.
 
-Punishments from the server's lists and EssentialsX get the default scope (`scopes.default-scope`). LiteBans' keep theirs: a global LiteBans ban (`*`) stays global, whatever the default scope.
+Punishments from the server's lists and EssentialsX get the default scope (`scopes.default-scope`). LiteBans' keep theirs: a global LiteBans ban (`*`) stays global, whatever the default scope. AdvancedBan's are global, as AdvancedBan has no scopes.
 
 With `ips.enabled: false`, no IP is imported, and a ban of an IP alone is skipped. Players already online who are banned by the import are kicked.
 
@@ -46,7 +47,15 @@ If LiteBans asks for a user name and password for the H2 file, they're in its `h
 - **Permissions** start with `xbans.` instead of `litebans.`: `xbans.ban`, `xbans.mute`, `xbans.history`. See [Commands](/xbans/commands/).
 - **Weights** are permissions (`xbans.weight.<n>`), not group weights read through Vault.
 - **Unbanning** follows weights: staff lift their own punishments and those given by staff with a weight no higher than theirs, and `xbans.unban.override` lifts any. See [Commands](/xbans/commands/#staff-limits). Imported punishments count as the console's, since their staff's weights aren't known: whoever gave one can still lift it, and so can `xbans.unban.override`.
-- **Not in 1.0:** wildcard IP bans (`192.168.1.*`; the import counts them and leaves them out, since they'd match nobody), `/staffrollback`, `/lockdown`, `--modify`, GeoIP, the web interface and a proxy plugin.
+- **Not in 2.0:** wildcard IP bans (`192.168.1.*`; the import counts them and leaves them out, since they'd match nobody), `/staffrollback`, `/lockdown`, `--modify`, GeoIP and the web interface. The proxy plugin is in: see [Networks](/xbans/networks/).
+
+## From AdvancedBan
+
+xBans reads AdvancedBan from MySQL or MariaDB, with the settings in `plugins/AdvancedBan/MySQL.yml` (`UseMySQL: true` in AdvancedBan's `config.yml`), so leave those files where they are until the import is done. Run `/xbans import advancedban`, then `/xbans import advancedban confirm`.
+
+AdvancedBan's own default is a HSQLDB file in its folder, which xBans can't read: servers have no driver for it. Only an AdvancedBan on MySQL or MariaDB can be imported.
+
+Every punishment in AdvancedBan's history comes across, each with who gave it and why. One that's no longer in force but hadn't ended was lifted, so it comes across lifted: AdvancedBan doesn't keep who lifted it, so the removal says "AdvancedBan". Its notes aren't punishments, so they stay behind. Its permissions are `ab.*`; xBans' are `xbans.*`: see [Permissions](/xbans/permissions/).
 
 ## From vanilla or EssentialsX
 
@@ -54,4 +63,4 @@ Run `/xbans import vanilla confirm` for the server's ban lists, then `/xbans imp
 
 ## Not yet
 
-Imports from AdvancedBan and LibertyBans come after 1.0.
+An import from LibertyBans comes after 2.0.

@@ -31,6 +31,8 @@ public abstract class MessageBundle {
      * text, the [comment] written above it, the [placeholders] it fills when sent, and the
      * English texts it used to have ([formerEnglish]): an owner whose file still has one of
      * those never edited it, so it's moved to the new text (see [MessageKey.formerEnglish]).
+     * [optional] placeholders are filled when it's sent too, but its English needn't use them:
+     * an owner may add one (a ban screen that also shows `<staff>`).
      */
     protected fun message(
         key: String,
@@ -38,11 +40,12 @@ public abstract class MessageBundle {
         vararg comment: String,
         placeholders: List<String> = emptyList(),
         formerEnglish: List<String> = emptyList(),
+        optional: List<String> = emptyList(),
     ): MessageKey {
         require(KEY.matches(key)) { "message key \"$key\": use lower-case words of a-z, 0-9, - and _, joined with ." }
         require(key.substringBefore('.') != LangFiles.RESERVED) { "message key $key: ${LangFiles.RESERVED} is the files' own" }
         require(declared.none { it.key == key }) { "message $key declared twice" }
-        for (name in placeholders) {
+        for (name in placeholders + optional) {
             require(PLACEHOLDER.matches(name)) { "$key: placeholder \"$name\" should be lower-case a-z, 0-9, - and _" }
             require(MarkupTags.kind(name) == MarkupTags.Kind.OTHER) { "$key: <$name> is a tag of the markup or the theme, not a placeholder" }
         }
@@ -53,7 +56,11 @@ public abstract class MessageBundle {
                 "$key uses <$name>, which is neither a placeholder it declares nor a tag of the markup or the theme"
             }
         }
-        val message = MessageKey(this, declared.size, key, english, comment.flatMap { it.split('\n') }, placeholders.toList(), formerEnglish.toList())
+        val all = placeholders + optional.filter { it !in placeholders }
+        val message = MessageKey(
+            this, declared.size, key, english, comment.flatMap { it.split('\n') }, all, formerEnglish.toList(),
+            optional.filter { it !in placeholders },
+        )
         declared += message
         return message
     }
@@ -86,6 +93,8 @@ public class MessageKey internal constructor(
      * current text on the next load; an edited one is kept.
      */
     public val formerEnglish: List<String>,
+    /** Those of [placeholders] its English doesn't use: offered to an owner's text, never required of a translation. */
+    public val optional: List<String> = emptyList(),
 ) {
     override fun toString(): String = key
 }

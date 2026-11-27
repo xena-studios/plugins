@@ -36,6 +36,8 @@ public class ReceiverHost(
     private val nuVotifierIn: Path? = null,
     /** Sets the receiver's settings in `config.yml` to NuVotifier's, as it's taken over: `null`, or why it couldn't. */
     private val useNuVotifierPort: (port: Int, host: String?, v1: Boolean) -> String? = { _, _, _ -> null },
+    /** The command its lines name: `xvote`, or the proxy's `xvoteproxy`. */
+    private val command: String = "xvote",
 ) : VoteReceiver {
     private val lock = Any()
     private var receiver: Receiver? = null
@@ -73,7 +75,7 @@ public class ReceiverHost(
                 if (settings != failedSettings) {
                     failedSettings = settings
                     val why = if (e is BindException) "something else is using it (NuVotifier, or another server?)" else e.message
-                    log.error("Couldn't listen for votes on port ${settings.port}: $why. Votes from lists can't arrive until receiver.port is free or changed; /xvote reload tries again.")
+                    log.error("Couldn't listen for votes on port ${settings.port}: $why. Votes from lists can't arrive until receiver.port is free or changed; /$command reload tries again.")
                 }
             }
         }
@@ -134,7 +136,7 @@ public class ReceiverHost(
         val keys: KeyPair = try {
             val made = !Keys.exist(rsa)
             Keys.loadOrCreate(rsa).also {
-                if (made) log.info("Made a new RSA key pair for Votifier v1 in rsa/. Lists that ask for a public key get it with /xvote key.")
+                if (made) log.info("Made a new RSA key pair for Votifier v1 in rsa/. Lists that ask for a public key get it with /$command key.")
             }
         } catch (e: Exception) {
             log.error("Couldn't read the Votifier keys: ${e.message}")
@@ -142,7 +144,7 @@ public class ReceiverHost(
         }
         return try {
             val (tokens, created) = Tokens.loadOrCreate(folder)
-            if (created) log.info("Made a Votifier token in tokens.yml. Lists that ask for a token get it with /xvote token.")
+            if (created) log.info("Made a Votifier token in tokens.yml. Lists that ask for a token get it with /$command token.")
             Receiver.Credentials(keys, tokens)
         } catch (e: Exception) {
             log.error("Couldn't read ${Tokens.FILE}: ${e.message}")

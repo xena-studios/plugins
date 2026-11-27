@@ -1,0 +1,13 @@
+# xVote on BungeeCord in front of two Spigot servers, all on one MariaDB with network mode on
+# (xvote/velocity/network.sh): the proxy receives, the server the player is on pays.
+logged: sharing votes with the network
+logged: Listening for votes on 0.0.0.0:8192 (Votifier v1 and v2).
+backend: sharing votes with the network
+game: sharing votes with the network
+client: --plugin xvote-network --version 1.8.8 --vote-token xvote-boot-test --timeout 150
+logged: Vote for Friend from PlanetMinecraft.com (v2): held until Friend first joins.
+backend: Paying Friend for 1 votes from while they were away.
+logged: Vote for Friend from Minecraft-MP.com (v2): counted; paid on game, where Friend is.
+logged: Vote for Joiner from PlanetMinecraft.com (v2): counted; paid on lobby, where Joiner is.
+run: xvoteproxy status
+expect: network mode on

@@ -85,7 +85,7 @@ public class XVoteVelocity(private val bootstrap: VelocityBootstrap) : PluginEnt
         val drivers = Drivers(javaClass.classLoader, platform.driverFetcher())
         val plugins = folder.toAbsolutePath().parent
         var made: XVotePlugin? = null
-        val receiver = ReceiverHost(folder, { vote -> made?.accept(vote) }, platform.log, "plugins/${folder.fileName}/rsa/public.key", plugins, files::useReceiver)
+        val receiver = ReceiverHost(folder, { vote -> made?.accept(vote) }, platform.log, "plugins/${folder.fileName}/rsa/public.key", plugins, files::useReceiver, "xvoteproxy")
         val xvote = XVotePlugin(
             platform, VelocityVoteServer(platform, cache), files, cache, platform.players, cache,
             opener = JvmDatabase(family, folder, plugins.resolve("Xena"), drivers, platform.log),

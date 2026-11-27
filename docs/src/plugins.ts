@@ -12,6 +12,10 @@
 // the new major's at /<id>/next/, hidden. servedId says where each file is served, and
 // links.ts rewrites the links on the plugin's own pages to match, so they're written once, as
 // they'll be after the release. Deleting the "unreleased" field is the whole switch.
+//
+// A new plugin's first major (xVanish 1.0) is unreleased with no older major: nothing is served
+// at /<id>/ until it ships, and its pages, in <id>/, are built at /<id>/next/, hidden, as a
+// rewrite's are. Its "unreleased" has no last release's facts, as there was none.
 import catalog from "./data/plugins.json" with { type: "json" };
 import versions from "./data/versions.json" with { type: "json" };
 
@@ -40,18 +44,26 @@ interface Versioned {
   hidden?: boolean;
   newest: number;
   older: number[];
-  /** Merged but not released: its last release's facts, which the brand catalog keeps until it ships. */
-  unreleased?: { version: string; jarBudgetKb: number };
+  /**
+   * Merged but not released: its last release's facts, which the brand catalog keeps until it
+   * ships. Empty for a new plugin, which has had no release.
+   */
+  unreleased?: { version?: string; jarBudgetKb?: number };
 }
 const versioned: Versioned[] = versions.plugins;
 const versionsOf = (id: string) => versioned.find((v) => v.id === id);
 const newestFirst = (majors: number[]) => [...majors].sort((a, b) => b - a);
 
-/** The unreleased plugins, by id: the major they're on now, and the one still to ship. */
+/**
+ * The unreleased plugins, by id: the major they're on now (none for a new plugin's first), and
+ * the one still to ship.
+ */
 const unreleased = new Map(
   versioned.filter((v) => v.unreleased).map((v) => {
     const [current, ...rest] = newestFirst(v.older);
-    if (current === undefined) throw new Error(`src/data/versions.json: ${v.id} is unreleased but has no older major to show meanwhile`);
+    if (current === undefined && v.unreleased?.version !== undefined) {
+      throw new Error(`src/data/versions.json: ${v.id} has an unreleased major and a last release (${v.unreleased.version}), but no older major's pages to show it`);
+    }
     return [v.id, { current, rest, next: v.newest }] as const;
   }),
 );
@@ -66,11 +78,14 @@ function plugin(id: string, name: string, hidden: boolean, v: Versioned | undefi
   const u = unreleased.get(id);
   const older = newestFirst(v?.older ?? []);
   if (!u) return [{ id, name, hidden, newest: v?.newest, older, catalogId: id, group: name, versioned: older.length > 0 }];
+  const next: DocsPlugin = { id: nextId(id), name: `${name} ${u.next}`, hidden: true, older: [], catalogId: id, group: name, versioned: true };
+  // A new plugin: nothing at /<id>/ yet. Its entry there is only its pages' sidebar group, hidden.
+  if (u.current === undefined) return [{ id, name, hidden: true, older: [], catalogId: id, group: name, versioned: false }, next];
   return [
     // What people see: the current major at /<id>/, as if the new one weren't there.
     { id, name, hidden, newest: u.rest.length ? u.current : undefined, older: u.rest, catalogId: id, group: name, folder: `v${u.current}`, versioned: u.rest.length > 0 },
     // The new major at /<id>/next/, hidden, on its own.
-    { id: nextId(id), name: `${name} ${u.next}`, hidden: true, older: [], catalogId: id, group: name, versioned: true },
+    next,
   ];
 }
 
@@ -94,7 +109,7 @@ export function servedId(fileId: string): string {
   if (!u) return fileId;
   const rest = fileId.slice(id.length + 1);
   const old = /^v(\d+)(?:\/(.*))?$/.exec(rest);
-  if (old && Number(old[1]) === u.current) return old[2] ? `${id}/${old[2]}` : id;
+  if (old && u.current !== undefined && Number(old[1]) === u.current) return old[2] ? `${id}/${old[2]}` : id;
   if (old) return fileId;
   return rest ? `${nextId(id)}/${rest}` : nextId(id);
 }

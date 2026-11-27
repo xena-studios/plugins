@@ -33,6 +33,8 @@ internal object BukkitFamily {
         val services = plugin.server.servicesManager
         val board = JvmFamilyBoard.find(services.getRegistrations(ConcurrentMap::class.java).map { it.provider })
         services.register(ConcurrentMap::class.java, board.root, plugin, ServicePriority.Lowest)
+        // Where the plugin's database finds the board for the family's backups.
+        JvmFamilyBoard.server = board
         return board
     }
 

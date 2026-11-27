@@ -90,13 +90,17 @@ public class FabricFamily internal constructor(private val platform: FabricPlatf
             val share = FabricLoader.getInstance().objectShare
             val made = JvmFamilyBoard.newRoot()
             val found = share.putIfAbsent(JvmFamilyBoard.NAME, made) ?: made
-            if (!JvmFamilyBoard.isRoot(found)) {
+            val board = if (!JvmFamilyBoard.isRoot(found)) {
                 // Another mod took the name: the family still works within this mod, alone.
                 platform.log.warn("${JvmFamilyBoard.NAME} in Fabric's object share isn't the family's board, so this mod keeps its own")
-                return JvmFamilyBoard(made)
+                JvmFamilyBoard(made)
+            } else {
+                @Suppress("UNCHECKED_CAST")
+                JvmFamilyBoard(found as ConcurrentMap<String, Any>)
             }
-            @Suppress("UNCHECKED_CAST")
-            return JvmFamilyBoard(found as ConcurrentMap<String, Any>)
+            // Where the mod's database finds the board for the family's backups.
+            JvmFamilyBoard.server = board
+            return board
         }
     }
 }

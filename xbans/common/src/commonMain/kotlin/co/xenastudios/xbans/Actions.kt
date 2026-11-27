@@ -96,14 +96,14 @@ internal class Actions(private val plugin: XBansPlugin) {
         val punisher = plugin.punisher
         // Read here, on the command's thread: the target and everyone on an IP are held to the sender's limits.
         val online = punisher.online(power)
-        val targetToken = if (kind.type == PunishmentType.KICK) {
+        val targetArg = if (kind.type == PunishmentType.KICK) {
             // Only someone here can be kicked.
             val found = plugin.players.find(parsed.target, source) ?: return reply(source, CoreMessages.commandUnknownPlayer, "player" to parsed.target)
             found.toString()
         } else {
             parsed.target
         }
-        resolve(source, targetToken, ips = ip, ids = false) { target ->
+        resolve(source, targetArg, ips = ip, ids = false) { target ->
             punisher.punish(Punisher.Request(
                 kind.type, target.id, target.name, target.ip, ip || target.ip != null, parsed.length, parsed.reason, parsed.template,
                 parsed.scope, silent, parsed.extraSilent, staff, staffName, power, source, online = online, temporary = kind.temp,

@@ -142,31 +142,31 @@ internal class Actions(private val plugin: XBansPlugin) {
     class Target(val id: PlayerRef?, val name: String, val ip: String?, val punishment: Long?)
 
     /**
-     * Who [token] names, then [next] with them; or [source] is told why not. Never blocks: names
+     * Who [arg] names, then [next] with them; or [source] is told why not. Never blocks: names
      * in memory answer at once, others are looked up off the server's threads.
      */
-    fun resolve(source: CommandSource, token: String, ips: Boolean, ids: Boolean, next: (Target) -> Unit) {
-        if (ids && token.length > 1 && token[0] == '#' && token.drop(1).all { it in '0'..'9' }) {
-            val id = token.drop(1).toLongOrNull() ?: return reply(source, XBansMessages.noSuchId, "id" to token.drop(1))
-            return next(Target(null, token, null, id))
+    fun resolve(source: CommandSource, arg: String, ips: Boolean, ids: Boolean, next: (Target) -> Unit) {
+        if (ids && arg.length > 1 && arg[0] == '#' && arg.drop(1).all { it in '0'..'9' }) {
+            val id = arg.drop(1).toLongOrNull() ?: return reply(source, XBansMessages.noSuchId, "id" to arg.drop(1))
+            return next(Target(null, arg, null, id))
         }
-        if (IpKeys.looksLikeAddress(token)) {
-            if (!ips) return reply(source, XBansMessages.neverJoined, "player" to token)
+        if (IpKeys.looksLikeAddress(arg)) {
+            if (!ips) return reply(source, XBansMessages.neverJoined, "player" to arg)
             if (!config[XBansConfig.ips.enabled]) return reply(source, XBansMessages.ipsOff)
             val backend = plugin.backend ?: return reply(source, XBansMessages.notReady)
-            if (!IpKeys.punishable(token)) return reply(source, XBansMessages.badIp)
-            val key = backend.keys.key(token)
+            if (!IpKeys.punishable(arg)) return reply(source, XBansMessages.badIp)
+            val key = backend.keys.key(arg)
             return next(Target(null, IpKeys.label(key), key, null))
         }
-        PlayerRef.parseOrNull(token)?.takeIf { token.length == 32 || token.length == 36 }?.let { id ->
-            return next(Target(id, plugin.server.name(id) ?: plugin.cache?.get(id)?.name ?: token, null, null))
+        PlayerRef.parseOrNull(arg)?.takeIf { arg.length == 32 || arg.length == 36 }?.let { id ->
+            return next(Target(id, plugin.server.name(id) ?: plugin.cache?.get(id)?.name ?: arg, null, null))
         }
-        if (!NAME.matches(token)) return reply(source, XBansMessages.neverJoined, "player" to token)
-        val online = plugin.server.online().firstOrNull { plugin.server.name(it).equals(token, ignoreCase = true) }
-        if (online != null) return next(Target(online, plugin.server.name(online) ?: token, null, null))
-        plugin.cache?.find(token)?.let { return next(Target(it.player, it.name, null, null)) }
-        lookup(token).onSettled { found, _ ->
-            if (found != null) next(Target(found.first, found.second, null, null)) else reply(source, XBansMessages.neverJoined, "player" to token)
+        if (!NAME.matches(arg)) return reply(source, XBansMessages.neverJoined, "player" to arg)
+        val online = plugin.server.online().firstOrNull { plugin.server.name(it).equals(arg, ignoreCase = true) }
+        if (online != null) return next(Target(online, plugin.server.name(online) ?: arg, null, null))
+        plugin.cache?.find(arg)?.let { return next(Target(it.player, it.name, null, null)) }
+        lookup(arg).onSettled { found, _ ->
+            if (found != null) next(Target(found.first, found.second, null, null)) else reply(source, XBansMessages.neverJoined, "player" to arg)
         }
     }
 

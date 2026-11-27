@@ -8,6 +8,7 @@ import co.xenastudios.core.api.toPlayerRef
 import co.xenastudios.core.bungee.BungeePlatform
 import co.xenastudios.core.common.family.PlayerCache
 import co.xenastudios.core.common.family.PlayerStore
+import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.later
 import co.xenastudios.core.common.text.Component
@@ -36,6 +37,7 @@ import net.md_5.bungee.event.EventHandler
 import net.md_5.bungee.event.EventPriority
 import java.net.InetSocketAddress
 import java.time.ZoneId
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -48,8 +50,13 @@ import kotlin.time.Duration.Companion.seconds
  */
 public class XBansBungee(private val bootstrap: BungeeBootstrap) : PluginEntry, Listener {
     private var platform: BungeePlatform? = null
-    private var xbans: XBansPlugin? = null
     private var server: BungeeBansServer? = null
+
+    // Made on the plugin's own thread, after enable, as on Velocity (XBansVelocity): until it's
+    // made, a login waits for it, as it waits for the bans.
+    @Volatile
+    private var xbans: XBansPlugin? = null
+    private val made = CompletableFuture<XBansPlugin>()
 
     override fun enable() {
         val started = System.nanoTime()
@@ -57,12 +64,39 @@ public class XBansBungee(private val bootstrap: BungeeBootstrap) : PluginEntry, 
         val family = platform.family
         val cache = PlayerCache(family.board, PlayerStore.InFile(family.folder), platform.scheduler, platform.clock, platform.log, XBansPlugin.PLUGIN_ID)
         platform.record(cache)
+        val server = BungeeBansServer(platform)
+        this.platform = platform
+        this.server = server
+        // The doors first, so nobody gets in between enable and the plugin being made.
+        platform.server.pluginManager.registerListener(bootstrap, this)
+        platform.scheduler.run(Where.Global, action = Make(platform, server, cache))
+        val millis = (System.nanoTime() - started) / 1_000_000
+        platform.log.info("xBans ${bootstrap.description.version} on ${platform.name}: turning banned players away at the proxy, enabled in $millis ms")
+    }
+
+    // A class, not a lambda (decisions/2026-11-25-a-lighter-core.md).
+    private inner class Make(private val platform: BungeePlatform, private val server: BungeeBansServer, private val cache: PlayerCache) : (Task) -> Unit {
+        override fun invoke(task: Task) {
+            val xbans = try {
+                make(platform, server, cache)
+            } catch (e: Throwable) {
+                // Nobody joins without it: every login is turned away, as with a database that won't open.
+                platform.log.error("xBans couldn't start, and nobody can join until it does.", e)
+                made.completeExceptionally(e)
+                return
+            }
+            this@XBansBungee.xbans = xbans
+            made.complete(xbans)
+        }
+    }
+
+    private fun make(platform: BungeePlatform, server: BungeeBansServer, cache: PlayerCache): XBansPlugin {
+        val family = platform.family
         val folder = bootstrap.dataFolder.toPath()
         val files = JvmFiles(folder, family, LangFolder.shipped(javaClass.classLoader, JvmFiles.LANGUAGES), platform.log)
         val config = files.config()
         val drivers = Drivers(javaClass.classLoader, platform.driverFetcher())
         val plugins = folder.toAbsolutePath().parent
-        val server = BungeeBansServer(platform)
         val xbans = XBansPlugin(
             platform, server, files, cache, platform.players, cache,
             opener = JvmDatabase(family, folder, plugins.resolve("Xena"), drivers, platform.log),
@@ -74,33 +108,26 @@ public class XBansBungee(private val bootstrap: BungeeBootstrap) : PluginEntry, 
             channel = if (config.config[XBansConfig.network.enabled]) platform.proxyChannel(XBansPlugin.PLUGIN_ID) else null,
             version = bootstrap.description.version,
         )
-        this.platform = platform
-        this.xbans = xbans
-        this.server = server
-        platform.server.pluginManager.registerListener(bootstrap, this)
-        platform.scheduler.run(Where.Global) { _ ->
-            platform.commands.feedback = xbans.texts.feedback
-            xbans.start(config)
-            xbans.open()
-        }
+        platform.commands.feedback = xbans.texts.feedback
+        xbans.start(config)
+        xbans.open()
         platform.scheduler.run(Where.Async) { _ ->
             cache.load()
             val loaded = files.translations(config.config, config.problems)
             platform.scheduler.run(Where.Global) { _ -> xbans.apply(loaded) }
         }
         xbans.updates = platform.checkUpdates(XBansPlugin.PLUGIN_ID, xbans.admin.updates, XBansConfig.updates.settings(config.config)) { xbans.texts.translations }
-        val millis = (System.nanoTime() - started) / 1_000_000
-        platform.log.info("xBans ${xbans.version} on ${platform.name}: turning banned players away at the proxy, enabled in $millis ms")
+        return xbans
     }
 
     // The network's door, last, so a plugin that allows logins later can't let a banned player back
-    // in. Just after a start, it waits (without blocking BungeeCord's threads) up to 10 seconds for the bans.
+    // in. Just after a start, it waits (without blocking BungeeCord's threads) up to 10 seconds for
+    // the plugin to be made and its bans read, and turns the player away if they aren't by then.
     @EventHandler(priority = EventPriority.HIGHEST)
     public fun onLogin(event: LoginEvent) {
-        val xbans = xbans ?: return
         if (event.isCancelled) return
-        if (xbans.backend != null) return decide(event)
-        val platform = platform ?: return
+        if (xbans?.backend != null) return decide(event)
+        val platform = platform ?: return deny(event, null)
         event.registerIntent(bootstrap)
         val once = AtomicBoolean()
         val finish = Runnable {
@@ -111,28 +138,41 @@ public class XBansBungee(private val bootstrap: BungeeBootstrap) : PluginEntry, 
                 event.completeIntent(bootstrap)
             }
         }
-        xbans.ready.whenComplete { _, _ -> finish.run() }
+        made.whenComplete { xbans, _ -> if (xbans == null) finish.run() else xbans.ready.whenComplete { _, _ -> finish.run() } }
         platform.scheduler.later(Where.Async, XBansPlugin.WAIT_SECONDS.seconds) { _ -> finish.run() }
     }
 
     private fun decide(event: LoginEvent) {
-        val xbans = xbans ?: return
-        val server = server ?: return
+        val xbans = xbans
+        if (xbans?.backend == null) return deny(event, null)
         val connection = event.connection
         val ref = connection.uniqueId?.toPlayerRef() ?: return
-        val name = connection.name ?: ref.toString()
-        val ban: Entry? = if (xbans.backend == null) null else xbans.banOnJoin(ref, (connection.socketAddress as? InetSocketAddress)?.address?.hostAddress, null) ?: return
+        val ban = xbans.banOnJoin(ref, (connection.socketAddress as? InetSocketAddress)?.address?.hostAddress, null) ?: return
+        deny(event, ban)
+    }
+
+    // Turned away: banned, or (ban null) before the bans are read.
+    private fun deny(event: LoginEvent, ban: Entry?) {
+        val xbans = xbans
+        val connection = event.connection
+        val ref = connection.uniqueId?.toPlayerRef()
         event.isCancelled = true
+        val screen = if (xbans != null && ref != null) xbans.denied(ref, connection.name ?: ref.toString(), ban) else Component.text(NOT_READY)
         @Suppress("DEPRECATION")
-        event.setCancelReason(*server.draw(xbans.denied(ref, name, ban)))
+        event.setCancelReason(*(server ?: return).draw(screen))
     }
 
     // A server's door: a player banned on that server's scope doesn't get onto it.
     @EventHandler(priority = EventPriority.HIGHEST)
     public fun onConnect(event: ServerConnectEvent) {
-        val xbans = xbans ?: return
-        val server = server ?: return
         if (event.isCancelled) return
+        val server = server ?: return
+        val xbans = xbans
+        if (xbans == null) {
+            // Nobody gets past the login before it's made; should one have, they go nowhere.
+            event.isCancelled = true
+            return
+        }
         val player = event.player
         val ref = player.uniqueId.toPlayerRef()
         val ban = xbans.banOnJoin(ref, address(player), event.target.name) ?: return
@@ -143,8 +183,12 @@ public class XBansBungee(private val bootstrap: BungeeBootstrap) : PluginEntry, 
 
     @EventHandler(priority = EventPriority.LOWEST)
     public fun onPostLogin(event: PostLoginEvent) {
-        val xbans = xbans ?: return
         val player = event.player
+        val xbans = xbans
+        if (xbans == null) {
+            server?.let { player.disconnect(*it.draw(Component.text(NOT_READY))) }
+            return
+        }
         val ref = player.uniqueId.toPlayerRef()
         val ban = xbans.joined(ref, player.name, address(player))
         if (ban != null || xbans.backend == null) player.disconnect(*server!!.draw(xbans.denied(ref, player.name, ban)))
@@ -165,11 +209,12 @@ public class XBansBungee(private val bootstrap: BungeeBootstrap) : PluginEntry, 
     override fun disable() {
         val platform = platform ?: return
         platform.server.pluginManager.unregisterListener(this)
-        xbans?.let { xbans ->
+        run {
             val done = CountDownLatch(1)
+            // On the plugin's thread, so after Make: whatever it made is stopped.
             platform.scheduler.run(Where.Global) { _ ->
                 try {
-                    xbans.stop().get(10, TimeUnit.SECONDS)
+                    xbans?.stop()?.get(10, TimeUnit.SECONDS)
                 } catch (e: Exception) {
                     platform.log.warn("Stopping, xBans' database didn't finish saving in time: $e")
                 } finally {
@@ -182,6 +227,11 @@ public class XBansBungee(private val bootstrap: BungeeBootstrap) : PluginEntry, 
         this.platform = null
         xbans = null
         server = null
+    }
+
+    private companion object {
+        // screens.not-ready's English, before there are translations to draw it in.
+        const val NOT_READY = "The server is still starting.\nTry again in a few seconds."
     }
 }
 

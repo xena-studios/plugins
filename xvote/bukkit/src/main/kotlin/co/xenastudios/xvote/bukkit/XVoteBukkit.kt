@@ -173,7 +173,7 @@ public class XVoteBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
     private fun hookPlaceholders(xvote: XVotePlugin) {
         if (placeholders != null) return
         placeholders = try {
-            Placeholders(xvote, plugin.description.version).also { it.register() }
+            PlaceholderHook.register(xvote, plugin.description.version)
         } catch (e: LinkageError) {
             xvote.log.warn("Couldn't add xVote's placeholders to PlaceholderAPI: $e")
             null
@@ -181,9 +181,9 @@ public class XVoteBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
     }
 
     private fun unhookPlaceholders() {
-        val expansion = placeholders as? Placeholders ?: return
+        val expansion = placeholders ?: return
         try {
-            expansion.unregister()
+            PlaceholderHook.unregister(expansion)
         } catch (e: LinkageError) {
             // PlaceholderAPI went first.
         }

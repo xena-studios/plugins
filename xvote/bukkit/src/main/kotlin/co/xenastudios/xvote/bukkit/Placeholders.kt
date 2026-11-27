@@ -8,6 +8,18 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import org.bukkit.OfflinePlayer
 
 /**
+ * Where [XVoteBukkit] reaches the placeholders: only this class names PlaceholderAPI's, so the entry
+ * point's own class is verified without it, on a server that doesn't have it.
+ */
+internal object PlaceholderHook {
+    fun register(plugin: XVotePlugin, version: String): Any = Placeholders(plugin, version).also { it.register() }
+
+    fun unregister(expansion: Any) {
+        (expansion as Placeholders).unregister()
+    }
+}
+
+/**
  * xVote's PlaceholderAPI placeholders, 1.x's, all answered from memory. Loaded only while
  * PlaceholderAPI is on.
  *

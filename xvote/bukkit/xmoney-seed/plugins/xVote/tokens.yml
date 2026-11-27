@@ -1,0 +1,4 @@
+# The boot tests' token, so the real client can sign its Votifier v2 votes (client.js --vote-token).
+# Not a secret: it's only ever on a test server.
+tokens:
+  "default": "xvote-boot-test"

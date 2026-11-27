@@ -10,3 +10,4 @@
 -keep,allowobfuscation class co.xenastudios.xvote.XMoneyEconomy { *; }
 -keep,allowobfuscation class co.xenastudios.xvote.bukkit.VaultEconomy { *; }
 -keep class co.xenastudios.xvote.bukkit.Placeholders { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.bukkit.PlaceholderHook { *; }

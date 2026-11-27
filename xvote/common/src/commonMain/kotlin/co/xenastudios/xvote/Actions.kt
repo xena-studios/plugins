@@ -156,12 +156,12 @@ internal class Actions private constructor(private val plugin: XVotePlugin) {
                 val sent = receiver.sendTest(service, name, timestamp)
                 when {
                     sent == null -> {
-                        via = Texts.Word(XVoteMessages.viaReceiver, "port" to status.port)
+                        via = Texts.Word(XVoteMessages.viaReceiver, "port" to status.port.toString())
                         expected
                     }
                     !sent.unreachable -> return@run texts.reply(source, XVoteMessages.testRefused, "reason" to sent.reason)
                     else -> {
-                        texts.reply(source, XVoteMessages.testUnreachable, "port" to status.port, "reason" to sent.reason)
+                        texts.reply(source, XVoteMessages.testUnreachable, "port" to status.port.toString(), "reason" to sent.reason)
                         via = XVoteMessages.viaDirect
                         plugin.accept(IncomingVote(service, name, "127.0.0.1", timestamp, VoteSource.TEST, now))
                     }
@@ -193,8 +193,8 @@ internal class Actions private constructor(private val plugin: XVotePlugin) {
         val receiver = plugin.receiver?.status
         val config = plugin.config
         val listening: Any = when {
-            receiver != null && !receiver.listening -> Texts.Word(XVoteMessages.statusStopped, "port" to receiver.port)
-            receiver != null -> Texts.Word(XVoteMessages.statusListening, "port" to receiver.port, "versions" to if (receiver.v1) "v1 and v2" else "v2 only", "tokens" to receiver.tokens)
+            receiver != null && !receiver.listening -> Texts.Word(XVoteMessages.statusStopped, "port" to receiver.port.toString())
+            receiver != null -> Texts.Word(XVoteMessages.statusListening, "port" to receiver.port.toString(), "versions" to if (receiver.v1) "v1 and v2" else "v2 only", "tokens" to receiver.tokens)
             config[XVoteConfig.receiver.enabled] -> XVoteMessages.statusNotListening
             else -> XVoteMessages.statusOff
         }

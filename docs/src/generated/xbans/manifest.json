@@ -1,0 +1,4586 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xbans",
+    "name": "xBans",
+    "version": "unspecified",
+    "description": "Bans, mutes and warnings. Nothing slips through."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "spigot",
+      "name": "Spigot",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "velocity",
+      "name": "Velocity",
+      "kind": "server",
+      "minVersion": "3.4",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "bungeecord",
+      "name": "BungeeCord",
+      "kind": "server",
+      "minVersion": "1.21",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "neoforge",
+      "name": "NeoForge",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "id": "sponge",
+      "name": "Sponge",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    },
+    {
+      "id": "pumpkin",
+      "name": "Pumpkin",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    },
+    {
+      "id": "hytale",
+      "name": "Hytale",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "xbans",
+      "usage": "/xbans [info|import|reload|debug|forget]",
+      "aliases": [],
+      "description": "Shows xBans' version, and holds its admin subcommands.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xbans info",
+          "usage": "/xbans info",
+          "aliases": [],
+          "description": "Shows xBans' version.",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xbans import",
+          "usage": "/xbans import <source> [confirm]",
+          "aliases": [],
+          "description": "Imports punishments from another plugin: a dry run with counts, until confirmed.",
+          "permission": "xbans.admin",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "source",
+              "type": "choice",
+              "required": true,
+              "greedy": false,
+              "description": "Where from: vanilla, essentials, litebans, advancedban.",
+              "choices": [
+                "vanilla",
+                "essentials",
+                "litebans",
+                "advancedban"
+              ]
+            },
+            {
+              "name": "confirm",
+              "type": "choice",
+              "required": false,
+              "greedy": false,
+              "description": "Imports, rather than counting what it would.",
+              "choices": [
+                "confirm"
+              ]
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xbans reload",
+          "usage": "/xbans reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "xbans.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xbans debug",
+          "usage": "/xbans debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "xbans.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xbans forget",
+          "usage": "/xbans forget <player>",
+          "aliases": [],
+          "description": "Deletes everything kept about one player.",
+          "permission": "xbans.admin.forget",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player name or UUID",
+              "required": true,
+              "greedy": false,
+              "description": "The player whose data is deleted, online or not.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": true,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "ban",
+      "usage": "/ban <player> [reason]",
+      "aliases": [],
+      "description": "Ban a player.",
+      "permission": "xbans.ban",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "tempban",
+      "usage": "/tempban <player> [reason]",
+      "aliases": [],
+      "description": "Ban a player for a while.",
+      "permission": "xbans.tempban",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "ipban",
+      "usage": "/ipban <player> [reason]",
+      "aliases": [
+        "banip",
+        "ban-ip"
+      ],
+      "description": "IP-ban a player.",
+      "permission": "xbans.ipban",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, or an IP address.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "tempipban",
+      "usage": "/tempipban <player> [reason]",
+      "aliases": [
+        "tempbanip"
+      ],
+      "description": "IP-ban a player for a while.",
+      "permission": "xbans.ipban",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, or an IP address.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "mute",
+      "usage": "/mute <player> [reason]",
+      "aliases": [],
+      "description": "Mute a player.",
+      "permission": "xbans.mute",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "tempmute",
+      "usage": "/tempmute <player> [reason]",
+      "aliases": [],
+      "description": "Mute a player for a while.",
+      "permission": "xbans.tempmute",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "ipmute",
+      "usage": "/ipmute <player> [reason]",
+      "aliases": [
+        "muteip"
+      ],
+      "description": "IP-mute a player.",
+      "permission": "xbans.ipmute",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, or an IP address.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "tempipmute",
+      "usage": "/tempipmute <player> [reason]",
+      "aliases": [
+        "tempmuteip"
+      ],
+      "description": "IP-mute a player for a while.",
+      "permission": "xbans.ipmute",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, or an IP address.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "warn",
+      "usage": "/warn <player> [reason]",
+      "aliases": [],
+      "description": "Warn a player.",
+      "permission": "xbans.warn",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "kick",
+      "usage": "/kick <player> [reason]",
+      "aliases": [],
+      "description": "Kick a player.",
+      "permission": "xbans.kick",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "Flags (-s silent, -S console only, -p public, -g every server, -I by IP, server:<name>), then a length (30m, 1d12h, 2mo, perm), a template, and the reason; -- before a reason that looks like a flag.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "unban",
+      "usage": "/unban <player> [reason]",
+      "aliases": [
+        "pardon",
+        "unbanip",
+        "pardon-ip"
+      ],
+      "description": "Revoke a player's ban.",
+      "permission": "xbans.unban",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, an IP address, or #id.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "-s for silently, server:<name> for one server, then why.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "unmute",
+      "usage": "/unmute <player> [reason]",
+      "aliases": [
+        "unmuteip"
+      ],
+      "description": "Revoke a player's mute.",
+      "permission": "xbans.unmute",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, an IP address, or #id.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "-s for silently, server:<name> for one server, then why.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "unwarn",
+      "usage": "/unwarn <player> [reason]",
+      "aliases": [],
+      "description": "Revoke a player's newest warning.",
+      "permission": "xbans.unwarn",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, an IP address, or #id.",
+          "choices": []
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "-s for silently, server:<name> for one server, then why.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "history",
+      "usage": "/history <player> [filter]",
+      "aliases": [
+        "hist"
+      ],
+      "description": "A player's punishments, newest first.",
+      "permission": "xbans.history",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player.",
+          "choices": []
+        },
+        {
+          "name": "filter",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "bans, mutes, warnings or kicks, and a page.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "staffhistory",
+      "usage": "/staffhistory <staff> [filter]",
+      "aliases": [
+        "staffhist"
+      ],
+      "description": "The punishments a staff member made, newest first.",
+      "permission": "xbans.staffhistory",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "staff",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The staff member, or console.",
+          "choices": []
+        },
+        {
+          "name": "filter",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "bans, mutes, warnings or kicks, and a page.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "checkban",
+      "usage": "/checkban <player>",
+      "aliases": [],
+      "description": "Whether a player is banned, and why.",
+      "permission": "xbans.checkban",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, an IP address, or #id.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "checkmute",
+      "usage": "/checkmute <player>",
+      "aliases": [],
+      "description": "Whether a player is muted, and why.",
+      "permission": "xbans.checkmute",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, an IP address, or #id.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "warnings",
+      "usage": "/warnings [player] [page]",
+      "aliases": [],
+      "description": "Active warnings: your own, or a player's.",
+      "permission": "xbans.warnings",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": false,
+          "greedy": false,
+          "description": "Whose: yours without one; another's needs xbans.warnings.others.",
+          "choices": []
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "greedy": false,
+          "description": "Which page.",
+          "choices": [],
+          "min": 1,
+          "max": 999999
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "banlist",
+      "usage": "/banlist [page]",
+      "aliases": [],
+      "description": "Everyone banned on this server.",
+      "permission": "xbans.banlist",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "greedy": false,
+          "description": "Which page.",
+          "choices": [],
+          "min": 1,
+          "max": 999999
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "mutelist",
+      "usage": "/mutelist [page]",
+      "aliases": [],
+      "description": "Everyone muted on this server.",
+      "permission": "xbans.mutelist",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "greedy": false,
+          "description": "Which page.",
+          "choices": [],
+          "min": 1,
+          "max": 999999
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "prunehistory",
+      "usage": "/prunehistory <player> [options]",
+      "aliases": [],
+      "description": "Delete a player's punishments that are no longer in force.",
+      "permission": "xbans.prunehistory",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player.",
+          "choices": []
+        },
+        {
+          "name": "options",
+          "type": "text",
+          "required": false,
+          "greedy": true,
+          "description": "How far back (30d), then confirm to delete.",
+          "choices": []
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "alts",
+      "usage": "/alts <player> [page]",
+      "aliases": [
+        "dupeip",
+        "checkalts"
+      ],
+      "description": "Accounts that share an IP with a player.",
+      "permission": "xbans.alts",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player, or an IP address.",
+          "choices": []
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "greedy": false,
+          "description": "Which page.",
+          "choices": [],
+          "min": 1,
+          "max": 999999
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    },
+    {
+      "path": "iphistory",
+      "usage": "/iphistory <player> [page]",
+      "aliases": [],
+      "description": "The IPs a player has joined from.",
+      "permission": "xbans.iphistory",
+      "playerOnly": false,
+      "arguments": [
+        {
+          "name": "player",
+          "type": "word",
+          "required": true,
+          "greedy": false,
+          "description": "The player.",
+          "choices": []
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "greedy": false,
+          "description": "Which page.",
+          "choices": [],
+          "min": 1,
+          "max": 999999
+        }
+      ],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xbans.scope",
+      "description": "Choose the server a punishment applies on (server:<name>).",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.extrasilent",
+      "description": "Punish with -S: only the console is told.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.notify.broadcast",
+      "description": "Hear punishments announced.",
+      "default": "everyone",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.notify.silent",
+      "description": "Hear silent punishments (-s).",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.notify.banned-join",
+      "description": "Hear when a banned player tries to join.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.notify.alts",
+      "description": "Hear when a player joins who shares an IP with a banned account.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.exempt",
+      "description": "Can't be punished. Not for operators unless given.",
+      "default": "nobody",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.limit.bypass-templates",
+      "description": "A template's own lengths aren't held to your staff-limits group.",
+      "default": "nobody",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.unban.override",
+      "description": "Lift (or replace) any punishment, whoever gave it.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.warnings.others",
+      "description": "See another player's warnings with /warnings <player>.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.staff",
+      "description": "Counted as staff by other plugins (xVanish), through xBans' API.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.ban",
+      "description": "Use /ban.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "ban"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.tempban",
+      "description": "Use /tempban.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "tempban"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.ipban",
+      "description": "Use /ipban.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "ipban",
+        "tempipban"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.mute",
+      "description": "Use /mute.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "mute"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.tempmute",
+      "description": "Use /tempmute.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "tempmute"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.ipmute",
+      "description": "Use /ipmute.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "ipmute",
+        "tempipmute"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.warn",
+      "description": "Use /warn.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "warn"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.kick",
+      "description": "Use /kick.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "kick"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.unban",
+      "description": "Use /unban.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "unban"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.unmute",
+      "description": "Use /unmute.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "unmute"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.unwarn",
+      "description": "Use /unwarn.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "unwarn"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.history",
+      "description": "Use /history.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "history"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.staffhistory",
+      "description": "Use /staffhistory.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "staffhistory"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.checkban",
+      "description": "Use /checkban.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "checkban"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.checkmute",
+      "description": "Use /checkmute.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "checkmute"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.warnings",
+      "description": "Use /warnings.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "warnings"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.banlist",
+      "description": "Use /banlist.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "banlist"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.mutelist",
+      "description": "Use /mutelist.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "mutelist"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.prunehistory",
+      "description": "Use /prunehistory.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "prunehistory"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.alts",
+      "description": "Use /alts.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "alts"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.iphistory",
+      "description": "Use /iphistory.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "iphistory"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.limit.helper",
+      "description": "Held to a staff-limits group's longest ban and mute.",
+      "default": "nobody",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.limit.moderator",
+      "description": "Held to a staff-limits group's longest ban and mute.",
+      "default": "nobody",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.template.hacking",
+      "description": "Use the hacking template.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.template.spam",
+      "description": "Use the spam template.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.template.language",
+      "description": "Use the language template.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xbans.admin",
+      "description": "Every admin subcommand of xBans, and its update notices.",
+      "default": "op",
+      "children": {
+        "xbans.admin.reload": true,
+        "xbans.admin.debug": true,
+        "xbans.admin.forget": true,
+        "xbans.admin.update": true
+      },
+      "commands": [
+        "xbans import"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xbans.admin.reload",
+      "description": "Use /xbans reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xbans reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xbans.admin.debug",
+      "description": "Use /xbans debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xbans debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xbans.admin.forget",
+      "description": "Use /xbans forget.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xbans forget"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xbans.admin.update",
+      "description": "Hear about newer versions of xBans when joining.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 2,
+    "header": [
+      "xBans: bans, mutes and warnings, the LiteBans way.",
+      "Docs: https://plugins.xenastudios.co/xbans/configuration/",
+      "",
+      "Apply changes with /xbans reload. A bad value falls back to its default with a",
+      "warning in the console; xBans never stops over config. The messages are in lang/."
+    ],
+    "entries": [
+      {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "screens",
+        "type": "section",
+        "comment": [
+          "What punished players see. The screens' words are in lang/."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "screens.appeal-link",
+            "type": "string",
+            "comment": [
+              "<appeal> in the screens."
+            ],
+            "default": "https://example.com/appeal",
+            "defaultText": "\"https://example.com/appeal\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "commands",
+        "type": "section",
+        "comment": [
+          "Each command can be turned off (it isn't registered, so another plugin can have its",
+          "name), given aliases, or a different permission. xBans takes over vanilla /ban,",
+          "/pardon, /ban-ip, /pardon-ip, /kick and /banlist, and gives them back when its own",
+          "are off."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "commands.ban",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.ban.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.ban.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.ban.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.ban",
+                "defaultText": "\"xbans.ban\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.tempban",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.tempban.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.tempban.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.tempban.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.tempban",
+                "defaultText": "\"xbans.tempban\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.ipban",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.ipban.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.ipban.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "banip",
+                  "ban-ip"
+                ],
+                "defaultText": "[\"banip\", \"ban-ip\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.ipban.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.ipban",
+                "defaultText": "\"xbans.ipban\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.tempipban",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.tempipban.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.tempipban.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "tempbanip"
+                ],
+                "defaultText": "[\"tempbanip\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.tempipban.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.ipban",
+                "defaultText": "\"xbans.ipban\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.unban",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.unban.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.unban.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "pardon",
+                  "unbanip",
+                  "pardon-ip"
+                ],
+                "defaultText": "[\"pardon\", \"unbanip\", \"pardon-ip\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.unban.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.unban",
+                "defaultText": "\"xbans.unban\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.mute",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.mute.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.mute.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.mute.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.mute",
+                "defaultText": "\"xbans.mute\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.tempmute",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.tempmute.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.tempmute.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.tempmute.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.tempmute",
+                "defaultText": "\"xbans.tempmute\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.ipmute",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.ipmute.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.ipmute.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "muteip"
+                ],
+                "defaultText": "[\"muteip\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.ipmute.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.ipmute",
+                "defaultText": "\"xbans.ipmute\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.tempipmute",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.tempipmute.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.tempipmute.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "tempmuteip"
+                ],
+                "defaultText": "[\"tempmuteip\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.tempipmute.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.ipmute",
+                "defaultText": "\"xbans.ipmute\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.unmute",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.unmute.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.unmute.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "unmuteip"
+                ],
+                "defaultText": "[\"unmuteip\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.unmute.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.unmute",
+                "defaultText": "\"xbans.unmute\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.warn",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.warn.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.warn.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.warn.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.warn",
+                "defaultText": "\"xbans.warn\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.unwarn",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.unwarn.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.unwarn.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.unwarn.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.unwarn",
+                "defaultText": "\"xbans.unwarn\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.kick",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.kick.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.kick.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.kick.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.kick",
+                "defaultText": "\"xbans.kick\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.history",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.history.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.history.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "hist"
+                ],
+                "defaultText": "[\"hist\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.history.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.history",
+                "defaultText": "\"xbans.history\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.staffhistory",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.staffhistory.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.staffhistory.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "staffhist"
+                ],
+                "defaultText": "[\"staffhist\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.staffhistory.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.staffhistory",
+                "defaultText": "\"xbans.staffhistory\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.checkban",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.checkban.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.checkban.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.checkban.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.checkban",
+                "defaultText": "\"xbans.checkban\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.checkmute",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.checkmute.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.checkmute.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.checkmute.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.checkmute",
+                "defaultText": "\"xbans.checkmute\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.warnings",
+            "type": "section",
+            "comment": [
+              "Players see their own warnings with this; others' need xbans.warnings.others."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.warnings.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.warnings.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.warnings.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.warnings",
+                "defaultText": "\"xbans.warnings\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.banlist",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.banlist.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.banlist.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.banlist.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.banlist",
+                "defaultText": "\"xbans.banlist\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.mutelist",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.mutelist.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.mutelist.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.mutelist.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.mutelist",
+                "defaultText": "\"xbans.mutelist\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.prunehistory",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.prunehistory.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.prunehistory.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.prunehistory.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.prunehistory",
+                "defaultText": "\"xbans.prunehistory\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.alts",
+            "type": "section",
+            "comment": [
+              "Accounts that share an IP with a player: LiteBans' /dupeip."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.alts.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.alts.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [
+                  "dupeip",
+                  "checkalts"
+                ],
+                "defaultText": "[\"dupeip\", \"checkalts\"]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.alts.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.alts",
+                "defaultText": "\"xbans.alts\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "commands.iphistory",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "commands.iphistory.enabled",
+                "type": "boolean",
+                "comment": [],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.iphistory.aliases",
+                "type": "list<alias>",
+                "comment": [],
+                "default": [],
+                "defaultText": "[]",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "commands.iphistory.permission",
+                "type": "permission",
+                "comment": [],
+                "default": "xbans.iphistory",
+                "defaultText": "\"xbans.iphistory\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "punishing",
+        "type": "section",
+        "comment": [
+          "How punishing works."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "punishing.default-reason",
+            "type": "string",
+            "comment": [
+              "The reason when none is given."
+            ],
+            "default": "No reason given",
+            "defaultText": "\"No reason given\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "punishing.silent-by-default",
+            "type": "boolean",
+            "comment": [
+              "Punishments are silent (-s) unless -p (public) is given."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "mutes",
+        "type": "section",
+        "comment": [
+          "What a mute blocks besides chat."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "mutes.blocked-commands",
+            "type": "list<string>",
+            "comment": [
+              "Commands a muted player can't use. Aliases and namespaced forms (/essentials:msg) are",
+              "blocked too. On Fabric, Minecraft's /me and /say, and zChat's /msg and /reply."
+            ],
+            "default": [
+              "msg",
+              "tell",
+              "w",
+              "whisper",
+              "r",
+              "reply",
+              "me",
+              "say",
+              "mail",
+              "m",
+              "t",
+              "pm",
+              "dm",
+              "message",
+              "teammsg",
+              "tm"
+            ],
+            "defaultText": "[\"msg\", \"tell\", \"w\", \"whisper\", \"r\", \"reply\", \"me\", \"say\", \"mail\", \"m\", \"t\", \"pm\", \"dm\", \"message\", \"teammsg\", \"tm\"]",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "mutes.block-signs",
+            "type": "boolean",
+            "comment": [
+              "Muted players can't write on signs (Bukkit)."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "mutes.block-books",
+            "type": "boolean",
+            "comment": [
+              "Muted players can't write or sign books (Bukkit)."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "mutes.block-anvils",
+            "type": "boolean",
+            "comment": [
+              "Muted players can't rename items on an anvil (Bukkit, 1.9 on)."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "warnings",
+        "type": "section",
+        "comment": [],
+        "choices": [],
+        "entries": [
+          {
+            "path": "warnings.default-duration",
+            "type": "length",
+            "comment": [
+              "How long a warning lasts when /warn isn't given a duration."
+            ],
+            "default": "30d",
+            "defaultText": "\"30d\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "warnings.actions",
+            "type": "warning actions",
+            "comment": [
+              "Commands the console runs when a player reaches a number of active warnings. <player>",
+              "is their name; each key is the count."
+            ],
+            "default": {
+              "3": {
+                "commands": [
+                  "tempmute <player> 1h -s Reached 3 warnings"
+                ]
+              },
+              "5": {
+                "commands": [
+                  "tempban <player> 1d -s Reached 5 warnings"
+                ]
+              }
+            },
+            "defaultText": "{3: {commands: [\"tempmute <player> 1h -s Reached 3 warnings\"]}, 5: {commands: [\"tempban <player> 1d -s Reached 5 warnings\"]}}",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "templates",
+        "type": "templates",
+        "comment": [
+          "Templates: /ban Steve hacking follows the \"hacking\" template. Each time the same",
+          "player gets the same template, the next step of its ladder applies (the last step",
+          "repeats). type is ban, mute or warn. A past punishment counts toward the ladder",
+          "until expire-ladder has passed since it was made, unless it was revoked. ip makes",
+          "it an IP punishment. A template's permission is needed to use it (blank:",
+          "xbans.template.<name>); operators have it. Its lengths are held to the sender's",
+          "staff-limits like typed ones, unless they have xbans.limit.bypass-templates."
+        ],
+        "default": {
+          "hacking": {
+            "type": "ban",
+            "reason": "Hacking",
+            "ladder": [
+              "1w",
+              "30d",
+              "permanent"
+            ],
+            "expire-ladder": "180d",
+            "ip": "false",
+            "silent": "false",
+            "permission": "xbans.template.hacking"
+          },
+          "spam": {
+            "type": "mute",
+            "reason": "Spamming",
+            "ladder": [
+              "1h",
+              "1d",
+              "1w"
+            ],
+            "expire-ladder": "180d",
+            "ip": "false",
+            "silent": "false",
+            "permission": "xbans.template.spam"
+          },
+          "language": {
+            "type": "warn",
+            "reason": "Inappropriate language",
+            "ladder": [
+              "30d"
+            ],
+            "expire-ladder": "180d",
+            "ip": "false",
+            "silent": "false",
+            "permission": "xbans.template.language"
+          }
+        },
+        "defaultText": "{hacking: {type: \"ban\", reason: \"Hacking\", ladder: [\"1w\", \"30d\", \"permanent\"], expire-ladder: \"180d\", ip: false, silent: false, permission: \"xbans.template.hacking\"}, spam: {type: \"mute\", reason: \"Spamming\", ladder: [\"1h\", \"1d\", \"1w\"], expire-ladder: \"180d\", ip: false, silent: false, permission: \"xbans.template.spam\"}, language: {type: \"warn\", reason: \"Inappropriate language\", ladder: [\"30d\"], expire-ladder: \"180d\", ip: false, silent: false, permission: \"xbans.template.language\"}}",
+        "choices": [],
+        "entries": []
+      },
+      {
+        "path": "staff-limits",
+        "type": "section",
+        "comment": [
+          "Who can punish whom, and for how long."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "staff-limits.weights",
+            "type": "boolean",
+            "comment": [
+              "Weights: a player with xbans.weight.<n> can only be punished by someone with a higher",
+              "weight. Players without one can be punished by anyone with the command. A player's",
+              "weight is the one they had when they last joined, if they're offline."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "staff-limits.groups",
+            "type": "staff groups",
+            "comment": [
+              "Longest ban and mute each group may give. A staff member with a group's permission",
+              "gets its limits; with several, the longest. Staff in no group have none. The",
+              "permissions aren't given to operators by default."
+            ],
+            "default": {
+              "helper": {
+                "permission": "xbans.limit.helper",
+                "ban": "1d",
+                "mute": "1d"
+              },
+              "moderator": {
+                "permission": "xbans.limit.moderator",
+                "ban": "30d",
+                "mute": "30d"
+              }
+            },
+            "defaultText": "{helper: {permission: \"xbans.limit.helper\", ban: \"1d\", mute: \"1d\"}, moderator: {permission: \"xbans.limit.moderator\", ban: \"30d\", mute: \"30d\"}}",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "ips",
+        "type": "section",
+        "comment": [
+          "IP addresses: for IP bans and mutes, /alts and /iphistory. IP addresses are personal",
+          "data: see https://plugins.xenastudios.co/xbans/privacy/"
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "ips.enabled",
+            "type": "boolean",
+            "comment": [
+              "Record players' IPs. Off: no IP bans or mutes, /alts or /iphistory, and nothing is",
+              "stored."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "ips.hash",
+            "type": "boolean",
+            "comment": [
+              "Store a salted hash instead of the IP: alts and IP bans still work, but there's no list",
+              "of addresses to leak. The salt is in ip-salt.txt in xBans' folder; copy it to every",
+              "server of a network (and the proxy), and turn it on with every server stopped. Once on,",
+              "it stays on for that database: addresses already stored are hashed. A lost salt: see",
+              "the privacy page (reset-ip-salt.txt)."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "ips.alt-alerts",
+            "type": "boolean",
+            "comment": [
+              "Tell staff when a player joins who shares an IP with a banned account."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "scopes",
+        "type": "section",
+        "comment": [
+          "Server scopes, for networks: a punishment can apply on every server (global) or on one.",
+          "/ban Steve server:survival bans Steve on survival only."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "scopes.server-name",
+            "type": "string",
+            "comment": [
+              "This server's name, for server:<name>. Each server of a network needs its own: the",
+              "name the proxy gives it, so the proxy turns a player away from the servers they're",
+              "banned on."
+            ],
+            "default": "server",
+            "defaultText": "\"server\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "scopes.default-scope",
+            "type": "enum",
+            "comment": [
+              "global: punishments apply on every server unless server: says otherwise. local: on this one."
+            ],
+            "default": "global",
+            "defaultText": "\"global\"",
+            "choices": [
+              "global",
+              "local"
+            ],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "lists",
+        "type": "section",
+        "comment": [
+          "Lists: /history, /staffhistory, /warnings, /banlist, /mutelist, /alts."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "lists.per-page",
+            "type": "integer",
+            "comment": [],
+            "default": 10,
+            "defaultText": "10",
+            "choices": [],
+            "min": 1,
+            "max": 50,
+            "entries": []
+          },
+          {
+            "path": "lists.date-format",
+            "type": "string",
+            "comment": [
+              "How dates are written, as in Java's DateTimeFormatter (y M d H h m s a E and",
+              "'quoted text'). The server's time zone."
+            ],
+            "default": "yyyy-MM-dd HH:mm",
+            "defaultText": "\"yyyy-MM-dd HH:mm\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "storage",
+        "type": "section",
+        "comment": [
+          "Where this plugin keeps its data. Read at startup only: restart after changing it."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "storage.type",
+            "type": "enum",
+            "comment": [
+              "sqlite keeps everything in one file in the plugin's folder, with nothing to set up.",
+              "mysql (or MariaDB) is for networks, or servers with a lot of history.",
+              "shared keeps it in the database every Xena plugin can share, set in plugins/Xena/config.yml."
+            ],
+            "default": "sqlite",
+            "defaultText": "\"sqlite\"",
+            "choices": [
+              "sqlite",
+              "mysql",
+              "shared"
+            ],
+            "entries": []
+          },
+          {
+            "path": "storage.table-prefix",
+            "type": "string",
+            "comment": [
+              "Put in front of every table's name, so plugins and servers can share one database."
+            ],
+            "default": "xbans_",
+            "defaultText": "\"xbans_\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "storage.mysql",
+            "type": "section",
+            "comment": [
+              "Only for type: mysql."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "storage.mysql.host",
+                "type": "string",
+                "comment": [],
+                "default": "localhost",
+                "defaultText": "\"localhost\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.port",
+                "type": "integer",
+                "comment": [],
+                "default": 3306,
+                "defaultText": "3306",
+                "choices": [],
+                "min": 1,
+                "max": 65535,
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.database",
+                "type": "string",
+                "comment": [],
+                "default": "minecraft",
+                "defaultText": "\"minecraft\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.username",
+                "type": "string",
+                "comment": [],
+                "default": "minecraft",
+                "defaultText": "\"minecraft\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.password",
+                "type": "string",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.properties",
+                "type": "string",
+                "comment": [
+                  "Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC."
+                ],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "storage.pool",
+            "type": "section",
+            "comment": [
+              "The connections used to read, beside the one that writes."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "storage.pool.readers",
+                "type": "integer",
+                "comment": [
+                  "How many: 0 picks for the database (1 for SQLite, 2 for MySQL). More helps only a",
+                  "MySQL server that many reads wait on."
+                ],
+                "default": 0,
+                "defaultText": "0",
+                "choices": [],
+                "min": 0,
+                "max": 16,
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "network",
+        "type": "section",
+        "comment": [
+          "Network mode: a ban made on one server kicks the player from the others and reaches",
+          "their ban lists within check-every seconds; with xBans on the proxy too, a banned",
+          "player can't get onto the network at all. Every server and the proxy share one MySQL or",
+          "MariaDB database (storage) for it. Read at startup and on reload."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "network.enabled",
+            "type": "boolean",
+            "comment": [
+              "On when several servers share this plugin's MySQL or MariaDB database, so a change",
+              "made on one (a ban, a mute) reaches the others within a few seconds.",
+              "Leave it off for a single server: it does nothing on SQLite."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "network.check-every",
+            "type": "integer",
+            "comment": [
+              "Seconds between checks for the other servers' changes."
+            ],
+            "default": 3,
+            "defaultText": "3",
+            "choices": [],
+            "min": 1,
+            "max": 60,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "updates",
+        "type": "section",
+        "comment": [
+          "Telling you when a newer version is out: in the console, and to players with",
+          "<plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,",
+          "sending only the plugin's version, the platform and the Minecraft version."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "updates.check",
+            "type": "boolean",
+            "comment": [
+              "Whether to ask at all."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "updates.channel",
+            "type": "enum",
+            "comment": [
+              "Which releases to hear of: release, beta (betas and releases) or alpha (everything)."
+            ],
+            "default": "release",
+            "defaultText": "\"release\"",
+            "choices": [
+              "release",
+              "beta",
+              "alpha"
+            ],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [],
+  "messages": [
+    {
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.update.available",
+      "english": "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+      "comment": [
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page."
+      ],
+      "placeholders": [
+        "plugin",
+        "current",
+        "latest",
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
+      ],
+      "placeholders": [
+        "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "core.reload.done",
+      "english": "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+      "comment": [
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise."
+      ],
+      "placeholders": [
+        "plugin",
+        "count",
+        "has_one",
+        "has_many"
+      ]
+    },
+    {
+      "key": "core.reload.problem",
+      "english": "<gold>!</gold> Problem: <problem>",
+      "comment": [
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too."
+      ],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "core.reload.module-off",
+      "english": "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+      "comment": [
+        "/<plugin> reload: a module that failed, and why, in English."
+      ],
+      "placeholders": [
+        "module",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.reload.failed",
+      "english": "<prefix><error>Reloading <plugin> failed; the console has the details.",
+      "comment": [
+        "/<plugin> reload: something went wrong; the settings from before are still in use."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.command.unknown",
+      "english": "<prefix><error>Unknown command.",
+      "comment": [
+        "Rare: a command that went away as it was typed."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.no-permission",
+      "english": "<prefix><error>You don't have permission to do that.",
+      "comment": [
+        "The sender lacks the command's permission."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.players-only",
+      "english": "<prefix><error>Only players can use this command.",
+      "comment": [
+        "The console or a command block ran a command only players can use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.usage",
+      "english": "<prefix><error>Usage:</error> <usage>",
+      "comment": [
+        "The command was typed with missing or extra words. <usage> is how to type it."
+      ],
+      "placeholders": [
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.unknown-player",
+      "english": "<prefix><error>No player called <highlight><player></highlight> is online.",
+      "comment": [
+        "No player the sender can see is online by the name typed (<player>)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.command.not-a-number",
+      "english": "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+      "comment": [
+        "A number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-an-integer",
+      "english": "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+      "comment": [
+        "A whole number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-small",
+      "english": "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+      "comment": [
+        "A number below the least the command takes (<min>)."
+      ],
+      "placeholders": [
+        "input",
+        "min",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-large",
+      "english": "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+      "comment": [
+        "A number above the most the command takes (<max>)."
+      ],
+      "placeholders": [
+        "input",
+        "max",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-a-choice",
+      "english": "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+      "comment": [
+        "A word that isn't one of those the command takes (<choices>, comma-separated)."
+      ],
+      "placeholders": [
+        "input",
+        "choices",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.invalid",
+      "english": "<prefix><error><reason></error> Usage: <usage>",
+      "comment": [
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.cooldown",
+      "english": "<prefix><error>You can use that again in <time>.",
+      "comment": [
+        "The command has a cooldown. <time> is how long is left."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.confirm",
+      "english": "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+      "comment": [
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is."
+      ],
+      "placeholders": [
+        "line",
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.error",
+      "english": "<prefix><error>Something went wrong running that command; the console has the details.",
+      "comment": [
+        "The command hit an error. The console has what happened."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "info",
+      "english": "<prefix>xBans <highlight><version></highlight> on <platform>, with <count> bans and mutes in force from <storage>. <gray>/xbans reload | debug | import",
+      "comment": [
+        "/xbans on its own."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "count",
+        "storage"
+      ]
+    },
+    {
+      "key": "screens.ban",
+      "english": "<#FF6B6B><bold>You are banned from this server.</bold>\n\n<gray>Reason: <white><reason>\n\n<gray>Appeal at <white><appeal></white>\n<dark_gray>ID #<id>",
+      "comment": [
+        "What punished players see. <reason>, <staff>, <id>, <expires> (a date), <time-left>,",
+        "<duration> and <appeal> (screens.appeal-link in config.yml) work in each.",
+        "A permanent ban, shown when they're kicked and each time they try to join."
+      ],
+      "placeholders": [
+        "id",
+        "reason",
+        "appeal",
+        "player",
+        "staff",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "screens.temp-ban",
+      "english": "<#FF6B6B><bold>You are banned from this server.</bold>\n\n<gray>Reason: <white><reason>\n<gray>Ends in <white><time-left></white> (<expires>)\n\n<gray>Appeal at <white><appeal></white>\n<dark_gray>ID #<id>",
+      "comment": [],
+      "placeholders": [
+        "id",
+        "reason",
+        "expires",
+        "time-left",
+        "appeal",
+        "player",
+        "staff",
+        "scope",
+        "date",
+        "length",
+        "duration",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "screens.ip-ban",
+      "english": "<#FF6B6B><bold>Your IP is banned from this server.</bold>\n\n<gray>Reason: <white><reason>\n<gray>Ends: <white><expires>\n\n<gray>Appeal at <white><appeal></white>\n<dark_gray>ID #<id>",
+      "comment": [
+        "A ban on their IP rather than their account."
+      ],
+      "placeholders": [
+        "id",
+        "reason",
+        "expires",
+        "appeal",
+        "player",
+        "staff",
+        "scope",
+        "date",
+        "time-left",
+        "length",
+        "duration",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "screens.kick",
+      "english": "<#EB2F4A><bold>You were kicked.</bold>\n\n<gray>Reason: <white><reason>",
+      "comment": [],
+      "placeholders": [
+        "reason",
+        "id",
+        "player",
+        "staff",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "screens.not-ready",
+      "english": "<#EB2F4A>The server is still starting.</#EB2F4A>\n<gray>Try again in a few seconds.",
+      "comment": [
+        "Shown when they can't join because xBans is still loading its bans (only in the first",
+        "seconds after a start, or while the database can't be reached at startup)."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "screens.muted",
+      "english": "<prefix><error>You're muted:</error> <reason>",
+      "comment": [
+        "Told to a muted player who tries to chat."
+      ],
+      "placeholders": [
+        "reason",
+        "id",
+        "player",
+        "staff",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "screens.temp-muted",
+      "english": "<prefix><error>You're muted</error> for <highlight><time-left></highlight>: <reason>",
+      "comment": [],
+      "placeholders": [
+        "reason",
+        "time-left",
+        "id",
+        "player",
+        "staff",
+        "scope",
+        "date",
+        "expires",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "screens.you-were-muted",
+      "english": "<prefix><error>You were muted</error> by <highlight><staff></highlight> <duration>: <reason>",
+      "comment": [
+        "Told to a player when they're muted, warned or unmuted, if they're online."
+      ],
+      "placeholders": [
+        "staff",
+        "reason",
+        "duration",
+        "id",
+        "player",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "screens.you-were-warned",
+      "english": "<prefix><error>You were warned</error> by <highlight><staff></highlight>: <reason>",
+      "comment": [],
+      "placeholders": [
+        "staff",
+        "reason",
+        "id",
+        "player",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "screens.you-were-unmuted",
+      "english": "<prefix><success>You can chat again.</success>",
+      "comment": [],
+      "placeholders": [
+        "id",
+        "player",
+        "staff",
+        "reason",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.ban",
+      "english": "<prefix><highlight><staff></highlight> banned <highlight><player></highlight> <duration>: <reason>",
+      "comment": [
+        "Told to the server when someone is punished. <player>, <staff>, <reason>, <duration>",
+        "(\"for 7d\" or \"permanently\", from the words below) and <id>. Silent punishments (-s)",
+        "go only to staff with xbans.notify.silent, with silent-prefix in front."
+      ],
+      "placeholders": [
+        "player",
+        "staff",
+        "reason",
+        "duration",
+        "id",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.ip-ban",
+      "english": "<prefix><highlight><staff></highlight> IP-banned <highlight><player></highlight> <duration>: <reason>",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "staff",
+        "reason",
+        "duration",
+        "id",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.mute",
+      "english": "<prefix><highlight><staff></highlight> muted <highlight><player></highlight> <duration>: <reason>",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "staff",
+        "reason",
+        "duration",
+        "id",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.ip-mute",
+      "english": "<prefix><highlight><staff></highlight> IP-muted <highlight><player></highlight> <duration>: <reason>",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "staff",
+        "reason",
+        "duration",
+        "id",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.warn",
+      "english": "<prefix><highlight><staff></highlight> warned <highlight><player></highlight>: <reason>",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "staff",
+        "reason",
+        "id",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.kick",
+      "english": "<prefix><highlight><staff></highlight> kicked <highlight><player></highlight>: <reason>",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "staff",
+        "reason",
+        "id",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.unban",
+      "english": "<prefix><highlight><staff></highlight> unbanned <highlight><player></highlight>.",
+      "comment": [
+        "<staff> is who lifted it."
+      ],
+      "placeholders": [
+        "player",
+        "staff",
+        "id",
+        "reason",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.unmute",
+      "english": "<prefix><highlight><staff></highlight> unmuted <highlight><player></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "staff",
+        "id",
+        "reason",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.unwarn",
+      "english": "<prefix><highlight><staff></highlight> removed a warning from <highlight><player></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "staff",
+        "id",
+        "reason",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.silent-prefix",
+      "english": "<dark_gray>[Silent]</dark_gray> ",
+      "comment": [
+        "Put after the theme's <prefix> of a silent punishment's broadcast."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "broadcasts.permanently",
+      "english": "permanently",
+      "comment": [
+        "<duration> for a permanent punishment, and for one with an end (<time> is how long)."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "broadcasts.for-time",
+      "english": "for <time>",
+      "comment": [],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "broadcasts.banned-join",
+      "english": "<prefix><highlight><player></highlight> tried to join but is banned: <reason>",
+      "comment": [
+        "Told to staff with xbans.notify.banned-join when a banned player tries to join. <player>,",
+        "<reason>. Blank for none."
+      ],
+      "placeholders": [
+        "player",
+        "reason",
+        "id",
+        "staff",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "broadcasts.alt-join",
+      "english": "<prefix><highlight><player></highlight> shares an IP with banned <highlight><alts></highlight>.",
+      "comment": [
+        "Told to staff with xbans.notify.alts when a player joins who shares an IP with a banned",
+        "account. <player>, and <alts>: the banned accounts. Blank for none."
+      ],
+      "placeholders": [
+        "player",
+        "alts"
+      ]
+    },
+    {
+      "key": "not-ready",
+      "english": "<prefix><error>xBans is still opening its database.</error> Try again in a moment.",
+      "comment": [
+        "xBans is still opening its database, just after a start."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "never-joined",
+      "english": "<prefix><error><highlight><player></highlight> has never joined this server.",
+      "comment": [
+        "<player> is the name typed."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "bad-ip",
+      "english": "<prefix><error>That isn't an IP address.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "no-ip",
+      "english": "<prefix><error>xBans doesn't know <highlight><player></highlight>'s IP yet.",
+      "comment": [
+        "<player>'s IP isn't known (they haven't joined since IPs were recorded)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "ips-off",
+      "english": "<prefix><error>IP punishments are off on this server.",
+      "comment": [
+        "IP commands are off because ips.enabled is false."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "bad-duration",
+      "english": "<prefix><error><highlight><input></highlight> isn't a length of time.</error> Use 30m, 1d12h, 2mo or perm.",
+      "comment": [
+        "<input> isn't a length of time."
+      ],
+      "placeholders": [
+        "input"
+      ]
+    },
+    {
+      "key": "already-banned",
+      "english": "<prefix><error><highlight><player></highlight> is already banned until <expires>.</error> Unban them first to shorten it.",
+      "comment": [
+        "<player> is already banned or muted, longer than this would. <expires> is when it ends."
+      ],
+      "placeholders": [
+        "player",
+        "expires",
+        "id",
+        "staff",
+        "reason",
+        "scope",
+        "date",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "already-muted",
+      "english": "<prefix><error><highlight><player></highlight> is already muted until <expires>.</error> Unmute them first to shorten it.",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "expires",
+        "id",
+        "staff",
+        "reason",
+        "scope",
+        "date",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "not-banned",
+      "english": "<prefix><error><highlight><player></highlight> isn't banned.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "not-muted",
+      "english": "<prefix><error><highlight><player></highlight> isn't muted.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "no-warnings",
+      "english": "<prefix><error><highlight><player></highlight> has no active warnings.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "no-such-id",
+      "english": "<prefix><error>There's no punishment <highlight>#<id></highlight> to do that to.",
+      "comment": [
+        "<id> isn't a punishment, or isn't one this command can revoke."
+      ],
+      "placeholders": [
+        "id"
+      ]
+    },
+    {
+      "key": "exempt",
+      "english": "<prefix><error><highlight><player></highlight> can't be punished.",
+      "comment": [
+        "<player> has xbans.exempt."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "outranks",
+      "english": "<prefix><error><highlight><player></highlight> outranks you.",
+      "comment": [
+        "<player>'s weight (xbans.weight.<n>) is as high as the sender's or higher."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "cant-lift",
+      "english": "<prefix><error>That was given by someone who outranks you.</error> <dark_gray>#<id>",
+      "comment": [
+        "Revoking a punishment made by someone whose weight was higher than the sender's (the",
+        "console's is highest), or replacing one with a ban or mute that's no longer. Staff can",
+        "always revoke their own; xbans.unban.override revokes any. <player>, <expires>, <id>."
+      ],
+      "placeholders": [
+        "id",
+        "player",
+        "staff",
+        "reason",
+        "scope",
+        "date",
+        "expires",
+        "time-left",
+        "length",
+        "duration",
+        "appeal",
+        "type",
+        "status"
+      ]
+    },
+    {
+      "key": "over-limit",
+      "english": "<prefix><error>You can give at most <highlight><max></highlight>.",
+      "comment": [
+        "Over the sender's staff-limits. <max> is the longest they may give."
+      ],
+      "placeholders": [
+        "max"
+      ]
+    },
+    {
+      "key": "temp-permanent",
+      "english": "<prefix><error>The <highlight><template></highlight> template's next step is permanent, so it needs /ban or /mute.",
+      "comment": [
+        "/tempban or /tempmute with a template whose next step is permanent. <template> is its name."
+      ],
+      "placeholders": [
+        "template"
+      ]
+    },
+    {
+      "key": "template-no-permission",
+      "english": "<prefix><error>You can't use the <highlight><template></highlight> template.",
+      "comment": [
+        "A template's permission is missing. <template> is its name."
+      ],
+      "placeholders": [
+        "template"
+      ]
+    },
+    {
+      "key": "scope-no-permission",
+      "english": "<prefix><error>You can't choose the server.",
+      "comment": [
+        "Choosing a server: needs xbans.scope."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "extra-silent-no-permission",
+      "english": "<prefix><error>You can't use -S.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "cancelled",
+      "english": "<prefix><error>Another plugin stopped that.",
+      "comment": [
+        "Another plugin stopped the punishment."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "failed",
+      "english": "<prefix><error>That couldn't be saved.</error> The console says why.",
+      "comment": [
+        "Couldn't be saved. The console says why."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "pruned",
+      "english": "<prefix><success>Removed</success> <highlight><count></highlight> inactive entries from <player>'s history.",
+      "comment": [
+        "/prunehistory. <count> entries of <player>'s were removed."
+      ],
+      "placeholders": [
+        "count",
+        "player"
+      ]
+    },
+    {
+      "key": "prune-confirm",
+      "english": "<prefix>That removes <highlight><count></highlight> inactive entries from <player>'s history for good. Run it again with <highlight>confirm</highlight> on the end.",
+      "comment": [
+        "/prunehistory without confirming. <count> would be removed."
+      ],
+      "placeholders": [
+        "count",
+        "player"
+      ]
+    },
+    {
+      "key": "history-header",
+      "english": "<prefix><highlight><player></highlight>'s history (<count>):",
+      "comment": [
+        "/history and /staffhistory. <player>, <count>."
+      ],
+      "placeholders": [
+        "player",
+        "count"
+      ]
+    },
+    {
+      "key": "staff-history-header",
+      "english": "<prefix>Punishments by <highlight><player></highlight> (<count>):",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "count"
+      ]
+    },
+    {
+      "key": "history-line",
+      "english": "<dark_gray>#<id></dark_gray> <gray><date></gray> <type> <highlight><player></highlight> <dark_gray>·</dark_gray> <length> <dark_gray>·</dark_gray> <white><reason></white> <dark_gray>by</dark_gray> <staff> <status>",
+      "comment": [
+        "One punishment in a list. <id>, <date>, <type> (from types below), <player>, <staff>,",
+        "<reason>, <length> (\"7d\", \"permanent\"), <status> (from the words below), <scope>."
+      ],
+      "placeholders": [
+        "id",
+        "player",
+        "staff",
+        "reason",
+        "date",
+        "length",
+        "type",
+        "status",
+        "scope",
+        "expires",
+        "time-left",
+        "duration",
+        "appeal"
+      ]
+    },
+    {
+      "key": "history-empty",
+      "english": "<prefix>Nothing found.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a list when it has more pages."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "status.active",
+      "english": "<#5EE08A>(active, <time> left)</#5EE08A>",
+      "comment": [
+        "<status> words. <time> is how long is left; <staff> who revoked it."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "status.ended",
+      "english": "<dark_gray>(ended)</dark_gray>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.revoked",
+      "english": "<dark_gray>(revoked by <staff>)</dark_gray>",
+      "comment": [],
+      "placeholders": [
+        "staff"
+      ]
+    },
+    {
+      "key": "status.kick",
+      "english": "",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "types.ban",
+      "english": "<#FF6B6B>Ban</#FF6B6B>",
+      "comment": [
+        "<type> words."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "types.ip-ban",
+      "english": "<#FF6B6B>IP ban</#FF6B6B>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "types.mute",
+      "english": "<#FFB86B>Mute</#FFB86B>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "types.ip-mute",
+      "english": "<#FFB86B>IP mute</#FFB86B>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "types.warn",
+      "english": "<#F5D76B>Warn</#F5D76B>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "types.kick",
+      "english": "<#B48CFF>Kick</#B48CFF>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "check-none",
+      "english": "<prefix><highlight><player></highlight> has nothing active of that kind.",
+      "comment": [
+        "/checkban and /checkmute: a line per active one, then its details."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "check",
+      "english": "<prefix><type> <highlight>#<id></highlight> on <highlight><player></highlight>, <length>, ends <expires>\n<gray>Reason: <white><reason></white>\n<gray>By <staff> on <date>, scope <scope>",
+      "comment": [],
+      "placeholders": [
+        "id",
+        "player",
+        "staff",
+        "reason",
+        "scope",
+        "date",
+        "expires",
+        "length",
+        "type",
+        "time-left",
+        "duration",
+        "appeal",
+        "status"
+      ]
+    },
+    {
+      "key": "warnings-header",
+      "english": "<prefix><highlight><player></highlight> has <count> active warnings:",
+      "comment": [
+        "/warnings. <player>, <count> active."
+      ],
+      "placeholders": [
+        "player",
+        "count"
+      ]
+    },
+    {
+      "key": "warnings-none",
+      "english": "<prefix><highlight><player></highlight> has no active warnings.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "banlist-header",
+      "english": "<prefix>Banned on this server (<count>):",
+      "comment": [
+        "/banlist and /mutelist. <count> on this server."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "mutelist-header",
+      "english": "<prefix>Muted on this server (<count>):",
+      "comment": [],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "list-empty",
+      "english": "<prefix>Nobody.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "alts-header",
+      "english": "<prefix>Accounts sharing an IP with <highlight><player></highlight> (<count>):",
+      "comment": [
+        "/alts. <player>, <count>. Each account: <name>, with <state> from alt-states (banned,",
+        "muted, online or offline)."
+      ],
+      "placeholders": [
+        "player",
+        "count"
+      ]
+    },
+    {
+      "key": "alts-line",
+      "english": "<gray>- <name> <state>",
+      "comment": [],
+      "placeholders": [
+        "name",
+        "state"
+      ]
+    },
+    {
+      "key": "alts-none",
+      "english": "<prefix><highlight><player></highlight> shares no IP with anyone.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "alt-states.banned",
+      "english": "<#FF6B6B>(banned)</#FF6B6B>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "alt-states.muted",
+      "english": "<#FFB86B>(muted)</#FFB86B>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "alt-states.online",
+      "english": "<#5EE08A>(online)</#5EE08A>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "alt-states.offline",
+      "english": "",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "ip-history-header",
+      "english": "<prefix><highlight><player></highlight>'s IPs (<count>):",
+      "comment": [
+        "/iphistory. <player>, <count>. Each line: <ip>, <first>, <last> (dates)."
+      ],
+      "placeholders": [
+        "player",
+        "count"
+      ]
+    },
+    {
+      "key": "ip-history-line",
+      "english": "<gray>- <white><ip></white>, first <first>, last <last>",
+      "comment": [],
+      "placeholders": [
+        "ip",
+        "first",
+        "last"
+      ]
+    },
+    {
+      "key": "ip-history-none",
+      "english": "<prefix>No IPs recorded for <highlight><player></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "imports.counted",
+      "english": "<prefix>Found in <highlight><source></highlight>: <bans> bans, <mutes> mutes, <warnings> warnings, <kicks> kicks and <players> players. Nothing was imported yet: run it again with <highlight>confirm</highlight> on the end.",
+      "comment": [
+        "A dry run. <source>, <bans>, <mutes>, <warnings>, <kicks>, <players> found."
+      ],
+      "placeholders": [
+        "source",
+        "bans",
+        "mutes",
+        "warnings",
+        "kicks",
+        "players"
+      ]
+    },
+    {
+      "key": "imports.started",
+      "english": "<prefix>Importing from <highlight><source></highlight>…",
+      "comment": [],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "imports.done",
+      "english": "<prefix><success>Imported</success> <highlight><added></highlight> punishments from <source> (<skipped> already there).",
+      "comment": [
+        "<source>, <added> new punishments, <skipped> already imported."
+      ],
+      "placeholders": [
+        "added",
+        "source",
+        "skipped"
+      ]
+    },
+    {
+      "key": "imports.failed",
+      "english": "<prefix><error>Couldn't import:</error> <reason>",
+      "comment": [
+        "<reason> it couldn't, in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "imports.wildcards",
+      "english": "<prefix><highlight><count></highlight> wildcard IP bans (such as 192.168.1.*) aren't imported: xBans bans whole addresses only.",
+      "comment": [
+        "A dry run or an import that found LiteBans wildcard IP bans (192.168.1.*), which aren't imported. <count>."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "imports.running",
+      "english": "<prefix><error>An import is already running.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "imports.unknown-source",
+      "english": "<prefix><error>Import from what?</error> One of: <sources>",
+      "comment": [
+        "<sources>: the ones xBans knows."
+      ],
+      "placeholders": [
+        "sources"
+      ]
+    },
+    {
+      "key": "proxy.info",
+      "english": "<prefix>xBans <highlight><version></highlight> on <platform>: <count> bans in force from <storage>, enforced at the proxy's login. <gray>/xbansproxy reload | debug",
+      "comment": [
+        "/xbansproxy on the proxy. <storage>: the database, and whether the servers share it."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "count",
+        "storage"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "key": "xbans:punish",
+      "className": "co.xenastudios.xbans.api.event.PunishEvent",
+      "description": "A punishment is about to be made, after every check. Cancel it to stop it.",
+      "cancellable": true,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xbans:punished",
+      "className": "co.xenastudios.xbans.api.event.PunishedEvent",
+      "description": "A punishment was made and saved, here or on another server of the network.",
+      "cancellable": false,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xbans:pardon",
+      "className": "co.xenastudios.xbans.api.event.PardonEvent",
+      "description": "A punishment is about to be lifted. Cancel it to keep it in force.",
+      "cancellable": true,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xbans:pardoned",
+      "className": "co.xenastudios.xbans.api.event.PardonedEvent",
+      "description": "A punishment was lifted, here or on another server (1.x's RevokedEvent).",
+      "cancellable": false,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xbans:login_denied",
+      "className": "co.xenastudios.xbans.api.event.LoginDeniedEvent",
+      "description": "A player was turned away as they joined, by a ban or because the bans aren't read yet. Not cancellable.",
+      "cancellable": false,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xbans:staff_notify",
+      "className": "co.xenastudios.xbans.api.event.StaffNotifyEvent",
+      "description": "Staff are about to be told something. Change who hears it, or cancel it.",
+      "cancellable": true,
+      "since": "2.0.0"
+    }
+  ]
+}

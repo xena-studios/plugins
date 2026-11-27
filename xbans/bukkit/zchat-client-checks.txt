@@ -1,0 +1,3 @@
+# Two real clients with zChat beside xBans (boot.sh ... --zchat --seed scripts/boot-seeds/client):
+# a muted player's chat and zChat's /msg both refused, as zChat asks xBans who's muted.
+client: --plugin xbans --zchat --timeout 150

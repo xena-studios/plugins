@@ -61,6 +61,16 @@ public class JvmFamilyBoard(
         /** The name a platform's registry keeps the board under, where it's keyed by text. */
         public const val NAME: String = "xena:board"
 
+        /**
+         * This plugin's board, once its platform found it: for the core's own parts that have
+         * no platform to ask, such as `JdbcDatabase`, which puts the plugin's database on the
+         * board for the family's backups (`FamilyBackups`). Each plugin relocates its own copy
+         * of the core, so this is one plugin's; `null` where no platform set it (tests, tools).
+         */
+        @JvmStatic
+        @Volatile
+        public var server: JvmFamilyBoard? = null
+
         /** A new, empty board for a server, for the first plugin to start. */
         @JvmStatic
         public fun newRoot(): ConcurrentMap<String, Any> = ConcurrentHashMap<String, Any>().also { it[MARKER] = 1 }

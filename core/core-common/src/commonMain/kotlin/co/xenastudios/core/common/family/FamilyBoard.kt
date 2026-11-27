@@ -14,7 +14,9 @@ import co.xenastudios.core.common.locked
  * another, and a cast between them fails. What's put on a board is only ever text, boxed
  * numbers and booleans, and arrays of those (`Array<Any?>`, Java's `Object[]`), which every
  * copy reads alike; and a value is never changed once it's there, only replaced
- * ([SharedMap.replace]). A plugin's own objects, lambdas included, never go on it.
+ * ([SharedMap.replace]). A plugin's own objects, lambdas included, never go on it; the one
+ * thing on a board that runs is a database's backup handle, an object of the JDK's own
+ * interface, called only with JDK values ([FamilyBackups]).
  *
  * Where plugins can't share objects (Pumpkin, whose plugins only send each other bytes), each
  * plugin has a [MemoryBoard] of its own, and what's on it is that plugin's alone.

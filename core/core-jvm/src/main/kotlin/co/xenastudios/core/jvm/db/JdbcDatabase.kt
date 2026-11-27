@@ -17,7 +17,9 @@ import co.xenastudios.core.common.db.Statement
 import co.xenastudios.core.common.db.eq
 import co.xenastudios.core.common.db.executeAll
 import co.xenastudios.core.common.db.values
+import co.xenastudios.core.common.family.FamilyBackups
 import co.xenastudios.core.common.platform.Log
+import co.xenastudios.core.jvm.family.JvmFamilyBoard
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.SecureRandom
@@ -83,8 +85,14 @@ public class JdbcDatabase internal constructor(
     private val log: Log,
     private val limits: JdbcLimits,
     name: String,
+    /**
+     * Where the data is, for the family's backups ([FamilyBackups]): the SQLite file's absolute
+     * path, or MySQL's `host:port/database`; `null` to stay off the board (tests).
+     */
+    private val where: String? = null,
 ) : Database {
     override val sql: Sql = Sql(dialect, prefix)
+    private val prefix = prefix
 
     private val queue = LinkedBlockingQueue<Job>()
     private val dropped = AtomicLong()
@@ -105,16 +113,25 @@ public class JdbcDatabase internal constructor(
     // and on SQLite an open connection keeps the -wal and -shm files.
     private val openReaders: MutableSet<ReaderConnection> = ConcurrentHashMap.newKeySet()
     private val readerThreads = limits.readers ?: if (dialect.shared) 2 else 1
+    // The readers' thread factory, and the handle a backup calls ([FamilyBackups.HANDLE]): one
+    // object, so being on the board costs no class at startup.
+    private val factory = Runner(null)
     private val readers = ThreadPoolExecutor(
-        readerThreads, readerThreads, 60, TimeUnit.SECONDS, LinkedBlockingQueue(), Runner(null),
+        readerThreads, readerThreads, 60, TimeUnit.SECONDS, LinkedBlockingQueue(), factory,
     ).apply { allowCoreThreadTimeOut(true) }
+
+    // The entry this database put on the family's board, and the board, to take it off on close.
+    private var registered: Array<Any?>? = null
+    private var registeredOn: JvmFamilyBoard? = null
 
     /**
      * The writer's thread ([task] `null`), each reader thread (running [task], then closing its
-     * connection) and the readers' thread factory, as one class: a lambda each would be a class
-     * each, made as every plugin with a database starts (decisions/2026-11-25-a-lighter-core.md).
+     * connection), the readers' thread factory and the family's backup handle, as one class: a
+     * lambda each would be a class each, made as every plugin with a database starts
+     * (decisions/2026-11-25-a-lighter-core.md). The handle's work is [DatabaseSnapshot]'s, loaded
+     * only when a backup asks.
      */
-    private inner class Runner(private val task: Runnable?) : Runnable, ThreadFactory {
+    private inner class Runner(private val task: Runnable?) : Runnable, ThreadFactory, java.util.function.Function<Any?, Any?> {
         override fun run() {
             if (task == null) return runWriter()
             try {
@@ -126,6 +143,8 @@ public class JdbcDatabase internal constructor(
         }
 
         override fun newThread(task: Runnable): Thread = Thread(Runner(task), "$threadName database reader").apply { isDaemon = true }
+
+        override fun apply(request: Any?): Any? = DatabaseSnapshot.answer(this@JdbcDatabase, where, request)
     }
 
     /** One [read]'s work, on a reader thread. */
@@ -190,7 +209,38 @@ public class JdbcDatabase internal constructor(
         return closed
     }
 
-    internal fun start(): JdbcDatabase = apply { writer.start() }
+    internal fun start(): JdbcDatabase = apply {
+        writer.start()
+        register()
+    }
+
+    /**
+     * Puts this database on the family's board for backups ([FamilyBackups]), if the platform
+     * found a board ([JvmFamilyBoard.server]) and it knows [where] it is. No class of its own: an
+     * array and the board's map, which the player cache has already loaded.
+     */
+    private fun register() {
+        val at = where ?: return
+        val board = JvmFamilyBoard.server ?: return
+        val sqlite = dialect is Dialect.Sqlite
+        val entry = arrayOfNulls<Any>(FamilyBackups.SIZE)
+        entry[FamilyBackups.KIND] = if (sqlite) FamilyBackups.SQLITE else FamilyBackups.MYSQL
+        entry[FamilyBackups.PLUGIN] = threadName
+        entry[FamilyBackups.WHERE] = at
+        entry[FamilyBackups.DESCRIPTION] = description
+        entry[FamilyBackups.PREFIX] = prefix
+        entry[FamilyBackups.HANDLE] = if (sqlite) factory else null
+        board.map(FamilyBackups.MAP).put("$threadName $at", entry)
+        registered = entry
+        registeredOn = board
+    }
+
+    /** Takes this database's entry off the board, as it closes; another plugin's on the same file stays. */
+    private fun unregister() {
+        val entry = registered ?: return
+        registeredOn?.map(FamilyBackups.MAP)?.remove("$threadName $where", entry)
+        registered = null
+    }
 
     private fun enqueue(job: Job) {
         if (!accepting) return job.fail(CLOSED)
@@ -265,6 +315,7 @@ public class JdbcDatabase internal constructor(
                 }
             }
             connection = null
+            unregister()
             closed.resolve(Unit)
         }
     }
@@ -632,7 +683,7 @@ public class JdbcDatabase internal constructor(
                     continue
                 }
                 val database = JdbcDatabase(Dialect.Sqlite(version), settings.prefix, "the SQLite database ${file.fileName}",
-                    connector, log, limits, name)
+                    connector, log, limits, name, file.toAbsolutePath().normalize().toString())
                 return prepare(database, "SQLite $version (${found.source} driver)", log)
             }
             return Outcome.Err(DbError(DbError.Kind.NO_DRIVER, "no SQLite driver could be used" +
@@ -672,7 +723,8 @@ public class JdbcDatabase internal constructor(
                 } catch (e: SQLException) {
                     return Outcome.Err(DbError(DbError.Kind.UNAVAILABLE, "couldn't connect to $description: ${e.message}"))
                 }
-                return prepare(JdbcDatabase(Dialect.MySql, settings.prefix, description, connector, log, limits, name),
+                return prepare(JdbcDatabase(Dialect.MySql, settings.prefix, description, connector, log, limits, name,
+                    "${mysql.host}:${mysql.port}/${mysql.database}"),
                     "MySQL (${found.source} driver)", log)
             }
             return Outcome.Err(DbError(DbError.Kind.NO_DRIVER, "no MySQL driver could be used" +

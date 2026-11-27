@@ -1,0 +1,28 @@
+# Paper and Folia from 1.19.3 read this instead of plugin.yml; Spigot and older Paper ignore it.
+# The same plugin, with its libraries handed to Paper by the core's loader from the family's
+# cache rather than resolved by Paper from plugin.yml's libraries: at every boot (DECISIONS.md).
+name: xVote
+version: '${version}'
+main: co.xenastudios.xvote.bukkit.XVoteBootstrap
+# The core's, relocated into the plugin's package with the rest of it.
+loader: co.xenastudios.xvote.core.loader.paper.PaperLibraryLoader
+api-version: '1.19'
+folia-supported: true
+description: Votes in. Rewards out.
+website: https://plugins.xenastudios.co/xvote/
+authors: [Xena Studios]
+dependencies:
+  server:
+    # Optional: money rewards. xMoney's API and Vault's economy are both called by name, through
+    # their own class loaders, so neither joins xVote's classpath.
+    xMoney:
+      load: BEFORE
+      required: false
+    Vault:
+      load: BEFORE
+      required: false
+    # Optional: xVote's placeholders, an expansion of PlaceholderAPI's classes.
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true

@@ -1,0 +1,215 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xvote.api/Period : kotlin/Enum<co.xenastudios.xvote.api/Period> { // co.xenastudios.xvote.api/Period|null[0]
+    enum entry ALL // co.xenastudios.xvote.api/Period.ALL|null[0]
+    enum entry DAY // co.xenastudios.xvote.api/Period.DAY|null[0]
+    enum entry MONTH // co.xenastudios.xvote.api/Period.MONTH|null[0]
+    enum entry WEEK // co.xenastudios.xvote.api/Period.WEEK|null[0]
+
+    final val entries // co.xenastudios.xvote.api/Period.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xvote.api/Period> // co.xenastudios.xvote.api/Period.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xvote.api/Period // co.xenastudios.xvote.api/Period.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xvote.api/Period> // co.xenastudios.xvote.api/Period.values|values#static(){}[0]
+}
+
+final enum class co.xenastudios.xvote.api/VoteResult : kotlin/Enum<co.xenastudios.xvote.api/VoteResult> { // co.xenastudios.xvote.api/VoteResult|null[0]
+    enum entry CANCELLED // co.xenastudios.xvote.api/VoteResult.CANCELLED|null[0]
+    enum entry COUNTED // co.xenastudios.xvote.api/VoteResult.COUNTED|null[0]
+    enum entry DUPLICATE // co.xenastudios.xvote.api/VoteResult.DUPLICATE|null[0]
+    enum entry FAILED // co.xenastudios.xvote.api/VoteResult.FAILED|null[0]
+    enum entry INVALID // co.xenastudios.xvote.api/VoteResult.INVALID|null[0]
+    enum entry WAITING // co.xenastudios.xvote.api/VoteResult.WAITING|null[0]
+
+    final val entries // co.xenastudios.xvote.api/VoteResult.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xvote.api/VoteResult> // co.xenastudios.xvote.api/VoteResult.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xvote.api/VoteResult // co.xenastudios.xvote.api/VoteResult.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xvote.api/VoteResult> // co.xenastudios.xvote.api/VoteResult.values|values#static(){}[0]
+}
+
+final enum class co.xenastudios.xvote.api/VoteSource : kotlin/Enum<co.xenastudios.xvote.api/VoteSource> { // co.xenastudios.xvote.api/VoteSource|null[0]
+    enum entry API // co.xenastudios.xvote.api/VoteSource.API|null[0]
+    enum entry FORWARDED // co.xenastudios.xvote.api/VoteSource.FORWARDED|null[0]
+    enum entry TEST // co.xenastudios.xvote.api/VoteSource.TEST|null[0]
+    enum entry VOTIFIER_V1 // co.xenastudios.xvote.api/VoteSource.VOTIFIER_V1|null[0]
+    enum entry VOTIFIER_V2 // co.xenastudios.xvote.api/VoteSource.VOTIFIER_V2|null[0]
+
+    final val entries // co.xenastudios.xvote.api/VoteSource.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xvote.api/VoteSource> // co.xenastudios.xvote.api/VoteSource.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xvote.api/VoteSource // co.xenastudios.xvote.api/VoteSource.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xvote.api/VoteSource> // co.xenastudios.xvote.api/VoteSource.values|values#static(){}[0]
+}
+
+abstract fun interface co.xenastudios.xvote.api/RewardType { // co.xenastudios.xvote.api/RewardType|null[0]
+    abstract fun give(co.xenastudios.core.api/PlayerRef, kotlin/String) // co.xenastudios.xvote.api/RewardType.give|give(co.xenastudios.core.api.PlayerRef;kotlin.String){}[0]
+}
+
+abstract interface co.xenastudios.xvote.api/XVoteApi { // co.xenastudios.xvote.api/XVoteApi|null[0]
+    abstract val events // co.xenastudios.xvote.api/XVoteApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xvote.api/XVoteApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.xvote.api/XVoteApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xvote.api/XVoteApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun party(): co.xenastudios.xvote.api/PartyProgress // co.xenastudios.xvote.api/XVoteApi.party|party(){}[0]
+    abstract fun registerRewardType(kotlin/String, kotlin/String, co.xenastudios.xvote.api/RewardType) // co.xenastudios.xvote.api/XVoteApi.registerRewardType|registerRewardType(kotlin.String;kotlin.String;co.xenastudios.xvote.api.RewardType){}[0]
+    abstract fun stats(co.xenastudios.core.api/PlayerRef): co.xenastudios.xvote.api/VoterStats // co.xenastudios.xvote.api/XVoteApi.stats|stats(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun submitVote(kotlin/String, kotlin/String, kotlin/String): co.xenastudios.core.api/Pending<co.xenastudios.xvote.api/VoteResult> // co.xenastudios.xvote.api/XVoteApi.submitVote|submitVote(kotlin.String;kotlin.String;kotlin.String){}[0]
+    abstract fun top(co.xenastudios.xvote.api/Period, kotlin/Int): kotlin.collections/List<co.xenastudios.xvote.api/TopVoter> // co.xenastudios.xvote.api/XVoteApi.top|top(co.xenastudios.xvote.api.Period;kotlin.Int){}[0]
+    abstract fun unregisterRewardType(kotlin/String) // co.xenastudios.xvote.api/XVoteApi.unregisterRewardType|unregisterRewardType(kotlin.String){}[0]
+}
+
+final class co.xenastudios.xvote.api.event/VoteCountedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xvote.api.event/VoteCountedEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin/String, kotlin/Int, kotlin/Int, kotlin/Boolean, kotlin/Long) // co.xenastudios.xvote.api.event/VoteCountedEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.String;kotlin.Int;kotlin.Int;kotlin.Boolean;kotlin.Long){}[0]
+
+    final val at // co.xenastudios.xvote.api.event/VoteCountedEvent.at|{}at[0]
+        final fun <get-at>(): kotlin/Long // co.xenastudios.xvote.api.event/VoteCountedEvent.at.<get-at>|<get-at>(){}[0]
+    final val firstToday // co.xenastudios.xvote.api.event/VoteCountedEvent.firstToday|{}firstToday[0]
+        final fun <get-firstToday>(): kotlin/Boolean // co.xenastudios.xvote.api.event/VoteCountedEvent.firstToday.<get-firstToday>|<get-firstToday>(){}[0]
+    final val name // co.xenastudios.xvote.api.event/VoteCountedEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xvote.api.event/VoteCountedEvent.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xvote.api.event/VoteCountedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xvote.api.event/VoteCountedEvent.player.<get-player>|<get-player>(){}[0]
+    final val site // co.xenastudios.xvote.api.event/VoteCountedEvent.site|{}site[0]
+        final fun <get-site>(): kotlin/String // co.xenastudios.xvote.api.event/VoteCountedEvent.site.<get-site>|<get-site>(){}[0]
+    final val streak // co.xenastudios.xvote.api.event/VoteCountedEvent.streak|{}streak[0]
+        final fun <get-streak>(): kotlin/Int // co.xenastudios.xvote.api.event/VoteCountedEvent.streak.<get-streak>|<get-streak>(){}[0]
+    final val total // co.xenastudios.xvote.api.event/VoteCountedEvent.total|{}total[0]
+        final fun <get-total>(): kotlin/Int // co.xenastudios.xvote.api.event/VoteCountedEvent.total.<get-total>|<get-total>(){}[0]
+
+    final object Companion { // co.xenastudios.xvote.api.event/VoteCountedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xvote.api.event/VoteCountedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xvote.api.event/VoteCountedEvent> // co.xenastudios.xvote.api.event/VoteCountedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xvote.api.event/VotePartyEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xvote.api.event/VotePartyEvent|null[0]
+    constructor <init>(kotlin.collections/MutableList<co.xenastudios.core.api/PlayerRef>) // co.xenastudios.xvote.api.event/VotePartyEvent.<init>|<init>(kotlin.collections.MutableList<co.xenastudios.core.api.PlayerRef>){}[0]
+
+    final val players // co.xenastudios.xvote.api.event/VotePartyEvent.players|{}players[0]
+        final fun <get-players>(): kotlin.collections/MutableList<co.xenastudios.core.api/PlayerRef> // co.xenastudios.xvote.api.event/VotePartyEvent.players.<get-players>|<get-players>(){}[0]
+
+    final object Companion { // co.xenastudios.xvote.api.event/VotePartyEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xvote.api.event/VotePartyEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xvote.api.event/VotePartyEvent> // co.xenastudios.xvote.api.event/VotePartyEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xvote.api.event/VoteReceivedEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xvote.api.event/VoteReceivedEvent|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String, kotlin/String, co.xenastudios.xvote.api/VoteSource) // co.xenastudios.xvote.api.event/VoteReceivedEvent.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String;co.xenastudios.xvote.api.VoteSource){}[0]
+
+    final val address // co.xenastudios.xvote.api.event/VoteReceivedEvent.address|{}address[0]
+        final fun <get-address>(): kotlin/String // co.xenastudios.xvote.api.event/VoteReceivedEvent.address.<get-address>|<get-address>(){}[0]
+    final val site // co.xenastudios.xvote.api.event/VoteReceivedEvent.site|{}site[0]
+        final fun <get-site>(): kotlin/String // co.xenastudios.xvote.api.event/VoteReceivedEvent.site.<get-site>|<get-site>(){}[0]
+    final val source // co.xenastudios.xvote.api.event/VoteReceivedEvent.source|{}source[0]
+        final fun <get-source>(): co.xenastudios.xvote.api/VoteSource // co.xenastudios.xvote.api.event/VoteReceivedEvent.source.<get-source>|<get-source>(){}[0]
+    final val timestamp // co.xenastudios.xvote.api.event/VoteReceivedEvent.timestamp|{}timestamp[0]
+        final fun <get-timestamp>(): kotlin/String // co.xenastudios.xvote.api.event/VoteReceivedEvent.timestamp.<get-timestamp>|<get-timestamp>(){}[0]
+    final val username // co.xenastudios.xvote.api.event/VoteReceivedEvent.username|{}username[0]
+        final fun <get-username>(): kotlin/String // co.xenastudios.xvote.api.event/VoteReceivedEvent.username.<get-username>|<get-username>(){}[0]
+
+    final object Companion { // co.xenastudios.xvote.api.event/VoteReceivedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xvote.api.event/VoteReceivedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xvote.api.event/VoteReceivedEvent> // co.xenastudios.xvote.api.event/VoteReceivedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xvote.api.event/VoteRewardEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xvote.api.event/VoteRewardEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin.collections/MutableList<kotlin/String>) // co.xenastudios.xvote.api.event/VoteRewardEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.collections.MutableList<kotlin.String>){}[0]
+
+    final val player // co.xenastudios.xvote.api.event/VoteRewardEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xvote.api.event/VoteRewardEvent.player.<get-player>|<get-player>(){}[0]
+    final val rewards // co.xenastudios.xvote.api.event/VoteRewardEvent.rewards|{}rewards[0]
+        final fun <get-rewards>(): kotlin.collections/MutableList<kotlin/String> // co.xenastudios.xvote.api.event/VoteRewardEvent.rewards.<get-rewards>|<get-rewards>(){}[0]
+    final val site // co.xenastudios.xvote.api.event/VoteRewardEvent.site|{}site[0]
+        final fun <get-site>(): kotlin/String // co.xenastudios.xvote.api.event/VoteRewardEvent.site.<get-site>|<get-site>(){}[0]
+
+    final object Companion { // co.xenastudios.xvote.api.event/VoteRewardEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xvote.api.event/VoteRewardEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xvote.api.event/VoteRewardEvent> // co.xenastudios.xvote.api.event/VoteRewardEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xvote.api.event/VoteRewardedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xvote.api.event/VoteRewardedEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin.collections/List<kotlin/String>) // co.xenastudios.xvote.api.event/VoteRewardedEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.collections.List<kotlin.String>){}[0]
+
+    final val player // co.xenastudios.xvote.api.event/VoteRewardedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xvote.api.event/VoteRewardedEvent.player.<get-player>|<get-player>(){}[0]
+    final val rewards // co.xenastudios.xvote.api.event/VoteRewardedEvent.rewards|{}rewards[0]
+        final fun <get-rewards>(): kotlin.collections/List<kotlin/String> // co.xenastudios.xvote.api.event/VoteRewardedEvent.rewards.<get-rewards>|<get-rewards>(){}[0]
+    final val site // co.xenastudios.xvote.api.event/VoteRewardedEvent.site|{}site[0]
+        final fun <get-site>(): kotlin/String // co.xenastudios.xvote.api.event/VoteRewardedEvent.site.<get-site>|<get-site>(){}[0]
+
+    final object Companion { // co.xenastudios.xvote.api.event/VoteRewardedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xvote.api.event/VoteRewardedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xvote.api.event/VoteRewardedEvent> // co.xenastudios.xvote.api.event/VoteRewardedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xvote.api/PartyProgress { // co.xenastudios.xvote.api/PartyProgress|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int) // co.xenastudios.xvote.api/PartyProgress.<init>|<init>(kotlin.Int;kotlin.Int){}[0]
+
+    final val left // co.xenastudios.xvote.api/PartyProgress.left|{}left[0]
+        final fun <get-left>(): kotlin/Int // co.xenastudios.xvote.api/PartyProgress.left.<get-left>|<get-left>(){}[0]
+    final val needed // co.xenastudios.xvote.api/PartyProgress.needed|{}needed[0]
+        final fun <get-needed>(): kotlin/Int // co.xenastudios.xvote.api/PartyProgress.needed.<get-needed>|<get-needed>(){}[0]
+    final val votes // co.xenastudios.xvote.api/PartyProgress.votes|{}votes[0]
+        final fun <get-votes>(): kotlin/Int // co.xenastudios.xvote.api/PartyProgress.votes.<get-votes>|<get-votes>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xvote.api/PartyProgress.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xvote.api/TopVoter { // co.xenastudios.xvote.api/TopVoter|null[0]
+    constructor <init>(kotlin/Int, co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin/Int) // co.xenastudios.xvote.api/TopVoter.<init>|<init>(kotlin.Int;co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.Int){}[0]
+
+    final val name // co.xenastudios.xvote.api/TopVoter.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xvote.api/TopVoter.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xvote.api/TopVoter.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xvote.api/TopVoter.player.<get-player>|<get-player>(){}[0]
+    final val rank // co.xenastudios.xvote.api/TopVoter.rank|{}rank[0]
+        final fun <get-rank>(): kotlin/Int // co.xenastudios.xvote.api/TopVoter.rank.<get-rank>|<get-rank>(){}[0]
+    final val votes // co.xenastudios.xvote.api/TopVoter.votes|{}votes[0]
+        final fun <get-votes>(): kotlin/Int // co.xenastudios.xvote.api/TopVoter.votes.<get-votes>|<get-votes>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xvote.api/TopVoter.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xvote.api/VoterStats { // co.xenastudios.xvote.api/VoterStats|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin.collections/Map<kotlin/String, kotlin/Long>) // co.xenastudios.xvote.api/VoterStats.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.collections.Map<kotlin.String,kotlin.Long>){}[0]
+
+    final val bestStreak // co.xenastudios.xvote.api/VoterStats.bestStreak|{}bestStreak[0]
+        final fun <get-bestStreak>(): kotlin/Int // co.xenastudios.xvote.api/VoterStats.bestStreak.<get-bestStreak>|<get-bestStreak>(){}[0]
+    final val lastVotes // co.xenastudios.xvote.api/VoterStats.lastVotes|{}lastVotes[0]
+        final fun <get-lastVotes>(): kotlin.collections/Map<kotlin/String, kotlin/Long> // co.xenastudios.xvote.api/VoterStats.lastVotes.<get-lastVotes>|<get-lastVotes>(){}[0]
+    final val month // co.xenastudios.xvote.api/VoterStats.month|{}month[0]
+        final fun <get-month>(): kotlin/Int // co.xenastudios.xvote.api/VoterStats.month.<get-month>|<get-month>(){}[0]
+    final val name // co.xenastudios.xvote.api/VoterStats.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xvote.api/VoterStats.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xvote.api/VoterStats.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xvote.api/VoterStats.player.<get-player>|<get-player>(){}[0]
+    final val streak // co.xenastudios.xvote.api/VoterStats.streak|{}streak[0]
+        final fun <get-streak>(): kotlin/Int // co.xenastudios.xvote.api/VoterStats.streak.<get-streak>|<get-streak>(){}[0]
+    final val today // co.xenastudios.xvote.api/VoterStats.today|{}today[0]
+        final fun <get-today>(): kotlin/Int // co.xenastudios.xvote.api/VoterStats.today.<get-today>|<get-today>(){}[0]
+    final val total // co.xenastudios.xvote.api/VoterStats.total|{}total[0]
+        final fun <get-total>(): kotlin/Int // co.xenastudios.xvote.api/VoterStats.total.<get-total>|<get-total>(){}[0]
+    final val week // co.xenastudios.xvote.api/VoterStats.week|{}week[0]
+        final fun <get-week>(): kotlin/Int // co.xenastudios.xvote.api/VoterStats.week.<get-week>|<get-week>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xvote.api/VoterStats.toString|toString(){}[0]
+    final fun votes(co.xenastudios.xvote.api/Period): kotlin/Int // co.xenastudios.xvote.api/VoterStats.votes|votes(co.xenastudios.xvote.api.Period){}[0]
+}
+
+final object co.xenastudios.xvote.api/XVote { // co.xenastudios.xvote.api/XVote|null[0]
+    final fun api(): co.xenastudios.xvote.api/XVoteApi // co.xenastudios.xvote.api/XVote.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xvote.api/XVote.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xvote.api/XVoteApi?) // co.xenastudios.xvote.api/XVote.register|register(co.xenastudios.xvote.api.XVoteApi?){}[0]
+}

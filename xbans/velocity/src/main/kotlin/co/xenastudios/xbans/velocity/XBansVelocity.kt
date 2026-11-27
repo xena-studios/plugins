@@ -6,6 +6,7 @@ import co.xenastudios.core.api.javaUuid
 import co.xenastudios.core.api.toPlayerRef
 import co.xenastudios.core.common.family.PlayerCache
 import co.xenastudios.core.common.family.PlayerStore
+import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.later
 import co.xenastudios.core.common.text.Component
@@ -46,8 +47,14 @@ import kotlin.time.Duration.Companion.seconds
  */
 public class XBansVelocity(private val bootstrap: VelocityBootstrap) : PluginEntry {
     private var platform: VelocityPlatform? = null
-    private var xbans: XBansPlugin? = null
     private val handlers = ArrayList<Pair<Class<*>, EventHandler<*>>>()
+
+    // Made on the plugin's own thread, after enable, as zChat's relay is: reading config.yml and
+    // the jar's translations and building the commands are most of what xBans adds to Velocity's
+    // startup. Until it's made, a login waits for it, as it waits for the bans (Login).
+    @Volatile
+    private var xbans: XBansPlugin? = null
+    private val made = CompletableFuture<XBansPlugin>()
 
     override fun enable() {
         val started = System.nanoTime()
@@ -55,12 +62,38 @@ public class XBansVelocity(private val bootstrap: VelocityBootstrap) : PluginEnt
         val family = platform.family
         val cache = PlayerCache(family.board, PlayerStore.InFile(family.folder), platform.scheduler, platform.clock, platform.log, XBansPlugin.PLUGIN_ID)
         platform.record(cache)
+        val server = VelocityBansServer(platform)
+        this.platform = platform
+        // The doors first, so nobody gets in between enable and the plugin being made.
+        listen(platform, server)
+        platform.scheduler.run(Where.Global, action = Make(platform, server, cache))
+        val millis = (System.nanoTime() - started) / 1_000_000
+        platform.log.info("xBans ${platform.container.description.version.orElse(XBansPlugin.VERSION)} on ${platform.name}: turning banned players away at the proxy, enabled in $millis ms")
+    }
+
+    // A class, not a lambda (decisions/2026-11-25-a-lighter-core.md).
+    private inner class Make(private val platform: VelocityPlatform, private val server: VelocityBansServer, private val cache: PlayerCache) : (Task) -> Unit {
+        override fun invoke(task: Task) {
+            val xbans = try {
+                make(platform, server, cache)
+            } catch (e: Throwable) {
+                // Nobody joins without it: every login is turned away, as with a database that won't open.
+                platform.log.error("xBans couldn't start, and nobody can join until it does.", e)
+                made.completeExceptionally(e)
+                return
+            }
+            this@XBansVelocity.xbans = xbans
+            made.complete(xbans)
+        }
+    }
+
+    private fun make(platform: VelocityPlatform, server: VelocityBansServer, cache: PlayerCache): XBansPlugin {
+        val family = platform.family
         val folder = bootstrap.dataFolder()
         val files = JvmFiles(folder, family, LangFolder.shipped(javaClass.classLoader, JvmFiles.LANGUAGES), platform.log)
         val config = files.config()
         val drivers = Drivers(javaClass.classLoader, platform.driverFetcher())
         val plugins = folder.toAbsolutePath().parent
-        val server = VelocityBansServer(platform)
         val xbans = XBansPlugin(
             platform, server, files, cache, platform.players, cache,
             opener = JvmDatabase(family, folder, plugins.resolve("Xena"), drivers, platform.log),
@@ -72,31 +105,25 @@ public class XBansVelocity(private val bootstrap: VelocityBootstrap) : PluginEnt
             channel = if (config.config[XBansConfig.network.enabled]) platform.proxyChannel(XBansPlugin.PLUGIN_ID) else null,
             version = platform.container.description.version.orElse(XBansPlugin.VERSION),
         )
-        this.platform = platform
-        this.xbans = xbans
-        listen(platform, xbans, server)
-        platform.scheduler.run(Where.Global) { _ ->
-            platform.commands.feedback = xbans.texts.feedback
-            xbans.start(config)
-            xbans.open()
-        }
+        platform.commands.feedback = xbans.texts.feedback
+        xbans.start(config)
+        xbans.open()
         platform.scheduler.run(Where.Async) { _ ->
             cache.load()
             val loaded = files.translations(config.config, config.problems)
             platform.scheduler.run(Where.Global) { _ -> xbans.apply(loaded) }
         }
         xbans.updates = platform.checkUpdates(XBansPlugin.PLUGIN_ID, xbans.admin.updates, XBansConfig.updates.settings(config.config)) { xbans.texts.translations }
-        val millis = (System.nanoTime() - started) / 1_000_000
-        platform.log.info("xBans ${xbans.version} on ${platform.name}: turning banned players away at the proxy, enabled in $millis ms")
+        return xbans
     }
 
-    private fun listen(platform: VelocityPlatform, xbans: XBansPlugin, server: VelocityBansServer) {
+    private fun listen(platform: VelocityPlatform, server: VelocityBansServer) {
         // Last, so a plugin that allows logins later can't let a banned player back in.
-        register(platform, LoginEvent::class.java, LAST, Login(platform, xbans, server))
-        register(platform, ServerPreConnectEvent::class.java, LAST, Connect(xbans, server))
-        register(platform, PostLoginEvent::class.java, FIRST, Joined(xbans, server))
-        register(platform, ServerConnectedEvent::class.java, FIRST, Switched(xbans))
-        register(platform, DisconnectEvent::class.java, LAST, Quit(xbans))
+        register(platform, LoginEvent::class.java, LAST, Login(platform, this, server))
+        register(platform, ServerPreConnectEvent::class.java, LAST, Connect(this, server))
+        register(platform, PostLoginEvent::class.java, FIRST, Joined(this, server))
+        register(platform, ServerConnectedEvent::class.java, FIRST, Switched(this))
+        register(platform, DisconnectEvent::class.java, LAST, Quit(this))
     }
 
     private fun <E : Any> register(platform: VelocityPlatform, type: Class<E>, order: Short, handler: EventHandler<E>) {
@@ -104,20 +131,25 @@ public class XBansVelocity(private val bootstrap: VelocityBootstrap) : PluginEnt
         handlers += type to handler
     }
 
-    /** The network's door: a banned player is turned away before any server sees them. Waits up to 10 seconds for the bans just after a start. */
-    private class Login(private val platform: VelocityPlatform, private val xbans: XBansPlugin, private val server: VelocityBansServer) : EventHandler<LoginEvent> {
+    /**
+     * The network's door: a banned player is turned away before any server sees them. Just after a
+     * start it waits, off Velocity's threads, up to 10 seconds for the plugin to be made and its
+     * bans read, and turns the player away if they aren't by then.
+     */
+    private class Login(private val platform: VelocityPlatform, private val entry: XBansVelocity, private val server: VelocityBansServer) : EventHandler<LoginEvent> {
         override fun execute(event: LoginEvent) {
             decide(event)
         }
 
         override fun executeAsync(event: LoginEvent): EventTask? {
-            if (xbans.backend != null) {
+            if (entry.xbans?.backend != null) {
                 decide(event)
                 return null
             }
-            // Just after a start: wait, off Velocity's threads, for the bans, at most 10 seconds.
             val waited = CompletableFuture<Unit>()
-            xbans.ready.whenComplete { _, _ -> waited.complete(Unit) }
+            entry.made.whenComplete { xbans, _ ->
+                if (xbans == null) waited.complete(Unit) else xbans.ready.whenComplete { _, _ -> waited.complete(Unit) }
+            }
             platform.scheduler.later(Where.Async, XBansPlugin.WAIT_SECONDS.seconds) { _ -> waited.complete(Unit) }
             return EventTask.resumeWhenComplete(waited.thenRun { decide(event) })
         }
@@ -126,8 +158,9 @@ public class XBansVelocity(private val bootstrap: VelocityBootstrap) : PluginEnt
             if (!event.result.isAllowed) return
             val player = event.player
             val ref = player.uniqueId.toPlayerRef()
-            if (xbans.backend == null) {
-                event.result = ResultedEvent.ComponentResult.denied(server.draw(xbans.denied(ref, player.username, null)))
+            val xbans = entry.xbans
+            if (xbans?.backend == null) {
+                event.result = ResultedEvent.ComponentResult.denied(entry.notReady(xbans, ref, player.username, server))
                 return
             }
             val ban = xbans.banOnJoin(ref, player.remoteAddress?.address?.hostAddress, null) ?: return
@@ -135,12 +168,22 @@ public class XBansVelocity(private val bootstrap: VelocityBootstrap) : PluginEnt
         }
     }
 
+    // Before the plugin is made there are no messages to draw the screen in.
+    private fun notReady(xbans: XBansPlugin?, ref: PlayerRef, name: String, server: VelocityBansServer): net.kyori.adventure.text.Component =
+        server.draw(xbans?.denied(ref, name, null) ?: Component.text(NOT_READY))
+
     /** A server's door: a player banned on that server's scope doesn't get onto it. */
-    private class Connect(private val xbans: XBansPlugin, private val server: VelocityBansServer) : EventHandler<ServerPreConnectEvent> {
+    private class Connect(private val entry: XBansVelocity, private val server: VelocityBansServer) : EventHandler<ServerPreConnectEvent> {
         override fun execute(event: ServerPreConnectEvent) {
             val target = event.result.server.orElse(null) ?: return
             val player = event.player
             val ref = player.uniqueId.toPlayerRef()
+            val xbans = entry.xbans
+            if (xbans == null) {
+                // Nobody gets past the login before it's made; should one have, they go nowhere.
+                event.result = ServerPreConnectEvent.ServerResult.denied()
+                return
+            }
             val ban = xbans.banOnJoin(ref, player.remoteAddress?.address?.hostAddress, target.serverInfo.name) ?: return
             event.result = ServerPreConnectEvent.ServerResult.denied()
             val screen = server.draw(xbans.denied(ref, player.username, ban))
@@ -149,24 +192,29 @@ public class XBansVelocity(private val bootstrap: VelocityBootstrap) : PluginEnt
         }
     }
 
-    private class Joined(private val xbans: XBansPlugin, private val server: VelocityBansServer) : EventHandler<PostLoginEvent> {
+    private class Joined(private val entry: XBansVelocity, private val server: VelocityBansServer) : EventHandler<PostLoginEvent> {
         override fun execute(event: PostLoginEvent) {
             val player = event.player
             val ref = player.uniqueId.toPlayerRef()
+            val xbans = entry.xbans
+            if (xbans == null) {
+                player.disconnect(entry.notReady(null, ref, player.username, server))
+                return
+            }
             val ban = xbans.joined(ref, player.username, player.remoteAddress?.address?.hostAddress)
             if (ban != null || xbans.backend == null) player.disconnect(server.draw(xbans.denied(ref, player.username, ban)))
         }
     }
 
-    private class Switched(private val xbans: XBansPlugin) : EventHandler<ServerConnectedEvent> {
+    private class Switched(private val entry: XBansVelocity) : EventHandler<ServerConnectedEvent> {
         override fun execute(event: ServerConnectedEvent) {
-            xbans.switched(event.player.uniqueId.toPlayerRef(), event.server.serverInfo.name)
+            entry.xbans?.switched(event.player.uniqueId.toPlayerRef(), event.server.serverInfo.name)
         }
     }
 
-    private class Quit(private val xbans: XBansPlugin) : EventHandler<DisconnectEvent> {
+    private class Quit(private val entry: XBansVelocity) : EventHandler<DisconnectEvent> {
         override fun execute(event: DisconnectEvent) {
-            xbans.quit(event.player.uniqueId.toPlayerRef())
+            entry.xbans?.quit(event.player.uniqueId.toPlayerRef())
         }
     }
 
@@ -174,17 +222,21 @@ public class XBansVelocity(private val bootstrap: VelocityBootstrap) : PluginEnt
         // Velocity's numeric priorities (higher runs first): PostOrder.FIRST's and LAST's values.
         const val FIRST: Short = Short.MAX_VALUE
         const val LAST: Short = Short.MIN_VALUE
+
+        // screens.not-ready's English, before there are translations to draw it in.
+        const val NOT_READY = "The server is still starting.\nTry again in a few seconds."
     }
 
     override fun disable() {
         val platform = platform ?: return
         for ((_, handler) in handlers) platform.server.eventManager.unregister(platform.bootstrap, handler)
         handlers.clear()
-        xbans?.let { xbans ->
+        run {
             val done = CountDownLatch(1)
+            // On the plugin's thread, so after Make: whatever it made is stopped.
             platform.scheduler.run(Where.Global) { _ ->
                 try {
-                    xbans.stop().get(10, TimeUnit.SECONDS)
+                    xbans?.stop()?.get(10, TimeUnit.SECONDS)
                 } catch (e: Exception) {
                     platform.log.warn("Stopping, xBans' database didn't finish saving in time: $e")
                 } finally {

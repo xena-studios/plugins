@@ -311,4 +311,23 @@ class JdbcDatabaseTest {
         }
         override fun read(row: Row) = Account(row[Accounts.player], row[Accounts.name], row[Accounts.balance])
     }
+
+    @Test
+    fun aDriverWithoutIsValidIsAskedWithASelect() {
+        // Spigot 1.8.8's bundled SQLite driver predates JDBC 4: isValid throws AbstractMethodError.
+        val real = java.sql.DriverManager.getConnection("jdbc:sqlite:" + folder.resolve("old-driver.db"))
+        val old = java.lang.reflect.Proxy.newProxyInstance(
+            javaClass.classLoader, arrayOf(java.sql.Connection::class.java),
+        ) { _, method, args ->
+            if (method.name == "isValid") throw AbstractMethodError("org.sqlite.Conn.isValid(I)Z")
+            try {
+                method.invoke(real, *(args ?: emptyArray()))
+            } catch (e: java.lang.reflect.InvocationTargetException) {
+                throw e.targetException
+            }
+        } as java.sql.Connection
+        assertTrue(JdbcDatabase.valid(old))
+        real.close()
+        assertFalse(JdbcDatabase.valid(old))
+    }
 }

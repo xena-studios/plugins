@@ -28,18 +28,47 @@ public class Rewards private constructor(
     /** A site from the config. */
     public class SiteEntry(public val key: String, public val name: String, public val service: String, public val link: String, public val cooldownMs: Long, public val rewards: List<String>)
 
-    /** A reward from the config, ready to give. */
+    /**
+     * A reward from the config, ready to give. Its items are read by the server the first time
+     * they're wanted ([items]): Paper's `/give` reader is slow to start, so it never runs as the
+     * plugin enables, and [Rewards.check] reads them all a moment later.
+     */
     public class RewardEntry(
         public val name: String,
         public val chance: Double,
         public val money: Double,
-        public val items: List<Any>,
+        private val written: List<String>,
         public val commands: List<String>,
         public val message: String,
         public val broadcast: String,
         public val sound: Sound,
         public val custom: List<String>,
-    )
+        private val server: VoteServer?,
+        private val warn: ((String) -> Unit)?,
+    ) {
+        @kotlin.concurrent.Volatile
+        private var read: List<Any>? = null
+
+        /** The items, as the server reads them; one it can't is skipped, with a warning. */
+        public val items: List<Any>
+            get() {
+                read?.let { return it }
+                val stacks = ArrayList<Any>()
+                for ((i, text) in written.withIndex()) {
+                    when (val item = server?.item(text) ?: Outcome.Err("items aren't given here")) {
+                        is Outcome.Ok -> stacks += item.value
+                        is Outcome.Err -> if (server != null && !server.proxy) warn?.invoke("config.yml: rewards.$name.items[$i] (\"$text\") ${item.error}, so it's skipped.")
+                    }
+                }
+                read = stacks
+                return stacks
+            }
+    }
+
+    /** Reads every reward's items now, so a mistake in one is said in the console soon after a load. */
+    public fun check() {
+        for (reward in rewards.values) reward.items
+    }
 
     /** The site a list's service name belongs to, ignoring case, or `null` for an unlisted one. */
     public fun site(service: String): SiteEntry? = byService[service.lowercase()]
@@ -89,7 +118,7 @@ public class Rewards private constructor(
          * Reads the config's sites, rewards and triggers. [server] reads each item; [warn] is told
          * about anything that's skipped, for the console.
          */
-        public fun of(config: Config, server: VoteServer?, warn: (String) -> Unit): Rewards {
+        public fun of(config: Config, server: VoteServer?, warn: (String) -> Unit, later: ((String) -> Unit)? = null): Rewards {
             val sites = ArrayList<SiteEntry>()
             for ((key, site) in config[XVoteConfig.sites]) {
                 val service = site.service.trim().ifBlank { key }
@@ -109,18 +138,11 @@ public class Rewards private constructor(
             }
             val rewards = LinkedHashMap<String, RewardEntry>()
             for ((name, reward) in config[XVoteConfig.rewards]) {
-                val stacks = ArrayList<Any>()
-                for ((i, written) in reward.items.withIndex()) {
-                    when (val item = server?.item(written) ?: Outcome.Err("items aren't given here")) {
-                        is Outcome.Ok -> stacks += item.value
-                        is Outcome.Err -> if (server != null && !server.proxy) warn("rewards.$name.items[$i] (\"$written\") ${item.error}, so it's skipped.")
-                    }
-                }
                 val sound = if (reward.sound.isBlank()) Sound.NONE else Sound.parse(reward.sound)
                 if (!sound.isNone && server?.knowsSound(sound) == false) {
                     warn("rewards.$name.sound (\"${reward.sound}\") isn't a sound this server knows; it plays only with a resource pack that adds it.")
                 }
-                rewards[name] = RewardEntry(name, reward.chance, reward.money, stacks, reward.commands, reward.message, reward.broadcast, sound, reward.custom)
+                rewards[name] = RewardEntry(name, reward.chance, reward.money, reward.items, reward.commands, reward.message, reward.broadcast, sound, reward.custom, server, later)
             }
             fun known(names: List<String>, path: String): List<String> {
                 val kept = ArrayList<String>()
@@ -129,7 +151,7 @@ public class Rewards private constructor(
             }
             fun numbered(milestones: Map<String, List<String>>, path: String): Map<Int, List<String>> {
                 val out = LinkedHashMap<Int, List<String>>()
-                for ((key, names) in milestones.entries.sortedBy { it.key.trim().toIntOrNull() ?: 0 }) {
+                for ((key, names) in milestones) {
                     val n = key.trim().toIntOrNull() ?: 0
                     if (n < 1) {
                         warn("$path.$key should be a whole number above 0, so it's skipped.")

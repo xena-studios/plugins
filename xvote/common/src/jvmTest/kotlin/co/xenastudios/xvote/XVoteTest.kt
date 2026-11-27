@@ -114,7 +114,7 @@ class XVoteTest {
         assertEquals(VoteResult.COUNTED, h.vote("Steve"))
         h.platform.advance(1.seconds)
         h.plugin.quit(FakeVoteServer.ref("Steve"), "Steve")
-        h.platform.until("the vote given back") { h.plugin.votes!!.unpaidCount == 0 }
+        h.platform.until("the vote given back") { h.plugin.votes()!!.unpaidCount == 0 }
         h.join("Steve")
         paid("Steve", 1)
     }

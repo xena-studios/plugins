@@ -14,7 +14,7 @@ import co.xenastudios.core.jvm.db.Drivers
 import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.core.loader.PluginEntry
 import co.xenastudios.core.loader.bungee.BungeeBootstrap
-import co.xenastudios.xvote.FileImports
+import co.xenastudios.xvote.DeferredImports
 import co.xenastudios.xvote.JvmDatabase
 import co.xenastudios.xvote.JvmFiles
 import co.xenastudios.xvote.JvmZones
@@ -79,8 +79,7 @@ public class XVoteBungee(private val bootstrap: BungeeBootstrap) : PluginEntry, 
         val config = files.config()
         val drivers = Drivers(javaClass.classLoader, platform.driverFetcher())
         val plugins = folder.toAbsolutePath().parent
-        var made: XVotePlugin? = null
-        val receiver = ReceiverHost(folder, { vote -> made?.accept(vote) }, platform.log, "plugins/${folder.fileName}/rsa/public.key", plugins, files::useReceiver, "xvoteproxy")
+        val receiver = ReceiverHost(folder, platform.log, "plugins/${folder.fileName}/rsa/public.key", plugins, files, "xvoteproxy")
         val xvote = XVotePlugin(
             platform, BungeeVoteServer(platform, cache), files, cache, platform.players, cache,
             opener = JvmDatabase(family, folder, plugins.resolve("Xena"), drivers, platform.log),
@@ -89,12 +88,12 @@ public class XVoteBungee(private val bootstrap: BungeeBootstrap) : PluginEntry, 
             about = platform::about,
             paste = if (System.getProperty("xena.debug.paste") == "false") null else MclogsPaste(),
             receiver = receiver,
-            imports = FileImports(plugins, folder, drivers, platform.log, files::useReceiver),
+            imports = DeferredImports(plugins, folder, drivers, platform.log, files),
             channel = if (config.config[XVoteConfig.network.enabled]) platform.proxyChannel(XVotePlugin.PLUGIN_ID) else null,
             zones = JvmZones,
             version = bootstrap.description.version,
         )
-        made = xvote
+        receiver.plugin = xvote
         platform.commands.feedback = xvote.texts.feedback
         xvote.start(config)
         xvote.open()

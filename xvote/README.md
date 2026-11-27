@@ -29,27 +29,25 @@ Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQL
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xvote:build       # compile, test, and check the jar's size budget
-./gradlew :xvote:runServer   # a Paper server with xVote, in xvote/run/
-XR_MYSQL=host:port:db:user:password ./gradlew :xvote:test   # also two servers on a real MySQL/MariaDB
+./gradlew :xvote:common:build :xvote:bukkit:build               # tests on the JVM and wasmWasi, the R8 jars and their budgets
+./gradlew :xvote:bukkit:runServer                               # a Paper server with the jar, in xvote/bukkit/run/
+./gradlew -p core/platform-fabric :xvote:26.3:collect           # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+xvote/bukkit/boot.sh paper 26.3 --java <JDK 25 home>            # the boot checks on a real server (--xmoney for the family test)
+xvote/velocity/network.sh velocity --java <JDK 25 home> --backend paper --backend-version 1.21.11 --backend-java <JDK 21 home>
+                                                                # the proxy in front of two Paper servers on one MariaDB, with real votes
+./gradlew :xvote:api:updateKotlinAbi                            # after a deliberate API change
+./gradlew :xvote:common:updateXenaManifest                      # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-api/                     xvote-api: the developer API, shipped inside the jar
-src/main/java/co/xenastudios/xvote/
-  XVote.java             the plugin: opens the database and reads every voter at startup, then sets up commands and modules
-  receiver/              the Votifier receiver: both protocols, keys, tokens, limits, the NuVotifier import, and a client for /vote test
-  vote/                  where every vote goes: matching names, never paying twice, totals and leaderboards in memory
-  storage/               the tables, the one database thread, and imports from VotingPlugin and SuperbVote
-  reward/                sites, rewards and triggers read from the config, and paying them on the right threads
-  play/                  joins, quits and reminders
-  hook/                  PlaceholderAPI, loaded only when installed
-  command/               /vote and /xvote
-boot-checks.txt          console commands CI runs on real Paper and Folia servers, and what each must log
-CHANGELOG.md             one section per release; the release workflow publishes it
+api/        the developer API, the same on every platform: totals, leaderboards, reward types, the events
+common/     the plugin, for every platform: config, messages, the ledger, rewards, commands (commonMain, no java.*);
+            the Votifier receiver, files and imports on the JVM (jvmMain)
+bukkit/     Paper, Folia, Spigot and CraftBukkit 1.8.8+: items, Vault, PlaceholderAPI, the Bukkit events
+fabric/     the Fabric mod, a branch of core/platform-fabric's build
+velocity/   the proxy's receiver on Velocity, and the network test (network.sh)
+bungee/     the same on BungeeCord and Waterfall
 ```
-
-The shared core (reloading, config migration, the theme, the update checker, bStats, the database, the change feed) is in [`core/`](../core).
 
 ## Licence
 

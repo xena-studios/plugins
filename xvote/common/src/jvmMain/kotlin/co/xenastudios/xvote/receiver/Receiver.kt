@@ -43,8 +43,8 @@ import javax.net.ServerSocketFactory
 public class Receiver(
     public val settings: ReceiverSettings,
     credentials: Credentials,
-    private val sink: (IncomingVote) -> Unit,
-    private val log: Log,
+    internal val sink: (IncomingVote) -> Unit,
+    internal val log: Log,
     private val sockets: ServerSocketFactory = ServerSocketFactory.getDefault(),
 ) : AutoCloseable {
     /** The keys and tokens votes are checked with, swapped whole on reload. */
@@ -70,7 +70,8 @@ public class Receiver(
     private var server: ServerSocket? = null
 
     @Volatile
-    private var closed = false
+    internal var closed = false
+        private set
 
     @Volatile
     private var running = false
@@ -180,7 +181,7 @@ public class Receiver(
         try {
             workers.execute {
                 try {
-                    handle(connection)
+                    Conversation.handle(this, connection)
                 } finally {
                     done.run()
                 }
@@ -199,130 +200,17 @@ public class Receiver(
         if (count.decrementAndGet() <= 0) openFrom.remove(key, count)
     }
 
-    /** One conversation: greet, read one vote, reply. */
-    internal fun handle(connection: Socket) {
-        val opened = System.currentTimeMillis()
-        val deadline = opened + settings.timeoutSeconds * 1000L
-        var v2 = false
-        var started = false
-        var out: OutputStream? = null
-        try {
-            connection.tcpNoDelay = true
-            // The first bytes come at once from a list; a scanner that connects and waits is let go sooner.
-            val input = Deadline(connection, minOf(deadline, opened + FIRST_BYTES_MS))
-            out = connection.getOutputStream()
-            val challenge = Protocol.newToken()
-            out.write(Protocol.greeting(challenge))
-            out.flush()
-            val data = DataInputStream(input)
-            val start = ByteArray(2)
-            // Some lists open a connection and send nothing; NuVotifier ignores that too.
-            if (readFully(input, start, 0, 2) < 2) return
-            started = true
-            input.until(deadline)
-            val now = System.currentTimeMillis()
-            val current = credentials
-            val vote = if (((start[0].toInt() and 0xFF) shl 8 or (start[1].toInt() and 0xFF)) == Protocol.V2_MAGIC) {
-                v2 = true
-                val length = data.readUnsignedShort()
-                if (length == 0 || length > Protocol.V2_MAX) {
-                    throw ProtocolException.noise("CorruptedFrameException", "A vote of $length bytes is too ${if (length == 0) "short" else "long"}.", "v2-length")
-                }
-                val message = ByteArray(length)
-                data.readFully(message)
-                Protocol.decodeV2(String(message, Charsets.UTF_8), challenge, current.tokens::forService, now)
-            } else {
-                if (!settings.v1) throw ProtocolException.noise("QuietException", "This server only accepts well-formed Votifier v2 packets.", "v1-off")
-                val keys = current.keys ?: throw ProtocolException.noise("QuietException", "There's no key for Votifier v1 yet.", "v1-nokey")
-                val block = ByteArray(Protocol.V1_BLOCK)
-                block[0] = start[0]
-                block[1] = start[1]
-                data.readFully(block, 2, Protocol.V1_BLOCK - 2)
-                Protocol.decodeV1(block, keys.private, now)
-            }
-            sink(vote)
-            if (v2) {
-                out.write(Protocol.ok())
-                out.flush()
-            }
-        } catch (e: ProtocolException) {
-            if (e.voteError) {
-                voteError(e.logKey, "Refused a vote: ${e.logLine}")
-            } else {
-                noise(e.logKey, true, "Refused a connection that wasn't a well-formed vote: ${e.message} Scanners send these; if a list's votes go missing, check its settings. (Logged once until the next reload.)")
-            }
-            reply(out, v2, e.causeName, e.message ?: "")
-        } catch (e: SocketTimeoutException) {
-            if (started) {
-                noise("slow", true, "A connection sent too little, too slowly, and was closed. (Logged once until the next reload.)")
-                reply(out, v2, "ReadTimeoutException", "Took too long to send the vote.")
-            }
-            // Before the first bytes: a connection that never spoke, as port scanners make. Not worth a line.
-        } catch (e: EOFException) {
-            if (started) {
-                noise("slow", true, "A connection sent too little, too slowly, and was closed. (Logged once until the next reload.)")
-                reply(out, v2, "ReadTimeoutException", "Took too long to send the vote.")
-            }
-        } catch (e: SocketException) {
-            // Closed by the other side, or by close() as the plugin stops.
-        } catch (e: IOException) {
-            if (!closed) noise("io", true, "A connection failed: ${e.message} (Logged once until the next reload.)")
-        } catch (e: RuntimeException) {
-            log.warn("Couldn't handle a vote", e)
-            reply(out, v2, e.javaClass.simpleName, "The server couldn't handle the vote.")
-        }
-    }
-
-    private fun reply(out: OutputStream?, v2: Boolean, cause: String, message: String) {
-        if (!v2 || out == null) return
-        try {
-            out.write(Protocol.error(cause, message))
-            out.flush()
-        } catch (e: IOException) {
-            // They've gone.
-        }
-    }
-
     // Once per kind. The kinds are a fixed few, so this can't grow.
-    private fun noise(kind: String, info: Boolean, message: String) {
+    internal fun noise(kind: String, info: Boolean, message: String) {
         if (noise.add(kind)) if (info) log.info(message) else log.warn(message)
     }
 
     // Once per list, up to a budget only lists' mistakes use.
-    private fun voteError(key: String, message: String) {
+    internal fun voteError(key: String, message: String) {
         if (voteErrors.size < MAX_VOTE_ERRORS) {
             if (voteErrors.add(key)) log.warn(message)
         } else if (voteErrorsQuiet.compareAndSet(false, true)) {
             log.warn("The vote receiver has logged $MAX_VOTE_ERRORS lists' mistakes; more are quiet until the next reload.")
-        }
-    }
-
-    /**
-     * The socket's input with a deadline for the whole conversation, not just each read, so a client
-     * can't hold a slot by sending a byte at a time.
-     */
-    private class Deadline(private val socket: Socket, @Volatile private var deadline: Long) : InputStream() {
-        private val input = socket.getInputStream()
-
-        /** A new deadline, for what's read from now on. */
-        fun until(deadline: Long) {
-            this.deadline = deadline
-        }
-
-        private fun arm() {
-            val left = deadline - System.currentTimeMillis()
-            if (left <= 0) throw SocketTimeoutException("deadline")
-            socket.soTimeout = minOf(Int.MAX_VALUE.toLong(), left).toInt()
-        }
-
-        override fun read(): Int {
-            arm()
-            return input.read()
-        }
-
-        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
-            arm()
-            return input.read(buffer, offset, length)
         }
     }
 

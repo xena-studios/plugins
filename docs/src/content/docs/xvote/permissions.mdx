@@ -1,0 +1,12 @@
+---
+title: Permissions
+description: "Every xVote permission, and who has it by default."
+sidebar:
+  order: 3.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+1.x's: `xvote.use` (`/vote`, `/vote top`, `/vote claim`) is everyone's; `xvote.test` and `xvote.admin` (`status`, `key`, `token`, `import`, `party`, and every admin subcommand) are operators'. Each admin subcommand also has its own, `xvote.admin.<subcommand>`. On the proxies, the proxy's own permissions (LuckPerms on the proxy) answer for `/xvoteproxy`.
+
+<Reference plugin="xvote" show="permissions" />

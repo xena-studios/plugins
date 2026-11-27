@@ -11,3 +11,8 @@
 -keep,allowobfuscation class co.xenastudios.xvote.bukkit.VaultEconomy { *; }
 -keep class co.xenastudios.xvote.bukkit.Placeholders { *; }
 -keep,allowobfuscation class co.xenastudios.xvote.bukkit.PlaceholderHook { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.Calls { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.Votes { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.DeferredImports { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.receiver.Conversation { *; }
+-keep,allowobfuscation class co.xenastudios.xvote.store.Ledger { *; }

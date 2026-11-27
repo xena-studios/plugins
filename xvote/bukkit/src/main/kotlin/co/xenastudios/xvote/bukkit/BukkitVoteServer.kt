@@ -56,6 +56,9 @@ internal class BukkitVoteServer(private val platform: BukkitPlatform, private va
         }
     }
 
+    @Suppress("DEPRECATION")
+    override fun nameOf(player: PlayerRef): String? = server.getOfflinePlayer(java.util.UUID.fromString(player.toString())).name
+
     // The family's player cache knows everyone who joined since it was there; a server's own user
     // cache is read only by a blocking lookup, which a vote's thread mustn't wait on.
     override fun known(name: String): Pair<PlayerRef, String>? = cache.find(name)?.let { it.player to it.name }

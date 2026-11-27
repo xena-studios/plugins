@@ -9,11 +9,11 @@ sidebar:
 xVote receives votes from server lists and rewards players for them, in one jar for Paper and Folia. It's for servers that would otherwise run one plugin to receive votes and another to reward them, and it pays every vote exactly once, even across a network.
 
 - **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
-- **A Votifier built in.** It speaks Votifier v1 and v2, on its own threads, with limits that keep floods and slow connections out. See [Setting up](/xvote/setting-up/).
+- **A Votifier built in.** It speaks Votifier v1 and v2, on its own threads, with limits that keep floods and slow connections out. See [Setting up](/xvote/v1/setting-up/).
 - **Every vote paid once.** Each vote is a row in a ledger, and a vote is taken by one server before it's paid. Offline players are paid when they join; a name that has never joined waits until it does. On a network, the player is paid on whichever server they're on.
 - **Rewards your way.** Money (through Vault), items, commands, messages, broadcasts and sounds, with a chance each. Give them on every vote, per site, on the first vote of the day, every Nth vote, at streak milestones and at vote totals.
 - **For players.** `/vote` lists each site with a link and when it opens again. `/vote top` has today's, this week's, this month's and all-time leaderboards. Reminders when they join, and a vote party for everyone.
-- **Easy to switch to.** It takes over NuVotifier's keys and tokens on its first start, so your lists keep working, and imports every player's total from VotingPlugin or SuperbVote. See [Switching](/xvote/switching/).
+- **Easy to switch to.** It takes over NuVotifier's keys and tokens on its first start, so your lists keep working, and imports every player's total from VotingPlugin or SuperbVote. See [Switching](/xvote/v1/switching/).
 
 ## How it works
 
@@ -25,7 +25,7 @@ A vote from the same site sooner than that site's **cooldown** is a repeat and i
 
 ## Storage
 
-Votes are kept in SQLite out of the box, in `plugins/xVote/votes.db`, or in MySQL/MariaDB. Several servers can share one MySQL database: see [Networks](/xvote/setting-up/#networks).
+Votes are kept in SQLite out of the box, in `plugins/xVote/votes.db`, or in MySQL/MariaDB. Several servers can share one MySQL database: see [Networks](/xvote/v1/setting-up/#networks).
 
 ## What else it does
 
@@ -35,7 +35,7 @@ Votes are kept in SQLite out of the box, in `plugins/xVote/votes.db`, or in MySQ
 ## Getting started
 
 1. [Install it](/start/installing/). It keeps votes in SQLite with nothing to set up.
-2. Open the receiver's port and tell your lists: [Setting up](/xvote/setting-up/).
-3. Set your sites and rewards: [Configuration](/xvote/configuration/).
-4. Every command and permission: [Commands](/xvote/commands/).
-5. Coming from NuVotifier, VotingPlugin or SuperbVote? Remove NuVotifier and xVote takes over its keys and tokens on the first start; bring the others' totals with one command: [Switching](/xvote/switching/).
+2. Open the receiver's port and tell your lists: [Setting up](/xvote/v1/setting-up/).
+3. Set your sites and rewards: [Configuration](/xvote/v1/configuration/).
+4. Every command and permission: [Commands](/xvote/v1/commands/).
+5. Coming from NuVotifier, VotingPlugin or SuperbVote? Remove NuVotifier and xVote takes over its keys and tokens on the first start; bring the others' totals with one command: [Switching](/xvote/v1/switching/).

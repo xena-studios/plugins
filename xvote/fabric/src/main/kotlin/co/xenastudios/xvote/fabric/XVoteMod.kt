@@ -14,7 +14,7 @@ import co.xenastudios.core.fabric.ref
 import co.xenastudios.core.jvm.admin.MclogsPaste
 import co.xenastudios.core.jvm.db.Drivers
 import co.xenastudios.core.jvm.i18n.LangFolder
-import co.xenastudios.xvote.FileImports
+import co.xenastudios.xvote.DeferredImports
 import co.xenastudios.xvote.JvmDatabase
 import co.xenastudios.xvote.JvmFiles
 import co.xenastudios.xvote.JvmZones
@@ -56,8 +56,7 @@ public object XVoteMod : ModInitializer {
         val config = files.config()
         val drivers = Drivers(XVoteMod::class.java.classLoader, platform.drivers(XVoteMod::class.java.classLoader))
         val gameDir = FabricLoader.getInstance().gameDir
-        var made: XVotePlugin? = null
-        val receiver = ReceiverHost(folder, { vote -> made?.accept(vote) }, platform.log, "config/xvote/rsa/public.key", null, files::useReceiver)
+        val receiver = ReceiverHost(folder, platform.log, "config/xvote/rsa/public.key", null, files)
         val xvote = XVotePlugin(
             platform, server, files, family.players, platform.players, family.players,
             opener = JvmDatabase(family.family, folder, FabricLoader.getInstance().configDir.resolve("xena"), drivers, platform.log),
@@ -67,11 +66,11 @@ public object XVoteMod : ModInitializer {
             paste = if (System.getProperty("xena.debug.paste") == "false") null else MclogsPaste(),
             receiver = receiver,
             // A Bukkit server's folders, should their old plugins' files be copied here.
-            imports = FileImports(gameDir.resolve("plugins"), folder, drivers, platform.log, files::useReceiver),
+            imports = DeferredImports(gameDir.resolve("plugins"), folder, drivers, platform.log, files),
             zones = JvmZones,
             version = version,
         )
-        made = xvote
+        receiver.plugin = xvote
         platform.commands.feedback = xvote.texts.feedback
         xvote.start(config)
         xvote.open()

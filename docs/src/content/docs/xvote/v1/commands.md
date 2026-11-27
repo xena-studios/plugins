@@ -23,7 +23,7 @@ Everyone has `xvote.use`.
 | `/xvote status` | `xvote.admin` | The receiver, the database, votes waiting, and the last votes with the service name each list sends. |
 | `/xvote key` | `xvote.admin` | The public key for lists that use Votifier v1. |
 | `/xvote token [service]` | `xvote.admin` | The tokens for Votifier v2, or one list's, made if it has none. |
-| `/xvote import <nuvotifier\|votingplugin\|superbvote>` | `xvote.admin` | Takes over NuVotifier's keys and tokens, or adds another plugin's totals: see [Switching](/xvote/switching/). |
+| `/xvote import <nuvotifier\|votingplugin\|superbvote>` | `xvote.admin` | Takes over NuVotifier's keys and tokens, or adds another plugin's totals: see [Switching](/xvote/v1/switching/). |
 | `/xvote party [start]` | `xvote.admin` | The vote party's progress, or starts one now. |
 | `/xvote reload`, `/xvote info` | `xvote.admin` | Reload the config, or show the version and settings. |
 

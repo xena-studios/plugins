@@ -33,6 +33,28 @@ import java.util.concurrent.TimeUnit
  *
  * Neither plugin keeps single votes, so day, week and month totals start from the switch.
  */
+/**
+ * [FileImports], made with the first `/xvote import`, not as the server starts: what reads other
+ * plugins' files is never loaded on a server that doesn't import.
+ */
+public class DeferredImports(
+    private val plugins: Path,
+    private val folder: Path,
+    private val drivers: Drivers,
+    private val log: Log,
+    private val files: co.xenastudios.xvote.Files?,
+    private val server: VoteServer? = null,
+) : VoteImports {
+    @Volatile
+    private var made: FileImports? = null
+
+    private fun imports(): FileImports = made ?: synchronized(this) { made ?: FileImports(plugins, folder, drivers, log, files, server).also { made = it } }
+
+    override fun nuVotifier(): Outcome<String, String>? = imports().nuVotifier()
+
+    override fun totals(source: String): Outcome<Pair<String, List<Imported>>, String> = imports().totals(source)
+}
+
 public class FileImports(
     /** The plugins folder (Bukkit's, or the proxy's). */
     private val plugins: Path,
@@ -40,10 +62,10 @@ public class FileImports(
     private val folder: Path,
     private val drivers: Drivers,
     private val log: Log,
-    /** Sets the receiver to NuVotifier's port in `config.yml`. */
-    private val usePort: (Int, String?, Boolean) -> String?,
-    /** A name for an imported uuid with none, from the server's user cache. */
-    private val nameOf: (PlayerRef) -> String? = { null },
+    /** Where the receiver is set to NuVotifier's port (`config.yml`). */
+    private val files: co.xenastudios.xvote.Files?,
+    /** Names for imported uuids with none, from the server's user cache. */
+    private val server: VoteServer? = null,
 ) : VoteImports {
 
     override fun nuVotifier(): Outcome<String, String>? {
@@ -55,7 +77,7 @@ public class FileImports(
             if (read.keys != null) backUp(folder.resolve("rsa"), folder.resolve("rsa.before-import-$stamp"))
             if (read.tokens != null) backUp(folder.resolve(Tokens.FILE), folder.resolve("${Tokens.FILE}.before-import-$stamp"))
             NuVotifier.write(read, folder)
-            read.usePort(usePort)?.let { log.warn("Couldn't set receiver.port to NuVotifier's ${read.port}: $it") }
+            read.usePort(files)?.let { log.warn("Couldn't set receiver.port to NuVotifier's ${read.port}: $it") }
             Outcome.Ok(read.describe())
         } catch (e: IOException) {
             Outcome.Err(e.message ?: e.toString())
@@ -71,7 +93,7 @@ public class FileImports(
 
     override fun totals(source: String): Outcome<Pair<String, List<Imported>>, String> = try {
         val read = if (source == "superbvote") superbVote() else votingPlugin()
-        Outcome.Ok(read.first to read.second.map { if (it.name.isNotBlank()) it else Imported(it.player, nameOf(it.player) ?: "", it.total, it.lastVote) })
+        Outcome.Ok(read.first to read.second.map { if (it.name.isNotBlank()) it else Imported(it.player, server?.nameOf(it.player) ?: "", it.total, it.lastVote) })
     } catch (e: IOException) {
         Outcome.Err(e.message ?: e.toString())
     }

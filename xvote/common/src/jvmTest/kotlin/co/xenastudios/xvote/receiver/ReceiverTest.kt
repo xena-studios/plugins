@@ -436,7 +436,11 @@ class ReceiverHostTest {
         val xvote = plugins.resolve("xVote")
         val ports = ArrayList<Int>()
         val votes = LinkedBlockingQueue<IncomingVote>()
-        val host = ReceiverHost(xvote, { votes += it }, log, "plugins/xVote/rsa/public.key", plugins) { port, _, _ -> ports += port; null }
+        val files = object : co.xenastudios.xvote.Files {
+            override fun load(): co.xenastudios.xvote.Loaded = throw UnsupportedOperationException()
+            override fun useReceiver(port: Int, host: String?, v1: Boolean): String? = null.also { ports += port }
+        }
+        val host = ReceiverHost(xvote, log, "plugins/xVote/rsa/public.key", plugins, files, sink = { votes += it })
         try {
             host.apply(ReceiverSettings("127.0.0.1", 0, true, 8, 4, 5, 60))
             assertEquals(listOf(8193), ports, "NuVotifier's port, into config.yml")
@@ -458,7 +462,7 @@ class ReceiverHostTest {
 
     @Test
     fun aFreshFolderGetsAKeyAndADefaultToken() {
-        val host = ReceiverHost(folder, {}, log, "rsa/public.key")
+        val host = ReceiverHost(folder, log, "rsa/public.key")
         try {
             host.apply(ReceiverSettings("127.0.0.1", 0, true, 8, 4, 5, 60))
             assertTrue(Keys.exist(folder.resolve("rsa")))

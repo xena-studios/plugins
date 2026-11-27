@@ -28,17 +28,26 @@ import java.util.Base64
  */
 public class ReceiverHost(
     private val folder: Path,
-    private val sink: (IncomingVote) -> Unit,
     private val log: Log,
     /** Where the key is, as the owner finds it: `plugins/xVote/rsa/public.key`. */
     override val keyFile: String,
     /** The plugins folder NuVotifier would be in, or `null` where there's none (Fabric). */
     private val nuVotifierIn: Path? = null,
-    /** Sets the receiver's settings in `config.yml` to NuVotifier's, as it's taken over: `null`, or why it couldn't. */
-    private val useNuVotifierPort: (port: Int, host: String?, v1: Boolean) -> String? = { _, _, _ -> null },
+    /** Sets the receiver's settings in `config.yml` to NuVotifier's, as it's taken over. */
+    private val files: co.xenastudios.xvote.Files? = null,
     /** The command its lines name: `xvote`, or the proxy's `xvoteproxy`. */
     private val command: String = "xvote",
-) : VoteReceiver {
+    /** Where votes go before [plugin] is set, for tests. */
+    private val sink: ((IncomingVote) -> Unit)? = null,
+) : VoteReceiver, (IncomingVote) -> Unit {
+    /** Where every vote that arrives goes. */
+    @Volatile
+    public var plugin: co.xenastudios.xvote.XVotePlugin? = null
+
+    override fun invoke(vote: IncomingVote) {
+        plugin?.accept(vote) ?: sink?.invoke(vote)
+    }
+
     private val lock = Any()
     private var receiver: Receiver? = null
     private var failedSettings: ReceiverSettings? = null
@@ -63,7 +72,7 @@ public class ReceiverHost(
                 return
             }
             stop()
-            val next = Receiver(settings, current, sink, log)
+            val next = Receiver(settings, current, this, log)
             try {
                 next.start()
                 receiver = next
@@ -162,7 +171,7 @@ public class ReceiverHost(
             NuVotifier.write(read, folder)
             val what = listOfNotNull(if (read.keys != null) "keys" else null, if (read.tokens != null) "tokens" else null).joinToString(" and ")
             log.info("Took over NuVotifier's $what from plugins/${found.fileName}, so your lists keep working.")
-            read.usePort(useNuVotifierPort)?.let { log.warn("Couldn't set receiver.port to NuVotifier's ${read.port}: $it") }
+            read.usePort(files)?.let { log.warn("Couldn't set receiver.port to NuVotifier's ${read.port}: $it") }
         } catch (e: IOException) {
             log.warn("Couldn't take over NuVotifier's setup from plugins/${found.fileName}: ${e.message}")
         }
@@ -233,10 +242,10 @@ public object NuVotifier {
 
     /** What was read from NuVotifier: [port] 0 and [host] empty if its config didn't say. */
     public class Found(public val folder: Path, public val keys: KeyPair?, public val tokens: Tokens?, public val host: String, public val port: Int, public val v1: Boolean) {
-        /** Points xVote's receiver at NuVotifier's port, address and v1 setting through [use]. */
-        public fun usePort(use: (Int, String?, Boolean) -> String?): String? {
+        /** Points xVote's receiver at NuVotifier's port, address and v1 setting in [files]' `config.yml`. */
+        public fun usePort(files: co.xenastudios.xvote.Files?): String? {
             val address = host.takeIf { it.isNotBlank() && '%' !in it }
-            return if (port > 0 || address != null || !v1) use(port, address, v1) else null
+            return if (files != null && (port > 0 || address != null || !v1)) files.useReceiver(port, address, v1) else null
         }
 
         /** What was taken, in English: `its keys, 3 tokens, port 8192`. */

@@ -45,7 +45,7 @@ internal class Network private constructor(private val plugin: XVotePlugin) : Pr
         val id = ProxyPayload.read(message.payload) {
             if (int() != 1) null else long()
         } ?: return
-        plugin.votes?.heard(id)
+        plugin.votes()?.heard(id)
     }
 
     companion object {

@@ -24,6 +24,7 @@ import co.xenastudios.xvote.api.event.VotePartyEvent
 import co.xenastudios.xvote.api.event.VoteReceivedEvent
 import co.xenastudios.xvote.config.XVoteConfig
 import co.xenastudios.xvote.store.Ledger
+import co.xenastudios.xvote.store.Reads
 import co.xenastudios.xvote.store.Tx
 import co.xenastudios.xvote.vote.Facts
 import co.xenastudios.xvote.vote.IncomingVote
@@ -69,47 +70,26 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
     @Volatile
     private var stopping = false
 
-    @Volatile
-    var party: Ledger.PartyState = Ledger.PartyState(0, 0)
-        private set
+    var party: Reads.PartyState
+        get() = plugin.party
+        private set(value) {
+            plugin.party = value
+        }
 
     private val voters get() = plugin.voters
     private val online get() = plugin.online
     private val pays: Boolean get() = !plugin.server.proxy
 
+    init {
+        // Made with the first vote or join, not as the server starts: what's left of 1.x's
+        // upkeep at setup is done then.
+        forgetUnknown(plugin.now())
+    }
+
     /** A claim no other server or moment can have: this run's random id and a counter. */
     fun newClaim(): String = origin + "-" + locked(this) { ++claims }.toString(36)
 
-    private fun siteWindow(): Long = maxOf(SITE_WINDOW_MS, plugin.rewards.longestCooldown)
-
-    /** Reads every voter and the party's count. */
-    fun load(now: Long): Pending<Outcome<Int, DbError>> {
-        val periods = voters.periods
-        val window = siteWindow()
-        val done = newPending<Outcome<Int, DbError>>()
-        db.read { session ->
-            Tx.read(session, db.sql) { tx -> Ledger.loadAll(tx, periods, now, window) to Ledger.party(tx, false) }
-        }.onSettled { read, error ->
-            when (read) {
-                is Outcome.Ok -> {
-                    voters.putAll(read.value.first.values)
-                    party = read.value.second
-                    done.resolve(Outcome.Ok(read.value.first.size))
-                }
-                is Outcome.Err -> done.resolve(read)
-                null -> done.resolve(Outcome.Err(DbError(DbError.Kind.UNAVAILABLE, error.toString())))
-            }
-        }
-        return done
-    }
-
-    /** Listens to the other servers' votes, payouts and parties. Before the feed starts. */
-    fun subscribe(feed: ChangeFeed) {
-        feed.subscribe("vote") { change -> change.payload.trim().toLongOrNull()?.let(::heard) }
-        feed.subscribe("player") { change -> PlayerRef.parseOrNull(change.payload.trim())?.let(::refresh) }
-        feed.subscribe("party") { change -> partyNews(change.payload) }
-        feed.onResync { resync() }
-    }
+    internal fun siteWindow(): Long = maxOf(SITE_WINDOW_MS, plugin.rewards.longestCooldown)
 
     /**
      * This server may have missed other servers' news (it couldn't reach the database for a
@@ -117,7 +97,7 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
      * is waiting for them, as a join would. Claims make it safe to run any time.
      */
     fun resync() {
-        load(plugin.now()).onSettled { _, _ ->
+        plugin.loadVoters().onSettled { _, _ ->
             for ((player, name) in online.all()) joined(player, name)
         }
     }
@@ -193,7 +173,7 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
         val facts: Facts?,
         val claim: String?,
         val voter: Voter?,
-        val party: Ledger.PartyState?,
+        val party: Reads.PartyState?,
         val partyFrom: Long,
         val left: Long,
     )
@@ -212,23 +192,23 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
         val facts = id?.let { Ledger.count(tx, voteId, it, shown, vote.site, vote.receivedAt, voters.periods) }
         tx.publish(feed, "vote", voteId.toString())
 
-        var after: Ledger.PartyState? = null
+        var after: Reads.PartyState? = null
         var partyFrom = -1L
         var left = -1L
         val config = plugin.config
         if (config[XVoteConfig.party.enabled]) {
             val needed = config[XVoteConfig.party.votes]
-            val before = Ledger.party(tx, true)
+            val before = Reads.party(tx, true)
             val since = if (before.since == 0L) vote.receivedAt else before.since
             val count = before.votes + 1
             if (count >= needed) {
                 partyFrom = since
                 // The next round starts after this vote: its voter was rewarded by this party, and
                 // isn't again by the next unless they vote again.
-                after = Ledger.PartyState(0, vote.receivedAt + 1)
+                after = Reads.PartyState(0, vote.receivedAt + 1)
                 tx.publish(feed, "party", "start:$since")
             } else {
-                after = Ledger.PartyState(count, since)
+                after = Reads.PartyState(count, since)
                 val remaining = needed - count
                 val every = config[XVoteConfig.party.progressEvery]
                 if (every > 0 && remaining % every == 0L) {
@@ -238,7 +218,7 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
             }
             Ledger.party(tx, after)
         }
-        val voter = id?.let { Ledger.voter(tx, it, voters.periods, vote.receivedAt, siteWindow()) }
+        val voter = id?.let { Reads.voter(tx, it, voters.periods, vote.receivedAt, siteWindow()) }
         return Stored(if (id == null) VoteResult.WAITING else VoteResult.COUNTED, facts, claim, voter, after, partyFrom, left)
     }
 
@@ -383,7 +363,7 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
                 Ledger.rename(tx, player, name)
                 val claim = newClaim()
                 val unpaid = if (stopping) emptyList() else Ledger.claimUnpaid(tx, player, claim, now)
-                Joined(Ledger.voter(tx, player, periods, now, window), unpaid, claim, matched)
+                Joined(Reads.voter(tx, player, periods, now, window), unpaid, claim, matched)
             }
         }.onSettled { joined, error ->
             if (joined !is Outcome.Ok) {
@@ -409,7 +389,7 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
 
     // ---- news from the other servers ----
 
-    private class Heard(val player: PlayerRef?, val voter: Voter?, val unpaid: List<Facts>, val claim: String?, val party: Ledger.PartyState, val matched: List<Facts>)
+    private class Heard(val player: PlayerRef?, val voter: Voter?, val unpaid: List<Facts>, val claim: String?, val party: Reads.PartyState, val matched: List<Facts>)
 
     /** A vote was stored elsewhere (another server, or the proxy): count it here, and pay it if its player is online here. */
     fun heard(voteId: Long) {
@@ -420,7 +400,7 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
         db.transaction { session ->
             Tx.run(session, db.sql) { tx ->
                 val row = Ledger.read(tx, voteId)
-                val partyNow = Ledger.party(tx, false)
+                val partyNow = Reads.party(tx, false)
                 if (row == null) return@run Heard(null, null, emptyList(), null, partyNow, emptyList())
                 var player = row.player
                 var matched = emptyList<Facts>()
@@ -442,7 +422,7 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
                     claim = newClaim()
                     unpaid = Ledger.claimUnpaid(tx, player, claim, now)
                 }
-                Heard(player, Ledger.voter(tx, player, periods, now, window), unpaid, claim, partyNow, matched)
+                Heard(player, Reads.voter(tx, player, periods, now, window), unpaid, claim, partyNow, matched)
             }
         }.onSettled { heard, error ->
             if (heard !is Outcome.Ok) {
@@ -463,20 +443,20 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
         val now = plugin.now()
         val periods = voters.periods
         val window = siteWindow()
-        db.read { session -> Tx.read(session, db.sql) { tx -> Ledger.voter(tx, player, periods, now, window) } }.onSettled { voter, _ ->
+        db.read { session -> Tx.read(session, db.sql) { tx -> Reads.voter(tx, player, periods, now, window) } }.onSettled { voter, _ ->
             ((voter as? Outcome.Ok)?.value)?.let(voters::put)
         }
     }
 
-    private fun partyNews(payload: String) {
+    fun partyNews(payload: String) {
         when {
             payload.startsWith("start:") -> {
-                party = Ledger.PartyState(0, plugin.now())
+                party = Reads.PartyState(0, plugin.now())
                 if (pays) party(payload.substring(6).trim().toLongOrNull() ?: 0L)
             }
             payload.startsWith("left:") -> {
                 val left = payload.substring(5).trim().toLongOrNull() ?: return
-                party = Ledger.PartyState(maxOf(0L, plugin.config[XVoteConfig.party.votes] - left), party.since)
+                party = Reads.PartyState(maxOf(0L, plugin.config[XVoteConfig.party.votes] - left), party.since)
                 if (pays) progress(left)
             }
         }
@@ -526,15 +506,15 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
         val done = newPending<Outcome<Unit, DbError>>()
         db.transaction { session ->
             Tx.run(session, db.sql) { tx ->
-                val before = Ledger.party(tx, true)
+                val before = Reads.party(tx, true)
                 val since = if (before.since == 0L) now else before.since
-                Ledger.party(tx, Ledger.PartyState(0, now))
+                Ledger.party(tx, Reads.PartyState(0, now))
                 tx.publish(feed, "party", "start:$since")
                 since
             }
         }.onSettled { since, error ->
             if (since is Outcome.Ok) {
-                party = Ledger.PartyState(0, now)
+                party = Reads.PartyState(0, now)
                 if (pays) party(since.value)
                 done.resolve(Outcome.Ok(Unit))
             } else {

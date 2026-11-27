@@ -10,7 +10,7 @@ import co.xenastudios.core.jvm.admin.MclogsPaste
 import co.xenastudios.core.jvm.db.Drivers
 import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.core.loader.PluginEntry
-import co.xenastudios.xvote.FileImports
+import co.xenastudios.xvote.DeferredImports
 import co.xenastudios.xvote.Json
 import co.xenastudios.xvote.JvmDatabase
 import co.xenastudios.xvote.JvmFiles
@@ -68,9 +68,7 @@ public class XVoteBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
         val config = files.config()
         val drivers = Drivers(plugin.javaClass.classLoader, platform.driverFetcher())
         val plugins = folder.toAbsolutePath().parent
-        // The receiver hands votes to the plugin, made just below.
-        var made: XVotePlugin? = null
-        val receiver = ReceiverHost(folder, { vote -> made?.accept(vote) }, platform.log, "plugins/${plugin.name}/rsa/public.key", plugins, files::useReceiver)
+        val receiver = ReceiverHost(folder, platform.log, "plugins/${plugin.name}/rsa/public.key", plugins, files)
         val xvote = XVotePlugin(
             platform, server, files, cache, platform.players, cache,
             opener = JvmDatabase(family, folder, plugins.resolve("Xena"), drivers, platform.log),
@@ -80,15 +78,13 @@ public class XVoteBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
             // -Dxena.debug.paste=false writes debug reports to the plugin's folder instead (boot tests do).
             paste = if (System.getProperty("xena.debug.paste") == "false") null else MclogsPaste(),
             receiver = receiver,
-            imports = FileImports(plugins, folder, drivers, platform.log, files::useReceiver) { ref ->
-                plugin.server.getOfflinePlayer(java.util.UUID.fromString(ref.toString())).name
-            },
+            imports = DeferredImports(plugins, folder, drivers, platform.log, files, server),
             // Behind a proxy, read at startup: the channel opens once.
             channel = if (config.config[XVoteConfig.network.enabled]) platform.proxyChannel(XVotePlugin.PLUGIN_ID) else null,
             zones = JvmZones,
             version = plugin.description.version,
         )
-        made = xvote
+        receiver.plugin = xvote
         this.platform = platform
         this.xvote = xvote
         platform.commands.feedback = xvote.texts.feedback

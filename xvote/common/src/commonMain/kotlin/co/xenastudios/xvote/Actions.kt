@@ -64,7 +64,7 @@ internal class Actions private constructor(private val plugin: XVotePlugin) {
         }
         val config = plugin.config
         if (config[XVoteConfig.party.enabled]) {
-            val votes = plugin.votes?.party?.votes ?: 0L
+            val votes = plugin.party.votes
             val needed = config[XVoteConfig.party.votes]
             texts.reply(source, XVoteMessages.listParty, "votes" to votes, "needed" to needed, "left" to maxOf(0L, needed - votes))
         }
@@ -146,7 +146,7 @@ internal class Actions private constructor(private val plugin: XVotePlugin) {
         val service = site?.service ?: siteArg ?: "test"
         val now = plugin.now()
         val timestamp = now.toString()
-        val votes = plugin.votes ?: return texts.reply(source, XVoteMessages.testFailed, "player" to name)
+        val votes = plugin.votes() ?: return texts.reply(source, XVoteMessages.testFailed, "player" to name)
         plugin.platform.scheduler.run(Where.Async) { _ ->
             val receiver = plugin.receiver
             val status = receiver?.status
@@ -200,7 +200,7 @@ internal class Actions private constructor(private val plugin: XVotePlugin) {
         }
         val backend = plugin.backend
         val storage = (backend?.database?.description ?: plugin.failure ?: "not open") + if (backend?.shared == true) texts.word(source.player, XVoteMessages.statusNetwork) else ""
-        val party: Any = if (config[XVoteConfig.party.enabled]) Texts.Word(XVoteMessages.statusPartyOn, "votes" to (plugin.votes?.party?.votes ?: 0L), "needed" to config[XVoteConfig.party.votes]) else XVoteMessages.statusPartyOff
+        val party: Any = if (config[XVoteConfig.party.enabled]) Texts.Word(XVoteMessages.statusPartyOn, "votes" to (plugin.party.votes), "needed" to config[XVoteConfig.party.votes]) else XVoteMessages.statusPartyOff
         texts.reply(source, XVoteMessages.statusHeader, "receiver" to listening, "storage" to storage, "voters" to plugin.voters.size, "party" to party)
         if (plugin.server.proxy && backend != null && !backend.shared) texts.reply(source, XVoteMessages.proxyNoNetwork)
         val db = backend?.database ?: return
@@ -279,7 +279,7 @@ internal class Actions private constructor(private val plugin: XVotePlugin) {
         val read = imports.totals(from)
         if (read is Outcome.Err) return texts.reply(source, XVoteMessages.importFailed, "source" to from, "reason" to read.error)
         val (where, players) = (read as Outcome.Ok).value
-        val votes = plugin.votes ?: return texts.reply(source, XVoteMessages.importStoreFailed, "reason" to (plugin.failure ?: "the database isn't open"))
+        val votes = plugin.votes() ?: return texts.reply(source, XVoteMessages.importStoreFailed, "reason" to (plugin.failure ?: "the database isn't open"))
         val db = votes.backend.database
         val now = plugin.now()
         val periods = plugin.voters.periods
@@ -293,7 +293,7 @@ internal class Actions private constructor(private val plugin: XVotePlugin) {
             when {
                 result !is Outcome.Ok -> texts.reply(source, XVoteMessages.importStoreFailed, "reason" to ((result as? Outcome.Err)?.error?.detail ?: error.toString()))
                 result.value < 0 -> texts.reply(source, XVoteMessages.importAgain, "source" to label, "ago" to Durations.format((now + result.value).milliseconds), "command" to from)
-                else -> votes.load(now).onSettled { _, _ -> texts.reply(source, XVoteMessages.importDone, "count" to result.value, "from" to where) }
+                else -> plugin.loadVoters().onSettled { _, _ -> texts.reply(source, XVoteMessages.importDone, "count" to result.value, "from" to where) }
             }
         }
     }
@@ -304,12 +304,12 @@ internal class Actions private constructor(private val plugin: XVotePlugin) {
         val config = plugin.config
         if (!start) {
             return if (config[XVoteConfig.party.enabled]) {
-                texts.reply(source, XVoteMessages.partyStatus, "votes" to (plugin.votes?.party?.votes ?: 0L), "needed" to config[XVoteConfig.party.votes])
+                texts.reply(source, XVoteMessages.partyStatus, "votes" to (plugin.party.votes), "needed" to config[XVoteConfig.party.votes])
             } else {
                 texts.reply(source, XVoteMessages.partyOff)
             }
         }
-        val votes = plugin.votes ?: return texts.reply(source, XVoteMessages.partyFailed, "reason" to (plugin.failure ?: "the database isn't open"))
+        val votes = plugin.votes() ?: return texts.reply(source, XVoteMessages.partyFailed, "reason" to (plugin.failure ?: "the database isn't open"))
         votes.startParty().onSettled { done, error ->
             if (done is Outcome.Ok) texts.reply(source, XVoteMessages.partyForced)
             else texts.reply(source, XVoteMessages.partyFailed, "reason" to ((done as? Outcome.Err)?.error?.detail ?: error.toString()))

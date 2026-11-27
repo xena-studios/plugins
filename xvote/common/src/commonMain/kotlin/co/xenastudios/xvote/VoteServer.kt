@@ -33,6 +33,9 @@ public interface VoteServer {
     /** Runs [line] (no slash) as the console, on the server's global thread: a reward's command. */
     public fun dispatch(line: String)
 
+    /** The name the server knows [player] by, even offline (Bukkit's user cache); `null` if it doesn't. Off the server's threads. */
+    public fun nameOf(player: PlayerRef): String? = null
+
     /** A player the server knows by [name] (its user cache), from memory, with their name as it has it; `null` if it doesn't. */
     public fun known(name: String): Pair<PlayerRef, String>? = null
 

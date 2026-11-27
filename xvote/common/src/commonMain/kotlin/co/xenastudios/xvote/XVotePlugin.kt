@@ -47,6 +47,7 @@ import co.xenastudios.xvote.api.VoterStats
 import co.xenastudios.xvote.api.XVote
 import co.xenastudios.xvote.api.XVoteApi
 import co.xenastudios.xvote.config.XVoteConfig
+import co.xenastudios.xvote.store.Reads
 import co.xenastudios.xvote.store.Tables
 import co.xenastudios.xvote.vote.IncomingVote
 import co.xenastudios.xvote.vote.Online
@@ -147,10 +148,25 @@ public class XVotePlugin(
 
     /** What's open, or `null` before the database is ready. */
     @Volatile
-    internal var votes: Votes? = null
+    public var backend: Backend? = null
         private set
 
-    public val backend: Backend? get() = votes?.backend
+    /** The vote party's count, as last read or stored. */
+    @Volatile
+    internal var party: Reads.PartyState = Reads.PartyState(0, 0)
+
+    @Volatile
+    private var madeVotes: Votes? = null
+
+    /**
+     * Where votes go, made with the first vote, join or news from another server, not as the server
+     * starts (decisions/2026-11-25-a-lighter-core.md); `null` before the database is open.
+     */
+    internal fun votes(): Votes? {
+        madeVotes?.let { return it }
+        val backend = backend ?: return null
+        return locked(this) { madeVotes ?: Votes(this, backend).also { madeVotes = it } }
+    }
 
     /** Why there's no database, if opening it failed. */
     @Volatile
@@ -218,7 +234,6 @@ public class XVotePlugin(
         private var step = 0
         private var db: Database? = null
         private var feed: ChangeFeed? = null
-        private var votes: Votes? = null
 
         override fun invoke(task: Task) {
             if (!plugin.running) return
@@ -246,12 +261,9 @@ public class XVotePlugin(
                 1 -> {
                     if (value !is Outcome.Ok<*>) return fail("Couldn't start network mode: ${(value as? Outcome.Err<*>)?.error ?: error}", true)
                     feed = (value.value as? ChangeFeed)?.takeIf { it.isOn }
-                    val made = Votes(plugin, Backend(db, feed))
-                    votes = made
-                    made.load(plugin.now()).onSettled(this)
+                    plugin.loadVoters(db).onSettled(this)
                 }
                 else -> {
-                    val made = votes!!
                     if (value !is Outcome.Ok<*>) return fail("Couldn't read the voters from ${db.description}: ${(value as? Outcome.Err<*>)?.error ?: error}", true)
                     if (!plugin.running) {
                         feed?.close()
@@ -259,10 +271,10 @@ public class XVotePlugin(
                         return
                     }
                     feed?.let {
-                        made.subscribe(it)
+                        for (kind in 0..3) News(plugin, kind).subscribe(it)
                         it.start()
                     }
-                    plugin.votes = made
+                    plugin.backend = Backend(db, feed)
                     plugin.failure = null
                     plugin.log.info("Loaded ${plugin.voters.size} voters from ${db.description}" + if (feed != null) ", sharing votes with the network." else ".")
                     if (plugin.server.proxy && feed == null) {
@@ -272,8 +284,7 @@ public class XVotePlugin(
                     XVote.register(plugin)
                     plugin.ready.resolve(true)
                     // Players online already (a reload of the server): treat them as joining now.
-                    for (player in plugin.server.online()) plugin.server.name(player)?.let { made.joined(player, it) }
-                    made.forgetUnknown(plugin.now())
+                    for (player in plugin.server.online()) plugin.server.name(player)?.let { plugin.votes()?.joined(player, it) }
                     plugin.applyReceiver()
                 }
             }
@@ -287,6 +298,69 @@ public class XVotePlugin(
             plugin.log.error("xVote can't count votes without its database. Fix storage in config.yml and restart.")
             plugin.ready.resolve(false)
         }
+    }
+
+    /** The change feed's news, each topic handed to the votes (made then), and its resync: one class, told apart by [kind]. */
+    private class News(private val plugin: XVotePlugin, private val kind: Int) : (co.xenastudios.core.common.db.Change) -> Unit, () -> Unit {
+        fun subscribe(feed: ChangeFeed) {
+            when (kind) {
+                0 -> feed.subscribe("vote", this)
+                1 -> feed.subscribe("player", this)
+                2 -> feed.subscribe("party", this)
+                else -> feed.onResync(this)
+            }
+        }
+
+        override fun invoke(change: co.xenastudios.core.common.db.Change) {
+            val votes = plugin.votes() ?: return
+            val payload = change.payload.trim()
+            when (kind) {
+                0 -> payload.toLongOrNull()?.let(votes::heard)
+                1 -> PlayerRef.parseOrNull(payload)?.let(votes::refresh)
+                else -> votes.partyNews(payload)
+            }
+        }
+
+        override fun invoke() {
+            plugin.votes()?.resync()
+        }
+    }
+
+    /** Reads every voter and the party's count into memory, on a reader of [db]. */
+    internal fun loadVoters(db: Database? = backend?.database): Pending<Outcome<Int, co.xenastudios.core.common.db.DbError>> {
+        val done = newPending<Outcome<Int, co.xenastudios.core.common.db.DbError>>()
+        val database = db ?: return done.also { it.resolve(Outcome.Err(co.xenastudios.core.common.db.DbError(co.xenastudios.core.common.db.DbError.Kind.CLOSED, "the database isn't open"))) }
+        val load = VoterLoad(this, done)
+        database.read(ReadAll(database, voters.periods, now(), maxOf(Votes.SITE_WINDOW_MS, rewards.longestCooldown))).onSettled(load)
+        return done
+    }
+
+    /** One read of every voter, and what's done with it: a class, not lambdas. */
+    private class VoterLoad(private val plugin: XVotePlugin, private val done: Pending<Outcome<Int, co.xenastudios.core.common.db.DbError>>) : (Any?, Throwable?) -> Unit {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(value: Any?, error: Throwable?) {
+            val read = value as? Outcome<Pair<Map<PlayerRef, co.xenastudios.xvote.vote.Voter>, Reads.PartyState>, co.xenastudios.core.common.db.DbError>
+            when (read) {
+                is Outcome.Ok -> {
+                    plugin.voters.putAll(read.value.first.values)
+                    plugin.party = read.value.second
+                    done.resolve(Outcome.Ok(read.value.first.size))
+                }
+                is Outcome.Err -> done.resolve(read)
+                null -> done.resolve(Outcome.Err(co.xenastudios.core.common.db.DbError(co.xenastudios.core.common.db.DbError.Kind.UNAVAILABLE, error.toString())))
+            }
+        }
+    }
+
+    private class ReadAll(private val db: Database, private val periods: Periods, private val now: Long, private val window: Long) :
+        (co.xenastudios.core.common.db.SqlSession) -> Outcome<Pair<Map<PlayerRef, co.xenastudios.xvote.vote.Voter>, Reads.PartyState>, co.xenastudios.core.common.db.DbError> {
+        override fun invoke(session: co.xenastudios.core.common.db.SqlSession): Outcome<Pair<Map<PlayerRef, co.xenastudios.xvote.vote.Voter>, Reads.PartyState>, co.xenastudios.core.common.db.DbError> =
+            try {
+                val tx = co.xenastudios.xvote.store.Tx(session, db.sql)
+                Outcome.Ok(Reads.loadAll(tx, periods, now, window) to Reads.party(tx, false))
+            } catch (e: co.xenastudios.xvote.store.TxFailed) {
+                Outcome.Err(e.error)
+            }
     }
 
     /** Tests only: network mode on an SQLite file two plugins share, standing in for a network's MySQL. */
@@ -304,16 +378,21 @@ public class XVotePlugin(
         channel?.close()
         val done = newPending<Unit>()
         val receiver = receiver
-        val votes = votes
+        val votes = madeVotes
+        val backend = backend
         // Off the server's threads: closing the receiver waits for its thread.
         platform.scheduler.run(Where.Async) { _ ->
             receiver?.close()
-            if (votes == null) {
+            if (backend == null) {
                 done.resolve(Unit)
                 return@run
             }
-            votes.backend.feed?.close()
-            votes.shutdown().onSettled { _, _ -> votes.backend.database.close().onSettled { _, _ -> done.resolve(Unit) } }
+            backend.feed?.close()
+            if (votes == null) {
+                backend.database.close().onSettled { _, _ -> done.resolve(Unit) }
+            } else {
+                votes.shutdown().onSettled { _, _ -> backend.database.close().onSettled { _, _ -> done.resolve(Unit) } }
+            }
         }
         return done
     }
@@ -356,7 +435,9 @@ public class XVotePlugin(
         config = loaded.config
         texts.translations = loaded.translations
         val warnings = ArrayList<String>()
-        rewards = Rewards.of(config, server) { warnings += "config.yml: $it" }
+        rewards = Rewards.of(config, server, Collect(warnings), Collect(null, log))
+        // The items are read on the next tick, not as the plugin enables (Rewards.RewardEntry).
+        if (!server.proxy) platform.scheduler.run(Where.Global, delay = co.xenastudios.core.common.scheduler.TICK, action = Check(rewards))
         val zoneText = config[XVoteConfig.counting.timeZone].trim()
         val zone = if (zoneText.isEmpty() || zoneText.equals("server", ignoreCase = true)) zones.server else zones.of(zoneText) ?: zones.server.also {
             warnings += "config.yml: counting.time-zone (\"$zoneText\") isn't a time zone, such as Europe/London; using the server's."
@@ -370,8 +451,8 @@ public class XVotePlugin(
         problems = loaded.problems + warnings
         updates?.apply(updateSettings)
         madePayout?.reloaded()
-        if (votes != null) {
-            votes?.forgetUnknown(now())
+        if (backend != null) {
+            madeVotes?.forgetUnknown(now())
             applyReceiver()
         }
         return problems
@@ -402,22 +483,12 @@ public class XVotePlugin(
 
     /** [player] joined (on a proxy, logged in): their votes held by name become theirs, and everything unpaid is paid; then a reminder. On their thread. */
     public fun joined(player: PlayerRef, name: String) {
-        val votes = votes
-        if (votes == null) {
-            // Before the voters are read: the start treats everyone online as joining.
-            online.add(player, name)
-            return
-        }
-        votes.joined(player, name)
-        if (!server.proxy && config[XVoteConfig.reminders.onJoin]) {
-            val delay = config[XVoteConfig.reminders.joinDelaySeconds].coerceAtLeast(0)
-            platform.scheduler.run(Where.On(player.uuid), delay = delay.seconds.coerceAtLeast(co.xenastudios.core.common.scheduler.TICK)) { _ -> remind(player) }
-        }
+        Calls.joined(this, player, name)
     }
 
     /** [player] left. */
     public fun quit(player: PlayerRef, name: String) {
-        votes?.quit(player, name) ?: online.remove(player, name)
+        madeVotes?.quit(player, name) ?: online.remove(player, name)
     }
 
     /** The proxy only: [player] is now on [toServer]. */
@@ -426,71 +497,39 @@ public class XVotePlugin(
     }
 
     /** The sites [player] can vote on now. */
-    internal fun available(player: PlayerRef?, now: Long): List<Rewards.SiteEntry> {
-        val voter = player?.let { voters[it] }
-        return rewards.sites.filter { voter == null || voter.lastOn(it.service) + it.cooldownMs <= now }
-    }
+    internal fun available(player: PlayerRef?, now: Long): List<Rewards.SiteEntry> = Calls.available(this, player, now)
 
     /** Reminds [player] if they can vote. On their thread. */
     internal fun remind(player: PlayerRef) {
-        if (server.name(player) == null || rewards.sites.isEmpty()) return
-        val open = available(player, now()).size
-        if (open > 0) texts.send(player, XVoteMessages.reminder, "available" to open)
+        Calls.remind(this, player)
     }
 
     /** Items that didn't fit: kept in the database for `/vote claim`. */
     internal fun hold(player: PlayerRef, items: List<ByteArray>, count: Int) {
-        val votes = votes ?: return
-        val db = votes.backend.database
-        db.transaction { session -> co.xenastudios.xvote.store.Tx.run(session, db.sql) { tx -> co.xenastudios.xvote.store.Ledger.hold(tx, player, items, now()) } }
-            .onSettled { done, error ->
-                if (done is Outcome.Ok) {
-                    texts.send(player, XVoteMessages.claimHeld, "count" to count)
-                } else {
-                    log.warn("Couldn't keep ${server.name(player) ?: player}'s reward items that didn't fit: ${(done as? Outcome.Err)?.error?.detail ?: error}")
-                }
-            }
+        Calls.hold(this, player, items, count)
     }
 
     // ---- the API ----
 
-    override fun stats(player: PlayerRef): VoterStats {
-        val voter = voters[player] ?: return VoterStats(player, "", 0, 0, 0, 0, 0, 0, emptyMap())
-        val now = now()
-        val periods = voters.periods
-        return VoterStats(player, voter.name, voter.total, voter.today(periods, now), voter.week(periods, now), voter.month(periods, now),
-            voter.streakNow(periods, now), voter.bestStreak, voter.lastBySite)
-    }
+    // Each in Calls, loaded with the first plugin to call one, not at startup.
+    override fun stats(player: PlayerRef): VoterStats = Calls.stats(this, player)
 
-    override fun top(period: Period, limit: Int): List<TopVoter> {
-        val ranked = voters.top(period, now())
-        val count = minOf(maxOf(1, limit), ranked.size)
-        return List(count) { i -> ranked[i].let { TopVoter(it.rank, it.voter.id, it.voter.name, it.votes) } }
-    }
+    override fun top(period: Period, limit: Int): List<TopVoter> = Calls.top(this, period, limit)
 
-    override fun party(): PartyProgress {
-        val votes = votes?.party?.votes ?: 0
-        return PartyProgress(minOf(Int.MAX_VALUE.toLong(), votes).toInt(), if (config[XVoteConfig.party.enabled]) config[XVoteConfig.party.votes] else 0)
-    }
+    override fun party(): PartyProgress = Calls.party(this)
 
     override fun registerRewardType(owner: String, id: String, type: RewardType) {
-        require(id.length in 1..64 && id.all { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it == '-' || it == '_' }) {
-            "A reward type's id is 1 to 64 letters, digits, - and _; got \"$id\"."
-        }
-        rewardTypes[id.lowercase()] = Payout.Registered(owner, type)
+        Calls.register(this, owner, id, type)
     }
 
     override fun unregisterRewardType(id: String) {
         rewardTypes.remove(id.lowercase())
     }
 
-    override fun submitVote(site: String, username: String, address: String): Pending<VoteResult> {
-        val now = now()
-        return accept(IncomingVote(site, username, address, now.toString(), VoteSource.API, now))
-    }
+    override fun submitVote(site: String, username: String, address: String): Pending<VoteResult> = Calls.submit(this, site, username, address)
 
     /** Where every vote arriving goes: the receiver, `/vote test`, the API. [VoteResult.FAILED] before the database is open. */
-    public fun accept(vote: IncomingVote): Pending<VoteResult> = votes?.accept(vote) ?: pendingOf(VoteResult.FAILED).also {
+    public fun accept(vote: IncomingVote): Pending<VoteResult> = votes()?.accept(vote) ?: pendingOf(VoteResult.FAILED).also {
         log.warn("A vote from ${vote.site} for ${vote.username} arrived before the database was open, so it's dropped.")
     }
 
@@ -500,6 +539,23 @@ public class XVotePlugin(
 
         /** xVote's version. The adapters' builds check theirs is the same. */
         public const val VERSION: String = "2.0.0"
+    }
+}
+
+/**
+ * A warning, into a list as the config loads or to the console later, and reading every reward's
+ * items a tick after a load: one class, not a lambda each.
+ */
+private class Collect(private val into: MutableList<String>?, private val log: co.xenastudios.core.common.platform.Log? = null) : (String) -> Unit {
+    override fun invoke(warning: String) {
+        if (into != null) into += "config.yml: $warning" else log?.warn(warning)
+    }
+}
+
+/** Reads every reward's items, a tick after a load. */
+private class Check(private val rewards: Rewards) : (Task) -> Unit {
+    override fun invoke(task: Task) {
+        rewards.check()
     }
 }
 

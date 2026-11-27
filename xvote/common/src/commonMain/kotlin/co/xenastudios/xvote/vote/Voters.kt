@@ -323,21 +323,21 @@ public class Voters(periods: Periods) {
             val votes = votes(voter, period, now)
             if (votes > 0) unsorted += Ranked(0, voter, votes)
         }
-        unsorted.sortWith(RANKING)
+        unsorted.sortWith(Ranking)
         val ranked = ArrayList<Ranked>(unsorted.size)
         for ((i, entry) in unsorted.withIndex()) ranked += Ranked(i + 1, entry.voter, entry.votes)
         boards[period] = Board(key, seen, ranked)
         return ranked
     }
 
-    private companion object {
-        // Most votes, then whoever got there first, then by name: a class, not a chain of lambdas.
-        val RANKING = object : Comparator<Ranked> {
-            override fun compare(a: Ranked, b: Ranked): Int {
-                if (a.votes != b.votes) return b.votes.compareTo(a.votes)
-                if (a.voter.lastVote != b.voter.lastVote) return a.voter.lastVote.compareTo(b.voter.lastVote)
-                return a.voter.name.compareTo(b.voter.name, ignoreCase = true)
-            }
-        }
+}
+
+// Most votes, then whoever got there first, then by name: an object, loaded with the first
+// leaderboard, not as the server starts.
+private object Ranking : Comparator<Voters.Ranked> {
+    override fun compare(a: Voters.Ranked, b: Voters.Ranked): Int {
+        if (a.votes != b.votes) return b.votes.compareTo(a.votes)
+        if (a.voter.lastVote != b.voter.lastVote) return a.voter.lastVote.compareTo(b.voter.lastVote)
+        return a.voter.name.compareTo(b.voter.name, ignoreCase = true)
     }
 }

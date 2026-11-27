@@ -168,4 +168,21 @@ class LanguageTagTest {
 
     private val ctx = co.xenastudios.core.common.config.ConfigContext.DEFAULT
     private fun scalar(text: String) = co.xenastudios.core.common.config.YamlNode.Scalar(text)
+
+    private object Screens : MessageBundle() {
+        val ban = message("screens.ban", "<error>Banned: <reason>", placeholders = listOf("reason"), optional = listOf("staff", "appeal"))
+    }
+
+    @Test
+    fun anOptionalPlaceholderMayBeUsedOrLeftOut() {
+        val catalog = MessageCatalog.of(Screens)
+        assertEquals(listOf("reason", "staff", "appeal"), Screens.ban.placeholders)
+        assertEquals(listOf("staff", "appeal"), Screens.ban.optional)
+        val without = "screens.ban: \"<error>Gebannt: <reason>\"\n"
+        assertEquals(emptyList(), TranslationCheck.check(catalog, DE, without, TestYaml))
+        val with = without.replace("<reason>\"", "<reason> von <staff>\"")
+        assertEquals(emptyList(), TranslationCheck.check(catalog, DE, with, TestYaml))
+        val dropped = without.replace("<reason>", "")
+        assertEquals(listOf(TranslationIssue.Kind.DROPPED_PLACEHOLDER), TranslationCheck.check(catalog, DE, dropped, TestYaml).map { it.kind })
+    }
 }

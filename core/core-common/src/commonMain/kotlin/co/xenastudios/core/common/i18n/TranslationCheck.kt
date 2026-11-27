@@ -89,11 +89,14 @@ public object TranslationCheck {
         }
     }
 
-    /** Placeholders [message] declares that [text] leaves out. */
+    /**
+     * Placeholders [message]'s English uses that [text] leaves out. One it only offers
+     * ([MessageKey.optional]) may be left out, as the English does.
+     */
     internal fun droppedPlaceholders(message: MessageKey, text: String): List<String> {
         if (message.placeholders.isEmpty()) return emptyList()
         val used = MarkupTags.names(text).toSet()
-        return message.placeholders.filter { it !in used }
+        return message.placeholders.filter { it !in used && it !in message.optional }
     }
 }
 

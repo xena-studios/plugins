@@ -168,9 +168,23 @@ check "xTeleport's real-client checks" xteleport/bukkit/client-checks.txt \
   $'tasks=:build :xteleport:api:build :xteleport:bukkit:build :xteleport:common:build\nchecks=\nboot=bukkit'
 check "xTeleport's Fabric mod (platform-fabric's build)" xteleport/fabric/src/main/kotlin/co/xenastudios/xteleport/fabric/FabricTeleportServer.kt \
   $'checks=\nboot=fabric'
+check "xBans' common code" xbans/common/src/commonMain/kotlin/co/xenastudios/xbans/Punisher.kt \
+  $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=bukkit fabric proxy'
+check "xBans' API" xbans/api/src/commonMain/kotlin/co/xenastudios/xbans/api/XBansApi.kt \
+  $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=bukkit fabric proxy'
+check "xBans' Bukkit adapter" xbans/bukkit/src/main/kotlin/co/xenastudios/xbans/bukkit/Guards.kt \
+  $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=bukkit'
+check "xBans' real-client checks" xbans/bukkit/client-checks.txt \
+  $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=bukkit'
+check "xBans' Fabric mod (platform-fabric's build)" xbans/fabric/src/main/kotlin/co/xenastudios/xbans/fabric/XBansMod.kt \
+  $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=fabric'
+check "xBans' Velocity door" xbans/velocity/src/main/kotlin/co/xenastudios/xbans/velocity/XBansVelocity.kt \
+  $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=proxy'
+check "xBans' network test" xbans/bungee/network-checks.txt \
+  $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=proxy'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
-check "Today's plugin" xbans/src/main/java/co/xenastudios/xbans/XBans.java \
-  $'units=xbans\ncompile=:xbans:compileJava :xbans:api:compileJava\nchecks=xbans/boot-checks.txt\nboot='
+check "Today's plugin" xvote/src/main/java/co/xenastudios/xvote/XVote.java \
+  $'units=xvote\ncompile=:xvote:compileJava :xvote:api:compileJava\nchecks=xvote/boot-checks.txt\nboot='
 check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Today's convention" build-logic/src/main/kotlin/xena.plugin.gradle.kts everything

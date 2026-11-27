@@ -1,0 +1,5 @@
+# A real client on Fabric (scripts/boot-fabric.sh --checks, with --seed scripts/boot-seeds/client
+# so the client is an operator), after boot-checks.txt: scripts/budgets/bots/client.js joins in
+# German, runs /fly and /heal, completes /gamemode, then switches to English. Fabric has no
+# teleport event, so /back is checked after a death there, and refusing to undo vanilla's /tp.
+client: --plugin xutilities

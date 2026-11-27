@@ -1,0 +1,6 @@
+# zChat beside xMoney in xMoney's boot tests (xmoney/fabric/zchat-client-checks.txt): its chat format
+# shows the sender's balance, through the <balance> tag xMoney gives zChat. The rest is zChat's
+# defaults, which it writes in on its first start.
+config-version: 3
+formatting:
+  default-format: "<gray>[<balance>] <player>:</gray> <white><message></white>"

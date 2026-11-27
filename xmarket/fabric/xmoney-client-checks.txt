@@ -1,0 +1,4 @@
+# A real client on Fabric with xMoney beside xMarket (scripts/boot-fabric.sh with xMoney's jar and
+# --seed scripts/boot-seeds/client), after boot-checks.txt: /shop's menus clicked through to a
+# purchase xMoney debits, /sell hand that it credits, /shop buy and /worth, in German.
+client: --plugin xmarket --xmoney

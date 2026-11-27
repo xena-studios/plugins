@@ -55,6 +55,15 @@ core/core-testing/sample/bukkit/boot.sh "$(scripts/server-jar.sh spigot 1.8.8 | 
 
 `boot.sh` boots the jar R8 shrank (`build/r8/XSample.jar`), as a release ships; the YAML parser and the stdlib are downloaded (`libraries:`, or the loader below 1.16.5). The Fabric sandbox is built and booted the same way, from its own build: `./gradlew -p core/platform-fabric build collect`, then `scripts/boot-fabric.sh --version 26.3 --java <JDK 25 home> --checks core/platform-fabric/sandbox/boot-checks.txt core/platform-fabric/build/libs/xsample-fabric-1.0.0+26.3.jar`.
 
+Real clients join the Fabric boots too, with the same `client:` step and the same scenarios (`scripts/budgets/bots/client.js`, mineflayer, so Node.js is needed): each plugin's `fabric/*client-checks.txt` beside the plugins its scenario needs, `--seed scripts/boot-seeds/client` so Joiner is an operator. Mineflayer joins up to 26.1, so they run on 1.20.1 and 1.21.11, not 26.3; on 1.20.1, which keeps no client language, Joiner reads English (decisions/2026-11-27-real-clients-on-fabric.md). xTeleport beside xMoney, for example:
+
+```sh
+libs=core/platform-fabric/build/libs
+scripts/boot-fabric.sh --version 1.21.11 --java <JDK 21 home> --seed scripts/boot-seeds/client --seed xteleport/fabric/xmoney-seed \
+  --checks xteleport/fabric/boot-checks.txt --checks xteleport/fabric/xmoney-client-checks.txt \
+  "$libs"/xteleport-fabric-*+1.21.11.jar "$libs"/xmoney-fabric-*+1.21.11.jar
+```
+
 The proxies boot through `scripts/boot-proxy.sh`, alone or in front of a backend, with xSample's proxy side (`core/core-testing/sample/velocity`, `bungee`). Alone, its platform checks and console commands, and with `--startup-budget` its startup; in front of a backend (Paper behind Velocity through modern forwarding, Spigot behind BungeeCord), the pair test, a real client joining through the proxy while xSample's two sides talk over the proxy layer (decisions/2026-11-25-the-proxy-layer.md):
 
 ```sh

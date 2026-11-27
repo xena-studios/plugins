@@ -133,7 +133,10 @@ check "xSample's Velocity plugin" core/core-testing/sample/velocity/src/main/kot
 check "The loader's shims" core/core-loader/src/velocity/java/co/xenastudios/core/loader/velocity/VelocityBootstrap.java \
   "$rewrite"$'\nboot=bukkit proxy'
 check "Proxy boot script" scripts/boot-proxy.sh $'tasks=\nchecks=\nboot=proxy'
-check "The real client" scripts/budgets/bots/client.js $'tasks=\nchecks=\nboot=bukkit proxy'
+check "The real client" scripts/budgets/bots/client.js $'tasks=\nchecks=\nboot=bukkit fabric proxy'
+check "The real client's operator seed" scripts/boot-seeds/client/ops.json $'tasks=\nchecks=\nboot=bukkit fabric'
+check "Fabric boot script" scripts/boot-fabric.sh $'tasks=\nchecks=\nboot=fabric'
+check "A rewritten plugin's Fabric real-client checks" xutilities/fabric/client-checks.txt $'checks=\nboot=fabric'
 check "A rewritten plugin's common code" xutilities/common/src/commonMain/kotlin/co/xenastudios/xutilities/Commands.kt \
   $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nboot=bukkit fabric'
 check "A rewritten plugin's Bukkit adapter" xutilities/bukkit/src/main/kotlin/co/xenastudios/xutilities/bukkit/BukkitXServer.kt \

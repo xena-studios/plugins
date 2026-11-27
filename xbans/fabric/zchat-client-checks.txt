@@ -1,0 +1,5 @@
+# Two real clients on Fabric with zChat beside xBans (scripts/boot-fabric.sh with zChat's jar and
+# --seed scripts/boot-seeds/client), after boot-checks.txt: a tempban that kicks Friend and keeps
+# them out until it ends, a mute stopping their chat and zChat's /msg, a kick, and Joiner's
+# replies in German.
+client: --plugin xbans --zchat --timeout 150

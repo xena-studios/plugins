@@ -1,0 +1,10 @@
+{
+  "id": "xbans",
+  "name": "xBans",
+  "version": "${version}",
+  "description": "Bans, mutes and warnings. Nothing slips through. On the proxy: banned players turned away at the network's door.",
+  "url": "https://plugins.xenastudios.co/xbans/",
+  "authors": ["Xena Studios"],
+  "dependencies": [],
+  "main": "co.xenastudios.xbans.velocity.XBansVelocityBootstrap"
+}

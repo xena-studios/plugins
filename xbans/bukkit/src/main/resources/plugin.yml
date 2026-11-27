@@ -1,0 +1,16 @@
+name: xBans
+version: '${version}'
+main: co.xenastudios.xbans.bukkit.XBansBootstrap
+# Ignored before 1.13; stops 1.13+ from treating the plugin as legacy.
+api-version: '1.13'
+folia-supported: true
+description: Bans, mutes and warnings. Nothing slips through.
+website: https://plugins.xenastudios.co/xbans/
+authors: [Xena Studios]
+# Optional: zChat asks xBans who's muted before each message. Loaded first when it's there.
+softdepend: [zChat]
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+# No commands or permissions here: they're registered at runtime from config.yml, so every
+# change to them applies on /xbans reload.

@@ -1,0 +1,20 @@
+# Paper and Folia from 1.19.3 read this instead of plugin.yml; Spigot and older Paper ignore it.
+# The same plugin, with its libraries handed to Paper by the core's loader from the family's
+# cache rather than resolved by Paper from plugin.yml's libraries: at every boot (DECISIONS.md).
+name: xBans
+version: '${version}'
+main: co.xenastudios.xbans.bukkit.XBansBootstrap
+# The core's, relocated into the plugin's package with the rest of it.
+loader: co.xenastudios.xbans.core.loader.paper.PaperLibraryLoader
+api-version: '1.19'
+folia-supported: true
+description: Bans, mutes and warnings. Nothing slips through.
+website: https://plugins.xenastudios.co/xbans/
+authors: [Xena Studios]
+dependencies:
+  server:
+    # Optional: zChat asks xBans who's muted before each message. Its API is called by name,
+    # through its own class loader, so it never joins xBans' classpath.
+    zChat:
+      load: BEFORE
+      required: false

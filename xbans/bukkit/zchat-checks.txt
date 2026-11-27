@@ -1,0 +1,2 @@
+# With zChat 4.0 beside it (boot.sh --zchat): zChat asks xBans who's muted before every message.
+logged: zChat asks xBans who's muted before each message.

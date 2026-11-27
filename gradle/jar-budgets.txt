@@ -96,3 +96,8 @@
 :core:platform-fabric:xteleport:1.20.1 685
 :core:platform-fabric:xteleport:1.21.11 688
 :core:platform-fabric:xteleport:26.3 680
+
+# xBans 2.0 (M6): measuring.
+:xbans:bukkit 900
+:xbans:velocity 2000
+:xbans:bungee 2000

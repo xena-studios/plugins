@@ -1,0 +1,3 @@
+sql:
+  driver: H2
+  table_prefix: 'litebans_'

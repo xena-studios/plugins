@@ -1,0 +1,19 @@
+# Imports from LiteBans' H2 file and AdvancedBan's HSQLDB files on a real server (boot.sh seeds
+# them from import-seed/, written by the drivers those plugins ship: H2 1.4.199 and HSQLDB 2.4.0,
+# by ./gradlew :xbans:common:jvmTest -PupdateBootSeed). Neither plugin is installed, as after an
+# owner takes its jar out. The driver each needs is downloaded into plugins/Xena/libraries/ (a
+# pinned on-demand library) and let go afterwards; a second import adds nothing.
+run: xbans import litebans
+expect: Reading plugins/LiteBans/litebans.mv.db with com.h2database:h2:1.4.200
+expect: Found in LiteBans: 2 bans, 1 mutes, 1 warnings, 1 kicks and 2 players.
+run: xbans import litebans confirm
+expect: Imported 5 punishments from LiteBans (0 already there).
+run: xbans import litebans confirm
+expect: Imported 0 punishments from LiteBans (5 already there).
+run: xbans import advancedban
+expect: Reading plugins/AdvancedBan/data/storage.script with org.hsqldb:hsqldb:2.5.2
+expect: Found in AdvancedBan: 2 bans, 1 mutes, 0 warnings, 1 kicks and 1 players.
+run: xbans import advancedban confirm
+expect: Imported 4 punishments from AdvancedBan (0 already there).
+run: xbans import advancedban confirm
+expect: Imported 0 punishments from AdvancedBan (4 already there).

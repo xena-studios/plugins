@@ -19,6 +19,18 @@ worldedit = "7.3.9"
 # Tests only: Paper ships its own SQLite and MySQL drivers, which the plugins use.
 sqlite-jdbc = "3.49.1.0"
 mysql-connector = "9.2.0"
+# xBans' imports read LiteBans' H2 and AdvancedBan's HSQLDB files with these, fetched only when
+# such an import runs (core-jvm's DriverLibrary, which names the same versions). Each H2 reads one
+# file format only (format 1, 2, 3); HSQLDB 2.5.2 is the newest whose jar runs on Java 8. The
+# fixture-* versions write the tests' files, as the plugins' own drivers did. Bumped by hand.
+h2-format1 = "1.4.200"
+h2-format2 = "2.1.214"
+h2-format3 = "2.4.240"
+hsqldb = "2.5.2"
+h2-fixture-format1 = "1.4.199"
+h2-fixture-format2 = "2.0.206"
+h2-fixture-format3 = "2.2.224"
+fixture-hsqldb = "2.4.0"
 shadow = "9.6.1"
 resource-factory = "1.4.0"
 run-paper = "3.1.0"
@@ -83,6 +95,14 @@ worldedit-core = { module = "com.sk89q.worldedit:worldedit-core", version.ref = 
 bstats-bukkit = { module = "org.bstats:bstats-bukkit", version.ref = "bstats" }
 mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql-connector" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
+h2-format1 = { module = "com.h2database:h2", version.ref = "h2-format1" }
+h2-format2 = { module = "com.h2database:h2", version.ref = "h2-format2" }
+h2-format3 = { module = "com.h2database:h2", version.ref = "h2-format3" }
+hsqldb = { module = "org.hsqldb:hsqldb", version.ref = "hsqldb" }
+h2-fixture-format1 = { module = "com.h2database:h2", version.ref = "h2-fixture-format1" }
+h2-fixture-format2 = { module = "com.h2database:h2", version.ref = "h2-fixture-format2" }
+h2-fixture-format3 = { module = "com.h2database:h2", version.ref = "h2-fixture-format3" }
+fixture-hsqldb = { module = "org.hsqldb:hsqldb", version.ref = "fixture-hsqldb" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }

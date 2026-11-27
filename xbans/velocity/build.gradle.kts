@@ -48,6 +48,12 @@ dependencies {
     // The database drivers, downloaded when the database opens: a proxy ships none.
     onDemand(libs.sqlite.jdbc) { isTransitive = false }
     onDemand(libs.mysql.connector) { isTransitive = false }
+    // What /xbans import reads LiteBans' H2 and AdvancedBan's HSQLDB files with: fetched only when
+    // such an import runs, one H2 per file format (LocalFiles).
+    onDemand(libs.h2.format1) { isTransitive = false }
+    onDemand(libs.h2.format2) { isTransitive = false }
+    onDemand(libs.h2.format3) { isTransitive = false }
+    onDemand(libs.hsqldb) { isTransitive = false }
     fetched(libs.snakeyaml.engine.kmp.jvm) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains")

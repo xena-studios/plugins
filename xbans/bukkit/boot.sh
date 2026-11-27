@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Boots xBans on one Bukkit-family server with its boot checks (boot-checks.txt): every command
 # that runs from the console, a ban's life from 1.x's checks, imports' dry runs, a reload, debug,
-# and a clean stop. For CI's boot matrix and by hand, after ./gradlew :xbans:bukkit:assemble. It
+# then imports from LiteBans' H2 and AdvancedBan's HSQLDB files (import-checks.txt, seeded from
+# import-seed/), and a clean stop. For CI's boot matrix and by hand, after ./gradlew :xbans:bukkit:assemble. It
 # boots the jar R8 shrank (build/r8/), as a release ships; XBANS_JAR=<jar> boots another.
 #
 #   xbans/bukkit/boot.sh paper|folia [version] [--zchat] [--java <JDK home>]
@@ -46,5 +47,5 @@ fi
 # on disk rather than uploading them from CI. bStats starts with xSample's seeded
 # plugins/bStats/config.yml turning it off, so a boot sends nothing.
 exec "$root/scripts/boot-test.sh" "${server[@]}" --jvm -DIReallyKnowWhatIAmDoingISwear=true --jvm -Dxena.debug.paste=false \
-  --seed "$root/core/core-testing/sample/bukkit/boot-seed" \
-  --checks "$here/boot-checks.txt" "$@" "$jar" "${extra[@]}"
+  --seed "$root/core/core-testing/sample/bukkit/boot-seed" --seed "$here/import-seed" \
+  --checks "$here/boot-checks.txt" --checks "$here/import-checks.txt" "$@" "$jar" "${extra[@]}"

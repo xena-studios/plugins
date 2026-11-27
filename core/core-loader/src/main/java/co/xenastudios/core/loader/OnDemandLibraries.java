@@ -59,6 +59,20 @@ public final class OnDemandLibraries {
     }
 
     /**
+     * The pinned library with this group, artifact and version, or with this group and artifact
+     * if none has that version; null if the plugin pins neither. A plugin can pin two versions of
+     * one library when each reads what the other can't (H2 1.4 and 2.x files, for xBans' imports).
+     */
+    public Library find(String group, String artifact, String version) {
+        for (Library library : pinned) {
+            if (library.group().equals(group) && library.artifact().equals(artifact) && library.version().equals(version)) {
+                return library;
+            }
+        }
+        return find(group, artifact);
+    }
+
+    /**
      * The jar of the pinned library with this group and artifact: from the cache if it's there
      * with the pinned hash, downloaded otherwise.
      *
@@ -66,9 +80,17 @@ public final class OnDemandLibraries {
      *     saying what the owner can do
      */
     public Path fetch(String group, String artifact) throws LibraryException {
-        Library library = find(group, artifact);
+        return fetch(find(group, artifact), group + ':' + artifact);
+    }
+
+    /** As {@link #fetch(String, String)}, for the version {@link #find(String, String, String)} picks. */
+    public Path fetch(String group, String artifact, String version) throws LibraryException {
+        return fetch(find(group, artifact, version), group + ':' + artifact + ':' + version);
+    }
+
+    private Path fetch(Library library, String asked) throws LibraryException {
         if (library == null) {
-            throw new LibraryException("This plugin's build pins no " + group + ':' + artifact + " to download"
+            throw new LibraryException("This plugin's build pins no " + asked + " to download"
                 + (pinned.isEmpty() ? "" : " (it pins " + pinned + ")") + ".");
         }
         return cache.fetch(library).jar();

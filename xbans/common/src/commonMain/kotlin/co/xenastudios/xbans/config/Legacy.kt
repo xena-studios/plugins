@@ -27,8 +27,9 @@ public object Legacy {
         add(Moved("messages.error.usage", CoreMessages.commandUsage, "<prefix><error>Usage:</error> <usage>"))
         add(Moved("messages.error.failed", CoreMessages.commandError, "<prefix><error>Something went wrong. The console has the details."))
         // 2.0 kept 1.x's English and its path for every message 1.x had, so what 1.x shipped is
-        // the English here. `info` and `proxy.*` are 2.0's own.
+        // the English here. `info`, `proxy.*` and the local files' imports are 2.0's own.
         for (key in XBansMessages.messages) {
+            if (key === XBansMessages.importReading || key === XBansMessages.importInUse || key === XBansMessages.importNoDriver) continue
             val path = when (key.key.substringBefore('.')) {
                 "screens", "broadcasts" -> key.key
                 "info", "proxy" -> continue

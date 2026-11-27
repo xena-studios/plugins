@@ -32,6 +32,30 @@ kotlin {
     }
 }
 
+// The drivers xBans' local imports fetch, and the older ones that write the tests' files as
+// LiteBans and AdvancedBan did, each resolved on its own (two H2s can't share a class path) and
+// handed to LocalImportTest by path, which loads each in a class loader of its own as a server
+// does. -PupdateBootSeed also writes xbans/bukkit/import-seed/ for the import boot check.
+val importDriverJars = files(
+    listOf(libs.h2.format1, libs.h2.format2, libs.h2.format3, libs.hsqldb, libs.h2.fixture.format1, libs.h2.fixture.format2, libs.h2.fixture.format3, libs.fixture.hsqldb)
+        .mapIndexed { index, library ->
+            val scope = configurations.dependencyScope("importDriver$index") {
+                dependencies.add(project.dependencies.create(library.get()).also { (it as ModuleDependency).isTransitive = false })
+            }
+            configurations.resolvable("importDriverJars$index") { extendsFrom(scope.get()) }
+        },
+)
+val bootSeed = providers.gradleProperty("updateBootSeed").map { rootProject.layout.projectDirectory.dir("xbans/bukkit/import-seed").asFile.absolutePath }
+tasks.named<Test>("jvmTest") {
+    val drivers: FileCollection = importDriverJars
+    inputs.files(drivers).withPropertyName("importDrivers")
+    val seed = bootSeed.orNull
+    if (seed != null) outputs.upToDateWhen { false }
+    jvmArgumentProviders.add(CommandLineArgumentProvider {
+        listOf("-Dxbans.test.drivers=${drivers.asPath}") + listOfNotNull(seed?.let { "-Dxbans.test.bootSeed=$it" })
+    })
+}
+
 // Tests can't hang: a stuck one fails the build in minutes, never holds CI.
 tasks.withType<Test>().configureEach {
     timeout = Duration.ofMinutes(5)

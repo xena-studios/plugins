@@ -61,13 +61,10 @@ expect: pruned 3 inactive entries from Steve's history
 run: kick Nobody
 expect: No player called Nobody is online.
 
-# Imports: a dry run reads the source first.
+# Imports: a dry run reads the source first. LiteBans' and AdvancedBan's own files are imported
+# by import-checks.txt, which boot.sh runs after these.
 run: xbans import vanilla
 expect: Couldn't import: the server's ban lists are empty.
-run: xbans import litebans
-expect: Couldn't import: there's no plugins/LiteBans/config.yml.
-run: xbans import advancedban
-expect: Couldn't import: there's no plugins/AdvancedBan/config.yml.
 
 run: xbans reload
 expect: Reloaded xBans

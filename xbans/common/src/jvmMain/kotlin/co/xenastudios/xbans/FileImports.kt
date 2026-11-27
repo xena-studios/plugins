@@ -32,8 +32,9 @@ import java.nio.file.Files as NioFiles
 /**
  * `/xbans import`'s sources on the JVM: the server's own ban lists (`vanilla`), EssentialsX's
  * mutes and players (`essentials`), LiteBans and AdvancedBan from their MySQL or MariaDB
- * databases. [server] is the server's folder (where `banned-players.json` is), [plugins] the
- * plugins folder; an adapter offers those its platform has ([ids]).
+ * databases or their own local files (LiteBans' H2, AdvancedBan's HSQLDB: [LocalFiles]). [server]
+ * is the server's folder (where `banned-players.json` is), [plugins] the plugins folder; an
+ * adapter offers those its platform has ([ids]).
  */
 public class FileImports(
     private val server: Path,
@@ -60,7 +61,7 @@ public class FileImports(
     public class Vanilla(private val server: Path) : Importer {
         override val name: String get() = "vanilla"
 
-        override fun read(scope: String, now: Long): Haul {
+        override fun read(scope: String, now: Long, context: ImportContext): Haul {
             val players = server.resolve("banned-players.json")
             val ips = server.resolve("banned-ips.json")
             if (!NioFiles.exists(players) && !NioFiles.exists(ips)) return Haul.failed("there's no banned-players.json or banned-ips.json in the server's folder.")
@@ -121,7 +122,7 @@ public class FileImports(
     public class Essentials(private val folder: Path) : Importer {
         override val name: String get() = "essentials"
 
-        override fun read(scope: String, now: Long): Haul {
+        override fun read(scope: String, now: Long, context: ImportContext): Haul {
             val users = folder.resolve("userdata")
             if (!NioFiles.isDirectory(users)) return Haul.failed("there's no Essentials/userdata folder in plugins/.")
             val haul = Haul()
@@ -164,8 +165,18 @@ public class FileImports(
         private fun number(data: YamlNode.Mapping, path: String): Long = text(data, path)?.trim()?.toLongOrNull() ?: 0
     }
 
-    /** A plugin whose punishments are in a MySQL or MariaDB database it names in its config. */
-    public abstract class SqlSource(private val drivers: Drivers, private val log: Log) : Importer {
+    /**
+     * A source's tables, by name, however they're read: through the core's database layer from
+     * MySQL or MariaDB, or straight from a local file's connection ([LocalFiles]). Each source's
+     * reading ([SqlSource.readFrom]) is the same on both.
+     */
+    public fun interface Tables {
+        /** Every row of [table] (ordered by its `id` if [byId]), `null` if there's no such table, or why not. */
+        public fun rows(table: String, byId: Boolean): Outcome<List<Row>, String>?
+    }
+
+    /** A plugin whose punishments are in a MySQL or MariaDB database it names in its config, or in a local file of its own. */
+    public abstract class SqlSource(protected val drivers: Drivers, private val log: Log) : Importer {
         /** Opens the database at [host]:[port], reads it with [read], and closes it. */
         protected fun withDatabase(host: String, port: Int, database: String, user: String, password: String, read: (Database) -> Haul): Haul {
             val settings = DatabaseSettings(DatabaseSettings.Type.MYSQL, "", DatabaseSettings.MySql(host, port, database, user, password, "characterEncoding=utf8"), 1)
@@ -180,32 +191,36 @@ public class FileImports(
             }
         }
 
-        /** Every row of `SELECT * FROM [table]` on [db], or `null` if there's no such table, or why not. */
-        protected fun rows(db: Database, table: String, order: String = ""): Outcome<List<Row>, String>? {
-            val result = CompletableFuture<Outcome<List<Row>, String>?>()
-            db.read { session ->
-                when (val found = session.query(db.sql.raw("SELECT * FROM $table$order"))) {
-                    is Outcome.Ok -> Outcome.Ok(found.value)
-                    is Outcome.Err -> found
-                }
-            }.onSettled { read, error ->
-                result.complete(when (read) {
-                    is Outcome.Ok -> Outcome.Ok(read.value)
-                    is Outcome.Err -> {
-                        val detail = read.error.detail
-                        if (read.error.code == 1146 || read.error.sqlState == "42S02" || "no such table" in detail || "doesn't exist" in detail) null
-                        else Outcome.Err("couldn't read $table: $detail")
-                    }
-                    null -> Outcome.Err("couldn't read $table: $error")
-                })
-            }
-            return result.get(5, TimeUnit.MINUTES)
-        }
-
         /** Reads [haul] from a database already open, as the tests open one. */
-        public abstract fun readFrom(db: Database, prefix: String, scope: String, now: Long): Haul
+        public fun readFrom(db: Database, prefix: String, scope: String, now: Long): Haul =
+            readFrom(Tables { table, byId -> rows(db, table, if (byId) " ORDER BY id" else "") }, prefix, scope, now)
 
-        protected companion object {
+        /** Reads what [tables] hold. */
+        public abstract fun readFrom(tables: Tables, prefix: String, scope: String, now: Long): Haul
+
+        public companion object {
+            /** Every row of `SELECT * FROM [table]` on [db], or `null` if there's no such table, or why not. */
+            internal fun rows(db: Database, table: String, order: String): Outcome<List<Row>, String>? {
+                val result = CompletableFuture<Outcome<List<Row>, String>?>()
+                db.read { session ->
+                    when (val found = session.query(db.sql.raw("SELECT * FROM $table$order"))) {
+                        is Outcome.Ok -> Outcome.Ok(found.value)
+                        is Outcome.Err -> found
+                    }
+                }.onSettled { read, error ->
+                    result.complete(when (read) {
+                        is Outcome.Ok -> Outcome.Ok(read.value)
+                        is Outcome.Err -> {
+                            val detail = read.error.detail
+                            if (read.error.code == 1146 || read.error.sqlState == "42S02" || "no such table" in detail || "doesn't exist" in detail) null
+                            else Outcome.Err("couldn't read $table: $detail")
+                        }
+                        null -> Outcome.Err("couldn't read $table: $error")
+                    })
+                }
+                return result.get(5, TimeUnit.MINUTES)
+            }
+
             internal fun text(row: Row, name: String): String? = when (val value = row.value(name)) {
                 is SqlValue.Text -> value.value.takeIf { it.isNotEmpty() }
                 is SqlValue.Integer -> value.value.toString()
@@ -247,23 +262,26 @@ public class FileImports(
 
     /**
      * LiteBans' database: its bans, mutes, warnings and kicks with who revoked them, and its login
-     * history for names, IPs and alts, read with the settings in `plugins/LiteBans/config.yml`.
-     * LiteBans' default database is H2, which servers have no driver for; LiteBans' own import moves
-     * it to MySQL or MariaDB first (the docs' "Switching from LiteBans" page).
+     * history for names, IPs and alts, read with the settings in `plugins/LiteBans/config.yml`:
+     * from MySQL or MariaDB, or from its default H2 file, `litebans.mv.db` in its folder, with the
+     * H2 that file's format needs ([LocalFiles.liteBans]).
      */
     public class LiteBans(private val folder: Path, drivers: Drivers, log: Log) : SqlSource(drivers, log) {
         override val name: String get() = "LiteBans"
 
-        override fun read(scope: String, now: Long): Haul {
+        override fun read(scope: String, now: Long, context: ImportContext): Haul {
             val file = folder.resolve("config.yml")
             if (!NioFiles.exists(file)) return Haul.failed("there's no plugins/LiteBans/config.yml.")
             val driver = setting(file, "sql.driver") ?: "H2"
-            if (!driver.equals("mysql", true) && !driver.equals("mariadb", true)) {
-                return Haul.failed("LiteBans uses $driver. xBans reads LiteBans from MySQL or MariaDB: move it there with LiteBans' own import first, as the docs' Switching from LiteBans page says.")
-            }
-            val address = setting(file, "sql.address") ?: "localhost:3306"
             val prefix = setting(file, "sql.table_prefix") ?: "litebans_"
             if (!PREFIX.matches(prefix)) return Haul.failed("LiteBans' table_prefix has characters xBans won't put in a query.")
+            if (driver.equals("h2", true)) {
+                return LocalFiles.liteBans(folder, file, drivers, context) { readFrom(it, prefix, scope, now) }
+            }
+            if (!driver.equals("mysql", true) && !driver.equals("mariadb", true)) {
+                return Haul.failed("LiteBans uses $driver. xBans reads LiteBans from H2, MySQL or MariaDB: move it to one with LiteBans' own import first.")
+            }
+            val address = setting(file, "sql.address") ?: "localhost:3306"
             val host = address.substringBefore(':')
             val port = address.substringAfter(':', "3306").toIntOrNull() ?: 3306
             return withDatabase(host, port, setting(file, "sql.database") ?: "litebans", setting(file, "sql.username") ?: "root", setting(file, "sql.password") ?: "") {
@@ -271,13 +289,13 @@ public class FileImports(
             }
         }
 
-        override fun readFrom(db: Database, prefix: String, scope: String, now: Long): Haul {
+        override fun readFrom(tables: Tables, prefix: String, scope: String, now: Long): Haul {
             val haul = Haul()
             val names = HashMap<PlayerRef, String>()
             val newest = HashMap<PlayerRef, Long>()
             val uses = HashMap<Pair<PlayerRef, String>, LongArray>()
             val withIp = HashSet<PlayerRef>()
-            when (val history = rows(db, prefix + "history")) {
+            when (val history = tables.rows(prefix + "history", false)) {
                 is Outcome.Err -> return Haul.failed(history.error)
                 is Outcome.Ok -> for (row in history.value) {
                     val id = player(text(row, "uuid")) ?: continue
@@ -300,7 +318,7 @@ public class FileImports(
             for ((key, span) in uses) haul.seen(key.first, names[key.first], key.second, span[0], span[1])
             for ((id, name) in names) if (id !in withIp) haul.seen(id, name, null, newest[id]!!, newest[id]!!)
             for ((table, type) in listOf("bans" to PunishmentType.BAN, "mutes" to PunishmentType.MUTE, "warnings" to PunishmentType.WARN, "kicks" to PunishmentType.KICK)) {
-                when (val rows = rows(db, prefix + table, " ORDER BY id")) {
+                when (val rows = tables.rows(prefix + table, true)) {
                     is Outcome.Err -> return Haul.failed(rows.error)
                     is Outcome.Ok -> for (row in rows.value) {
                         // 192.168.1.*: xBans matches whole addresses only, so it would match nobody.
@@ -349,17 +367,17 @@ public class FileImports(
     /**
      * AdvancedBan's database: every punishment in its `PunishmentHistory`, those still in
      * `Punishments` in force, from MySQL or MariaDB with the settings in
-     * `plugins/AdvancedBan/MySQL.yml` (`UseMySQL: true` in its config). Its default HSQLDB file
-     * needs a driver servers don't have.
+     * `plugins/AdvancedBan/MySQL.yml` (`UseMySQL: true` in its config), or from its default
+     * HSQLDB file, `data/storage.*` in its folder ([LocalFiles.advancedBan]).
      */
     public class AdvancedBan(private val folder: Path, drivers: Drivers, log: Log) : SqlSource(drivers, log) {
         override val name: String get() = "AdvancedBan"
 
-        override fun read(scope: String, now: Long): Haul {
+        override fun read(scope: String, now: Long, context: ImportContext): Haul {
             val config = folder.resolve("config.yml")
             if (!NioFiles.exists(config)) return Haul.failed("there's no plugins/AdvancedBan/config.yml.")
             if (setting(config, "UseMySQL")?.toBoolean() != true) {
-                return Haul.failed("AdvancedBan keeps its punishments in its own HSQLDB file, which xBans can't read: it reads AdvancedBan from MySQL or MariaDB (UseMySQL: true in AdvancedBan's config).")
+                return LocalFiles.advancedBan(folder, drivers, context) { readFrom(it, "", scope, now) }
             }
             val mysql = folder.resolve("MySQL.yml")
             if (!NioFiles.exists(mysql)) return Haul.failed("there's no plugins/AdvancedBan/MySQL.yml.")
@@ -369,17 +387,17 @@ public class FileImports(
             ) { readFrom(it, "", scope, now) }
         }
 
-        override fun readFrom(db: Database, prefix: String, scope: String, now: Long): Haul {
+        override fun readFrom(tables: Tables, prefix: String, scope: String, now: Long): Haul {
             val haul = Haul()
             // What's still in force, by who, what and when it started: Punishments' ids aren't its history's.
             val inForce = HashSet<String>()
-            when (val active = rows(db, prefix + "Punishments")) {
+            when (val active = tables.rows(prefix + "Punishments", false)) {
                 is Outcome.Err -> return Haul.failed(active.error)
                 is Outcome.Ok -> for (row in active.value) inForce += key(row)
                 null -> return Haul.failed("AdvancedBan's database has no Punishments table.")
             }
             val names = HashMap<PlayerRef, String>()
-            val history = when (val read = rows(db, prefix + "PunishmentHistory", " ORDER BY id")) {
+            val history = when (val read = tables.rows(prefix + "PunishmentHistory", true)) {
                 is Outcome.Err -> return Haul.failed(read.error)
                 is Outcome.Ok -> read.value
                 null -> return Haul.failed("AdvancedBan's database has no PunishmentHistory table.")

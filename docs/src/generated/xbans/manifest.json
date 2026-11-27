@@ -4510,6 +4510,40 @@
       ]
     },
     {
+      "key": "imports.reading",
+      "english": "<prefix>Reading <highlight><file></highlight> with <driver>…",
+      "comment": [
+        "LiteBans' H2 or AdvancedBan's HSQLDB file, read from a copy with a driver fetched for it (downloaded once into plugins/Xena/libraries/). <file>, <driver>."
+      ],
+      "placeholders": [
+        "file",
+        "driver"
+      ]
+    },
+    {
+      "key": "imports.in-use",
+      "english": "<prefix><error><source> is still using <file>.</error> Stop it first: move its jar out of the plugins folder (keep its folder), restart, then import again.",
+      "comment": [
+        "<source>'s database file <file> is open: the plugin is running, here or on another server."
+      ],
+      "placeholders": [
+        "source",
+        "file"
+      ]
+    },
+    {
+      "key": "imports.no-driver",
+      "english": "<prefix><error>Couldn't get <driver> to read <file>:</error> <reason>",
+      "comment": [
+        "<reason>, in English, says why and which jar to put where to import without a download. <driver>, <file>."
+      ],
+      "placeholders": [
+        "driver",
+        "file",
+        "reason"
+      ]
+    },
+    {
       "key": "imports.running",
       "english": "<prefix><error>An import is already running.",
       "comment": [],

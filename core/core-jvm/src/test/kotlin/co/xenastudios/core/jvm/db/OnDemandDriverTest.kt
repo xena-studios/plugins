@@ -39,8 +39,11 @@ class OnDemandDriverTest {
             val pin = pins[driver.coordinates]
             assertTrue(pin != null, "${driver.coordinates} has no pin in gradle/library-pins.txt")
             // The tests' driver is the jar the pin is for, so the pin, DriverLibrary and the
-            // version catalog can't drift apart.
-            assertEquals(pin, Sha256.of(jarOf(driver.driverClass)), driver.coordinates)
+            // version catalog can't drift apart. The H2s and HSQLDB that xBans' imports read
+            // other plugins' files with aren't on this class path (three H2s share a class
+            // name): xBans' LocalImportTest gets each by DriverLibrary's version, and the
+            // build checks those jars against their pins.
+            if (driver == DriverLibrary.SQLITE || driver == DriverLibrary.MYSQL) assertEquals(pin, Sha256.of(jarOf(driver.driverClass)), driver.coordinates)
         }
     }
 

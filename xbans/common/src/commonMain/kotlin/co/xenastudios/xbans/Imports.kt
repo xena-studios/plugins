@@ -7,6 +7,7 @@ import co.xenastudios.core.api.onSettled
 import co.xenastudios.core.api.reject
 import co.xenastudios.core.api.resolve
 import co.xenastudios.core.common.Outcome
+import co.xenastudios.core.common.i18n.MessageKey
 import co.xenastudios.xbans.api.Punishment
 import co.xenastudios.xbans.api.PunishmentType
 import co.xenastudios.xbans.config.XBansConfig
@@ -30,13 +31,32 @@ public interface Importer {
     public val name: String
 
     /** Everything it holds, or [Haul.failed] with why not. [scope] is what a punishment with none gets. Blocks; never on a server thread. */
-    public fun read(scope: String, now: Long): Haul
+    public fun read(scope: String, now: Long, context: ImportContext): Haul
+}
+
+/**
+ * What an importer may ask of the server as it reads: whether a plugin is running here (its
+ * database is then in use), and to tell whoever ran the import how it's going. Made per import.
+ */
+public class ImportContext(
+    private val running: (String) -> Boolean = { false },
+    private val tell: (MessageKey, Array<out Pair<String, Any>>) -> Unit = { _, _ -> },
+) {
+    /** Whether the plugin called [name] is installed and on, here. */
+    public fun running(name: String): Boolean = running.invoke(name)
+
+    public fun tell(message: MessageKey, vararg placeholders: Pair<String, Any>) {
+        tell.invoke(message, placeholders)
+    }
 }
 
 /** What a source holds, read whole before anything is written, so a dry run can count it. */
 public class Haul(
     /** Why it couldn't be read, for the owner, in English; `null` if it was. */
     public val failed: String? = null,
+    /** The message saying so, when it's more than [XBansMessages.importFailed]'s reason. */
+    public val message: MessageKey? = null,
+    public val placeholders: List<Pair<String, Any>> = emptyList(),
 ) {
     /** One punishment, as xBans will store it. Its [Entry.ip] is the raw address; [key] says where it came from ([IP] stands for its IP key). */
     public class Row(public val entry: Entry, public val key: String)
@@ -67,6 +87,9 @@ public class Haul(
         public const val IP: String = "{ip}"
 
         public fun failed(why: String): Haul = Haul(why)
+
+        /** Failed, as [message] says; [why] for the console. */
+        public fun failed(why: String, message: MessageKey, vararg placeholders: Pair<String, Any>): Haul = Haul(why, message, placeholders.toList())
     }
 }
 

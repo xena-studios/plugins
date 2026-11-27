@@ -35,6 +35,9 @@
 -keep class **.loader.bungee.BungeeBootstrap { public *; }
 -keep class * extends **.loader.bungee.BungeeBootstrap { <init>(); }
 -keep class * extends org.bukkit.plugin.java.JavaPlugin { <init>(); }
+# Copied by its bytes into a fetched JDBC driver's class loader and run there (core-jvm's
+# IsolatedDriver), so it keeps its constructor and run(), and R8 can't fold it into a caller.
+-keep,allowobfuscation class **.loader.DriverRelease { *; }
 -keepclassmembers class * implements org.bukkit.event.Listener { @org.bukkit.event.EventHandler <methods>; }
 -keepclassmembers class * implements net.md_5.bungee.api.plugin.Listener { @net.md_5.bungee.event.EventHandler <methods>; }
 # Bukkit events keep their names, since other plugins and Skript listen to them by class, and

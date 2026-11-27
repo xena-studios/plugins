@@ -157,7 +157,7 @@ class ImportTest {
              {"uuid": "$alex", "name": "Alex", "created": "2025-01-01 10:00:00 +0000", "source": "Server", "expires": "2025-01-02 10:00:00 +0000", "reason": "Over"}]
         """.trimIndent().toByteArray(StandardCharsets.UTF_8))
         Files.write(folder.resolve("banned-ips.json"), """[{"ip": "198.51.100.7", "created": "2025-01-01 10:00:00 +0000", "source": "Console", "expires": "forever", "reason": "VPN"}]""".toByteArray(StandardCharsets.UTF_8))
-        val vanilla = FileImports.Vanilla(folder).read(Punishment.GLOBAL, now)
+        val vanilla = FileImports.Vanilla(folder).read(Punishment.GLOBAL, now, ImportContext())
         assertNull(vanilla.failed)
         assertEquals(listOf("Griefing", "VPN"), vanilla.rows.map { it.entry.punishment.reason }, "Alex's ban had ended")
         assertTrue(vanilla.rows[1].key.startsWith("vanilla:ip:{ip}:"))
@@ -165,11 +165,11 @@ class ImportTest {
         val users = Files.createDirectories(folder.resolve("Essentials/userdata"))
         Files.write(users.resolve("$steve.yml"), "last-account-name: Steve\nip-address: 203.0.113.9\nmuted: true\nmute-reason: Spam\ntimestamps:\n  login: ${now - 1000}\n  mute: ${now + 3_600_000}\n".toByteArray(StandardCharsets.UTF_8))
         Files.write(users.resolve("$alex.yml"), "lastAccountName: Alex\nmuted: false\n".toByteArray(StandardCharsets.UTF_8))
-        val essentials = FileImports.Essentials(folder.resolve("Essentials")).read(Punishment.GLOBAL, now)
+        val essentials = FileImports.Essentials(folder.resolve("Essentials")).read(Punishment.GLOBAL, now, ImportContext())
         assertEquals(1, essentials.count(PunishmentType.MUTE))
         assertEquals(2, essentials.players())
         assertEquals("203.0.113.9", essentials.seen.first { it.id == steve }.ip)
-        assertEquals("there's no plugins/LiteBans/config.yml.", FileImports.LiteBans(folder.resolve("nope"), Drivers.serverOnly(javaClass.classLoader), log).read("*", now).failed)
+        assertEquals("there's no plugins/LiteBans/config.yml.", FileImports.LiteBans(folder.resolve("nope"), Drivers.serverOnly(javaClass.classLoader), log).read("*", now, ImportContext()).failed)
         // YAML is read with the core's parser, so this is what a server's file looks like to it.
         assertTrue((JvmYaml.read("a: 1") as Outcome.Ok).value is YamlNode.Mapping)
     }

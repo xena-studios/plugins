@@ -26,6 +26,22 @@ public enum class DriverLibrary(
 
     /** MySQL's, which talks to MariaDB too, for `storage: mysql` on a server without it. */
     MYSQL("com.mysql:mysql-connector-j:9.2.0", "com.mysql.cj.jdbc.Driver"),
+
+    // Another plugin's local database, read once by an import ([IsolatedDriver]), never the
+    // plugin's own. H2's file formats don't mix: each version reads its own format only, named in
+    // the file's first line (`format:1`, 2 or 3), so there's one driver per format.
+
+    /** H2 1.4.200, for H2 files of format 1 (`.mv.db` written by H2 1.4.177 to 1.4.200, and 1.4's `.h2.db`). */
+    H2_FORMAT_1("com.h2database:h2:1.4.200", "org.h2.Driver"),
+
+    /** H2 2.1.214, for format 2 (written by H2 2.0.202 to 2.1.214). */
+    H2_FORMAT_2("com.h2database:h2:2.1.214", "org.h2.Driver"),
+
+    /** H2 2.4.240, for format 3 (written by H2 2.2.220 and later). Java 11 or newer. */
+    H2_FORMAT_3("com.h2database:h2:2.4.240", "org.h2.Driver"),
+
+    /** HSQLDB 2.5.2, the newest whose jar runs on Java 8, for files written by HSQLDB 2.x. */
+    HSQLDB("org.hsqldb:hsqldb:2.5.2", "org.hsqldb.jdbc.JDBCDriver"),
 }
 
 /**
@@ -43,14 +59,15 @@ public fun interface DriverFetcher {
  * A [DriverFetcher] on the plugin's on-demand libraries: the drivers its build pinned
  * (`onDemand` in the xena.fetched-libraries convention, hashes in gradle/library-pins.txt),
  * downloaded into the family's shared cache the first time a server without one opens a
- * database, and checked against the pin every time. The pinned version is the one fetched,
- * whatever [DriverLibrary.coordinates] says, so a bump needs only the build changed.
+ * database, and checked against the pin every time. The version [DriverLibrary.coordinates]
+ * names if the build pins it (H2 is pinned at several), the one pinned otherwise, so a bump
+ * needs only the build changed.
  */
 public class OnDemandDriverFetcher(private val libraries: OnDemandLibraries) : DriverFetcher {
     override fun fetch(library: DriverLibrary): Outcome<Path, DbError> {
-        val (group, artifact) = library.coordinates.split(':')
+        val (group, artifact, version) = library.coordinates.split(':')
         return try {
-            Outcome.Ok(libraries.fetch(group, artifact))
+            Outcome.Ok(libraries.fetch(group, artifact, version))
         } catch (e: LibraryException) {
             Outcome.Err(DbError(DbError.Kind.NO_DRIVER, e.message ?: "couldn't download ${library.coordinates}"))
         }
@@ -65,7 +82,8 @@ public class OnDemandDriverFetcher(private val libraries: OnDemandLibraries) : D
  */
 public class Drivers(
     private val loader: ClassLoader,
-    private val fetcher: DriverFetcher? = null,
+    /** Where fetched drivers come from; `null` with none ([serverOnly]). */
+    public val fetcher: DriverFetcher? = null,
 ) {
     /** One driver to try, and where it came from, for the console. */
     internal class Candidate(val driver: Driver, val source: String)

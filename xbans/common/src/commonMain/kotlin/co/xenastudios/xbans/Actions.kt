@@ -444,7 +444,7 @@ internal class Actions(private val plugin: XBansPlugin) {
         val scope = plugin.punisher.scope(null)
         plugin.platform.scheduler.run(Where.Async) { _ ->
             val haul = try {
-                importer.read(scope, plugin.now())
+                importer.read(scope, plugin.now(), ImportContext(::running) { message, placeholders -> reply(source, message, *placeholders) })
             } catch (e: Exception) {
                 importing = false
                 plugin.log.error("The import from ${importer.name} failed", e)
@@ -452,7 +452,8 @@ internal class Actions(private val plugin: XBansPlugin) {
             }
             haul.failed?.let {
                 importing = false
-                return@run reply(source, XBansMessages.importFailed, "reason" to it)
+                val message = haul.message ?: return@run reply(source, XBansMessages.importFailed, "reason" to it)
+                return@run reply(source, message, *haul.placeholders.toTypedArray())
             }
             if (!confirm) {
                 importing = false
@@ -472,6 +473,11 @@ internal class Actions(private val plugin: XBansPlugin) {
                 if (haul.wildcards > 0) reply(source, XBansMessages.importWildcards, "count" to haul.wildcards)
             }
         }
+    }
+
+    // Whether a plugin is on here, from what the debug report lists: "LiteBans 2.17.4, Vault 1.7 (off)".
+    private fun running(name: String): Boolean = plugin.about()["Plugins"].orEmpty().split(", ").any {
+        it.substringBefore(' ').equals(name, true) && !it.endsWith(" (off)")
     }
 
     internal companion object {

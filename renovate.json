@@ -20,6 +20,14 @@
       "enabled": false
     },
     {
+      "description": "xBans' imports fetch these to read LiteBans' H2 and AdvancedBan's HSQLDB files (core-jvm's DriverLibrary names the same versions, and gradle/library-pins.txt their hashes). Each H2 reads one file format only, HSQLDB 2.5.2 is the newest that runs on Java 8, and the fixture versions write the tests' files as the plugins did, so none is bumped by a bot.",
+      "matchPackageNames": [
+        "com.h2database:h2",
+        "org.hsqldb:hsqldb"
+      ],
+      "enabled": false
+    },
+    {
       "description": "xPlots compiles against the newest WorldGuard and WorldEdit built for Java 21 (xplots/build.gradle.kts). Later ones are Java 25 class files, which JDK 21 can't read, so they're bumped by hand when the build moves to Java 25.",
       "matchPackageNames": [
         "com.sk89q.worldguard:**",

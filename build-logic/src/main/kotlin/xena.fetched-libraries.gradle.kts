@@ -26,25 +26,37 @@ val fetchedJars = configurations.resolvable("fetchedJars") {
     extendsFrom(fetched.get())
 }
 val onDemand = configurations.dependencyScope("onDemand")
-val onDemandJars = configurations.resolvable("onDemandJars") {
-    extendsFrom(onDemand.get())
+// Each on-demand library resolves on its own, so a plugin can pin two versions of one without
+// Gradle settling on the newer: xBans' imports fetch the H2 each file format needs (1.4.200,
+// 2.1.214, 2.4.240), since each reads its own format only. Declared with `isTransitive = false`,
+// as every fetched library is, each resolves to its one jar.
+val onDemandEach = ArrayList<Provider<out Configuration>>()
+onDemand.configure {
+    dependencies.whenObjectAdded {
+        val declared = this
+        val index = onDemandEach.size
+        val scope = configurations.dependencyScope("onDemand$index") { dependencies.add(declared.copy()) }
+        onDemandEach += configurations.resolvable("onDemandJars$index") { extendsFrom(scope.get()) }
+    }
 }
 
-/** A task checking the jars [configuration] resolves to against the pins, and listing them at [listed] in the jar. */
-fun pinned(name: String, what: String, configuration: Provider<out Configuration>, listed: String) =
+/** A task checking the jars [configurations] resolve to against the pins, and listing them at [listed] in the jar. */
+fun pinned(name: String, what: String, configurations: () -> List<Provider<out Configuration>>, listed: String) =
     tasks.register<PinnedLibraries>(name) {
         description = "Checks the libraries $what against their pinned SHA-256 and lists them for the loader."
-        val artifacts = configuration.map { it.incoming.artifacts }
-        coordinates.set(artifacts.flatMap { collection ->
-            collection.resolvedArtifacts.map { results ->
-                results.map { result ->
-                    val id = result.id.componentIdentifier as? ModuleComponentIdentifier
-                        ?: throw GradleException("fetched libraries come from Maven Central, not ${result.id.componentIdentifier}")
-                    "${id.group}:${id.module}:${id.version}"
+        for (configuration in configurations()) {
+            val artifacts = configuration.map { it.incoming.artifacts }
+            coordinates.addAll(artifacts.flatMap { collection ->
+                collection.resolvedArtifacts.map { results ->
+                    results.map { result ->
+                        val id = result.id.componentIdentifier as? ModuleComponentIdentifier
+                            ?: throw GradleException("fetched libraries come from Maven Central, not ${result.id.componentIdentifier}")
+                        "${id.group}:${id.module}:${id.version}"
+                    }
                 }
-            }
-        })
-        jars.from(artifacts.map { it.artifactFiles })
+            })
+            jars.from(artifacts.map { it.artifactFiles })
+        }
         // The repo's, also from a build of its own inside it (xena.repoRoot, as xena.r8 reads it).
         pins.set(isolated.rootProject.projectDirectory.dir(providers.gradleProperty("xena.repoRoot").getOrElse(".")).file("gradle/library-pins.txt"))
         update.set(providers.gradleProperty("updatePins").map { true }.orElse(false))
@@ -52,8 +64,9 @@ fun pinned(name: String, what: String, configuration: Provider<out Configuration
         output.set(layout.buildDirectory.dir("generated/$name"))
     }
 
-val pinnedLibraries = pinned("pinnedLibraries", "downloaded at startup", fetchedJars, "META-INF/xena/libraries.txt")
-val pinnedOnDemand = pinned("pinnedOnDemandLibraries", "downloaded when a feature needs them", onDemandJars, "META-INF/xena/on-demand-libraries.txt")
+val pinnedLibraries = pinned("pinnedLibraries", "downloaded at startup", { listOf(fetchedJars) }, "META-INF/xena/libraries.txt")
+// Configured when it's first needed, after the build script has declared every library.
+val pinnedOnDemand = pinned("pinnedOnDemandLibraries", "downloaded when a feature needs them", { onDemandEach }, "META-INF/xena/on-demand-libraries.txt")
 
 the<SourceSetContainer>().named("main") {
     resources.srcDir(pinnedLibraries.flatMap { it.output })

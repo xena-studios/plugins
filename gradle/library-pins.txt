@@ -2,9 +2,13 @@
 # A server checks each download against these, so the build fails when a jar it resolves isn't
 # here: after a deliberate version bump, run the build with -PupdatePins and commit this file.
 
+com.h2database:h2:1.4.200 3ad9ac4b6aae9cd9d3ac1c447465e1ed06019b851b893dd6a8d76ddb6d85bca6
+com.h2database:h2:2.1.214 d623cdc0f61d218cf549a8d09f1c391ff91096116b22e2475475fce4fbe72bd0
+com.h2database:h2:2.4.240 29b70e427cc1c40cdc376283adbb0cc62853073797bb5fe5761f81fe73d57ce0
 com.mysql:mysql-connector-j:9.2.0 7e9941bbdcca244d878ea95bfff788fd9ba6a65af757f24be6c632930d61c7ed
 com.squareup.okio:okio-jvm:3.18.2 681fed549d1d2c63710f42c9eab433d642c71af778babd67035c50f8c425aaff
 it.krzeminski:snakeyaml-engine-kmp-jvm:5.0.0 506718c275eef4118fc589f95004066079bf72b872850cd8bd89bb6fc08dec1e
 net.thauvin.erik.urlencoder:urlencoder-lib-jvm:1.6.0 8d0fd2aeb48d19dc49c563ebc00f274947e45f716c107535c12ead63decd688d
+org.hsqldb:hsqldb:2.5.2 e4aa39c5afb318e8effdec80a0e6de7c9dacc453c1cf7666c515f29a16658dac
 org.jetbrains.kotlin:kotlin-stdlib:2.4.21 bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3
 org.xerial:sqlite-jdbc:3.49.1.0 5c8609d2ca341deb8c6f71778974b5ba4995c7d32d7c7c89d9392a3e72c39291

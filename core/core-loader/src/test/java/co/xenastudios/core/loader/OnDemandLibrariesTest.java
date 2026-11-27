@@ -50,6 +50,19 @@ class OnDemandLibrariesTest {
     }
 
     @Test
+    void twoVersionsOfOneLibraryAreEachFoundByVersion() {
+        Library older = new Library("com.h2database", "h2", "1.4.200", "a".repeat(64), "org.h2.Driver");
+        Library newer = new Library("com.h2database", "h2", "2.4.240", "b".repeat(64), "org.h2.Driver");
+        OnDemandLibraries onDemand = new OnDemandLibraries(List.of(older, newer), new LibraryCache(dir, Fixtures.none(), ""));
+        assertEquals(older, onDemand.find("com.h2database", "h2", "1.4.200"));
+        assertEquals(newer, onDemand.find("com.h2database", "h2", "2.4.240"));
+        // A version it doesn't pin falls back to the one it does, as find(group, artifact) does.
+        assertEquals(older, onDemand.find("com.h2database", "h2", "2.1.214"));
+        LibraryException none = assertThrows(LibraryException.class, () -> onDemand.fetch("org.hsqldb", "hsqldb", "2.5.2"));
+        Fixtures.assertContains(none.getMessage(), "pins no org.hsqldb:hsqldb:2.5.2", "h2 1.4.200, h2 2.4.240");
+    }
+
+    @Test
     void aJarWithoutAListHasNothingToFetch() throws IOException {
         try (URLClassLoader plugin = new URLClassLoader(new URL[0], null)) {
             OnDemandLibraries onDemand = OnDemandLibraries.read(plugin, new LibraryCache(dir, Fixtures.none(), ""));

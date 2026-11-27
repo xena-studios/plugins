@@ -249,6 +249,22 @@ public object XBansMessages : MessageBundle() {
         "imports.wildcards", "<prefix><highlight><count></highlight> wildcard IP bans (such as 192.168.1.*) aren't imported: xBans bans whole addresses only.",
         "A dry run or an import that found LiteBans wildcard IP bans (192.168.1.*), which aren't imported. <count>.", placeholders = listOf("count"),
     )
+    public val importReading: MessageKey = message(
+        "imports.reading", "<prefix>Reading <highlight><file></highlight> with <driver>…",
+        "LiteBans' H2 or AdvancedBan's HSQLDB file, read from a copy with a driver fetched for it (downloaded once into plugins/Xena/libraries/). <file>, <driver>.",
+        placeholders = listOf("file", "driver"),
+    )
+    public val importInUse: MessageKey = message(
+        "imports.in-use",
+        "<prefix><error><source> is still using <file>.</error> Stop it first: move its jar out of the plugins folder (keep its folder), restart, then import again.",
+        "<source>'s database file <file> is open: the plugin is running, here or on another server.",
+        placeholders = listOf("source", "file"),
+    )
+    public val importNoDriver: MessageKey = message(
+        "imports.no-driver", "<prefix><error>Couldn't get <driver> to read <file>:</error> <reason>",
+        "<reason>, in English, says why and which jar to put where to import without a download. <driver>, <file>.",
+        placeholders = listOf("driver", "file", "reason"),
+    )
     public val importRunning: MessageKey = message("imports.running", "<prefix><error>An import is already running.")
     public val importUnknown: MessageKey = message("imports.unknown-source", "<prefix><error>Import from what?</error> One of: <sources>", "<sources>: the ones xBans knows.", placeholders = listOf("sources"))
 

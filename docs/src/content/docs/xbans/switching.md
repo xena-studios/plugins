@@ -9,8 +9,8 @@ xBans uses LiteBans' commands, flags and durations, so staff can carry on as bef
 
 | Source | What comes across |
 | --- | --- |
-| `litebans` | Bans, IP bans, mutes, warnings and kicks, with who made and revoked each, their scopes and silent flags; and LiteBans' login history, for names, `/alts` and `/iphistory`. |
-| `advancedban` | AdvancedBan's history: bans, IP bans, mutes, warnings and kicks, with who made each, and which were lifted early. |
+| `litebans` | Bans, IP bans, mutes, warnings and kicks, with who made and revoked each, their scopes and silent flags; and LiteBans' login history, for names, `/alts` and `/iphistory`. From its H2 file, MySQL or MariaDB. |
+| `advancedban` | AdvancedBan's history: bans, IP bans, mutes, warnings and kicks, with who made each, and which were lifted early. From its own HSQLDB files, MySQL or MariaDB. |
 | `vanilla` | `banned-players.json` and `banned-ips.json`: the server's own lists, which vanilla's and EssentialsX's `/ban` write. |
 | `essentials` | EssentialsX's mutes, and each player's last name and IP. (EssentialsX keeps its bans in the server's lists: import `vanilla` for those.) |
 
@@ -27,18 +27,14 @@ With `ips.enabled: false`, no IP is imported, and a ban of an IP alone is skippe
 
 ## From LiteBans
 
-xBans reads LiteBans' database with the settings in `plugins/LiteBans/config.yml`, so leave that file where it is until the import is done.
+xBans reads LiteBans' database with the settings in `plugins/LiteBans/config.yml`, so leave LiteBans' folder where it is until the import is done.
 
-**On MySQL or MariaDB** (`driver: MySQL` or `MariaDB` in LiteBans' config): run `/xbans import litebans`, then `/xbans import litebans confirm`.
+**On H2, LiteBans' default** (`driver: H2`, its database in `plugins/LiteBans/litebans.mv.db`):
 
-**On H2, LiteBans' default.** Paper has no H2 driver, so move LiteBans to MySQL or MariaDB first with LiteBans' own import, then import into xBans:
+1. Stop LiteBans: take its jar out of `plugins/`, keep its folder, and restart. A LiteBans that's running has its file open, and xBans says so rather than read it.
+2. Run `/xbans import litebans`, then `/xbans import litebans confirm`. The driver for LiteBans' file is downloaded the first time: see [below](#reading-litebans-and-advancedbans-own-files).
 
-1. Point LiteBans at an empty MySQL or MariaDB database in its `config.yml` (`sql.driver: MySQL`) and run `/litebans reload`. `/litebans info` should say it's connected to MySQL.
-2. In LiteBans' `config.yml`, set `import.from: litebans` and `import.sqlite: true` (for LiteBans, this means its H2 file), then run `/litebans import start`.
-3. When it's done, run `/xbans import litebans confirm`.
-4. Remove LiteBans. xBans takes over `/ban`, `/mute` and the rest.
-
-If LiteBans asks for a user name and password for the H2 file, they're in its `h2.yml`; see [LiteBans' importing guide](https://gitlab.com/ruany/LiteBans/-/wikis/Importing).
+**On MySQL or MariaDB** (`driver: MySQL` or `MariaDB`): run `/xbans import litebans`, then `/xbans import litebans confirm`. LiteBans can keep running for this one.
 
 ### What's different
 
@@ -51,11 +47,28 @@ If LiteBans asks for a user name and password for the H2 file, they're in its `h
 
 ## From AdvancedBan
 
-xBans reads AdvancedBan from MySQL or MariaDB, with the settings in `plugins/AdvancedBan/MySQL.yml` (`UseMySQL: true` in AdvancedBan's `config.yml`), so leave those files where they are until the import is done. Run `/xbans import advancedban`, then `/xbans import advancedban confirm`.
+xBans reads AdvancedBan's database with its settings, so leave AdvancedBan's folder where it is until the import is done.
 
-AdvancedBan's own default is a HSQLDB file in its folder, which xBans can't read: servers have no driver for it. Only an AdvancedBan on MySQL or MariaDB can be imported.
+**On its own files, AdvancedBan's default** (`UseMySQL: false`, its database in `plugins/AdvancedBan/data/storage.*`): stop AdvancedBan first (take its jar out of `plugins/`, keep its folder, and restart), then run `/xbans import advancedban` and `/xbans import advancedban confirm`. The driver is downloaded as for LiteBans' file: see [below](#reading-litebans-and-advancedbans-own-files).
+
+**On MySQL or MariaDB** (`UseMySQL: true`, the settings in `plugins/AdvancedBan/MySQL.yml`): run `/xbans import advancedban`, then `/xbans import advancedban confirm`.
 
 Every punishment in AdvancedBan's history comes across, each with who gave it and why. One that's no longer in force but hadn't ended was lifted, so it comes across lifted: AdvancedBan doesn't keep who lifted it, so the removal says "AdvancedBan". Its notes aren't punishments, so they stay behind. Its permissions are `ab.*`; xBans' are `xbans.*`: see [Permissions](/xbans/permissions/).
+
+## Reading LiteBans' and AdvancedBan's own files
+
+Servers have no driver for LiteBans' H2 file or AdvancedBan's HSQLDB files, so xBans downloads the one a file needs from Maven Central the first time, into the family's library folder, `plugins/Xena/libraries/`, checked against the hash pinned in xBans' build, and only when such an import runs: nothing is downloaded or loaded at startup. It copies the files, reads the copy with the driver in a class loader of its own, then deletes the copy and lets the driver go. The plugin's own files are never written to.
+
+H2's files come in three formats, and each H2 reads only its own, so xBans looks at the file's first line and picks the driver, whichever H2 your LiteBans shipped:
+
+| File written by | Read with |
+| --- | --- |
+| H2 1.4 (`format:1` in the file's first line, or an older `litebans.h2.db`) | H2 1.4.200 |
+| H2 2.0 or 2.1 (`format:2`) | H2 2.1.214 |
+| H2 2.2 or later (`format:3`) | H2 2.4.240, which needs Java 11 or newer |
+| HSQLDB 2.x (AdvancedBan's `data/storage.*`) | HSQLDB 2.5.2 |
+
+That covers every LiteBans on H2 (from 2.1, which moved LiteBans from SQLite to H2) and every AdvancedBan 2.x (HSQLDB 2.4.0 since AdvancedBan 2.2.0). The tests read files written by H2 1.4.199, 2.0.206 and 2.2.224 and by HSQLDB 2.4.0, with LiteBans' and AdvancedBan's tables. LiteBans' H2 file is opened with `sql.username` and `sql.password` from its `config.yml`, then with H2's default login. A server that can't reach Maven Central says which jar to put where; for example, put `h2-2.1.214.jar` from Maven Central at `plugins/Xena/libraries/com/h2database/h2/2.1.214/h2-2.1.214.jar` and run the import again. `mirror:` in `plugins/Xena/libraries.yml` downloads from somewhere else.
 
 ## From vanilla or EssentialsX
 

@@ -177,6 +177,18 @@ public class BukkitPlatform private constructor(
         metrics.task = scheduler.run(Where.Global, action = metrics)
     }
 
+    @Volatile
+    private var madeMenus: BukkitMenus? = null
+
+    /**
+     * The plugin's chest menus ([co.xenastudios.core.common.menu.Menus]), made the first time
+     * they're asked for: a plugin that never opens one never loads them, and their listener is
+     * registered with the first menu. [close] closes every one still open, a deposit's items
+     * handed to its handler first.
+     */
+    public val menus: BukkitMenus
+        get() = madeMenus ?: synchronized(this) { madeMenus ?: BukkitMenus(plugin, text, server, log).also { madeMenus = it } }
+
     private val channels = ArrayList<ProxyChannel>()
 
     /**
@@ -234,6 +246,8 @@ public class BukkitPlatform private constructor(
      * finish what's running. Disable the plugin's modules first, which may still schedule work.
      */
     public fun close() {
+        madeMenus?.closeAll()
+        madeMenus = null
         updates?.close()
         updates = null
         bStats?.close()

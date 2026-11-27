@@ -30,6 +30,12 @@ stonecutter parameters {
     constants["chunk_result"] = current.parsed >= "1.20.5"
     // 1.21.9 kept a world's spawn and a player's respawn point as RespawnData (xTeleport).
     constants["respawn_data"] = current.parsed >= "1.21.9"
+    // 1.20.5 kept an item's name, lore and the rest as data components, not NBT (the menus).
+    constants["item_components"] = current.parsed >= "1.20.5"
+    // 26.1 renamed a menu click's ClickType to ContainerInput (the menus).
+    constants["container_input"] = current.parsed >= "26.1"
+    // 26.1 gave a player's drop and the like a Prediction (the menus).
+    constants["item_prediction"] = current.parsed >= "26.1"
     // 26.1 sends action-bar text with sendOverlayMessage, not displayClientMessage (xTeleport).
     constants["overlay_message"] = current.parsed >= "26.1"
 }

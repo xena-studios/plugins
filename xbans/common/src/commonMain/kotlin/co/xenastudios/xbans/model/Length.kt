@@ -82,35 +82,35 @@ public class Length(
             else -> false
         }
 
-        /** What [parse] found: a length, `null` (not a length, so a reason can start there), or too long. */
-        public class Read(public val length: Length?, public val tooLong: Boolean = false)
+        /** What [read] gives for a length past 100 years: not one, and not to be taken as a reason either. */
+        public val TOO_LONG: Length = Length(-1)
 
-        /** Reads a length; `null` in [Read.length] if the text isn't one. Past 100 years is [Read.tooLong]. */
-        public fun read(text: String): Read {
+        /** Reads a length: `null` if the text isn't one (a reason can start there), [TOO_LONG] past 100 years. */
+        public fun read(text: String): Length? {
             var input = text.trim().lowercase()
             if (input.startsWith("duration:")) input = input.substring("duration:".length)
-            if (isPermanentWord(input)) return Read(PERMANENT)
-            if (input.isEmpty() || !input[0].isDigit() && input[0] != '.') return Read(null)
+            if (isPermanentWord(input)) return PERMANENT
+            if (input.isEmpty() || !input[0].isDigit() && input[0] != '.') return null
             var total = 0.0
             var i = 0
             while (i < input.length) {
                 val start = i
                 while (i < input.length && (input[i].isDigit() || input[i] == '.')) i++
-                if (i == start || i == input.length) return Read(null)
-                val amount = input.substring(start, i).toDoubleOrNull() ?: return Read(null)
+                if (i == start || i == input.length) return null
+                val amount = input.substring(start, i).toDoubleOrNull() ?: return null
                 val unitStart = i
                 while (i < input.length && input[i].isLetter()) i++
                 val unit = unit(input.substring(unitStart, i))
-                if (unit == 0L) return Read(null)
+                if (unit == 0L) return null
                 total += amount * unit
             }
-            if (total < 1000) return Read(null)
-            if (total > MAX_MILLIS) return Read(null, tooLong = true)
-            return Read(Length(total.roundToLong()))
+            if (total < 1000) return null
+            if (total > MAX_MILLIS) return TOO_LONG
+            return Length(total.roundToLong())
         }
 
         /** [read]'s length, or `null`; too long is `null` too. */
-        public fun parse(text: String): Length? = read(text).length
+        public fun parse(text: String): Length? = read(text)?.takeIf { it !== TOO_LONG }
 
         /** A unit's length in milliseconds, long and short names alike, or 0 if it isn't one. */
         internal fun unit(unit: String): Long = when (unit) {
@@ -128,13 +128,12 @@ public class Length(
         public fun isUnit(word: String): Boolean = unit(word.lowercase()) > 0
 
         /** A length in the config, written as typed (`7d`, `permanent`). */
-        public val TYPE: ConfigType<Length> = ConfigType.scalar("length", { it.typed() }) { raw ->
-            val read = read(raw)
-            when {
-                read.tooLong -> Outcome.Err("is more than 100 years; write permanent instead")
-                read.length == null -> Outcome.Err("isn't a length of time, such as 7d, 1d12h, 1mo or permanent")
-                else -> Outcome.Ok(read.length)
-            }
+        public val TYPE: ConfigType<Length> = ConfigType.scalar("length", co.xenastudios.xbans.Startup.writeLength, co.xenastudios.xbans.Startup.readLength)
+
+        internal fun typeRead(raw: String): Outcome<Length, String> = when (val read = read(raw)) {
+            TOO_LONG -> Outcome.Err("is more than 100 years; write permanent instead")
+            null -> Outcome.Err("isn't a length of time, such as 7d, 1d12h, 1mo or permanent")
+            else -> Outcome.Ok(read)
         }
     }
 }

@@ -70,7 +70,7 @@ public interface XBansApi {
     // ---- the staff layer ----
 
     /**
-     * Whether online [player] is staff here: has `xbans.staff`, which operators have, or any
+     * Whether online [player] is staff here: has `xbans.staff` ([XBans.STAFF_PERMISSION]), which operators have, or any
      * permission to punish. From memory, any thread; `false` for a player who isn't online.
      *
      * @since 2.0.0
@@ -89,11 +89,6 @@ public interface XBansApi {
      * @since 2.0.0
      */
     public fun notifyStaff(message: String, silent: Boolean)
-
-    public companion object {
-        /** Staff in the sense of [isStaff]. Operators have it. */
-        public const val STAFF_PERMISSION: String = "xbans.staff"
-    }
 }
 
 /**
@@ -102,6 +97,9 @@ public interface XBansApi {
  * @since 2.0.0
  */
 public object XBans {
+    /** Staff in the sense of [XBansApi.isStaff]. Operators have it. */
+    public const val STAFF_PERMISSION: String = "xbans.staff"
+
     @Volatile
     private var running: XBansApi? = null
 

@@ -1,6 +1,5 @@
 package co.xenastudios.xbans.bukkit
 
-import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.bukkit.BukkitPlatform
 import co.xenastudios.core.common.family.PlayerCache
 import co.xenastudios.core.common.family.PlayerStore
@@ -20,17 +19,14 @@ import co.xenastudios.xbans.api.XBansApi
 import co.xenastudios.xbans.bukkit.modern.Anvils
 import co.xenastudios.xbans.bukkit.modern.PaperChat
 import co.xenastudios.xbans.bukkit.modern.PaperValidate
-import co.xenastudios.xbans.bukkit.modern.Tell
 import co.xenastudios.xbans.config.XBansConfig
-import co.xenastudios.xbans.model.Entry
-import org.bukkit.entity.Player
+import java.util.concurrent.TimeUnit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.server.PluginEnableEvent
 import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
-import java.util.concurrent.TimeUnit
 
 /**
  * xBans on Paper, Folia, Spigot and CraftBukkit, 1.8.8 on: the shared plugin on platform-bukkit,
@@ -82,17 +78,17 @@ public class XBansBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
         xbans.beforeFirstEvent = EventBridge(plugin.server, xbans.bus)
         plugin.server.servicesManager.register(XBansApi::class.java, xbans, plugin, ServicePriority.Normal)
 
-        // Enforcement can't be turned off: it's what the plugin is for.
-        val paper = Modernity(plugin)
+        // Enforcement can't be turned off: it's what the plugin is for. What's Paper's, each its own
+        // listener class, loaded only if the server has what it uses.
+        val validates = has("io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent") && has("io.papermc.paper.connection.PlayerConfigurationConnection")
         val mutes = MuteGuard(xbans, server)
         val pm = plugin.server.pluginManager
-        pm.registerEvents(Gate(xbans, server, paper.validates), plugin)
+        pm.registerEvents(Gate(xbans, server, validates), plugin)
         pm.registerEvents(mutes, plugin)
         pm.registerEvents(this, plugin)
-        val tell = Telling(xbans, mutes, server)
-        if (paper.chat) pm.registerEvents(PaperChat(xbans, tell), plugin)
-        if (paper.validates) pm.registerEvents(PaperValidate(xbans, tell), plugin)
-        if (paper.anvils) pm.registerEvents(Anvils(xbans), plugin)
+        if (has("io.papermc.paper.event.player.AsyncChatEvent")) pm.registerEvents(PaperChat(xbans, mutes), plugin)
+        if (validates) pm.registerEvents(PaperValidate(xbans, mutes), plugin)
+        if (has("org.bukkit.event.inventory.PrepareAnvilEvent") && renames()) pm.registerEvents(Anvils(xbans), plugin)
         chat = LegacyChat(xbans, plugin, mutes).also { it.on() }
 
         xbans.start(config)
@@ -143,32 +139,21 @@ public class XBansBukkit(private val plugin: JavaPlugin) : PluginEntry, Listener
         override fun upload(text: String) = MclogsPaste().upload(text)
     }
 
-    /** What this server has of Paper's, found once: each its own listener class, loaded only if it's there. */
-    private class Modernity(private val owner: JavaPlugin) {
-        private fun has(name: String) = try {
-            Class.forName(name, false, owner.javaClass.classLoader)
-            true
-        } catch (e: ClassNotFoundException) {
-            false
-        } catch (e: LinkageError) {
-            false
-        }
-
-        val chat = has("io.papermc.paper.event.player.AsyncChatEvent")
-        val validates = has("io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent") && has("io.papermc.paper.connection.PlayerConfigurationConnection")
-        val anvils = has("org.bukkit.event.inventory.PrepareAnvilEvent") && try {
-            org.bukkit.inventory.AnvilInventory::class.java.getMethod("getRenameText")
-            true
-        } catch (e: NoSuchMethodException) {
-            false
-        }
+    private fun has(name: String): Boolean = try {
+        Class.forName(name, false, plugin.javaClass.classLoader)
+        true
+    } catch (e: ClassNotFoundException) {
+        false
+    } catch (e: LinkageError) {
+        false
     }
 
-    /** What Paper's listeners ask of the adapter. */
-    private class Telling(private val xbans: XBansPlugin, private val mutes: MuteGuard, private val server: BukkitBansServer) : Tell {
-        override fun tell(player: Player) = mutes.tell(player)
-
-        override fun screen(player: PlayerRef, name: String, ban: Entry?): String = server.legacy(xbans.denied(player, name, ban))
+    // Anvils say what's being typed from 1.11.
+    private fun renames(): Boolean = try {
+        org.bukkit.inventory.AnvilInventory::class.java.getMethod("getRenameText")
+        true
+    } catch (e: NoSuchMethodException) {
+        false
     }
 
     /**

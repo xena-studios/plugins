@@ -22,18 +22,29 @@ public object XBansMessages : MessageBundle() {
         "id", "player", "staff", "reason", "scope", "date", "expires", "time-left", "length", "duration", "appeal", "type", "status",
     )
 
-    private val TAG = Regex("<([a-z0-9_-]+)")
-
     // A message about a punishment: the placeholders its English uses, and the rest of a
     // punishment's offered.
     private fun about(key: String, english: String, vararg comment: String, extra: List<String> = emptyList()): MessageKey {
-        val used = TAG.findAll(english).map { it.groupValues[1] }.toSet()
+        val used = tags(english)
         val all = PUNISHMENT + extra
         return message(
             key, english, *comment,
             placeholders = all.filter { it in used }.distinct(),
             optional = all.filter { it !in used }.distinct(),
         )
+    }
+
+    // The tags [english] names, `<id>` and `<reason>`: a loop rather than a regex and its lambda.
+    private fun tags(english: String): Set<String> {
+        val found = HashSet<String>()
+        var i = english.indexOf('<')
+        while (i >= 0) {
+            var end = i + 1
+            while (end < english.length && english[end].let { it in 'a'..'z' || it in '0'..'9' || it == '_' || it == '-' }) end++
+            if (end > i + 1) found += english.substring(i + 1, end)
+            i = english.indexOf('<', end)
+        }
+        return found
     }
 
     private const val SCREEN_END = "\n\n<gray>Appeal at <white><appeal></white>\n<dark_gray>ID #<id>"

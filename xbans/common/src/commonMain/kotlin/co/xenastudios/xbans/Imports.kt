@@ -13,6 +13,9 @@ import co.xenastudios.xbans.config.XBansConfig
 import co.xenastudios.xbans.ip.IpKeys
 import co.xenastudios.xbans.model.Entry
 import co.xenastudios.xbans.store.Backend
+import co.xenastudios.xbans.store.importPlayer
+import co.xenastudios.xbans.store.insertImported
+import co.xenastudios.xbans.store.touchIp
 
 /** The importers an adapter offers, by the id `/xbans import` takes: `vanilla`, `essentials`, `litebans`, `advancedban`. */
 public interface Imports {
@@ -112,7 +115,7 @@ internal class Importing(private val plugin: XBansPlugin, private val backend: B
                 val stored = keyed.withId(id)
                 if (stored.active(now)) {
                     active += stored
-                    backend.feed.publish(session, Backend.TOPIC_PUNISH, "$id${Backend.QUIET}").let { if (it is Outcome.Err) return@transaction it }
+                    backend.publish(session, Backend.TOPIC_PUNISH, "$id${Backend.QUIET}").let { if (it is Outcome.Err) return@transaction it }
                 }
             }
             Outcome.Ok(Triple(active, a, s))

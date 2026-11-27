@@ -69,12 +69,12 @@ public class Args(
                 val first = rest[0]
                 // "5 days" or "1.5 hours", typed with a space.
                 val read = if (rest.size > 1 && SPACED_AMOUNT.matches(first) && Length.isUnit(rest[1])) {
-                    Length.read(first + rest[1]).also { if (it.length != null) next = 2 }
+                    Length.read(first + rest[1]).also { if (it != null) next = 2 }
                 } else {
-                    Length.read(first).also { if (it.length != null) next = 1 }
+                    Length.read(first).also { if (it != null) next = 1 }
                 }
-                length = read.length
-                if (read.tooLong) {
+                length = read?.takeIf { it !== Length.TOO_LONG }
+                if (read === Length.TOO_LONG) {
                     badLength = first
                     next = 1
                 } else if (length == null && looksLikeLength(first)) {

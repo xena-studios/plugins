@@ -36,7 +36,7 @@ public class XBansPermissions internal constructor(private val admin: Permission
     public val bypassTemplates: Permission = permission("limit.bypass-templates", "A template's own lengths aren't held to your staff-limits group.", PermissionDefault.NOBODY)
     public val override: Permission = permission("unban.override", "Lift (or replace) any punishment, whoever gave it.")
     public val warningsOthers: Permission = permission("warnings.others", "See another player's warnings with /warnings <player>.")
-    public val staff: Permission = node(XBansApi.STAFF_PERMISSION, "Counted as staff by other plugins (xVanish), through xBans' API.")
+    public val staff: Permission = node(co.xenastudios.xbans.api.XBans.STAFF_PERMISSION, "Counted as staff by other plugins (xVanish), through xBans' API.")
 
     internal fun of(node: String, description: String, default: PermissionDefault = PermissionDefault.OP): Permission? {
         if (node.isEmpty()) return null
@@ -54,9 +54,11 @@ internal class Commands(private val plugin: XBansPlugin) {
     var warnings: List<String> = emptyList()
         private set
 
-    private class Building(val config: Config, val perms: XBansPermissions, val problems: MutableList<String>, val taken: MutableSet<String>)
-
-    private var building: Building? = null
+    // What the tree being built has so far: fields, not a class of their own.
+    private var bConfig: Config? = null
+    private lateinit var bPerms: XBansPermissions
+    private var bProblems: MutableList<String> = ArrayList()
+    private var bTaken: MutableSet<String> = HashSet()
 
     /** One punishment command: what it makes, whether it needs a length, whether it's by IP. */
     class Kind(val name: String, val type: PunishmentType, val temp: Boolean, val ip: Boolean)
@@ -65,7 +67,10 @@ internal class Commands(private val plugin: XBansPlugin) {
         val perms = XBansPermissions(plugin.admin.permissions)
         val problems = ArrayList<String>()
         val taken = HashSet<String>()
-        building = Building(config, perms, problems, taken)
+        bConfig = config
+        bPerms = perms
+        bProblems = problems
+        bTaken = taken
         val c = XBansConfig.commands
         val ips = config[XBansConfig.ips.enabled]
         val proxy = plugin.server.proxy
@@ -107,12 +112,9 @@ internal class Commands(private val plugin: XBansPlugin) {
                     executes(Run(PUNISH, target, rest, kind = kind))
                 }
             }
+            // Ifs, not a when on the enum, which would be one more class at startup.
             for ((section, type) in listOf(c.unban to PunishmentType.BAN, c.unmute to PunishmentType.MUTE, c.unwarn to PunishmentType.WARN)) {
-                val what = when (type) {
-                    PunishmentType.BAN -> "ban"
-                    PunishmentType.MUTE -> "mute"
-                    else -> "newest warning"
-                }
+                val what = if (type == PunishmentType.BAN) "ban" else if (type == PunishmentType.MUTE) "mute" else "newest warning"
                 add(section, "Revoke a player's $what.", PermissionDefault.OP) {
                     val target = argument("player", Words(plugin, if (type == PunishmentType.WARN) Words.PLAYERS else if (type == PunishmentType.BAN) Words.BANNED else Words.MUTED), "The player, an IP address, or #id.")
                     val rest = optional("reason", Words(plugin, Words.FLAGS), "-s for silently, server:<name> for one server, then why.")
@@ -158,37 +160,33 @@ internal class Commands(private val plugin: XBansPlugin) {
         // 1.x's nodes, declared with their defaults.
         for ((_, limit) in config[XBansConfig.staffLimits.groups]) perms.of(limit.permission, "Held to a staff-limits group's longest ban and mute.", PermissionDefault.NOBODY)
         for ((name, template) in config[XBansConfig.templates]) perms.of(template.permissionFor(name), "Use the $name template.")
-        building = null
+        bConfig = null
         permissions = perms
         warnings = problems
         return tree
     }
 
+    // By the type's position, not a `when` on the enum, which would be a class of its own made as the server starts.
     private fun description(kind: Kind): String {
-        val what = when (kind.type) {
-            PunishmentType.BAN -> if (kind.ip) "IP-ban" else "Ban"
-            PunishmentType.MUTE -> if (kind.ip) "IP-mute" else "Mute"
-            PunishmentType.WARN -> "Warn"
-            PunishmentType.KICK -> "Kick"
-        }
+        val what = arrayOf(if (kind.ip) "IP-ban" else "Ban", if (kind.ip) "IP-mute" else "Mute", "Warn", "Kick")[kind.type.ordinal]
         return "$what a player" + if (kind.temp) " for a while." else "."
     }
 
     // A root command from its config section, unless it's off or its name is taken.
     private inline fun CommandTreeBuilder.add(section: Cmd, description: String, default: PermissionDefault, block: CommandBuilder.() -> Unit) {
-        val b = building!!
-        if (!b.config[section.enabled]) return
+        val config = bConfig!!
+        if (!config[section.enabled]) return
         val name = section.command
-        if (name in b.taken) {
-            b.problems += "/$name is also another of xBans' commands' alias, so it's skipped. Remove that alias."
+        if (name in bTaken) {
+            bProblems += "/$name is also another of xBans' commands' alias, so it's skipped. Remove that alias."
             return
         }
-        val aliases = b.config[section.aliases].filter { it != name }.distinct().filter { alias ->
-            (alias !in b.taken).also { free -> if (!free) b.problems += "${section.path}.aliases: /$alias is already another xBans command's, so it's left out." }
+        val aliases = config[section.aliases].filter { it != name }.distinct().filter { alias ->
+            (alias !in bTaken).also { free -> if (!free) bProblems += "${section.path}.aliases: /$alias is already another xBans command's, so it's left out." }
         }
-        b.taken += name
-        b.taken += aliases
-        root(name, description, b.perms.of(b.config[section.permission], "Use /$name.", default), aliases, block)
+        bTaken += name
+        bTaken += aliases
+        root(name, description, bPerms.of(config[section.permission], "Use /$name.", default), aliases, block)
     }
 
     /**

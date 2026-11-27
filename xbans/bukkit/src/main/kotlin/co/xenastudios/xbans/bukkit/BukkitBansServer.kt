@@ -71,14 +71,17 @@ internal class BukkitBansServer(private val platform: BukkitPlatform) : BansServ
     }
 
     // The server's command map, through CraftServer's own method: Bukkit's API has none before Paper's.
-    private val commandMap: Any? by lazy {
-        try {
+    // Found with the first muted player's command; a field, not `by lazy`, which is two classes.
+    @Volatile
+    private var foundMap: Any? = null
+
+    private val commandMap: Any?
+        get() = foundMap ?: try {
             val method: Method = server.javaClass.getMethod("getCommandMap")
-            method.invoke(server)
+            method.invoke(server).also { foundMap = it }
         } catch (e: ReflectiveOperationException) {
             null
         }
-    }
 
     override fun commandNames(label: String): List<String>? {
         val map = commandMap as? org.bukkit.command.CommandMap ?: return null

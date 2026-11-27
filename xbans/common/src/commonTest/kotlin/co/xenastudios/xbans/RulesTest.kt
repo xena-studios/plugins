@@ -35,7 +35,7 @@ class RulesTest {
         assertTrue(Length.parse("perm")!!.permanent)
         assertNull(Length.parse("hacking"))
         assertNull(Length.parse("500ms"))
-        assertTrue(Length.read("200y").tooLong)
+        assertTrue(Length.read("200y") === Length.TOO_LONG)
         assertEquals("2w", Length.parse("14d")!!.typed())
         assertEquals("1d12h", Length.parse("36h")!!.typed())
         assertEquals("1mo 3d", Length.format(33L * 86_400_000L))

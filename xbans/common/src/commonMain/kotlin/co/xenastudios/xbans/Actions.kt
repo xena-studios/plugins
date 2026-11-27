@@ -22,6 +22,15 @@ import co.xenastudios.xbans.ip.IpKeys
 import co.xenastudios.xbans.model.Entry
 import co.xenastudios.xbans.model.Length
 import co.xenastudios.xbans.store.Backend
+import co.xenastudios.xbans.store.activeWarnings
+import co.xenastudios.xbans.store.alts
+import co.xenastudios.xbans.store.boundary
+import co.xenastudios.xbans.store.count
+import co.xenastudios.xbans.store.find
+import co.xenastudios.xbans.store.idByName
+import co.xenastudios.xbans.store.ipHistory
+import co.xenastudios.xbans.store.page
+import co.xenastudios.xbans.store.prune
 
 /**
  * What xBans' commands do, made the first time one runs: a server that's just started hasn't
@@ -397,6 +406,24 @@ internal class Actions(private val plugin: XBansPlugin) {
                     }
                 }
             }
+        }
+    }
+
+    /** The API's staff notification: as a punishment's announcement is sent, after [StaffNotifyEvent]. */
+    fun notifyStaff(message: String, silent: Boolean) {
+        val markup = co.xenastudios.core.common.text.Markup.parse(message, texts.translations.theme.tags)
+        val line = texts.translations.theme.chat(markup.render())
+        val server = plugin.server
+        plugin.platform.scheduler.run(Where.Global) { _ ->
+            server.console(line)
+            val node = if (silent) Punisher.NOTIFY_SILENT else Punisher.NOTIFY_BROADCAST
+            val recipients = server.online().filterTo(ArrayList()) { server.hasPermission(it, node) }
+            if (recipients.isNotEmpty() && plugin.hasListeners(co.xenastudios.xbans.api.event.StaffNotifyEvent.TYPE)) {
+                val event = co.xenastudios.xbans.api.event.StaffNotifyEvent(line.plain(), silent, recipients)
+                plugin.bus.fire(co.xenastudios.xbans.api.event.StaffNotifyEvent.TYPE, event)
+                if (event.isCancelled) recipients.clear()
+            }
+            for (player in recipients) server.send(player, line)
         }
     }
 

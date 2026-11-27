@@ -24,6 +24,9 @@ import co.xenastudios.xbans.model.Active
 import co.xenastudios.xbans.model.Entry
 import co.xenastudios.xbans.store.Backend
 import co.xenastudios.xbans.store.Tables
+import co.xenastudios.xbans.store.find
+import co.xenastudios.xbans.store.insert
+import co.xenastudios.xbans.store.seen
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path

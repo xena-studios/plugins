@@ -19,7 +19,7 @@ import co.xenastudios.core.common.db.Statement
 public object Tables {
     /** 1.x's schema: version 1, made with these statements (its `Schema.STEPS`), `{rowid}` and `{table}` filled per database. */
     public val MIGRATIONS: List<Migration> = listOf(
-        Migration(1, "the first tables") { sql -> statements(sql) },
+        Migration(1, "the first tables", co.xenastudios.xbans.Startup.tables),
     )
 
     private val STEP_1 = listOf(
@@ -50,7 +50,7 @@ public object Tables {
         "CREATE INDEX {p}ips_ip ON {p}ips (ip)",
     )
 
-    private fun statements(sql: Sql): List<Statement> = STEP_1.map { sql.raw(fill(it, sql.dialect)) }
+    internal fun statements(sql: Sql): List<Statement> = STEP_1.map { sql.raw(fill(it, sql.dialect)) }
 
     /** 1.x's placeholders: `{rowid}` a key the database numbers, `{table}` what follows a `CREATE TABLE`. */
     internal fun fill(text: String, dialect: Dialect): String = when (dialect) {

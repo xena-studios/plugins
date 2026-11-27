@@ -10,6 +10,7 @@ import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.scheduler.later
 import co.xenastudios.xbans.model.Entry
 import co.xenastudios.xbans.store.Backend
+import co.xenastudios.xbans.store.find
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -39,8 +40,7 @@ internal class Network(
 
     /** Subscribes to a freshly opened database's feed, before it starts. */
     fun subscribe(backend: Backend) {
-        val feed = backend.feed
-        if (!feed.isOn) return
+        val feed = backend.feed ?: return
         feed.subscribe(Backend.TOPIC_PUNISH) { handle(backend, it, revoke = false) }
         feed.subscribe(Backend.TOPIC_REVOKE) { handle(backend, it, revoke = true) }
         // The feed may have missed changes: read again what's in force.

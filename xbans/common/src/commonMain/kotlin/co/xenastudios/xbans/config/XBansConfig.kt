@@ -43,7 +43,7 @@ public object XBansConfig : ConfigSchema(
     public val warnings: Warnings = Warnings(this)
 
     public val templates: ConfigKey<Map<String, Template>> = key(
-        "templates", MapType.TEMPLATES, Template.DEFAULTS,
+        "templates", MapType.TEMPLATES, defaultTemplates(),
         "Templates: /ban Steve hacking follows the \"hacking\" template. Each time the same",
         "player gets the same template, the next step of its ladder applies (the last step",
         "repeats). type is ban, mute or warn. A past punishment counts toward the ladder",
@@ -68,7 +68,7 @@ public object XBansConfig : ConfigSchema(
 
     init {
         // 2.0: messages go to lang/ (Legacy carries the edited ones there), the theme into messages.
-        migrate(1) { Legacy.toTwo(this) }
+        migrate(1, co.xenastudios.xbans.Startup.configOne)
     }
 
     /** `screens:` what's left of 1.x's screens once the messages moved to lang/. */
@@ -264,18 +264,17 @@ public class Template(
     override fun hashCode(): Int = (type.hashCode() * 31 + reason.hashCode()) * 31 + ladder.hashCode()
 
     override fun toString(): String = "Template($type, $reason, $ladder)"
-
-    internal companion object {
-        private fun of(name: String, type: PunishmentType, reason: String, vararg ladder: String) =
-            Template(type, reason, ladder.map { Length.parse(it)!! }, Length.parse("180d")!!, false, false, "xbans.template.$name")
-
-        val DEFAULTS: Map<String, Template> = linkedMapOf(
-            "hacking" to of("hacking", PunishmentType.BAN, "Hacking", "7d", "30d", "permanent"),
-            "spam" to of("spam", PunishmentType.MUTE, "Spamming", "1h", "1d", "7d"),
-            "language" to of("language", PunishmentType.WARN, "Inappropriate language", "30d"),
-        )
-    }
 }
+
+// 1.x's templates. A function, not a companion object, which would be a class of its own.
+private fun template(name: String, type: PunishmentType, reason: String, vararg ladder: String) =
+    Template(type, reason, ladder.map { Length.parse(it)!! }, Length.parse("180d")!!, false, false, "xbans.template.$name")
+
+private fun defaultTemplates(): Map<String, Template> = linkedMapOf(
+    "hacking" to template("hacking", PunishmentType.BAN, "Hacking", "7d", "30d", "permanent"),
+    "spam" to template("spam", PunishmentType.MUTE, "Spamming", "1h", "1d", "7d"),
+    "language" to template("language", PunishmentType.WARN, "Inappropriate language", "30d"),
+)
 
 /** The commands the console runs at a count of warnings. */
 public class WarnAction(public val commands: List<String>) {

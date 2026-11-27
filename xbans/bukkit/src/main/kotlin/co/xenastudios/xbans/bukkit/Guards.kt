@@ -96,8 +96,11 @@ internal class Gate(private val xbans: XBansPlugin, private val server: BukkitBa
  * they're on, signs and books (anvils in [Anvils]). Each check is a map lookup for the player and
  * their IP; only a muted player's command is looked up further.
  */
-internal class MuteGuard(private val xbans: XBansPlugin, private val server: BukkitBansServer) : Listener {
-    fun tell(player: Player) {
+internal class MuteGuard(private val xbans: XBansPlugin, private val server: BukkitBansServer) : Listener, co.xenastudios.xbans.bukkit.modern.Tell {
+    // What Paper's listeners ask of the adapter: the screen a player turned away sees.
+    override fun screen(player: co.xenastudios.core.api.PlayerRef, name: String, ban: co.xenastudios.xbans.model.Entry?): String = server.legacy(xbans.denied(player, name, ban))
+
+    override fun tell(player: Player) {
         val mute = xbans.muteOf(player.ref) ?: return
         xbans.mutedMessage(player.ref, mute)?.let { server.send(player.ref, it) }
     }

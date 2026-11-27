@@ -25,6 +25,14 @@ import co.xenastudios.xbans.model.Entry
 import co.xenastudios.xbans.model.Length
 import co.xenastudios.xbans.model.Replacing
 import co.xenastudios.xbans.store.Backend
+import co.xenastudios.xbans.store.accountsOn
+import co.xenastudios.xbans.store.activeWarnings
+import co.xenastudios.xbans.store.find
+import co.xenastudios.xbans.store.inForceOf
+import co.xenastudios.xbans.store.insert
+import co.xenastudios.xbans.store.known
+import co.xenastudios.xbans.store.ladderStep
+import co.xenastudios.xbans.store.revoke
 import kotlin.time.Instant
 
 /** How a punishment or a pardon went: what the command's sender, or the API's caller, is told. */
@@ -342,6 +350,13 @@ public class Punisher internal constructor(private val plugin: XBansPlugin) {
             val event = PunishedEvent(p, !local)
             plugin.platform.scheduler.run(Where.Async) { plugin.bus.fire(PunishedEvent.TYPE, event) }
         }
+    }
+
+    /** [player] was turned away at the door: [LoginDeniedEvent], off the server's threads, when something listens. */
+    public fun loginDenied(player: PlayerRef, name: String, ban: Entry?) {
+        if (!plugin.hasListeners(co.xenastudios.xbans.api.event.LoginDeniedEvent.TYPE)) return
+        val event = co.xenastudios.xbans.api.event.LoginDeniedEvent(player, name, ban?.punishment, plugin.server.proxy)
+        plugin.platform.scheduler.run(Where.Async) { _ -> plugin.bus.fire(co.xenastudios.xbans.api.event.LoginDeniedEvent.TYPE, event) }
     }
 
     /** The screen a banned player sees, in their language: the ban, temporary ban or IP ban screen. */

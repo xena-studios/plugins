@@ -7,12 +7,9 @@ import co.xenastudios.core.api.event.EventBus
 import co.xenastudios.core.api.event.EventType
 import co.xenastudios.core.api.newPending
 import co.xenastudios.core.api.onSettled
-import co.xenastudios.core.api.pendingOf
 import co.xenastudios.core.api.resolve
 import co.xenastudios.core.common.Outcome
-import co.xenastudios.core.common.admin.Debug
 import co.xenastudios.core.common.admin.PasteService
-import co.xenastudios.core.common.admin.PlayerDataRegistry
 import co.xenastudios.core.common.admin.RecentErrors
 import co.xenastudios.core.common.command.AdminCommands
 import co.xenastudios.core.common.command.CommandDispatcher
@@ -35,31 +32,27 @@ import co.xenastudios.core.common.module.Module
 import co.xenastudios.core.common.module.ModuleSet
 import co.xenastudios.core.common.permission.PermissionRegistrar
 import co.xenastudios.core.common.platform.Platform
-import co.xenastudios.core.common.proxy.Peer
 import co.xenastudios.core.common.proxy.ProxyChannel
-import co.xenastudios.core.common.proxy.ProxyPayload
 import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.scheduler.Where
-import co.xenastudios.core.common.scheduler.later
 import co.xenastudios.core.common.text.Component
 import co.xenastudios.core.common.update.UpdateChecker
 import co.xenastudios.core.common.update.UpdateSettings
 import co.xenastudios.xbans.api.Alt
 import co.xenastudios.xbans.api.HistoryPage
-import co.xenastudios.xbans.api.Punishment
 import co.xenastudios.xbans.api.PunishRequest
 import co.xenastudios.xbans.api.PunishResult
+import co.xenastudios.xbans.api.Punishment
 import co.xenastudios.xbans.api.PunishmentType
 import co.xenastudios.xbans.api.XBans
 import co.xenastudios.xbans.api.XBansApi
-import co.xenastudios.xbans.api.event.LoginDeniedEvent
 import co.xenastudios.xbans.config.XBansConfig
 import co.xenastudios.xbans.model.Active
 import co.xenastudios.xbans.model.Entry
-import co.xenastudios.xbans.model.Length
 import co.xenastudios.xbans.store.Backend
 import co.xenastudios.xbans.store.IpSetup
 import co.xenastudios.xbans.store.Tables
+import co.xenastudios.xbans.store.alts
 import kotlin.concurrent.Volatile
 import kotlin.time.Duration.Companion.seconds
 
@@ -103,16 +96,16 @@ public class XBansPlugin(
     /** The family's player cache: names of players who aren't online, for every command naming a player. */
     internal val cache: PlayerCache? = null,
     private val opener: Opener,
-    private val registrar: CommandRegistrar? = null,
-    private val permissionRegistrar: PermissionRegistrar? = null,
+    internal val registrar: CommandRegistrar? = null,
+    internal val permissionRegistrar: PermissionRegistrar? = null,
     /** What `/xbans debug`'s report says about the server. */
-    private val about: () -> Map<String, String> = { emptyMap() },
+    internal val about: () -> Map<String, String> = { emptyMap() },
     /** Where `/xbans debug` uploads its report; `null` to write a file. */
-    private val paste: PasteService? = null,
+    internal val paste: PasteService? = null,
     /** The importers the adapter offers, for `/xbans import`. */
     public val imports: Imports? = null,
     /** The proxy layer's channel, `xena:xbans`, behind a proxy and on it; `null` without one. */
-    private val channel: ProxyChannel? = null,
+    internal val channel: ProxyChannel? = null,
     override val version: String = VERSION,
 ) : XBansApi {
 
@@ -120,7 +113,7 @@ public class XBansPlugin(
     public val log: RecentErrors = RecentErrors(platform.log, platform.clock)
 
     /** The messages, in each reader's language. */
-    public val texts: Texts = Texts(languages) { server }
+    public val texts: Texts = Texts(languages, server)
 
     /** The API's events. On Bukkit the adapter bridges them to Bukkit events. */
     public val bus: SimpleEventBus = SimpleEventBus(log)
@@ -140,19 +133,19 @@ public class XBansPlugin(
     /** What's open, or `null` before the first database is ready. */
     @Volatile
     public var backend: Backend? = null
-        private set
+        internal set
 
     /** Why there's no database, while opening it fails. */
     @Volatile
     public var failure: String? = null
-        private set
+        internal set
 
     /** Settled `true` once the first database is open and its bans are in memory. */
     public val ready: Pending<Boolean> = newPending()
 
     @Volatile
     public var running: Boolean = false
-        private set
+        internal set
 
     public val sessions: Sessions = Sessions()
 
@@ -173,13 +166,9 @@ public class XBansPlugin(
     /** `/xbans reload`, `debug` and `forget`, or on a proxy `/xbansproxy`'s. */
     public val admin: AdminCommands = AdminCommands(
         PLUGIN_ID, NAME, platform, reloader(),
-        // Objects, not lambdas, so neither class loads until the command runs (AdminCommands).
-        debug = object : () -> Debug {
-            override fun invoke() = AdminParts.debug(this@XBansPlugin, about, paste)
-        },
-        playerData = object : () -> PlayerDataRegistry {
-            override fun invoke() = AdminParts.playerData(this@XBansPlugin, cache)
-        },
+        // One class, not two lambdas, and neither part loads until its command runs (AdminCommands).
+        debug = AdminPart(this, true),
+        playerData = AdminPart(this, false),
         text = texts.admin,
     )
 
@@ -214,19 +203,28 @@ public class XBansPlugin(
         val wanted = opener.describe(config)
         val ticket = locked(this) { ++generation }
         this.wanted = wanted
-        platform.scheduler.run(Where.Async) { _ -> openNow(config, ticket) }
+        platform.scheduler.run(Where.Async, action = OpenTask(config, ticket))
+    }
+
+    // Opening, or trying again while there's no database, off the server's threads: a class, not a lambda.
+    internal fun retryTask(config: Config, ticket: Int): (Task) -> Unit = OpenTask(config, ticket, retry = true)
+
+    private inner class OpenTask(private val config: Config, private val ticket: Int, private val retry: Boolean = false) : (Task) -> Unit {
+        override fun invoke(task: Task) {
+            if (!retry || backend == null) openNow(config, ticket)
+        }
     }
 
     /** Tests only: network mode on an SQLite file two plugins share, standing in for a network's MySQL. */
     internal var networkOnAnyDatabase: Boolean = false
 
     @Volatile
-    private var wanted: String? = null
+    internal var wanted: String? = null
     private var generation = 0
     @Volatile
-    private var lastProblem: String? = null
+    internal var lastProblem: String? = null
 
-    private fun current(ticket: Int) = locked(this) { ticket == generation } && running
+    internal fun current(ticket: Int): Boolean = locked(this) { ticket == generation } && running
 
     private fun openNow(config: Config, ticket: Int) {
         if (!current(ticket)) return
@@ -237,58 +235,83 @@ public class XBansPlugin(
         Opening(db, config, ticket).start()
     }
 
-    /** Opening a database: its tables, how IPs are keyed, the change feed, what's in force; one class for its steps. */
-    private inner class Opening(private val db: Database, private val config: Config, private val ticket: Int) {
+    /**
+     * Opening a database: its tables, how IPs are keyed, the change feed (on a network), what's in
+     * force. One class for its steps rather than a lambda each (each would be a class of its own,
+     * made as the server starts: decisions/2026-11-25-a-lighter-core.md). On the database's threads.
+     */
+    private inner class Opening(private val db: Database, private val config: Config, private val ticket: Int) :
+        (Any?, Throwable?) -> Unit, (Task) -> Unit {
+        private var step = 0
+        private var keys: co.xenastudios.xbans.ip.IpKeys? = null
+        private var feed: ChangeFeed? = null
+        private var fresh: Backend? = null
+
         fun start() {
-            db.migrate(Tables.MIGRATIONS).onSettled { migrated, error ->
-                if (migrated !is Outcome.Ok) return@onSettled fail("couldn't bring ${db.description}'s tables up to date: ${(migrated as? Outcome.Err)?.error ?: error}")
-                db.session { session -> Outcome.Ok(IpSetup(platform.storage, log, db.sql).keys(session, config[XBansConfig.ips.hash])) }.onSettled { keyed, failure ->
-                    val keys = when (val outcome = (keyed as? Outcome.Ok)?.value) {
-                        is Outcome.Ok -> outcome.value
-                        is Outcome.Err -> return@onSettled fail(outcome.error)
-                        null -> return@onSettled fail("couldn't read how IPs are kept: ${(keyed as? Outcome.Err)?.error ?: failure}")
+            db.migrate(Tables.MIGRATIONS).onSettled(this)
+        }
+
+        override fun invoke(value: Any?, error: Throwable?) {
+            when (step++) {
+                0 -> {
+                    if (value !is Outcome.Ok<*>) return fail("couldn't bring ${db.description}'s tables up to date: ${(value as? Outcome.Err<*>)?.error ?: error}")
+                    db.session(IpStep(this@XBansPlugin, db, config[XBansConfig.ips.hash])).onSettled(this)
+                }
+                1 -> {
+                    @Suppress("UNCHECKED_CAST")
+                    when (val outcome = (value as? Outcome.Ok<*>)?.value as? Outcome<co.xenastudios.xbans.ip.IpKeys, String>) {
+                        is Outcome.Ok -> keys = outcome.value
+                        is Outcome.Err -> return fail(outcome.error)
+                        null -> return fail("couldn't read how IPs are kept: ${(value as? Outcome.Err<*>)?.error ?: error}")
                     }
                     // The feed first, so it starts from before the load: a change made while the bans
-                    // load is in both, and memory ignores the second copy.
+                    // load is in both, and memory ignores the second copy. Off a network, none.
                     val settings = XBansConfig.network.read(config)
-                    val feeding = if (networkOnAnyDatabase && settings.enabled) {
-                        ChangeFeed.openOnAny(db, settings, platform.scheduler, platform.clock, log, kotlin.uuid.Uuid.random().toHexString().substring(0, 16))
-                    } else {
-                        ChangeFeed.open(db, settings, platform.scheduler, platform.clock, log)
+                    when {
+                        !settings.enabled -> invoke(Outcome.Ok(null), null)
+                        networkOnAnyDatabase -> ChangeFeed.openOnAny(db, settings, platform.scheduler, platform.clock, log, kotlin.uuid.Uuid.random().toHexString().substring(0, 16)).onSettled(this)
+                        else -> ChangeFeed.open(db, settings, platform.scheduler, platform.clock, log).onSettled(this)
                     }
-                    feeding.onSettled { fed, feedError ->
-                        val feed = (fed as? Outcome.Ok)?.value ?: return@onSettled fail("couldn't start network mode: ${(fed as? Outcome.Err)?.error ?: feedError}")
-                        val active = Active()
-                        val now = now()
-                        db.read { session -> Backend(db, feed, active, keys).inForce(session, now) }.onSettled { read, readError ->
-                            val found = (read as? Outcome.Ok)?.value ?: return@onSettled fail("couldn't read the bans in force: ${(read as? Outcome.Err)?.error ?: readError}")
-                            for (entry in found) active.add(entry)
-                            opened(Backend(db, feed, active, keys))
-                        }
-                    }
+                }
+                2 -> {
+                    if (value !is Outcome.Ok<*>) return fail("couldn't start network mode: ${(value as? Outcome.Err<*>)?.error ?: error}")
+                    feed = (value.value as? ChangeFeed)?.takeIf { it.isOn }
+                    val backend = Backend(db, feed, Active(), keys!!)
+                    fresh = backend
+                    db.read(InForce(backend, now())).onSettled(this)
+                }
+                else -> {
+                    if (value !is Outcome.Ok<*>) return fail("couldn't read the bans in force: ${(value as? Outcome.Err<*>)?.error ?: error}")
+                    val backend = fresh!!
+                    @Suppress("UNCHECKED_CAST")
+                    for (entry in value.value as List<Entry>) backend.active.add(entry)
+                    opened(backend)
                 }
             }
         }
 
         private fun fail(why: String) {
+            feed?.close()
             db.close()
             failedToOpen("Couldn't open ${db.description}: $why", config, ticket, db)
         }
 
         private fun opened(fresh: Backend) {
             if (!current(ticket)) {
-                fresh.feed.close()
+                fresh.feed?.close()
                 db.close()
                 return
             }
-            network.subscribe(fresh)
-            fresh.feed.start()
+            fresh.feed?.let {
+                network.subscribe(fresh)
+                it.start()
+            }
             val old = backend
             backend = fresh
             failure = null
             rekeySessions(fresh)
             if (old != null) {
-                old.feed.close()
+                old.feed?.close()
                 old.database.close()
             }
             if (lastProblem != null) {
@@ -296,37 +319,38 @@ public class XBansPlugin(
                 lastProblem = null
             }
             log.info("Loaded ${fresh.active.size} bans and mutes in force from ${db.description}, schema 1" +
-                if (fresh.feed.isOn) ", sharing changes with the network." else ".")
+                if (fresh.shared) ", sharing changes with the network." else ".")
             XBans.register(this@XBansPlugin)
             ready.resolve(true)
             // Players who are online already (a reload, a database swapped) and banned on the new one.
-            platform.scheduler.run(Where.Global) { _ ->
-                val now = now()
-                for (player in server.online()) {
-                    val ban = fresh.active.ban(player, sessions.ip(player), loginServer(player), now) ?: continue
-                    sessions.quietQuit(player)
-                    server.kick(player, punisher.screen(player, ban), true)
-                }
+            platform.scheduler.run(Where.Global, action = this)
+        }
+
+        override fun invoke(task: Task) {
+            val fresh = fresh ?: return
+            val now = now()
+            for (player in server.online()) {
+                val ban = fresh.active.ban(player, sessions.ip(player), loginServer(player), now) ?: continue
+                sessions.quietQuit(player)
+                server.kick(player, punisher.screen(player, ban), true)
             }
         }
     }
 
-    private fun failedToOpen(problem: String, config: Config, ticket: Int, db: Database?) {
-        if (!current(ticket)) return
-        // Said once: a retry every 15 seconds that fails the same way adds nothing to the log.
-        val repeat = problem == lastProblem
-        lastProblem = problem
-        failure = problem
-        if (!repeat) log.error(problem)
-        val current = backend
-        if (current != null) {
-            log.error("Still using ${current.database.description}.")
-            wanted = null // So reloading with the same settings tries again.
-            return
-        }
-        if (!repeat) log.error("Nobody can join until it opens: trying again every ${RETRY.inWholeSeconds}s.")
-        platform.scheduler.later(Where.Async, RETRY) { _ -> if (backend == null) openNow(config, ticket) }
+    /** How IPs are keyed, on the writer: a class, not a lambda. */
+    private class IpStep(private val plugin: XBansPlugin, private val db: Database, private val hash: Boolean) :
+        (co.xenastudios.core.common.db.SqlSession) -> Outcome<Outcome<co.xenastudios.xbans.ip.IpKeys, String>, DbError> {
+        override fun invoke(session: co.xenastudios.core.common.db.SqlSession): Outcome<Outcome<co.xenastudios.xbans.ip.IpKeys, String>, DbError> =
+            Outcome.Ok(IpSetup(plugin.platform.storage, plugin.log, db.sql).keys(session, hash))
     }
+
+    /** What's in force, on a reader: a class, not a lambda. */
+    private class InForce(private val backend: Backend, private val now: Long) :
+        (co.xenastudios.core.common.db.SqlSession) -> Outcome<List<Entry>, DbError> {
+        override fun invoke(session: co.xenastudios.core.common.db.SqlSession): Outcome<List<Entry>, DbError> = backend.inForce(session, now)
+    }
+
+    private fun failedToOpen(problem: String, config: Config, ticket: Int, db: Database?) = Calls.failedToOpen(this, problem, config, ticket)
 
     // Every online player's IP keyed again, as a newly opened database keys them.
     private fun rekeySessions(backend: Backend) {
@@ -341,20 +365,7 @@ public class XBansPlugin(
     }
 
     /** Turns the plugin off, as the server stops: the API, the commands, the feed, then the database, once what's queued is saved. */
-    public fun stop(): Pending<Unit> {
-        running = false
-        XBans.register(null)
-        updates?.close()
-        updates = null
-        modules.clear()
-        registrar?.clear()
-        permissionRegistrar?.sync(emptyList())
-        channel?.close()
-        val current = backend ?: return pendingOf(Unit)
-        backend = null
-        current.feed.close()
-        return current.database.close()
-    }
+    public fun stop(): Pending<Unit> = Calls.stop(this)
 
     @Suppress("UNCHECKED_CAST")
     private fun reloader(): ModuleReloader =
@@ -386,7 +397,7 @@ public class XBansPlugin(
     public fun apply(loaded: Loaded): List<String> {
         config = loaded.config
         texts.translations = loaded.translations
-        texts.look = Texts.Look(Dates.of(config[XBansConfig.lists.dateFormat]), config[XBansConfig.screens.appealLink])
+        texts.look(config[XBansConfig.lists.dateFormat], config[XBansConfig.screens.appealLink])
         dispatcher = CommandDispatcher(commands.tree(config), platform.clock, log)
         permissions = commands.permissions
         permissionRegistrar?.sync(permissions.permissions + admin.permissions.permissions)
@@ -405,14 +416,14 @@ public class XBansPlugin(
     internal val serverName: String get() = config[XBansConfig.scopes.serverName]
 
     /** Whether xBans tells players here of punishments: always on a server; on a proxy only when its servers don't share the database. */
-    internal val tellsPlayers: Boolean get() = !server.proxy || backend?.feed?.isOn != true
+    internal val tellsPlayers: Boolean get() = !server.proxy || backend?.shared != true
 
     /** Whether [entry] reaches [player] where they are: this server's scope, or on the proxy the server they're on. */
     internal fun appliesHere(entry: Entry, player: PlayerRef): Boolean =
         if (!server.proxy) entry.appliesOn(serverName) else entry.punishment.isGlobal || seats[player]?.let(entry::appliesOn) == true
 
     // The scope a ban is checked against where [player] is: this server's, or on the proxy the one they're on.
-    private fun loginServer(player: PlayerRef): String? = if (server.proxy) seats[player] else serverName
+    internal fun loginServer(player: PlayerRef): String? = if (server.proxy) seats[player] else serverName
 
     // ---- players ----
 
@@ -433,55 +444,17 @@ public class XBansPlugin(
      * while the bans aren't read. Fires [LoginDeniedEvent] and tells staff with
      * `xbans.notify.banned-join`. Any thread.
      */
-    public fun denied(player: PlayerRef, name: String, ban: Entry?): Component {
-        if (ban != null) tellStaff(name, ban)
-        if (hasListeners(LoginDeniedEvent.TYPE)) {
-            val event = LoginDeniedEvent(player, name, ban?.punishment, server.proxy)
-            platform.scheduler.run(Where.Async) { _ -> bus.fire(LoginDeniedEvent.TYPE, event) }
-        }
-        return if (ban == null) texts.render(player, XBansMessages.screenNotReady) ?: Component.text("The server is still starting.")
-        else punisher.screen(player, ban)
-    }
-
-    private fun tellStaff(name: String, ban: Entry) {
-        val now = now()
-        platform.scheduler.run(Where.Global) { _ ->
-            for (staff in server.online()) {
-                if (server.hasPermission(staff, NOTIFY_BANNED_JOIN)) {
-                    texts.about(staff, XBansMessages.bannedJoin, ban, now, "player" to name)?.let { server.send(staff, it) }
-                }
-            }
-        }
-    }
+    public fun denied(player: PlayerRef, name: String, ban: Entry?): Component = Calls.denied(this, player, name, ban)
 
     /**
      * [player] joined (or, on the proxy, logged in): their IP keyed and remembered, their join
      * recorded with their weight and exemption, alts reported. Returns the ban that should kick
      * them now (one made while they connected), or `null`. On their thread.
      */
-    public fun joined(player: PlayerRef, name: String, address: String?): Entry? {
-        val backend = backend
-        val ip = if (backend == null || !config[XBansConfig.ips.enabled]) null else backend.keys.keyOf(address)
-        val sharing = sessions.joined(player, ip)
-        if (sharing >= SHARED_IP_WARNING && !warnedShared) {
-            warnedShared = true
-            log.warn("$sharing players online are on the same IP. If they come through a proxy, it isn't forwarding their real addresses, and an IP ban " +
-                "would shut them all out: turn on the proxy's forwarding (Velocity's player-info-forwarding, or BungeeCord's ip_forward).")
-        }
-        if (backend == null) return null
-        val ban = backend.active.ban(player, ip, loginServer(player), now())
-        if (ban != null) return ban
-        if (backend.database.available) {
-            backend.seen(player, name, ip, server.weight(player), server.hasPermission(player, co.xenastudios.xbans.Power.EXEMPT), now()).onSettled { done, error ->
-                if (done !is Outcome.Ok) log.warn("Couldn't record $name's join: ${(done as? Outcome.Err)?.error ?: error}")
-            }
-        }
-        if (ip != null && config[XBansConfig.ips.altAlerts]) actions().alertOnJoin(player, name, ip)
-        return null
-    }
+    public fun joined(player: PlayerRef, name: String, address: String?): Entry? = Calls.joined(this, player, name, address)
 
     @Volatile
-    private var warnedShared = false
+    internal var warnedShared = false
 
     /** [player] left; `true` if their quit line is to be left out (they were kicked for a ban). */
     public fun quit(player: PlayerRef): Boolean {
@@ -502,64 +475,28 @@ public class XBansPlugin(
     }
 
     /** What a muted player is told when they try to chat: "You're muted", for [mute]. */
-    public fun mutedMessage(player: PlayerRef, mute: Entry): Component? =
-        texts.about(player, if (mute.punishment.isPermanent) XBansMessages.muted else XBansMessages.tempMuted, mute, now())
+    public fun mutedMessage(player: PlayerRef, mute: Entry): Component? = Calls.mutedMessage(this, player, mute)
 
     /**
      * Whether a muted [player]'s command [line] (`/msg Bob hi`) is one they can't use, by what it is,
      * not how it was typed: an alias (`/emsg`) or a namespace (`/essentials:msg`) of a blocked
      * command is blocked too. Only a muted player's commands are looked up. On the command's thread.
      */
-    public fun blocksCommand(line: String): Boolean {
-        val text = line.removePrefix("/")
-        val label = text.substringBefore(' ').lowercase()
-        if (label.isEmpty()) return false
-        val names = blocked()
-        if (strip(label) in names) return true
-        val known = server.commandNames(label) ?: return false
-        return known.any { strip(it.lowercase()) in names }
-    }
+    public fun blocksCommand(line: String): Boolean = Calls.blocksCommand(this, line)
 
     @Volatile
-    private var blockedFrom: List<String>? = null
+    internal var blockedFrom: List<String>? = null
 
     @Volatile
-    private var blockedNames: Set<String> = emptySet()
-
-    private fun blocked(): Set<String> {
-        val current = config[XBansConfig.mutes.blockedCommands]
-        if (current !== blockedFrom) {
-            blockedNames = current.map { strip(it.trim().lowercase().removePrefix("/")) }.toSet()
-            blockedFrom = current
-        }
-        return blockedNames
-    }
-
-    private fun strip(label: String): String = label.substringAfterLast(':')
+    internal var blockedNames: Set<String> = emptySet()
 
     // ---- the proxy layer ----
 
     // A server tells the proxy of a ban or kick it just made, so the proxy acts before the feed's
     // next check: the player is taken off the network at once. Behind a proxy only.
-    internal fun tellProxy(entry: Entry) {
-        val channel = channel ?: return
-        if (server.proxy || entry.type != PunishmentType.BAN && entry.type != PunishmentType.KICK) return
-        // NO_PLAYER (nobody here to carry it) is fine: the change feed brings it within check-every.
-        channel.send(Peer.Proxy, TOPIC_ENFORCE, ProxyPayload.write { int(1); long(entry.id) })
-    }
+    internal fun tellProxy(entry: Entry) = Calls.tellProxy(this, entry)
 
-    private fun listen(channel: ProxyChannel) {
-        if (!server.proxy) return
-        channel.listen(TOPIC_ENFORCE) { message ->
-            val id = ProxyPayload.read(message.payload) { if (int() == 1) long() else null } ?: return@listen
-            val backend = backend ?: return@listen
-            backend.find(id).onSettled { found, _ ->
-                val entry = (found as? Outcome.Ok)?.value ?: return@onSettled
-                if (entry.punishment.removal != null || !markHeard(entry.id)) return@onSettled
-                punisher.applyMade(entry, emptyList(), false, false, null)
-            }
-        }
-    }
+    private fun listen(channel: ProxyChannel) = Calls.listen(this, channel)
 
     /** Whether [id] is heard for the first time; the proxy then skips the feed's copy. */
     internal fun markHeard(id: Long): Boolean = locked(heard) {
@@ -580,94 +517,31 @@ public class XBansPlugin(
 
     // ---- the API ----
 
-    private fun activeOf(player: PlayerRef, mute: Boolean): Punishment? {
-        val backend = backend ?: return null
-        val now = now()
-        val entry = if (mute) backend.active.mute(player, sessions.ip(player), loginServer(player), now) else backend.active.ban(player, null, loginServer(player), now)
-        return entry?.punishment
-    }
+    // Each in Calls, loaded with the first plugin to call one, not at startup.
+    override fun activeBan(player: PlayerRef): Punishment? = Calls.activeOf(this, player, false)
 
-    override fun activeBan(player: PlayerRef): Punishment? = activeOf(player, false)
+    override fun activeMute(player: PlayerRef): Punishment? = Calls.activeOf(this, player, true)
 
-    override fun activeMute(player: PlayerRef): Punishment? = activeOf(player, true)
+    override fun punish(request: PunishRequest): Pending<PunishResult> = Calls.punish(this, request)
 
-    override fun punish(request: PunishRequest): Pending<PunishResult> {
-        val name = server.name(request.target) ?: cache?.get(request.target)?.name ?: request.target.toString()
-        val made = Punisher.Request(
-            request.type, request.target, name, null, request.ipBased,
-            if (request.durationMillis <= 0) Length.PERMANENT else Length(request.durationMillis), request.reason, null, request.scope,
-            request.silent, request.extraSilent, request.staff, request.staffName, null, null,
-        )
-        return result(punisher.punish(made))
-    }
-
-    override fun pardon(player: PlayerRef, type: PunishmentType, staff: PlayerRef?, staffName: String, reason: String): Pending<PunishResult> {
-        val name = server.name(player) ?: cache?.get(player)?.name ?: player.toString()
-        return result(punisher.revoke(Punisher.Revoke(type, player, name, null, null, null, reason, false, false, staff, staffName, null, null)))
-    }
-
-    private fun result(done: Pending<Done>): Pending<PunishResult> {
-        val out = newPending<PunishResult>()
-        done.onSettled { value, error ->
-            out.resolve(when (value) {
-                is Done.Made -> PunishResult.done(value.entry.punishment)
-                is Done.Lifted -> PunishResult.done(value.entries.first().punishment)
-                is Done.Refused -> PunishResult(PunishResult.Outcome.REFUSED, null, refusal(value))
-                Done.Cancelled -> PunishResult.CANCELLED
-                Done.NotReady -> PunishResult(PunishResult.Outcome.FAILED, null, "xBans is still opening its database.")
-                is Done.Failed -> PunishResult(PunishResult.Outcome.FAILED, null, value.error)
-                null -> PunishResult(PunishResult.Outcome.FAILED, null, error.toString())
-            })
-        }
-        return out
-    }
+    override fun pardon(player: PlayerRef, type: PunishmentType, staff: PlayerRef?, staffName: String, reason: String): Pending<PunishResult> =
+        Calls.pardon(this, player, type, staff, staffName, reason)
 
     /** What a refusal says, in English, for the API. */
-    internal fun refusal(refused: Done.Refused): String {
-        val english = Translations.of(XBansMessages.catalog, emptyMap())
-        val language = english.default
-        val placeholders = refused.placeholders + (refused.entry?.let { texts.of(it, now()) } ?: emptyList())
-        return texts.render(language, refused.message, placeholders)?.plain() ?: refused.message.key
-    }
+    internal fun refusal(refused: Done.Refused): String = Calls.refusal(this, refused)
 
     override fun history(player: PlayerRef, page: Int, perPage: Int): Pending<HistoryPage> = actions().historyPage(Backend.Filter.target(player, null), page, perPage)
 
     override fun staffHistory(staff: PlayerRef?, page: Int, perPage: Int): Pending<HistoryPage> = actions().historyPage(Backend.Filter.staff(staff, null), page, perPage)
 
-    override fun alts(player: PlayerRef): Pending<List<Alt>> {
-        val backend = backend ?: return pendingOf(emptyList())
-        val out = newPending<List<Alt>>()
-        backend.alts(player, null).onSettled { found, _ ->
-            out.resolve((found as? Outcome.Ok)?.value.orEmpty().mapNotNull { use ->
-                use.id?.takeIf { it != player }?.let { Alt(it, use.name, kotlin.time.Instant.fromEpochMilliseconds(use.last)) }
-            })
-        }
-        return out
-    }
+    override fun alts(player: PlayerRef): Pending<List<Alt>> = Calls.alts(this, player)
 
-    override fun isStaff(player: PlayerRef): Boolean {
-        if (!server.isOnline(player)) return false
-        if (server.hasPermission(player, XBansApi.STAFF_PERMISSION)) return true
-        val c = XBansConfig.commands
-        return listOf(c.ban, c.mute, c.kick, c.warn).any { config[it.enabled] && config[it.permission].let { node -> node.isNotEmpty() && server.hasPermission(player, node) } }
-    }
+    override fun isStaff(player: PlayerRef): Boolean = Calls.isStaff(this, player)
 
     override fun onlineStaff(): List<PlayerRef> = server.online().filter(::isStaff)
 
     override fun notifyStaff(message: String, silent: Boolean) {
-        val markup = co.xenastudios.core.common.text.Markup.parse(message, texts.translations.theme.tags)
-        val line = texts.translations.theme.chat(markup.render())
-        platform.scheduler.run(Where.Global) { _ ->
-            server.console(line)
-            val node = if (silent) Punisher.NOTIFY_SILENT else Punisher.NOTIFY_BROADCAST
-            val recipients = server.online().filterTo(ArrayList()) { server.hasPermission(it, node) }
-            if (recipients.isNotEmpty() && hasListeners(co.xenastudios.xbans.api.event.StaffNotifyEvent.TYPE)) {
-                val event = co.xenastudios.xbans.api.event.StaffNotifyEvent(line.plain(), silent, recipients)
-                bus.fire(co.xenastudios.xbans.api.event.StaffNotifyEvent.TYPE, event)
-                if (event.isCancelled) recipients.clear()
-            }
-            for (player in recipients) server.send(player, line)
-        }
+        actions().notifyStaff(message, silent)
     }
 
     /** Who [source] is, as punishments record them: their uuid and name, or the console's. */
@@ -696,4 +570,10 @@ public class XBansPlugin(
 
         internal val RETRY = 15.seconds
     }
+}
+
+/** `/xbans debug`'s report or `forget`'s player data, made when the command first asks. */
+private class AdminPart<T>(private val plugin: XBansPlugin, private val debug: Boolean) : () -> T {
+    @Suppress("UNCHECKED_CAST")
+    override fun invoke(): T = (if (debug) AdminParts.debug(plugin, plugin.about, plugin.paste) else AdminParts.playerData(plugin, plugin.cache)) as T
 }

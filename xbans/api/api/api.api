@@ -1,0 +1,233 @@
+public final class co/xenastudios/xbans/api/Alt {
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lkotlin/time/Instant;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLastSeen ()Lkotlin/time/Instant;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xbans/api/HistoryPage {
+	public fun <init> (Ljava/util/List;IIJ)V
+	public final fun getPage ()I
+	public final fun getPages ()I
+	public final fun getPunishments ()Ljava/util/List;
+	public final fun getTotal ()J
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xbans/api/PunishRequest {
+	public static final field Companion Lco/xenastudios/xbans/api/PunishRequest$Companion;
+	public final fun getDurationMillis ()J
+	public final fun getExtraSilent ()Z
+	public final fun getIpBased ()Z
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getScope ()Ljava/lang/String;
+	public final fun getSilent ()Z
+	public final fun getStaff ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getStaffName ()Ljava/lang/String;
+	public final fun getTarget ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getType ()Lco/xenastudios/xbans/api/PunishmentType;
+	public static final fun of (Lco/xenastudios/xbans/api/PunishmentType;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)Lco/xenastudios/xbans/api/PunishRequest;
+	public fun toString ()Ljava/lang/String;
+	public final fun withDurationMillis (J)Lco/xenastudios/xbans/api/PunishRequest;
+	public final fun withExtraSilent (Z)Lco/xenastudios/xbans/api/PunishRequest;
+	public final fun withIpBased (Z)Lco/xenastudios/xbans/api/PunishRequest;
+	public final fun withScope (Ljava/lang/String;)Lco/xenastudios/xbans/api/PunishRequest;
+	public final fun withSilent (Z)Lco/xenastudios/xbans/api/PunishRequest;
+	public final fun withStaff (Lco/xenastudios/core/api/PlayerRef;)Lco/xenastudios/xbans/api/PunishRequest;
+	public final fun withStaff (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)Lco/xenastudios/xbans/api/PunishRequest;
+	public static synthetic fun withStaff$default (Lco/xenastudios/xbans/api/PunishRequest;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;ILjava/lang/Object;)Lco/xenastudios/xbans/api/PunishRequest;
+}
+
+public final class co/xenastudios/xbans/api/PunishRequest$Companion {
+	public final fun of (Lco/xenastudios/xbans/api/PunishmentType;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)Lco/xenastudios/xbans/api/PunishRequest;
+}
+
+public final class co/xenastudios/xbans/api/PunishResult {
+	public static final field CANCELLED Lco/xenastudios/xbans/api/PunishResult;
+	public static final field Companion Lco/xenastudios/xbans/api/PunishResult$Companion;
+	public fun <init> (Lco/xenastudios/xbans/api/PunishResult$Outcome;Lco/xenastudios/xbans/api/Punishment;Ljava/lang/String;)V
+	public static final fun done (Lco/xenastudios/xbans/api/Punishment;)Lco/xenastudios/xbans/api/PunishResult;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getOutcome ()Lco/xenastudios/xbans/api/PunishResult$Outcome;
+	public final fun getPunishment ()Lco/xenastudios/xbans/api/Punishment;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xbans/api/PunishResult$Companion {
+	public final fun done (Lco/xenastudios/xbans/api/Punishment;)Lco/xenastudios/xbans/api/PunishResult;
+}
+
+public final class co/xenastudios/xbans/api/PunishResult$Outcome : java/lang/Enum {
+	public static final field CANCELLED Lco/xenastudios/xbans/api/PunishResult$Outcome;
+	public static final field DONE Lco/xenastudios/xbans/api/PunishResult$Outcome;
+	public static final field FAILED Lco/xenastudios/xbans/api/PunishResult$Outcome;
+	public static final field REFUSED Lco/xenastudios/xbans/api/PunishResult$Outcome;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xbans/api/PunishResult$Outcome;
+	public static fun values ()[Lco/xenastudios/xbans/api/PunishResult$Outcome;
+}
+
+public final class co/xenastudios/xbans/api/Punishment {
+	public static final field Companion Lco/xenastudios/xbans/api/Punishment$Companion;
+	public static final field GLOBAL Ljava/lang/String;
+	public fun <init> (JLco/xenastudios/xbans/api/PunishmentType;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;ZLjava/lang/String;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lkotlin/time/Instant;Lkotlin/time/Instant;Ljava/lang/String;ZLjava/lang/String;Lco/xenastudios/xbans/api/Removal;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreated ()Lkotlin/time/Instant;
+	public final fun getExpires ()Lkotlin/time/Instant;
+	public final fun getId ()J
+	public final fun getIpBased ()Z
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getRemoval ()Lco/xenastudios/xbans/api/Removal;
+	public final fun getScope ()Ljava/lang/String;
+	public final fun getSilent ()Z
+	public final fun getStaff ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getStaffName ()Ljava/lang/String;
+	public final fun getTarget ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getTargetName ()Ljava/lang/String;
+	public final fun getTemplate ()Ljava/lang/String;
+	public final fun getType ()Lco/xenastudios/xbans/api/PunishmentType;
+	public fun hashCode ()I
+	public final fun isActive (Lkotlin/time/Instant;)Z
+	public final fun isGlobal ()Z
+	public final fun isPermanent ()Z
+	public fun toString ()Ljava/lang/String;
+	public final fun withRemoval (Lco/xenastudios/xbans/api/Removal;)Lco/xenastudios/xbans/api/Punishment;
+}
+
+public final class co/xenastudios/xbans/api/Punishment$Companion {
+}
+
+public final class co/xenastudios/xbans/api/PunishmentType : java/lang/Enum {
+	public static final field BAN Lco/xenastudios/xbans/api/PunishmentType;
+	public static final field KICK Lco/xenastudios/xbans/api/PunishmentType;
+	public static final field MUTE Lco/xenastudios/xbans/api/PunishmentType;
+	public static final field WARN Lco/xenastudios/xbans/api/PunishmentType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getLasts ()Z
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xbans/api/PunishmentType;
+	public static fun values ()[Lco/xenastudios/xbans/api/PunishmentType;
+}
+
+public final class co/xenastudios/xbans/api/Removal {
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lkotlin/time/Instant;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAt ()Lkotlin/time/Instant;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getStaff ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getStaffName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xbans/api/XBans {
+	public static final field INSTANCE Lco/xenastudios/xbans/api/XBans;
+	public static final field STAFF_PERMISSION Ljava/lang/String;
+	public static final fun api ()Lco/xenastudios/xbans/api/XBansApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xbans/api/XBansApi;)V
+}
+
+public abstract interface class co/xenastudios/xbans/api/XBansApi {
+	public abstract fun activeBan (Lco/xenastudios/core/api/PlayerRef;)Lco/xenastudios/xbans/api/Punishment;
+	public abstract fun activeMute (Lco/xenastudios/core/api/PlayerRef;)Lco/xenastudios/xbans/api/Punishment;
+	public abstract fun alts (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun history (Lco/xenastudios/core/api/PlayerRef;II)Ljava/util/concurrent/CompletableFuture;
+	public fun isBanned (Lco/xenastudios/core/api/PlayerRef;)Z
+	public fun isMuted (Lco/xenastudios/core/api/PlayerRef;)Z
+	public abstract fun isStaff (Lco/xenastudios/core/api/PlayerRef;)Z
+	public abstract fun notifyStaff (Ljava/lang/String;Z)V
+	public abstract fun onlineStaff ()Ljava/util/List;
+	public abstract fun pardon (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xbans/api/PunishmentType;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun punish (Lco/xenastudios/xbans/api/PunishRequest;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun staffHistory (Lco/xenastudios/core/api/PlayerRef;II)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class co/xenastudios/xbans/api/XBansApi$DefaultImpls {
+	public static fun isBanned (Lco/xenastudios/xbans/api/XBansApi;Lco/xenastudios/core/api/PlayerRef;)Z
+	public static fun isMuted (Lco/xenastudios/xbans/api/XBansApi;Lco/xenastudios/core/api/PlayerRef;)Z
+}
+
+public final class co/xenastudios/xbans/api/event/LoginDeniedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xbans/api/event/LoginDeniedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/xbans/api/Punishment;Z)V
+	public final fun getBan ()Lco/xenastudios/xbans/api/Punishment;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getProxy ()Z
+}
+
+public final class co/xenastudios/xbans/api/event/LoginDeniedEvent$Companion {
+}
+
+public final class co/xenastudios/xbans/api/event/PardonEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xbans/api/event/PardonEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xbans/api/Punishment;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getPunishment ()Lco/xenastudios/xbans/api/Punishment;
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getStaff ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getStaffName ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xbans/api/event/PardonEvent$Companion {
+}
+
+public final class co/xenastudios/xbans/api/event/PardonedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xbans/api/event/PardonedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xbans/api/Punishment;Z)V
+	public final fun getFromOtherServer ()Z
+	public final fun getPunishment ()Lco/xenastudios/xbans/api/Punishment;
+}
+
+public final class co/xenastudios/xbans/api/event/PardonedEvent$Companion {
+}
+
+public final class co/xenastudios/xbans/api/event/PunishEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xbans/api/event/PunishEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xbans/api/PunishmentType;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Ljava/lang/String;JLco/xenastudios/core/api/PlayerRef;Ljava/lang/String;ZZLjava/lang/String;)V
+	public final fun getDurationMillis ()J
+	public final fun getIpBased ()Z
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getScope ()Ljava/lang/String;
+	public final fun getSilent ()Z
+	public final fun getStaff ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getStaffName ()Ljava/lang/String;
+	public final fun getTarget ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getTargetName ()Ljava/lang/String;
+	public final fun getType ()Lco/xenastudios/xbans/api/PunishmentType;
+}
+
+public final class co/xenastudios/xbans/api/event/PunishEvent$Companion {
+}
+
+public final class co/xenastudios/xbans/api/event/PunishedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xbans/api/event/PunishedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xbans/api/Punishment;Z)V
+	public final fun getFromOtherServer ()Z
+	public final fun getPunishment ()Lco/xenastudios/xbans/api/Punishment;
+}
+
+public final class co/xenastudios/xbans/api/event/PunishedEvent$Companion {
+}
+
+public final class co/xenastudios/xbans/api/event/StaffNotifyEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xbans/api/event/StaffNotifyEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Ljava/lang/String;ZLjava/util/List;)V
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getRecipients ()Ljava/util/List;
+	public final fun getSilent ()Z
+}
+
+public final class co/xenastudios/xbans/api/event/StaffNotifyEvent$Companion {
+}
+

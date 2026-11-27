@@ -25,26 +25,26 @@ public class JvmDatabase(
     private val drivers: Drivers,
     private val log: Log,
 ) : Opener {
-    private class Where(val settings: DatabaseSettings, val sqliteFile: Path, val problem: String?)
-
-    private fun where(config: Config): Where {
+    // Where the config says the data is: the settings, the SQLite file, and why it isn't what was
+    // asked for. The stdlib's Triple, not a class of xBans' own made as the server starts.
+    private fun where(config: Config): Triple<DatabaseSettings, Path, String?> {
         val plan = family.storage(config, XBansConfig.storage)
         val file = if (plan.inFamilyFolder) familyFolder.resolve(Family.DATABASE_FILE.toString()) else folder.resolve(FILE)
-        return Where(plan.database, file, plan.problem)
+        return Triple(plan.database, file, plan.problem)
     }
 
     override fun describe(config: Config): String {
-        val where = where(config)
-        return listOf(where.settings, where.settings.mysql.password.hashCode(), where.sqliteFile, XBansConfig.network.read(config), config[XBansConfig.ips.hash]).joinToString("|")
+        val (settings, file) = where(config)
+        return listOf(settings, settings.mysql.password.hashCode(), file, config[XBansConfig.network.enabled], config[XBansConfig.network.checkEvery], config[XBansConfig.ips.hash]).joinToString("|")
     }
 
     override fun open(config: Config): Outcome<Database, String> {
-        val where = where(config)
-        where.problem?.let(log::warn)
-        return when (val opened: Outcome<Database, DbError> = JdbcDatabase.open(where.settings, where.sqliteFile, drivers, log, XBansPlugin.NAME)) {
+        val (settings, file, problem) = where(config)
+        problem?.let(log::warn)
+        return when (val opened: Outcome<Database, DbError> = JdbcDatabase.open(settings, file, drivers, log, XBansPlugin.NAME)) {
             is Outcome.Ok -> Outcome.Ok(opened.value)
             is Outcome.Err -> Outcome.Err(
-                "Couldn't open ${if (where.settings.type == DatabaseSettings.Type.MYSQL) "MySQL" else "the SQLite database ${where.sqliteFile.fileName}"}: ${opened.error.detail}.",
+                "Couldn't open ${if (settings.type == DatabaseSettings.Type.MYSQL) "MySQL" else "the SQLite database ${file.fileName}"}: ${opened.error.detail}.",
             )
         }
     }

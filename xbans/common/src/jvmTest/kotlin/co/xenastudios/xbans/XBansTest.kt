@@ -9,6 +9,10 @@ import co.xenastudios.xbans.api.event.LoginDeniedEvent
 import co.xenastudios.xbans.api.event.PunishEvent
 import co.xenastudios.xbans.api.event.PunishedEvent
 import co.xenastudios.xbans.store.Backend
+import co.xenastudios.xbans.store.find
+import co.xenastudios.xbans.store.forget
+import co.xenastudios.xbans.store.inForceOf
+import co.xenastudios.xbans.store.ipHistory
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

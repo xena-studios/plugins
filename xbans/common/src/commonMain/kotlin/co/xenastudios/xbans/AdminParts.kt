@@ -10,6 +10,7 @@ import co.xenastudios.core.common.admin.PlayerData
 import co.xenastudios.core.common.admin.PlayerDataRegistry
 import co.xenastudios.core.common.admin.PlayerLookup
 import co.xenastudios.core.common.family.PlayerCache
+import co.xenastudios.xbans.store.forget
 
 /** What `/xbans debug` and `/xbans forget` run on, made the first time each runs: not as the server starts. */
 internal object AdminParts {
@@ -25,7 +26,7 @@ internal object AdminParts {
                 "In force" to (backend?.active?.size?.toString() ?: "not read yet"),
                 "Network" to when {
                     backend == null -> "no database: ${plugin.failure ?: "opening"}"
-                    backend.feed.isOn -> "sharing changes with the other servers" + if (plugin.server.proxy) ", enforced at the proxy's login" else ""
+                    backend.shared -> "sharing changes with the other servers" + if (plugin.server.proxy) ", enforced at the proxy's login" else ""
                     else -> "this server alone"
                 },
                 "IPs" to when {

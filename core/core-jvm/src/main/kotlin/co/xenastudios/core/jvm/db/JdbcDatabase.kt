@@ -731,8 +731,26 @@ public class JdbcDatabase internal constructor(
             if (owner.split('&').none { it.trim().startsWith("$key=", ignoreCase = true) }) properties.setProperty(key, value)
         }
 
-        private fun valid(connection: Connection): Boolean = try {
+        /**
+         * Whether [connection] still works. Drivers older than JDBC 4, such as the SQLite driver
+         * Spigot 1.8.8 bundles, have no `isValid`; they're asked with a `SELECT 1` instead.
+         */
+        internal fun valid(connection: Connection): Boolean = try {
             !connection.isClosed && connection.isValid(2)
+        } catch (e: SQLException) {
+            false
+        } catch (e: AbstractMethodError) {
+            answers(connection)
+        }
+
+        private fun answers(connection: Connection): Boolean = try {
+            val statement = connection.createStatement()
+            try {
+                statement.execute("SELECT 1")
+            } finally {
+                statement.close()
+            }
+            true
         } catch (e: SQLException) {
             false
         }

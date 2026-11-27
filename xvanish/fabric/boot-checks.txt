@@ -1,0 +1,16 @@
+# What scripts/boot-fabric.sh checks on each Minecraft line with xVanish, from the console. No
+# database: a single server keeps who's vanished in config/xvanish/vanished.txt.
+logged: [xVanish] xVanish 1.0.0 on
+run: xvanish info
+expect: xVanish 1.0.0 on
+run: vanish list
+expect: Nobody is vanished.
+run: vanish
+expect: Only players can use this command.
+run: vanish on Nobody
+expect: No player called Nobody is online.
+run: xvanish reload
+expect: Reloaded xVanish
+run: xvanish debug
+expect: Modules:
+expect: Debug report saved as debug/debug-

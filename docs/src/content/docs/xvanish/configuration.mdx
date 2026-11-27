@@ -1,0 +1,16 @@
+---
+title: Configuration
+description: "xVanish's config.yml: every switch, what it does, and its default."
+sidebar:
+  order: 4
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`plugins/xVanish/config.yml` (`config/xvanish/` on Fabric). Every setting applies on `/xvanish reload` except `network` and `storage`, which are read at startup. A switch that's off registers no listener at all.
+
+## Networks
+
+Several servers can share who's vanished: set `network.enabled: true` on each, and `storage` to the same MySQL or MariaDB database (or `type: shared` for the family's, in `plugins/Xena/config.yml`). Each server keeps the whole list in memory and hears the others' changes within `network.check-every`, so a player who vanished on one server joins the next vanished, and `/vanish list` names those on other servers. On SQLite network mode does nothing, and says so.
+
+<Reference plugin="xvanish" show="config" />

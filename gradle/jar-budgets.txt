@@ -114,3 +114,6 @@
 :core:platform-fabric:xbans:1.21.11 760
 :core:platform-fabric:xbans:26.3 750
 :xvanish:bukkit 900
+:core:platform-fabric:xvanish:1.20.1 900
+:core:platform-fabric:xvanish:1.21.11 900
+:core:platform-fabric:xvanish:26.3 900

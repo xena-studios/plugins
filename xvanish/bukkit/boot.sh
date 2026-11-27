@@ -48,4 +48,4 @@ fi
 # plugins/bStats/config.yml turning it off.
 exec "$root/scripts/boot-test.sh" "${server[@]}" --jvm -DIReallyKnowWhatIAmDoingISwear=true --jvm -Dxena.debug.paste=false \
   --seed "$root/core/core-testing/sample/bukkit/boot-seed" --seed "$here/import-seed" \
-  --checks "$here/boot-checks.txt" "$@" "$jar" "${extra[@]}"
+  --checks "$here/boot-checks.txt" --checks "$here/import-checks.txt" "$@" "$jar" "${extra[@]}"

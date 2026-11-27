@@ -1,0 +1,23 @@
+---
+title: Commands
+description: "Every xVanish command: /vanish and its words, /xvanish's admin subcommands, their arguments, aliases and permissions."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`<angle brackets>` are required, `[square brackets]` optional. A player without a command's permission doesn't see it in tab completion.
+
+`/vanish` takes one word, then maybe a player:
+
+| | |
+| --- | --- |
+| `/vanish` | Vanish, or show again. |
+| `/vanish on [player]`, `/vanish off [player]` | Vanish or show yourself, or with `xvanish.vanish.others`, another player. |
+| `/vanish <player>` | Vanish or show another player (`xvanish.vanish.others`). |
+| `/vanish list` | Who's vanished, here and on the network (`xvanish.list`). |
+| `/vanish login`, `/vanish logout` | Send a fake join or quit message, without showing or hiding you (`xvanish.login`). |
+| `/vanish pickup` | Pick up items and experience while vanished, or stop (`xvanish.pickup`). |
+
+<Reference plugin="xvanish" show="commands" />

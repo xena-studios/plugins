@@ -1,0 +1,12 @@
+# The import from SuperVanish's data.yml on a real server (boot.sh seeds it from import-seed/):
+# a dry run, then the import into vanished.txt, PremiumVanish's absence, and forget.
+run: xvanish import supervanish --dry-run
+expect: Dry run from SuperVanish: 2 of 2 records would be imported
+run: xvanish import supervanish
+expect: Imported from SuperVanish: 2.
+run: xvanish import premiumvanish
+expect: There's no PremiumVanish data here to import.
+run: xvanish forget 0f7c3c58-6d4c-4f0e-9f7a-2a1b3c4d5e6f
+run: xvanish forget 0f7c3c58-6d4c-4f0e-9f7a-2a1b3c4d5e6f
+expect: Forgot
+

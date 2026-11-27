@@ -1,0 +1,16 @@
+---
+title: Permissions
+description: "Every xVanish permission, who has it by default, and the vanish levels."
+sidebar:
+  order: 3
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Operators have every permission but `xvanish.join`, which nobody has until it's given: otherwise every operator would join vanished.
+
+**Levels.** `xvanish.level.<n>`, from 2 up to `vanish.max-level` (5 by default), gives a player level `<n>`; without one it's 1. A vanished player is seen only by players with `xvanish.see` and a level at least theirs, so a level-3 admin stays hidden from level-1 moderators.
+
+**SuperVanish's and PremiumVanish's permissions.** With `vanish.other-plugins-permissions: true`, `sv.use`, `sv.see`, `sv.list`, `sv.login`, `sv.logout`, `sv.toggleitems`, `sv.others`, `sv.joinvanished` (and the same under `pv.`), and `pv.level.<n>`, grant xVanish's.
+
+<Reference plugin="xvanish" show="permissions" />

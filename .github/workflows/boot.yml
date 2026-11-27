@@ -144,9 +144,9 @@ jobs:
       # gradle/jar-budgets.txt.
       - run: >-
           ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble :xutilities:bukkit:assemble :zchat:bukkit:assemble
-          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble
+          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble
           :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget :zchat:bukkit:checkJarBudget
-          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget
+          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: bukkit-jars
@@ -161,6 +161,7 @@ jobs:
             xmoney/hook-consumer/build/libs/hook-consumer.jar
             xteleport/bukkit/build/r8/xTeleport.jar
             xbans/bukkit/build/r8/xBans.jar
+            xvanish/bukkit/build/r8/xVanish.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -370,7 +371,7 @@ jobs:
         run: |
           for jar in xmoney/bukkit/build/r8/xMoney.jar xmoney/vault-consumer/build/libs/vault-consumer.jar \
                      xmoney/hook-consumer/build/libs/hook-consumer.jar zchat/bukkit/build/r8/zChat.jar \
-                     xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar; do
+                     xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar; do
             [[ -f $jar ]] || { echo "::error::$jar is missing: the bukkit-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/*' | head -20; exit 1; }
           done
       # xMoney beside vault-consumer (a plugin.yml plugin that depends on Vault) and, on Paper and
@@ -448,7 +449,29 @@ jobs:
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xbans/bukkit/zchat-client-checks.txt)
           xbans/bukkit/boot.sh "${target[@]}" "${zchat[@]}" --java "$JAVA" "${args[@]}"
-      # The family test: xTwin, xUtilities, zChat, xTeleport and xBans beside xSample, each with its own relocated core,
+      # xVanish alone: every command from the console, the import from SuperVanish's data.yml
+      # (import-checks.txt), a reload and debug; on a `client` cell beside zChat and xTeleport, with
+      # two real clients: Joiner vanishes and Friend finds them nowhere, not in the tab list, the
+      # world, xTeleport's /tpa, zChat's mentions and /msg or a completion, even after a relog; then
+      # Joiner shows again (xvanish/bukkit/client-checks.txt).
+      - name: boot xVanish
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+          SEED: ${{ matrix.cell.seed }}
+          REGIONS: ${{ matrix.cell.regions }}
+          CLIENT: ${{ matrix.cell.client }}
+        run: |
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          # boot.sh takes --family right after the server.
+          family=()
+          [[ $CLIENT != true ]] || family=(--family)
+          args=()
+          [[ -z $SEED ]] || args+=(--seed "$SEED")
+          [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xvanish/bukkit/client-checks.txt)
+          xvanish/bukkit/boot.sh "${target[@]}" "${family[@]}" --java "$JAVA" "${args[@]}"
+      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans and xVanish beside xSample, each with its own relocated core,
       # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),
       # and each answering its own commands.
       - name: family test
@@ -460,9 +483,9 @@ jobs:
           if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
             --checks core/core-testing/twin/family-checks.txt --checks xutilities/bukkit/boot-checks.txt --checks zchat/bukkit/boot-checks.txt \
-            --checks xteleport/bukkit/boot-checks.txt --checks xbans/bukkit/boot-checks.txt \
+            --checks xteleport/bukkit/boot-checks.txt --checks xbans/bukkit/boot-checks.txt --checks xvanish/bukkit/boot-checks.txt \
             core/core-testing/twin/bukkit/build/r8/XTwin.jar xutilities/bukkit/build/r8/xUtilities.jar zchat/bukkit/build/r8/zChat.jar \
-            xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar
+            xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar
       # The runtime budgets are the `budgets` job's, on a server of their own: a boot test's
       # server is shared with its checks, which would skew the numbers.
       - if: failure()
@@ -733,6 +756,13 @@ jobs:
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks xbans/fabric/boot-checks.txt \
             core/platform-fabric/build/libs/xbans-fabric-*+"$VERSION".jar
+      - name: boot xVanish
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks xvanish/fabric/boot-checks.txt \
+            core/platform-fabric/build/libs/xvanish-fabric-*+"$VERSION".jar
       # xMoney beside zChat: zChat's formats get xMoney's <balance> through zChat's placeholder seam.
       - name: xMoney beside zChat
         if: matrix.cell.family
@@ -750,9 +780,10 @@ jobs:
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks core/platform-fabric/sandbox/boot-checks.txt --checks core/core-testing/twin/family-checks.txt \
             --checks xutilities/fabric/boot-checks.txt --checks zchat/fabric/boot-checks.txt --checks xteleport/fabric/boot-checks.txt \
+            --checks xvanish/fabric/boot-checks.txt \
             core/platform-fabric/build/libs/xsample-fabric-*+"$VERSION".jar core/platform-fabric/build/libs/xtwin-fabric-*+"$VERSION".jar \
             core/platform-fabric/build/libs/xutilities-fabric-*+"$VERSION".jar core/platform-fabric/build/libs/zchat-fabric-*+"$VERSION".jar \
-            core/platform-fabric/build/libs/xteleport-fabric-*+"$VERSION".jar
+            core/platform-fabric/build/libs/xteleport-fabric-*+"$VERSION".jar core/platform-fabric/build/libs/xvanish-fabric-*+"$VERSION".jar
       # Fabric's runtime budgets aren't measured yet; its jars' sizes are checked in
       # build-fabric (gradle/jar-budgets.txt).
       - if: failure()
@@ -843,6 +874,12 @@ jobs:
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
             --out build/budgets/xbans \
             xbans/bukkit/build/r8/xBans.jar
+      - name: runtime budgets, xVanish (newest Paper)
+        run: |
+          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
+          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
+            --out build/budgets/xvanish \
+            xvanish/bukkit/build/r8/xVanish.jar
       # Its startup is reported, not budgeted: Paper 1.21.11 loads a plugin about 4 times
       # slower than 26.3 on these 2-core runners (its JIT threads and loader, not our code: the
       # server thread spends 6-7 ms of CPU in our enable), and startup is budgeted, failing, on

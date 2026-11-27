@@ -1,0 +1,24 @@
+---
+title: Languages
+description: "Which languages each plugin speaks, how much of it is translated, and whether a person has reviewed it."
+sidebar:
+  order: 5.5
+---
+
+import Languages from "../../../components/Languages.astro";
+
+From each plugin's rewrite on, a player reads its messages in their own client's language, and the console in the server's `default-language`. English is written in the plugin's code; every other language is a file the plugin ships, which it writes to `plugins/<Plugin>/lang/` for you to edit in place.
+
+<Languages />
+
+This table is built from the plugins' own files, so it's current with every build of these docs. **Machine-drafted** means the translation was drafted by a machine and hasn't been reviewed by a native speaker yet; it reads correctly, but may not sound like a person wrote it. **Reviewed** means a native speaker has been through every message.
+
+## Changing a message
+
+Edit the message in `plugins/<Plugin>/lang/<language>.yml` and run `/<plugin> reload`. A message you've changed stays as you wrote it through updates; one you haven't follows the plugin's improvements. To get a message back, delete it from the file and reload.
+
+A message can use [formatting](/start/formatting/) and the placeholders its English uses. If a translation is missing a message, the plugin uses its English, so a partial translation still works.
+
+## Helping with a translation
+
+Spotted a clumsy or wrong translation? [Open an issue](https://github.com/xena-studios/plugins/issues/new/choose) with the message's key (its name in the file), what it says and what it should say, or send a pull request changing the plugin's `lang/<language>.yml`. Reviews by native speakers are what turn **machine-drafted** into **reviewed**.

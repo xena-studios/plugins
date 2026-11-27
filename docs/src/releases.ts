@@ -35,6 +35,8 @@ async function load(): Promise<GitHubRelease[] | null> {
           Accept: "application/vnd.github+json",
           "User-Agent": "xena-studios/plugins docs build (contact@xenastudios.co)",
           "X-GitHub-Api-Version": "2022-11-28",
+          // CI passes its token, so a build never runs into the unauthenticated rate limit.
+          ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
         },
         signal: AbortSignal.timeout(15_000),
       });

@@ -1,266 +1,449 @@
-/* The plugin family's brand (xena-studios/brand, tokens/plugins.json) mapped onto
-   Starlight, as docs.raptorpanel.net wears Raptor's: deepslate neutrals, Space
-   Grotesk for words, JetBrains Mono for code and labels, dark only. Pages outside
-   a plugin use the family's neutral accent; each plugin's pages swap in its own
-   (public/accents/, via src/routeData.ts). The colours are the brand's tokens
-   (tokens.css, copied by pnpm brand:sync). The frame is a game GUI (gui.css, DESIGN.md):
-   beveled panels, inset slots and item tooltips; the accent marks only a name, the
-   chosen slot and the primary action. Focus rings are white. */
-@import "@fontsource-variable/space-grotesk";
-@import "@fontsource-variable/jetbrains-mono";
+/* The plugin family's brand (xena-studios/brand, tokens/plugins.json) mapped onto Fumadocs:
+   deepslate neutrals, Space Grotesk for words, JetBrains Mono for code and labels, dark only,
+   as every plugin banner and icon is. Pages outside a plugin use the family's
+   neutral accent; each plugin's pages swap in its own (public/accents/<id>.css, inlined by the
+   page). The frame is a game GUI (gui.css, DESIGN.md): beveled panels, inset slots and item
+   tooltips; the accent marks only a name, the chosen slot and the primary action. Focus rings
+   are the text colour. */
 
-:root {
-  /* The family's tokens (tokens.css, from the brand repo). */
-  --bg: var(--plugin-bg);
-  --raised: var(--plugin-raised);
-  --rule: var(--plugin-rule);
-  --text: var(--plugin-text);
-  --muted: var(--plugin-muted);
-  /* The family's neutral accent: pale lavender, no plugin's colour. */
-  --accent: #C9C2E0;
-  --mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+@theme {
+  --font-sans: "Space Grotesk Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+:root,
+.dark {
+  --mono: var(--font-mono);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* The family's neutral accent: pale lavender, no plugin's colour. A plugin's page sets its own. */
+  --accent: #c9c2e0;
+  --accent-low: #2a2735;
+  --accent-high: #e6e1f5;
+  /* The accent as text: lifted toward white so the darkest accents (xBans' red) still read at
+     4.5:1 on the panels. */
+  --accent-ink: color-mix(in oklab, var(--accent) 80%, white);
+  --text: var(--color-fd-foreground);
 
-  --sl-font: "Space Grotesk Variable", system-ui, sans-serif;
-  --sl-font-mono: var(--mono);
-
-  --sl-color-white: var(--text);
-  --sl-color-gray-1: #E2E0E8;
-  --sl-color-gray-2: #C4C1CD;
-  --sl-color-gray-3: var(--muted);
-  --sl-color-gray-4: #5E5B69;
-  --sl-color-gray-5: var(--rule);
-  --sl-color-gray-6: var(--raised);
-  --sl-color-black: var(--bg);
-  --sl-color-bg-sidebar: #0F0E13;
-  --sl-color-bg-nav: color-mix(in srgb, #0F0E13 82%, transparent);
-  --sl-color-hairline: var(--rule);
-  --sl-color-hairline-light: var(--rule);
-  --sl-color-hairline-shade: var(--rule);
-
-  --sl-color-accent-low: #2A2735;
-  --sl-color-accent: var(--accent);
-  --sl-color-accent-high: #E6E1F5;
-  --sl-color-text-accent: var(--sl-color-accent);
-
-  --sl-shadow-sm: none;
-  --sl-shadow-md: none;
-  --sl-shadow-lg: none;
-
-  --sl-text-h1: clamp(1.75rem, 1.3rem + 1.9vw, 2.75rem);
-  --sl-line-height-headings: 1.12;
-
+  --color-fd-background: var(--plugin-bg);
+  --color-fd-foreground: var(--plugin-text);
+  --color-fd-muted: var(--plugin-raised);
+  --color-fd-muted-foreground: var(--plugin-muted);
+  --color-fd-popover: #17161c;
+  --color-fd-popover-foreground: var(--plugin-text);
+  --color-fd-card: #16151b;
+  --color-fd-card-foreground: var(--plugin-text);
+  --color-fd-border: var(--plugin-rule);
+  --color-fd-primary: var(--accent);
+  --color-fd-primary-foreground: var(--gui-on-accent);
+  --color-fd-secondary: var(--plugin-raised);
+  --color-fd-secondary-foreground: var(--plugin-text);
+  --color-fd-accent: #23212a;
+  --color-fd-accent-foreground: var(--plugin-text);
+  --color-fd-ring: var(--plugin-text);
+  --color-fd-overlay: rgb(5 4 7 / 0.6);
+  --sidebar-ground: #0f0e13;
+  --header-ground: var(--gui-panel);
+  --horizon-top: #1b1a21;
+  --horizon-bottom: #121116;
+  --code-ground: #0d0c10;
   color-scheme: dark;
-  scrollbar-color: var(--rule) var(--bg);
 }
 
 body {
+  font-family: var(--font-sans);
+  background: var(--color-fd-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Headings: Space Grotesk Bold with the family's tight tracking. */
-h1,
-.sl-markdown-content :is(h2, h3, h4) {
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  text-wrap: balance;
-}
-
-.sl-markdown-content p,
-.sl-markdown-content li {
-  text-wrap: pretty;
-}
-
-/* Links: quiet underlines that firm up on hover (xenastudios.co). */
-a {
-  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-  text-underline-offset: 0.25em;
-  text-decoration-thickness: 1px;
-  transition: color 160ms var(--ease), text-decoration-color 160ms var(--ease);
-}
-a:hover {
-  text-decoration-color: currentColor;
+  font-feature-settings: "ss01", "ss04";
 }
 
 :focus-visible {
-  outline: var(--gui-px) solid var(--text);
+  outline: var(--gui-px) solid var(--color-fd-foreground);
   outline-offset: 3px;
   border-radius: 0;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--sl-color-accent) 35%, transparent);
-  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 38%, transparent);
+  color: var(--color-fd-foreground);
 }
 
-/* Header: a solid GUI bar with one dark edge under it. */
-.header {
-  background: var(--gui-panel);
-  border-bottom: var(--gui-px) solid var(--gui-edge);
-  box-shadow: none;
-}
-:root {
-  --sl-color-bg-nav: var(--gui-panel);
+/* Links: quiet underlines that firm up on hover (xenastudios.co). */
+a {
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 1px;
+  transition:
+    color 160ms var(--ease),
+    text-decoration-color 160ms var(--ease);
 }
 
-
-/* Sidebar: muted links, the current page in the accent on a faint tint, group
-   names as mono labels. */
-.sidebar-content a {
-  color: var(--muted);
-  text-decoration: none;
+/* The outbound arrow (External.tsx). */
+.external {
+  display: inline;
+  width: 0.62em;
+  height: 0.62em;
+  margin-left: 0.3em;
+  vertical-align: 0.05em;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.sidebar-content a:hover {
-  color: var(--text);
+a:hover > .external,
+a:focus-visible > .external {
+  transform: translate(1px, -1px);
+}
+
+/* --- The sidebar: a panel's inset ground --- */
+#nd-sidebar {
+  background: var(--sidebar-ground);
+  border-inline-end: 1px solid var(--color-fd-border);
+}
+#nd-sidebar a[data-active],
+#nd-sidebar-mobile a[data-active] {
+  border-radius: 0;
+  padding-block: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--color-fd-muted-foreground);
+}
+#nd-sidebar a[data-active]:hover,
+#nd-sidebar-mobile a[data-active]:hover {
+  color: var(--color-fd-foreground);
+  background: color-mix(in srgb, var(--gui-slot) 60%, transparent);
 }
 /* The current page is the chosen slot: inset, framed in the accent. */
-.sidebar-content a[aria-current="page"],
-.sidebar-content a[aria-current="page"]:hover {
-  color: var(--text);
+#nd-sidebar a[data-active="true"],
+#nd-sidebar-mobile a[data-active="true"] {
+  color: var(--color-fd-foreground);
+  font-weight: 600;
   background: var(--gui-slot);
-  border-radius: 0;
   box-shadow:
     inset var(--gui-px) var(--gui-px) 0 var(--gui-slot-lo),
     inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -1) 0 var(--gui-slot-hi),
-    0 0 0 var(--gui-px) var(--sl-color-accent);
-  font-weight: 600;
+    0 0 0 var(--gui-px) var(--accent);
 }
-.sidebar-content a {
-  border-radius: 0;
-}
-.sidebar-content .group-label .large {
+/* Group names: mono labels, as the inventory's rows are. */
+#nd-sidebar p:has(+ a),
+#nd-sidebar-mobile p:has(+ a),
+#nd-sidebar [data-separator],
+#nd-sidebar-mobile [data-separator] {
   font-family: var(--mono);
-  font-size: 0.75rem;
-  font-weight: 400;
+  font-size: 0.6875rem;
+  font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--gui-hint);
 }
-/* Links that leave the docs get the outbound arrow. */
-.sidebar-content a[href^="http"]::after {
-  content: "";
-  display: inline-block;
-  width: 0.62em;
-  height: 0.62em;
-  margin-inline-start: 0.4em;
-  background: currentColor;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 1.5h5.5V7M8.5 1.5 1.5 8.5'/%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 1.5h5.5V7M8.5 1.5 1.5 8.5'/%3E%3C/svg%3E") center / contain no-repeat;
+/* A "Soon" or "Beta" badge after a link (its description in the page tree). */
+.sidebar-badge {
+  margin-inline-start: auto;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gui-hint);
 }
 
-starlight-toc a {
-  color: var(--muted);
-  text-decoration: none;
+/* --- Contents column --- */
+#nd-toc a {
+  font-size: 0.8125rem;
 }
-starlight-toc a[aria-current="true"] {
-  color: var(--text);
+#nd-toc a[data-active="true"] {
+  color: var(--color-fd-foreground);
   font-weight: 600;
 }
+#toc-title {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gui-hint);
+}
+#toc-title svg {
+  display: none;
+}
 
-/* Starlight's link buttons, as GUI buttons (gui.css). */
-.sl-link-button {
-  min-height: 2.75rem;
-  border-radius: 0;
-  font-size: 0.9375rem;
+/* --- The page --- */
+#nd-page {
+  gap: 0;
+}
+#nd-page > * {
+  max-width: 50rem;
+}
+#nd-page[data-full="true"] > * {
+  max-width: 62rem;
+}
+.page-main {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Reading: Fumadocs' typography in the family's voice --- */
+.prose {
+  --tw-prose-body: var(--color-fd-foreground);
+  --tw-prose-headings: var(--color-fd-foreground);
+  --tw-prose-links: var(--color-fd-foreground);
+  --tw-prose-bold: var(--color-fd-foreground);
+  --tw-prose-code: var(--color-fd-foreground);
+  --tw-prose-th-borders: var(--color-fd-border);
+  --tw-prose-td-borders: var(--color-fd-border);
+  font-size: 1rem;
+  line-height: 1.72;
+}
+.prose :where(p, li) {
+  /* About 75 characters: Space Grotesk's "0", which ch measures, is wider than its average letter. */
+  max-width: 58ch;
+  text-wrap: pretty;
+}
+.prose :where(p, ul, ol) {
+  color: color-mix(in srgb, var(--color-fd-foreground) 88%, var(--color-fd-background));
+}
+.prose :where(h1, h2, h3, h4) {
   font-weight: 700;
-  background: var(--gui-panel);
-  color: var(--text);
-  border: var(--gui-px) solid var(--gui-edge);
-  box-shadow:
-    inset var(--gui-px) var(--gui-px) 0 var(--gui-panel-hi),
-    inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -3) 0 var(--gui-panel-lo);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
-.sl-link-button.primary {
-  background: var(--sl-color-accent);
-  color: var(--gui-on-accent);
-  border-color: var(--gui-edge);
+.prose :where(h2) {
+  margin-top: 2.75em;
+  padding-top: 1.1rem;
+  font-size: 1.5rem;
+  border-top: var(--gui-px) solid var(--gui-panel-lo);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gui-panel-hi) 70%, transparent);
 }
-.sl-link-button:hover {
-  filter: brightness(1.15);
+.prose :where(h3) {
+  font-size: 1.1875rem;
+  margin-top: 2em;
 }
-
+.prose :where(h2, h3, h4) a {
+  text-decoration: none;
+}
+/* Links in the reading column: text colour with a quiet underline; the accent is for names, the
+   chosen slot and the primary action, so it shows on hover only. */
+.prose a:not(.gui-button):not(.link-card):not([data-card]):not(.heading-anchor) {
+  color: var(--color-fd-foreground);
+  font-weight: 500;
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--gui-lore) 55%, transparent);
+}
+.prose a:not(.gui-button):not(.link-card):not([data-card]):not(.heading-anchor):hover {
+  color: var(--accent-ink);
+  text-decoration-color: currentColor;
+}
 /* Inline code sits in a slot. */
-.sl-markdown-content :not(pre) > code {
-  background: var(--gui-slot);
+.prose :not(pre) > code {
+  padding: 0.12em 0.42em;
   border: 0;
   border-radius: 0;
-  padding: 0.1em 0.4em;
-  box-shadow: inset 1px 1px 0 var(--gui-slot-lo), inset -1px -1px 0 var(--gui-slot-hi);
+  font-size: 0.875em;
+  font-weight: 450;
+  background: #1c1a22;
+  box-shadow:
+    inset 1px 1px 0 var(--gui-slot-lo),
+    inset -1px -1px 0 #34313d;
 }
 
-/* Tables: hairline rows, mono labels for the header. */
-.sl-markdown-content table {
-  border-collapse: collapse;
+/* Code blocks: the family's raised surface with a hairline, square corners, the title as a tab. */
+.prose figure.shiki,
+figure.shiki {
+  border-radius: 0;
+  border: 1px solid var(--color-fd-border);
+  background: var(--code-ground);
+  box-shadow: none;
 }
-/* Tables: the header row is a GUI bar; rows are ruled like inventory rows. */
-.sl-markdown-content :is(th, td) {
-  border-color: var(--rule);
-}
-.sl-markdown-content th {
+figure.shiki > div:first-child:has(figcaption),
+figure.shiki [data-title],
+figure.shiki figcaption {
   font-family: var(--mono);
   font-size: 0.75rem;
+}
+figure.shiki pre {
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+figure.shiki button {
+  border-radius: 0;
+}
+
+/* Tables: the header row is a GUI bar; rows are ruled like inventory rows. */
+.prose table {
+  font-size: 0.9rem;
+}
+.prose :where(thead th) {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--gui-lore);
   background: var(--gui-panel);
-  box-shadow: inset 0 var(--gui-px) 0 var(--gui-panel-hi), inset 0 calc(var(--gui-px) * -1) 0 var(--gui-panel-lo);
 }
-.sl-markdown-content td {
+.prose :where(td) {
   font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+.prose :where(td:first-child) code {
+  white-space: nowrap;
 }
 
-/* Asides: a tooltip's panel and border, the title an attribute line. */
-.starlight-aside {
+/* Fumadocs' wrapper round every table: square, in the GUI's edge. */
+.prose div:has(> table) {
   border-radius: 0;
-  border: var(--gui-px) solid var(--gui-tooltip-bottom);
-  border-top-color: var(--gui-tooltip-top);
+  border-color: var(--color-fd-border);
+}
+
+/* --- Asides (:::note): a tooltip's border, the title an attribute line --- */
+.aside {
+  --aside: var(--gui-tooltip-top);
+  margin-block: 1.5rem;
+  padding: 0.85rem 1.1rem 0.95rem;
+  border: var(--gui-px) solid color-mix(in srgb, var(--aside) 55%, var(--gui-tooltip-bottom));
+  border-top-color: var(--aside);
   background: var(--gui-tooltip);
 }
-.starlight-aside__title {
-  color: var(--gui-attribute);
+.aside-caution {
+  --aside: #d18a17;
 }
-.starlight-aside__title {
+.aside-danger {
+  --aside: #e0435a;
+}
+.aside-tip {
+  --aside: #2fb67a;
+}
+.aside-title {
+  margin: 0 0 0.35rem !important;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--aside) 55%, white);
+}
+.aside-body > :first-child {
+  margin-top: 0;
+}
+.aside-body > :last-child {
+  margin-bottom: 0;
+}
+
+/* --- Previous and next, and the line under a page --- */
+.page-footer {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+.page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  color: var(--gui-hint);
+}
+.edit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--gui-lore);
+  text-decoration: none;
+}
+.edit-link:hover {
+  color: var(--color-fd-foreground);
+}
+.pagination {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.pagination a {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.8rem 1rem;
+  text-decoration: none;
+  color: var(--color-fd-foreground);
+}
+.pagination a:hover {
+  filter: brightness(1.15);
+}
+.pagination .next {
+  text-align: end;
+}
+.pagination .label {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gui-hint);
+}
+.pagination .name {
+  font-weight: 700;
+  font-size: 1.0625rem;
+}
+
+/* --- The site footer --- */
+.site-footer {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-block: 2rem 1rem;
+  border-top: 1px solid var(--color-fd-border);
+  color: var(--color-fd-muted-foreground);
+  font-size: 0.9375rem;
+}
+.site-footer .studio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+}
+.site-footer .label {
   font-family: var(--mono);
   font-size: 0.75rem;
+  font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
-
-
-/* The home page's lists: hairline rows, icon then name and one line. */
-.more-label {
-  margin-top: 3rem !important;
-  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.6rem);
-  letter-spacing: -0.02em;
+.site-footer .note {
+  margin: 0;
+  max-width: 72ch;
+  font-size: 0.875rem;
 }
-.more-list {
-  list-style: none;
-  padding: 0;
-  margin: 1rem 0 0;
-  border-top: 1px solid var(--rule);
-}
-.more-list li {
-  display: grid;
-  grid-template-columns: 11rem 1fr;
+.site-footer ul {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem 1.5rem;
-  margin: 0;
-  padding-block: 1rem;
-  border-bottom: 1px solid var(--rule);
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
 }
-.more-list a {
-  color: var(--text);
-  font-weight: 700;
+.site-footer a {
+  color: inherit;
+  text-decoration: none;
 }
-.more-list p {
-  margin: 0;
-  color: var(--muted);
+.site-footer a:hover {
+  color: var(--color-fd-foreground);
 }
-@media (max-width: 40rem) {
-  .more-list li {
-    grid-template-columns: 1fr;
-  }
+.site-footer .xena {
+  display: inline-flex;
+  color: var(--color-fd-foreground);
+}
+.site-footer .logo {
+  height: 0.9rem;
+  width: auto;
+}
+
+/* --- Search --- */
+[data-search-dialog],
+div[role="dialog"]:has(input[placeholder^="Search"]) {
+  border-radius: 0 !important;
+}
+.search-footer {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gui-hint);
+}
+mark {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -268,86 +451,34 @@ starlight-toc a[aria-current="true"] {
   *::before,
   *::after {
     transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
   }
 }
 
-/* Section openers in the reading column: a pixel rule above each h2, across the column. */
-.sl-markdown-content .sl-heading-wrapper.level-h2,
-.sl-markdown-content > h2 {
-  padding-top: 1.1rem;
-  border-top: var(--gui-px) solid var(--gui-panel-lo);
-  box-shadow: inset 0 1px 0 var(--gui-panel-hi);
-}
-.sl-markdown-content .sl-heading-wrapper.level-h2 > h2 {
-  border: 0;
-  box-shadow: none;
-  padding-top: 0;
-}
-
-/* The home page has no title row of its own: the inventory carries its heading. */
-.content-panel:has(> .sl-container:empty) {
-  display: none;
-}
-.content-panel:has(> .sl-container:empty) + .content-panel {
-  border-top: 0;
-}
-
-/* Previous and next: two GUI panels. */
-.pagination-links a {
-  border-radius: 0;
-  border: var(--gui-px) solid var(--gui-edge);
-  background: var(--gui-panel);
-  box-shadow: inset var(--gui-px) var(--gui-px) 0 var(--gui-panel-hi), inset calc(var(--gui-px) * -1) calc(var(--gui-px) * -1) 0 var(--gui-panel-lo);
-}
-.pagination-links a:hover {
-  filter: brightness(1.12);
-}
-
-/* The sidebar is a panel's inset ground. */
-:root {
-  --sl-color-bg-sidebar: #0F0E13;
-}
-
-/* Links in the reading column: text colour with a quiet underline; the accent is for names,
-   the chosen slot and the primary action, so it shows on hover only. */
-.sl-markdown-content a:not(.gui-button):not(.sl-link-button) {
-  color: var(--text);
-  text-decoration-color: color-mix(in srgb, var(--gui-lore) 60%, transparent);
-}
-.sl-markdown-content a:not(.gui-button):not(.sl-link-button):hover {
-  color: var(--sl-color-accent);
-  text-decoration-color: currentColor;
-}
-
-/* Reference tables: a command or setting in the first column never breaks mid-name. */
-.sl-markdown-content td:first-child:has(code) {
-  min-width: 14ch;
-}
-.sl-markdown-content td:first-child code {
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
   white-space: nowrap;
+  border: 0;
 }
 
-/* A plugin's overview: its opening list of features reads as the item's lore, in tooltip
-   material, flowing in two columns on wide screens (columns, not grid rows, so a short
-   line never leaves a hole beside a long one). Titles are attribute lines; the accent
-   stays on the name, the chosen slot and Download. */
-.content-panel:has(.product) + .content-panel .sl-markdown-content > ul:first-of-type {
-  columns: 2 19rem;
-  column-gap: 2.25rem;
-  margin-block: 1.75rem;
-  padding: clamp(1.1rem, 2.5vw, 1.6rem);
-  list-style: none;
-  background: var(--gui-tooltip);
-  border: var(--gui-px) solid;
-  border-image: linear-gradient(var(--gui-tooltip-top), var(--gui-tooltip-bottom)) 1;
-  outline: var(--gui-px) solid #050208;
+/* Headings link to themselves; the link shows only as a mark on hover. */
+.heading {
+  scroll-margin-top: 5.5rem;
 }
-.content-panel:has(.product) + .content-panel .sl-markdown-content > ul:first-of-type > li {
-  break-inside: avoid;
-  margin: 0 0 0.9rem;
-  color: var(--gui-lore);
-  line-height: 1.55;
+.heading-anchor {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
 }
-.content-panel:has(.product) + .content-panel .sl-markdown-content > ul:first-of-type > li > strong:first-child {
-  color: var(--gui-attribute);
+.heading-anchor:hover::after {
+  content: "#";
+  margin-inline-start: 0.4em;
+  font-weight: 400;
+  color: var(--gui-hint);
 }

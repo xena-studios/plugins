@@ -6,8 +6,8 @@ on:
   push:
     branches: [main]
     # The docs, and what the plugin catalog reads: each plugin's build file (its version and
-    # Folia support), api/ folder and changelog.
-    paths: ["docs/**", ".github/workflows/docs.yml", "*/build.gradle.kts", "*/api/build.gradle.kts", "*/CHANGELOG.md"]
+    # Folia support), api/ folder and changelog; and the lang files the languages page reads.
+    paths: ["docs/**", ".github/workflows/docs.yml", "*/build.gradle.kts", "*/api/build.gradle.kts", "*/CHANGELOG.md", "*/common/src/commonMain/resources/lang/*.yml"]
   pull_request:
   # Redeploy main by hand from the Actions tab. A release does too (release.yml), so its
   # download page lists it at once.
@@ -51,6 +51,8 @@ jobs:
             case $file in
               docs/* | .github/workflows/docs.yml) docs=true ;;
               */build.gradle.kts | */api/build.gradle.kts | */CHANGELOG.md | */modrinth.md | */README.md | xstats/web/*) docs=true ;;
+              # The languages page reads each rewritten plugin's lang files.
+              */common/src/commonMain/resources/lang/*.yml) docs=true ;;
               README.md | .github/labeler.yml | .github/workflows/labels.yml | .github/ISSUE_TEMPLATE/bug_report.yml | .github/ISSUE_TEMPLATE/feature_request.yml) docs=true ;;
             esac
           done <<< "$files"
@@ -92,9 +94,13 @@ jobs:
       # Fails when a list of the plugins is out of date with the brand catalog and the build
       # files (run pnpm catalog), or something links a Modrinth page that's still in review.
       - run: pnpm catalog:check
-      # Fails on a type error (astro check) or any broken internal link
-      # (starlight-links-validator).
+      # Type-checks, prerenders every page to dist/client, then fails on a manifest or releases
+      # file that doesn't match its schema, a broken internal link or #fragment, an inline
+      # script the CSP wouldn't allow, or a page over the page-weight budget (scripts/postbuild.ts).
+      # The token (contents: read) keeps the download pages' GitHub reads under the rate limit.
       - run: pnpm build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - run: pnpm exec wrangler deploy --dry-run
 
   # Main only (on push or by hand), once the build passes. The Cloudflare token
@@ -126,6 +132,8 @@ jobs:
           cache-dependency-path: docs/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Deploy to Cloudflare
         run: pnpm exec wrangler deploy
         env:

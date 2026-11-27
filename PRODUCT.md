@@ -27,7 +27,7 @@ A family of small plugins that each do one job, built on one shared core: every 
 
 ## Capabilities and Constraints
 
-- Starlight on Astro, static output, strict CSP (inline scripts are hashed by `docs/scripts/headers.ts`; fonts are self-hosted files). No server code.
+- Fumadocs on TanStack Start, every page prerendered to static files, strict CSP (each page's own inline script moves to a file and the shared ones are hashed, by `docs/scripts/postbuild.ts`; fonts are self-hosted files). No server code, and a page-weight budget the build enforces.
 - Dark only today.
 - Eleven plugins, all released: xUtilities, zChat, xLimbo, xRewind, xPlots, xTeleport, xVote, xBans, xMoney, xBackup, xStats. Categories: Players, Moderation, Economy, Server.
 - A plugin whose Modrinth project is still in Modrinth's review has no public Modrinth page (it's a 404 to everyone else), nor does an unreleased one: never link one. The plugins in review are listed in `docs/src/data/modrinth.json`, which `docs/scripts/catalog.ts` reads; until Modrinth approves one, its downloads come from its GitHub releases.

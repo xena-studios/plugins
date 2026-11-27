@@ -1,7 +1,7 @@
 name: Boot
 
 # The rewrite's boot matrix (ROADMAP.md, "Build, CI and releases"): xSample, the core's sample
-# plugin, and each rewritten plugin (xUtilities, zChat, xMoney, xTeleport, xBans, xVanish, xVote) on real servers of every platform they ship
+# plugin, and each rewritten plugin (xUtilities, zChat, xMoney, xTeleport, xBans, xVanish, xMarket, xVote) on real servers of every platform they ship
 # for, and the family test, xSample, xTwin and the rewritten plugins on one server. The Plugins workflow
 # boots today's plugins; this one boots the rewrite.
 #
@@ -148,12 +148,9 @@ jobs:
       # gradle/jar-budgets.txt.
       - run: >-
           ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble :xutilities:bukkit:assemble :zchat:bukkit:assemble
-          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble
+          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble :xvote:bukkit:assemble
           :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget :zchat:bukkit:checkJarBudget
-          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget
-          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xvote:bukkit:assemble
-          :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget :zchat:bukkit:checkJarBudget
-          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget
+          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: bukkit-jars
@@ -386,8 +383,7 @@ jobs:
         run: |
           for jar in xmoney/bukkit/build/r8/xMoney.jar xmoney/vault-consumer/build/libs/vault-consumer.jar \
                      xmoney/hook-consumer/build/libs/hook-consumer.jar zchat/bukkit/build/r8/zChat.jar \
-                     xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar xmarket/bukkit/build/r8/xMarket.jar; do
-                     xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar \
+                     xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar xmarket/bukkit/build/r8/xMarket.jar \
                      xvote/bukkit/build/r8/xVote.jar; do
             [[ -f $jar ]] || { echo "::error::$jar is missing: the bukkit-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/*' | head -20; exit 1; }
           done
@@ -494,6 +490,22 @@ jobs:
       # /shop's menus through to a purchase xMoney debits, /sell hand that it credits, /shop buy and
       # /worth, in German (xmarket/bukkit/xmoney-client-checks.txt).
       - name: boot xMarket
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+          SEED: ${{ matrix.cell.seed }}
+          REGIONS: ${{ matrix.cell.regions }}
+          CLIENT: ${{ matrix.cell.client }}
+        run: |
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          # boot.sh takes --xmoney right after the server.
+          xmoney=()
+          [[ $CLIENT != true ]] || xmoney=(--xmoney)
+          args=()
+          [[ -z $SEED ]] || args+=(--seed "$SEED")
+          [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xmarket/bukkit/xmoney-client-checks.txt)
+          xmarket/bukkit/boot.sh "${target[@]}" "${xmoney[@]}" --java "$JAVA" "${args[@]}"
       # xVote alone: test votes through its own receiver's port, the lists, the imports' refusals, a
       # reload and debug; on a `client` cell beside xMoney, with two real clients and real Votifier
       # v2 votes: one for Friend before Friend has ever joined, paid as Friend joins, one for Joiner,
@@ -513,12 +525,9 @@ jobs:
           args=()
           [[ -z $SEED ]] || args+=(--seed "$SEED")
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
-          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xmarket/bukkit/xmoney-client-checks.txt)
-          xmarket/bukkit/boot.sh "${target[@]}" "${xmoney[@]}" --java "$JAVA" "${args[@]}"
-      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish and xMarket beside xSample, each with its own relocated core,
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client)
           xvote/bukkit/boot.sh "${target[@]}" "${xmoney[@]}" --java "$JAVA" "${args[@]}"
-      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish and xVote beside xSample, each with its own relocated core,
+      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish, xMarket and xVote beside xSample, each with its own relocated core,
       # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),
       # and each answering its own commands.
       - name: family test
@@ -531,12 +540,9 @@ jobs:
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
             --checks core/core-testing/twin/family-checks.txt --checks xutilities/bukkit/boot-checks.txt --checks zchat/bukkit/boot-checks.txt \
             --checks xteleport/bukkit/boot-checks.txt --checks xbans/bukkit/boot-checks.txt --checks xvanish/bukkit/boot-checks.txt --checks xmarket/bukkit/boot-checks.txt \
-            core/core-testing/twin/bukkit/build/r8/XTwin.jar xutilities/bukkit/build/r8/xUtilities.jar zchat/bukkit/build/r8/zChat.jar \
-            xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar xmarket/bukkit/build/r8/xMarket.jar
-            --checks xteleport/bukkit/boot-checks.txt --checks xbans/bukkit/boot-checks.txt --checks xvanish/bukkit/boot-checks.txt \
             --checks xvote/bukkit/boot-checks.txt \
             core/core-testing/twin/bukkit/build/r8/XTwin.jar xutilities/bukkit/build/r8/xUtilities.jar zchat/bukkit/build/r8/zChat.jar \
-            xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar \
+            xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar xmarket/bukkit/build/r8/xMarket.jar \
             xvote/bukkit/build/r8/xVote.jar
       # The runtime budgets are the `budgets` job's, on a server of their own: a boot test's
       # server is shared with its checks, which would skew the numbers.

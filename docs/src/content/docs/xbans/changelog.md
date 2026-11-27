@@ -16,7 +16,8 @@ The rewrite: the same commands, flags, permissions, settings and punishments as 
 ### New
 
 - **Bans for the whole network, at the proxy.** With xBans on Velocity or BungeeCord sharing the servers' MySQL database, a banned player is turned away as they log in and never reaches a server; a ban scoped to one server keeps them off that one. A ban or kick made on any server takes the player off the network at once. If the database can't be read, nobody gets in until it can: xBans fails closed, and says so. See [Networks](https://plugins.xenastudios.co/xbans/networks/).
-- **Imports from AdvancedBan** (on MySQL or MariaDB), beside LiteBans, EssentialsX and the server's own lists: `/xbans import advancedban`.
+- **Imports from AdvancedBan**, beside LiteBans, EssentialsX and the server's own lists: `/xbans import advancedban`.
+- **LiteBans and AdvancedBan import from their own files too**, not only from MySQL or MariaDB: LiteBans' H2 database (`litebans.mv.db`, from any LiteBans version) and AdvancedBan's HSQLDB files (`data/storage.*`). xBans downloads the driver the file needs the first time, reads a copy, and leaves the plugin's files as they were. See [Switching](https://plugins.xenastudios.co/xbans/switching/).
 - **`/xbans forget <player>`** deletes the IPs and name xBans keeps for a player, for an erasure request. Their punishments stay: see [Privacy](https://plugins.xenastudios.co/xbans/privacy/#deleting-a-players-data).
 - **`/xbans debug`** writes a report to share when asking for help.
 - **zChat reads xBans' mutes**, so a muted player can't chat or `/msg` through zChat either, on every server of a network.

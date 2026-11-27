@@ -7,8 +7,8 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish] [--zchat] [--xmoney]
-//     [--version 1.21.11] [--forge xena:xsample]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvote|xvote-network] [--zchat] [--xmoney]
+//     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
 // /heal and /back, a teleport and its way back, and /gamemode's completion), or zChat's (a
@@ -27,7 +27,12 @@
 // them away at the proxy), or xVanish's with zChat and xTeleport beside it (xvanish: Friend again, not
 // an operator: Joiner vanishes, and Friend no longer has them in the tab list or the world, hears a
 // fake quit, can't /tpa or /msg them nor complete their name, and mentioning them pings no one; a
-// relog of Friend's keeps them hidden; showing again brings them back with a fake join).
+// relog of Friend's keeps them hidden; showing again brings them back with a fake join), or
+// xVote's (real Votifier v2 votes sent to --vote-port, signed with --vote-token: one for Friend
+// before Friend has ever joined, paid as Friend joins; one for Joiner, paid at once; /vote in
+// German; with --xmoney, the money reward in Joiner's /balance), or xVote across a network
+// (xvote-network: the votes sent to the proxy's receiver, Friend paid on lobby as Friend first
+// joins, then on game, where Friend moved, and Joiner on lobby).
 //
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks; --version sets it instead, for a
@@ -45,6 +50,8 @@ const version = option('--version', false)
 const forge = option('--forge', null)
 const withZChat = process.argv.includes('--zchat')
 const withXMoney = process.argv.includes('--xmoney')
+const votePort = Number(option('--vote-port', 8192))
+const voteToken = option('--vote-token', '')
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const failures = []
 const heard = []
@@ -453,6 +460,83 @@ async function xvanish () {
   finish()
 }
 
+// A Votifier v2 vote, as a server list sends one (NuVotifier's protocol): read the greeting's
+// challenge, send the signed JSON, read the reply. Resolves to null once accepted, or the error.
+function sendVote (username, service) {
+  const net = require('net')
+  const crypto = require('crypto')
+  return new Promise((resolve) => {
+    const socket = net.connect(votePort, '127.0.0.1')
+    let buffer = ''
+    let sent = false
+    const done = (result) => { socket.destroy(); resolve(result) }
+    socket.setTimeout(10000, () => done('the receiver timed out'))
+    socket.on('error', (e) => done(`couldn't reach the receiver: ${e.message}`))
+    socket.on('data', (data) => {
+      buffer += data.toString('utf8')
+      if (!sent && buffer.includes('\n')) {
+        const greeting = buffer.slice(0, buffer.indexOf('\n')).trim().split(' ')
+        buffer = buffer.slice(buffer.indexOf('\n') + 1)
+        if (greeting.length !== 3 || greeting[0] !== 'VOTIFIER') return done(`not Votifier's greeting: ${greeting.join(' ')}`)
+        const payload = JSON.stringify({ serviceName: service, username, address: '127.0.0.1', timestamp: String(Date.now()), challenge: greeting[2] })
+        const signature = crypto.createHmac('sha256', voteToken).update(payload).digest('base64')
+        const message = Buffer.from(JSON.stringify({ payload, signature }), 'utf8')
+        const header = Buffer.alloc(4)
+        header.writeUInt16BE(0x733a, 0)
+        header.writeUInt16BE(message.length, 2)
+        socket.write(Buffer.concat([header, message]))
+        sent = true
+      }
+      if (sent && buffer.includes('\n')) {
+        const reply = JSON.parse(buffer.slice(0, buffer.indexOf('\n')))
+        done(reply.status === 'ok' ? null : reply.error || 'refused')
+      }
+    })
+  })
+}
+
+async function vote (username, service, name) {
+  const refused = await sendVote(username, service)
+  check(name, refused == null, refused)
+}
+
+// xVote on one server: real votes through its receiver, rewards where the player is.
+async function xvote () {
+  // Friend has never joined: the vote waits for the name, and is paid as Friend first joins.
+  await vote('Friend', 'PlanetMinecraft.com', 'a vote for a name that never joined is taken')
+  await sleep(1000)
+  const friend = friendBot({ version: false })
+  check('Friend joins', await friend.until(() => friend.spawned), 'Friend never spawned')
+  check("Friend's waiting vote is paid as Friend joins", await friend.hears('Thanks for voting', 0, 15000), `Friend heard ${JSON.stringify(friend.heard).slice(0, 400)}`)
+  try { friend.bot.quit() } catch {}
+  const from = heard.length
+  await vote(username, 'PlanetMinecraft.com', 'a vote for a player online is taken')
+  check("Joiner's vote is paid at once", await hear('Thanks for voting', from, 10000) != null, `heard ${JSON.stringify(heard.slice(from)).slice(0, 400)}`)
+  await command('/vote', 'Stimme für den Server ab', '/vote answers in German')
+  if (withXMoney) await command('/balance', '25', "the vote's money reward, paid through xMoney")
+  finish()
+}
+
+// xVote across a network: the proxy receives, the server the player is on pays.
+async function xvoteNetwork () {
+  await vote('Friend', 'PlanetMinecraft.com', 'the proxy takes a vote for a name that never joined')
+  await sleep(3000)
+  const friend = friendBot()
+  check('Friend joins through the proxy', await friend.until(() => friend.spawned), `kicked: ${friend.kicked}`)
+  check('the waiting vote is paid on lobby, where Friend first joins', await friend.hears('Thanks for voting', 0, 20000), `Friend heard ${JSON.stringify(friend.heard).slice(0, 400)}`)
+  await sleep(1000)
+  friend.bot.chat('/server game')
+  await sleep(5000)
+  const at = friend.heard.length
+  await vote('Friend', 'Minecraft-MP.com', 'the proxy takes a vote for Friend, now on game')
+  check('the vote is paid on game, where Friend is', await friend.hears('Thanks for voting', at, 20000), `Friend heard ${JSON.stringify(friend.heard.slice(at)).slice(0, 400)}`)
+  const from = heard.length
+  await vote(username, 'PlanetMinecraft.com', 'the proxy takes a vote for Joiner, on lobby')
+  check('it is paid on lobby', await hear('Thanks for voting', from, 20000) != null, `heard ${JSON.stringify(heard.slice(from)).slice(0, 400)}`)
+  try { friend.bot.quit() } catch {}
+  finish()
+}
+
 async function run () {
   if (forge) {
     // Looks like a frame of ours ('X', version 1), signed with nothing the network knows.
@@ -469,6 +553,8 @@ async function run () {
   if (plugin === 'xbans') return xbans()
   if (plugin === 'xbans-network') return xbansNetwork()
   if (plugin === 'xvanish') return xvanish()
+  if (plugin === 'xvote') return xvote()
+  if (plugin === 'xvote-network') return xvoteNetwork()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")

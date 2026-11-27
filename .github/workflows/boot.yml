@@ -221,7 +221,7 @@ jobs:
       - run: >-
           ./gradlew :core:core-testing:sample:velocity:assemble :core:core-testing:sample:bungee:assemble :core:core-testing:sample:bukkit:assemble
           :zchat:velocity:assemble :zchat:bungee:assemble :zchat:bukkit:assemble
-          :xbans:velocity:assemble :xbans:bungee:assemble :xbans:bukkit:assemble
+          :xbans:velocity:assemble :xbans:bungee:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble
           :core:core-testing:sample:velocity:checkJarBudget :core:core-testing:sample:bungee:checkJarBudget
           :zchat:velocity:checkJarBudget :zchat:bungee:checkJarBudget :xbans:velocity:checkJarBudget :xbans:bungee:checkJarBudget
       - uses: actions/upload-artifact@v7
@@ -237,6 +237,7 @@ jobs:
             xbans/velocity/build/r8/xBans-Velocity.jar
             xbans/bungee/build/r8/xBans-Bungee.jar
             xbans/bukkit/build/r8/xBans.jar
+            xvanish/bukkit/build/r8/xVanish.jar
           if-no-files-found: error
 
   bukkit:
@@ -559,7 +560,8 @@ jobs:
                      core/core-testing/sample/bukkit/build/r8/XSample.jar \
                      zchat/velocity/build/r8/zChat-Velocity.jar zchat/bungee/build/r8/zChat-Bungee.jar \
                      zchat/bukkit/build/r8/zChat.jar xbans/velocity/build/r8/xBans-Velocity.jar \
-                     xbans/bungee/build/r8/xBans-Bungee.jar xbans/bukkit/build/r8/xBans.jar; do
+                     xbans/bungee/build/r8/xBans-Bungee.jar xbans/bukkit/build/r8/xBans.jar \
+                     xvanish/bukkit/build/r8/xVanish.jar; do
             [[ -f $jar ]] || { echo "::error::$jar is missing: the proxy-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/r8*' | head -20; exit 1; }
           done
       # What will boot, for the cache key: the proxy's version and build (and the Java it needs),
@@ -693,6 +695,22 @@ jobs:
           version=()
           [[ $VERSION == latest ]] || version=(--version "$VERSION")
           xbans/velocity/network.sh "$PROXY" "${version[@]}" --java "$JAVA" --backend "${BACKEND_JAR:-$BACKEND}" \
+            --backend-version "$BACKEND_VERSION" --backend-java "$BACKEND_JAVA"
+      # xVanish has no proxy side: its network test is two servers with xVanish behind the proxy, on
+      # one MariaDB (a container network.sh starts), and real clients: a player vanished on lobby
+      # named by /vanish list on game, switching to game and staying hidden from a player there
+      # (xvanish/bukkit/network.sh, network-checks.txt).
+      - name: xVanish network test
+        if: matrix.cell.backend != ''
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          VERSION: ${{ steps.server.outputs.version }}
+          BACKEND_JAVA: ${{ steps.backend-java.outputs.path }}
+          BACKEND_JAR: ${{ steps.backend-jar.outputs.jar }}
+        run: |
+          version=()
+          [[ $VERSION == latest ]] || version=(--version "$VERSION")
+          xvanish/bukkit/network.sh "$PROXY" "${version[@]}" --java "$JAVA" --backend "${BACKEND_JAR:-$BACKEND}" \
             --backend-version "$BACKEND_VERSION" --backend-java "$BACKEND_JAVA"
       - if: failure()
         uses: actions/upload-artifact@v7

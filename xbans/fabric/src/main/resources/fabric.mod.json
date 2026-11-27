@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "xbans",
+  "version": "${version}",
+  "name": "xBans",
+  "description": "Bans, mutes and warnings. Nothing slips through. Server-side: players install nothing.",
+  "authors": ["Xena Studios"],
+  "contact": {
+    "homepage": "https://plugins.xenastudios.co/xbans/",
+    "sources": "https://github.com/xena-studios/plugins",
+    "issues": "https://github.com/xena-studios/plugins/issues"
+  },
+  "license": "GPL-3.0-only",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.xbans.fabric.XBansMod" }
+    ]
+  },
+  "depends": {
+    "fabricloader": "${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${flk}"
+  }
+}

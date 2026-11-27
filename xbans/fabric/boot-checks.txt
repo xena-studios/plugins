@@ -1,0 +1,36 @@
+# What scripts/boot-fabric.sh checks on each Minecraft line with xBans, from the console: a ban's
+# life as on Bukkit, mutes and warnings, IP bans, lookups, the vanilla import's dry run, a reload.
+logged: [xBans] xBans 2.0.0 on
+logged: Loaded 0 bans and mutes in force from the SQLite database punishments.db, schema 1.
+run: xbans info
+expect: xBans 2.0.0 on
+run: ban Steve -s 7d griefing the spawn
+expect: [Silent] Console banned Steve for 1w: griefing the spawn
+run: checkban Steve
+expect: Reason: griefing the spawn
+run: ban Steve for good
+expect: Console banned Steve permanently: for good
+run: tempban Steve 1d shorter
+expect: is already banned until
+run: pardon Steve appealed
+expect: Console unbanned Steve.
+run: history Steve
+expect: Steve's history (2)
+run: mute Alex spam
+expect: Console muted Alex for 1h: Spamming
+run: warn Alex 1h language
+expect: Console warned Alex: Inappropriate language
+run: unmute Alex
+expect: Console unmuted Alex.
+run: ipban 198.51.100.7 boot test
+expect: Console IP-banned 198.51.x.x permanently: boot test
+run: unban 198.51.100.7
+expect: Console unbanned 198.51.x.x.
+run: banlist
+expect: Nobody.
+run: kick Nobody
+expect: No player called Nobody is online.
+run: xbans import vanilla
+expect: Couldn't import: the server's ban lists are empty.
+run: xbans reload
+expect: Reloaded xBans

@@ -74,6 +74,8 @@ The rewrites are merged one by one but released together (ROADMAP.md, Release), 
 
 Write every page as it will be after the release: the new major's links as `/<plugin>/commands/`, the old major's as `/<plugin>/v<old>/commands/`. `src/plugins.ts` serves each file where it belongs (`servedId`) and `src/links.ts` rewrites the links on the plugin's pages to match, before the links validator checks them, so a broken link fails the build either way. Pages outside the plugin's folder (the start pages) link to `/<plugin>/...` and get the current release either way.
 
+**A new plugin's first major** (xVanish 1.0) has no old major to show meanwhile: its line is `{ "id": "xvanish", "name": "xVanish", "newest": 1, "older": [], "unreleased": {} }`, with no last release's facts. Nothing is served at `/<plugin>/` until it ships, and its pages, in `src/content/docs/<plugin>/`, are built at `/<plugin>/next/`, hidden, as a rewrite's are. It needs a `name` until its brand catalog entry is there, at its release.
+
 **The switch, in the release's pull request, is one line:** delete `"unreleased": {...}` from the plugin's line in `src/data/versions.json`, then run `pnpm catalog`, which brings the build's version and jar budget into the catalog. The rest of that pull request is the release's own: `src/data/releases/<plugin>.json` for the download picker (the build fails without it once the plugin is released), `(unreleased)` and its note off the changelog's heading, and the start pages' requirements.
 
 ## Look

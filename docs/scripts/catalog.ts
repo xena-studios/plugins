@@ -67,7 +67,8 @@ for (const id of review.inReview) {
 const inReview = new Set(review.inReview);
 
 // A rewrite merged but not released: the lists keep its last release's facts (src/plugins.ts).
-const versions: { plugins: { id: string; unreleased?: { version: string; jarBudgetKb: number } }[] } = JSON.parse(
+// A new plugin's first major has no last release: its "unreleased" is empty.
+const versions: { plugins: { id: string; unreleased?: { version?: string; jarBudgetKb?: number } }[] } = JSON.parse(
   fs.readFileSync(path.join(DOCS, "src/data/versions.json"), "utf8"),
 );
 const unreleasedOf = (id: string) => versions.plugins.find((v) => v.id === id)?.unreleased;
@@ -96,7 +97,7 @@ function facts(id: string) {
     // xena.folia is on unless the plugin turns it off.
     folia: !/^\s*folia = false/m.test(text),
     // The most its jar may weigh: the build fails over it.
-    jarBudgetKb: unreleased
+    jarBudgetKb: unreleased?.jarBudgetKb !== undefined
       ? unreleased.jarBudgetKb
       : rewritten
       ? Number(budgets.match(new RegExp(`^:${id}:bukkit (\\d+)`, "m"))?.[1] ?? 150)
@@ -104,6 +105,8 @@ function facts(id: string) {
     api: fs.existsSync(path.join(ROOT, id, "api/build.gradle.kts")),
     rewritten,
     unreleased: !!unreleased,
+    /** Whether the site shows an older major meanwhile: an unreleased rewrite's, not a new plugin's. */
+    oldMajor: unreleased?.version !== undefined,
   };
 }
 
@@ -150,7 +153,7 @@ write(
   "docs/src/data/plugins.json",
   JSON.stringify(
     // What the site reads; the rest only steers this script.
-    { categories: catalog.categories, plugins: plugins.map(({ buildVersion, rewritten, unreleased, ...p }) => p) },
+    { categories: catalog.categories, plugins: plugins.map(({ buildVersion, rewritten, unreleased, oldMajor, ...p }) => p) },
     null,
     2,
   ) + "\n",
@@ -315,7 +318,7 @@ for (const p of plugins) {
   changelogPage(p.id, changelog);
   // An unreleased rewrite's old major, which the site shows meanwhile, has every section but
   // the new major's.
-  if (p.unreleased) {
+  if (p.oldMajor) {
     const major = p.version.split(".")[0]!;
     const sections = changelog.split(/^(?=## )/m);
     const kept = sections.filter((s) => !s.startsWith("## ") || /^## (\d+)/.exec(s)?.[1] === undefined || Number(/^## (\d+)/.exec(s)![1]) <= Number(major));
@@ -334,7 +337,7 @@ for (const p of plugins) {
       ? `docs/src/content/docs/${dir}/index.mdx`
       : `docs/src/content/docs/${dir}/index.md`;
   const overviews: [string, string][] = [[overviewIn(p.id), p.buildVersion]];
-  if (p.unreleased) overviews.push([overviewIn(`${p.id}/v${p.version.split(".")[0]}`), p.version]);
+  if (p.oldMajor) overviews.push([overviewIn(`${p.id}/v${p.version.split(".")[0]}`), p.version]);
   for (const [overview, version] of overviews) {
     const text = outputs.get(overview) ?? fs.readFileSync(path.join(ROOT, overview), "utf8");
     const updated = text.replace(/^(Current version: \*\*)[^*]+(\*\*)/m, `$1${version}$2`);

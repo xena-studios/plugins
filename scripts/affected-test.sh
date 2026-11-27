@@ -183,13 +183,16 @@ check "xBans' Velocity door" xbans/velocity/src/main/kotlin/co/xenastudios/xbans
 check "xBans' network test" xbans/bungee/network-checks.txt \
   $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=proxy'
 check "xVanish's common code" xvanish/common/src/commonMain/kotlin/co/xenastudios/xvanish/XVanishPlugin.kt \
-  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit fabric'
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit fabric proxy'
 check "xVanish's API" xvanish/api/src/commonMain/kotlin/co/xenastudios/xvanish/api/XVanishApi.kt \
-  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit fabric'
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit fabric proxy'
 check "xVanish's Bukkit adapter" xvanish/bukkit/src/main/kotlin/co/xenastudios/xvanish/bukkit/Listeners.kt \
-  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit'
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit proxy'
 check "xVanish's real-client checks" xvanish/bukkit/client-checks.txt \
-  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit'
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit proxy'
+# Its network test is behind the proxies, though it has no proxy side.
+check "xVanish's network test" xvanish/bukkit/network-checks.txt \
+  $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit proxy'
 check "xVanish's Fabric mod (platform-fabric's build)" xvanish/fabric/src/main/kotlin/co/xenastudios/xvanish/fabric/FabricVanishServer.kt \
   $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=fabric'
 check "xMarket's common code" xmarket/common/src/commonMain/kotlin/co/xenastudios/xmarket/Trades.kt \

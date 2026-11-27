@@ -37,7 +37,8 @@
 #   means everything, and a plugin's API is in its folder.
 # - The rewrite's boot matrix (the Boot workflow) boots a platform when its adapter, the sample
 #   plugins' code for it, a rewritten plugin's code for it (<plugin>/bukkit/, <plugin>/fabric/,
-#   <plugin>/velocity/ and bungee/; its common/ and api/ mean each it has), or anything under them
+#   <plugin>/velocity/ and bungee/; its common/ and api/ mean each it has; a bukkit/network.sh, a
+#   network test behind the proxies, makes its bukkit/ mean the proxies too), or anything under them
 #   changed: core/platform-fabric/ means Fabric; core/platform-bukkit/ and the samples' bukkit/
 #   folders mean Bukkit; core/platform-velocity/, core/platform-bungee/ and the samples' velocity/
 #   and bungee/ folders mean the proxies (Velocity, BungeeCord, Waterfall, and their pair tests in
@@ -205,13 +206,14 @@ if [[ $all == false ]]; then
           changed[$top]=1
           if [[ -n ${kmp[$top]:-} ]]; then
             case $file in
-              */bukkit/*) bootBukkit=true ;;
+              # A Bukkit plugin with a network test behind the proxies (xVanish's network.sh).
+              */bukkit/*) bootBukkit=true; [[ ! -f $top/bukkit/network.sh ]] || bootProxy=true ;;
               */fabric/*) bootFabric=true ;;
               */velocity/* | */bungee/*) bootProxy=true ;;
               *.md) ;;
               *)
                 bootBukkit=true bootFabric=true
-                [[ ! -d $top/velocity && ! -d $top/bungee ]] || bootProxy=true ;;
+                [[ ! -d $top/velocity && ! -d $top/bungee && ! -f $top/bukkit/network.sh ]] || bootProxy=true ;;
             esac
           fi
         else

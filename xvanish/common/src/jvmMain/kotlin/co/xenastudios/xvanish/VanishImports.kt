@@ -42,7 +42,7 @@ public class VanishImporter(
     override fun describe(record: PlayerRef): String = "$displayName's vanished player $record"
 
     override fun write(record: PlayerRef): Pending<Outcome<Unit, String>> {
-        plugin.remembered.add(record, plugin.server.name(record) ?: "")
+        plugin.rememberOffline(record, plugin.server.name(record) ?: "")
         return pendingOf(Outcome.Ok(Unit))
     }
 

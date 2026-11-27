@@ -7,7 +7,7 @@
 #   scripts/boot-proxy.sh --proxy velocity|bungeecord|waterfall [--version 4.3.1] [--java <JDK home>] \
 #     [--backend paper|<server.jar>] [--backend-version 1.21.11] [--backend-java <JDK home>] \
 #     [--backend-plugin backend.jar]... [--two-backends] [--backend-seed <folder>] [--proxy-seed <folder>] [--grant Joiner=node,node]... [--jvm -Dflag]... \
-#     [--checks file]... [--startup-budget <ms>] [--record-startup <folder>] plugin.jar...
+#     [--checks file]... [--startup-budget <ms>] [--record-startup <folder>] [plugin.jar...]
 #
 # The proxy comes from scripts/server-jar.sh (its newest release unless --version says), or
 # --proxy-jar names one on disk. Steps are scripts/boot-test.sh's, one per line in a checks file
@@ -98,7 +98,9 @@ case $proxy in
   velocity | bungeecord | waterfall) ;;
   *) echo "--proxy is velocity, bungeecord or waterfall" >&2; exit 2 ;;
 esac
-((${#jars[@]})) || { echo "no plugin jars given" >&2; exit 2; }
+# No proxy plugin is fine for a backend plugin's network test (xVanish has no proxy side).
+((${#jars[@]} + ${#backend_jars[@]})) || { echo "no plugin jars given" >&2; exit 2; }
+[[ -z $startup_budget || ${#jars[@]} -gt 0 ]] || { echo "--startup-budget times the proxy's plugins: give one" >&2; exit 2; }
 [[ -z $record_startup || -n $startup_budget ]] || { echo "--record-startup needs --startup-budget, whose boots it records" >&2; exit 2; }
 
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -129,7 +131,7 @@ base="$root/build/boot/$version${backend_jar:+-behind-$(basename "$backend_jar" 
 
 # Our plugins' names, to spot their lines: Velocity's by id ([xsample]), BungeeCord's by name.
 names=()
-for jar in "${jars[@]}" ${backend_jars[@]+"${backend_jars[@]}"}; do
+for jar in ${jars[@]+"${jars[@]}"} ${backend_jars[@]+"${backend_jars[@]}"}; do
   descriptor=$({ unzip -p "$jar" velocity-plugin.json bungee.yml plugin.yml paper-plugin.yml 2>/dev/null || true; })
   [[ -n $descriptor ]] || { echo "$(basename "$jar") isn't a plugin: no velocity-plugin.json, bungee.yml or plugin.yml" >&2; exit 2; }
   while IFS= read -r name; do names+=("$name"); done < <(sed -nE 's/^name: *//p; s/.*"(id|name)": *"([^"]+)".*/\2/p' <<<"$descriptor" | sort -u)
@@ -225,7 +227,7 @@ proxy_files() {
     bungee_game=$'  game:\n    address: 127.0.0.1:'"$game"$'\n    restricted: false\n    motd: game'
   fi
   mkdir -p "$dir/plugins"
-  cp "${jars[@]}" "$dir/plugins/"
+  [[ ${#jars[@]} -eq 0 ]] || cp "${jars[@]}" "$dir/plugins/"
   [[ -z $proxy_seed ]] || cp -R "$proxy_seed/." "$dir/"
   if [[ $proxy == velocity ]]; then
     local mode=none
@@ -381,7 +383,7 @@ if [[ $two_backends == true ]]; then
 fi
 proxy_files "$base/proxy" "$proxy_port" "$backend_port" "$game_port"
 start_proxy "$base/proxy"
-echo "Started $version on port $proxy_port with ${names[*]}"
+echo "Started $version on port $proxy_port${jars[0]+ with its plugins}, for ${names[*]}"
 
 since=0
 allowed=()

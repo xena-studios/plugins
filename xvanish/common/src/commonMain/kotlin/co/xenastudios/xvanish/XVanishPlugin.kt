@@ -302,16 +302,17 @@ public class XVanishPlugin(
 
     // Works out [player]'s level and what they see, from their permissions now.
     private fun workOut(player: PlayerRef): Int {
-        var level = 1
-        for (n in config[XVanishConfig.vanish.maxLevel] downTo 2) {
-            if (server.hasPermission(player, XVanish.LEVEL_PERMISSION + n) || (otherPlugins && server.hasPermission(player, "pv.level.$n"))) {
-                level = n
-                break
-            }
-        }
+        val max = config[XVanishConfig.vanish.maxLevel]
+        val others = otherPlugins
+        // SuperVanish's and PremiumVanish's layered permissions: sv.use.level<n> and
+        // sv.see.level<n> (pv. the same), a see level apart from the use level.
+        fun theirs(kind: String, n: Int) = others && (server.hasPermission(player, "sv.$kind.level$n") || server.hasPermission(player, "pv.$kind.level$n"))
+        val level = (max downTo 2).firstOrNull { server.hasPermission(player, XVanish.LEVEL_PERMISSION + it) || theirs("use", it) } ?: 1
+        val seeLevel = if (others) (max downTo 1).firstOrNull { theirs("see", it) } ?: 0 else 0
         levels[player] = level
         sees[player] = when {
-            has(player, "see", "see") -> level
+            has(player, "see", "see") -> maxOf(level, seeLevel)
+            seeLevel > 0 -> seeLevel
             // xBans' staff layer: whom it counts as staff see the first level.
             config[XVanishConfig.vanish.xbansStaffSee] && server.hasPermission(player, XBANS_STAFF) -> 1
             else -> 0
@@ -329,7 +330,8 @@ public class XVanishPlugin(
 
     override fun canSee(viewer: PlayerRef, target: PlayerRef): Boolean {
         if (viewer == target) return true
-        val level = here[target] ?: return network?.isVanished(target) != true
+        // Not vanished here: as the network says, at the level they vanished at on their server.
+        val level = here[target] ?: network?.takeIf { it.isVanished(target) }?.level(target) ?: return true
         return (sees[viewer] ?: 0) >= level
     }
 
@@ -380,7 +382,8 @@ public class XVanishPlugin(
         }
         val level = workOut(player)
         if (vanished) here[player] = level else here.remove(player)
-        remember(player, name, vanished)
+        // Heard from the network, which has it already.
+        remember(player, name, vanished, publish = cause != VanishCause.NETWORK)
         if (vanished && !silent) fake(player, name, joined = false)
         refresh(player)
         server.effects(player, if (vanished) effects(player) else null)
@@ -411,10 +414,16 @@ public class XVanishPlugin(
     }
 
     // Memory, the file, the family's cache and the network, as [player] vanishes or shows.
-    private fun remember(player: PlayerRef, name: String, vanished: Boolean) {
+    private fun remember(player: PlayerRef, name: String, vanished: Boolean, publish: Boolean = true) {
         if (vanished && config[XVanishConfig.vanish.remember]) remembered.add(player, name) else if (!vanished) remembered.remove(player)
         cache?.setVanished(player, vanished)
-        network?.publish(player, name, vanished)
+        if (publish) network?.publish(player, name, here[player] ?: level(player), vanished)
+    }
+
+    /** An offline [player] vanished by an import: `vanished.txt`, and the network's table. */
+    internal fun rememberOffline(player: PlayerRef, name: String) {
+        remembered.add(player, name)
+        network?.publish(player, name, 1, true)
     }
 
     /**
@@ -499,7 +508,9 @@ public class XVanishPlugin(
             remember(player, name, true)
             refresh(player)
             server.effects(player, effects(player))
-            texts.send(player, XVanishMessages.joinedVanished)
+            // A moment later: a client's language reaches the server after it joins (a proxy's
+            // switch too), and the message is in it.
+            platform.scheduler.run(Where.on(player), JOINED_MESSAGE_DELAY) { if (player in here) texts.send(player, XVanishMessages.joinedVanished) }
             // The family's cache records the join itself, maybe after this: marked again once it has.
             cache?.let { c -> platform.scheduler.run(Where.Async) { if (player in here) c.setVanished(player, true) } }
             changed(player, true, true, VanishCause.JOIN)
@@ -522,7 +533,8 @@ public class XVanishPlugin(
             if (!config[XVanishConfig.vanish.remember]) {
                 remembered.remove(player)
                 cache?.setVanished(player, false)
-                network?.publish(player, server.name(player) ?: "", false)
+                // Not at once: they may be switching servers, still vanished there.
+                network?.left(player, server.name(player) ?: "")
             }
         }
         levels.remove(player)
@@ -554,12 +566,20 @@ public class XVanishPlugin(
     public fun openNetwork(result: Outcome<Database, String>) {
         when (result) {
             is Outcome.Err -> log.error("${result.error} Network mode is off until it's fixed: each server keeps its own vanished players.")
-            is Outcome.Ok -> Network.open(this, result.value) { network = it }
+            is Outcome.Ok -> Network.open(this, result.value, networkOnAnyDatabase) { network = it }
         }
     }
 
-    /** Another server says [player] vanished or showed: hidden or shown here too if they're online. */
-    internal fun heard(player: PlayerRef, vanished: Boolean) {
+    /** For tests: network mode's change feed on SQLite too, where two plugins sharing a file stand in for two servers. */
+    internal var networkOnAnyDatabase: Boolean = false
+
+    /**
+     * The network says [player] ([name]) vanished or showed: `vanished.txt` follows it, so a
+     * server that can't reach the database later still knows, and they're hidden or shown here
+     * too if they're online.
+     */
+    internal fun heard(player: PlayerRef, name: String, vanished: Boolean) {
+        if (!vanished) remembered.remove(player) else if (config[XVanishConfig.vanish.remember]) remembered.add(player, name)
         cache?.setVanished(player, vanished)
         if (server.name(player) != null && (player in here) != vanished) change(player, vanished, true, VanishCause.NETWORK, null)
     }
@@ -581,6 +601,9 @@ public class XVanishPlugin(
 
         /** xBans' staff permission (its API's `XBans.STAFF_PERMISSION`), which operators have. */
         internal const val XBANS_STAFF: String = "xbans.staff"
+
+        /** How long after a vanished join the player is told, so it's in their client's language. */
+        internal val JOINED_MESSAGE_DELAY: kotlin.time.Duration = kotlin.time.Duration.parse("1s")
 
         /** How long a held-back chat message waits to be said again. */
         internal const val CHAT_CONFIRM_MILLIS: Long = 15_000

@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvote|xvote-network|xmarket] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -27,7 +27,10 @@
 // them away at the proxy), or xVanish's with zChat and xTeleport beside it (xvanish: Friend again, not
 // an operator: Joiner vanishes, and Friend no longer has them in the tab list or the world, hears a
 // fake quit, can't /tpa or /msg them nor complete their name, and mentioning them pings no one; a
-// relog of Friend's keeps them hidden; showing again brings them back with a fake join), or
+// relog of Friend's keeps them hidden; showing again brings them back with a fake join), or xVanish
+// across a network (xvanish-network: through a proxy with two servers, Friend and Watcher, an operator
+// too, on "game": Joiner vanishes on lobby, Watcher's /vanish list on game names them as not on this
+// server, Joiner switches to game and stays hidden from Friend, and shows again there), or
 // xVote's (real Votifier v2 votes sent to --vote-port, signed with --vote-token: one for Friend
 // before Friend has ever joined, paid as Friend joins; one for Joiner, paid at once; /vote in
 // German; with --xmoney, the money reward in Joiner's /balance), or xVote across a network
@@ -320,7 +323,7 @@ async function zchatNetwork () {
 // A second player for xBans' checks, who can be kicked and come back: their lines, whether and why
 // they were kicked, and a way to wait for either.
 function friendBot (opts = {}) {
-  const friend = mineflayer.createBot({ host: '127.0.0.1', port, username: 'Friend', auth: 'offline', version: opts.version ?? version })
+  const friend = mineflayer.createBot({ host: '127.0.0.1', port, username: opts.name ?? 'Friend', auth: 'offline', version: opts.version ?? version })
   const state = { bot: friend, heard: [], kicked: null, spawned: false, ended: false }
   friend.on('message', (msg) => state.heard.push((msg.unsigned || msg).toString()))
   friend.on('kicked', (reason) => { state.kicked = typeof reason === 'string' ? reason : JSON.stringify(reason) })
@@ -539,6 +542,55 @@ async function xvoteNetwork () {
   finish()
 }
 
+// xVanish across a network: Joiner on lobby, Friend (not an operator) and Watcher (one) on game,
+// through the proxy. Network mode shares who's vanished through the database.
+async function xvanishNetwork () {
+  // One login per address every 3 s gets through Velocity (its login-ratelimit).
+  const friend = friendBot()
+  // A real client empties its world on a respawn, as BungeeCord's switch sends; mineflayer only on
+  // a login, so Friend would keep the players it saw on lobby.
+  friend.bot._client.on('respawn', () => {
+    for (const [id, e] of Object.entries(friend.bot.entities)) if (e !== friend.bot.entity) delete friend.bot.entities[id]
+  })
+  check('Friend joins through the proxy', await friend.until(() => friend.spawned), `kicked: ${friend.kicked}`)
+  await sleep(3500)
+  const watcher = friendBot({ name: 'Watcher' })
+  check('Watcher joins through the proxy', await watcher.until(() => watcher.spawned), `kicked: ${watcher.kicked}`)
+  await sleep(2000)
+  friend.bot.chat('/server game')
+  watcher.bot.chat('/server game')
+  await sleep(5000)
+  await command('/vanish', 'Du bist unsichtbar.', '/vanish on lobby answers in German')
+  // Network mode: game hears of it from the database within its check, a second here.
+  await sleep(4000)
+  let from = watcher.heard.length
+  watcher.bot.chat('/vanish list')
+  check("/vanish list on game names Joiner, vanished on lobby", await watcher.hears(`${username} not on this server`, from), `Watcher heard ${JSON.stringify(watcher.heard.slice(from))}`)
+  const listed = (f) => Object.keys(f.bot.players).includes(username)
+  const inWorld = (f) => Object.values(f.bot.entities).some((e) => e.type === 'player' && e.username === username)
+  from = friend.heard.length
+  const mine = heard.length
+  bot.chat('/server game')
+  // Before 1.12 the server reads a client's language only as it joins (DECISIONS.md, "A real client"),
+  // and through BungeeCord the client joins game in English.
+  const [major, minor] = (bot.version || '1.8').split('.').map(Number)
+  const arrived = major > 1 || minor >= 12 ? 'unsichtbar beigetreten' : 'joined vanished'
+  check('Joiner arrives on game vanished', await hear(arrived, mine, 15000) != null, `heard ${JSON.stringify(heard.slice(mine)).slice(0, 400)}`)
+  await sleep(3000)
+  check('Friend on game has no Joiner in the tab list or the world', !listed(friend) && !inWorld(friend), `listed ${listed(friend)}, in the world ${inWorld(friend)}`)
+  check('nor heard them join', !friend.heard.slice(from).some((l) => l.includes(`${username} joined`)), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  check('Watcher, an operator, sees them', listed(watcher), 'not in Watcher\'s tab list')
+  from = watcher.heard.length
+  watcher.bot.chat('/vanish list')
+  check('/vanish list on game now has Joiner here', await watcher.hears(`${username} level`, from), `Watcher heard ${JSON.stringify(watcher.heard.slice(from))}`)
+  from = friend.heard.length
+  await command('/vanish', 'wieder sichtbar', '/vanish on game shows Joiner')
+  check('Friend hears a fake join', await friend.hears(`${username} joined the game`, from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  check('and has Joiner back', await friend.until(() => listed(friend) && inWorld(friend), 5000), `listed ${listed(friend)}, in the world ${inWorld(friend)}`)
+  for (const f of [friend, watcher]) try { f.bot.quit() } catch {}
+  finish()
+}
+
 async function run () {
   if (forge) {
     // Looks like a frame of ours ('X', version 1), signed with nothing the network knows.
@@ -558,6 +610,7 @@ async function run () {
   if (plugin === 'xvote') return xvote()
   if (plugin === 'xvote-network') return xvoteNetwork()
   if (plugin === 'xmarket') return xmarket()
+  if (plugin === 'xvanish-network') return xvanishNetwork()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")

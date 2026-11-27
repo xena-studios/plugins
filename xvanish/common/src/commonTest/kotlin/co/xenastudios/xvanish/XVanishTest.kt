@@ -152,7 +152,10 @@ abstract class XVanishCases(byDefault: Boolean) {
         assertTrue(server.quit(staff), "the quit message is left out")
         assertTrue(join(staff), "joins vanished, the join message left out")
         assertFalse(server.sees(alex, staff))
-        assertTrue(server.heard(staff).any { "joined vanished" in it.lowercase() || "joined" in it })
+        // Told a moment later, once their client's language has reached the server.
+        assertFalse(server.heard(staff).any { "joined vanished" in it.lowercase() })
+        platform.scheduler.advance(XVanishPlugin.JOINED_MESSAGE_DELAY)
+        assertTrue(server.heard(staff).any { "joined vanished" in it.lowercase() })
         // A restart: a new plugin reads the file.
         val again = Remembered(platform.storage, platform.scheduler, platform.log)
         again.load()
@@ -273,6 +276,20 @@ abstract class XVanishCases(byDefault: Boolean) {
         reconfigure("vanish:\n  other-plugins-permissions: true\n")
         assertTrue(server.sees(steve, staff))
         assertTrue(plugin.permissions.permissions.any { it.node == "sv.use" })
+    }
+
+    @Test
+    fun theirLayeredLevelsAreHonoured() {
+        reconfigure("vanish:\n  other-plugins-permissions: true\n")
+        staff.permissions += "pv.use.level3"
+        steve.permissions += "sv.see.level2"
+        join(steve)
+        run(staff, "vanish")
+        assertEquals(3, plugin.level(staff.player!!), "PremiumVanish's pv.use.level3")
+        assertFalse(server.sees(steve, staff), "sv.see.level2 is below level 3")
+        steve.permissions += "sv.see.level3"
+        reconfigure("vanish:\n  other-plugins-permissions: true\n")
+        assertTrue(server.sees(steve, staff), "SuperVanish's sv.see.level3, without sv.see")
     }
 
     @Test

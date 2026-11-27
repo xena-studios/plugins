@@ -13,4 +13,9 @@ import Reference from "../../../components/reference/Reference.astro";
 
 Several servers can share who's vanished: set `network.enabled: true` on each, and `storage` to the same MySQL or MariaDB database (or `type: shared` for the family's, in `plugins/Xena/config.yml`). Each server keeps the whole list in memory and hears the others' changes within `network.check-every`, so a player who vanished on one server joins the next vanished, and `/vanish list` names those on other servers. On SQLite network mode does nothing, and says so.
 
+- **A server switch never shows anyone**, `remember: false` included: a player who leaves one server for another stays vanished; with `remember: false` they're shown on the network only once they've left it (10 seconds after their last server, unless they reach another first).
+- **Each server's `vanished.txt` follows the network**, so a server that can't reach the database (at startup or later) keeps everyone vanished as it last knew them, and a change made while it was away (someone shown again elsewhere) reaches its file as it reconnects. Changes made during an outage wait and are written once the database is back.
+- **Levels cross servers:** staff see a player vanished on another server only if their level is high enough, as on the same server.
+- **`/xvanish forget`** forgets a player on every server, not only the one it ran on. `/xvanish import` adds the imported players to the network too, and turning network mode on adds what each server's `vanished.txt` already lists.
+
 <Reference plugin="xvanish" show="config" />

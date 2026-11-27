@@ -77,11 +77,12 @@ internal class LedgerWork(private val ledger: Ledger) {
             claim(it, name)
             return it
         }
+        var created: Pending<DbOutcome<Applied?, DbError>>? = null
         val account = accounts.getOrCreate(id) {
             val made = Account(id, name, true, if (shared) 0 else maxOf(0, start))
             val cause = Cause(TransactionKind.START, "xMoney", "starting balance")
             if (shared) {
-                create(made, maxOf(0, start), cause)
+                created = create(made, maxOf(0, start), cause)
             } else {
                 val time = now()
                 val writes = ArrayList<Statement>(statements.account(made, time))
@@ -94,6 +95,9 @@ internal class LedgerWork(private val ledger: Ledger) {
             }
             made
         }
+        // Once getOrCreate has indexed it: the database may have answered already (#187), and
+        // what it read is for this account, which `accounts` only knows from now on.
+        created?.onSettled { result, _ -> created(account, result) }
         // The name may have been another account's: a player joining under it takes it.
         claim(account, name)
         return account
@@ -504,10 +508,14 @@ internal class LedgerWork(private val ledger: Ledger) {
         }
     }
 
-    /** On a network: a new player's account, with the starting balance only if no server made it first. */
-    private fun create(account: Account, start: Long, cause: Cause) {
+    /**
+     * On a network: a new player's account, with the starting balance only if no server made it
+     * first. Queued while [Accounts.getOrCreate] makes it, so nothing else is written for it
+     * first; settled by [created] once it's indexed.
+     */
+    private fun create(account: Account, start: Long, cause: Cause): Pending<DbOutcome<Applied?, DbError>> {
         locked(counter) { inFlight++ }
-        db.transaction { session ->
+        return db.transaction { session ->
             val time = now()
             for (statement in statements.account(account, time)) run(session, statement)?.let { return@transaction DbOutcome.Err(it) }
             val made = when (val inserted = session.execute(statements.start(account.id, start))) {
@@ -523,16 +531,18 @@ internal class LedgerWork(private val ledger: Ledger) {
                     }
                 } else applied
             }
-        }.onSettled { result, _ ->
-            locked(counter) { inFlight-- }
-            when (result) {
-                is DbOutcome.Ok -> result.value?.let(::apply)
-                is DbOutcome.Err -> {
-                    problem = result.error.toString()
-                    log.error("Couldn't make ${account.name}'s account in ${db.description}: ${result.error}")
-                }
-                null -> Unit
+        }
+    }
+
+    private fun created(account: Account, result: DbOutcome<Applied?, DbError>?) {
+        locked(counter) { inFlight-- }
+        when (result) {
+            is DbOutcome.Ok -> result.value?.let(::apply)
+            is DbOutcome.Err -> {
+                problem = result.error.toString()
+                log.error("Couldn't make ${account.name}'s account in ${db.description}: ${result.error}")
             }
+            null -> Unit
         }
     }
 

@@ -1,6 +1,11 @@
 package co.xenastudios.xmoney.ledger
 
+import co.xenastudios.core.api.Pending
 import co.xenastudios.core.api.PlayerRef
+import co.xenastudios.core.common.Outcome
+import co.xenastudios.core.common.db.Database
+import co.xenastudios.core.common.db.DbError
+import co.xenastudios.core.common.db.SqlSession
 import co.xenastudios.core.jvm.db.JdbcDatabase
 import co.xenastudios.xmoney.api.TransactionResult.Status
 import java.nio.file.Files
@@ -42,6 +47,31 @@ open class SharedTest {
     fun onlyTheFirstServerGivesTheStartingBalance() {
         val a = server()
         val b = server()
+        val steve = player()
+        a.open(steve, "Steve", 50 * one)
+        a.flush().await()
+        b.open(steve, "Steve", 50 * one)
+        b.flush().await()
+        assertEquals(50 * one, b.accounts[steve]!!.balance)
+        assertEquals(50 * one, Bench.stored(opened[0])[steve])
+        Bench.assertLedgerMatchesBalances(opened[0])
+    }
+
+    /**
+     * #187: B's database settling the new account's transaction before `open` returns, as a quick
+     * writer thread does for a caller held up (CI's two cores under load). B found no account to
+     * give the balance it read to, as the account is only indexed once `open` has queued its first
+     * write, and kept 0.
+     */
+    @Test
+    fun aSecondServerKeepsTheStartingBalanceItReadsHoweverQuickItsDatabaseIs() {
+        val a = server()
+        val real = database().also { opened += it }
+        val quick = object : Database by real {
+            override fun <T> transaction(work: (SqlSession) -> Outcome<T, DbError>): Pending<Outcome<T, DbError>> =
+                real.transaction(work).also { it.await() }
+        }
+        val b = Bench.ledger(quick, platform, shared = true)
         val steve = player()
         a.open(steve, "Steve", 50 * one)
         a.flush().await()

@@ -1,0 +1,36 @@
+{
+  "//": "Modrinth's POST /v2/version `data` part: CreatableVersion in Labrinth's OpenAPI (https://github.com/modrinth/code/blob/main/apps/docs/public/openapi.yaml, v2.7.0), with the limits Labrinth checks on the server (InitialVersionData in apps/labrinth/src/routes/v2/version_creation.rs: version_number 1-32 characters of RE_URL_SAFE_RELAXED, name 1-64, changelog up to 65536, file_parts 1-256, dependencies up to 4096, at least one game version and loader). Read 2026-11-27.",
+  "type": "object",
+  "required": ["file_parts", "project_id", "name", "version_number", "game_versions", "version_type", "loaders", "featured", "dependencies"],
+  "additionalProperties": false,
+  "properties": {
+    "project_id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "version_number": { "type": "string", "minLength": 1, "maxLength": 32, "pattern": "^[a-zA-Z0-9!@$()`.+,_\"-]+$" },
+    "changelog": { "type": "string", "nullable": true, "maxLength": 65536 },
+    "dependencies": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "required": ["dependency_type"],
+        "properties": {
+          "version_id": { "type": "string", "nullable": true },
+          "project_id": { "type": "string", "nullable": true },
+          "file_name": { "type": "string", "nullable": true },
+          "dependency_type": { "type": "string", "enum": ["required", "optional", "incompatible", "embedded"] }
+        }
+      }
+    },
+    "game_versions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "version_type": { "type": "string", "enum": ["release", "beta", "alpha"] },
+    "loaders": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "featured": { "type": "boolean" },
+    "status": { "type": "string", "enum": ["listed", "archived", "draft", "unlisted", "scheduled", "unknown"] },
+    "requested_status": { "type": "string", "nullable": true, "enum": ["listed", "archived", "draft", "unlisted", null] },
+    "file_parts": { "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1 } },
+    "primary_file": { "type": "string" },
+    "environment": { "type": "string" },
+    "file_types": { "type": "object" }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "//": "Modrinth's PATCH /v2/project/{id} body as the store page sync sends it: EditProject in Labrinth (apps/labrinth/src/routes/v2/projects.rs: body up to 65536 characters). Read 2026-11-27.",
+  "type": "object",
+  "required": ["body"],
+  "additionalProperties": false,
+  "properties": { "body": { "type": "string", "minLength": 1, "maxLength": 65536 } }
+}

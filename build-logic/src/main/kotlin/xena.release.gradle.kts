@@ -3,6 +3,8 @@ import co.xenastudios.gradle.CurseForgePublish
 import co.xenastudios.gradle.HangarPublish
 import co.xenastudios.gradle.ModrinthPublish
 import co.xenastudios.gradle.ReleaseAssemble
+import co.xenastudios.gradle.Site
+import co.xenastudios.gradle.StorePagePublish
 import co.xenastudios.gradle.VoxelReleasePublish
 
 // The rewrite's release (ROADMAP.md, "Build, CI and releases"): one tag per plugin
@@ -20,7 +22,13 @@ import co.xenastudios.gradle.VoxelReleasePublish
 //   ./gradlew <path>:releaseAssemble       build/release: the jars, SHA256SUMS, release.json, update posts
 //   ./gradlew <path>:releasePublish        every store, from build/release (release.yml runs each store alone)
 //   ./gradlew <path>:release -Pxena.release.dryRun=true
-//                                          both, sending nothing: each store prints what it would send
+//                                          both, sending nothing: each store checks and prints what it would send
+//   ./gradlew <path>:releaseStorePage      <plugin>/modrinth.md as the Modrinth and Hangar pages
+//
+// -Pxena.release.root=<folder> puts each plugin's release in <folder>/<plugin id> instead of
+// the project's build/release, so one folder holds a release of several plugins (release.yml,
+// scripts/release.ts --together). Each store task checks its payload against the store's schema
+// and lists (StoreChecks) before sending anything, and a dry run does the same instead of sending.
 //
 // Tokens come from the environment, as release.yml sets them: MODRINTH_TOKEN,
 // HANGAR_API_TOKEN, VOXEL_API_KEY, CURSEFORGE_TOKEN. The store tasks read the folder
@@ -34,7 +42,9 @@ val release = extensions.create<XenaReleaseExtension>("xenaRelease").apply {
 }
 
 val isDryRun = providers.gradleProperty("xena.release.dryRun").map { it.toBoolean() }.orElse(false)
-val releaseOutput = layout.buildDirectory.dir("release")
+val releaseOutput = providers.gradleProperty("xena.release.root")
+    .flatMap { root -> release.pluginId.map { rootProject.layout.projectDirectory.dir(root).dir(it) } }
+    .orElse(layout.buildDirectory.dir("release"))
 
 tasks.register("releaseInfo") {
     group = "publishing"
@@ -72,6 +82,39 @@ val releaseAssemble = tasks.register<ReleaseAssemble>("releaseAssemble") {
     }
     jars += release.jars
     outputDir = releaseOutput
+    // The site's side (docs/README.md, Unreleased rewrites): the download picker's entry.
+    val docs = rootProject.layout.projectDirectory.dir("docs/src")
+    siteManifest = release.pluginId.map { docs.file("generated/$it/manifest.json") }.filter { it.asFile.isFile }
+    siteReleases = release.pluginId.map { docs.file("data/releases/$it.json") }.filter { it.asFile.isFile }
+    siteVersions = docs.file("data/versions.json")
+    releaseDate = providers.gradleProperty("xena.release.date")
+    val version = project.version.toString()
+    storeLinks = provider {
+        Site.storeLinks(
+            tag = "${release.pluginId.get()}-v$version",
+            modrinth = release.modrinthId.orNull,
+            hangar = release.hangarId.orNull,
+            curseForge = release.curseForgeBukkitId.orNull ?: release.curseForgeModsId.orNull,
+            voxel = release.voxelId.orNull,
+            spigotMc = release.spigotMcId.orNull,
+            builtByBit = release.builtByBitId.orNull,
+        )
+    }
+}
+
+// The store page, for a plugin that has one (today's text until its release pull request).
+tasks.register<StorePagePublish>("releaseStorePage") {
+    group = "publishing"
+    description = "Publishes <plugin>/modrinth.md as the plugin's Modrinth and Hangar pages (-Pxena.release.dryRun=true checks and prints)."
+    val file = release.pluginId.map { rootProject.layout.projectDirectory.file("$it/modrinth.md") }
+    page = file
+    modrinthSlug = release.modrinthId
+    hangarSlug = release.hangarId
+    dryRun = isDryRun
+    modrinthToken = providers.environmentVariable("MODRINTH_TOKEN")
+    hangarApiKey = providers.environmentVariable("HANGAR_API_TOKEN")
+    val present = file.map { it.asFile.isFile }
+    onlyIf("the plugin has a modrinth.md (a new plugin's is modrinth.draft.md until its release)") { present.get() }
 }
 
 val stores = listOf(

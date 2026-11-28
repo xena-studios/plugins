@@ -131,8 +131,10 @@ abstract class VoxelReleasePublish : DefaultTask() {
             Voxel.upload(id ?: 0, manifest.version, manifest.title, manifest.changelog,
                 manifest.type != VersionType.RELEASE, key, dir.resolve(jar.file))
         }
+        val preview = upload("<key>")
+        StoreChecks.require("${manifest.title} on voxel.shop", StoreChecks.voxel(preview.fields, dir.resolve(jar.file)))
         if (dryRun) {
-            DryRun.report(dir, "voxel", upload("<key>").describe() +
+            DryRun.report(dir, "voxel", preview.describe() + "  checked: postUpdate's fields\n" +
                 (if (id == null) "  (no voxel.shop resource yet: a real release skips this)\n" else ""), logger)
             return
         }

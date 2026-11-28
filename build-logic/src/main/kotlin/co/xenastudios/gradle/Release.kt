@@ -27,7 +27,8 @@ enum class ReleasePlatform(
     /** A Paper-only jar (xLimbo). */
     PAPER(listOf("paper", "purpur"), "PAPER", CurseForgeClass.BUKKIT, bukkitFamily = true),
     VELOCITY(listOf("velocity"), "VELOCITY"),
-    BUNGEECORD(listOf("bungeecord", "waterfall")),
+    /** BungeeCord and Waterfall: Hangar takes it as Waterfall's, whose versions are its own lines (1.21). */
+    BUNGEECORD(listOf("bungeecord", "waterfall"), "WATERFALL"),
     FABRIC(listOf("fabric"), curseForge = CurseForgeClass.MODS, curseForgeLoader = "Fabric"),
     NEOFORGE(listOf("neoforge"), curseForge = CurseForgeClass.MODS, curseForgeLoader = "NeoForge"),
     FORGE(listOf("forge"), curseForge = CurseForgeClass.MODS, curseForgeLoader = "Forge"),
@@ -40,6 +41,16 @@ enum class ReleasePlatform(
     /** Modrinth's loaders, with Folia when the plugin runs on it. */
     fun modrinthLoaders(folia: Boolean): List<String> =
         if (folia && (this == BUKKIT || this == PAPER)) modrinthLoaders + "folia" else modrinthLoaders
+
+    /**
+     * The site's platform ids for the jar (a plugin's manifest's `platforms`, which the download
+     * picker checks each jar against): the Bukkit jar is Paper's, Folia's and Spigot's.
+     */
+    fun sitePlatforms(folia: Boolean): List<String> = when (this) {
+        BUKKIT -> listOfNotNull("paper", "folia".takeIf { folia }, "spigot")
+        PAPER -> listOfNotNull("paper", "folia".takeIf { folia })
+        else -> listOf(name.lowercase())
+    }
 }
 
 /** CurseForge's project classes: each plugin has up to three projects, one per class (M0). */
@@ -87,11 +98,13 @@ data class ReleaseFile(
     val size: Long,
     /** Hangar's versions for the platform, where they aren't [gameVersions] (Velocity's own). */
     val hangarVersions: List<String> = emptyList(),
+    /** Or every version Hangar lists for the platform from this one on. */
+    val hangarFrom: String? = null,
 ) {
     fun toMap(): Map<String, Any?> = linkedMapOf(
         "name" to name, "file" to file, "platform" to platform.name, "label" to label,
         "gameVersions" to gameVersions, "loaders" to loaders, "java" to java, "sha256" to sha256, "size" to size,
-        "hangarVersions" to hangarVersions,
+        "hangarVersions" to hangarVersions, "hangarFrom" to hangarFrom,
     )
 
     companion object {
@@ -106,6 +119,7 @@ data class ReleaseFile(
             sha256 = map["sha256"] as String,
             size = (map["size"] as Number).toLong(),
             hangarVersions = (map["hangarVersions"] as List<*>?)?.map { it.toString() }.orEmpty(),
+            hangarFrom = map["hangarFrom"] as String?,
         )
     }
 }
@@ -166,6 +180,10 @@ object Release {
     const val REPO = "xena-studios/plugins"
     const val BRAND_RAW = "https://raw.githubusercontent.com/xena-studios/brand/main/"
     const val CATALOG_URL = BRAND_RAW + "tokens/plugins-catalog.json"
+
+    /** The heading of one version's section, such as "2.0.0 (unreleased)", or null. */
+    fun changelogHeading(changelog: String, version: String): String? =
+        changelog.lines().firstOrNull { it == "## $version" || it.startsWith("## $version ") }?.removePrefix("## ")
 
     /** One version's section of a CHANGELOG.md, as scripts/changelog.sh prints it, or null. */
     fun changelogSection(changelog: String, version: String): String? {

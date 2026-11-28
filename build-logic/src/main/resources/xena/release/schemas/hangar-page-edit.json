@@ -1,0 +1,7 @@
+{
+  "//": "Hangar's PATCH /api/v1/pages/editmain/{project} body: StringContent in Hangar's OpenAPI (https://hangar.papermc.io/v3/api-docs), with pages.minLen 15 and pages.maxLen 32000 (backend config/hangar/PagesConfig.java's defaults). Read 2026-11-27.",
+  "type": "object",
+  "required": ["content"],
+  "additionalProperties": false,
+  "properties": { "content": { "type": "string", "minLength": 15, "maxLength": 32000 } }
+}

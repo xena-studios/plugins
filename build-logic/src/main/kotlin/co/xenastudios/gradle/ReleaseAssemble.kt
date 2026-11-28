@@ -63,6 +63,40 @@ abstract class ReleaseAssemble : DefaultTask() {
     @get:Nested
     val jars: MutableList<ReleaseJar> = mutableListOf()
 
+    /** The plugin's site manifest (docs/src/generated/<plugin>/manifest.json): which platforms the site lists. */
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val siteManifest: RegularFileProperty
+
+    /**
+     * The site's releases file (docs/src/data/releases/<plugin>.json). When it already has this
+     * version (the release pull request wrote it), every jar must be the bytes it recorded, or
+     * the release stops before anything is uploaded: the site would link jars that differ.
+     */
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val siteReleases: RegularFileProperty
+
+    /**
+     * The site's versions.json. A real release stops while the plugin's line still has
+     * "unreleased": its release pull request deletes it, and has to be merged first.
+     */
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val siteVersions: RegularFileProperty
+
+    /** Store to its page, for the site's entry (Site.storeLinks). */
+    @get:Input
+    abstract val storeLinks: MapProperty<String, String>
+
+    /** The release's date for the site (YYYY-MM-DD, UTC). Defaults to today. */
+    @get:Input
+    @get:Optional
+    abstract val releaseDate: Property<String>
+
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
 
@@ -75,6 +109,24 @@ abstract class ReleaseAssemble : DefaultTask() {
         val out = outputDir.get().asFile
         out.deleteRecursively()
         out.mkdirs()
+
+        val notes = mutableListOf<String>()
+        // A section still headed "(unreleased)", or a site line still "unreleased": the release
+        // pull request (scripts/release.ts --together) isn't merged yet.
+        val pending = buildList {
+            changelogFile.orNull?.asFile?.takeIf { it.isFile }?.let { file ->
+                Release.changelogHeading(file.readText(), version)?.takeIf { "(unreleased)" in it }
+                    ?.let { add("${file.parentFile.name}/CHANGELOG.md's section is still \"$it\"") }
+            }
+            siteVersions.orNull?.asFile?.takeIf { it.isFile }?.let { file ->
+                if (Site.isUnreleased(file.readText(), id)) add("docs/src/data/versions.json still has \"unreleased\" on $id's line")
+            }
+        }
+        if (pending.isNotEmpty()) {
+            if (!dryRun.get()) throw GradleException("$id $version isn't ready to release: merge its release pull request first (node scripts/release.ts --together):\n  " + pending.joinToString("\n  "))
+            pending.forEach { logger.warn("{}: {}; a real release stops here until its release pull request is merged", id, it) }
+            notes += pending.map { "$it: a real release stops here until the release pull request is merged." }
+        }
 
         val changelog = changelogFile.orNull?.asFile?.takeIf { it.isFile }
             ?.let { Release.changelogSection(it.readText(), version) }
@@ -110,6 +162,7 @@ abstract class ReleaseAssemble : DefaultTask() {
                 loaders = jar.loaders.get().ifEmpty { platform.modrinthLoaders(folia.get()) },
                 java = jar.java.orNull,
                 hangarVersions = jar.hangarVersions.getOrElse(emptyList()),
+                hangarFrom = jar.hangarFrom.orNull,
                 sha256 = Release.sha256(target),
                 size = target.length(),
             )
@@ -124,7 +177,21 @@ abstract class ReleaseAssemble : DefaultTask() {
             out.resolve("spigotmc-update.txt").writeText(Release.updatePost("SpigotMC", manifest))
             out.resolve("builtbybit-update.txt").writeText(Release.updatePost("BuiltByBit", manifest))
         }
-        out.resolve("summary.md").writeText(Release.summary(manifest, stores(files)))
+        out.resolve("summary.md").writeText(Release.summary(manifest, stores(files)) +
+            notes.joinToString("") { "\n> $it\n" })
+
+        // The download picker's entry, which the release pull request puts in the site.
+        val platforms = siteManifest.orNull?.asFile?.takeIf { it.isFile }?.let { Site.releasePlatforms(it.readText()) }
+        val date = releaseDate.orNull ?: java.time.LocalDate.now(java.time.ZoneOffset.UTC).toString()
+        val entry = Site.entry(manifest, folia.get(), platforms, storeLinks.get(), date)
+        out.resolve(Site.FILE).writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(entry)) + "\n")
+        siteReleases.orNull?.asFile?.takeIf { it.isFile }?.let { recorded ->
+            val problems = Site.mismatches(recorded.readText(), entry)
+            if (problems.isNotEmpty()) {
+                throw GradleException("These jars aren't the ones ${recorded.name} records for ${manifest.title}, so nothing is released. " +
+                    "Rebuild the site's entry from this build (node scripts/release.ts --site-data <release folder>):\n  " + problems.joinToString("\n  "))
+            }
+        }
         logger.lifecycle("{}: {} jar(s) in {}", manifest.title, files.size, out)
         files.forEach { logger.lifecycle("  {}  {}  {}", it.sha256, it.file, it.gameVersions.joinToString(",")) }
     }

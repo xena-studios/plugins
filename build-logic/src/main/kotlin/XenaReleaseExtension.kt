@@ -39,6 +39,13 @@ abstract class XenaReleaseExtension @Inject constructor(objects: ObjectFactory) 
     abstract val curseForgeModsId: Property<Int>
     abstract val curseForgeHytaleId: Property<Int>
 
+    /**
+     * The SpigotMC and BuiltByBit resource ids, for the site's download picker only: neither store
+     * has an upload API, so the release writes their update posts to paste. Unset: not listed.
+     */
+    abstract val spigotMcId: Property<Int>
+    abstract val builtByBitId: Property<Int>
+
     /** Every jar the plugin ships, one per platform (and per Minecraft line, for mods). */
     val jars: NamedDomainObjectContainer<ReleaseJar> = objects.domainObjectContainer(ReleaseJar::class.java)
 
@@ -85,6 +92,14 @@ abstract class ReleaseJar @Inject constructor(private val name: String) : Named 
      */
     @get:Input
     abstract val hangarVersions: ListProperty<String>
+
+    /**
+     * Instead of [hangarVersions]: every version Hangar lists for the platform from this one on,
+     * read from Hangar at the release, so a new Velocity is listed without a change here.
+     */
+    @get:Input
+    @get:Optional
+    abstract val hangarFrom: Property<String>
 
     /** Modrinth's loaders, when not the platform's own. */
     @get:Input

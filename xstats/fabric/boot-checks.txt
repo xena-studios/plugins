@@ -1,6 +1,7 @@
 # What scripts/boot-fabric.sh checks on each Minecraft line with xStats, from the console: the
-# Bukkit checks (xstats/bukkit/boot-checks.txt) on Fabric, but boards, which are Bukkit's text
-# displays. The database opens with the SQLite driver xStats downloads (a Fabric server ships none).
+# Bukkit checks (xstats/bukkit/boot-checks.txt) on Fabric, with a board in the world as a text
+# display (FabricBoards), the overworld named by its id's path. The database opens with the SQLite
+# driver xStats downloads (a Fabric server ships none).
 logged: [xStats] xStats 2.0.0 on
 logged: Stats ready: 0 players in the SQLite database stats.db.
 logged: so there's no history to import.
@@ -22,8 +23,22 @@ run: leaderboard nothing
 expect: There's no stat called
 run: stats Steve
 expect: has never played here.
-run: xstats board add kills all world 0.5 80 0.5
-expect: Boards in the world are text displays
+run: forceload add 0 0
+expect: Marked
+run: xstats board add kills all overworld 0.5 80 0.5
+expect: Placed board 1
+run: xstats save
+expect: Saved 0 players
+run: execute positioned 0.5 80 0.5 if entity @e[type=minecraft:text_display,distance=..1] run say BOARD SHOWN
+expect: BOARD SHOWN
+run: xstats board list
+expect: kills, all at overworld 0 80 0
+run: xstats board remove 1
+expect: Removed board 1.
+run: xstats save
+expect: Saved 0 players
+run: execute positioned 0.5 80 0.5 unless entity @e[type=minecraft:text_display,distance=..1] run say BOARD GONE
+expect: BOARD GONE
 run: xstats web test
 expect: Web test passed
 run: xstats web export

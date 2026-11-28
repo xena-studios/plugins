@@ -40,7 +40,7 @@ stats:
 | `a + b + c` | Several of the above added up, as long as they count the same thing (all distances, say). |
 | `xstats:playtime` | Time online, leaving out time a player didn't move their camera at all between two saves. |
 | `xstats:sessions` | Times joined. |
-| `papi:%placeholder%` | Any PlaceholderAPI value, read at every save and when the player leaves: `papi:%vault_eco_balance%`, a jobs level. Bukkit only: on Fabric it reads nothing. |
+| `papi:%placeholder%` | Any PlaceholderAPI value, read at every save and when the player leaves: `papi:%vault_eco_balance%`, a jobs level. On Fabric, a [Text Placeholder API](https://modrinth.com/mod/placeholder-api) value, with its argument after a space: `papi:%player:statistic jump%`. |
 
 The rest of a stat's settings:
 
@@ -73,7 +73,7 @@ Players with `xstats.leaderboard.exclude` are left out of every leaderboard, suc
 
 ## Boards in the world
 
-`/xstats board add <stat> [daily|weekly|monthly|all]` places a leaderboard just above where you stand: a text display, no hologram plugin needed, on Paper, Folia and Spigot 1.19.4 and newer. It's updated at every save. `/xstats board list` lists them with their ids, and `/xstats board remove <id>` takes one down. From the console, add the world and coordinates: `/xstats board add kills monthly world 0.5 80 0.5`.
+`/xstats board add <stat> [daily|weekly|monthly|all]` places a leaderboard just above where you stand: a text display, no hologram plugin needed, on Paper, Folia and Spigot 1.19.4 and newer, and on Fabric. It's updated at every save. `/xstats board list` lists them with their ids, and `/xstats board remove <id>` takes one down. From the console, add the world and coordinates: `/xstats board add kills monthly world 0.5 80 0.5`. On Fabric a world is its dimension: `overworld`, `the_nether`, `the_end`, or a mod's own id.
 
 How many places each shows is `leaderboards.boards.lines`; the title, each line and the text when nobody's on it yet are `boards.*` in [`lang/`](/xstats/messages/). Boards aren't saved with the world: each appears when its chunk loads, so one removed while its chunk was unloaded never leaves anything behind.
 

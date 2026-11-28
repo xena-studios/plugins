@@ -28,10 +28,24 @@ import kotlin.concurrent.Volatile
 public class JvmFiles(
     private val folder: Path,
     private val family: Family,
-    /** The jar's translations: [LangFolder.shipped] of [LANGUAGES]. */
-    private val shipped: Map<LanguageTag, String>,
+    /**
+     * The jar's translations, [LangFolder.shipped] of [LANGUAGES]: read the first time the lang
+     * files are, which the plugin does off the server thread.
+     */
+    private val jar: () -> Map<LanguageTag, String>,
     private val log: Log,
 ) : Files {
+    public constructor(folder: Path, family: Family, shipped: Map<LanguageTag, String>, log: Log) : this(folder, family, Given(shipped), log)
+
+    private class Given(private val shipped: Map<LanguageTag, String>) : () -> Map<LanguageTag, String> {
+        override fun invoke(): Map<LanguageTag, String> = shipped
+    }
+
+    @Volatile
+    private var read: Map<LanguageTag, String>? = null
+
+    private val shipped: Map<LanguageTag, String> get() = read ?: jar().also { read = it }
+
     private val path = folder.resolve("config.yml")
     private val yaml = RememberingYaml()
     private val file = ConfigFile(XBackupConfig, path, yaml)

@@ -173,6 +173,19 @@ public class XBackupPlugin(
         override fun invoke(): Any = if (kind == 0) apply(files.load()) else wanted()
     }
 
+    /**
+     * The lang files for the config [start] used, read after it off the server thread: the texts
+     * and the problems change, nothing else. A reload since then wins. On the global thread.
+     */
+    public fun translated(loaded: Loaded) {
+        if (loaded.config !== config) return
+        texts.translations = loaded.translations
+        problems = loaded.problems + applied
+    }
+
+    // What the last apply warned of, besides what the files said.
+    private var applied: List<String> = emptyList()
+
     /** Uses what [Files] read: the settings to the engine, the commands rebuilt. On the global thread. */
     public fun apply(loaded: Loaded): List<String> {
         config = loaded.config
@@ -183,6 +196,7 @@ public class XBackupPlugin(
         permissionRegistrar?.sync(permissions.permissions + admin.permissions.permissions)
         warnings += registrar?.sync(dispatcher).orEmpty() + commands.warnings
         warnings.forEach(log::warn)
+        applied = warnings
         problems = loaded.problems + warnings
         updates?.apply(XBackupConfig.updates.settings(config))
         modules.sync(wanted())

@@ -3,12 +3,16 @@ package co.xenastudios.xbackup.bukkit
 import co.xenastudios.core.bukkit.BukkitPlatform
 import co.xenastudios.core.common.family.PlayerCache
 import co.xenastudios.core.common.family.PlayerStore
+import co.xenastudios.core.common.i18n.LanguageTag
+import co.xenastudios.core.common.scheduler.Task
+import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.jvm.admin.MclogsPaste
 import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.core.loader.PluginEntry
 import co.xenastudios.xbackup.Engine
 import co.xenastudios.xbackup.JvmEngine
 import co.xenastudios.xbackup.JvmFiles
+import co.xenastudios.xbackup.Loaded
 import co.xenastudios.xbackup.RestoreOnStart
 import co.xenastudios.xbackup.XBackupPlugin
 import co.xenastudios.xbackup.api.XBackupApi
@@ -25,8 +29,9 @@ import java.util.logging.Level
  *
  * - As the server loads it (before any world): `running.lock` held, and a staged restore put in
  *   place ([RestoreOnStart]).
- * - As it enables: `config.yml` and `lang/` read (the remotes' passwords moved to `secrets.yml`
- *   first), commands registered; the repository isn't read until something needs it.
+ * - As it enables: `config.yml` read (the remotes' passwords moved to `secrets.yml` first),
+ *   commands registered; `lang/` and the player cache read on an async task right after; the
+ *   repository isn't read until something needs it.
  * - The API's events are Bukkit events too, and the API is in the services manager.
  */
 public class XBackupBukkit(private val plugin: JavaPlugin) : PluginEntry, (XBackupPlugin) -> Engine {
@@ -56,7 +61,7 @@ public class XBackupBukkit(private val plugin: JavaPlugin) : PluginEntry, (XBack
         platform.record(cache)
         val server = BukkitBackupServer(platform)
         this.server = server
-        val files = JvmFiles(home, family, LangFolder.shipped(plugin.javaClass.classLoader, JvmFiles.LANGUAGES), platform.log)
+        val files = JvmFiles(home, family, Shipped(plugin.javaClass.classLoader), platform.log)
         val xbackup = XBackupPlugin(
             platform, server, files, cache, this,
             registrar = platform.commands,
@@ -72,9 +77,11 @@ public class XBackupBukkit(private val plugin: JavaPlugin) : PluginEntry, (XBack
         plugin.server.servicesManager.register(XBackupApi::class.java, xbackup, plugin, ServicePriority.Normal)
         disables = server.watchDisables()
         RestoreOnStart.report(home) { platform.log.info(it) }
-        val loaded = files.load()
+        // config.yml alone here; the lang files (eight languages) and the player cache are read on
+        // an async task right after, as xBans does: English until then.
+        val loaded = files.config()
         xbackup.start(loaded)
-        cache.load()
+        platform.scheduler.run(Where.Async, action = Steps(platform, xbackup, cache, files, loaded))
         xbackup.updates = platform.checkUpdates(XBackupPlugin.PLUGIN_ID, xbackup.admin.updates, XBackupConfig.updates.settings(loaded.config)) { xbackup.texts.translations }
         // bStats: 1.x's service id.
         platform.metrics(35420)
@@ -119,6 +126,37 @@ public class XBackupBukkit(private val plugin: JavaPlugin) : PluginEntry, (XBack
 
         private class Connect(private val driver: co.xenastudios.core.jvm.db.IsolatedDriver) : (String) -> java.sql.Connection? {
             override fun invoke(url: String): java.sql.Connection? = driver.connect(url, java.util.Properties())
+        }
+    }
+
+    // The jar's translations, read with the lang files on the async task.
+    private class Shipped(private val loader: ClassLoader) : () -> Map<LanguageTag, String> {
+        override fun invoke(): Map<LanguageTag, String> = LangFolder.shipped(loader, JvmFiles.LANGUAGES)
+    }
+
+    /**
+     * After enable, as one class rather than a lambda each: on an async task, the player cache
+     * and the lang files read; then on the global thread, the lang files used.
+     */
+    private class Steps(
+        private val platform: BukkitPlatform,
+        private val xbackup: XBackupPlugin,
+        private val cache: PlayerCache,
+        private val files: JvmFiles,
+        private val config: Loaded,
+    ) : (Task) -> Unit {
+        @Volatile
+        private var loaded: Loaded? = null
+
+        override fun invoke(task: Task) {
+            val read = loaded
+            if (read == null) {
+                cache.load()
+                loaded = files.translations(config.config, config.problems)
+                platform.scheduler.run(Where.Global, action = this)
+            } else {
+                xbackup.translated(read)
+            }
         }
     }
 

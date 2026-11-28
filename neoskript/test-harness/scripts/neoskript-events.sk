@@ -1,0 +1,47 @@
+# The neoskript-events scenario: server events, driven by console commands (the test servers have no
+# players). Each line the harness checks starts with "[harness] events".
+
+on load:
+	send "[harness] events loaded" to console
+
+on command "nsk-greet":
+	cancel event
+	# No 'to': it goes to the event's command sender, here the console.
+	send "[harness] events greeted by %sender%"
+
+on command:
+	send "[harness] events any command" to console
+
+on command "nsk-elsewhere":
+	send "[harness] events wrong filter ran" to console
+
+on command "nsk-wait":
+	cancel event
+	wait 2 ticks
+	send "[harness] events after wait: %sender%" to console
+
+# Entity and world events, driven by a command that spawns, hurts and kills a pig and makes it rain.
+on command "nsk-pig":
+	cancel event
+	spawn a pig at spawn of world "world"
+	damage last spawned entity by 1
+	kill last spawned entity
+	set weather of world "world" to rain
+
+on spawn of pig:
+	send "[harness] events spawned %event-entity%" to console
+
+on spawn of a zombie:
+	send "[harness] events wrong spawn filter ran" to console
+
+on damage of pig:
+	send "[harness] events damage %damage% by %damage cause%" to console
+
+on death of pig:
+	send "[harness] events death of %victim%" to console
+	clear drops
+
+on weather change to rain:
+	send "[harness] events weather in %event-world% to rain" to console
+	# Time states: the world's weather before the event, and the one it changes to.
+	send "[harness] events weather was %past weather of event-world% now %weather of event-world% and will be %future weather of event-world%" to console

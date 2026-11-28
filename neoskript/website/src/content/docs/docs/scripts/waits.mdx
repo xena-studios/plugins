@@ -1,0 +1,69 @@
+---
+title: Waits and delays
+description: Pausing a trigger with wait, what changes after a wait, and the thread it carries on on.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+`wait <timespan>` pauses the trigger and carries on later, without holding up the server. Other triggers, and the game, run in the meantime.
+
+```skript
+command /countdown:
+	trigger:
+		loop 3 times:
+			broadcast "%4 - loop-number%..."
+			wait 1 second
+		broadcast "<green>Go!"
+```
+
+Timespans: `1 tick` (a twentieth of a second), `5 seconds`, `2 minutes`, `1 hour`, and `1 minute and 30 seconds`. Short forms like `30s` and `2h` work only in a command argument a player types, not in a script.
+
+## After a wait
+
+The world moves on while a trigger waits, so check what you rely on.
+
+- **The player may have left.** Check `player is online` before using them.
+- **The event is over.** Skript won't load `cancel event` after a wait ("An event cannot be cancelled after it has already passed"), or changes to what the event does, such as `set damage to` or `set join message to`, each with its own error. Do them before waiting.
+- **A function can't return a value.** Skript won't load `return` after a wait in a function: "A return statement after a delay is useless…". See [functions](/docs/scripts/functions/).
+- **Local variables are kept.** `{_x}` is still there, and so are the loops the wait is inside.
+
+```skript
+on join:
+	wait 5 seconds
+	if player is online:
+		send "Don't forget to read /rules." to player
+```
+
+## When code counts as after a wait
+
+NeoSkript decides this as Skript does, when the script loads, so a script loads on both or on neither.
+
+- **A wait in only some of the paths** (one branch of an `if`, or a loop that may not run) makes the code after it *maybe* after a wait. Skript refuses `return` there, and a few changes such as `set damage to`. It allows `cancel event` and most other changes, which it only refuses when every path has waited.
+- **A wait in every branch** of an `if ... else` counts as a wait. A branch that waits and then stops (`stop`, `return`) doesn't count.
+- **`wait 0 ticks`** waits a tick, and counts.
+- **Calling a function that waits** doesn't count: the caller carries on at once.
+- **`teleport`** may wait for the chunk to load, so the code after it is maybe after a wait. `force teleport` doesn't wait.
+- **Code inside `wait 1 second:`** (a delayed section) runs after the wait, but Skript loads it as if it hadn't waited. The code after the section carries on at once, without waiting.
+- **Sections that make something**, like `spawn a pig at X:` or `set {_bar} to a new bossbar:`, can't wait: "Delays can't be used within a 'spawn' section". Their code starts as if nothing had waited, and can't `return`.
+- **`run on`** (NeoSkript only) counts as a maybe-wait, the code in it and after it. On Folia the trigger may have to wait to get to the other thread and back, so `return` after it in a function is refused, on Paper too, so a script loads the same on both. See [Folia](/docs/server/folia/#run-on).
+
+## Where it carries on
+
+On Paper, a trigger carries on on the server's main thread. On Folia it carries on on the same thread it was on: a player's region thread follows the player if they move, and timers and console commands carry on on the global thread. See [Folia](/docs/server/folia/).
+
+<Aside type="tip">
+In a function, `wait` doesn't hold up the trigger that called it: the caller carries on, and the rest of the function runs later. See [functions](/docs/scripts/functions/).
+</Aside>
+
+## Instead of waiting in a loop
+
+A loop that waits a tick each time to check something runs 20 times a second for as long as it waits. When an event fires for the change you're waiting for, use the event.
+
+```skript
+# Instead of looping until the player sneaks, listen for it.
+on sneak toggle:
+	if player is sneaking:
+		send "You crouched." to player
+```
+
+The pattern is the [wait effect](/syntax/effects/#delay).

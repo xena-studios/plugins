@@ -46,6 +46,8 @@ By [Xena Studios](https://xenastudios.co). Each does one job, costs next to noth
 All eleven need Paper 1.21.11+ and Java 21+. xUtilities, zChat, xRewind, xTeleport, xVote, xBans, xMoney, xStats and xBackup also run on Folia. Download them from [GitHub](https://github.com/xena-studios/plugins/releases), and xUtilities, zChat and xLimbo from [Modrinth](https://modrinth.com/organization/xena-studios) too; the [docs](https://plugins.xenastudios.co) cover setup, commands, permissions and config.
 <!-- catalog:end -->
 
+[NeoSkript](neoskript), the fast drop-in replacement for Skript, lives here too, with its own site at [neoskript.dev](https://neoskript.dev).
+
 ## Building
 
 Needs JDK 21 or newer.
@@ -54,6 +56,8 @@ Needs JDK 21 or newer.
 ./gradlew build                  # every plugin, tested, into <plugin>/build/libs/
 ./gradlew :<plugin>:runServer    # a Paper server with that plugin
 ```
+
+NeoSkript is a build of its own until it moves onto the core: run `./gradlew build` in `neoskript/` (it needs JDK 21, and 25 for its test harness's 26.x servers). See [its README](neoskript/README.md).
 
 ## Contributing
 

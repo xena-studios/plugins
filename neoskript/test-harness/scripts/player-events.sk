@@ -1,0 +1,37 @@
+# The neoskript-player-events scenario: player events, driven by the harness bot's players. Lines the
+# harness checks in the console start with "[harness] player", and the bot logs everything a player is
+# shown as "[bot:<name>] <text>". It runs on NeoSkript and on the reference Skript, which must agree.
+
+on load:
+	send "[harness] player loaded" to console
+
+on join:
+	send "[harness] player join %player%" to console
+	send "Welcome, %player%!" to player
+	set join message to "%player% arrived"
+
+on chat:
+	send "[harness] player chat %player%: %message%" to console
+	# The message is a text component, as in Skript 2.17: how it reads as text, in a variable, and compared.
+	set {_message} to message
+	send "[harness] player chat as text: %length of message%, %{_message}% (%message in upper case%)" to console
+	if message contains "there":
+		send "[harness] player chat contains there" to console
+	if "%message%" is "hello there":
+		send "[harness] player chat text is hello there" to console
+	if {_message} is "HELLO THERE":
+		send "[harness] player chat variable compared ignoring case" to console
+	if message is "secret":
+		cancel event
+		send "Your secret is safe" to player
+
+on quit:
+	send "[harness] player quit %player%" to console
+	set quit message to "%player% departed"
+
+command /nsk-hello [<text>]:
+	trigger:
+		set {_text} to arg-1 ? "nothing"
+		# No 'to': it goes to the command's sender, here the player.
+		send "Hello %player%, you said %{_text}%"
+		send "[harness] player command by %sender%: %{_text}%" to console

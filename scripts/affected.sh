@@ -46,6 +46,8 @@
 #   any other module in core/ means all three, as does everything, and the Boot workflow itself.
 # - Markdown (DECISIONS.md and decisions/ among it), scripts/decisions.ts, the rest of the docs
 #   and the other workflows mean nothing.
+# - neoskript/ means nothing here: it's a Gradle build of its own, which the NeoSkript workflow
+#   builds and tests, until N1 (#203) joins it to the root build.
 # - Anything else, such as a new top-level folder, means everything: unsure is never
 #   skipped.
 #
@@ -115,7 +117,7 @@ declare -A known=() kmp=()
 for file in */build.gradle.kts */common/build.gradle.kts; do
   [[ -f $file ]] || continue
   unit=${file%%/*}
-  [[ $unit == core || $unit == build-logic || -n ${known[$unit]:-} ]] && continue
+  [[ $unit == core || $unit == build-logic || $unit == neoskript || -n ${known[$unit]:-} ]] && continue
   units+=("$unit")
   known[$unit]=1
   [[ $file == */common/build.gradle.kts && ! -f $unit/build.gradle.kts ]] && kmp[$unit]=1
@@ -200,7 +202,7 @@ if [[ $all == false ]]; then
         plugin=${plugin%%/*}
         if [[ -n ${known[$plugin]:-} ]]; then changed[$plugin]=1; else all=true; fi ;;
       .github/workflows/boot.yml) bootBukkit=true bootFabric=true bootProxy=true ;;
-      docs/* | .github/* | LICENSE | renovate.json | .gitignore) ;;
+      docs/* | .github/* | .claude-plugin/* | neoskript/* | LICENSE | renovate.json | .gitignore) ;;
       # A plugin's folder. Anything else, the root *.gradle.kts files among it, is everything.
       # A rewritten plugin boots in the Boot workflow: its bukkit/ on Bukkit, its fabric/ on
       # Fabric, the rest (common/, api/, its lang files) on both.

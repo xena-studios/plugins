@@ -1,0 +1,23 @@
+# Harness: NeoSkript writes these, and the reference Skript must read them.
+on load:
+	set {n::text} to "from neoskript ✓"
+	set {n::long} to 7
+	set {n::double} to 0.25
+	set {n::bool} to false
+	set {n::timespan} to 2 hours and 3 seconds
+	set {n::list::*} to "x", "y" and "z"
+	set {n::Quoted "name"} to 1
+	set {n::item} to diamond sword of sharpness 2 named "y"
+	set {n::block} to 5 stone
+	set {_inv} to chest inventory with 1 row
+	set slot 0 of {_inv} to 2 diamonds
+	set {n::stack} to slot 0 of {_inv}
+	set {n::mode} to creative
+	set {n::particle} to flame particle
+	set {n::particle dust} to blue dust particle of size 3
+	set {n::particle transition} to red dust particle that transitions to green
+	set {n::particle block} to oak planks block particle
+	set {n::particle item} to stick item particle
+	set {n::particle shriek} to shriek particle delayed by 5 ticks
+	set {n::particle trail} to blue trail particle moving to location(3, 70, 4, world "world")
+	set {n::particle effect} to green potion effect particle

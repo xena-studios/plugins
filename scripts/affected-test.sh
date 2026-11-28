@@ -132,6 +132,8 @@ check "xSample's Velocity plugin" core/core-testing/sample/velocity/src/main/kot
   "$rewrite"$'\nboot=proxy'
 check "The loader's shims" core/core-loader/src/velocity/java/co/xenastudios/core/loader/velocity/VelocityBootstrap.java \
   "$rewrite"$'\nboot=bukkit proxy'
+check "NeoSkript (its own build and workflow)" neoskript/neoskript-runtime/src/main/java/co/xenastudios/neoskript/runtime/Variables.java "$nothing"
+check "NeoSkript's workflow" .github/workflows/neoskript.yml "$nothing"
 check "Proxy boot script" scripts/boot-proxy.sh $'tasks=\nchecks=\nboot=proxy'
 check "The real client" scripts/budgets/bots/client.js $'tasks=\nchecks=\nboot=bukkit fabric proxy'
 check "The real client's operator seed" scripts/boot-seeds/client/ops.json $'tasks=\nchecks=\nboot=bukkit fabric'

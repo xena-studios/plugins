@@ -15,6 +15,8 @@ plugins {
 
 xenaFabricMod {
     id = "xsample"
+    // The core's world hooks, which WorldCheck checks on each Minecraft line.
+    worldHooks = true
 }
 
 version = "1.0.0+${sc.current.version}"

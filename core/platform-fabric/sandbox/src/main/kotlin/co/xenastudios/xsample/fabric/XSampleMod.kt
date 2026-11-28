@@ -43,6 +43,8 @@ public object XSampleMod : ModInitializer {
         // nothing). bStats has no Fabric platform, so there's no metrics call here.
         platform.checkUpdates("xsample", sample.admin.updates, SampleConfig.updates.settings(SampleConfig.defaults)) { translations }
         ServerLifecycleEvents.SERVER_STOPPING.register { _ -> sample.disable() }
+        // The world hooks' mixins on this Minecraft line, once the server runs (WorldCheck).
+        ServerLifecycleEvents.SERVER_STARTED.register { server -> WorldCheck.run(platform, server) }
         platform.log.info("Enabled on ${platform.name} (Kotlin ${KotlinVersion.CURRENT})")
     }
 }

@@ -119,6 +119,16 @@ public class BukkitPlatform private constructor(
     /** Which way chat is heard here: `Paper's AsyncChatEvent` or `Bukkit's AsyncPlayerChatEvent`, for `/<plugin> debug`. */
     public val chatPath: String get() = if (BukkitChat.paperChat(plugin.server)) "Paper's AsyncChatEvent" else "Bukkit's AsyncPlayerChatEvent"
 
+    private val closing = java.util.concurrent.CopyOnWriteArrayList<AutoCloseable>()
+
+    /**
+     * Closes [closeable] as the platform closes, before the scheduler stops: for what an
+     * extension of the platform opens, such as the world hooks (`BukkitWorlds.world`).
+     */
+    public fun closeWith(closeable: AutoCloseable) {
+        closing += closeable
+    }
+
     @Volatile
     private var recording: AutoCloseable? = null
 
@@ -259,6 +269,8 @@ public class BukkitPlatform private constructor(
         events.close()
         chats.forEach { it.close() }
         chats.clear()
+        closing.forEach { runCatching { it.close() } }
+        closing.clear()
         commands.clear()
         permissions.sync(emptyList())
         recording?.close()

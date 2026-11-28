@@ -23,8 +23,9 @@
 # with R8's marker stripped, renamed classes in the package xsample and no keep rule for enums or
 # the core's api (DECISIONS.md, "Smaller jars"). Never released, so no 1.x jar to stay under; the
 # line keeps the core's shrunk size from creeping. 443 KiB with the chat bridge, 471 KiB with the
-# proxy layer's server side (the channel, its frames and signing: "The proxy layer").
-:core:core-testing:sample:bukkit 480
+# proxy layer's server side (the channel, its frames and signing: "The proxy layer"); 527.5 KiB with
+# the world hooks, which its WorldCheck uses (a plugin that doesn't use them has none of them).
+:core:core-testing:sample:bukkit 580
 # xTwin on Bukkit, the family test's second plugin: the same core with fewer of its parts.
 # 387 KiB shrunk, 400 KiB with its own bStats, 311 KiB as xSample's above. Never released.
 :core:core-testing:twin:bukkit 345
@@ -40,9 +41,11 @@
 # the adapter and the core, with fabric-language-kotlin's stdlib and the YAML parser downloaded.
 # 398-412 KiB shrunk before Loom remaps it (2,038-2,090 KiB before, unshrunk with the parser);
 # 431-445 KiB relocated and with the update checker, 332-346 KiB as xSample's Bukkit jar above.
-:core:platform-fabric:sandbox:1.20.1 365
-:core:platform-fabric:sandbox:1.21.11 370
-:core:platform-fabric:sandbox:26.3 380
+# 404-419 KiB with the world hooks and their mixins, which WorldCheck uses (worldHooks = true; a
+# mod without it has none of them): "The world hooks".
+:core:platform-fabric:sandbox:1.20.1 445
+:core:platform-fabric:sandbox:1.21.11 445
+:core:platform-fabric:sandbox:26.3 460
 # xTwin on Fabric, the family test's second mod, packaged as every mod is (xena.fabric-mod):
 # its core relocated to co.xenastudios.xtwin.core, then shrunk: 358-373 KiB, 269-283 KiB as
 # xSample's above. Never released.

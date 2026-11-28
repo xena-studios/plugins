@@ -65,6 +65,10 @@ internal class PlatformCheck(private val plugin: JavaPlugin, private val platfor
     fun start() {
         val checks = listOf("global", "async", "async delay", "repeat", "place", "retired", "storage", "event", "async event", "text", "family", "drivers", "chat")
         waiting += checks
+        // The world hooks, only where boot.sh asks (-Dxsample.world=true): the budget check
+        // measures xSample's startup and metaspace without them, as a plugin that doesn't use them.
+        val world = java.lang.Boolean.getBoolean("xsample.world")
+        if (world) waiting += "world"
 
         scheduler.run(Where.Global) {
             check("global", scheduler.owns(Where.Global) && !scheduler.owns(Where.Async)) { "not on the global thread" }
@@ -98,6 +102,7 @@ internal class PlatformCheck(private val plugin: JavaPlugin, private val platfor
         scheduler.run(Where.Async) { checkStorage() }
         checkEvents()
         scheduler.run(Where.Global) { checkChat() }
+        if (world) WorldCheck(plugin, platform) { passed, why -> check("world", passed) { why } }.start()
         platform.text.send(plugin.server.consoleSender, Component("Platform check: text drawn as ${platform.text}", Style(color = TextColor.NAMED.getValue("aqua"))))
         check("text", platform.locale(FakeConsole) == null) { "the console has a locale" }
         scheduler.run(Where.Async) { checkFamily() }

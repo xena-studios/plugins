@@ -44,6 +44,12 @@ import org.gradle.process.ExecOperations
  * - `-repackageclasses` into [packageName]: Bukkit's `PluginClassLoader` looks classes up in a
  *   cache every plugin shares, so two jars must never both have `a.a`.
  *
+ * **Mixins** (a Fabric mod's, in the packages of the mixin configs its `fabric.mod.json`
+ * lists) never go through R8: Mixin reads their annotations, which R8 would drop, and their
+ * names and members, which it would change. They're left out of R8's input, given to it as
+ * class path so the code that names them (an accessor) still resolves, and copied into the
+ * shrunk jar as they are; whatever of ours they call keeps its name and members.
+ *
  * R8 carries the jar's other files over; Maven's pom files and Kotlin's `.kotlin_builtins` and
  * `.kotlin_module` files (read only by kotlin-reflect and the compiler) are then dropped. R8's
  * marker (a ~190-byte `~~R8{...}` string in every class's constant pool, which nothing reads at
@@ -102,10 +108,13 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
 
     @TaskAction
     fun shrink() {
-        val input = inputJar.singleFile
+        val original = inputJar.singleFile
+        val mixinPackages = mixinPackages(original)
+        val input = if (mixinPackages.isEmpty()) original else File(temporaryDir, original.name).also { split(original, mixinPackages, it) }
+        val mixins = File(temporaryDir, "mixins.jar")
         val generated = generatedRules.get().asFile
         generated.parentFile.mkdirs()
-        generated.writeText(entryPointRules(input) + exposedCoreApi(input) + "-repackageclasses ${packageName.get()}\n")
+        generated.writeText(entryPointRules(input) + exposedCoreApi(input) + mixinRules(original, mixinPackages) + "-repackageclasses ${packageName.get()}\n")
         val common = File(temporaryDir, "common.pro")
         common.writeText(
             R8Shrink::class.java.getResourceAsStream("/xena/r8/common.pro")?.use { it.readBytes().decodeToString() }
@@ -121,7 +130,8 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
         )
         rules.files.sorted().forEach { args += listOf("--pg-conf", it.path) }
         args += listOf("--pg-conf", generated.path)
-        libraries.files.filter { it.exists() && it != input }.forEach { args += listOf("--lib", it.path) }
+        libraries.files.filter { it.exists() && it != original }.forEach { args += listOf("--lib", it.path) }
+        if (mixinPackages.isNotEmpty()) args += listOf("--classpath", mixins.path)
         args += input.path
         exec.javaexec {
             executable = launcher.get().executablePath.asFile.path
@@ -131,8 +141,58 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
         }
         val out = outputJar.get().asFile
         out.parentFile.mkdirs()
-        copyWithout(classes, out, startupList(classes))
-        logger.lifecycle("%s: %.1f KiB -> %.1f KiB".format(out.name, input.length() / 1024.0, out.length() / 1024.0))
+        copyWithout(classes, out, startupList(classes), if (mixinPackages.isEmpty()) null else mixins)
+        logger.lifecycle("%s: %.1f KiB -> %.1f KiB".format(out.name, original.length() / 1024.0, out.length() / 1024.0))
+    }
+
+    /** The packages of the mixin configs the jar's `fabric.mod.json` lists, as paths (`co/xenastudios/x/core/fabric/mixin/`). */
+    private fun mixinPackages(jar: File): List<String> = ZipFile(jar).use { zip ->
+        fun text(name: String) = zip.getEntry(name)?.let { entry -> zip.getInputStream(entry).use { it.readBytes().decodeToString() } }
+        val mod = text("fabric.mod.json") ?: return emptyList()
+        @Suppress("UNCHECKED_CAST")
+        val configs = ((JsonSlurper().parseText(mod) as Map<String, Any?>)["mixins"] as? List<Any?>).orEmpty()
+            .mapNotNull { (it as? Map<*, *>)?.get("config") ?: it }
+        configs.mapNotNull { config ->
+            val json = text(config.toString()) ?: throw GradleException("fabric.mod.json lists the mixin config $config, which the jar doesn't have")
+            @Suppress("UNCHECKED_CAST")
+            ((JsonSlurper().parseText(json) as Map<String, Any?>)["package"] as? String)?.replace('.', '/')?.plus("/")
+        }
+    }
+
+    // The jar's mixin classes into mixins.jar, the rest into [rest].
+    private fun split(jar: File, packages: List<String>, rest: File) {
+        val mixins = File(temporaryDir, "mixins.jar")
+        ZipFile(jar).use { zip ->
+            ZipOutputStream(rest.outputStream().buffered()).use { others ->
+                ZipOutputStream(mixins.outputStream().buffered()).use { ours ->
+                    for (entry in zip.entries()) {
+                        if (entry.isDirectory) continue
+                        val out = if (entry.name.endsWith(".class") && packages.any { entry.name.startsWith(it) }) ours else others
+                        out.putNextEntry(ZipEntry(entry.name))
+                        zip.getInputStream(entry).use { it.copyTo(out) }
+                        out.closeEntry()
+                    }
+                }
+            }
+        }
+    }
+
+    /** Keep rules for the jar's own classes the mixins call, read from each mixin's constant pool. */
+    private fun mixinRules(jar: File, packages: List<String>): String {
+        if (packages.isEmpty()) return ""
+        val classRef = Regex("""co/xenastudios/[\w/$]+""")
+        return ZipFile(jar).use { zip ->
+            val classes = zip.entries().asSequence().map { it.name }.filter { it.endsWith(".class") }.map { it.removeSuffix(".class") }.toHashSet()
+            val called = sortedSetOf<String>()
+            for (name in classes) {
+                if (packages.none { name.startsWith(it) }) continue
+                val bytes = zip.getInputStream(zip.getEntry("$name.class")).use { it.readBytes() }
+                classRef.findAll(String(bytes, Charsets.ISO_8859_1)).map { it.value }
+                    .filter { it in classes && packages.none { prefix -> it.startsWith(prefix) } }
+                    .forEach { called += it }
+            }
+            called.joinToString("") { "# called by the mixins\n-keep class ${it.replace('/', '.')} { *; }\n" }
+        }
     }
 
     /** Keep rules for what the jar's own files name. */
@@ -238,13 +298,16 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
         return names.joinToString("\n", postfix = "\n")
     }
 
-    private fun copyWithout(from: File, to: File, startup: String?) {
+    private fun copyWithout(from: File, to: File, startup: String?, mixins: File? = null) {
         val deflater = Deflater(Deflater.BEST_COMPRESSION, true)
-        ZipFile(from).use { zip ->
+        val mixinZip = mixins?.let(::ZipFile)
+        mixinZip.use { _ -> ZipFile(from).use { zip ->
             ZipOutputStream(to.outputStream().buffered()).use { out ->
                 out.setLevel(Deflater.BEST_COMPRESSION)
                 val entries = zip.entries().asSequence().map { it.name }.filter { it != STARTUP_CLASSES }.toMutableList()
                 if (startup != null) entries += STARTUP_CLASSES
+                val mixinNames = mixinZip?.entries()?.asSequence()?.map { it.name }?.toHashSet().orEmpty()
+                entries += mixinNames
                 // The shipped translations in one entry, so what every language repeats (the keys,
                 // the tags) compresses once: core-jvm's LangFolder.shipped reads either form.
                 val languages = entries.filter { LANG.matches(it) }.sorted()
@@ -265,9 +328,10 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
                     var bytes = when {
                         name == STARTUP_CLASSES && startup != null -> startup.toByteArray()
                         name == LANG_BUNDLE && bundle != null -> bundle.toByteArray(Charsets.UTF_8)
+                        name in mixinNames -> mixinZip!!.getInputStream(mixinZip.getEntry(name)).use { it.readBytes() }
                         else -> zip.getInputStream(zip.getEntry(name)).use { it.readBytes() }
                     }
-                    if (name.endsWith(".class")) bytes = withoutMarker(bytes)
+                    if (name.endsWith(".class") && name !in mixinNames) bytes = withoutMarker(bytes)
                     // Sizes and CRC up front, so no data descriptor follows each entry (16 bytes
                     // each); fixed times, so the same input gives the same jar.
                     val entry = ZipEntry(name).apply {
@@ -281,7 +345,7 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
                     out.closeEntry()
                 }
             }
-        }
+        } }
         deflater.end()
     }
 

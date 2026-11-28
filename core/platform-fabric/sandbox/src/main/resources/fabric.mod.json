@@ -6,6 +6,7 @@
   "description": "The core's sample plugin on Fabric, for boot tests. Never released.",
   "license": "MIT",
   "environment": "*",
+  "mixins": ["xsample-world.mixins.json"],
   "entrypoints": {
     "main": [
       { "adapter": "kotlin", "value": "co.xenastudios.xsample.fabric.XSampleMod" }

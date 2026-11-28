@@ -17,6 +17,15 @@ val modern = sourceSets.create("modern")
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().matching { it.name in setOf("compileKotlin", "compileTestKotlin") }.configureEach {
     friendPaths.from(modern.output.classesDirs)
 }
+// The world hooks (block, container and entity changes; DECISIONS.md, "The world hooks"),
+// compiled against Spigot 1.13.2's API: block data starts at 1.13, the floor of every plugin
+// that asks for them. Built on main (it sees main's classes, main doesn't see it): a plugin
+// reaches it through BukkitWorld.create, which refuses a server before 1.13, so no older
+// server ever loads it.
+val world = sourceSets.create("world")
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().matching { it.name == "compileWorldKotlin" }.configureEach {
+    friendPaths.from(sourceSets.main.get().output.classesDirs, modern.output.classesDirs)
+}
 // Paper's API says it needs Java 21 to run, which is true of the server, not of these classes.
 configurations.named(modern.compileClasspathConfigurationName) {
     attributes { attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21) }
@@ -34,6 +43,10 @@ dependencies {
     "modernImplementation"(project(":core:core-jvm"))
     "modernCompileOnly"(libs.paper.api)
     implementation(modern.output)
+    "worldImplementation"(project(":core:core-jvm"))
+    "worldCompileOnly"(libs.spigot.api.world) { isTransitive = false }
+    "worldCompileOnly"(sourceSets.main.get().output)
+    "worldCompileOnly"(modern.output)
 
     // The adapter's logic runs against Spigot 1.8.8's API and what it needs at runtime, with
     // fakes for the server. Its own chat API (1.8-SNAPSHOT) is in no public repository.
@@ -41,8 +54,21 @@ dependencies {
     testImplementation(libs.bungeecord.chat)
     testImplementation(libs.adventure.api)
     testImplementation(project(":core:core-testing"))
+    testImplementation(world.output)
 }
 
 tasks.jar {
     from(modern.output)
+    from(world.output)
+}
+
+// A plugin compiles against the world hooks as against main: their classes go out with main's,
+// both in the jar (above) and as the classes a consumer compiles against. Main itself never
+// sees them, so there's no cycle.
+for (elements in listOf("apiElements", "runtimeElements")) {
+    configurations.named(elements) {
+        outgoing.variants.matching { it.name == "classes" }.configureEach {
+            for (dir in world.output.classesDirs) artifact(dir) { builtBy(world.output) }
+        }
+    }
 }

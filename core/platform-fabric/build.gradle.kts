@@ -73,6 +73,16 @@ kotlin {
     }
 }
 
+// The world hooks' mixins (src/main/java/.../mixin) are remapped with the mod that carries them
+// (its remapJar, through tiny-remapper's mixin support), never through a refmap: the mod
+// relocates them first (xena.fabric-mod), which a refmap's class names wouldn't follow. Their
+// config, xena-world.mixins.json, is written with this line's Java for its compatibility level.
+tasks.processResources {
+    val java = "JAVA_" + minOf(requiredJava.majorVersion.toInt(), 21)
+    inputs.property("java", java)
+    filesMatching("xena-world.mixins.json") { expand("java" to java) }
+}
+
 // Not a mod, so nothing to run: a server runs xSample on it, `:sandbox:<version>:runServer`.
 tasks.withType<net.fabricmc.loom.task.AbstractRunTask>().configureEach { enabled = false }
 

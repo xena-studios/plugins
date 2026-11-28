@@ -35,6 +35,7 @@ esac
 
 # Old Spigot waits 20 seconds over its age without this; newer servers ignore it. bStats starts
 # (xSample's and xTwin's, under a made-up id) with plugins/bStats/config.yml turning it off.
+# xsample.world runs the world hooks' check (WorldCheck) with the platform's.
 exec "$root/scripts/boot-test.sh" "${server[@]}" --jvm -DIReallyKnowWhatIAmDoingISwear=true \
-  --jvm -Dxsample.bstats=1 --jvm -Dxtwin.bstats=1 --seed "$here/boot-seed" \
+  --jvm -Dxsample.bstats=1 --jvm -Dxtwin.bstats=1 --jvm -Dxsample.world=true --seed "$here/boot-seed" \
   --checks "$here/boot-checks.txt" "$@" "$jar"

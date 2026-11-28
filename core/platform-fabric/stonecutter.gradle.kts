@@ -38,6 +38,11 @@ stonecutter parameters {
     constants["item_prediction"] = current.parsed >= "26.1"
     // 1.21.5 made the player's selected hotbar slot a getter, not a field (xMarket).
     constants["selected_slot"] = current.parsed >= "1.21.5"
+    // 1.21.2 split the server's explosions into ServerExplosion, which destroys blocks in explode() (the world hooks).
+    constants["server_explosion"] = current.parsed >= "1.21.2"
+    // By 1.21.11 thrown eggs moved to projectile.throwableitemprojectile and horses to animal.equine (the world hooks).
+    constants["projectile_packages"] = current.parsed >= "1.21.11"
+    constants["equine"] = current.parsed >= "1.21.11"
     // 26.1 sends action-bar text with sendOverlayMessage, not displayClientMessage (xTeleport).
     constants["overlay_message"] = current.parsed >= "26.1"
 }

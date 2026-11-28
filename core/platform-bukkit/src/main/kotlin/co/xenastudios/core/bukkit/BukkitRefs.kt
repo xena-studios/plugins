@@ -11,6 +11,7 @@ import org.bukkit.OfflinePlayer
 import org.bukkit.Server
 import org.bukkit.World
 import org.bukkit.entity.Player
+import java.util.concurrent.ConcurrentHashMap
 import org.bukkit.Location as BukkitLocation
 
 /*
@@ -26,9 +27,26 @@ public val OfflinePlayer.ref: PlayerRef
 /** The player, if they're online on [server]. */
 public fun PlayerRef.online(server: Server): Player? = server.getPlayer(javaUuid)
 
-/** The world, by its folder's name, which Bukkit keeps from one start to the next. */
+/**
+ * The world, by its folder's name, which Bukkit keeps from one start to the next. One reference
+ * per name, made once: hot paths ask a block or an entity for its world on every event.
+ */
 public val World.ref: WorldRef
-    @JvmName("ref") get() = WorldRef.of(name)
+    @JvmName("ref") get() {
+        val name = name
+        worldRefs[name]?.let { return it }
+        // Keyed by name, so an unloaded world's server object is never held, only its name and
+        // its reference; a server that makes and drops worlds by the thousand (minigames) clears
+        // the lot now and then rather than keeping them all. No lambda: that would be a class
+        // of its own, loaded at startup.
+        if (worldRefs.size >= MAX_WORLD_REFS) worldRefs.clear()
+        val made = WorldRef.of(name)
+        return worldRefs.putIfAbsent(name, made) ?: made
+    }
+
+private const val MAX_WORLD_REFS = 256
+
+private val worldRefs = ConcurrentHashMap<String, WorldRef>()
 
 /** The world, if it's loaded on [server]. */
 public fun WorldRef.loaded(server: Server): World? = server.getWorld(name)

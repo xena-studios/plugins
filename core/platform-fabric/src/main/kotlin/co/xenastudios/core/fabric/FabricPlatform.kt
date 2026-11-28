@@ -277,9 +277,15 @@ public class FabricPlatform(
             val player = handler.player
             fire(PlayerJoinEvent.TYPE) { PlayerJoinEvent(player.ref, player.scoreboardName) }
         }
-        ServerPlayConnectionEvents.DISCONNECT.register { handler, _ ->
+        // Minecraft (1.21.11 at least) can report a disconnect from the connection's Netty thread;
+        // the quit is fired on the server thread, as every other event is. execute() runs it at
+        // once when the disconnect already came on the server thread (and once the server has
+        // stopped), else as the next task, by when the player may be out of the player list.
+        ServerPlayConnectionEvents.DISCONNECT.register { handler, server ->
             val player = handler.player
-            fire(PlayerQuitEvent.TYPE) { PlayerQuitEvent(player.ref, player.scoreboardName) }
+            val ref = player.ref
+            val name = player.scoreboardName
+            server.execute { fire(PlayerQuitEvent.TYPE) { PlayerQuitEvent(ref, name) } }
         }
     }
 

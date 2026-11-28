@@ -4,6 +4,7 @@ package co.xenastudios.core.bukkit.world
 
 import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.api.WorldRef
+import co.xenastudios.core.bukkit.ref
 import co.xenastudios.core.api.event.EventPriority
 import co.xenastudios.core.api.toPlayerRef
 import co.xenastudios.core.bukkit.BukkitPlatform
@@ -59,7 +60,6 @@ internal class BukkitWorldHooks(
     internal val bukkitPriority: BukkitPriority = BukkitPriority.valueOf(priority.name)
 
     private val players = ConcurrentHashMap<UUID, PlayerRef>()
-    private val worlds = ConcurrentHashMap<String, WorldRef>()
     private val started = HashMap<WorldHook, Listener>()
 
     // Who broke what in the last second, so a torch that falls off is theirs: only while a
@@ -130,7 +130,7 @@ internal class BukkitWorldHooks(
 
     internal fun ref(player: Player): PlayerRef = players.computeIfAbsent(player.uniqueId, MAKE_REF)
 
-    internal fun ref(world: World): WorldRef = worlds.computeIfAbsent(world.name, MAKE_WORLD)
+    internal fun ref(world: World): WorldRef = world.ref
 
     internal fun heard(cause: ChangeCause): Boolean = hears(cause)
 
@@ -172,7 +172,6 @@ internal class BukkitWorldHooks(
 
     private companion object {
         val MAKE_REF: java.util.function.Function<UUID, PlayerRef> = java.util.function.Function { it.toPlayerRef() }
-        val MAKE_WORLD: java.util.function.Function<String, WorldRef> = java.util.function.Function { WorldRef.of(it) }
     }
 }
 

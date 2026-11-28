@@ -332,7 +332,7 @@ start_proxy() {
   shift
   proxy_log="$dir/console.log"
   mkfifo "$dir/stdin"
-  (cd "$dir" && exec "$java" "${proxy_flags[@]}" "$@" -jar "$proxy_jar" <stdin >"$proxy_log" 2>&1) &
+  (cd "$dir" && exec "$java" -Dxena.debug.paste=false "${proxy_flags[@]}" "$@" -jar "$proxy_jar" <stdin >"$proxy_log" 2>&1) &
   proxy_pid=$!
   exec 3>"$dir/stdin"
   # Velocity says Done; BungeeCord and Waterfall that they're listening.
@@ -388,7 +388,7 @@ if [[ -n $backend_jar ]]; then
   backend_files "$base/backend" "$backend_port"
   backend_log="$base/backend/console.log"
   mkfifo "$base/backend/stdin"
-  backend_cmd=("${backend_java:+$backend_java/bin/}java" -Xms512M -Xmx1G -DIReallyKnowWhatIAmDoingISwear=true -jar "$backend_jar")
+  backend_cmd=("${backend_java:+$backend_java/bin/}java" -Xms512M -Xmx1G -DIReallyKnowWhatIAmDoingISwear=true -Dxena.debug.paste=false -jar "$backend_jar")
   if [[ $backend_kind == paper ]]; then backend_cmd+=(--nogui); else backend_cmd+=(nogui); fi
   (cd "$base/backend" && exec "${backend_cmd[@]}" <stdin >"$backend_log" 2>&1) &
   backend_pid=$!

@@ -20,7 +20,9 @@ import java.util.logging.Logger;
  * class loader already sees is left alone: the server bundles it, {@code libraries:} in
  * plugin.yml fetched it (Spigot 1.16.5 builds from May 2021 on, and Paper), or another plugin
  * did (Bukkit before 1.16.5 shares classes between plugins). The rest come from the
- * {@link LibraryCache} and are added with the first {@link Strategy} that works.
+ * {@link LibraryCache} and are added with the first {@link Strategy} that works: to the plugin's
+ * class loader, or on Bukkit before 1.16.5 to the server's, which every plugin shares
+ * ({@link Startup#definesForOthers}).
  */
 public final class Libraries {
 
@@ -79,14 +81,33 @@ public final class Libraries {
         }
         List<LibraryCache.Fetched> fetched = fetch(missing, cache, log);
         List<String> failures = new ArrayList<>();
+        // On old Bukkit the jars go into the server's class loader, which every plugin's loader
+        // asks first, under its own locks: added to the plugin's, the plugins sharing them would
+        // define their classes there without its lock (Startup.definesForOthers).
+        ClassLoader server = own.getParent();
+        if (forced != Strategy.ISOLATED && server != null && Startup.definesForOthers(own)) {
+            for (Strategy strategy : Strategy.order(java, true, forced)) {
+                if (!strategy.injects()) {
+                    continue;
+                }
+                try {
+                    inject(strategy, server, fetched);
+                    check(missing, own);
+                    log.info(describe(fetched, strategy.description() + " on the server's class loader, which every plugin shares", cache));
+                    return new Loaded(own, strategy, fetched, visible);
+                } catch (Throwable e) {
+                    failures.add(strategy.name().toLowerCase(Locale.ROOT) + " on the server's class loader: " + e);
+                }
+            }
+            log.warning("Couldn't add the libraries to the server's class loader (" + String.join("; ", failures)
+                + "), so they're added to the plugin's, where plugins starting at the same time can break each other's classes."
+                + " Starting the server with --add-opens java.base/java.net=ALL-UNNAMED"
+                + " --add-opens java.base/jdk.internal.loader=ALL-UNNAMED fixes it.");
+        }
         for (Strategy strategy : Strategy.order(java, own instanceof URLClassLoader, forced)) {
             try {
                 ClassLoader loader = add(strategy, own, ownJar, fetched);
-                for (Library library : missing) {
-                    if (find(library.probe(), loader) == null) {
-                        throw new IllegalStateException(library + " was added, but " + library.probe() + " still isn't visible");
-                    }
-                }
+                check(missing, loader);
                 if (strategy == Strategy.ISOLATED && !failures.isEmpty()) {
                     log.warning("Couldn't add the libraries to the plugin's class loader (" + String.join("; ", failures)
                         + "), so the plugin runs in a class loader of its own, where other plugins can't use its API."
@@ -101,6 +122,14 @@ public final class Libraries {
         throw new LibraryException("Couldn't make " + missing + " visible to the plugin (" + String.join("; ", failures)
             + "). Remove the loader setting to use the default, or start the server with"
             + " --add-opens java.base/java.net=ALL-UNNAMED.");
+    }
+
+    private static void check(List<Library> missing, ClassLoader loader) {
+        for (Library library : missing) {
+            if (find(library.probe(), loader) == null) {
+                throw new IllegalStateException(library + " was added, but " + library.probe() + " still isn't visible");
+            }
+        }
     }
 
     /** Adds a downloaded jar to the plugin's class path the platform's own way, such as Velocity's {@code addToClasspath}. */
@@ -164,29 +193,40 @@ public final class Libraries {
 
     private static ClassLoader add(Strategy strategy, ClassLoader own, URL ownJar, List<LibraryCache.Fetched> jars)
             throws Throwable {
-        switch (strategy) {
-            case REFLECT:
-                Method addUrl = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-                addUrl.setAccessible(true);
-                for (LibraryCache.Fetched jar : jars) {
-                    addUrl.invoke(own, url(jar));
-                }
-                return own;
-            case LOOKUP:
-                MethodHandle handle = trustedLookup().findVirtual(URLClassLoader.class, "addURL",
-                    MethodType.methodType(void.class, URL.class));
-                for (LibraryCache.Fetched jar : jars) {
-                    handle.invoke((URLClassLoader) own, url(jar));
-                }
-                return own;
-            default:
-                URL[] urls = new URL[jars.size() + 1];
-                urls[0] = ownJar;
-                for (int i = 0; i < jars.size(); i++) {
-                    urls[i + 1] = url(jars.get(i));
-                }
-                String name = Libraries.class.getName();
-                return new ChildFirst(urls, own, name.substring(0, name.lastIndexOf('.') + 1));
+        if (strategy.injects()) {
+            inject(strategy, own, jars);
+            return own;
+        }
+        URL[] urls = new URL[jars.size() + 1];
+        urls[0] = ownJar;
+        for (int i = 0; i < jars.size(); i++) {
+            urls[i + 1] = url(jars.get(i));
+        }
+        String name = Libraries.class.getName();
+        return new ChildFirst(urls, own, name.substring(0, name.lastIndexOf('.') + 1));
+    }
+
+    /**
+     * Adds the jars to {@code target}'s class path: {@code URLClassLoader.addURL}, or on Java 9 and
+     * later's application class loader, which isn't one, the method the JDK's
+     * {@code Instrumentation.appendToSystemClassLoaderSearch} calls.
+     */
+    private static void inject(Strategy strategy, ClassLoader target, List<LibraryCache.Fetched> jars) throws Throwable {
+        boolean urls = target instanceof URLClassLoader;
+        Class<?> owner = urls ? URLClassLoader.class : target.getClass();
+        String method = urls ? "addURL" : "appendToClassPathForInstrumentation";
+        Class<?> parameter = urls ? URL.class : String.class;
+        if (strategy == Strategy.REFLECT) {
+            Method add = owner.getDeclaredMethod(method, parameter);
+            add.setAccessible(true);
+            for (LibraryCache.Fetched jar : jars) {
+                add.invoke(target, urls ? url(jar) : jar.jar().toString());
+            }
+        } else {
+            MethodHandle add = trustedLookup().findVirtual(owner, method, MethodType.methodType(void.class, parameter));
+            for (LibraryCache.Fetched jar : jars) {
+                add.invoke(target, urls ? (Object) url(jar) : jar.jar().toString());
+            }
         }
     }
 

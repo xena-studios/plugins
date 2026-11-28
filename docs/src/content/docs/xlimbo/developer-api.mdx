@@ -1,0 +1,87 @@
+---
+title: Developer API
+description: "Build on xLimbo: the main server's status, who's in limbo and in line, sending players back and into limbo, holds and priorities, and the events."
+sidebar:
+  order: 10
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xLimbo's API is by `PlayerRef` (a player's UUID), the same as every Xena plugin's. Get it with `XLimbo.api()` once xLimbo is enabled (add it to your plugin's `depend`, or `softdepend` and check `XLimbo.isEnabled()` first). It's also in Paper's services manager, as `XLimboApi`.
+
+:::caution[Not on Maven Central yet]
+The API isn't published until 3.0 is released. Its coordinates will be `co.xenastudios.xlimbo:xlimbo-api:3.0.0` (and `xlimbo-api-bukkit` for the Bukkit events); until then, compile against the plugin's jar.
+:::
+
+## Reading
+
+Every read answers from memory, on any thread:
+
+```java
+XLimboApi api = XLimbo.api();
+PlayerRef player = PlayerRefs.of(bukkitPlayer.getUniqueId());
+boolean waiting = api.isInLimbo(player);
+int place = api.queuePosition(player);   // from 1; 0 if they aren't in line
+int inLine = api.queueSize();
+boolean up = api.isMainServerUp();       // server-check's last answer; false while it's off
+int shown = api.visibleCount();          // in limbo, less the vanished: what to show players
+ReturnRoute route = api.route();         // PROXY or TELEPORT (send-back.via)
+```
+
+## Sending players
+
+- **`sendBack(player)`**: through the queue while it's on (auto-join or server-check), a few a second; otherwise at once. While server-check says the main server is down, nobody is sent: everyone goes back when it comes up. **`sendBackAll()`** for everyone in limbo.
+- **`sendToLimbo(player)`**: into limbo on this server, as `/xlimbo send` does. With `send-back.via: teleport`, where they were is kept for `destination: previous`.
+
+Both return a `CompletableFuture<Boolean>`, completed on the server thread: `true` once they're sent (or in line, or there), `false` if something kept them.
+
+## Add-ons
+
+A **hold** keeps players in limbo, asked just before each would be sent back, by the queue, `/join` and the API alike; a **priority** puts some ahead in the line (the highest any hook gives wins; equal numbers keep the order they joined):
+
+```java
+api.registerHold("MyLogin", player -> !loggedIn.contains(player));
+api.registerPriority("MyRanks", player -> isDonor(player) ? 10 : 0);
+// as your plugin disables:
+api.unregisterAll("MyLogin");
+```
+
+Both are called on the server thread, often: answer from memory.
+
+**With xTeleport**, xLimbo gives it a destination, `xlimbo` (`XLimbo.DESTINATION`): `XTeleport.api().teleport(player, "xlimbo", options)` sends a player into limbo through xTeleport, with whatever warmup, cooldown or cost the options ask for. And with `send-back.destination` set to a destination your plugin gave xTeleport, players go back there.
+
+## Events
+
+On `api.getEvents()`, each fired only when something listens, on the server thread (`MainServerStatusEvent` off it, on the thread that asked the main server):
+
+- **`PreEnterLimboEvent`** (cancellable): a player on this server is about to be sent into limbo, by `/xlimbo send`, the API or xTeleport's destination. Not for a player joining.
+- **`EnteredLimboEvent`**: a player arrived, with `getReason()`: `MAIN_SERVER_DOWN`, `REFUSED` (sent back moments ago and here again), `SENT` or `UNKNOWN`.
+- **`PreReturnEvent`** (cancellable): a player is about to be sent back, with the `ReturnCause` (`QUEUE`, `JOIN_COMMAND`, `PLUGIN`, `ADMIN`), the route and the destination. A cancelled automatic return is tried again on a later pass of the queue.
+- **`ReturnedEvent`**: a player was sent back.
+- **`MainServerStatusEvent`**: server-check saw the main server go up or down (a change only, not the first answer).
+
+They're Bukkit events too, `BukkitPreEnterLimboEvent`, `BukkitEnteredLimboEvent`, `BukkitPreReturnEvent`, `BukkitReturnedEvent` and `BukkitMainServerStatusEvent` in `co.xenastudios.xlimbo.api.bukkit`, so Skript and plain listeners see them.
+
+```java
+api.getEvents().subscribe(PreReturnEvent.TYPE, event -> {
+    if (inTutorial(event.getPlayer())) event.setCancelled(true);
+});
+```
+
+<Reference plugin="xlimbo" show="events" />
+
+## From 2.x
+
+2.x's API (2.1.0's `XLimboApi.get()` and its three Bukkit events) is replaced:
+
+| 2.x | 3.0 |
+| --- | --- |
+| `XLimboApi.get()` | `XLimbo.api()` (also in the services manager, as before) |
+| `getQueuePosition(Player)` (an `OptionalInt`) | `queuePosition(PlayerRef)` (0 when not in line) |
+| `getQueueSize()`, `isServerCheckEnabled()`, `isMainServerUp()` | `queueSize()`, `isServerCheckEnabled()`, `isMainServerUp()` |
+| `sendBack(Player)`, `sendBackAll()` | `sendBack(PlayerRef)` (now a `CompletableFuture<Boolean>`), `sendBackAll()` |
+| `PlayerEnterLimboEvent` | `EnteredLimboEvent`, or Bukkit's `BukkitEnteredLimboEvent` |
+| `PlayerReturnEvent` (cancellable) | `PreReturnEvent`, or `BukkitPreReturnEvent` |
+| `MainServerStatusEvent` (Bukkit) | `MainServerStatusEvent` on xLimbo's bus, or `BukkitMainServerStatusEvent` |
+
+New: `route()`, `isInLimbo`, `playersInLimbo`, `visibleCount`, `sendToLimbo`, holds and priorities, `PreEnterLimboEvent` and `ReturnedEvent`.

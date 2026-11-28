@@ -197,3 +197,11 @@
 :core:platform-fabric:xlimits:1.20.1 590
 :core:platform-fabric:xlimits:1.21.11 595
 :core:platform-fabric:xlimits:26.3 585
+
+# xLimbo 3.0 (M15), shrunk: 564 KiB on Paper (its one jar: Paper only, by design), over the 500 KiB
+# target and 2.x's 185, with the reason in decisions/2026-11-28-xlimbo-3.md: about 400 KiB the
+# shared core it reaches (commands, config, messages and translations, the family's cache, the admin
+# commands, the update checker), the rest xLimbo's own with its API: the world and its generator,
+# the return queue and its status ping, the thirteen protections, the commands, the family's
+# bridges and the Bukkit events, plus the seven translations and bStats.
+:xlimbo:bukkit 620

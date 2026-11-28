@@ -1,0 +1,9 @@
+# xLimbo as a world on a server players play on, with xTeleport and xVanish beside it (boot.sh
+# --family, its seed's send-back.via: teleport): a real client, Joiner, an operator, sets
+# xTeleport's spawn and sends Friend to limbo, where Friend is in adventure mode; Joiner, vanished,
+# follows and isn't counted for Friend; Friend's /join takes them back through xTeleport's spawn,
+# with their game mode given back.
+logged: Sending players back through xTeleport
+run: xlimbo info
+expect: xLimbo 3.0.0 on
+client: --plugin xlimbo-family

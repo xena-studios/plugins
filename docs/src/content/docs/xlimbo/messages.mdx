@@ -1,0 +1,20 @@
+---
+title: Messages
+description: "Every message xLimbo sends, in English, with the placeholders each fills in."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Every message is in `plugins/xLimbo/lang/`, one file per language: `en.yml`, `de.yml`, `es.yml`, `fr.yml`, `pt-BR.yml`, `ru.yml`, `pl.yml` and `zh-CN.yml`. Edit any of these files in place and run `/xlimbo reload`: your edits are kept, and a message you haven't edited gets the new text when an update changes it. Delete a file to have it written again as shipped. A blank message (`""`) sends nothing: a blank `join.welcome` welcomes nobody, a blank `queue.action-bar` shows the hint instead.
+
+Each player reads xLimbo in their client's language. A message can use [the theme's tags](/start/formatting/#the-theme) (`<prefix>`, `<highlight>`, `<success>`, `<error>`), any [formatting](/start/formatting/), and the placeholders listed beside it. The `core.*` messages are the ones every Xena plugin shares: errors such as "You don't have permission", and the replies of `/xlimbo reload` and `/xlimbo debug`.
+
+2.x's messages were in `config.yml`; each one you'd changed is carried into `lang/en.yml` under its new key on the first start: see [Upgrading from 2.x](/xlimbo/upgrade/).
+
+:::note[The translations are drafts]
+The seven languages besides English were drafted by machine translation and haven't been read by native speakers yet. Corrections are welcome: open an issue or a pull request with the file.
+:::
+
+<Reference plugin="xlimbo" show="messages" />

@@ -7,6 +7,31 @@ sidebar:
   order: 90
 ---
 
+## 3.0.0 (unreleased)
+
+Not released yet: 3.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 2.1.0 is the release, and 2.x gets its fixes.
+
+A rewrite on the new core. Replace the jar and restart: your 2.x config is carried forward, the old file is kept as `config.yml.bak-v2`, and the world is kept as it is. Still Paper 1.21.11 or newer (or Purpur) and Java 21. See [Upgrading from 2.x](https://plugins.xenastudios.co/xlimbo/upgrade/).
+
+### New
+
+- **A limbo world on your own server.** `send-back.via: teleport` makes the limbo a world on a server players play on: `/xlimbo send <player>` (or the API, or xTeleport's `xlimbo` destination) puts a player there, and `/join` takes them back with a teleport to `send-back.destination`: where they were (`previous`), xTeleport's spawn, one of its warps, or another plugin's destination. Players sent in this way are in adventure mode rather than creative, so nothing made there comes back with them, and get their game mode back as they leave. `send-back.via: proxy`, a network's fallback, stays the default.
+- **With xTeleport**, every teleport back goes through its API, with its safety check, and xLimbo gives it an `xlimbo` destination.
+- **With xVanish**, vanished players aren't counted or listed for players who can't see them: in `/xlimbo`, `/xlimbo list` and the queue's place and total.
+- **Every message in each player's language**: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese (the seven besides English are drafts, awaiting native speakers). Messages are in `lang/` now; the ones you changed in 2.x's `config.yml` are copied into `lang/en.yml`.
+- `/xlimbo list` (who's in limbo and their place in line), `/xlimbo send <player>`, `/xlimbo back <player|all>`, and the admin subcommands every Xena plugin has: `/xlimbo reload`, `debug` (a report to share when asking for help) and `forget`.
+- The welcome is sent a second after a player joins, once their client has said which language it's in.
+
+### Changed
+
+- The theme and the language are the family's (`plugins/Xena/config.yml`) unless set in xLimbo's `messages`. A colour you'd changed in 2.x stays xLimbo's own.
+- The update checker is `updates` (`update-checker.enabled` became `updates.check`).
+- `/xlimbo info`'s permission: the info is everyone's; `xlimbo.admin` grants reload, debug and forget, and `xlimbo.list`, `xlimbo.send` and `xlimbo.back` are new, operators' by default.
+
+### For developers
+
+The API is new: `XLimbo.api()` by `PlayerRef`, with `sendToLimbo`, holds and priorities, and five events (`PreEnterLimboEvent` and `PreReturnEvent` cancellable, `EnteredLimboEvent`, `ReturnedEvent`, `MainServerStatusEvent`) on xLimbo's bus and as Bukkit events in `co.xenastudios.xlimbo.api.bukkit`. 2.1.0's `XLimboApi.get()` and its Bukkit events are gone: see [Developer API](https://plugins.xenastudios.co/xlimbo/developer-api/#from-2x).
+
 ## 2.1.0
 
 Replace the jar and restart. Your config is kept as it is.

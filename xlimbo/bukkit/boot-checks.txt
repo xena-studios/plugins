@@ -1,0 +1,32 @@
+# xLimbo on a real Paper server, from the console (scripts/boot-test.sh --checks, through boot.sh):
+# the world made with its floor and nothing below it, every command that runs without a player,
+# answered by the core's dispatcher and drawn from lang/en.yml, a reload that keeps the world,
+# debug, and a clean stop. Paper only: xLimbo doesn't run on Spigot or Folia.
+logged: xLimbo 3.0.0 on
+logged: World xlimbo is ready
+run: xlimbo info
+expect: xLimbo 3.0.0 on
+
+# The void world exists, with its purple glass floor at y 64 and nothing below it.
+run: execute in minecraft:xlimbo if block 7 64 -9 minecraft:purple_stained_glass run say FLOOR OK
+expect: FLOOR OK
+run: execute in minecraft:xlimbo if block 7 63 -9 minecraft:air run say VOID OK
+expect: VOID OK
+
+run: join
+expect: Only players can use this command.
+run: xlimbo list
+expect: Nobody is in limbo.
+run: xlimbo back Nobody
+expect: No player called Nobody is online.
+
+# Reloading keeps the world and re-registers /join.
+run: xlimbo reload
+expect: Reloaded xLimbo
+run: execute in minecraft:xlimbo if block 7 64 -9 minecraft:purple_stained_glass run say STILL OK
+expect: STILL OK
+run: join
+expect: Only players can use this command.
+run: xlimbo debug
+expect: Modules:
+expect: Debug report saved as debug/debug-

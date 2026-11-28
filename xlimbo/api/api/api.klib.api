@@ -1,0 +1,157 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xlimbo.api/EnterReason : kotlin/Enum<co.xenastudios.xlimbo.api/EnterReason> { // co.xenastudios.xlimbo.api/EnterReason|null[0]
+    enum entry MAIN_SERVER_DOWN // co.xenastudios.xlimbo.api/EnterReason.MAIN_SERVER_DOWN|null[0]
+    enum entry REFUSED // co.xenastudios.xlimbo.api/EnterReason.REFUSED|null[0]
+    enum entry SENT // co.xenastudios.xlimbo.api/EnterReason.SENT|null[0]
+    enum entry UNKNOWN // co.xenastudios.xlimbo.api/EnterReason.UNKNOWN|null[0]
+
+    final val entries // co.xenastudios.xlimbo.api/EnterReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xlimbo.api/EnterReason> // co.xenastudios.xlimbo.api/EnterReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xlimbo.api/EnterReason // co.xenastudios.xlimbo.api/EnterReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xlimbo.api/EnterReason> // co.xenastudios.xlimbo.api/EnterReason.values|values#static(){}[0]
+}
+
+final enum class co.xenastudios.xlimbo.api/ReturnCause : kotlin/Enum<co.xenastudios.xlimbo.api/ReturnCause> { // co.xenastudios.xlimbo.api/ReturnCause|null[0]
+    enum entry ADMIN // co.xenastudios.xlimbo.api/ReturnCause.ADMIN|null[0]
+    enum entry JOIN_COMMAND // co.xenastudios.xlimbo.api/ReturnCause.JOIN_COMMAND|null[0]
+    enum entry PLUGIN // co.xenastudios.xlimbo.api/ReturnCause.PLUGIN|null[0]
+    enum entry QUEUE // co.xenastudios.xlimbo.api/ReturnCause.QUEUE|null[0]
+
+    final val entries // co.xenastudios.xlimbo.api/ReturnCause.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xlimbo.api/ReturnCause> // co.xenastudios.xlimbo.api/ReturnCause.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xlimbo.api/ReturnCause // co.xenastudios.xlimbo.api/ReturnCause.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xlimbo.api/ReturnCause> // co.xenastudios.xlimbo.api/ReturnCause.values|values#static(){}[0]
+}
+
+final enum class co.xenastudios.xlimbo.api/ReturnRoute : kotlin/Enum<co.xenastudios.xlimbo.api/ReturnRoute> { // co.xenastudios.xlimbo.api/ReturnRoute|null[0]
+    enum entry PROXY // co.xenastudios.xlimbo.api/ReturnRoute.PROXY|null[0]
+    enum entry TELEPORT // co.xenastudios.xlimbo.api/ReturnRoute.TELEPORT|null[0]
+
+    final val entries // co.xenastudios.xlimbo.api/ReturnRoute.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xlimbo.api/ReturnRoute> // co.xenastudios.xlimbo.api/ReturnRoute.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xlimbo.api/ReturnRoute // co.xenastudios.xlimbo.api/ReturnRoute.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xlimbo.api/ReturnRoute> // co.xenastudios.xlimbo.api/ReturnRoute.values|values#static(){}[0]
+}
+
+abstract fun interface co.xenastudios.xlimbo.api/HoldHook { // co.xenastudios.xlimbo.api/HoldHook|null[0]
+    abstract fun holds(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xlimbo.api/HoldHook.holds|holds(co.xenastudios.core.api.PlayerRef){}[0]
+}
+
+abstract fun interface co.xenastudios.xlimbo.api/PriorityHook { // co.xenastudios.xlimbo.api/PriorityHook|null[0]
+    abstract fun priority(co.xenastudios.core.api/PlayerRef): kotlin/Int // co.xenastudios.xlimbo.api/PriorityHook.priority|priority(co.xenastudios.core.api.PlayerRef){}[0]
+}
+
+abstract interface co.xenastudios.xlimbo.api/XLimboApi { // co.xenastudios.xlimbo.api/XLimboApi|null[0]
+    abstract val events // co.xenastudios.xlimbo.api/XLimboApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xlimbo.api/XLimboApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.xlimbo.api/XLimboApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xlimbo.api/XLimboApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun isInLimbo(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xlimbo.api/XLimboApi.isInLimbo|isInLimbo(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun isMainServerUp(): kotlin/Boolean // co.xenastudios.xlimbo.api/XLimboApi.isMainServerUp|isMainServerUp(){}[0]
+    abstract fun isServerCheckEnabled(): kotlin/Boolean // co.xenastudios.xlimbo.api/XLimboApi.isServerCheckEnabled|isServerCheckEnabled(){}[0]
+    abstract fun playersInLimbo(): kotlin.collections/List<co.xenastudios.core.api/PlayerRef> // co.xenastudios.xlimbo.api/XLimboApi.playersInLimbo|playersInLimbo(){}[0]
+    abstract fun queuePosition(co.xenastudios.core.api/PlayerRef): kotlin/Int // co.xenastudios.xlimbo.api/XLimboApi.queuePosition|queuePosition(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun queueSize(): kotlin/Int // co.xenastudios.xlimbo.api/XLimboApi.queueSize|queueSize(){}[0]
+    abstract fun registerHold(kotlin/String, co.xenastudios.xlimbo.api/HoldHook) // co.xenastudios.xlimbo.api/XLimboApi.registerHold|registerHold(kotlin.String;co.xenastudios.xlimbo.api.HoldHook){}[0]
+    abstract fun registerPriority(kotlin/String, co.xenastudios.xlimbo.api/PriorityHook) // co.xenastudios.xlimbo.api/XLimboApi.registerPriority|registerPriority(kotlin.String;co.xenastudios.xlimbo.api.PriorityHook){}[0]
+    abstract fun route(): co.xenastudios.xlimbo.api/ReturnRoute // co.xenastudios.xlimbo.api/XLimboApi.route|route(){}[0]
+    abstract fun sendBack(co.xenastudios.core.api/PlayerRef): co.xenastudios.core.api/Pending<kotlin/Boolean> // co.xenastudios.xlimbo.api/XLimboApi.sendBack|sendBack(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun sendBackAll() // co.xenastudios.xlimbo.api/XLimboApi.sendBackAll|sendBackAll(){}[0]
+    abstract fun sendToLimbo(co.xenastudios.core.api/PlayerRef): co.xenastudios.core.api/Pending<kotlin/Boolean> // co.xenastudios.xlimbo.api/XLimboApi.sendToLimbo|sendToLimbo(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun unregisterAll(kotlin/String) // co.xenastudios.xlimbo.api/XLimboApi.unregisterAll|unregisterAll(kotlin.String){}[0]
+    abstract fun visibleCount(): kotlin/Int // co.xenastudios.xlimbo.api/XLimboApi.visibleCount|visibleCount(){}[0]
+}
+
+final class co.xenastudios.xlimbo.api.event/EnteredLimboEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xlimbo.api.event/EnteredLimboEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xlimbo.api/EnterReason) // co.xenastudios.xlimbo.api.event/EnteredLimboEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xlimbo.api.EnterReason){}[0]
+
+    final val player // co.xenastudios.xlimbo.api.event/EnteredLimboEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xlimbo.api.event/EnteredLimboEvent.player.<get-player>|<get-player>(){}[0]
+    final val reason // co.xenastudios.xlimbo.api.event/EnteredLimboEvent.reason|{}reason[0]
+        final fun <get-reason>(): co.xenastudios.xlimbo.api/EnterReason // co.xenastudios.xlimbo.api.event/EnteredLimboEvent.reason.<get-reason>|<get-reason>(){}[0]
+
+    final object Companion { // co.xenastudios.xlimbo.api.event/EnteredLimboEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xlimbo.api.event/EnteredLimboEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xlimbo.api.event/EnteredLimboEvent> // co.xenastudios.xlimbo.api.event/EnteredLimboEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xlimbo.api.event/MainServerStatusEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xlimbo.api.event/MainServerStatusEvent|null[0]
+    constructor <init>(kotlin/Boolean) // co.xenastudios.xlimbo.api.event/MainServerStatusEvent.<init>|<init>(kotlin.Boolean){}[0]
+
+    final val up // co.xenastudios.xlimbo.api.event/MainServerStatusEvent.up|{}up[0]
+        final fun <get-up>(): kotlin/Boolean // co.xenastudios.xlimbo.api.event/MainServerStatusEvent.up.<get-up>|<get-up>(){}[0]
+
+    final object Companion { // co.xenastudios.xlimbo.api.event/MainServerStatusEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xlimbo.api.event/MainServerStatusEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xlimbo.api.event/MainServerStatusEvent> // co.xenastudios.xlimbo.api.event/MainServerStatusEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xlimbo.api.event/PreEnterLimboEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xlimbo.api.event/PreEnterLimboEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef) // co.xenastudios.xlimbo.api.event/PreEnterLimboEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef){}[0]
+
+    final val player // co.xenastudios.xlimbo.api.event/PreEnterLimboEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xlimbo.api.event/PreEnterLimboEvent.player.<get-player>|<get-player>(){}[0]
+
+    final object Companion { // co.xenastudios.xlimbo.api.event/PreEnterLimboEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xlimbo.api.event/PreEnterLimboEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xlimbo.api.event/PreEnterLimboEvent> // co.xenastudios.xlimbo.api.event/PreEnterLimboEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xlimbo.api.event/PreReturnEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xlimbo.api.event/PreReturnEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xlimbo.api/ReturnCause, co.xenastudios.xlimbo.api/ReturnRoute, kotlin/String) // co.xenastudios.xlimbo.api.event/PreReturnEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xlimbo.api.ReturnCause;co.xenastudios.xlimbo.api.ReturnRoute;kotlin.String){}[0]
+
+    final val cause // co.xenastudios.xlimbo.api.event/PreReturnEvent.cause|{}cause[0]
+        final fun <get-cause>(): co.xenastudios.xlimbo.api/ReturnCause // co.xenastudios.xlimbo.api.event/PreReturnEvent.cause.<get-cause>|<get-cause>(){}[0]
+    final val destination // co.xenastudios.xlimbo.api.event/PreReturnEvent.destination|{}destination[0]
+        final fun <get-destination>(): kotlin/String // co.xenastudios.xlimbo.api.event/PreReturnEvent.destination.<get-destination>|<get-destination>(){}[0]
+    final val player // co.xenastudios.xlimbo.api.event/PreReturnEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xlimbo.api.event/PreReturnEvent.player.<get-player>|<get-player>(){}[0]
+    final val route // co.xenastudios.xlimbo.api.event/PreReturnEvent.route|{}route[0]
+        final fun <get-route>(): co.xenastudios.xlimbo.api/ReturnRoute // co.xenastudios.xlimbo.api.event/PreReturnEvent.route.<get-route>|<get-route>(){}[0]
+
+    final object Companion { // co.xenastudios.xlimbo.api.event/PreReturnEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xlimbo.api.event/PreReturnEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xlimbo.api.event/PreReturnEvent> // co.xenastudios.xlimbo.api.event/PreReturnEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xlimbo.api.event/ReturnedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xlimbo.api.event/ReturnedEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xlimbo.api/ReturnCause, co.xenastudios.xlimbo.api/ReturnRoute, kotlin/String) // co.xenastudios.xlimbo.api.event/ReturnedEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xlimbo.api.ReturnCause;co.xenastudios.xlimbo.api.ReturnRoute;kotlin.String){}[0]
+
+    final val cause // co.xenastudios.xlimbo.api.event/ReturnedEvent.cause|{}cause[0]
+        final fun <get-cause>(): co.xenastudios.xlimbo.api/ReturnCause // co.xenastudios.xlimbo.api.event/ReturnedEvent.cause.<get-cause>|<get-cause>(){}[0]
+    final val destination // co.xenastudios.xlimbo.api.event/ReturnedEvent.destination|{}destination[0]
+        final fun <get-destination>(): kotlin/String // co.xenastudios.xlimbo.api.event/ReturnedEvent.destination.<get-destination>|<get-destination>(){}[0]
+    final val player // co.xenastudios.xlimbo.api.event/ReturnedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xlimbo.api.event/ReturnedEvent.player.<get-player>|<get-player>(){}[0]
+    final val route // co.xenastudios.xlimbo.api.event/ReturnedEvent.route|{}route[0]
+        final fun <get-route>(): co.xenastudios.xlimbo.api/ReturnRoute // co.xenastudios.xlimbo.api.event/ReturnedEvent.route.<get-route>|<get-route>(){}[0]
+
+    final object Companion { // co.xenastudios.xlimbo.api.event/ReturnedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xlimbo.api.event/ReturnedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xlimbo.api.event/ReturnedEvent> // co.xenastudios.xlimbo.api.event/ReturnedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final object co.xenastudios.xlimbo.api/XLimbo { // co.xenastudios.xlimbo.api/XLimbo|null[0]
+    final const val DESTINATION // co.xenastudios.xlimbo.api/XLimbo.DESTINATION|{}DESTINATION[0]
+        final fun <get-DESTINATION>(): kotlin/String // co.xenastudios.xlimbo.api/XLimbo.DESTINATION.<get-DESTINATION>|<get-DESTINATION>(){}[0]
+
+    final fun api(): co.xenastudios.xlimbo.api/XLimboApi // co.xenastudios.xlimbo.api/XLimbo.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xlimbo.api/XLimbo.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xlimbo.api/XLimboApi?) // co.xenastudios.xlimbo.api/XLimbo.register|register(co.xenastudios.xlimbo.api.XLimboApi?){}[0]
+}

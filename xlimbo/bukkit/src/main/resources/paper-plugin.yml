@@ -1,0 +1,29 @@
+# Paper only (1.21.11 and newer, and Purpur): Paper reads this, and the core's loader hands it the
+# libraries from the family's cache at every boot (DECISIONS.md). There's no plugin.yml: xLimbo
+# doesn't run on Spigot, and not on Folia, which can't create worlds.
+name: xLimbo
+version: '${version}'
+main: co.xenastudios.xlimbo.bukkit.XLimboBootstrap
+# The core's, relocated into the plugin's package with the rest of it.
+loader: co.xenastudios.xlimbo.core.loader.paper.PaperLibraryLoader
+api-version: '1.21.11'
+folia-supported: false
+# Before the worlds load, so a world in bukkit.yml can use xLimbo's generator.
+load: STARTUP
+description: "Never drop a player again."
+website: https://plugins.xenastudios.co/xlimbo/
+authors: [Xena Studios]
+dependencies:
+  server:
+    # Optional: sending players back with a teleport, through xTeleport's destinations, and its
+    # "xlimbo" destination. Its API is called by name, through its own class loader, once it's
+    # enabled: it starts after the worlds, xLimbo before them, so neither waits on the other.
+    xTeleport:
+      load: OMIT
+      required: false
+    # Optional: who's vanished, for /xlimbo list and the queue's counts. Called by name too.
+    xVanish:
+      load: OMIT
+      required: false
+# No commands or permissions here: they're registered at runtime from config.yml, so every
+# change to them applies on /xlimbo reload.

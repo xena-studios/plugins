@@ -1,0 +1,5 @@
+# A real client on xLimbo as a network's fallback (scripts/boot-test.sh --checks, with --seed
+# scripts/boot-seeds/client), after boot-checks.txt: scripts/budgets/bots/client.js joins in
+# German and lands on the limbo's floor without a teleport, is welcomed and shown the hint in
+# German, can't see Friend, and /join's proxy message goes out with its cooldown.
+client: --plugin xlimbo

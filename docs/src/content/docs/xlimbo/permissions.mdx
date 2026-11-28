@@ -1,0 +1,12 @@
+---
+title: Permissions
+description: "Every xLimbo permission, and who has it by default."
+sidebar:
+  order: 2.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`/join` is everyone's: `xlimbo.join` by default, or whatever `join-command.permission` names. `xlimbo.admin` grants the admin subcommands (`reload`, `debug`, `forget`) and the update notices, as 2.x's `xlimbo.admin` granted `reload` and `info`; each is also on its own as `xlimbo.admin.<subcommand>`. 3.0's staff commands have their own, operators' by default: `xlimbo.list`, `xlimbo.send` and `xlimbo.back`.
+
+<Reference plugin="xlimbo" show="permissions" />

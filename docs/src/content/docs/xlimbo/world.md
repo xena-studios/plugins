@@ -60,7 +60,6 @@ player:
   hide-others: true
 join:
   suppress-join-message: true
-  custom-join-message: "<prefix>The server is unavailable right now, so you're waiting here. Type <highlight>/join</highlight> to go back."
   clear-chat-on-join: false
 quit:
   suppress-quit-message: true
@@ -69,10 +68,11 @@ death:
 action-bar:
   enabled: true
   interval-ticks: 40
-  message: "<white>Type <highlight><bold>/join</bold></highlight> to go back to the server"
 ```
 
-- Players are put in **creative** with **flight**, which stays on so nobody falls.
-- With **`hide-others`**, players can't see each other, in the world or the tab list. Hundreds of players arriving in one spot, each tracking every other one, is the biggest load a limbo has; hidden, it's gone. Turn it off if players should see each other while they wait.
-- The usual join, quit and death broadcasts are hidden, so a crash doesn't flood chat.
+The welcome (`join.welcome`) and the hint (`action-bar.hint`) are in [`lang/`](/xlimbo/messages/), in each player's language; the welcome comes a second after they join, once their client has said which.
+
+- Players are put in **creative** with **flight**, which stays on so nobody falls. Sent into limbo on a server they play on ([`send-back.via: teleport`](/xlimbo/on-one-server/)), they're put in **adventure** instead, so nothing made in creative comes back with them, and get their game mode and flight back as they leave.
+- With **`hide-others`**, players can't see each other, in the world or the tab list (with `send-back.via: teleport`, players in limbo can't see each other; everyone else is as before). Hundreds of players arriving in one spot, each tracking every other one, is the biggest load a limbo has; hidden, it's gone. Turn it off if players should see each other while they wait.
+- The usual join, quit and death broadcasts are hidden, so a crash doesn't flood chat (with `send-back.via: teleport`, only for players in limbo).
 - The **action bar** repeats a hint every `interval-ticks` (20 ticks is one second). While a player waits in the [return queue](/xlimbo/network-setup/#pacing), it shows their place in line instead.

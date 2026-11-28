@@ -1,0 +1,4 @@
+# xLimbo as a world on this server, sending players back through xTeleport's /spawn.
+send-back:
+  via: teleport
+  destination: spawn

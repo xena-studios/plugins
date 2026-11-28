@@ -3,41 +3,36 @@
 #
 # Apply changes with /xlimbo reload. Everything applies, even the world's name and
 # floor. A bad value falls back to its default with a warning in the console; xLimbo
-# never stops over config. All text is MiniMessage:
-# https://plugins.xenastudios.co/start/formatting/
+# never stops over config. The messages are in lang/: one file per language.
 
 # Managed by the plugin, to carry your settings forward on updates. Don't edit it.
-config-version: 2
+config-version: 3
 
-# The look xLimbo's messages share. The default messages use these as tags, so changing
-# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#B48CFF>, or <gold><bold>.
-theme:
-  # <prefix> starts the default messages. Make it your server's name, such as
-  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
-  prefix: "<#B48CFF>»</#B48CFF> "
-  # The colour of message text that has no tag of its own.
-  base: "<gray>"
-  # <highlight>: names and values, such as a player or a speed.
-  highlight: "<#B48CFF>"
-  # <success>: something turned on or done.
-  success: "<#5EE08A>"
-  # <error>: something refused or turned off.
-  error: "<#FF6B6B>"
-
-# Messages the commands share.
+# How this plugin's messages look, and the language they're in. shared uses the
+# setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is
+# this plugin's own.
 messages:
-  error:
-    # The console or a command block ran a command only players can use.
-    player-only: "<prefix><error>Only players can use this command."
-    # The sender lacks the command's permission.
-    no-permission: "<prefix><error>You don't have permission to do that."
-    # No online player has that name. <player> is the name typed.
-    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
-    # The command was typed wrong. <usage> is how to type it.
-    usage: "<prefix><error>Usage:</error> <usage>"
-    # The command hit an error. The console has the details.
-    failed: "<prefix><error>Something went wrong. The console has the details."
+  # The language players see messages in: auto for each player's own (their client's
+  # language setting), or one language for everyone, such as de or pt-BR.
+  language: "shared"
+  # The language of the console, and of players whose language has no file in lang/.
+  default-language: "shared"
+
+  # The look every message shares, used in messages as tags: <prefix>, <highlight>,
+  # <success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,
+  # italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>.
+  theme:
+    # <prefix> starts the default messages. Make it your server's name, such as
+    # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+    prefix: "shared"
+    # The colour of message text that has no tag of its own.
+    base: "shared"
+    # <highlight>: names and values, such as a player or a speed.
+    highlight: "shared"
+    # <success>: something turned on or done.
+    success: "shared"
+    # <error>: something refused or turned off.
+    error: "shared"
 
 # The void world players wait in: one floor layer, nothing else. Changing its name,
 # floor-block or floor-y rebuilds it on /xlimbo reload; players are moved out and back.
@@ -46,7 +41,8 @@ world:
   # this to its name (level-name in server.properties) and give it xLimbo's generator
   # in bukkit.yml (worlds: <name>: generator: xLimbo).
   name: "xlimbo"
-  # The one-block-thick floor everyone stands on.
+  # The one-block-thick floor everyone stands on: a block as Minecraft names it, such as
+  # white_stained_glass. It must be solid and not fall.
   floor-block: "purple_stained_glass"
   # The floor's height. Players stand one block above it.
   floor-y: 64
@@ -76,11 +72,11 @@ player:
   # everyone else is the biggest load a limbo has; this takes it away.
   hide-others: true
 
+# Arriving. The welcome message is join.welcome in lang/.
 join:
   # Hide the "joined the game" broadcast.
   suppress-join-message: true
-  # Sent to a player when they arrive. Blank for none.
-  custom-join-message: "<prefix>The server is unavailable right now, so you're waiting here. Type <highlight>/join</highlight> to go back."
+  # Clear the arriving player's chat first.
   clear-chat-on-join: false
 
 quit:
@@ -92,56 +88,59 @@ death:
   suppress-death-message: true
 
 # The server /join and automatic returns send players to: its name in your proxy's
-# config, such as "main".
+# config, such as "main". Only with send-back.via: proxy.
 main-server: "main"
 
-# Send players back on their own this long after they arrive.
+# How players go back. proxy: xLimbo is your network's fallback server, and players go
+# to main-server through the proxy (BungeeCord, Waterfall or Velocity). teleport: xLimbo
+# is a world on this server (/xlimbo send puts players in it), and players go back with
+# a teleport, through xTeleport when it's installed.
+send-back:
+  via: "proxy"
+  # With via: teleport, where to: previous (where they were before limbo, or spawn if
+  # that isn't known), spawn (xTeleport's /spawn, or the main world's), warp:<name>
+  # (an xTeleport warp), or the name of a destination another plugin gave xTeleport.
+  destination: "previous"
+
+# Send players back on their own this long after they arrive. The message they get is
+# auto-join.sending in lang/.
 auto-join:
   # Only without server-check, which sends players back as soon as the main server is up.
   enabled: false
   # How long after arriving.
   delay-seconds: 30
-  # Sent as a player is sent back. Blank for none.
-  message: "<prefix>Sending you back to the server..."
 
 # Watch the main server, and send everyone back as soon as it's up, instead of waiting
-# for /join or auto-join.
+# for /join or auto-join. Only with send-back.via: proxy. Everyone here is told
+# (server-check.up in lang/) when it comes back.
 server-check:
   enabled: false
   # Your main server's address as xLimbo can reach it (not the proxy's), such as
   # "127.0.0.1:25566". xLimbo asks it for its status, as a server list does.
   address: "127.0.0.1:25566"
   interval-seconds: 5
-  # Sent to everyone here when the main server comes back up. Blank for none.
-  message-up: "<prefix><success>The server is back up!</success> Sending everyone back..."
 
-# How automatic returns are paced.
+# How automatic returns are paced. While a player waits their turn, their action bar
+# shows queue.action-bar from lang/ (blank shows the normal one instead).
 queue:
   # How many players are sent back each second, so the main server isn't flooded the
   # moment it's back. 0 sends everyone at once.
   per-second: 5
-  # Shown on the action bar while a player waits their turn. <position> and <total>
-  # are filled in. Blank shows the normal action bar instead.
-  action-bar: "<white>Sending you back: <highlight><bold>#<position></bold></highlight> of <total> in line"
 
-# /join: sends you to main-server. Everyone has it by default.
+# /join: sends you back. Everyone has it by default. Its messages are join-command.* in lang/.
 join-command:
   enabled: true
   aliases: ["server", "lobby"]
+  # Blank ("") lets anyone.
   permission: "xlimbo.join"
   # Seconds between uses, per player, so nobody can spam your proxy.
   cooldown-seconds: 3
-  # <server> is main-server.
-  message-sending: "<prefix>Connecting you to <highlight><server></highlight>..."
-  # <seconds> is the whole seconds left.
-  message-cooldown: "<prefix><error>Wait <highlight><seconds>s</highlight> before trying again."
 
-# A hint repeated on every player's action bar.
+# A hint repeated on every player's action bar: action-bar.hint in lang/.
 action-bar:
   enabled: true
   # Ticks between updates (20 is one second).
   interval-ticks: 40
-  message: "<white>Type <highlight><bold>/join</bold></highlight> to go back to the server"
 
 # Players here are in creative, so these stop them breaking, lagging or escaping the
 # server. Each can be turned off; one that's off costs nothing.
@@ -182,11 +181,11 @@ protections:
     enabled: false
     max-places-per-second: 30
 
-# Tells you when a new version is out.
-update-checker:
-  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
-  # only the plugin version, the platform and the Minecraft version.
-  enabled: true
-  # Logged, and shown to admins when they join, when a newer version is out.
-  # <plugin>, <current>, <latest> and <url> are filled in.
-  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"
+# Telling you when a newer version is out: in the console, and to players with
+# <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
+# sending only the plugin's version, the platform and the Minecraft version.
+updates:
+  # Whether to ask at all.
+  check: true
+  # Which releases to hear of: release, beta (betas and releases) or alpha (everything).
+  channel: "release"

@@ -61,16 +61,15 @@ public class NeoForgeOnlinePlayers(private val server: () -> MinecraftServer?) :
  * [co.xenastudios.core.common.i18n.LanguageSource]).
  *
  * Minecraft 1.20.1 doesn't keep the client's language after reading its options packet (1.20.2
- * started to), and reaching that packet would take a mixin, so on 1.20.1 every player reads the
- * family's `default-language`.
+ * started to), but Forge 1.20.1 does: its `ServerPlayer.getLanguage()`.
  */
 public object NeoForgeLanguages {
-    /** [player]'s client locale, or `null` where Minecraft doesn't keep it (1.20.1). */
+    /** [player]'s client locale. */
     public fun clientLocale(player: ServerPlayer): String? =
         //? if client_information {
         player.clientInformation().language()
         //?} else
-        //null
+        //player.language
 }
 
 /**

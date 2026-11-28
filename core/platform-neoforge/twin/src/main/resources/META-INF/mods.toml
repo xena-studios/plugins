@@ -1,0 +1,32 @@
+# xTwin on Forge 1.20.1: the family test's second mod. Never released.
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+
+[[mods]]
+modId = "xtwin"
+version = "${version}"
+displayName = "xTwin"
+description = "The family test's second mod on Forge 1.20.1. Never released."
+
+[[dependencies.xtwin]]
+modId = "forge"
+mandatory = true
+versionRange = "${loader}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.xtwin]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "BOTH"
+
+# The Kotlin stdlib.
+[[dependencies.xtwin]]
+modId = "kotlinforforge"
+mandatory = true
+versionRange = "${kff}"
+ordering = "NONE"
+side = "BOTH"

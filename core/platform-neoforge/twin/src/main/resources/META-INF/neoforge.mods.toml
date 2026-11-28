@@ -12,7 +12,7 @@ description = "The family test's second mod on NeoForge. Never released."
 [[dependencies.xtwin]]
 modId = "neoforge"
 type = "required"
-versionRange = "${neoforge}"
+versionRange = "${loader}"
 ordering = "NONE"
 side = "BOTH"
 

@@ -22,8 +22,13 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 //    stdlib and the downloaded libraries, renamed classes in the package `<id>`, with the jar's
 //    line in gradle/jar-budgets.txt. The class NeoForge makes by its `@Mod` annotation, and the
 //    classes it calls by theirs, keep their names.
-// 4. `collect`: the jar that ships, into the build's build/libs, for the boot scripts. NeoForge
-//    runs Mojang's names, which the shrunk jar already has, so nothing is remapped.
+// 4. On Forge 1.20.1 (ModDevGradle's legacy plugin, net.neoforged.moddev.legacyforge), its
+//    `reobfJar`: the shrunk jar to SRG names, which Forge runs. NeoForge runs Mojang's names,
+//    which the shrunk jar already has, so there nothing is remapped.
+// 5. `collect`: the jar that ships, into the build's build/libs, for the boot scripts.
+//
+// The jar carries the descriptor of its loader: META-INF/neoforge.mods.toml on NeoForge,
+// META-INF/mods.toml on Forge, from a mod's resources, which have both.
 plugins {
     java
     id("xena.r8")
@@ -85,6 +90,8 @@ val neoForgeRules = tasks.register("neoForgeR8Rules") {
             |# NeoForge's entry points (xena.neoforge-mod)
             |-keep @net.neoforged.fml.common.Mod class * { <init>(...); }
             |-keep @net.neoforged.fml.common.EventBusSubscriber class * { *; }
+            |-keep @net.minecraftforge.fml.common.Mod class * { <init>(...); }
+            |-keep @net.minecraftforge.fml.common.Mod${'$'}EventBusSubscriber class * { *; }
             |""".trimMargin(),
         )
     }
@@ -105,9 +112,34 @@ the<XenaR8Extension>().apply {
 
 val shrinkJar = tasks.named<R8Shrink>("shrinkJar")
 
+// Forge 1.20.1 or NeoForge: decided by the ModDevGradle plugin the mod applies.
+val forge = providers.provider { plugins.hasPlugin("net.neoforged.moddev.legacyforge") }
+
+tasks.named<ProcessResources>("processResources") {
+    val other = forge.map { if (it) "META-INF/neoforge.mods.toml" else "META-INF/mods.toml" }
+    exclude { it.path == other.get() }
+}
+
+// On Forge, the shrunk jar is the one ModDevGradle remaps to SRG names (its task type isn't on
+// build-logic's class path, so its input is set by name), after ModDevGradle's own setting,
+// which it makes once the project is evaluated.
+plugins.withId("net.neoforged.moddev.legacyforge") {
+    afterEvaluate {
+        tasks.named("reobfJar") {
+            @Suppress("UNCHECKED_CAST")
+            (property("input") as RegularFileProperty).set(shrinkJar.flatMap { it.outputJar })
+        }
+    }
+}
+
 tasks.register<Copy>("collect") {
     group = "build"
     description = "Copies this version's mod jar to the build's build/libs."
-    from(shrinkJar.flatMap { it.outputJar })
+    if ("reobfJar" in project.tasks.names) {
+        @Suppress("UNCHECKED_CAST")
+        from(project.tasks.named("reobfJar").flatMap { it.property("archiveFile") as Provider<RegularFile> })
+    } else {
+        from(shrinkJar.flatMap { it.outputJar })
+    }
     into(isolated.rootProject.projectDirectory.dir("build/libs"))
 }

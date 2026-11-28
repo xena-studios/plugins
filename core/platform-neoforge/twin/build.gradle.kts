@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 // xTwin as a NeoForge mod, the family test's second mod beside xSample, one jar per Minecraft line.
 plugins {
-    id("net.neoforged.moddev")
     kotlin("jvm")
     // How every Xena mod is packaged (build-logic): the core bundled and relocated to xTwin's
     // package, shrunk by R8 against the jar's line in gradle/jar-budgets.txt; the YAML parser
@@ -15,11 +14,25 @@ xenaNeoForgeMod {
     id = "xtwin"
 }
 
+// ModDevGradle for NeoForge, or its legacy plugin for Forge 1.20.1's node, as the adapter.
+val forge = sc.current.project.endsWith("-forge")
+if (forge) {
+    apply(plugin = "net.neoforged.moddev.legacyforge")
+    configure<net.neoforged.moddevgradle.legacyforge.dsl.LegacyForgeExtension> { version = sc.properties["deps.forge"] }
+} else {
+    apply(plugin = "net.neoforged.moddev")
+    configure<net.neoforged.moddevgradle.dsl.NeoForgeExtension> { version = sc.properties["deps.neoforge"] }
+}
+
 version = "1.0.0+${sc.current.version}"
-base.archivesName = "xtwin-neoforge"
+base.archivesName = if (forge) "xtwin-forge" else "xtwin-neoforge"
 
 // As the adapter: Minecraft's Java decides the bytecode.
-val requiredJava: JavaVersion = if (sc.current.parsed >= "26.1") JavaVersion.VERSION_25 else JavaVersion.VERSION_21
+val requiredJava: JavaVersion = when {
+    sc.current.parsed >= "26.1" -> JavaVersion.VERSION_25
+    sc.current.parsed >= "1.20.5" -> JavaVersion.VERSION_21
+    else -> JavaVersion.VERSION_17
+}
 
 repositories {
     mavenCentral()
@@ -30,8 +43,7 @@ repositories {
     }
 }
 
-neoForge {
-    version = sc.properties["deps.neoforge"]
+configure<net.neoforged.moddevgradle.dsl.ModDevExtension> {
     runs {
         register("server") {
             server()
@@ -49,7 +61,7 @@ neoForge {
 dependencies {
     compileOnly(kotlin("stdlib"))
     // The stdlib on runServer's server, as Kotlin for Forge brings it to a real one.
-    runtimeOnly("thedarkcolour:kotlinforforge-neoforge:${sc.properties["deps.kff"]}")
+    if (!forge) runtimeOnly("thedarkcolour:kotlinforforge-neoforge:${sc.properties["deps.kff"]}")
 
     // The adapter for this version.
     val adapter = project(":${sc.current.project}")
@@ -87,9 +99,9 @@ tasks.processResources {
     val props = mapOf(
         "version" to project.version.toString(),
         "minecraft" to sc.properties["mod.mc_compat"],
-        "neoforge" to sc.properties["mod.neoforge_compat"],
+        "loader" to sc.properties[if (forge) "mod.forge_compat" else "mod.neoforge_compat"],
         "kff" to sc.properties["mod.kff_compat"],
     )
     inputs.properties(props)
-    filesMatching("META-INF/neoforge.mods.toml") { expand(props) }
+    filesMatching(listOf("META-INF/neoforge.mods.toml", "META-INF/mods.toml")) { expand(props) }
 }

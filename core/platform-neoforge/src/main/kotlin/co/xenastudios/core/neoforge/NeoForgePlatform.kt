@@ -39,6 +39,7 @@ import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.entity.player.PlayerEvent
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent
 import net.neoforged.neoforge.event.server.ServerStoppedEvent
+//? if !forge
 import net.neoforged.neoforge.event.tick.ServerTickEvent
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
@@ -91,7 +92,7 @@ public class NeoForgePlatform(
         NeoForgeLibraries.load(log)
     }
 
-    override val name: String = "NeoForge ${version("minecraft")}"
+    override val name: String = "$LOADER ${version("minecraft")}"
 
     override val threading: Threading get() = Threading.MAIN_THREAD
 
@@ -170,12 +171,12 @@ public class NeoForgePlatform(
      */
     public fun about(): Map<String, String> {
         val mods = ModList.get().mods
-            .filter { it.modId != "minecraft" && it.modId != "neoforge" }
+            .filter { it.modId != "minecraft" && it.modId != LOADER_ID }
             .map { "${it.modId} ${it.version}" }
             .sorted()
         return linkedMapOf(
             "Java" to "${System.getProperty("java.version")} (${System.getProperty("java.vendor")})",
-            "Server" to "$name, NeoForge ${version("neoforge")}",
+            "Server" to "$name, $LOADER ${version(LOADER_ID)}",
             "Mods" to "${mods.size}: ${mods.joinToString(", ")}",
         )
     }
@@ -233,7 +234,7 @@ public class NeoForgePlatform(
             override fun mayKnow(player: PlayerRef): Boolean =
                 running?.player(player)?.let { permissions.has(it, node) } == true
         }
-        val releases = ModrinthReleases(project, "neoforge", version("minecraft"), current, JvmHttp())
+        val releases = ModrinthReleases(project, LOADER_ID, version("minecraft"), current, JvmHttp())
         val checker = UpdateChecker(this, displayName, current, releases, notices)
         val joins = bus.subscribe(PlayerJoinEvent.TYPE) { event -> checker.joined(event.player) }
         updates?.let { (old, subscription) -> subscription.cancel(); old.close() }
@@ -257,6 +258,11 @@ public class NeoForgePlatform(
             scheduler.close(wait = 10.seconds)
             running = null
         }
+        //? if forge {
+        /*game.addListener(NeoPriority.NORMAL, false, net.minecraftforge.event.TickEvent.ServerTickEvent::class.java) { event ->
+            if (event.phase == net.minecraftforge.event.TickEvent.Phase.START) scheduler.tick()
+        }
+        *///?} else
         game.addListener(NeoPriority.NORMAL, false, ServerTickEvent.Pre::class.java) { _ -> scheduler.tick() }
         game.addListener(NeoPriority.NORMAL, false, PlayerEvent.PlayerLoggedInEvent::class.java) { event ->
             val player = event.entity as? ServerPlayer ?: return@addListener
@@ -281,7 +287,17 @@ public class NeoForgePlatform(
     }
 
     private companion object {
-        /** A loaded mod's version, `minecraft` and `neoforge` among them; `?` for none. */
+        // The loader, by name and by its mod's id (Modrinth's loader too): NeoForge, or Forge on
+        // Forge 1.20.1's node.
+        //? if forge {
+        /*const val LOADER = "Forge"
+        const val LOADER_ID = "forge"
+        *///?} else {
+        const val LOADER = "NeoForge"
+        const val LOADER_ID = "neoforge"
+        //?}
+
+        /** A loaded mod's version, `minecraft` and the loader's among them; `?` for none. */
         fun version(mod: String): String =
             ModList.get().getModContainerById(mod).map { it.modInfo.version.toString() }.orElse("?")
 

@@ -1,8 +1,18 @@
-# What each Minecraft line builds against. The versions themselves are in settings.gradle.kts.
+# What each Minecraft line builds against (and Forge 1.20.1's node, which builds against Forge). The versions themselves are in settings.gradle.kts.
 # Kotlin for Forge brings the Kotlin stdlib to the server (ROADMAP.md, Kotlin stdlib); its Kotlin
 # must be the rewrite's (gradle/libs.versions.toml), or a mod would call a stdlib it lacks. Each
 # line takes the newest Kotlin for Forge for its Minecraft (5.x for 1.20.6 to 1.21.8, 6.x from
 # 1.21.9), and a mod asks for at least that one.
+
+["1.20.1-forge"]
+deps.forge = "1.20.1-47.4.29"
+# Any Forge for 1.20.1: nothing a mod calls is newer than its first builds.
+mod.forge_compat = "[47,)"
+mod.mc_compat = "[1.20.1]"
+# Kotlin for Forge 4.13.0 is the first 4.x with the rewrite's Kotlin (2.4.21), published to its
+# Maven and CurseForge; Modrinth's newest 4.x is 4.12.0 (Kotlin 2.2.21), which a mod can't run on.
+deps.kff = "4.13.0"
+mod.kff_compat = "[4.13.0,)"
 
 ["1.21.1"]
 deps.neoforge = "21.1.268"

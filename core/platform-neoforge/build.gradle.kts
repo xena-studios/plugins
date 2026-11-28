@@ -1,27 +1,37 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 // The core on NeoForge, built once per Minecraft line (settings.gradle.kts): this script runs for
-// each version's node, with `sc.current` the version. Not a mod of its own: a plugin bundles it
-// with the core, as on Fabric. NeoForge runs Mojang's names from 1.20.5 on, so nothing is remapped.
+// each version's node, with `sc.current` the version, and for Forge 1.20.1's. Not a mod of its
+// own: a plugin bundles it with the core, as on Fabric. NeoForge runs Mojang's names from 1.20.5
+// on, so nothing is remapped; Forge 1.20.1 runs SRG names, so a mod's shrunk jar is (xena.neoforge-mod).
 plugins {
-    id("net.neoforged.moddev")
     kotlin("jvm")
 }
 
+// ModDevGradle for NeoForge, or its legacy plugin for Forge 1.20.1 (the same plugin's jar).
+val forge = sc.current.project.endsWith("-forge")
+if (forge) {
+    apply(plugin = "net.neoforged.moddev.legacyforge")
+    configure<net.neoforged.moddevgradle.legacyforge.dsl.LegacyForgeExtension> { version = sc.properties["deps.forge"] }
+} else {
+    apply(plugin = "net.neoforged.moddev")
+    configure<net.neoforged.moddevgradle.dsl.NeoForgeExtension> { version = sc.properties["deps.neoforge"] }
+}
+
 group = "co.xenastudios.core"
-version = "0.0.0+${sc.current.version}"
+version = "0.0.0+${sc.current.project}"
 description = "The rewrite's core on NeoForge, server-side: one jar per Minecraft line."
 base.archivesName = "platform-neoforge"
 
-// Minecraft's Java decides the bytecode: 21 for 1.21.x, 25 for 26.1 and later.
-val requiredJava: JavaVersion = if (sc.current.parsed >= "26.1") JavaVersion.VERSION_25 else JavaVersion.VERSION_21
+// Minecraft's Java decides the bytecode: 17 for 1.20.1, 21 for 1.21.x, 25 for 26.1 and later.
+val requiredJava: JavaVersion = when {
+    sc.current.parsed >= "26.1" -> JavaVersion.VERSION_25
+    sc.current.parsed >= "1.20.5" -> JavaVersion.VERSION_21
+    else -> JavaVersion.VERSION_17
+}
 
 repositories {
     mavenCentral()
-}
-
-neoForge {
-    version = sc.properties["deps.neoforge"]
 }
 
 dependencies {

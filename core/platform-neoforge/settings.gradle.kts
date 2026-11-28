@@ -38,6 +38,11 @@ stonecutter {
         // to 1.20.4 run with SRG names on a server, which a jar would need remapping for); 1.21.11
         // the last 1.21 line; 26.3 the newest. A new line is a version here and its block in
         // stonecutter.properties.toml.
+        // Forge 1.20.1, where Forge's modpack servers stay, is a node of this tree too (decisions/
+        // 2026-11-28-neoforge-and-forge.md): NeoForge forked from it, so the same source builds it,
+        // with Forge's package names swapped in (stonecutter.gradle.kts) and Minecraft 1.20.1's
+        // differences switched as platform-fabric switches them.
+        version("1.20.1-forge", "1.20.1")
         versions("1.21.1", "1.21.11", "26.3")
         vcsVersion = "26.3"
         // xSample as a NeoForge mod on this adapter, never released: a node per line, like these.

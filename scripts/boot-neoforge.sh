@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Boots a real NeoForge dedicated server with the given mod jars, runs console commands, stops
+# Boots a real NeoForge (or Forge 1.20.1) dedicated server with the given mod jars, runs console commands, stops
 # it, and fails if the log has an error or a warning from our mods, a command's expected output
 # never appeared, or the server didn't start and stop cleanly. The NeoForge side of
 # scripts/boot-fabric.sh, with the same steps.
 #
-#   scripts/boot-neoforge.sh --version 1.21.1 [--java <JDK home>] [--checks file]... \
+#   scripts/boot-neoforge.sh --version 1.21.1 [--loader neoforge|forge] [--java <JDK home>] [--checks file]... \
 #     [--run "console command"]... [--expect "log text"]... [--logged "log text"]... \
 #     [--client "client.js arguments"]... [--seed folder]... mod.jar...
 #
@@ -22,9 +22,14 @@
 # Maven's SHA-1, and gets Kotlin for Forge at that line's version, from Modrinth. The JDK is the one Minecraft
 # needs (21 for 1.21.x, 25 for 26.x): --java, or `java` on the PATH.
 #
+# --loader forge boots Forge 1.20.1 instead, platform-neoforge's 1.20.1-forge node: Forge's own
+# installer at that node's build, and Kotlin for Forge's jar from its Maven (4.13.0, the first 4.x
+# with the rewrite's Kotlin, isn't on Modrinth), checked against its SHA-1 there.
+#
 # Installers, servers, Mojang's jar and the libraries are cached in .cache/neoforge/.
 set -euo pipefail
 
+loader=neoforge
 version=""
 java_home=""
 steps=()
@@ -32,6 +37,7 @@ seeds=()
 jars=()
 while (($#)); do
   case "$1" in
+    --loader) loader=$2; shift 2 ;;
     --version) version=$2; shift 2 ;;
     --java) java_home=$2; shift 2 ;;
     --run) steps+=("run: $2"); shift 2 ;;
@@ -49,28 +55,42 @@ while (($#)); do
   esac
 done
 [[ -n $version ]] || { echo "--version is needed: the Minecraft version, such as 1.21.11" >&2; exit 2; }
+[[ $loader == neoforge || $loader == forge ]] || { echo "--loader is neoforge or forge, not $loader" >&2; exit 2; }
 ((${#jars[@]})) || { echo "no mod jars given" >&2; exit 2; }
 
 root=$(cd "$(dirname "$0")/.." && pwd)
 cache="$root/.cache/neoforge"
 java=${java_home:+$java_home/bin/}java
-base="$root/build/boot/neoforge-$version"
+base="$root/build/boot/$loader-$version"
 mkdir -p "$cache"
 
 # ---- what platform-neoforge builds against for this version ----
 # A key's value for this version: its own block's, or the shared one above every block.
 properties="$root/core/platform-neoforge/stonecutter.properties.toml"
+# Forge 1.20.1 is the tree's 1.20.1-forge node.
+node=$version
+[[ $loader == neoforge ]] || node="$version-forge"
 property() {
   local value
-  value=$(awk -v section="[\"$version\"]" -v key="$1" '
+  value=$(awk -v section="[\"$node\"]" -v key="$1" '
     /^\[/ { block = $0; next }
     $1 == key && (block == "" || block == section) { value = $3; gsub(/"/, "", value) }
     END { print value }' "$properties")
-  [[ -n $value ]] || { echo "$1 isn't set for $version in $properties" >&2; exit 2; }
+  [[ -n $value ]] || { echo "$1 isn't set for $node in $properties" >&2; exit 2; }
   printf '%s' "$value"
 }
-grep -qF "[\"$version\"]" "$properties" || { echo "platform-neoforge doesn't build for $version (no [\"$version\"] in $properties)" >&2; exit 2; }
-neoforge=$(property deps.neoforge)
+grep -qF "[\"$node\"]" "$properties" || { echo "platform-neoforge doesn't build for $node (no [\"$node\"] in $properties)" >&2; exit 2; }
+if [[ $loader == neoforge ]]; then
+  build=$(property deps.neoforge)
+  installer_url="https://maven.neoforged.net/releases/net/neoforged/neoforge/$build/neoforge-$build-installer.jar"
+  args_file="libraries/net/neoforged/neoforge/$build/unix_args.txt"
+  descriptor_file=META-INF/neoforge.mods.toml
+else
+  build=$(property deps.forge)
+  installer_url="https://maven.minecraftforge.net/net/minecraftforge/forge/$build/forge-$build-installer.jar"
+  args_file="libraries/net/minecraftforge/forge/$build/unix_args.txt"
+  descriptor_file=META-INF/mods.toml
+fi
 kff=$(property deps.kff)
 
 # Downloads $1 to $2 once, checked against the SHA-1 its Maven publishes beside it.
@@ -89,7 +109,9 @@ fetch_checked() {
 # Kotlin for Forge as owners install it: its mod, from Modrinth (its Maven has the parts apart),
 # checked against the SHA-1 Modrinth lists for it.
 mods=("$cache/kotlinforforge-$kff-all.jar")
-if [[ ! -f ${mods[0]} ]]; then
+if [[ $loader == forge ]]; then
+  fetch_checked "https://thedarkcolour.github.io/KotlinForForge/thedarkcolour/kotlinforforge/$kff/kotlinforforge-$kff-all.jar" "${mods[0]}"
+elif [[ ! -f ${mods[0]} ]]; then
   file=$(curl -fsSL "https://api.modrinth.com/v2/project/kotlin-for-forge/version" |
     jq -r --arg v "$kff" '[.[] | select(.version_number == $v and (.loaders | index("neoforge")))][0].files[0] | "\(.url) \(.hashes.sha1)"')
   [[ $file != "null null" && -n $file ]] || { echo "Kotlin for Forge $kff isn't on Modrinth for NeoForge" >&2; exit 1; }
@@ -102,20 +124,20 @@ fi
 # Our mods' names, to spot their warnings: platform-neoforge starts each line with the mod's.
 names=()
 for jar in "${jars[@]}"; do
-  descriptor=$(unzip -p "$jar" META-INF/neoforge.mods.toml 2>/dev/null || true)
-  [[ -n $descriptor ]] || { echo "$(basename "$jar") isn't a NeoForge mod: it has no META-INF/neoforge.mods.toml" >&2; exit 2; }
+  descriptor=$(unzip -p "$jar" "$descriptor_file" 2>/dev/null || true)
+  [[ -n $descriptor ]] || { echo "$(basename "$jar") isn't a $loader mod: it has no $descriptor_file" >&2; exit 2; }
   names+=("$(sed -n 's/^displayName *= *"\([^"]*\)".*/\1/p' <<<"$descriptor" | head -1)")
 done
 ours=$(IFS='|'; echo "${names[*]}")
 
-# ---- the server: NeoForge's installer, run once per version ----
-server_dir="$cache/server-$neoforge"
-if [[ ! -f $server_dir/libraries/net/neoforged/neoforge/$neoforge/unix_args.txt ]]; then
+# ---- the server: the loader's installer, run once per build ----
+server_dir="$cache/server-$loader-$build"
+if [[ ! -f $server_dir/$args_file ]]; then
   mkdir -p "$server_dir"
-  installer="$cache/neoforge-$neoforge-installer.jar"
-  fetch_checked "https://maven.neoforged.net/releases/net/neoforged/neoforge/$neoforge/neoforge-$neoforge-installer.jar" "$installer"
-  echo "Installing NeoForge $neoforge"
-  (cd "$server_dir" && "$java" -jar "$installer" --installServer . >install.log 2>&1) || { tail -20 "$server_dir/install.log" >&2; echo "NeoForge's installer failed" >&2; exit 1; }
+  installer="$cache/$loader-$build-installer.jar"
+  fetch_checked "$installer_url" "$installer"
+  echo "Installing $loader $build"
+  (cd "$server_dir" && "$java" -jar "$installer" --installServer . >install.log 2>&1) || { tail -20 "$server_dir/install.log" >&2; echo "The $loader installer failed" >&2; exit 1; }
 fi
 
 fail() {
@@ -188,12 +210,12 @@ EOF
 
 mkfifo "$base/stdin"
 # Debug reports stay in the server's folder: a boot test never uploads one.
-(cd "$base" && exec "$java" -Xms512M -Xmx1G -Dxena.debug.paste=false "@libraries/net/neoforged/neoforge/$neoforge/unix_args.txt" nogui <stdin >"$log" 2>&1) &
+(cd "$base" && exec "$java" -Xms512M -Xmx1G -Dxena.debug.paste=false "@$args_file" nogui <stdin >"$log" 2>&1) &
 pid=$!
 exec 3>"$base/stdin"
 
 wait_for "Done (" 300
-echo "Started NeoForge $neoforge with ${names[*]}"
+echo "Started $loader $build with ${names[*]}"
 since=0
 for step in "${steps[@]+"${steps[@]}"}"; do
   case "$step" in
@@ -228,4 +250,4 @@ errors=$(grep -E "${level}(ERROR|FATAL)\]" "$log" || true)
 warnings=$(grep -E "${level}WARN\] \[[^]]*\]: \[($ours)\]" "$log" || true)
 [[ -z $warnings ]] || fail "our mods logged warnings:"$'\n'"$warnings"
 grep -E "${level}INFO\] \[[^]]*\]: \[($ours)\]" "$log" || true
-echo "PASS: NeoForge $version"
+echo "PASS: $loader $version"

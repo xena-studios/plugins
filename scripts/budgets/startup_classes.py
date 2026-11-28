@@ -2,7 +2,7 @@
 """Writes a plugin's startup class list from a boot's class-loading log, for build-logic's R8Shrink
 (xenaR8's startupClasses: the project's startup-classes.txt), which maps it to the shrunk jar's
 names. scripts/budgets/check.sh --record-startup runs it after a boot with
--Xlog:class+load=info:file=<log>:uptimemillis.
+-Xlog:class+load=info,class+init=info:file=<log>:uptimemillis.
 
     startup_classes.py --log classload.log --boot boot.log --jar Plugin.jar --out startup-classes.txt
     startup_classes.py --log classload.log --done-ms 4210 --jar Plugin.jar --out startup-classes.txt
@@ -15,6 +15,13 @@ library its META-INF/xena/libraries.txt lists (from plugins/Xena/libraries/, or 
 libraries/ for libraries:), the jar's
 own back in the names they have before R8 (the mapping file beside the jar), in the order they
 loaded, which is the order the shim loads them in.
+
+Only the classes the boot linked, when the log has class+init's "Start class verification" lines:
+a class the JVM only loaded to verify another (to check one type is assignable to another) is never
+linked on its own, but the shim's preloader links every class it's given (getDeclaredConstructors),
+which verifies it and loads what its own code names in turn. Listing those cost xStats about 9 KB of
+metaspace, which a hand trim took back and a record put back; now a record leaves them out. A log
+without those lines (class+load alone) keeps every class loaded, as before.
 """
 import argparse
 import os
@@ -60,8 +67,19 @@ for line in listed.splitlines():
     if len(parts) >= 2 and parts[0].count(":") == 2:
         group, artifact, version = parts[0].split(":")
         libraries.append(f"/{group.replace('.', '/')}/{artifact}/{version}/{artifact}-{version}.jar")
+# The classes the boot verified, so linked, before it was done: None if the log doesn't say.
+linked = None
+for line in open(a.log, errors="replace"):
+    m = re.match(r"^\[(\d+)ms\](?:\[info\]\[class,init\])? Start class verification for: (\S+)", line.rstrip("\n"))
+    if m:
+        if linked is None:
+            linked = set()
+        if int(m.group(1)) <= done:
+            linked.add(m.group(2))
+
 names = []
 seen = set()
+unlinked = 0
 for line in open(a.log, errors="replace"):
     m = re.match(r"^\[(\d+)ms\](?:\[info\]\[class,load\])? (\S+) source: (.*)$", line.rstrip("\n"))
     if not m or int(m.group(1)) > done:
@@ -70,6 +88,9 @@ for line in open(a.log, errors="replace"):
     ours = jar_name in source
     library = any(path in source for path in libraries)
     if not (ours or library) or "$$Lambda" in name or "/0x" in name:
+        continue
+    if linked is not None and name not in linked:
+        unlinked += 1
         continue
     name = original.get(name, name) if ours else name
     # The core's Paper loader: Paper loads it in a class loader of its own before the plugin's,
@@ -90,4 +111,5 @@ with open(a.out, "w") as f:
     f.write("# In their names before R8; R8Shrink maps them. Record again after big changes.\n")
     for name in names:
         f.write(name + "\n")
-print(f"{len(names)} startup classes -> {a.out}")
+left = "" if linked is None else f", {unlinked} loaded only to verify others left out"
+print(f"{len(names)} startup classes -> {a.out}{left}")

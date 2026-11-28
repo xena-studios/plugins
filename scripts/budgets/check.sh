@@ -313,7 +313,7 @@ with zipfile.ZipFile(sys.argv[1]) as src, zipfile.ZipFile(sys.argv[2], "w", zipf
             dst.writestr(item, src.read(item))
 PY
   done
-  boot "$out/record.log" "-Xlog:class+load=info:file=$out/classload.log:uptimemillis"; sleep 2; stop
+  boot "$out/record.log" "-Xlog:class+load=info,class+init=info:file=$out/classload.log:uptimemillis"; sleep 2; stop
   cp "${jars[@]}" "$dir/plugins/"
   for i in "${!jars[@]}"; do
     python3 "$here/startup_classes.py" --log "$out/classload.log" --boot "$out/record.log" --jar "${jars[$i]}" \

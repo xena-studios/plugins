@@ -20,16 +20,17 @@ jar=${XBACKUP_JAR:-$here/build/r8/xBackup.jar}
 [[ -f $jar ]] || { echo "no $jar: run ./gradlew :xbackup:bukkit:assemble first" >&2; exit 2; }
 (($#)) || { sed -n '2,13p' "$0" >&2; exit 2; }
 
-server=()
+server=() version=
 case "$1" in
   paper | folia)
     server=(--project "$1")
     shift
     if (($#)) && [[ $1 != -* ]]; then
+      version=$1
       server+=(--version "$1")
       shift
     fi ;;
-  *.jar) server=(--server "$1"); shift ;;
+  *.jar) server=(--server "$1"); version=$(basename "$1" .jar | sed -n 's/^[a-z]*-\([0-9.]*\).*/\1/p'); shift ;;
   *) echo "the first argument is paper, folia or a server jar, not $1" >&2; exit 2 ;;
 esac
 
@@ -40,6 +41,16 @@ if (($#)) && [[ $1 == --family ]]; then
     [[ -f $root/$plugin ]] || { echo "no $root/$plugin: run ./gradlew :xmoney:bukkit:assemble :xbans:bukkit:assemble first" >&2; exit 2; }
     extra+=("$root/$plugin")
   done
+  # Older than 1.15.2, xMoney needs Vault.jar beside it to stand in for Vault, as owners run it
+  # (xmoney/bukkit/boot.sh does the same): without it xMoney rightly warns, and the boot fails.
+  if [[ -n $version && $(printf '%s\n1.15.2\n' "$version" | sort -V | head -1) == "$version" && $version != 1.15.2 ]]; then
+    vault=$root/.cache/plugins/Vault-1.7.3.jar sum=a6b5ed97f43a5cf5bbaf00a7c8cd23c5afc9bd003f849875af8b36e6cf77d01d
+    mkdir -p "$(dirname "$vault")"
+    [[ -f $vault ]] || { curl -fsSL -o "$vault.part" https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar && mv "$vault.part" "$vault"; }
+    got=$( (command -v sha256sum >/dev/null && sha256sum "$vault" || shasum -a 256 "$vault") | cut -d' ' -f1)
+    [[ $got == "$sum" ]] || { echo "Vault-1.7.3.jar's sha256 is $got, not $sum" >&2; rm -f "$vault"; exit 2; }
+    extra+=("$vault")
+  fi
   extra+=(--checks "$here/family-checks.txt")
 fi
 

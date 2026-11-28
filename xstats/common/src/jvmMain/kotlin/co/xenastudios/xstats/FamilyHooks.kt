@@ -44,7 +44,8 @@ public class FamilyHooks(
                 subscribe(loader, events, "co.xenastudios.${spec.id}.api.event.$event", Counter(counter, stats, plugin))?.let(subscriptions::add)
             }
             hooked[spec.plugin] = Hooked(subscriptions, spec)
-            plugin.log.info("Keeping ${spec.plugin}'s stats: ${spec.stats.joinToString(", ") { spec.id + "_" + it.id }}.")
+            val whose = if (spec.plugin.endsWith("s")) spec.plugin + "'" else spec.plugin + "'s"
+            plugin.log.info("Keeping $whose stats: ${spec.stats.joinToString(", ") { spec.id + "_" + it.id }}.")
         } catch (e: ReflectiveOperationException) {
             Integrations.unhook(plugin, spec)
             plugin.log.warn("Couldn't keep ${spec.plugin}'s stats: this ${spec.plugin}'s API is different ($e).")

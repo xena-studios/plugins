@@ -1,0 +1,219 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xstats.api/Period : kotlin/Enum<co.xenastudios.xstats.api/Period> { // co.xenastudios.xstats.api/Period|null[0]
+    enum entry ALL // co.xenastudios.xstats.api/Period.ALL|null[0]
+    enum entry DAILY // co.xenastudios.xstats.api/Period.DAILY|null[0]
+    enum entry MONTHLY // co.xenastudios.xstats.api/Period.MONTHLY|null[0]
+    enum entry WEEKLY // co.xenastudios.xstats.api/Period.WEEKLY|null[0]
+
+    final val entries // co.xenastudios.xstats.api/Period.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xstats.api/Period> // co.xenastudios.xstats.api/Period.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val id // co.xenastudios.xstats.api/Period.id|{}id[0]
+        final fun <get-id>(): kotlin/String // co.xenastudios.xstats.api/Period.id.<get-id>|<get-id>(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xstats.api/Period // co.xenastudios.xstats.api/Period.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xstats.api/Period> // co.xenastudios.xstats.api/Period.values|values#static(){}[0]
+
+    final object Companion { // co.xenastudios.xstats.api/Period.Companion|null[0]
+        final fun parse(kotlin/String): co.xenastudios.xstats.api/Period? // co.xenastudios.xstats.api/Period.Companion.parse|parse(kotlin.String){}[0]
+    }
+}
+
+final enum class co.xenastudios.xstats.api/StatUnit : kotlin/Enum<co.xenastudios.xstats.api/StatUnit> { // co.xenastudios.xstats.api/StatUnit|null[0]
+    enum entry COUNT // co.xenastudios.xstats.api/StatUnit.COUNT|null[0]
+    enum entry DAMAGE // co.xenastudios.xstats.api/StatUnit.DAMAGE|null[0]
+    enum entry DISTANCE // co.xenastudios.xstats.api/StatUnit.DISTANCE|null[0]
+    enum entry TIME // co.xenastudios.xstats.api/StatUnit.TIME|null[0]
+
+    final val entries // co.xenastudios.xstats.api/StatUnit.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xstats.api/StatUnit> // co.xenastudios.xstats.api/StatUnit.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xstats.api/StatUnit // co.xenastudios.xstats.api/StatUnit.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xstats.api/StatUnit> // co.xenastudios.xstats.api/StatUnit.values|values#static(){}[0]
+}
+
+abstract fun interface co.xenastudios.xstats.api/ProfileSection { // co.xenastudios.xstats.api/ProfileSection|null[0]
+    abstract fun lines(co.xenastudios.core.api/PlayerRef, kotlin/Boolean): kotlin.collections/List<co.xenastudios.xstats.api/ProfileLine> // co.xenastudios.xstats.api/ProfileSection.lines|lines(co.xenastudios.core.api.PlayerRef;kotlin.Boolean){}[0]
+}
+
+abstract interface co.xenastudios.xstats.api/CustomStat { // co.xenastudios.xstats.api/CustomStat|null[0]
+    abstract val id // co.xenastudios.xstats.api/CustomStat.id|{}id[0]
+        abstract fun <get-id>(): kotlin/String // co.xenastudios.xstats.api/CustomStat.id.<get-id>|<get-id>(){}[0]
+
+    abstract fun increment(co.xenastudios.core.api/PlayerRef, kotlin/Long) // co.xenastudios.xstats.api/CustomStat.increment|increment(co.xenastudios.core.api.PlayerRef;kotlin.Long){}[0]
+    abstract fun set(co.xenastudios.core.api/PlayerRef, kotlin/Long) // co.xenastudios.xstats.api/CustomStat.set|set(co.xenastudios.core.api.PlayerRef;kotlin.Long){}[0]
+}
+
+abstract interface co.xenastudios.xstats.api/XStatsApi { // co.xenastudios.xstats.api/XStatsApi|null[0]
+    abstract val events // co.xenastudios.xstats.api/XStatsApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xstats.api/XStatsApi.events.<get-events>|<get-events>(){}[0]
+    abstract val proxy // co.xenastudios.xstats.api/XStatsApi.proxy|{}proxy[0]
+        abstract fun <get-proxy>(): kotlin/Boolean // co.xenastudios.xstats.api/XStatsApi.proxy.<get-proxy>|<get-proxy>(){}[0]
+    abstract val version // co.xenastudios.xstats.api/XStatsApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xstats.api/XStatsApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun isPrivate(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xstats.api/XStatsApi.isPrivate|isPrivate(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun profile(co.xenastudios.core.api/PlayerRef): co.xenastudios.core.api/Pending<co.xenastudios.xstats.api/StatsProfile?> // co.xenastudios.xstats.api/XStatsApi.profile|profile(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun rank(co.xenastudios.core.api/PlayerRef, kotlin/String, co.xenastudios.xstats.api/Period): kotlin/Int // co.xenastudios.xstats.api/XStatsApi.rank|rank(co.xenastudios.core.api.PlayerRef;kotlin.String;co.xenastudios.xstats.api.Period){}[0]
+    abstract fun registerProfileSection(kotlin/String, kotlin/String, kotlin/String, co.xenastudios.xstats.api/ProfileSection) // co.xenastudios.xstats.api/XStatsApi.registerProfileSection|registerProfileSection(kotlin.String;kotlin.String;kotlin.String;co.xenastudios.xstats.api.ProfileSection){}[0]
+    abstract fun registerStat(kotlin/String, kotlin/String, kotlin/String, co.xenastudios.xstats.api/StatUnit, kotlin/Boolean, kotlin/Int): co.xenastudios.xstats.api/CustomStat // co.xenastudios.xstats.api/XStatsApi.registerStat|registerStat(kotlin.String;kotlin.String;kotlin.String;co.xenastudios.xstats.api.StatUnit;kotlin.Boolean;kotlin.Int){}[0]
+    abstract fun stat(kotlin/String): co.xenastudios.xstats.api/StatInfo? // co.xenastudios.xstats.api/XStatsApi.stat|stat(kotlin.String){}[0]
+    abstract fun stats(): kotlin.collections/List<co.xenastudios.xstats.api/StatInfo> // co.xenastudios.xstats.api/XStatsApi.stats|stats(){}[0]
+    abstract fun top(kotlin/String, co.xenastudios.xstats.api/Period, kotlin/Int): kotlin.collections/List<co.xenastudios.xstats.api/LeaderboardEntry> // co.xenastudios.xstats.api/XStatsApi.top|top(kotlin.String;co.xenastudios.xstats.api.Period;kotlin.Int){}[0]
+    abstract fun unregisterProfileSection(kotlin/String, kotlin/String) // co.xenastudios.xstats.api/XStatsApi.unregisterProfileSection|unregisterProfileSection(kotlin.String;kotlin.String){}[0]
+    abstract fun unregisterStats(kotlin/String) // co.xenastudios.xstats.api/XStatsApi.unregisterStats|unregisterStats(kotlin.String){}[0]
+    abstract fun value(co.xenastudios.core.api/PlayerRef, kotlin/String, co.xenastudios.xstats.api/Period): kotlin/Long // co.xenastudios.xstats.api/XStatsApi.value|value(co.xenastudios.core.api.PlayerRef;kotlin.String;co.xenastudios.xstats.api.Period){}[0]
+    open fun registerStat(kotlin/String, kotlin/String, kotlin/String, co.xenastudios.xstats.api/StatUnit): co.xenastudios.xstats.api/CustomStat // co.xenastudios.xstats.api/XStatsApi.registerStat|registerStat(kotlin.String;kotlin.String;kotlin.String;co.xenastudios.xstats.api.StatUnit){}[0]
+    open fun registerStat(kotlin/String, kotlin/String, kotlin/String, co.xenastudios.xstats.api/StatUnit, kotlin/Boolean): co.xenastudios.xstats.api/CustomStat // co.xenastudios.xstats.api/XStatsApi.registerStat|registerStat(kotlin.String;kotlin.String;kotlin.String;co.xenastudios.xstats.api.StatUnit;kotlin.Boolean){}[0]
+}
+
+final class co.xenastudios.xstats.api.event/LeaderboardChangeEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xstats.api.event/LeaderboardChangeEvent|null[0]
+    constructor <init>(kotlin/String, co.xenastudios.xstats.api/Period, co.xenastudios.core.api/PlayerRef, kotlin/String, co.xenastudios.core.api/PlayerRef?, kotlin/Long) // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.<init>|<init>(kotlin.String;co.xenastudios.xstats.api.Period;co.xenastudios.core.api.PlayerRef;kotlin.String;co.xenastudios.core.api.PlayerRef?;kotlin.Long){}[0]
+
+    final val leader // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.leader|{}leader[0]
+        final fun <get-leader>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.leader.<get-leader>|<get-leader>(){}[0]
+    final val leaderName // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.leaderName|{}leaderName[0]
+        final fun <get-leaderName>(): kotlin/String // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.leaderName.<get-leaderName>|<get-leaderName>(){}[0]
+    final val period // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.period|{}period[0]
+        final fun <get-period>(): co.xenastudios.xstats.api/Period // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.period.<get-period>|<get-period>(){}[0]
+    final val previous // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.previous|{}previous[0]
+        final fun <get-previous>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.previous.<get-previous>|<get-previous>(){}[0]
+    final val stat // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.stat|{}stat[0]
+        final fun <get-stat>(): kotlin/String // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.stat.<get-stat>|<get-stat>(){}[0]
+    final val value // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.value|{}value[0]
+        final fun <get-value>(): kotlin/Long // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.value.<get-value>|<get-value>(){}[0]
+
+    final object Companion { // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xstats.api.event/LeaderboardChangeEvent> // co.xenastudios.xstats.api.event/LeaderboardChangeEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xstats.api.event/PrivacyChangeEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xstats.api.event/PrivacyChangeEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/Boolean) // co.xenastudios.xstats.api.event/PrivacyChangeEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.Boolean){}[0]
+
+    final val hidden // co.xenastudios.xstats.api.event/PrivacyChangeEvent.hidden|{}hidden[0]
+        final fun <get-hidden>(): kotlin/Boolean // co.xenastudios.xstats.api.event/PrivacyChangeEvent.hidden.<get-hidden>|<get-hidden>(){}[0]
+    final val player // co.xenastudios.xstats.api.event/PrivacyChangeEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xstats.api.event/PrivacyChangeEvent.player.<get-player>|<get-player>(){}[0]
+
+    final object Companion { // co.xenastudios.xstats.api.event/PrivacyChangeEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xstats.api.event/PrivacyChangeEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xstats.api.event/PrivacyChangeEvent> // co.xenastudios.xstats.api.event/PrivacyChangeEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xstats.api.event/StatChangeEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xstats.api.event/StatChangeEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin/Long, kotlin/Boolean) // co.xenastudios.xstats.api.event/StatChangeEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.Long;kotlin.Boolean){}[0]
+
+    final val player // co.xenastudios.xstats.api.event/StatChangeEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xstats.api.event/StatChangeEvent.player.<get-player>|<get-player>(){}[0]
+    final val set // co.xenastudios.xstats.api.event/StatChangeEvent.set|{}set[0]
+        final fun <get-set>(): kotlin/Boolean // co.xenastudios.xstats.api.event/StatChangeEvent.set.<get-set>|<get-set>(){}[0]
+    final val stat // co.xenastudios.xstats.api.event/StatChangeEvent.stat|{}stat[0]
+        final fun <get-stat>(): kotlin/String // co.xenastudios.xstats.api.event/StatChangeEvent.stat.<get-stat>|<get-stat>(){}[0]
+
+    final var amount // co.xenastudios.xstats.api.event/StatChangeEvent.amount|{}amount[0]
+        final fun <get-amount>(): kotlin/Long // co.xenastudios.xstats.api.event/StatChangeEvent.amount.<get-amount>|<get-amount>(){}[0]
+        final fun <set-amount>(kotlin/Long) // co.xenastudios.xstats.api.event/StatChangeEvent.amount.<set-amount>|<set-amount>(kotlin.Long){}[0]
+
+    final object Companion { // co.xenastudios.xstats.api.event/StatChangeEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xstats.api.event/StatChangeEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xstats.api.event/StatChangeEvent> // co.xenastudios.xstats.api.event/StatChangeEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xstats.api.event/StatsSavedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xstats.api.event/StatsSavedEvent|null[0]
+    constructor <init>(kotlin/Int, kotlin/Long) // co.xenastudios.xstats.api.event/StatsSavedEvent.<init>|<init>(kotlin.Int;kotlin.Long){}[0]
+
+    final val millis // co.xenastudios.xstats.api.event/StatsSavedEvent.millis|{}millis[0]
+        final fun <get-millis>(): kotlin/Long // co.xenastudios.xstats.api.event/StatsSavedEvent.millis.<get-millis>|<get-millis>(){}[0]
+    final val players // co.xenastudios.xstats.api.event/StatsSavedEvent.players|{}players[0]
+        final fun <get-players>(): kotlin/Int // co.xenastudios.xstats.api.event/StatsSavedEvent.players.<get-players>|<get-players>(){}[0]
+
+    final object Companion { // co.xenastudios.xstats.api.event/StatsSavedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xstats.api.event/StatsSavedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xstats.api.event/StatsSavedEvent> // co.xenastudios.xstats.api.event/StatsSavedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xstats.api/LeaderboardEntry { // co.xenastudios.xstats.api/LeaderboardEntry|null[0]
+    constructor <init>(kotlin/Int, co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin/Long) // co.xenastudios.xstats.api/LeaderboardEntry.<init>|<init>(kotlin.Int;co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.Long){}[0]
+
+    final val name // co.xenastudios.xstats.api/LeaderboardEntry.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xstats.api/LeaderboardEntry.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xstats.api/LeaderboardEntry.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xstats.api/LeaderboardEntry.player.<get-player>|<get-player>(){}[0]
+    final val rank // co.xenastudios.xstats.api/LeaderboardEntry.rank|{}rank[0]
+        final fun <get-rank>(): kotlin/Int // co.xenastudios.xstats.api/LeaderboardEntry.rank.<get-rank>|<get-rank>(){}[0]
+    final val value // co.xenastudios.xstats.api/LeaderboardEntry.value|{}value[0]
+        final fun <get-value>(): kotlin/Long // co.xenastudios.xstats.api/LeaderboardEntry.value.<get-value>|<get-value>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xstats.api/LeaderboardEntry.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xstats.api/ProfileLine { // co.xenastudios.xstats.api/ProfileLine|null[0]
+    constructor <init>(kotlin/String, kotlin/String) // co.xenastudios.xstats.api/ProfileLine.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val label // co.xenastudios.xstats.api/ProfileLine.label|{}label[0]
+        final fun <get-label>(): kotlin/String // co.xenastudios.xstats.api/ProfileLine.label.<get-label>|<get-label>(){}[0]
+    final val value // co.xenastudios.xstats.api/ProfileLine.value|{}value[0]
+        final fun <get-value>(): kotlin/String // co.xenastudios.xstats.api/ProfileLine.value.<get-value>|<get-value>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xstats.api/ProfileLine.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xstats.api/StatInfo { // co.xenastudios.xstats.api/StatInfo|null[0]
+    constructor <init>(kotlin/String, kotlin/String, co.xenastudios.xstats.api/StatUnit, kotlin/Int, kotlin/Boolean, kotlin/Boolean, kotlin/String, kotlin/Boolean = ...) // co.xenastudios.xstats.api/StatInfo.<init>|<init>(kotlin.String;kotlin.String;co.xenastudios.xstats.api.StatUnit;kotlin.Int;kotlin.Boolean;kotlin.Boolean;kotlin.String;kotlin.Boolean){}[0]
+
+    final val decimals // co.xenastudios.xstats.api/StatInfo.decimals|{}decimals[0]
+        final fun <get-decimals>(): kotlin/Int // co.xenastudios.xstats.api/StatInfo.decimals.<get-decimals>|<get-decimals>(){}[0]
+    final val id // co.xenastudios.xstats.api/StatInfo.id|{}id[0]
+        final fun <get-id>(): kotlin/String // co.xenastudios.xstats.api/StatInfo.id.<get-id>|<get-id>(){}[0]
+    final val name // co.xenastudios.xstats.api/StatInfo.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xstats.api/StatInfo.name.<get-name>|<get-name>(){}[0]
+    final val owner // co.xenastudios.xstats.api/StatInfo.owner|{}owner[0]
+        final fun <get-owner>(): kotlin/String // co.xenastudios.xstats.api/StatInfo.owner.<get-owner>|<get-owner>(){}[0]
+    final val periods // co.xenastudios.xstats.api/StatInfo.periods|{}periods[0]
+        final fun <get-periods>(): kotlin/Boolean // co.xenastudios.xstats.api/StatInfo.periods.<get-periods>|<get-periods>(){}[0]
+    final val shown // co.xenastudios.xstats.api/StatInfo.shown|{}shown[0]
+        final fun <get-shown>(): kotlin/Boolean // co.xenastudios.xstats.api/StatInfo.shown.<get-shown>|<get-shown>(){}[0]
+    final val unit // co.xenastudios.xstats.api/StatInfo.unit|{}unit[0]
+        final fun <get-unit>(): co.xenastudios.xstats.api/StatUnit // co.xenastudios.xstats.api/StatInfo.unit.<get-unit>|<get-unit>(){}[0]
+    final val website // co.xenastudios.xstats.api/StatInfo.website|{}website[0]
+        final fun <get-website>(): kotlin/Boolean // co.xenastudios.xstats.api/StatInfo.website.<get-website>|<get-website>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xstats.api/StatInfo.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xstats.api/StatsProfile { // co.xenastudios.xstats.api/StatsProfile|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String?, kotlin/Long, kotlin/Long, kotlin/Boolean, kotlin.collections/Map<co.xenastudios.xstats.api/Period, kotlin.collections/Map<kotlin/String, kotlin/Long>>) // co.xenastudios.xstats.api/StatsProfile.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String?;kotlin.Long;kotlin.Long;kotlin.Boolean;kotlin.collections.Map<co.xenastudios.xstats.api.Period,kotlin.collections.Map<kotlin.String,kotlin.Long>>){}[0]
+
+    final val firstJoin // co.xenastudios.xstats.api/StatsProfile.firstJoin|{}firstJoin[0]
+        final fun <get-firstJoin>(): kotlin/Long // co.xenastudios.xstats.api/StatsProfile.firstJoin.<get-firstJoin>|<get-firstJoin>(){}[0]
+    final val hidden // co.xenastudios.xstats.api/StatsProfile.hidden|{}hidden[0]
+        final fun <get-hidden>(): kotlin/Boolean // co.xenastudios.xstats.api/StatsProfile.hidden.<get-hidden>|<get-hidden>(){}[0]
+    final val lastSeen // co.xenastudios.xstats.api/StatsProfile.lastSeen|{}lastSeen[0]
+        final fun <get-lastSeen>(): kotlin/Long // co.xenastudios.xstats.api/StatsProfile.lastSeen.<get-lastSeen>|<get-lastSeen>(){}[0]
+    final val name // co.xenastudios.xstats.api/StatsProfile.name|{}name[0]
+        final fun <get-name>(): kotlin/String? // co.xenastudios.xstats.api/StatsProfile.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xstats.api/StatsProfile.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xstats.api/StatsProfile.player.<get-player>|<get-player>(){}[0]
+    final val values // co.xenastudios.xstats.api/StatsProfile.values|{}values[0]
+        final fun <get-values>(): kotlin.collections/Map<co.xenastudios.xstats.api/Period, kotlin.collections/Map<kotlin/String, kotlin/Long>> // co.xenastudios.xstats.api/StatsProfile.values.<get-values>|<get-values>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xstats.api/StatsProfile.toString|toString(){}[0]
+    final fun value(kotlin/String, co.xenastudios.xstats.api/Period): kotlin/Long // co.xenastudios.xstats.api/StatsProfile.value|value(kotlin.String;co.xenastudios.xstats.api.Period){}[0]
+}
+
+final object co.xenastudios.xstats.api/XStats { // co.xenastudios.xstats.api/XStats|null[0]
+    final fun api(): co.xenastudios.xstats.api/XStatsApi // co.xenastudios.xstats.api/XStats.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xstats.api/XStats.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xstats.api/XStatsApi?) // co.xenastudios.xstats.api/XStats.register|register(co.xenastudios.xstats.api.XStatsApi?){}[0]
+}

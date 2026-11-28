@@ -29,31 +29,27 @@ Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQL
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xstats:build       # compile, test, check the jar's size budget, and zip the site
-./gradlew :xstats:runServer   # a Paper server with xStats and PlaceholderAPI, in xstats/run/
-XR_MYSQL=127.0.0.1:3307:xr:root:pw ./gradlew :xstats:test   # the engine's tests on MySQL/MariaDB too
+./gradlew :xstats:common:build :xstats:bukkit:build             # tests on the JVM and wasmWasi, the R8 jars and their budgets
+XR_MYSQL=127.0.0.1:3307:xr:root:pw ./gradlew :xstats:common:jvmTest   # the engine's tests on MySQL/MariaDB too
+./gradlew -p core/platform-fabric :xstats:26.3:collect          # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+xstats/bukkit/boot.sh paper 26.3 --java <JDK 25 home>           # the boot checks on a real server, boards included
+xstats/velocity/network.sh --java <JDK 25 home> --backend paper --backend-version 1.21.11 --backend-java <JDK 21 home>
+                                                                # the proxy in front of two Paper servers on one MariaDB, with a real client
+./gradlew :xstats:api:updateKotlinAbi                           # after a deliberate API change
+./gradlew :xstats:common:updateXenaManifest                     # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-api/                     the developer API (co.xenastudios.xstats:xstats-api), shipped inside the jar
-web/                     the website: plain HTML, CSS and JS, copied into the jar and zipped by the build
-src/main/java/co/xenastudios/xstats/
-  XStats.java            the plugin: opens the database on xStats' thread, and in setup turns on the rest
-  stat/                  the stats: the vanilla translation table, definitions from the config, formatting
-  collect/               the save task, reading players on their own thread, joins and quits, xStats' thread
-  data/                  every player's stats in memory, the save itself, and leaderboards
-  storage/               the tables, and every read and write
-  importer/              the world/stats import
-  command/               /stats, /leaderboard and /xstats
-  hook/                  PlaceholderAPI, loaded only when installed
-  board/                 leaderboards in the world, as text displays
-  profile/               sections other plugins add to profiles
-  web/                   the web server, its JSON, rate limits, the self-test and the export
-boot-checks.txt          console commands CI runs on real Paper and Folia servers, and what each must log
-CHANGELOG.md             one section per release; the release workflow publishes it
+api/        the developer API, the same on every platform: stats, leaderboards, stats of your own, profile sections, the events
+common/     the plugin, for every platform: config and its 1.x carry-over, messages, the stat table, the engine and its
+            saves, the 1.x tables, leaderboards, commands, the family's stats (commonMain, no java.*); the website's
+            server and pages, the import from stats files and the family's hooks on the JVM (jvmMain)
+bukkit/     Paper, Folia, Spigot and CraftBukkit 1.13+: Minecraft's stats, boards as text displays (1.19.4+),
+            PlaceholderAPI, the Bukkit events
+fabric/     the Fabric mod, a branch of core/platform-fabric's build: Minecraft's stats, Text Placeholder API
+velocity/   the network's view on Velocity, and the network test (network.sh)
+web/        the website: plain HTML, CSS and JS, copied into the jars
 ```
-
-The shared core (reloading, config migration, the theme, the update checker, bStats, the database, the change feed, chat pages and offline profiles) is in [`core/`](../core).
 
 ## Licence
 

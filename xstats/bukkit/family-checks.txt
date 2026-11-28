@@ -1,0 +1,11 @@
+# xStats in the family test (the Boot workflow's, from 1.13, beside xSample, xVote, xBans, xTeleport,
+# xMarket, zChat, xRewind and the rest, each with its own relocated core): once its database is open, xStats finds
+# each one's API by name and listens on its bus (FamilyHooks), keeping their numbers as stats.
+logged: Keeping xVote's stats: xvote_votes.
+logged: Keeping xBans' stats: xbans_punishments.
+logged: Keeping xTeleport's stats: xteleport_teleports.
+logged: Keeping xMarket's stats: xmarket_bought, xmarket_sold.
+logged: Keeping zChat's stats: zchat_messages.
+logged: Keeping xRewind's stats: xrewind_rollbacks.
+run: xstats status
+expect: xBans, xMarket, xRewind, xTeleport, xVote, zChat

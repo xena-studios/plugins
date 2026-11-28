@@ -27,6 +27,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /** xLimbo on the fake platform (Paper's one thread, virtual time): /join, the queue, server-check, the teleport route, the API and the hooks. */
@@ -76,13 +77,51 @@ class XLimboTest {
     fun theDefaultsTurnOnEveryProtectionButTheBuildGuard() {
         assertEquals(XLimbo.api(), plugin)
         val on = server.listening.keys
-        assertTrue(Switch.ARRIVALS in on && Switch.HIDE_OTHERS in on && Switch.FLOOR in on && Switch.CLEANUP in on, on.toString())
+        assertTrue(Switch.ARRIVALS in on && Switch.HIDE_OTHERS in on && Switch.FLOOR in on, on.toString())
+        assertTrue("protect.cleanup.300" in plugin.modules.active, plugin.modules.active.toString())
         assertFalse(Switch.BUILD_GUARD in on)
         assertTrue(server.syncs >= 1, "the world is synced as it starts")
         reconfigure("protections:\n  floor: false\n  build-guard:\n    enabled: true\n  entities:\n    cleanup-interval-seconds: 0\nplayer:\n  hide-others: false\n")
-        assertFalse(Switch.FLOOR in server.listening || Switch.CLEANUP in server.listening || Switch.HIDE_OTHERS in server.listening)
+        assertFalse(Switch.FLOOR in server.listening || Switch.HIDE_OTHERS in server.listening)
+        assertTrue(plugin.modules.active.none { it.startsWith("protect.cleanup") }, plugin.modules.active.toString())
         assertTrue(Switch.BUILD_GUARD in server.listening)
         assertEquals(ReturnRoute.PROXY, plugin.route())
+    }
+
+    @Test
+    fun anEmptyLimboSchedulesNothingAndAnArrivalStartsItsTimersAgain() {
+        // Every timer on: the action bar (default), auto-join's queue, the sweep every second.
+        reconfigure("auto-join:\n  enabled: true\n  delay-seconds: 60\nprotections:\n  entities:\n    cleanup-interval-seconds: 1\n")
+        platform.scheduler.advance(10.seconds)
+        assertEquals(0, platform.scheduler.pending, "nothing runs while nobody is in limbo")
+        assertEquals(0, server.sweeps)
+        server.join(alex)
+        platform.scheduler.advance(3.seconds)
+        assertTrue(server.bars[alex.player!!].orEmpty().isNotEmpty(), "the action bar runs while someone's here")
+        assertTrue(server.sweeps >= 2, "the sweep runs while someone's here: ${server.sweeps}")
+        // A player who isn't in limbo (the teleport route's main world) doesn't keep it going.
+        server.join(steve, intoLimbo = false)
+        server.quit(alex)
+        platform.scheduler.advance(3.seconds)
+        val sweeps = server.sweeps
+        assertEquals(0, platform.scheduler.pending, "each timer stopped itself once limbo was empty")
+        platform.scheduler.advance(30.seconds)
+        assertEquals(sweeps, server.sweeps)
+        // Back again: everything starts, and auto-join's delay still counts from the arrival.
+        server.join(sam)
+        platform.scheduler.advance(59.seconds)
+        assertTrue(server.connected.isEmpty())
+        platform.scheduler.advance(2.seconds)
+        assertEquals(listOf(sam.player!! to "main"), server.connected)
+    }
+
+    @Test
+    fun aReloadWithPlayersInLimboKeepsItsTimersRunning() {
+        server.join(alex)
+        reconfigure("action-bar:\n  interval-ticks: 20\n")
+        server.bars.clear()
+        platform.scheduler.advance(3.seconds)
+        assertTrue(server.bars[alex.player!!].orEmpty().size >= 2, server.bars.toString())
     }
 
     @Test
@@ -129,9 +168,10 @@ class XLimboTest {
         server.join(alex)
         server.join(steve)
         server.join(sam)
-        platform.scheduler.advance(9.seconds)
+        // The queue's tick starts with the first arrival: the first goes back at 10 s, one more each second.
+        platform.scheduler.advance(9500.milliseconds)
         assertTrue(server.connected.isEmpty())
-        platform.scheduler.advance(2.seconds)
+        platform.scheduler.advance(1.seconds)
         assertEquals(1, server.connected.size)
         assertTrue(server.messages(alex).any { "Sending you back" in it })
         // Two still waiting, each seeing their place among them.

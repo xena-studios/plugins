@@ -1,0 +1,45 @@
+# xStats on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks, through
+# boot.sh). The database opens with the SQLite driver the server ships; a new world has no stats
+# folder yet, so the first-start import has nothing to read.
+logged: xStats 2.0.0 on
+logged: Stats ready: 0 players in the SQLite database stats.db.
+logged: so there's no history to import.
+run: xstats info
+expect: xStats 2.0.0 on
+
+run: xstats reload
+expect: Reloaded xStats
+
+# The stat translation table, checked against this server's own names for its stats (Paper 1.20
+# and newer; elsewhere it says it can't check).
+paper run: xstats status
+paper expect: match this server
+folia run: xstats status
+folia expect: match this server
+
+# A save with nobody online: readings, the database write and every leaderboard.
+run: xstats save
+expect: Saved 0 players
+
+run: leaderboard kills
+expect: Nobody's on this leaderboard yet.
+run: lb kills monthly
+expect: Nobody's on this leaderboard yet.
+run: leaderboard jumps daily
+expect: is only counted all time.
+run: leaderboard nothing
+expect: There's no stat called
+run: stats Steve
+expect: has never played here.
+
+# The web server: a test copy on a free port, fetched over HTTP on this machine.
+run: xstats web test
+expect: Web test passed
+run: xstats web export
+expect: Exported the website
+
+run: xstats import
+expect: there's no history to import.
+
+run: xstats debug
+expect: Debug report saved as debug/debug-

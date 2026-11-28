@@ -1,38 +1,46 @@
 ---
 title: Configuration
-description: Every setting in xStats' config.yml.
+description: "Every setting in xStats' config.yml, with its default."
 sidebar:
-  order: 9
+  order: 4
 ---
 
-import { Code } from "@astrojs/starlight/components";
-import config from "../../../generated/xstats/config.yml?raw";
+import Reference from "../../../components/reference/Reference.astro";
 
-The config is `plugins/xStats/config.yml`, written on first start. Apply changes with `/xstats reload`; only `storage`, `server-name` and `network` need a restart.
+The config is `plugins/xStats/config.yml` (`plugins/xstats/` on Velocity, `config/xstats/config.yml` on Fabric), written on first start. Apply changes with `/xstats reload` (`/xstatsproxy reload` on the proxy); only `storage`, `server-name` and `network` need a restart. xStats' messages are in `lang/`: see [Messages](/xstats/messages/). A bad value falls back to its default with a warning in the console; xStats never stops over config.
 
 | Section | What it covers |
 | --- | --- |
-| `theme` | The prefix and colours xStats' messages share: see [the theme](/start/formatting/#the-theme). |
-| `messages` | What players are told, and shared errors under `messages.error`. |
-| `commands` | `/stats` and `/leaderboard`: on or off, their aliases and permission. |
-| `stats` | The stats xStats keeps, where each comes from, and which have periods: see [Choosing stats](/xstats/setting-up/#choosing-stats). |
-| `collecting` | How often to save, how many players to read each tick, AFK-aware playtime, and the first-start import. |
-| `leaderboards` | Places kept, leaving banned players out, `/leaderboard`'s page size, and how boards in the world look. |
-| `periods` | The time zone, the day weeks start, how long each day's numbers are kept, and the periods' names. |
-| `web` | The website and its API: see [The website](/xstats/website/). |
-| `server-name` | This server's name in the database, for [networks](/xstats/networks/). |
-| `storage` | SQLite in the plugin's folder (`stats.db`), or MySQL/MariaDB. |
-| `network` | Several servers sharing one database: see [Networks](/xstats/networks/). |
-| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
+| `commands` | `/stats` and `/leaderboard`: on or off, their aliases and permissions. |
+| `stats` | The stats xStats keeps, in the order `/stats` and the website show them: see [Choosing stats](/xstats/setting-up/#choosing-stats). |
+| `collecting` | How often it saves, how many players it reads a tick, AFK-aware playtime, and the first start's import. |
+| `leaderboards` | Places kept, banned players left out, the page size, and the lines on boards in the world. |
+| `periods` | The time zone days start in, the day weeks start, and how long each day's numbers are kept. |
+| `web` | The website: see [The website](/xstats/website/). |
+| `integrations` | The family's stats, each one on until you turn it off. |
+| `proxy` | xStats on Velocity: its two network commands, and how soon it reads the network again. |
+| `server-name` | This server's name in the database, for networks. |
+| `storage` | Where stats are kept: SQLite in the plugin's folder (`stats.db`), MySQL/MariaDB, or the family's shared database. |
+| `network` | Servers (and the proxy) sharing one database: see [Networks](/xstats/networks/). |
+| `updates` | The update checker: [Privacy](/start/privacy/). |
 
-## Saving
+## The family's stats
 
-Every `collecting.save-every-minutes` (5), xStats reads every online player's stats, `collecting.reads-per-tick` (4) players a tick, writes what changed, and works out every leaderboard. Reading is a lookup in counters the server already keeps; a stat that adds up every block or item (`mined:*`) looks at each one, so it's the costliest kind. Lower `reads-per-tick` to spread a save over more ticks on a very full server.
+With one of these installed, xStats keeps its numbers as stats, owned by that plugin, on `/stats`, `/leaderboard`, placeholders and the website, per day, week and month too. Each has a switch under `integrations`:
 
-A crash loses at most one save's worth of playtime and placeholder stats. Minecraft's own stats aren't lost: the next reading makes up the difference.
+| Plugin | Stats |
+| --- | --- |
+| xVote | `xvote_votes`: votes paid on this server. |
+| xMoney | `xmoney_balance` (the latest any server saw) and `xmoney_earned` (money received: payments, rewards, sales). |
+| xBans | `xbans_punishments`: bans, mutes, kicks and warnings a player received. |
+| xTeleport | `xteleport_teleports`: homes, warps, spawn and tpa. |
+| xRewind | `xrewind_rollbacks`: blocks a member of staff put back with rollbacks. |
+| xMarket | `xmarket_bought` and `xmarket_sold`: items bought from and sold to the market. |
+| zChat | `zchat_messages`: chat messages sent. |
 
-A bad value falls back to its default with a warning in the console.
+Players xVanish hides are left out of leaderboards while they're hidden, and shown as offline on the website.
 
-## The full default config
+## Every setting
 
-<Code code={config} lang="yaml" title="plugins/xStats/config.yml" />
+<Reference plugin="xstats" show="config" />

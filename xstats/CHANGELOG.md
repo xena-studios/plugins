@@ -1,5 +1,30 @@
 # xStats changelog
 
+## 2.0.0 (unreleased)
+
+Not released yet: 2.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 1.0.1 is the release, and 1.x gets its fixes.
+
+The rewrite: the same commands, permissions, settings, stats, boards and website as 1.0.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.13 to 26.3**, **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), and **Velocity**, with xStats' messages in eight languages. Keep the 1.0.1 jar to go back to.
+
+### New
+
+- **The whole network on the proxy.** With xStats on Velocity sharing the servers' MySQL database (with `network.enabled`), `/networkstats` and `/networkleaderboard` answer from memory wherever a player is, even on a server without xStats, and the website can run there for the whole network. See [Networks](https://plugins.xenastudios.co/xstats/networks/).
+- **The family's stats.** With xVote, xMoney, xBans, xTeleport, xRewind, xMarket or zChat installed, their numbers are stats like any other: `xvote_votes`, `xmoney_balance` and `xmoney_earned`, `xbans_punishments`, `xteleport_teleports`, `xrewind_rollbacks`, `xmarket_bought` and `xmarket_sold`, `zchat_messages`. Each can be turned off under `integrations`.
+- **Players xVanish hides** are left out of leaderboards while they're hidden, and shown as offline on the website.
+- **Placeholders on Fabric** through Text Placeholder API: `%xstats:stat kills_monthly%` and the rest, and `%xstats:kd%`.
+- **Messages in your players' languages**: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese, in `lang/`.
+- **`/xstats forget <player>`** deletes everything xStats keeps about a player, for an erasure request, and **`/xstats debug`** writes a report to share when asking for help.
+- **For developers**: the API is the same on every platform, with players as `PlayerRef`s; `registerStat` takes decimals, `unregisterStats` takes a plugin's stats out of use, and two cancellable events join the two 1.x had: `StatChangeEvent` and `PrivacyChangeEvent`.
+
+### Upgrading from 1.x
+
+Replace the jar and restart. Your `config.yml` is carried forward and the old one is kept beside it as `config.yml.bak-v1`; your stats stay where they are (`stats.db`, or your MySQL tables), untouched, at schema 2, and so do your boards. See [Upgrading from 1.x](https://plugins.xenastudios.co/xstats/upgrade/).
+
+- **Messages are in `lang/` now**, one file per language, no longer in `config.yml`; the boards' words and the period names too. Every message you changed in 1.x is copied into `lang/en.yml` on the first start, and then xStats sends English to everyone (`messages.language: en`), as 1.x did.
+- **`theme` moved into `messages.theme`**, shared with the other Xena plugins in `plugins/Xena/config.yml` unless you set it here.
+- `update-checker` is `updates` now: `update-checker.enabled` is carried to `updates.check`.
+- The API changed: see [Developer API](https://plugins.xenastudios.co/xstats/developer-api/#from-1x).
+
 ## 1.0.1
 
 ### Fixed

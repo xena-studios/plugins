@@ -573,6 +573,10 @@ co.xenastudios.xlimbo.core.common.module.Module
 co.xenastudios.xlimbo.XLimboPlugin$Listen
 co.xenastudios.xlimbo.core.common.module.ModuleSet$Running
 co.xenastudios.xlimbo.ActionBar
+co.xenastudios.xlimbo.XLimboPluginKt
+co.xenastudios.xlimbo.XLimboPluginKt$occupy$2
+co.xenastudios.xlimbo.WhileOccupied
+co.xenastudios.xlimbo.Sweep
 co.xenastudios.xlimbo.core.common.scheduler.SchedulerKt
 co.xenastudios.xlimbo.core.common.module.ModuleContext$ModuleTask
 co.xenastudios.xlimbo.core.bukkit.MainThreadScheduler$MainTask

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "xstats",
+  "version": "${version}",
+  "name": "xStats",
+  "description": "Player stats, leaderboards and a website. Server-side: players install nothing.",
+  "authors": ["Xena Studios"],
+  "contact": {
+    "homepage": "https://plugins.xenastudios.co/xstats/",
+    "sources": "https://github.com/xena-studios/plugins",
+    "issues": "https://github.com/xena-studios/plugins/issues"
+  },
+  "license": "GPL-3.0-only",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.xstats.fabric.XStatsMod" }
+    ]
+  },
+  "suggests": {
+    "placeholder-api": "*"
+  },
+  "depends": {
+    "fabricloader": "${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${flk}"
+  }
+}

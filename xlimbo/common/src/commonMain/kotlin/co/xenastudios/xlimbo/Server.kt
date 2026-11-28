@@ -57,6 +57,12 @@ public interface LimboServer {
     /** Makes the limbo world match [config]: creating, rebuilding, switching or adjusting it. On the server thread. */
     public fun sync(config: Config)
 
+    /**
+     * Removes stray entities from the limbo world: everything but players and what builds are made
+     * of, and anything tagged `xlimbo.keep` (`cleanup-interval-seconds`, while anyone is in limbo).
+     */
+    public fun sweep()
+
     /** Turns on [switch] ([Switch]) until the returned handle is closed. */
     public fun listen(switch: Int, plugin: XLimboPlugin): AutoCloseable
 
@@ -86,6 +92,8 @@ public object Switch {
     public const val ITEMS: Int = 12
     public const val ENTITY_ITEMS: Int = 13
     public const val BUILD_GUARD: Int = 14
+
+    /** Not a listener: [LimboServer.sweep] on a timer, while anyone is in limbo. Its module key's here for `/xlimbo debug`. */
     public const val CLEANUP: Int = 15
 
     /** Each switch's module key, as `/xlimbo debug` names it. */

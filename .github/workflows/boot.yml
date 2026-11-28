@@ -149,9 +149,9 @@ jobs:
       # gradle/jar-budgets.txt.
       - run: >-
           ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble :xutilities:bukkit:assemble :zchat:bukkit:assemble
-          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble :xvote:bukkit:assemble :xbackup:bukkit:assemble :xrewind:bukkit:assemble :xlimits:bukkit:assemble :xlimbo:bukkit:assemble :xplots:bukkit:assemble
+          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble :xvote:bukkit:assemble :xbackup:bukkit:assemble :xrewind:bukkit:assemble :xlimits:bukkit:assemble :xlimbo:bukkit:assemble :xplots:bukkit:assemble :xstats:bukkit:assemble
           :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget :zchat:bukkit:checkJarBudget
-          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget :xbackup:bukkit:checkJarBudget :xrewind:bukkit:checkJarBudget :xlimits:bukkit:checkJarBudget :xlimbo:bukkit:checkJarBudget :xplots:bukkit:checkJarBudget
+          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget :xbackup:bukkit:checkJarBudget :xrewind:bukkit:checkJarBudget :xlimits:bukkit:checkJarBudget :xlimbo:bukkit:checkJarBudget :xplots:bukkit:checkJarBudget :xstats:bukkit:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: bukkit-jars
@@ -174,6 +174,7 @@ jobs:
             xlimits/bukkit/build/r8/xLimits.jar
             xlimbo/bukkit/build/r8/xLimbo.jar
             xplots/bukkit/build/r8/xPlots.jar
+            xstats/bukkit/build/r8/xStats.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -212,7 +213,7 @@ jobs:
           path: core/platform-fabric/build/libs/*.jar
           if-no-files-found: error
 
-  # xSample's, zChat's, xBans' and xVote's proxy jars, and their Bukkit jars for the backends, once for every proxy cell.
+  # xSample's, zChat's, xBans', xVote's and xStats' proxy jars, and their Bukkit jars for the backends, once for every proxy cell.
   build-proxy:
     needs: changes
     if: needs.changes.outputs.proxy != '[]'
@@ -234,9 +235,10 @@ jobs:
           :zchat:velocity:assemble :zchat:bungee:assemble :zchat:bukkit:assemble
           :xbans:velocity:assemble :xbans:bungee:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble
           :xvote:velocity:assemble :xvote:bungee:assemble :xvote:bukkit:assemble
+          :xstats:velocity:assemble :xstats:bukkit:assemble
           :core:core-testing:sample:velocity:checkJarBudget :core:core-testing:sample:bungee:checkJarBudget
           :zchat:velocity:checkJarBudget :zchat:bungee:checkJarBudget :xbans:velocity:checkJarBudget :xbans:bungee:checkJarBudget
-          :xvote:velocity:checkJarBudget :xvote:bungee:checkJarBudget
+          :xvote:velocity:checkJarBudget :xvote:bungee:checkJarBudget :xstats:velocity:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: proxy-jars
@@ -254,6 +256,8 @@ jobs:
             xvote/velocity/build/r8/xVote-Velocity.jar
             xvote/bungee/build/r8/xVote-Bungee.jar
             xvote/bukkit/build/r8/xVote.jar
+            xstats/velocity/build/r8/xStats-Velocity.jar
+            xstats/bukkit/build/r8/xStats.jar
           if-no-files-found: error
 
   bukkit:
@@ -393,7 +397,7 @@ jobs:
                      xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar xmarket/bukkit/build/r8/xMarket.jar \
                      xvote/bukkit/build/r8/xVote.jar \
                      xbackup/bukkit/build/r8/xBackup.jar xrewind/bukkit/build/r8/xRewind.jar \
-                     xlimits/bukkit/build/r8/xLimits.jar xlimbo/bukkit/build/r8/xLimbo.jar; do
+                     xlimits/bukkit/build/r8/xLimits.jar xlimbo/bukkit/build/r8/xLimbo.jar xstats/bukkit/build/r8/xStats.jar; do
             [[ -f $jar ]] || { echo "::error::$jar is missing: the bukkit-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/*' | head -20; exit 1; }
           done
       # xMoney beside vault-consumer (a plugin.yml plugin that depends on Vault) and, on Paper and
@@ -664,7 +668,34 @@ jobs:
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xplots/bukkit/client-checks.txt)
           xplots/bukkit/boot.sh "${target[@]}" "${opts[@]}" --java "$JAVA" "${args[@]}"
-      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish, xMarket, xVote, xBackup, (from 1.13) xRewind and xPlots and (on Paper from 1.21.11) xLimbo beside xSample, each with its own relocated core,
+      # xStats alone, from 1.13 (its floor; older cells skip it): every console command, a save, the
+      # website's self-test and export, the import, a reload and debug, and from 1.19.4 a board in the
+      # world (board-checks.txt); on a `client` cell beside xMoney, whose stats it keeps
+      # (xstats/bukkit/xmoney-checks.txt), and there and at its floor (Spigot 1.13.2) a real client in
+      # German: /stats, jumps a save reads, the leaderboard and /stats private (client-checks.txt).
+      - name: boot xStats
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+          SEED: ${{ matrix.cell.seed }}
+          REGIONS: ${{ matrix.cell.regions }}
+          CLIENT: ${{ matrix.cell.client }}
+          ID: ${{ matrix.cell.id }}
+          RESOLVED: ${{ steps.server.outputs.version }}
+        run: |
+          if [[ -n $RESOLVED && $(printf '%s\n1.13\n' "$RESOLVED" | sort -V | head -1) != 1.13 ]]; then echo "xStats starts at 1.13; this is $RESOLVED."; exit 0; fi
+          # Boards are text displays, from 1.19.4.
+          [[ -z $RESOLVED || $(printf '%s\n1.19.4\n' "$RESOLVED" | sort -V | head -1) == 1.19.4 ]] || export XSTATS_BOARDS=false
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          # boot.sh takes --xmoney right after the server.
+          xmoney=()
+          [[ $CLIENT != true ]] || xmoney=(--xmoney)
+          args=()
+          [[ -z $SEED ]] || args+=(--seed "$SEED")
+          [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          [[ $CLIENT != true && $ID != spigot-1.13.2 ]] || args+=(--seed scripts/boot-seeds/client --checks xstats/bukkit/client-checks.txt)
+          xstats/bukkit/boot.sh "${target[@]}" "${xmoney[@]}" --java "$JAVA" "${args[@]}"
+      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish, xMarket, xVote, xBackup, (from 1.13) xRewind, xPlots and xStats and (on Paper from 1.21.11) xLimbo beside xSample, each with its own relocated core,
       # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),
       # and each answering its own commands.
       - name: family test
@@ -678,6 +709,8 @@ jobs:
           rewind=()
           [[ $(printf '%s\n1.13\n' "$RESOLVED" | sort -V | head -1) != 1.13 ]] || rewind=(--checks xrewind/bukkit/boot-checks.txt xrewind/bukkit/build/r8/xRewind.jar
             --checks xplots/bukkit/boot-checks.txt xplots/bukkit/build/r8/xPlots.jar)
+          # xStats too from 1.13, its floor, keeping the others' stats (xstats/bukkit/family-checks.txt).
+          [[ $(printf '%s\n1.13\n' "$RESOLVED" | sort -V | head -1) != 1.13 ]] || rewind+=(--checks xstats/bukkit/boot-checks.txt --checks xstats/bukkit/family-checks.txt xstats/bukkit/build/r8/xStats.jar)
           # xLimbo too on Paper from 1.21.11, its floor (Paper only).
           [[ $SERVER != paper || $(printf '%s\n1.21.11\n' "$RESOLVED" | sort -V | head -1) != 1.21.11 ]] || rewind+=(--checks xlimbo/bukkit/boot-checks.txt xlimbo/bukkit/build/r8/xLimbo.jar)
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
@@ -770,7 +803,8 @@ jobs:
                      xbans/bungee/build/r8/xBans-Bungee.jar xbans/bukkit/build/r8/xBans.jar \
                      xvanish/bukkit/build/r8/xVanish.jar \
                      xvote/velocity/build/r8/xVote-Velocity.jar xvote/bungee/build/r8/xVote-Bungee.jar \
-                     xvote/bukkit/build/r8/xVote.jar; do
+                     xvote/bukkit/build/r8/xVote.jar xstats/velocity/build/r8/xStats-Velocity.jar \
+                     xstats/bukkit/build/r8/xStats.jar; do
             [[ -f $jar ]] || { echo "::error::$jar is missing: the proxy-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/r8*' | head -20; exit 1; }
           done
       # What will boot, for the cache key: the proxy's version and build (and the Java it needs),
@@ -957,6 +991,34 @@ jobs:
           [[ $VERSION == latest ]] || version=(--version "$VERSION")
           xvote/velocity/network.sh "$PROXY" "${version[@]}" --java "$JAVA" --backend "${BACKEND_JAR:-$BACKEND}" \
             --backend-version "$BACKEND_VERSION" --backend-java "$BACKEND_JAVA"
+      # xStats on Velocity alone (it has no BungeeCord side), with its startup against the budget: the
+      # network's view, read-only, and its admin subcommands. Then, where the cell has a backend, the
+      # network test: two servers with xStats behind the proxy, all on one MariaDB (a container
+      # network.sh starts), a real client jumping on lobby, and the proxy's /networkleaderboard with
+      # them on it once lobby saves (xstats/velocity/network-checks.txt).
+      - name: boot xStats
+        if: matrix.cell.proxy == 'velocity'
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          VERSION: ${{ steps.server.outputs.version }}
+        run: |
+          version=()
+          [[ $VERSION == latest ]] || version=(--version "$VERSION")
+          budget=$(sed -n 's/^startup-first-ms //p' gradle/perf-budgets.txt)
+          scripts/boot-proxy.sh --proxy velocity "${version[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
+            --checks xstats/velocity/boot-checks.txt --startup-budget "$budget" xstats/velocity/build/r8/xStats-Velocity.jar
+      - name: xStats network test
+        if: matrix.cell.proxy == 'velocity' && matrix.cell.backend != ''
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          VERSION: ${{ steps.server.outputs.version }}
+          BACKEND_JAVA: ${{ steps.backend-java.outputs.path }}
+          BACKEND_JAR: ${{ steps.backend-jar.outputs.jar }}
+        run: |
+          version=()
+          [[ $VERSION == latest ]] || version=(--version "$VERSION")
+          xstats/velocity/network.sh "${version[@]}" --java "$JAVA" --backend "${BACKEND_JAR:-$BACKEND}" \
+            --backend-version "$BACKEND_VERSION" --backend-java "$BACKEND_JAVA"
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
@@ -1135,6 +1197,14 @@ jobs:
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks xvote/fabric/boot-checks.txt "${args[@]}" \
             "$libs"/xvote-fabric-*+"$VERSION".jar
+      # xStats alone: every console command, a save, the website's self-test and export, the import
+      # (which waits for the world Fabric makes after the mods), a reload and debug (xstats/fabric/boot-checks.txt).
+      - name: boot xStats
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks xstats/fabric/boot-checks.txt core/platform-fabric/build/libs/xstats-fabric-*+"$VERSION".jar
       - name: boot xRewind
         env:
           JAVA: ${{ steps.java.outputs.path }}
@@ -1220,6 +1290,7 @@ jobs:
           # With its limbo given a folder it won't touch, so the heap is xLimbo's and not its world's (the seed's config says why).
           - {id: xlimbo, name: xLimbo, jar: xlimbo/bukkit/build/r8/xLimbo.jar, seed: xlimbo/bukkit/budgets-seed}
           - {id: xplots, name: xPlots, jar: xplots/bukkit/build/r8/xPlots.jar}
+          - {id: xstats, name: xStats, jar: xstats/bukkit/build/r8/xStats.jar}
     permissions:
       contents: read
     steps:

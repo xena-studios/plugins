@@ -1,0 +1,19 @@
+# A board in the world, then gone again: text displays, so Paper, Folia and Spigot 1.19.4 and
+# newer (boot.sh leaves this out below). Folia's console can't test entities with execute, so it
+# checks only what xStats says.
+run: forceload add 0 0
+expect: Marked
+run: xstats board add kills all world 0.5 80 0.5
+expect: Placed board 1
+run: xstats save
+expect: Saved 0 players
+paper run: execute positioned 0.5 80 0.5 if entity @e[type=minecraft:text_display,distance=..1] run say BOARD SHOWN
+paper expect: BOARD SHOWN
+run: xstats board list
+expect: kills, all at world 0 80 0
+run: xstats board remove 1
+expect: Removed board 1.
+run: xstats save
+expect: Saved 0 players
+paper run: execute positioned 0.5 80 0.5 unless entity @e[type=minecraft:text_display,distance=..1] run say BOARD GONE
+paper expect: BOARD GONE

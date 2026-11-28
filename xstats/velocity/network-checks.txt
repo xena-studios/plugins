@@ -1,0 +1,14 @@
+# xStats on Velocity in front of two Paper servers, all on one MariaDB with network mode on
+# (xstats/velocity/network.sh): a stat counted on lobby (the jumps Joiner makes there, read at
+# lobby's save) shows on the proxy's network leaderboard, which reads every server's stats.
+logged: Network stats ready
+logged: read again as the servers save.
+backend: Sharing stats with the network.
+game: Sharing stats with the network.
+client: --plugin xstats-network --version 1.21.11 --timeout 150
+run: xstatsproxy status
+expect: network mode on
+run: networkleaderboard jumps
+expect: Joiner
+run: xsp refresh
+expect: Read the network's stats

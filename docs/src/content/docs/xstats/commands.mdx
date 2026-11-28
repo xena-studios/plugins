@@ -1,0 +1,34 @@
+---
+title: Commands
+description: "xStats' commands: /stats and /leaderboard for players, /xstats for staff, and the network's commands on the proxy."
+sidebar:
+  order: 3
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`<angle brackets>` are required, `[square brackets]` optional.
+
+## Players
+
+- **`/stats [player]`** shows a player's stats, with their place on each all-time leaderboard, sections other plugins add, and a link to their page on the website when `web.public-url` is set. It works for players who are offline.
+- **`/stats private`** hides you from the website, or shows you again.
+- **`/leaderboard <stat> [daily|weekly|monthly|all] [page]`** (`/lb`) shows a leaderboard, a page at a time. The stat is its id (`mob_kills`) or its name (`Mobs_killed`).
+
+Both can be turned off, given other aliases or a permission under `commands` in the config; their permissions are blank (everyone) by default. The leaderboard command isn't `/top` because xUtilities' `/top` takes you to the highest block; without xUtilities, add `top` to `commands.leaderboard.aliases`.
+
+## Staff
+
+- **`/xstats status`** shows the database, players known, the last save, changes waiting for the next one, rows in each table, the website, the family's plugins xStats keeps stats for, and whether xStats' table of Minecraft's stats matches this server.
+- **`/xstats save`** saves now, instead of waiting for the next save.
+- **`/xstats import`** reads players' history from the world's stats files again. It never overwrites what's counted: see [History](/xstats/setting-up/#history-from-before-xstats).
+- **`/xstats board add <stat> [period] [<world> <x> <y> <z>]`** places a leaderboard in the world: where you stand, or at the coordinates. **`/xstats board list`** lists them with their ids, and **`/xstats board remove <id>`** takes one down.
+- **`/xstats web test`** starts a test copy of the website on a free port on this machine, checks every kind of page, and stops it. **`/xstats web export`** writes the website to `plugins/xStats/site/`, to host anywhere: see [Host it anywhere](/xstats/website/#host-it-anywhere).
+- **`/xstats forget <player>`** deletes everything xStats keeps about a player, for a data-erasure request. **`/xstats debug`** writes a report to share when asking for help; **`/xstats reload`** applies the config and lang files; **`/xstats info`** shows the version and what's running.
+
+## On the proxy
+
+- **`/networkstats [player]`** (`/nstats`) and **`/networkleaderboard <stat> [period] [page]`** (`/nlb`, `/networklb`) are `/stats` and `/leaderboard` for the whole network, wherever the player is. Their names, aliases and permissions are under `proxy` in the config.
+- **`/xstatsproxy`** (`/xsp`) is the proxy's own admin command, so `/xstats` typed in game still reaches the server: `status`, `refresh` (reads the network's stats again now), `web test`, `web export`, `reload` and `debug`.
+
+<Reference plugin="xstats" show="commands" />

@@ -14,6 +14,7 @@
     { "id": "xlimits", "name": "xLimits", "newest": 1, "older": [], "unreleased": {} },
     { "id": "xlimbo", "newest": 3, "older": [2], "unreleased": { "version": "2.1.0", "jarBudgetKb": 220 } },
     { "id": "xplots", "newest": 2, "older": [1], "unreleased": { "version": "1.0.2", "jarBudgetKb": 330, "api": false, "folia": false } },
+    { "id": "xstats", "newest": 2, "older": [1], "unreleased": { "version": "1.0.1", "jarBudgetKb": 450 } },
     { "id": "xsample", "name": "xSample", "hidden": true, "newest": 1, "older": [0] }
   ]
 }

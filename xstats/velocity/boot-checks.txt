@@ -1,0 +1,24 @@
+# xStats on a proxy alone (scripts/boot-proxy.sh --checks): the database opens on the proxy's own
+# SQLite file (a network shares MySQL instead, which the warning says), and /xstatsproxy, the
+# network commands and the website answer.
+logged: xStats 2.0.0 on
+logged: Network stats ready: 0 players in the SQLite database stats.db.
+allow: which the servers don't share, so it has no server's stats
+run: xstatsproxy
+expect: the network's stats for 0 players
+run: xstatsproxy status
+expect: xStats on the proxy needs the servers' database.
+run: networkleaderboard kills
+expect: Nobody's on this leaderboard yet.
+run: nlb jumps daily
+expect: is only counted all time.
+run: networkstats Steve
+expect: has never played here.
+run: xsp refresh
+expect: Read the network's stats
+run: xstatsproxy web test
+expect: Web test passed
+run: xsp reload
+expect: Reloaded xStats
+run: xstatsproxy debug
+expect: Debug report saved as

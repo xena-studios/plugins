@@ -11,7 +11,7 @@ sidebar:
 
 Not released yet: 3.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 2.1 is the release, and 2.x gets its fixes.
 
-The rewrite: the same commands, permissions and settings as 2.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, **Fabric 1.20.1, 1.21.11 and 26.3**, **NeoForge 1.21.1, 1.21.11 and 26.3** and **Forge 1.20.1** (server-side: players install nothing), in eight languages. Keep the 2.1.0 jar to go back to.
+The rewrite: the same commands, permissions and settings as 2.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, **Fabric 1.20.1, 1.21.11 and 26.3**, **NeoForge 1.21.1, 1.21.11 and 26.3**, **Forge 1.20.1** and **Sponge from API 8 (1.16.5) to API 21 (26.3)**, one jar (server-side: players install nothing), in eight languages. Keep the 2.1.0 jar to go back to.
 
 ### Upgrading from 2.x
 
@@ -33,6 +33,7 @@ Replace the jar and restart. Your `config.yml` is carried forward and the old on
 
 ### New
 
+- **Sponge**, API 8 (SpongeVanilla 1.16.5) on, one jar for every API line. Everything but the workstation menus, which SpongeAPI can't open without their block; `/back` remembers deaths and xUtilities' own teleports, as on Fabric.
 - **Spigot, CraftBukkit and Bukkit 1.8.8 to 26.3**, and **Fabric**. Where a server can't do something, the command says so instead of failing: `/ping` needs 1.17 on Spigot (Paper has it earlier), and the workstation menus other than `/craft` need Paper 1.14 or Spigot 1.21.4. On Fabric, `/back` remembers deaths and xUtilities' own teleports (Fabric has no teleport event for other mods' without a mixin).
 - **NeoForge 1.21.1, 1.21.11 and 26.3**, and **Forge 1.20.1**, a jar per line, with Kotlin for Forge. Every command and menu works as on Fabric, and `/back` remembers what it does there. On Forge 1.20.1 each player gets their own language, which Fabric 1.20.1 can't give.
 - **Eight languages**, each player's own: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese. The seven besides English are machine-drafted, waiting for native speakers to read them; corrections are welcome.

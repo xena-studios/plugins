@@ -1,0 +1,35 @@
+{
+  "loader": {
+    "name": "java_plain",
+    "version": "1.0"
+  },
+  "license": "GPL-3.0-only",
+  "plugins": [
+    {
+      "id": "xutilities",
+      "name": "xUtilities",
+      "version": "${version}",
+      "entrypoint": "co.xenastudios.xutilities.sponge.XUtilitiesSponge",
+      "description": "Every command you need. None you don't.",
+      "links": {
+        "homepage": "https://plugins.xenastudios.co/xutilities/",
+        "source": "https://github.com/xena-studios/plugins",
+        "issues": "https://github.com/xena-studios/plugins/issues"
+      },
+      "contributors": [
+        {
+          "name": "Xena Studios",
+          "description": "Author"
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "spongeapi",
+          "version": "[8.0.0,)",
+          "load-order": "after",
+          "optional": false
+        }
+      ]
+    }
+  ]
+}

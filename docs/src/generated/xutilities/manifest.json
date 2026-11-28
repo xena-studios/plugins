@@ -72,9 +72,11 @@
       "id": "sponge",
       "name": "Sponge",
       "kind": "server",
-      "minVersion": "latest",
+      "minVersion": "1.16.5",
       "maxVersion": "latest",
-      "status": "planned"
+      "java": 8,
+      "status": "release",
+      "since": "3.0.0"
     },
     {
       "id": "pumpkin",

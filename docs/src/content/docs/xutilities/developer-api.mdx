@@ -7,7 +7,7 @@ sidebar:
 
 import Reference from "../../../components/reference/Reference.astro";
 
-xUtilities' API is the same on Paper, Folia, Spigot, Fabric, NeoForge and Forge: players are by UUID, and every method answers from memory, on any thread, at once. Get it with `XUtilities.api()` once xUtilities is enabled (add it to your plugin's `depend`, or `softdepend` and check `XUtilities.isEnabled()` first). On Bukkit it's also in the services manager, as `XUtilitiesApi`.
+xUtilities' API is the same on Paper, Folia, Spigot, Fabric, NeoForge, Forge and Sponge: players are by UUID, and every method answers from memory, on any thread, at once. Get it with `XUtilities.api()` once xUtilities is enabled (add it to your plugin's `depend`, or `softdepend` and check `XUtilities.isEnabled()` first). On Bukkit it's also in the services manager, as `XUtilitiesApi`.
 
 :::caution[Not on Maven Central yet]
 3.0's API isn't published until 3.0 is released. Its coordinates will be `co.xenastudios.xutilities:xutilities-api:3.0.0`; until then, compile against the plugin's jar. The [2.x API](/xutilities/v2/developer-api/) is on Maven Central as `2.1.0`.
@@ -26,7 +26,7 @@ if (api.isBackEnabled()) {
 }
 ```
 
-`setBackLocation` is for a teleport xUtilities doesn't hear about: on Bukkit, one without the `COMMAND`, `PLUGIN` or `UNKNOWN` cause; on Fabric, NeoForge and Forge, every teleport your mod makes. It returns `false` while `/back` is off or the player isn't online, and doesn't fire `BackRecordEvent`: you decided. The spot is forgotten when the player leaves.
+`setBackLocation` is for a teleport xUtilities doesn't hear about: on Bukkit, one without the `COMMAND`, `PLUGIN` or `UNKNOWN` cause; on Fabric, NeoForge, Forge and Sponge, every teleport your mod makes. It returns `false` while `/back` is off or the player isn't online, and doesn't fire `BackRecordEvent`: you decided. The spot is forgotten when the player leaves.
 
 `isCommandEnabled(label)` says whether xUtilities has a command on under that name or alias: one of its commands, a [link command](/xutilities/link-commands/), or `/xutilities` itself (and `/xu`). A leading `/`, the `xutilities:` prefix and upper case are fine.
 

@@ -65,6 +65,10 @@ const votePort = Number(option('--vote-port', 8192))
 const voteToken = option('--vote-token', '')
 // The server is Fabric (scripts/boot-fabric.sh passes it): a few checks differ there by design.
 const onFabric = process.argv.includes('--fabric')
+// How long a client's change of language takes to reach the server's messages. Fabric API has no
+// event for it, so the core compares the players' languages every FabricFamily.LANGUAGE_CHECK
+// (5 seconds): a change shows within one of those, plus a margin for a slow tick.
+const languageChange = onFabric ? 7000 : 2000
 // The server reads no client language (Fabric on 1.20.1): Joiner reads the default, English.
 const fixedLanguage = process.argv.includes('--fixed-language')
 // What Joiner, whose client is in German, should read: the German, or with --fixed-language the
@@ -156,7 +160,7 @@ async function xutilities () {
   const [major, minor] = (bot.version || '1.8').split('.').map(Number)
   if ((major > 1 || minor >= 12) && !fixedLanguage) {
     bot.setSettings({ locale: 'en_us' })
-    await sleep(2000)
+    await sleep(languageChange)
     await command('/fly', 'Flight', '/fly answers in the language the client changed to (English)')
   }
   finish()
@@ -658,7 +662,7 @@ async function run () {
   // The client switches to English: the next reply follows.
   if (!fixedLanguage) {
     bot.setSettings({ locale: 'en_us' })
-    await sleep(2000)
+    await sleep(languageChange)
     await command('/xsample debug', 'Checking xSample', 'a reply in the language the client changed to (English)')
   }
   finish()

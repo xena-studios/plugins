@@ -314,7 +314,9 @@ internal class BukkitBlocks(private val plugin: Plugin, private val platform: Bu
                     tickets = has("org.bukkit.Chunk", "addPluginChunkTicket", Plugin::class.java),
                     paperItems = has("org.bukkit.inventory.ItemStack", "serializeItemsAsBytes", Array<ItemStack>::class.java) &&
                         has("org.bukkit.inventory.ItemStack", "deserializeBytes", ByteArray::class.java),
-                    signSides = exists("org.bukkit.block.sign.Side") && adventure && exists("net.kyori.adventure.text.serializer.gson.GsonComponentSerializer"),
+                    // Sides came in 1.20, waxing in 1.20.1: both, or a sign's front alone.
+                    signSides = exists("org.bukkit.block.sign.Side") && has("org.bukkit.block.Sign", "isWaxed") && adventure &&
+                        exists("net.kyori.adventure.text.serializer.gson.GsonComponentSerializer"),
                     adventure = adventure,
                     stateNoSnapshot = has("org.bukkit.block.Block", "getState", boolean),
                 )

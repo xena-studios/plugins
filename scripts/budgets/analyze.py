@@ -162,7 +162,9 @@ def plugin_info(jar):
     (co.xenastudios.<plugin>, with its relocated core) and the package R8 moved renamed
     classes to (the plugin's id, xena.r8's packageName), so every class of the jar's own."""
     with zipfile.ZipFile(jar) as z:
-        yml = z.read("plugin.yml").decode()
+        # plugin.yml, or paper-plugin.yml for a Paper-only plugin (xLimbo), which has no plugin.yml.
+        names = z.namelist()
+        yml = z.read("plugin.yml" if "plugin.yml" in names else "paper-plugin.yml").decode()
         classes = [n for n in z.namelist() if n.endswith(".class")]
     name = re.search(r"(?m)^name:\s*['\"]?([^'\"\n]+)", yml).group(1).strip()
     main = re.search(r"(?m)^main:\s*['\"]?([\w.$]+)", yml).group(1)

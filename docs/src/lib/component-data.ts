@@ -148,6 +148,12 @@ export function installData(plugin: string) {
           needs: "Fabric Loader and Fabric Language Kotlin, which gives the mod Kotlin. Fabric jars are one per Minecraft line, so pick the one for your version.",
           restart: "Start the server.",
         };
+      case "sponge":
+        return {
+          folder: "mods/",
+          needs: "SpongeVanilla or SpongeForge, API 8 or newer. One jar runs on every Sponge version and carries the Kotlin it needs, so nothing else is installed.",
+          restart: "Start the server.",
+        };
       case "neoforge":
       case "forge":
         return {

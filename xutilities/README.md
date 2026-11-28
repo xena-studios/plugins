@@ -19,7 +19,7 @@ xUtilities is a lightweight essentials plugin for Paper and Folia: gamemodes, fl
 
 **[Download on Modrinth](https://modrinth.com/plugin/xutilities)** · [Docs](https://plugins.xenastudios.co/xutilities/) · [Commands](https://plugins.xenastudios.co/xutilities/commands/) · [Developer API](https://plugins.xenastudios.co/xutilities/developer-api/) · [Changelog](CHANGELOG.md)
 
-2.1.0 is the release: Paper 1.21.11 or newer (or Purpur or Folia) and Java 21. **3.0, on `main` and not released yet** (it ships with the other plugins' rewrites), runs on Paper, Folia, Spigot and CraftBukkit from 1.8.8 to the newest, and on Fabric 1.20.1, 1.21.11 and 26.3, in eight languages; 2.x is kept on the `maintenance` branch.
+2.1.0 is the release: Paper 1.21.11 or newer (or Purpur or Folia) and Java 21. **3.0, on `main` and not released yet** (it ships with the other plugins' rewrites), runs on Paper, Folia, Spigot and CraftBukkit from 1.8.8 to the newest, on Fabric 1.20.1, 1.21.11 and 26.3, and on Sponge from API 8 (1.16.5) to API 21 (26.3), in eight languages; 2.x is kept on the `maintenance` branch.
 
 ## Developing
 
@@ -29,6 +29,8 @@ From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../C
 ./gradlew :xutilities:common:build :xutilities:bukkit:build    # tests on the JVM and wasmWasi, the R8 jar and its budget
 ./gradlew :xutilities:bukkit:runServer                          # a Paper server with the jar, in xutilities/bukkit/run/
 ./gradlew -p core/platform-fabric :xutilities:26.3:collect      # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+./gradlew :xutilities:sponge:build                              # the Sponge jar (build/r8/), its budget and its API 8 and newest-API checks
+scripts/boot-sponge.sh --version 1.16.5-8.2.0 --checks xutilities/sponge/boot-checks.txt xutilities/sponge/build/r8/xUtilities-Sponge.jar
 xutilities/bukkit/boot.sh paper 26.3 --java <JDK 25 home>       # the boot checks on a real server
 ./gradlew :xutilities:api:updateKotlinAbi                       # after a deliberate API change
 ./gradlew :xutilities:common:updateXenaManifest                 # after changing a command, setting or message: the docs' reference
@@ -40,6 +42,7 @@ common/     everything xUtilities does, in Kotlin Multiplatform: the config and 
             the messages (lang/ in its resources), the commands, /back; jvmMain reads the files on a JVM server
 bukkit/     the Paper, Folia, Spigot and CraftBukkit jar: what it does to players, from 1.8.8 on, and the Bukkit events
 fabric/     the Fabric mod, a branch of core/platform-fabric's own build, one jar per Minecraft line
+sponge/     the Sponge plugin, API 8 on, one jar with the stdlib inside (xena.sponge-plugin)
 CHANGELOG.md   one section per release; the release workflow publishes it
 modrinth.md    the Modrinth and Hangar project page, published when it changes on main
 ```

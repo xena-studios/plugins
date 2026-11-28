@@ -86,6 +86,11 @@
 :core:platform-neoforge:xutilities:1.21.1 505
 :core:platform-neoforge:xutilities:1.21.11 505
 :core:platform-neoforge:xutilities:26.3 505
+# On Sponge, 815 KiB shrunk (4,434 KiB shaded): one jar for API 8 to 21 with the Kotlin stdlib and the
+# YAML parser inside, since Sponge has no library loader (decisions/2026-11-28-platform-sponge.md).
+# Over the 500 KiB target and the 1.x jar + 300 KiB rule for that reason, which no trim removes:
+# the stdlib and the parser are what Bukkit and Fabric download instead. Size + about 10%.
+:xutilities:sponge 900
 
 # zChat 4.0 (M3), shrunk: 615 KiB on Bukkit (with bStats, the update checker, Paper's loader, its
 # startup list and the proxy layer's server end), over the 500 KiB target with the reason recorded in

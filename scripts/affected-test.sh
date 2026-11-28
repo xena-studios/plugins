@@ -151,9 +151,11 @@ check "Rewrite's Sponge convention" build-logic/src/main/kotlin/xena.sponge-plug
 check "NeoForge mods' convention" build-logic/src/main/kotlin/xena.neoforge-mod.gradle.kts "$rewrite"$'\nboot=neoforge'
 check "A rewritten plugin's Fabric real-client checks" xutilities/fabric/client-checks.txt $'checks=\nboot=fabric'
 check "A rewritten plugin's common code" xutilities/common/src/commonMain/kotlin/co/xenastudios/xutilities/Commands.kt \
-  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nboot=bukkit fabric neoforge'
+  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build :xutilities:sponge:build\nchecks=\nboot=bukkit fabric neoforge sponge'
 check "A rewritten plugin's Bukkit adapter" xutilities/bukkit/src/main/kotlin/co/xenastudios/xutilities/bukkit/BukkitXServer.kt \
-  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nboot=bukkit'
+  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build :xutilities:sponge:build\nchecks=\nboot=bukkit'
+check "A rewritten plugin's Sponge adapter" xutilities/sponge/src/main/kotlin/co/xenastudios/xutilities/sponge/SpongeXServer.kt \
+  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build :xutilities:sponge:build\nchecks=\nboot=sponge'
 check "A rewritten plugin's Fabric mod (platform-fabric's build)" xutilities/fabric/src/main/kotlin/co/xenastudios/xutilities/fabric/XUtilitiesMod.kt \
   $'checks=\nboot=fabric'
 check "A rewritten plugin's NeoForge mod (platform-neoforge's build)" xutilities/neoforge/src/main/kotlin/co/xenastudios/xutilities/neoforge/XUtilitiesMod.kt \

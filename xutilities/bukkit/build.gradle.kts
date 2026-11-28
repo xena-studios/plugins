@@ -135,6 +135,10 @@ val fabricLines = listOf("1.20.1" to 17, "1.21.11" to 21, "26.3" to 25)
 val neoForgeLibs = rootProject.layout.projectDirectory.dir("core/platform-neoforge/build/libs")
 val neoForgeLines = listOf("1.21.1" to 21, "1.21.11" to 21, "26.3" to 25)
 
+// The Sponge jar, one for API 8 (1.16.5) on, from xutilities/sponge's shrinkJar.
+evaluationDependsOn(":xutilities:sponge")
+val spongeJar = project(":xutilities:sponge").tasks.named<co.xenastudios.gradle.R8Shrink>("shrinkJar").flatMap { it.outputJar }
+
 xenaRelease {
     pluginId = "xutilities"
     displayName = "xUtilities"
@@ -176,6 +180,12 @@ xenaRelease {
         gameVersions = listOf("1.20.1")
         java = 17
         label = "Forge 1.20.1"
+    }
+    jar("sponge") {
+        platform = ReleasePlatform.SPONGE
+        file = spongeJar
+        minecraft("1.16.5")
+        java = 8
     }
 }
 

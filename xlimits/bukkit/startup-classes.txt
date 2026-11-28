@@ -1,9 +1,6 @@
 # The classes this plugin loads as it starts, recorded on Paper by scripts/budgets/check.sh
 # --record-startup: the shim loads them on a thread of its own before onEnable (DECISIONS.md).
 # In their names before R8; R8Shrink maps them. Record again after big changes.
-# Without the core's PaperLibraryLoader, which Paper loads itself: its Java 17 class files make
-# Spigot 1.13 to 1.17 log an error as their ASM rewrites the plugin's classes.
-co.xenastudios.xlimits.core.loader.LibraryException
 co.xenastudios.xlimits.core.loader.Manifest
 co.xenastudios.xlimits.core.loader.Library
 co.xenastudios.xlimits.core.loader.bukkit.LoaderSettings
@@ -16,10 +13,6 @@ co.xenastudios.xlimits.bukkit.XLimitsBootstrap
 co.xenastudios.xlimits.core.loader.Startup
 co.xenastudios.xlimits.core.loader.Strategy
 co.xenastudios.xlimits.core.loader.Libraries
-co.xenastudios.xlimits.core.loader.Libraries$ChildFirst
-okio.Okio
-it.krzeminski.snakeyaml.engine.kmp.api.Dump
-net.thauvin.erik.urlencoder.Character
 kotlin.Lazy
 co.xenastudios.xlimits.core.loader.Libraries$Loaded
 kotlin.KotlinVersion
@@ -28,13 +21,17 @@ kotlin.KotlinVersionCurrentValue
 co.xenastudios.xlimits.core.loader.Startup$1
 co.xenastudios.xlimits.core.loader.PluginEntry
 co.xenastudios.xlimits.bukkit.XLimitsBukkit
-co.xenastudios.xlimits.core.common.admin.PasteService
 co.xenastudios.xlimits.core.common.command.CommandFeedback
 co.xenastudios.xlimits.api.XLimitsApi
 kotlin.Function
 kotlin.jvm.functions.Function1
 co.xenastudios.xlimits.core.common.scheduler.Where
 co.xenastudios.xlimits.core.common.scheduler.Where$Async
+kotlin.collections.ArraysKt__ArraysJVMKt
+kotlin.collections.ArraysKt__ArraysKt
+kotlin.collections.ArraysKt___ArraysJvmKt
+kotlin.collections.ArraysKt___ArraysKt
+kotlin.collections.ArraysKt
 kotlin.collections.CollectionsKt__CollectionsJVMKt
 kotlin.collections.CollectionsKt__CollectionsKt
 kotlin.collections.CollectionsKt__IterablesKt
@@ -46,12 +43,6 @@ kotlin.collections.CollectionsKt__ReversedViewsKt
 kotlin.collections.CollectionsKt___CollectionsJvmKt
 kotlin.collections.CollectionsKt___CollectionsKt
 kotlin.collections.CollectionsKt
-kotlin.NotImplementedError
-kotlin.collections.ArraysKt__ArraysJVMKt
-kotlin.collections.ArraysKt__ArraysKt
-kotlin.collections.ArraysKt___ArraysJvmKt
-kotlin.collections.ArraysKt___ArraysKt
-kotlin.collections.ArraysKt
 kotlin.collections.MapsKt__MapWithDefaultKt
 kotlin.collections.MapsKt__MapsJVMKt
 kotlin.collections.MapsKt__MapsKt
@@ -82,20 +73,16 @@ kotlin.sequences.SequencesKt___SequencesJvmKt
 kotlin.sequences.SequencesKt___SequencesKt
 kotlin.sequences.SequencesKt
 kotlin.ranges.RangesKt__RangesKt
-kotlin.text.CharsKt__CharJVMKt
 kotlin.ranges.RangesKt___RangesKt
-kotlin.text.CharsKt__CharKt
 kotlin.ranges.RangesKt
+kotlin.text.CharsKt__CharJVMKt
+kotlin.text.CharsKt__CharKt
 kotlin.text.CharsKt
 kotlin.text.Regex
-kotlin.text.FlagEnum
-kotlin.text.RegexOption
 kotlin.text.HexExtensionsKt
-kotlin.KotlinNothingValueException
 kotlin.time.Duration
 kotlin.time.DurationKt
 kotlin.uuid.Uuid
-kotlin.jvm.internal.DefaultConstructorMarker
 kotlin.uuid.UuidKt__UuidJVMKt
 kotlin.uuid.UuidKt__UuidKt
 kotlin.uuid.UuidKt
@@ -114,12 +101,8 @@ co.xenastudios.xlimits.core.common.scheduler.Scheduler
 co.xenastudios.xlimits.core.common.text.TextRenderer
 co.xenastudios.xlimits.core.bukkit.ClientLocales
 co.xenastudios.xlimits.core.bukkit.ClientLocales$Companion$modern$1
-co.xenastudios.xlimits.core.bukkit.ClientLocales$Spigot
-co.xenastudios.xlimits.core.bukkit.ClientLocales$None
 co.xenastudios.xlimits.core.bukkit.BukkitServer
 kotlin.jvm.internal.Intrinsics
-kotlin.UninitializedPropertyAccessException
-kotlin.KotlinNullPointerException
 kotlin.collections.ArraysUtilJVM
 co.xenastudios.xlimits.core.bukkit.BukkitServer$Companion
 co.xenastudios.xlimits.core.bukkit.BukkitServer$Flavor
@@ -156,7 +139,6 @@ kotlin.time.TimeSource$Monotonic$ValueTimeMark
 co.xenastudios.xlimits.core.jvm.platform.FolderStorage
 co.xenastudios.xlimits.core.common.Outcome
 co.xenastudios.xlimits.core.common.Outcome$Ok
-co.xenastudios.xlimits.core.common.Outcome$Err
 co.xenastudios.xlimits.core.bukkit.MainThreadScheduler
 co.xenastudios.xlimits.core.common.scheduler.Task
 co.xenastudios.xlimits.core.bukkit.BukkitPlayers$Companion
@@ -165,17 +147,12 @@ co.xenastudios.xlimits.core.jvm.scheduler.AsyncExecutor
 co.xenastudios.xlimits.core.bukkit.BukkitText
 co.xenastudios.xlimits.core.bukkit.modern.AdventureText
 co.xenastudios.xlimits.core.jvm.text.AdventureRenderer
-co.xenastudios.xlimits.core.common.text.ClickEvent$Action
-kotlin.NoWhenBranchMatchedException
 co.xenastudios.xlimits.core.common.text.LegacyRenderer
 co.xenastudios.xlimits.core.common.text.TextColor
 kotlin.Pair
 kotlin.TuplesKt
-kotlin.collections.MapWithDefault
 co.xenastudios.xlimits.core.common.i18n.Delivery
-co.xenastudios.xlimits.core.api.PlayerRef
 co.xenastudios.xlimits.core.bukkit.modern.ModernLocales
-co.xenastudios.xlimits.core.common.scheduler.Where$On
 co.xenastudios.xlimits.core.bukkit.modern.ModernLocales$handler$1
 co.xenastudios.xlimits.core.bukkit.BukkitPlayers
 co.xenastudios.xlimits.core.bukkit.BukkitCommands$Companion
@@ -185,7 +162,6 @@ kotlin.jvm.internal.TypeIntrinsics
 kotlin.jvm.functions.Function0
 co.xenastudios.xlimits.core.bukkit.Refresher
 co.xenastudios.xlimits.core.common.command.CommandFeedback$Companion
-co.xenastudios.xlimits.core.common.command.CommandResult
 co.xenastudios.xlimits.core.common.text.Component
 co.xenastudios.xlimits.core.bukkit.BukkitPermissions
 co.xenastudios.xlimits.core.common.permission.PermissionDefault
@@ -203,15 +179,9 @@ kotlin.time.Duration$Companion
 kotlin.time.DurationJvmKt
 kotlin.time.DurationUnit
 kotlin.time.DurationUnitKt__DurationUnitJvmKt
-kotlin.time.DurationUnitKt__DurationUnitKt
-kotlin.time.DurationUnitKt
 co.xenastudios.xlimits.core.jvm.family.JvmFamilyBoard
 co.xenastudios.xlimits.core.jvm.config.JvmYaml
-it.krzeminski.snakeyaml.engine.kmp.exceptions.YamlEngineException
-it.krzeminski.snakeyaml.engine.kmp.exceptions.MarkedYamlEngineException
-co.xenastudios.xlimits.core.jvm.config.JvmYaml$Failure
 co.xenastudios.xlimits.core.common.config.YamlNode
-co.xenastudios.xlimits.core.common.config.YamlNode$Null
 co.xenastudios.xlimits.core.common.config.YamlNode$Scalar
 co.xenastudios.xlimits.core.common.config.YamlNode$Sequence
 it.krzeminski.snakeyaml.engine.kmp.nodes.Node
@@ -219,14 +189,9 @@ it.krzeminski.snakeyaml.engine.kmp.nodes.ScalarNode
 co.xenastudios.xlimits.core.common.config.YamlNode$Mapping
 it.krzeminski.snakeyaml.engine.kmp.api.LoadSettings
 kotlin.LazyKt__LazyJVMKt
-kotlin.LazyKt__LazyKt
-kotlin.LazyKt
 kotlin.SynchronizedLazyImpl
 kotlin.UNINITIALIZED_VALUE
 co.xenastudios.xlimits.core.common.family.PlayerCache
-co.xenastudios.xlimits.core.common.db.Table
-co.xenastudios.xlimits.core.common.family.PlayerCache$Players
-co.xenastudios.xlimits.core.common.db.CorruptValueException
 co.xenastudios.xlimits.core.common.family.PlayerStore
 co.xenastudios.xlimits.core.common.family.PlayerStore$InFile
 co.xenastudios.xlimits.core.jvm.family.JvmFamilyBoard$JdkMap
@@ -234,7 +199,6 @@ co.xenastudios.xlimits.core.bukkit.BukkitFamily$record$handler$1
 kotlin.Unit
 co.xenastudios.xlimits.bukkit.BukkitLimitsServer
 co.xenastudios.xlimits.core.common.scheduler.Where$Global
-co.xenastudios.xlimits.core.common.scheduler.Where$At
 co.xenastudios.xlimits.core.api.event.EventPriority
 co.xenastudios.xlimits.core.common.world.WorldHooks
 co.xenastudios.xlimits.core.bukkit.world.BukkitWorldHooks
@@ -244,7 +208,6 @@ co.xenastudios.xlimits.core.api.event.Event
 co.xenastudios.xlimits.core.api.event.EventListener
 co.xenastudios.xlimits.core.api.event.Subscription
 kotlin.collections.AbstractList$IteratorImpl
-co.xenastudios.xlimits.core.api.WorldRef
 co.xenastudios.xlimits.core.api.event.EventBus
 co.xenastudios.xlimits.core.common.event.SimpleEventBus
 kotlin.collections.EmptyMap
@@ -280,7 +243,6 @@ co.xenastudios.xlimits.core.common.config.ConfigType$Companion
 co.xenastudios.xlimits.core.common.config.ConfigType
 co.xenastudios.xlimits.core.common.config.ConfigType$Companion$text$1
 co.xenastudios.xlimits.core.common.config.ConfigType$Builtin
-co.xenastudios.xlimits.core.common.time.DurationError$Kind
 co.xenastudios.xlimits.core.common.i18n.LanguageTag$Companion
 kotlin.sequences.Sequence
 kotlin.text.DelimitedRangesSequence
@@ -288,6 +250,8 @@ kotlin.jvm.functions.Function2
 kotlin.sequences.SequencesKt___SequencesKt$asIterable$$inlined$Iterable$1
 kotlin.text.DelimitedRangesSequence$iterator$1
 co.xenastudios.xlimits.core.jvm.i18n.LangFolder$Companion
+kotlin.io.ByteStreamsKt
+kotlin.io.CloseableKt
 co.xenastudios.xlimits.core.jvm.config.RememberingYaml
 co.xenastudios.xlimits.core.jvm.config.ConfigFile
 co.xenastudios.xlimits.core.common.config.ConfigNode
@@ -317,8 +281,6 @@ kotlin.jvm.internal.CallableReference
 kotlin.jvm.internal.FunctionReference
 kotlin.jvm.internal.FunctionReferenceImpl
 co.xenastudios.xlimits.core.common.family.ThemeSection$Companion$STYLE$1
-kotlin.jvm.KotlinReflectionNotSupportedError
-kotlin.reflect.KDeclarationContainer
 kotlin.jvm.internal.CallableReference$NoReceiver
 co.xenastudios.xlimits.core.common.text.Theme
 co.xenastudios.xlimits.core.common.text.Style
@@ -335,7 +297,6 @@ co.xenastudios.xlimits.core.common.text.TextColor$Companion
 co.xenastudios.xlimits.core.common.text.Markup$Parser$Opened$Push
 co.xenastudios.xlimits.core.common.text.Node$Text
 co.xenastudios.xlimits.core.common.text.Node$Styled
-co.xenastudios.xlimits.core.common.text.Node$Insert
 co.xenastudios.xlimits.core.common.text.MarkupTag$Inserting
 co.xenastudios.xlimits.config.XLimitsConfig$Command
 co.xenastudios.xlimits.config.XLimitsConfig$Worlds
@@ -364,17 +325,13 @@ co.xenastudios.xlimits.XLimitsPermissions
 co.xenastudios.xlimits.core.common.command.AdminCommands$declared$1
 co.xenastudios.xlimits.core.common.text.Component$Companion
 co.xenastudios.xlimits.bukkit.XLimitsBukkit$enable$xlimits$1
-co.xenastudios.xlimits.bukkit.XLimitsBukkit$Mclogs
 co.xenastudios.xlimits.bukkit.XLimitsBukkit$Importers
 co.xenastudios.xlimits.core.common.admin.RecentErrors
 co.xenastudios.xlimits.Texts
-co.xenastudios.xlimits.core.common.text.Placeholder
 co.xenastudios.xlimits.core.common.admin.AdminText
-co.xenastudios.xlimits.core.common.command.CommandSource
 co.xenastudios.xlimits.core.common.i18n.MessageKey
 co.xenastudios.xlimits.core.common.command.CommandFeedback$Companion$of$1
 co.xenastudios.xlimits.core.common.module.ModuleSet
-co.xenastudios.xlimits.core.common.scheduler.WrongThreadException
 co.xenastudios.xlimits.Rules
 co.xenastudios.xlimits.Category
 co.xenastudios.xlimits.Rules$EntityRule
@@ -390,7 +347,6 @@ co.xenastudios.xlimits.core.common.command.ModuleReloader
 co.xenastudios.xlimits.XLimitsPlugin$Reloading
 co.xenastudios.xlimits.XLimitsPlugin$admin$1
 co.xenastudios.xlimits.core.common.admin.Imports
-co.xenastudios.xlimits.core.common.admin.ImportListener
 co.xenastudios.xlimits.core.common.admin.Importer
 co.xenastudios.xlimits.LimitImporter
 co.xenastudios.xlimits.core.common.admin.Importer$Companion
@@ -400,7 +356,6 @@ co.xenastudios.xlimits.FarmControl$Companion
 co.xenastudios.xlimits.Insights
 co.xenastudios.xlimits.core.common.command.AdminCommands
 co.xenastudios.xlimits.core.common.command.AdminSubcommand
-co.xenastudios.xlimits.core.common.command.CommandFailure
 co.xenastudios.xlimits.core.common.command.ArgumentType
 co.xenastudios.xlimits.core.common.command.CommandHandler
 co.xenastudios.xlimits.core.common.permission.Permission
@@ -432,10 +387,8 @@ co.xenastudios.xlimits.bukkit.EventBridge
 co.xenastudios.xlimits.core.common.config.ConfigContext
 co.xenastudios.xlimits.core.common.config.Configs
 it.krzeminski.snakeyaml.engine.kmp.api.lowlevel.Compose
-it.krzeminski.snakeyaml.engine.kmp.exceptions.YamlVersionException
 it.krzeminski.snakeyaml.engine.kmp.api.LoadSettings$CollectionProvider
 it.krzeminski.snakeyaml.engine.kmp.api.LoadSettings$SpecVersionMutator
-it.krzeminski.snakeyaml.engine.kmp.common.SpecVersion
 it.krzeminski.snakeyaml.engine.kmp.schema.SchemaKt
 it.krzeminski.snakeyaml.engine.kmp.schema.Schema
 it.krzeminski.snakeyaml.engine.kmp.schema.JsonSchema
@@ -450,7 +403,6 @@ it.krzeminski.snakeyaml.engine.kmp.constructor.ConstructScalar
 it.krzeminski.snakeyaml.engine.kmp.constructor.core.ConstructYamlCoreBool
 it.krzeminski.snakeyaml.engine.kmp.constructor.ConstructScalar$Companion
 it.krzeminski.snakeyaml.engine.kmp.constructor.core.ConstructYamlCoreInt
-it.krzeminski.snakeyaml.engine.kmp.exceptions.ConstructorException
 it.krzeminski.snakeyaml.engine.kmp.constructor.core.ConstructYamlCoreInt$Companion
 it.krzeminski.snakeyaml.engine.kmp.constructor.json.ConstructYamlJsonFloat
 it.krzeminski.snakeyaml.engine.kmp.constructor.core.ConstructYamlCoreFloat
@@ -486,15 +438,12 @@ okio.SegmentPool
 okio.Segment
 okio.Segment$Companion
 it.krzeminski.snakeyaml.engine.kmp.scanner.StreamReader
-it.krzeminski.snakeyaml.engine.kmp.exceptions.ReaderException
 it.krzeminski.snakeyaml.engine.kmp.scanner.StreamReader$Companion
 it.krzeminski.snakeyaml.engine.kmp.parser.Parser
 it.krzeminski.snakeyaml.engine.kmp.parser.ParserImpl
-it.krzeminski.snakeyaml.engine.kmp.exceptions.ParserException
 it.krzeminski.snakeyaml.engine.kmp.parser.ParserImpl$Companion
 it.krzeminski.snakeyaml.engine.kmp.scanner.Scanner
 it.krzeminski.snakeyaml.engine.kmp.scanner.ScannerImpl
-it.krzeminski.snakeyaml.engine.kmp.exceptions.ScannerException
 it.krzeminski.snakeyaml.engine.kmp.scanner.ScannerImpl$Companion
 it.krzeminski.snakeyaml.engine.kmp.exceptions.Mark
 it.krzeminski.snakeyaml.engine.kmp.exceptions.Mark$Companion
@@ -504,7 +453,6 @@ it.krzeminski.snakeyaml.engine.kmp.tokens.StreamStartToken
 it.krzeminski.snakeyaml.engine.kmp.parser.Production
 it.krzeminski.snakeyaml.engine.kmp.parser.ParserImpl$ParseStreamStart
 it.krzeminski.snakeyaml.engine.kmp.composer.Composer
-it.krzeminski.snakeyaml.engine.kmp.exceptions.ComposerException
 it.krzeminski.snakeyaml.engine.kmp.comments.CommentEventsCollector
 it.krzeminski.snakeyaml.engine.kmp.comments.CommentType
 it.krzeminski.snakeyaml.engine.kmp.comments.EventQueue
@@ -570,7 +518,6 @@ co.xenastudios.xlimits.core.common.config.Decoder
 co.xenastudios.xlimits.core.common.time.Durations
 kotlin.math.MathKt__MathHKt
 kotlin.math.MathKt__MathJVMKt
-kotlin.math.MathKt
 co.xenastudios.xlimits.core.common.config.Decoder$Result
 co.xenastudios.xlimits.core.common.config.ConfigLoad
 co.xenastudios.xlimits.core.jvm.config.ConfigFile$Loaded
@@ -585,9 +532,7 @@ co.xenastudios.xlimits.core.common.i18n.MessageCatalog
 co.xenastudios.xlimits.core.common.i18n.Translations$Companion
 co.xenastudios.xlimits.core.common.i18n.Language
 co.xenastudios.xlimits.core.common.i18n.Formats
-co.xenastudios.xlimits.core.common.i18n.Formats$Plural
 co.xenastudios.xlimits.core.common.i18n.Formats$Companion
-co.xenastudios.xlimits.core.common.i18n.Language$Parsed
 co.xenastudios.xlimits.core.common.i18n.Translations
 co.xenastudios.xlimits.XLimitsPlugin$Make
 co.xenastudios.xlimits.core.common.module.ModuleContext
@@ -605,6 +550,7 @@ co.xenastudios.xlimits.core.api.event.EventType
 co.xenastudios.xlimits.core.api.event.EventType$Companion
 co.xenastudios.xlimits.core.common.event.SimpleEventBus$Entry
 co.xenastudios.xlimits.core.bukkit.world.Spawns
+co.xenastudios.xlimits.core.bukkit.world.Spawns$Credit
 co.xenastudios.xlimits.core.common.world.WorldHooks$One
 co.xenastudios.xlimits.bukkit.modern.EntitiesLoaded
 co.xenastudios.xlimits.bukkit.Blocks
@@ -631,16 +577,17 @@ co.xenastudios.xlimits.core.common.update.UpdateSettings
 co.xenastudios.xlimits.core.common.family.PlayerStore$None
 co.xenastudios.xlimits.core.bukkit.BukkitUpdates
 co.xenastudios.xlimits.core.api.Pending_jvmKt
-co.xenastudios.xlimits.core.common.scheduler.SchedulerKt
-co.xenastudios.xlimits.core.common.platform.StorageKt
 co.xenastudios.xlimits.core.bukkit.BukkitUpdates$start$notices$1
 co.xenastudios.xlimits.core.common.update.ModrinthReleases
 co.xenastudios.xlimits.core.jvm.update.JvmHttp
+co.xenastudios.xlimits.core.common.update.UpdateChecker
+co.xenastudios.xlimits.core.bukkit.BukkitUpdates$joins$listener$1
+co.xenastudios.xlimits.core.common.scheduler.SchedulerKt
+co.xenastudios.xlimits.core.common.platform.StorageKt
+co.xenastudios.xlimits.core.common.update.ModrinthReleases$Companion
 co.xenastudios.xlimits.core.common.family.DatabaseSection
 co.xenastudios.xlimits.core.common.family.StorageType
-co.xenastudios.xlimits.core.common.update.UpdateChecker
 co.xenastudios.xlimits.core.common.family.MySqlSection
-co.xenastudios.xlimits.core.bukkit.BukkitUpdates$joins$listener$1
 co.xenastudios.xlimits.core.common.family.PoolSection
 co.xenastudios.xlimits.core.common.family.FamilyConfig$Players
 co.xenastudios.xlimits.core.common.text.Theme$Companion
@@ -648,15 +595,13 @@ co.xenastudios.xlimits.core.common.family.FamilyLoad
 co.xenastudios.xlimits.core.common.family.Look
 co.xenastudios.xlimits.core.common.family.FamilySettingsKt
 co.xenastudios.xlimits.core.jvm.i18n.LangFolder
-co.xenastudios.xlimits.core.common.update.ModrinthReleases$Companion
-kotlin.io.CloseableKt
-co.xenastudios.xlimits.core.jvm.i18n.LangFolder$ownerLanguages$$inlined$sortedBy$1
 co.xenastudios.xlimits.core.common.i18n.LangFiles
+co.xenastudios.xlimits.core.common.i18n.ShippedLanguage
+co.xenastudios.xlimits.core.jvm.i18n.LangFolder$ownerLanguages$$inlined$sortedBy$1
+kotlin.comparisons.ComparisonsKt__ComparisonsKt
 co.xenastudios.xlimits.core.common.i18n.TranslationCheck
 co.xenastudios.xlimits.core.common.i18n.LangLoad
 co.xenastudios.xlimits.core.jvm.i18n.LangFolder$Loaded
 co.xenastudios.xlimits.core.bukkit.MainThreadScheduler$MainTask
 co.xenastudios.xlimits.core.bukkit.modern.Ticks
 co.xenastudios.xlimits.core.common.update.HttpAnswer
-co.xenastudios.xlimits.core.common.update.JsonReader
-co.xenastudios.xlimits.core.common.update.ReleasesKt

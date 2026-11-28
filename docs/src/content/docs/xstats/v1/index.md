@@ -25,7 +25,7 @@ xStats gives players their stats, everyone leaderboards, and you placeholders an
 
 ## Storage
 
-Stats are kept in SQLite out of the box, in `plugins/xStats/stats.db`, or in MySQL/MariaDB, in [documented tables](/xstats/database/). Several servers can share one MySQL database: see [Networks](/xstats/networks/).
+Stats are kept in SQLite out of the box, in `plugins/xStats/stats.db`, or in MySQL/MariaDB, in [documented tables](/xstats/v1/database/). Several servers can share one MySQL database: see [Networks](/xstats/v1/networks/).
 
 ## What else it does
 
@@ -34,7 +34,7 @@ Stats are kept in SQLite out of the box, in `plugins/xStats/stats.db`, or in MyS
 ## Getting started
 
 1. [Install it](/start/installing/). Stats are kept in SQLite out of the box, with nothing to set up.
-2. Choose your stats and leaderboards: [Setting up](/xstats/setting-up/).
-3. Turn on the website: [The website](/xstats/website/).
-4. Every command and permission: [Commands](/xstats/commands/). Placeholders: [Placeholders](/xstats/placeholders/).
-5. Several servers? [Networks](/xstats/networks/).
+2. Choose your stats and leaderboards: [Setting up](/xstats/v1/setting-up/).
+3. Turn on the website: [The website](/xstats/v1/website/).
+4. Every command and permission: [Commands](/xstats/v1/commands/). Placeholders: [Placeholders](/xstats/v1/placeholders/).
+5. Several servers? [Networks](/xstats/v1/networks/).

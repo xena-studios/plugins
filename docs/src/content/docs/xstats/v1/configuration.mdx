@@ -6,7 +6,7 @@ sidebar:
 ---
 
 import { Code } from "@astrojs/starlight/components";
-import config from "../../../generated/xstats/config.yml?raw";
+import config from "../../../../generated/xstats/v1/config.yml?raw";
 
 The config is `plugins/xStats/config.yml`, written on first start. Apply changes with `/xstats reload`; only `storage`, `server-name` and `network` need a restart.
 
@@ -15,14 +15,14 @@ The config is `plugins/xStats/config.yml`, written on first start. Apply changes
 | `theme` | The prefix and colours xStats' messages share: see [the theme](/start/formatting/#the-theme). |
 | `messages` | What players are told, and shared errors under `messages.error`. |
 | `commands` | `/stats` and `/leaderboard`: on or off, their aliases and permission. |
-| `stats` | The stats xStats keeps, where each comes from, and which have periods: see [Choosing stats](/xstats/setting-up/#choosing-stats). |
+| `stats` | The stats xStats keeps, where each comes from, and which have periods: see [Choosing stats](/xstats/v1/setting-up/#choosing-stats). |
 | `collecting` | How often to save, how many players to read each tick, AFK-aware playtime, and the first-start import. |
 | `leaderboards` | Places kept, leaving banned players out, `/leaderboard`'s page size, and how boards in the world look. |
 | `periods` | The time zone, the day weeks start, how long each day's numbers are kept, and the periods' names. |
-| `web` | The website and its API: see [The website](/xstats/website/). |
-| `server-name` | This server's name in the database, for [networks](/xstats/networks/). |
+| `web` | The website and its API: see [The website](/xstats/v1/website/). |
+| `server-name` | This server's name in the database, for [networks](/xstats/v1/networks/). |
 | `storage` | SQLite in the plugin's folder (`stats.db`), or MySQL/MariaDB. |
-| `network` | Several servers sharing one database: see [Networks](/xstats/networks/). |
+| `network` | Several servers sharing one database: see [Networks](/xstats/v1/networks/). |
 | `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
 
 ## Saving

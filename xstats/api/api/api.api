@@ -1,0 +1,161 @@
+public abstract interface class co/xenastudios/xstats/api/CustomStat {
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun increment (Lco/xenastudios/core/api/PlayerRef;J)V
+	public abstract fun set (Lco/xenastudios/core/api/PlayerRef;J)V
+}
+
+public final class co/xenastudios/xstats/api/LeaderboardEntry {
+	public fun <init> (ILco/xenastudios/core/api/PlayerRef;Ljava/lang/String;J)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getRank ()I
+	public final fun getValue ()J
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xstats/api/Period : java/lang/Enum {
+	public static final field ALL Lco/xenastudios/xstats/api/Period;
+	public static final field Companion Lco/xenastudios/xstats/api/Period$Companion;
+	public static final field DAILY Lco/xenastudios/xstats/api/Period;
+	public static final field MONTHLY Lco/xenastudios/xstats/api/Period;
+	public static final field WEEKLY Lco/xenastudios/xstats/api/Period;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getId ()Ljava/lang/String;
+	public static final fun parse (Ljava/lang/String;)Lco/xenastudios/xstats/api/Period;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xstats/api/Period;
+	public static fun values ()[Lco/xenastudios/xstats/api/Period;
+}
+
+public final class co/xenastudios/xstats/api/Period$Companion {
+	public final fun parse (Ljava/lang/String;)Lco/xenastudios/xstats/api/Period;
+}
+
+public final class co/xenastudios/xstats/api/ProfileLine {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class co/xenastudios/xstats/api/ProfileSection {
+	public abstract fun lines (Lco/xenastudios/core/api/PlayerRef;Z)Ljava/util/List;
+}
+
+public final class co/xenastudios/xstats/api/StatInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xstats/api/StatUnit;IZZLjava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xstats/api/StatUnit;IZZLjava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDecimals ()I
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getOwner ()Ljava/lang/String;
+	public final fun getPeriods ()Z
+	public final fun getShown ()Z
+	public final fun getUnit ()Lco/xenastudios/xstats/api/StatUnit;
+	public final fun getWebsite ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xstats/api/StatUnit : java/lang/Enum {
+	public static final field COUNT Lco/xenastudios/xstats/api/StatUnit;
+	public static final field DAMAGE Lco/xenastudios/xstats/api/StatUnit;
+	public static final field DISTANCE Lco/xenastudios/xstats/api/StatUnit;
+	public static final field TIME Lco/xenastudios/xstats/api/StatUnit;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xstats/api/StatUnit;
+	public static fun values ()[Lco/xenastudios/xstats/api/StatUnit;
+}
+
+public final class co/xenastudios/xstats/api/StatsProfile {
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;JJZLjava/util/Map;)V
+	public final fun getFirstJoin ()J
+	public final fun getHidden ()Z
+	public final fun getLastSeen ()J
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getValues ()Ljava/util/Map;
+	public fun toString ()Ljava/lang/String;
+	public final fun value (Ljava/lang/String;Lco/xenastudios/xstats/api/Period;)J
+}
+
+public final class co/xenastudios/xstats/api/XStats {
+	public static final field INSTANCE Lco/xenastudios/xstats/api/XStats;
+	public static final fun api ()Lco/xenastudios/xstats/api/XStatsApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xstats/api/XStatsApi;)V
+}
+
+public abstract interface class co/xenastudios/xstats/api/XStatsApi {
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getProxy ()Z
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun isPrivate (Lco/xenastudios/core/api/PlayerRef;)Z
+	public abstract fun profile (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun rank (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/xstats/api/Period;)I
+	public abstract fun registerProfileSection (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xstats/api/ProfileSection;)V
+	public fun registerStat (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xstats/api/StatUnit;)Lco/xenastudios/xstats/api/CustomStat;
+	public fun registerStat (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xstats/api/StatUnit;Z)Lco/xenastudios/xstats/api/CustomStat;
+	public abstract fun registerStat (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xstats/api/StatUnit;ZI)Lco/xenastudios/xstats/api/CustomStat;
+	public abstract fun stat (Ljava/lang/String;)Lco/xenastudios/xstats/api/StatInfo;
+	public abstract fun stats ()Ljava/util/List;
+	public abstract fun top (Ljava/lang/String;Lco/xenastudios/xstats/api/Period;I)Ljava/util/List;
+	public abstract fun unregisterProfileSection (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun unregisterStats (Ljava/lang/String;)V
+	public abstract fun value (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/xstats/api/Period;)J
+}
+
+public final class co/xenastudios/xstats/api/XStatsApi$DefaultImpls {
+	public static fun registerStat (Lco/xenastudios/xstats/api/XStatsApi;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xstats/api/StatUnit;)Lco/xenastudios/xstats/api/CustomStat;
+	public static fun registerStat (Lco/xenastudios/xstats/api/XStatsApi;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xstats/api/StatUnit;Z)Lco/xenastudios/xstats/api/CustomStat;
+}
+
+public final class co/xenastudios/xstats/api/event/LeaderboardChangeEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xstats/api/event/LeaderboardChangeEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Ljava/lang/String;Lco/xenastudios/xstats/api/Period;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;J)V
+	public final fun getLeader ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getLeaderName ()Ljava/lang/String;
+	public final fun getPeriod ()Lco/xenastudios/xstats/api/Period;
+	public final fun getPrevious ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getStat ()Ljava/lang/String;
+	public final fun getValue ()J
+}
+
+public final class co/xenastudios/xstats/api/event/LeaderboardChangeEvent$Companion {
+}
+
+public final class co/xenastudios/xstats/api/event/PrivacyChangeEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xstats/api/event/PrivacyChangeEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Z)V
+	public final fun getHidden ()Z
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+}
+
+public final class co/xenastudios/xstats/api/event/PrivacyChangeEvent$Companion {
+}
+
+public final class co/xenastudios/xstats/api/event/StatChangeEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xstats/api/event/StatChangeEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;JZ)V
+	public final fun getAmount ()J
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getSet ()Z
+	public final fun getStat ()Ljava/lang/String;
+	public final fun setAmount (J)V
+}
+
+public final class co/xenastudios/xstats/api/event/StatChangeEvent$Companion {
+}
+
+public final class co/xenastudios/xstats/api/event/StatsSavedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xstats/api/event/StatsSavedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (IJ)V
+	public final fun getMillis ()J
+	public final fun getPlayers ()I
+}
+
+public final class co/xenastudios/xstats/api/event/StatsSavedEvent$Companion {
+}
+

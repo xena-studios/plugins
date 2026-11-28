@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-When the [website](/xstats/website/) is on, xStats serves a read-only JSON API beside it. Everything the built-in site shows comes from here, so anything it does, your own site can too.
+When the [website](/xstats/v1/website/) is on, xStats serves a read-only JSON API beside it. Everything the built-in site shows comes from here, so anything it does, your own site can too.
 
 - **Versioned.** Every path starts with `/api/v1/`. A change that removes or renames a field comes as `/api/v2/`, with v1 kept alongside. New fields can be added to v1 at any time.
 - **Read-only.** `GET` and `HEAD` only, plus `OPTIONS` for CORS. Anything else gets `405`.
@@ -94,9 +94,9 @@ One player's page, by uuid or by name. Link to players by uuid: it never changes
 ```
 
 - `rank` is 0 when they're not on that leaderboard.
-- `sections` are what other plugins add through xStats' [developer API](/xstats/developer-api/).
+- `sections` are what other plugins add through xStats' [developer API](/xstats/v1/developer-api/).
 - `history` is how much each stat with periods went up on each of the last 30 days; `from` is the first day, as days since 1970-01-01.
-- `servers` is only there in [network mode](/xstats/networks/): each server's all-time values.
+- `servers` is only there in [network mode](/xstats/v1/networks/): each server's all-time values.
 - `online` is as of the last save.
 
 ## `GET /api/v1/head/{uuid}`

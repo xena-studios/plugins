@@ -63,7 +63,7 @@ votes.increment(player.getUniqueId(), 1);   // a vote: counts today, this week, 
 balance.set(player.getUniqueId(), cents);   // a value that goes up and down: only rises count towards periods
 ```
 
-A registered stat is kept, saved, ranked and shown like xStats' own: on `/stats`, `/leaderboard`, placeholders (`%xstats_xvote_votes_monthly%`) and the website, with daily, weekly and monthly numbers. Its full id is your plugin's name in lowercase, an underscore and your id. Changes are queued and saved with xStats' next save. Pass `true` as the last argument for a value you `set`, such as a balance: on a [network](/xstats/networks/) it's the latest value any server set. Without it, a stat is a count, and a network adds up every server's. Register in `onEnable`; registering again returns the same stat, and stats are forgotten when your plugin is disabled (their saved values stay, and come back when you register again).
+A registered stat is kept, saved, ranked and shown like xStats' own: on `/stats`, `/leaderboard`, placeholders (`%xstats_xvote_votes_monthly%`) and the website, with daily, weekly and monthly numbers. Its full id is your plugin's name in lowercase, an underscore and your id. Changes are queued and saved with xStats' next save. Pass `true` as the last argument for a value you `set`, such as a balance: on a [network](/xstats/v1/networks/) it's the latest value any server set. Without it, a stat is a count, and a network adds up every server's. Register in `onEnable`; registering again returns the same stat, and stats are forgotten when your plugin is disabled (their saved values stay, and come back when you register again).
 
 ## Add a section to profiles
 

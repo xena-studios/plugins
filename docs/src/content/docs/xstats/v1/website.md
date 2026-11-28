@@ -122,4 +122,4 @@ The same site works as static files on GitHub Pages, Cloudflare Pages, Netlify o
 
 For the browser to be allowed to read the API from another site, that site must be in `web.cors-origins`. The default `"*"` allows any site, which is safe here: the API is read-only and uses no cookies. List your site's address instead to allow only it.
 
-Build your own instead? The [web API](/xstats/web-api/) is documented and versioned, and so are the [database tables](/xstats/database/).
+Build your own instead? The [web API](/xstats/v1/web-api/) is documented and versioned, and so are the [database tables](/xstats/v1/database/).

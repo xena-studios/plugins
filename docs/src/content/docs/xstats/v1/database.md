@@ -18,7 +18,7 @@ xStats' tables are documented and kept stable, so you can build your own site or
 | `boards` | `id`, `server`, `world`, `x`, `y`, `z`, `yaw`, `stat`, `period` | Leaderboards placed in the world. |
 | `sources` | `stat`, `server`, `source` | Which of Minecraft's counters a stat added up on each server, so a stat whose `source` changes starts again from the new counters' value. |
 | `meta` | `name`, `value` | The schema version, and whether the import ran on each server. |
-| `changes` | | Only in network mode: the core's [change feed](/xstats/networks/), pruned to ten minutes. |
+| `changes` | | Only in network mode: the core's [change feed](/xstats/v1/networks/), pruned to ten minutes. |
 
 Values are in each stat's unit: seconds for times, centimetres for distances, tenths of a health point for damage, and a placeholder stat's `decimals` as whole numbers (12.34 with two decimals is 1234).
 

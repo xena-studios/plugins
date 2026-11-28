@@ -52,6 +52,8 @@ class XBansTest {
 
     private fun lastConsole() = server.console.last().removePrefix("» ")
 
+    private fun consoleSaid(line: String) = server.console.lastOrNull()?.removePrefix("» ") == line
+
     private fun lastReply(source: co.xenastudios.core.common.command.CommandSource = h.console) = h.replies(source).last().removePrefix("» ")
 
     @Test
@@ -100,17 +102,17 @@ class XBansTest {
 
     @Test
     fun templatesMutesAndWarnings() {
-        h.run("mute Alex spam")
+        // Each step waits for its own broadcast or reply: a command that answers in several lines
+        // (warnings) can still be finishing when the next one starts.
+        h.run("mute Alex spam") { consoleSaid("Console muted Alex for 1h: Spamming") }
         assertEquals("Console muted Alex for 1h: Spamming", lastConsole())
-        h.run("checkmute Alex")
-        assertTrue(lastReply().contains("Reason: Spamming"), lastReply())
-        h.run("warn Alex 1h language")
+        h.run("checkmute Alex") { h.console.replies.any { it.contains("Reason: Spamming") } }
+        h.run("warn Alex 1h language") { consoleSaid("Console warned Alex: Inappropriate language") }
         assertEquals("Console warned Alex: Inappropriate language", lastConsole())
-        h.run("warnings Alex")
-        assertTrue(h.console.replies.any { it.contains("Alex has 1 active warnings") }, h.console.replies.toString())
-        h.run("unwarn Alex")
+        h.run("warnings Alex") { h.console.replies.any { it.contains("Alex has 1 active warnings") } }
+        h.run("unwarn Alex") { consoleSaid("Console removed a warning from Alex.") }
         assertEquals("Console removed a warning from Alex.", lastConsole())
-        h.run("unmute Alex")
+        h.run("unmute Alex") { consoleSaid("Console unmuted Alex.") }
         assertEquals("Console unmuted Alex.", lastConsole())
     }
 

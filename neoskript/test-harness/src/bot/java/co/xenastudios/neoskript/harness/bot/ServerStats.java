@@ -100,6 +100,54 @@ final class ServerStats {
                 nonDaemon, pluginThreads, bossBars);
     }
 
+    /** The plugin's pending tasks, each as the class of the code it runs, sorted, for telling two samples apart. */
+    static String describeTasks(String pluginName) {
+        Plugin plugin = Bukkit.getPluginManager().getPlugin(pluginName);
+        java.util.List<String> names = new java.util.ArrayList<>();
+        try {
+            for (BukkitTask task : Bukkit.getScheduler().getPendingTasks()) {
+                if (plugin != null && task.getOwner().getName().equals(plugin.getName()) && !task.isCancelled()) {
+                    names.add("bukkit:" + code(task));
+                }
+            }
+        } catch (UnsupportedOperationException folia) {
+            // Folia has no Bukkit scheduler.
+        }
+        Set<Object> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<Object> found = Collections.newSetFromMap(new IdentityHashMap<>());
+        collect(Bukkit.getGlobalRegionScheduler(), plugin, 4, seen, found);
+        collect(Bukkit.getAsyncScheduler(), plugin, 4, seen, found);
+        for (Object task : found) {
+            names.add(task.getClass().getSimpleName() + ":" + code(task));
+        }
+        java.util.Collections.sort(names);
+        return names.isEmpty() ? "none" : String.join(" ", names);
+    }
+
+    /** The class of the Runnable or Consumer a task holds, found by its fields, or the task's own class. */
+    private static String code(Object task) {
+        for (Class<?> type = task.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
+            for (Field field : type.getDeclaredFields()) {
+                if (Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
+                if (Runnable.class.isAssignableFrom(field.getType())
+                        || java.util.function.Consumer.class.isAssignableFrom(field.getType())) {
+                    try {
+                        field.setAccessible(true);
+                        Object code = field.get(task);
+                        if (code != null) {
+                            return code.getClass().getName();
+                        }
+                    } catch (ReflectiveOperationException | RuntimeException unreadable) {
+                        // Try the next field.
+                    }
+                }
+            }
+        }
+        return task.getClass().getName();
+    }
+
     /**
      * The plugin's scheduled tasks that haven't been cancelled: Bukkit's on Paper, and the global region's and the
      * async scheduler's on both, found in the schedulers' fields as the server doesn't list them.

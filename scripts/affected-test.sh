@@ -275,9 +275,24 @@ check "xLimbo's Paper adapter" xlimbo/bukkit/src/main/kotlin/co/xenastudios/xlim
   $'tasks=:build :xlimbo:api:build :xlimbo:bukkit:build :xlimbo:common:build\nchecks=\nboot=bukkit'
 check "xLimbo's budgets seed" xlimbo/bukkit/budgets-seed/plugins/xLimbo/config.yml \
   $'tasks=:build :xlimbo:api:build :xlimbo:bukkit:build :xlimbo:common:build\nchecks=\nboot=bukkit'
+check "xStats' common code" xstats/common/src/commonMain/kotlin/co/xenastudios/xstats/XStatsPlugin.kt \
+  $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=bukkit fabric proxy'
+check "xStats' API" xstats/api/src/commonMain/kotlin/co/xenastudios/xstats/api/XStatsApi.kt \
+  $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=bukkit fabric proxy'
+check "xStats' website, copied into every jar" xstats/web/index.html \
+  $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=bukkit fabric proxy'
+check "xStats' Bukkit adapter" xstats/bukkit/src/main/kotlin/co/xenastudios/xstats/bukkit/BukkitStatsServer.kt \
+  $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=bukkit'
+check "xStats' family checks" xstats/bukkit/xmoney-checks.txt \
+  $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=bukkit'
+check "xStats' Fabric mod (platform-fabric's build)" xstats/fabric/src/main/kotlin/co/xenastudios/xstats/fabric/XStatsMod.kt \
+  $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=fabric'
+check "xStats' Velocity side" xstats/velocity/src/main/kotlin/co/xenastudios/xstats/velocity/XStatsVelocity.kt \
+  $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=proxy'
+check "xStats' network test" xstats/velocity/network.sh \
+  $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=proxy'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
-check "Today's plugin" xstats/src/main/java/co/xenastudios/xstats/XStats.java \
-  $'units=xstats\ncompile=:xstats:compileJava :xstats:api:compileJava\nchecks=xstats/boot-checks.txt\nboot='
+# No "today's plugin" case: xStats 2.0 was the last plugin still on today's Java core.
 check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric proxy'
 # The floor check reads the shrunk jars and changes none, so nothing boots again.

@@ -213,3 +213,20 @@
 # the return queue and its status ping, the thirteen protections, the commands, the family's
 # bridges and the Bukkit events, plus the seven translations and bStats.
 :xlimbo:bukkit 620
+
+# xStats 2.0 (M10), shrunk: 850 KiB on Bukkit, over 1.x's 399 KiB and the 500 KiB target, with the
+# reason recorded in decisions/2026-11-28-xstats-2.md: about 425 KiB the shared core xStats reaches
+# (as xVote's: the database layer and change feed, commands, config, messages, the family), about
+# 300 KiB xStats' own and its API (the engine and its periods, the 1.x tables and statements, the
+# stat table for 1.13 to 26.x, leaderboards, boards in the world, every command, the website's
+# server and JSON API, the import from stats files, the family's hooks, PlaceholderAPI, the four
+# events and their Bukkit events), 20 KiB the seven translations, 18 KiB the website's own files,
+# 8 KiB bStats, 3 KiB the startup list. Line: size + 10%.
+:xstats:bukkit 935
+# Its proxy side, the network's view on Velocity (the engine read-only, the network commands, the
+# website): 697 KiB, shrunk; line size + 10%.
+:xstats:velocity 765
+# On Fabric, 752-766 KiB, shrunk before Loom remaps it, its core relocated (xena.fabric-mod); lines size + 10%.
+:core:platform-fabric:xstats:1.20.1 830
+:core:platform-fabric:xstats:1.21.11 830
+:core:platform-fabric:xstats:26.3 840

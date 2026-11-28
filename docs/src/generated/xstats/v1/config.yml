@@ -1,0 +1,373 @@
+# xStats: player stats, leaderboards and a website.
+# Docs: https://plugins.xenastudios.co/xstats/configuration/
+#
+# Apply changes with /xstats reload. A bad value falls back to its default with a
+# warning in the console; xStats never stops over config. All text is MiniMessage:
+# https://plugins.xenastudios.co/start/formatting/
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# The look xStats' messages share. The default messages use these as tags, so changing
+# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
+# <#3EC407>, or <gold><bold>.
+theme:
+  # <prefix> starts the default messages. Make it your server's name, such as
+  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+  prefix: "<#3EC407>»</#3EC407> "
+  # The colour of message text that has no tag of its own.
+  base: "<gray>"
+  # <highlight>: names and values, such as a player or a speed.
+  highlight: "<#3EC407>"
+  # <success>: something turned on or done.
+  success: "<#5EE08A>"
+  # <error>: something refused or turned off.
+  error: "<#FF6B6B>"
+
+# What players are told.
+messages:
+  error:
+    # The console or a command block ran a command only players can use.
+    player-only: "<prefix><error>Only players can use this command."
+    # The sender lacks the command's permission.
+    no-permission: "<prefix><error>You don't have permission to do that."
+    # No online player has that name. <player> is the name typed.
+    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
+    # The command was typed wrong. <usage> is how to type it.
+    usage: "<prefix><error>Usage:</error> <usage>"
+    # The command hit an error. The console has the details.
+    failed: "<prefix><error>Something went wrong. The console has the details."
+  # /stats. <player> is whose; <first-join> and <last-seen> are when; <playtime> and <kd>
+  # (kills per death) are filled in when the playtime, kills and deaths stats exist.
+  profile-header: "<prefix><highlight><player></highlight>'s stats <dark_gray>·</dark_gray> joined <white><first-join></white>, last seen <white><last-seen></white>"
+  # One stat. <stat>, <value>, and <rank>: their place on the all-time board, or blank.
+  profile-line: "  <gray><stat>:</gray> <white><value></white><rank>"
+  # How <rank> looks when they have one.
+  profile-rank: " <dark_gray>#<rank></dark_gray>"
+  # A section another plugin adds. <title> is its heading.
+  profile-section: "<prefix><highlight><title>"
+  # One of its lines: <label> and <value>.
+  profile-section-line: "  <gray><label>:</gray> <white><value>"
+  # After the stats, when web.public-url is set. <url> is their page.
+  profile-link: "<prefix><click:open_url:'<url>'><hover:show_text:'Open in your browser'><highlight><underlined>See it on the website</underlined></highlight></hover></click>"
+  # <player> is the name typed.
+  never-joined: "<prefix><error><highlight><player></highlight> has never played here."
+  private-on: "<prefix><success>Your stats are hidden</success> from the website. Leaderboards in game still show you."
+  private-off: "<prefix>Your stats are <highlight>on the website</highlight> again."
+  # /leaderboard. <stat>, <period>.
+  top-header: "<prefix><highlight><stat></highlight> <dark_gray>·</dark_gray> <period>"
+  # <rank>, <player>, <value>.
+  top-line: "  <gray><rank>.</gray> <white><player></white> <dark_gray>-</dark_gray> <highlight><value>"
+  # The line for the player reading it, when they're on the page.
+  top-line-self: "  <highlight><rank>. <player></highlight> <dark_gray>-</dark_gray> <highlight><value>"
+  top-empty: "<prefix>Nobody's on this leaderboard yet."
+  # <stat> is what was typed; <stats> the ones there are.
+  unknown-stat: "<prefix><error>There's no stat called <highlight><stat></highlight>.</error> Try: <stats>"
+  # <stat> has no daily, weekly or monthly numbers.
+  no-periods: "<prefix><error><highlight><stat></highlight> is only counted all time."
+  # Under a page of /leaderboard. See the docs for <next> and <previous>.
+  page-footer: "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>"
+  # Before the database is open, just after startup.
+  not-ready: "<prefix><error>Stats are still loading. Try again in a moment."
+
+# The commands players use. Blank permission means everyone may.
+commands:
+
+  # /stats [player]: a player's stats. /stats private hides your own from the website
+  # (xstats.private, everyone has it).
+  stats:
+    enabled: true
+    aliases: []
+    permission: ""
+
+  # /leaderboard <stat> [daily|weekly|monthly|all] [page]: a leaderboard. Without
+  # xUtilities, whose /top this would clash with, you can add top to its aliases.
+  leaderboard:
+    enabled: true
+    aliases: ["lb"]
+    permission: ""
+
+# The stats xStats keeps, in the order /stats and the website show them. Each has:
+#   name: what players see.
+#   source: where the numbers come from:
+#     one of Minecraft's own stats, as /scoreboard names them: player_kills, jump,
+#       mined:diamond_ore, killed:zombie, crafted:* (every item). Add several with +.
+#     xstats:playtime (time online, not counting time standing still with the camera
+#       unmoved) or xstats:sessions (times joined).
+#     papi:%placeholder%: a PlaceholderAPI value, such as papi:%vault_eco_balance%,
+#       read every save and when the player leaves.
+#   unit: auto, count, time, distance or damage. auto works it out from the source.
+#   decimals: for papi values with decimals, such as 2 for a balance.
+#   periods: also count it per day, week and month, for leaderboards and the website.
+#     Each day a player's stat changes is one row in the database, so only turn it on
+#     for stats you want leaderboards of.
+#   in-game: show it on /stats and /leaderboard. Placeholders always work.
+#   website: show it on the website and in the web API.
+# An id is 1 to 32 lowercase letters, digits and _. Placeholders use it: %xstats_kills%.
+stats:
+  playtime:
+    name: "Playtime"
+    source: "xstats:playtime"
+    unit: "auto"
+    decimals: 0
+    periods: true
+    in-game: true
+    website: true
+  sessions:
+    name: "Sessions"
+    source: "xstats:sessions"
+    unit: "auto"
+    decimals: 0
+    periods: false
+    in-game: true
+    website: true
+  kills:
+    name: "Player kills"
+    source: "player_kills"
+    unit: "auto"
+    decimals: 0
+    periods: true
+    in-game: true
+    website: true
+  deaths:
+    name: "Deaths"
+    source: "deaths"
+    unit: "auto"
+    decimals: 0
+    periods: true
+    in-game: true
+    website: true
+  mob_kills:
+    name: "Mobs killed"
+    source: "mob_kills"
+    unit: "auto"
+    decimals: 0
+    periods: true
+    in-game: true
+    website: true
+  blocks_mined:
+    name: "Blocks mined"
+    source: "mined:*"
+    unit: "auto"
+    decimals: 0
+    periods: true
+    in-game: true
+    website: true
+  distance:
+    name: "Distance travelled"
+    source: "walk_one_cm + sprint_one_cm + crouch_one_cm + swim_one_cm + walk_on_water_one_cm + walk_under_water_one_cm + climb_one_cm + fly_one_cm + aviate_one_cm + horse_one_cm + boat_one_cm + minecart_one_cm + pig_one_cm + strider_one_cm + happy_ghast_one_cm + nautilus_one_cm"
+    unit: "auto"
+    decimals: 0
+    periods: true
+    in-game: true
+    website: true
+  fish_caught:
+    name: "Fish caught"
+    source: "fish_caught"
+    unit: "auto"
+    decimals: 0
+    periods: true
+    in-game: true
+    website: true
+  jumps:
+    name: "Jumps"
+    source: "jump"
+    unit: "auto"
+    decimals: 0
+    periods: false
+    in-game: true
+    website: true
+  damage_dealt:
+    name: "Damage dealt"
+    source: "damage_dealt"
+    unit: "auto"
+    decimals: 0
+    periods: false
+    in-game: true
+    website: true
+  animals_bred:
+    name: "Animals bred"
+    source: "animals_bred"
+    unit: "auto"
+    decimals: 0
+    periods: false
+    in-game: true
+    website: true
+  villager_trades:
+    name: "Villager trades"
+    source: "traded_with_villager"
+    unit: "auto"
+    decimals: 0
+    periods: false
+    in-game: true
+    website: true
+  items_enchanted:
+    name: "Items enchanted"
+    source: "enchant_item"
+    unit: "auto"
+    decimals: 0
+    periods: false
+    in-game: true
+    website: true
+  raids_won:
+    name: "Raids won"
+    source: "raid_win"
+    unit: "auto"
+    decimals: 0
+    periods: false
+    in-game: true
+    website: true
+
+# How stats are read and saved.
+collecting:
+  # Minutes between saves. Each save reads online players' stats, a few each tick,
+  # writes what changed, and works out every leaderboard. A crash loses at most this
+  # much of playtime and placeholder stats; Minecraft's own stats are never lost.
+  save-every-minutes: 5
+  # Players read per tick during a save. Lower spreads a save over more ticks.
+  reads-per-tick: 4
+  # Leave out of playtime the minutes a player didn't move their camera at all, as when
+  # they're away from the keyboard. Checked at each save, by comparing where they look.
+  afk-aware: true
+  # On first start, read every player's history from the world's stats folder, so
+  # leaderboards aren't empty on day one. /xstats import runs it again.
+  import-on-first-start: true
+
+leaderboards:
+  # Places kept on each leaderboard: for /leaderboard, placeholders and the website.
+  size: 100
+  # Leave players banned with /ban out of leaderboards. Players with
+  # xstats.leaderboard.exclude are always left out, such as staff; nobody has it unless
+  # given it, operators included.
+  exclude-banned: true
+  # Places on each page of /leaderboard.
+  per-page: 10
+
+  # Leaderboards in the world: Paper text displays, placed with /xstats board.
+  boards:
+    # Places each in-world board shows.
+    lines: 10
+    # The top line. <stat> and <period> are filled in.
+    title: "<#3EC407><bold><stat></bold></#3EC407>\n<gray><period>"
+    # Each place: <rank>, <player>, <value>.
+    line: "<gray><rank>.</gray> <white><player></white> <#3EC407><value>"
+    # When nobody is on it yet.
+    empty: "<gray>Nobody yet"
+
+# Days, weeks and months, for daily, weekly and monthly leaderboards.
+periods:
+  # The time zone days start in, such as Europe/London or America/New_York. Blank uses
+  # the server's own.
+  timezone: ""
+  # The day weeks start on.
+  week-starts: "monday"
+  # Days to keep each day's numbers. Older days are added into their month, so monthly
+  # and all-time numbers stay right while the database stays small.
+  keep-daily-days: 90
+
+  # How periods are named to players.
+  names:
+    daily: "Today"
+    weekly: "This week"
+    monthly: "This month"
+    all: "All time"
+
+# The stats website and its JSON API, served by xStats itself on its own port. Off until
+# you turn it on: see https://plugins.xenastudios.co/xstats/website/ for safe setups,
+# behind a reverse proxy or a tunnel.
+web:
+  # Serve the website and the API.
+  enabled: false
+  # The address to listen on. 0.0.0.0 is every network the machine has; 127.0.0.1 only
+  # this machine, for a reverse proxy or tunnel on the same machine.
+  bind: "0.0.0.0"
+  # The port. On a shared host, use a port your host gave the server (an extra
+  # allocation), or put the site behind your own domain with a tunnel.
+  port: 8804
+  # The site's address as players open it, such as https://stats.example.com. /stats links
+  # to it, and /xstats web export writes it into the files. Blank leaves the link out.
+  public-url: ""
+  # Serve the website itself. Off serves only the JSON API, for a site hosted elsewhere.
+  site: true
+  # Sites hosted elsewhere that may read the API from a visitor's browser, such as
+  # https://example.com. "*" lets any site.
+  cors-origins: ["*"]
+  # Requests one visitor may make each minute. A visit to a page is a few; more are
+  # answered 429 until the minute is up. Players' heads have a limit of their own, five
+  # times this, since a leaderboard shows many.
+  requests-per-minute: 120
+  # Requests handled at once. More wait for a moment, then get 503.
+  max-concurrent: 32
+  # Addresses of your reverse proxy or tunnel, or ranges such as 173.245.48.0/20.
+  # Requests from them are counted against the visitor's address the proxy passes on
+  # (in client-ip-header) instead, so the rate limit is per visitor. Leave it empty when
+  # visitors connect directly.
+  trusted-proxies: []
+  # The header a trusted proxy puts the visitor's address in. X-Forwarded-For suits
+  # nginx, Caddy and most tunnels. CF-Connecting-IP only if Cloudflare is the proxy
+  # listed above, or the one in front of it with nothing reaching yours another way:
+  # visitors can send any header themselves, and only Cloudflare replaces this one.
+  client-ip-header: "X-Forwarded-For"
+  avatars:
+    # Where players' heads come from: {uuid}, {name} and {size} are filled in. The default
+    # is mc-heads.net; https://crafatar.com/avatars/{uuid}?size={size}&overlay works too.
+    url: "https://mc-heads.net/avatar/{uuid}/{size}"
+    # Fetch heads through xStats and keep them, so visitors' browsers never contact the
+    # service above. Heads are kept in memory for a day.
+    proxy: false
+
+  # How the site looks.
+  branding:
+    # The site's title, such as your server's name. Blank shows "Server stats".
+    name: ""
+    # A line under the title. Blank for none.
+    tagline: ""
+    # A logo: a link (https://...), or a PNG, JPEG, SVG or WebP file in plugins/xStats/web/,
+    # such as logo.png. Blank for none.
+    logo: ""
+    accent: "#3ec407"
+    background: "#0f1419"
+    surface: "#1a222b"
+    text: "#e6edf3"
+
+# This server's name in the database, for networks: each server's stats are kept apart
+# under it and added up for the network. Letters, digits, - and _.
+server-name: "main"
+
+# Where stats are kept. sqlite needs nothing set up. Use mysql for a network, so every
+# server shares one set of stats and one website. A change here applies on restart.
+storage:
+  # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
+  # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  type: "sqlite"
+  # Put in front of every table's name, so plugins and servers can share one database.
+  table-prefix: "xstats_"
+
+  # Only for type: mysql.
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "minecraft"
+    username: "minecraft"
+    password: ""
+    # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
+    properties: ""
+
+# For servers sharing one MySQL database: each server hears about the others' saves
+# and /stats private, and its leaderboards count the whole network.
+network:
+  # On when several servers share this plugin's MySQL or MariaDB database, so a change
+  # made on one (a ban, a payment) reaches the others within a few seconds.
+  # Leave it off for a single server: it does nothing on SQLite.
+  enabled: false
+  # Seconds between checks for the other servers' changes.
+  check-every: 3
+
+# Tells you when a new version is out.
+update-checker:
+  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
+  # only the plugin version, the platform and the Minecraft version.
+  enabled: true
+  # Logged, and shown to admins when they join, when a newer version is out.
+  # <plugin>, <current>, <latest> and <url> are filled in.
+  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"

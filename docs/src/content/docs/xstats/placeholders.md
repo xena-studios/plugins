@@ -1,13 +1,13 @@
 ---
 title: Placeholders
-description: xStats' PlaceholderAPI placeholders, for scoreboards, TAB, holograms and ajLeaderboards.
+description: "xStats' placeholders: PlaceholderAPI on Bukkit and Text Placeholder API on Fabric, for scoreboards, TAB, holograms and ajLeaderboards."
 sidebar:
-  order: 4
+  order: 4.7
 ---
 
-With [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) installed, xStats adds these. Each is answered from memory, from the last save, so they're cheap enough for a scoreboard that refreshes every tick.
+With [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) installed on Bukkit, xStats adds these. Each is answered from memory, from the last save, so they're cheap enough for a scoreboard that refreshes every tick.
 
-`<stat>` is a stat's id from the config, such as `kills` or `mob_kills`. `<period>` is `daily`, `weekly`, `monthly` or `all`; leave it out for all time. Only stats with `periods: true` have daily, weekly and monthly numbers.
+`<stat>` is a stat's id from the config, such as `kills` or `mob_kills`, or one of the family's, such as `xvote_votes`. `<period>` is `daily`, `weekly`, `monthly` or `all`; leave it out for all time. Only stats with `periods: true` (and the family's) have daily, weekly and monthly numbers.
 
 | Placeholder | What it shows |
 | --- | --- |
@@ -22,3 +22,7 @@ With [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) installed, xSt
 Leaderboard placeholders reach as far as `leaderboards.size` (100 places); past that, they're blank.
 
 **ajLeaderboards** works with the `_raw` placeholders, but xStats' own `top` placeholders and boards already give you leaderboards per day, week and month without it.
+
+## On Fabric
+
+With [Text Placeholder API](https://modrinth.com/mod/placeholder-api) installed, the same placeholders are `%xstats:stat <params>%`, where `<params>` is what follows `xstats_` above: `%xstats:stat kills_monthly%`, `%xstats:stat top_kills_1_name%`, `%xstats:stat rank_playtime%`. Kills per death is `%xstats:kd%`.

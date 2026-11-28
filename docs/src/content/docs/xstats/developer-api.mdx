@@ -1,0 +1,66 @@
+---
+title: Developer API
+description: "Build on xStats: stats, ranks and leaderboards from memory, stats of your own, sections on profiles and events, on every server and the proxy."
+sidebar:
+  order: 6.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xStats' API is the same on Paper, Folia, Spigot, Fabric and Velocity: players are `PlayerRef`s (by UUID), and every read answers from memory at once, on any thread. Get it with `XStats.api()` once xStats is enabled (add it to your plugin's `depend`, or `softdepend` and check `XStats.isEnabled()` first). On Bukkit it's also in the services manager, as `XStatsApi`.
+
+:::caution[Not on Maven Central yet]
+2.0's API isn't published until 2.0 is released. Its coordinates will be `co.xenastudios.xstats:xstats-api:2.0.0`; until then, compile against the plugin's jar. The [1.x API](/xstats/v1/developer-api/) is on Maven Central as `1.0.1`.
+:::
+
+## Read stats and leaderboards
+
+```java
+XStatsApi xstats = XStats.api();
+PlayerRef player = PlayerRefs.of(bukkitPlayer.getUniqueId());
+long kills = xstats.value(player, "kills", Period.MONTHLY);
+int place = xstats.rank(player, "kills", Period.ALL);   // 0: not on it
+List<LeaderboardEntry> top = xstats.top("playtime", Period.WEEKLY, 10);
+List<StatInfo> all = xstats.stats();
+```
+
+Values are as of xStats' last save, every few minutes, which is also when leaderboards are worked out. They're whole numbers in the stat's `StatUnit`: seconds for `TIME`, centimetres for `DISTANCE`, tenths of a health point for `DAMAGE`, and `COUNT` with `StatInfo#getDecimals()` places. `profile(player)` returns everything about a player (`null` for one xStats doesn't know); `isPrivate(player)` says whether they ran `/stats private`. On the proxy (`xstats.getProxy()`), every read is the network's.
+
+## Count your own stats
+
+```java
+CustomStat votes = xstats.registerStat("MyPlugin", "votes", "Votes", StatUnit.COUNT);            // myplugin_votes
+CustomStat balance = xstats.registerStat("MyPlugin", "balance", "Balance", StatUnit.COUNT, true, 2); // set, two decimals
+
+votes.increment(player, 1);       // counts today, this week, this month and all time
+balance.set(player, cents);       // a value that goes up and down: only rises count towards periods
+```
+
+A registered stat is kept, saved, ranked and shown like xStats' own: on `/stats`, `/leaderboard`, placeholders (`%xstats_myplugin_votes_monthly%`) and the website, with daily, weekly and monthly numbers. Its full id is your plugin's name in lowercase, an underscore and your id. Changes wait in memory and are saved with xStats' next save, so calling it on every event costs nothing. Pass `true` for a value you `set`, such as a balance: on a [network](/xstats/networks/) it's the latest value any server set. Without it, a stat is a count, and a network adds up every server's. Register in `onEnable`; registering again returns the same stat. On Bukkit, your stats and sections are taken out of use as your plugin is disabled; elsewhere, call `unregisterStats("MyPlugin")`. Their saved values stay, and come back when you register again.
+
+## Add a section to profiles
+
+```java
+xstats.registerProfileSection("MyPlugin", "votes", "Voting", (player, staff) -> List.of(
+    new ProfileLine("Votes this month", Integer.toString(votesThisMonth(player))),
+    new ProfileLine("Streak", streak(player) + " days")));
+```
+
+The section shows on `/stats`, the website and the web API's player page. It's asked off the server's threads whenever a profile is shown, so answer from memory: a section that takes over half a second is skipped for that profile, and one that throws is logged once and skipped. `staff` is true when staff with `xstats.staff` look in game, so a section can show them more (a full history, say) and show the public a summary. Lines are plain text everywhere: the website never reads them as HTML. Return an empty list to leave the section out.
+
+## Events
+
+On xStats' own bus (`xstats.getEvents()`), the same everywhere, and on Bukkit as Bukkit events too (`co.xenastudios.xstats.api.bukkit.BukkitStatChangeEvent` and the rest), so Skript sees them. Each is fired only when something listens.
+
+- `StatChangeEvent` (cancellable): another plugin is about to change a registered stat; change its amount.
+- `PrivacyChangeEvent` (cancellable): a player is about to go private or public.
+- `StatsSavedEvent`: after each save, with the players saved and how long it took.
+- `LeaderboardChangeEvent`: a leaderboard has a new leader, with the one before. Not fired when a new day empties a board.
+
+`StatsSavedEvent` and `LeaderboardChangeEvent` are fired on xStats' database thread: to touch the world or a player from one, go to the right thread first.
+
+<Reference plugin="xstats" show="events" />
+
+## From 1.x
+
+1.x's `XStatsApi.get()` is `XStats.api()`; players are `PlayerRef`s rather than `UUID`s; `getStat`, `getRank`, `getTop`, `getStats` and `getProfile` are `value`, `rank`, `top`, `stats` and `profile`; `registerStat` and `registerProfileSection` take your plugin's name rather than its `Plugin`, and `registerStat` takes the decimals too. Off Bukkit, call `unregisterStats` as your plugin stops. 1.x's Bukkit events are `co.xenastudios.xstats.api.bukkit.BukkitStatsSavedEvent` and `BukkitLeaderboardChangeEvent` now, each wrapping xStats' own event.

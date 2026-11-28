@@ -206,7 +206,7 @@ boot() {
   shift
   rm -f "$dir/stdin"
   mkfifo "$dir/stdin"
-  (cd "$dir" && exec "$java" -Xms1G -Xmx1G -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -Dxena.startupTimes=true "$@" \
+  (cd "$dir" && exec "$java" -Xms1G -Xmx1G -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -Dxena.startupTimes=true -Dxena.debug.paste=false "$@" \
     -Dlog4j.configurationFile="$here/log4j2.xml" -Dterminal.jline=false -Dterminal.ansi=false \
     -jar "$paper" --nogui <stdin >"$log" 2>&1) &
   pid=$!

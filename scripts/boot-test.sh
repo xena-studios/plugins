@@ -213,7 +213,7 @@ EOF
   for property in "${properties[@]+"${properties[@]}"}"; do echo "$property" >>"$dir/server.properties"; done
 
   mkfifo "$dir/stdin"
-  (cd "$dir" && exec "$java" -Xms512M -Xmx1G ${jvm[@]+"${jvm[@]}"} -jar "$server_jar" "$nogui" <stdin >"$log" 2>&1) &
+  (cd "$dir" && exec "$java" -Xms512M -Xmx1G -Dxena.debug.paste=false ${jvm[@]+"${jvm[@]}"} -jar "$server_jar" "$nogui" <stdin >"$log" 2>&1) &
   pid=$!
   exec 3>"$dir/stdin"
 

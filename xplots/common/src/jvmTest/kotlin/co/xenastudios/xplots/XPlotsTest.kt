@@ -166,6 +166,38 @@ class XPlotsTest {
     }
 
     @Test
+    fun anAwayOwnersRenewalNoticeSurvivesARestartAndIsToldOnceAsTheyJoin() {
+        val folder = java.nio.file.Files.createTempDirectory("xplots")
+        val hooks = FakeHooks()
+        val economy = hooks.economy as FakeEconomy
+        val h = harness("plots:\n  auto-renew: true\n", hooks, folder)
+        val plot = h.field().plots()[0]
+        val steve = h.server.join("Steve")
+        economy.balances[steve] = 1000.0
+        h.rentAsMenu(steve, plot)
+        val first = plot.lease!!.expires
+        h.server.leave(steve)
+        h.platform.advance(3.days - 1.hours + 1.seconds)
+        h.platform.until("the renewal") { plot.lease!!.expires > first }
+        h.flush()
+        assertEquals("renewed", h.query("SELECT kind FROM xplots_notice")[0][0], "kept with the plot")
+        h.stop()
+        harnesses.remove(h)
+
+        // Restarted before Steve came back: told as they join, once.
+        val again = harness("plots:\n  auto-renew: true\n", hooks, folder)
+        again.platform.until("the plots to be read") { again.plugin.isReady }
+        again.server.join("Steve")
+        again.plugin.joined(steve, "Steve")
+        val renewed = again.server.said(steve).filter { it.contains("Renewed box-1") }
+        assertEquals(1, renewed.size, again.server.said(steve).toString())
+        again.flush()
+        assertEquals(0, again.query("SELECT COUNT(*) FROM xplots_notice")[0][0].toString().toInt(), "forgotten once told")
+        again.plugin.joined(steve, "Steve")
+        assertEquals(1, again.server.said(steve).count { it.contains("Renewed box-1") }, "not told twice")
+    }
+
+    @Test
     fun aRenewalCutShortByARestartIsNeverChargedTwice() {
         val folder = java.nio.file.Files.createTempDirectory("xplots")
         val hooks = FakeHooks()

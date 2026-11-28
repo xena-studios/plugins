@@ -33,7 +33,7 @@ internal object AdminParts {
 
     /**
      * `/xplots forget <player>`: their memberships, and the plots they rent, whose rents end as an
-     * eviction does (put back if their field says so). Their name goes with them.
+     * eviction does (put back if their field says so), and renewal notices kept for them. Their name goes with them.
      */
     fun playerData(plugin: XPlotsPlugin): PlayerDataRegistry =
         PlayerDataRegistry(plugin.cache?.asLookup() ?: PlayerLookup { pendingOf(null) }).apply {
@@ -57,6 +57,7 @@ internal object AdminParts {
                         }
                     }
                 }
+                count += plugin.renewals.forget(player)
                 pendingOf(Outcome.Ok(count))
             })
             plugin.cache?.let { register("the family's player cache", it.asPlayerData()) }

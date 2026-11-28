@@ -66,7 +66,7 @@ Stand where players should arrive and run `/xplots field setwarp box`. Players t
 
 ## Renewals
 
-With `auto-renew` on (the config's `plots.auto-renew`, or one field's), a rented plot renews for one more period an hour before it runs out, charged from its owner's balance through the economy, whether they're online or not; they're told then, or when they next join. An owner turns it off for their plot in its menu. A balance that doesn't cover it is tried once: the owner is told, and the plot runs out as it would have. Item currency can't renew (the item is in an inventory, not a balance).
+With `auto-renew` on (the config's `plots.auto-renew`, or one field's), a rented plot renews for one more period an hour before it runs out, charged from its owner's balance through the economy, whether they're online or not; they're told then, or when they next join, even after a restart. An owner turns it off for their plot in its menu. A balance that doesn't cover it is tried once: the owner is told, and the plot runs out as it would have. Item currency can't renew (the item is in an inventory, not a balance).
 
 Each renewal is charged once at most, even if the server stops in the middle of one: the charge is written down before the money is taken and cleared in the same write that extends the rent, and a start that finds one left asks xMoney's ledger whether it went through. With Vault, which keeps no ledger to ask, it's taken as paid.
 

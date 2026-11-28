@@ -24,8 +24,11 @@ import kotlin.uuid.Uuid
 /** A rented plot's renewal: whether it renews on its own, and the charge being made now (the expiry it extends from), if any. */
 public class Renewal(public val auto: Boolean, public val charge: Long?)
 
-/** What [Store.load] read: every field and plot, and the renewals by plot. */
-public class Stored(public val plots: Plots, public val renewals: Map<Plot, Renewal>)
+/** A renewal's notice for an owner who was away: [kind] is the message's key (`renewed`, `renew-failed`), told as they next join. */
+public class Notice(public val plot: Plot, public val owner: PlayerRef, public val kind: String, public val price: Double)
+
+/** What [Store.load] read: every field and plot, the renewals by plot, and the notices waiting for their owners. */
+public class Stored(public val plots: Plots, public val renewals: Map<Plot, Renewal>, public val notices: List<Notice> = emptyList())
 
 /**
  * Where plots survive a restart. Everything is read once as xPlots starts, off the server's
@@ -77,6 +80,24 @@ public class Store(public val db: Database, private val log: Log) {
 
     /** A plot's renewal: `null` to take it away. */
     public fun saveRenewal(plot: Plot, renewal: Renewal?): Pending<Outcome<Unit, DbError>> = write(renewalStatements(plot, renewal))
+
+    /** A notice kept for its owner, in place of any earlier one about the same plot. */
+    public fun saveNotice(notice: Notice): Pending<Outcome<Unit, DbError>> {
+        val (most, least) = longs(notice.owner)
+        val plot = notice.plot
+        val owner = arrayOf(fieldOf(plot), numberOf(plot), SqlValue.Integer(most), SqlValue.Integer(least))
+        return write(listOf(
+            sql.raw("DELETE FROM {p}notice WHERE field = ? AND number = ? AND owner_most = ? AND owner_least = ?", *owner),
+            sql.raw("INSERT INTO {p}notice (field, number, owner_most, owner_least, kind, price) VALUES (?, ?, ?, ?, ?, ?)",
+                *owner, SqlValue.Text(notice.kind), SqlValue.Real(notice.price)),
+        ))
+    }
+
+    /** Every notice kept for [owner]: they've been told. */
+    public fun deleteNotices(owner: PlayerRef): Pending<Outcome<Unit, DbError>> {
+        val (most, least) = longs(owner)
+        return write(listOf(sql.raw("DELETE FROM {p}notice WHERE owner_most = ? AND owner_least = ?", SqlValue.Integer(most), SqlValue.Integer(least))))
+    }
 
     public fun saveSnapshot(plot: Plot, data: ByteArray): Pending<Outcome<Unit, DbError>> =
         write(listOf(deletePlotRow("snapshot", plot), sql.raw("INSERT INTO {p}snapshot (field, number, data) VALUES (?, ?, ?)", fieldOf(plot), numberOf(plot), SqlValue.Bytes(data))))
@@ -164,7 +185,7 @@ public class Store(public val db: Database, private val log: Log) {
         sql.raw("DELETE FROM {p}$table WHERE field = ? AND number = ?", fieldOf(plot), numberOf(plot))
 
     internal companion object {
-        val TABLES = listOf("member", "lease", "snapshot", "renewal", "plot")
+        val TABLES = listOf("member", "lease", "snapshot", "renewal", "notice", "plot")
 
         fun i(value: Int): SqlValue = SqlValue.Integer(value.toLong())
         fun fieldOf(plot: Plot): SqlValue = SqlValue.Integer(plot.field.id.toLong())

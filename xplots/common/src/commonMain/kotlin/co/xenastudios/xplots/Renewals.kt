@@ -17,6 +17,7 @@ import co.xenastudios.xplots.model.Facing
 import co.xenastudios.xplots.model.Lease
 import co.xenastudios.xplots.model.Plot
 import co.xenastudios.xplots.model.info
+import co.xenastudios.xplots.store.Notice
 import co.xenastudios.xplots.store.Renewal
 import kotlin.concurrent.Volatile
 import kotlin.time.Duration.Companion.milliseconds
@@ -44,8 +45,10 @@ public class Renewals internal constructor(private val plugin: XPlotsPlugin) {
     private val charging = HashSet<Plot>()
     private val failedFor = concurrentMap<Plot, Long>()
 
-    /** Renewals made while their owner was away, told when they next join. */
-    private val waiting = concurrentMap<PlayerRef, List<Pair<String, Array<Pair<String, Any>>>>>()
+    /** Renewals made while their owner was away, told when they next join: kept in the database too, so a restart doesn't lose them. */
+    private val waiting = concurrentMap<PlayerRef, List<Notice>>().also { map ->
+        for (notice in plugin.storedNotices) map[notice.owner] = (map[notice.owner] ?: emptyList()) + notice
+    }
 
     /** Whether [plot]'s field offers renewals at all: `auto-renew`, with an economy that can charge an owner who's away. */
     public fun offered(plot: Plot): Boolean = plugin.rentals.settings(plot).autoRenew && plugin.rentals.wallet.item() == null
@@ -134,8 +137,7 @@ public class Renewals internal constructor(private val plugin: XPlotsPlugin) {
                 val row = Renewal(true, null)
                 rows[plot] = row
                 store?.saveLease(plot, extended, row)
-                val shown = arrayOf<Pair<String, Any>>("plot" to plot.id, "price" to plugin.rentals.wallet.format(price), "time" to plugin.rentals.time(extended.remaining(plugin.now())))
-                tellOrKeep(owner, XPlotsMessages.renewed.key, shown)
+                tellOrKeep(Notice(plot, owner, XPlotsMessages.renewed.key, price))
                 plugin.fire(RentPaidEvent.TYPE) { RentPaidEvent(owner, info(plot, false), RentKind.RENEW, 1, price) }
             }
             paid -> {
@@ -153,7 +155,7 @@ public class Renewals internal constructor(private val plugin: XPlotsPlugin) {
                 val row = Renewal(true, null)
                 rows[plot] = row
                 if (!plot.isFree) store?.saveRenewal(plot, row)
-                tellOrKeep(owner, XPlotsMessages.renewFailed.key, arrayOf("plot" to plot.id, "price" to plugin.rentals.wallet.format(price)))
+                tellOrKeep(Notice(plot, owner, XPlotsMessages.renewFailed.key, price))
             }
         }
         locked(charging) { charging.remove(plot) }
@@ -161,16 +163,39 @@ public class Renewals internal constructor(private val plugin: XPlotsPlugin) {
         plugin.expiry.reschedule()
     }
 
-    private fun tellOrKeep(owner: PlayerRef, key: String, placeholders: Array<Pair<String, Any>>) {
-        val message = XPlotsMessages.messages.first { it.key == key }
-        if (plugin.server.isOnline(owner)) plugin.texts.send(owner, message, *placeholders)
-        else waiting[owner] = (waiting[owner] ?: emptyList()) + (key to placeholders)
+    private fun tellOrKeep(notice: Notice) {
+        val owner = notice.owner
+        if (plugin.server.isOnline(owner)) return tell(notice)
+        // The latest about each plot, in memory and in the database, until they join.
+        waiting[owner] = (waiting[owner] ?: emptyList()).filter { it.plot != notice.plot } + notice
+        plugin.store?.saveNotice(notice)
     }
 
-    /** [player] joined: renewals made while they were away. */
+    private fun tell(notice: Notice) {
+        val plot = notice.plot
+        val lease = plot.lease
+        // Only about a plot that's still theirs: one that ran out or changed hands since says so on its own.
+        if (lease == null || lease.owner != notice.owner) return
+        val price = plugin.rentals.wallet.format(notice.price)
+        if (notice.kind == XPlotsMessages.renewed.key) {
+            plugin.texts.send(notice.owner, XPlotsMessages.renewed, "plot" to plot.id, "price" to price, "time" to plugin.rentals.time(lease.remaining(plugin.now())))
+        } else {
+            plugin.texts.send(notice.owner, XPlotsMessages.renewFailed, "plot" to plot.id, "price" to price)
+        }
+    }
+
+    /** `/xplots forget`: the notices kept for [player], untold; how many. */
+    internal fun forget(player: PlayerRef): Long {
+        val kept = waiting.remove(player) ?: return 0
+        plugin.store?.deleteNotices(player)
+        return kept.size.toLong()
+    }
+
+    /** [player] joined: renewals made while they were away, then forgotten. */
     internal fun joined(player: PlayerRef) {
         val told = waiting.remove(player) ?: return
-        for ((key, placeholders) in told) plugin.texts.send(player, XPlotsMessages.messages.first { it.key == key }, *placeholders)
+        plugin.store?.deleteNotices(player)
+        for (notice in told) tell(notice)
     }
 
     /**

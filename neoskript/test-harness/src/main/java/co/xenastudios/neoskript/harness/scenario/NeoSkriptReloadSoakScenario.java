@@ -95,9 +95,10 @@ public final class NeoSkriptReloadSoakScenario implements Scenario {
         int reloads = reloads();
         try (ServerProcess server = builder.start()) {
             server.await(ServerProcess.DONE, WAIT);
-            // NeoSkript starts in the server's first tick, which can come after "Done": until then its start task
-            // is pending and would count in the sample.
+            // NeoSkript starts in the server's first tick, which can come after "Done". Then, as after /sk disable
+            // all below, its one-off tasks at startup finish first: the sample is what stays.
             server.await(Pattern.compile("\\[NeoSkript] Loaded 0 scripts with 0 triggers in \\d+ ms$"), WAIT);
+            Thread.sleep(5_000);
             Map<String, Long> empty = sample(server, "empty");
             String emptyTasks = tasks(server, "empty");
             int start = server.mark();

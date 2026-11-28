@@ -60,11 +60,18 @@ stonecutter {
         branch("xmarket")
         branch("xvote")
         branch("xbackup")
+        // N0 spike (#202): the game model on Fabric, in sandbox/n0/model/fabric. Never released.
+        branch("n0model")
     }
 }
 
 // A plugin's Fabric adapter lives in its own folder; its branch here is pointed at it, and each
 // Minecraft line's node at its versions/ folder there, as Stonecutter puts a branch's nodes.
+run {
+    val folder = file("../../sandbox/n0/model/fabric")
+    project(":n0model").projectDir = folder
+    for (node in project(":n0model").children) node.projectDir = folder.resolve("versions/${node.name}").also { it.mkdirs() }
+}
 for (plugin in listOf("xutilities", "zchat", "xmoney", "xteleport", "xbans", "xvanish", "xmarket", "xvote", "xbackup")) {
     val folder = file("../../$plugin/fabric")
     project(":$plugin").projectDir = folder
@@ -118,5 +125,6 @@ includeBuild("../..") {
         substitute(module("co.xenastudios:xmarket-common")).using(project(":xmarket:common"))
         substitute(module("co.xenastudios:xvote-common")).using(project(":xvote:common"))
         substitute(module("co.xenastudios:xbackup-common")).using(project(":xbackup:common"))
+        substitute(module("co.xenastudios.sandbox:common")).using(project(":sandbox:n0-model:common"))
     }
 }

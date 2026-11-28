@@ -116,6 +116,12 @@ include("core:core-benchmarks")
 include("sandbox")
 // Its API, and two plugins that use it, so CI checks that other plugins can use an API.
 include("sandbox:api", "sandbox:consumer", "sandbox:paper-consumer")
+// N0 spike (#202): a neutral game model for NeoSkript, its Paper adapter (the Fabric one is a
+// branch of core/platform-fabric's build). Never released.
+include("sandbox:n0-model:common", "sandbox:n0-model:bukkit")
+project(":sandbox:n0-model").projectDir = file("sandbox/n0/model")
+project(":sandbox:n0-model:common").projectDir = file("sandbox/n0/model/common")
+project(":sandbox:n0-model:bukkit").projectDir = file("sandbox/n0/model/bukkit")
 // Every plugin: each top-level folder whose build applies xena.plugin, so a new plugin
 // needs no line here. The sandbox, which is never released, is listed above.
 rootDir.listFiles { file -> file.isDirectory && file.name != "sandbox" }

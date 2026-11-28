@@ -1,0 +1,10 @@
+# A real client through the model (scripts/budgets/bots/client.js --plugin n0model), after
+# boot-checks.txt: join, chat, a cancelled chat, a break and a place, then the quit, each answered
+# or logged by the hand-written script's triggers.
+client: --plugin n0model
+expect: N0 QUIT Joiner left
+logged: N0 JOIN Joiner: minecraft:glass at
+logged: N0 CHAT Joiner: hello model
+logged: N0 CHAT Joiner cancelled
+logged: N0 BREAK Joiner broke minecraft:glass
+logged: N0 PLACE Joiner placed minecraft:dirt

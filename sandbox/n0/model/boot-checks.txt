@@ -1,0 +1,5 @@
+# The N0 game model spike on a real server (scripts/boot-test.sh, scripts/boot-fabric.sh --checks):
+# the same model calls on blocks, items and a zombie, its damage and death through the platform's
+# own events into the hand-written script, then the timing loop.
+logged: MODEL PASS
+logged: BENCH done

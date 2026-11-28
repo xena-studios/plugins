@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "n0model",
+  "version": "${version}",
+  "name": "N0Model",
+  "description": "N0 spike (#202), the game model for NeoSkript, on Fabric. Never released.",
+  "license": "MIT",
+  "environment": "*",
+  "mixins": ["n0model-world.mixins.json"],
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.neoskript.model.fabric.N0ModelMod" }
+    ]
+  },
+  "depends": {
+    "fabricloader": "${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${flk}"
+  }
+}

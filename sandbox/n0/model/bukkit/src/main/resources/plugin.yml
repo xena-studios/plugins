@@ -1,0 +1,8 @@
+name: N0Model
+version: 0.0.0
+main: co.xenastudios.neoskript.model.bukkit.N0ModelPlugin
+api-version: "1.21"
+folia-supported: true
+description: N0 spike (#202), the game model for NeoSkript. Never released.
+libraries:
+  - org.jetbrains.kotlin:kotlin-stdlib:${kotlin}

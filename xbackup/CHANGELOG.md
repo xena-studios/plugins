@@ -1,5 +1,36 @@
 # xBackup changelog
 
+## 2.0.0 (unreleased)
+
+Not released yet: 2.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 1.0.1 is the release, and 1.x gets its fixes.
+
+The rewrite: the same commands, permissions, settings, remotes and repository as 1.0.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3** and **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), with xBackup's messages in eight languages. The repository format is 1.x's byte for byte: 2.0 reads every backup 1.0.1 made, and 1.0.1 reads 2.0's. Keep the 1.0.1 jar to go back to.
+
+### New
+
+- **The Xena plugins' databases are copied by the plugins themselves.** xMoney, xBans and the rest copy their SQLite database for each backup, from their own database writer, between two of their writes: nothing is ever half in a backup, and nothing waits on xBackup. A database on MySQL or MariaDB is named in each backup and in `/backup status` as not in the backups, so nobody mistakes a backup for a copy of it. See [Databases](https://plugins.xenastudios.co/xbackup/databases/).
+- **Spigot, CraftBukkit and older Paper**, from 1.8.8: the worlds are saved with `World#save()` and xBackup waits, off the server's thread, until the region files stop changing.
+- **Fabric**, server-side, in `config/xbackup/`: saving off and the worlds flushed as `/save-off` and `/save-all flush` do.
+- **Messages in `lang/`**, in English, German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese, each player in their own.
+- **`/xbackup debug`** writes a report to share when asking for help.
+- **The command-line restore runs on Java 8** and newer, and restores a Fabric server's backups too.
+
+### Upgrading from 1.x
+
+Replace the jar and restart. Your `config.yml` is carried forward and the old one is kept beside it as `config.yml.bak-v1`; the repository and the remotes' copies are used as they are. See [Upgrading from 1.x](https://plugins.xenastudios.co/xbackup/upgrade/).
+
+- **Messages are in `lang/` now**, one file per language, no longer in `config.yml`. Every message you changed in 1.x is copied into `lang/en.yml` on the first start, and then xBackup sends English to everyone (`messages.language: en`), as 1.x did.
+- **The broadcasts** are switched by `broadcasts.start` and `broadcasts.done`; one you'd given text in 1.x is switched on.
+- **`theme` moved into `messages.theme`**, shared with the other Xena plugins in `plugins/Xena/config.yml` unless you set it here. Colours you changed in 1.x stay xBackup's own.
+- `update-checker` is `updates` now: `update-checker.enabled` is carried to `updates.check`.
+- **Going back to 1.0.1:** stop the server, put the 1.0.1 jar back, and rename `config.yml.bak-v1` to `config.yml` (keep 2.0's as `config.yml.v2`). The repository needs nothing.
+
+### For developers: the API's breaking changes
+
+- `XBackupApi.get()` is `XBackup.api()`; on Bukkit the API is also in the services manager.
+- Plugins are named by name rather than passed as a `Plugin`, paths are strings relative to the server folder, and times are milliseconds, so the API is the same on every platform.
+- The events are xBackup's own (`XBackup.api().getEvents()`), with Bukkit events beside them in `co.xenastudios.xbackup.api.bukkit`.
+
 ## 1.0.1
 
 ### Fixed

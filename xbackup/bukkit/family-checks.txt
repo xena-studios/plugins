@@ -1,0 +1,12 @@
+# The family (boot.sh --family): xMoney 2.0 and xBans 2.0 beside xBackup, on SQLite. Each
+# backup asks their own database writers for a copy (core's family backup seam), never copies
+# their files from outside; the status says so, and the copies check and restore.
+logged: xMoney
+logged: xBans
+
+run: backup now family
+expect: Backed up
+run: backup status
+expect: Databases copied by their plugin: xBans, xMoney
+run: backup verify full
+expect: All good.

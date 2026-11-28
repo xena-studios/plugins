@@ -1,0 +1,35 @@
+---
+title: xBackup
+description: "xBackup: incremental backups that never stall the server, for Paper, Folia, Spigot and Fabric. Only what changed, chunk by chunk, copied off-site and restored safely."
+sidebar:
+  label: Overview
+  order: 1
+---
+
+xBackup backs up your server incrementally, storing only what changed since the last backup, down to single chunks. Hourly backups take almost no disk, and the server pauses for milliseconds, not seconds. It runs on Paper, Folia, Spigot and Fabric, from Minecraft 1.8.8 on Bukkit and 1.20.1 on Fabric.
+
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
+- **Only what changed.** A world's region files are kept chunk by chunk: edit one chunk and a backup stores one chunk, not an 8 MB region file. Everything else is stored once, however many backups use it.
+- **You won't feel it running.** Autosave goes off, the worlds are written to disk, xBackup reads what changed on a low-priority thread of its own, and autosave goes back on. The server's thread spends tens of milliseconds on it; `/backup status` shows the real number. See [Performance](/xbackup/performance/).
+- **A restore you can trust.** Every file comes back checked against the hash it was saved with. You see what a restore will change before it happens, and it never writes over a running world. It's put in place on the next start, before any world loads, or from the command line with the server stopped. See [Restoring](/xbackup/restoring/).
+- **Databases copied by their owners.** The Xena plugins' databases (xMoney's, xBans' and the rest) are copied by the plugin that writes them, between its own writes, so a backup never holds a half-written database. Any other SQLite database is copied by SQLite itself, never as raw bytes. See [Databases](/xbackup/databases/).
+- **Copies off the server.** A second disk, S3 (AWS, Cloudflare R2, Backblaze B2, Wasabi, MinIO and the rest), WebDAV (Nextcloud and others), SFTP, FTP, Google Drive, OneDrive and Dropbox. Only new files are sent. See [Remotes](/xbackup/remotes/).
+- **In your players' language.** Every message is in `lang/`, in English and seven more languages.
+
+## How it works
+
+Backups go into a **repository**: a folder, `plugins/xBackup/repository` (`config/xbackup/repository` on Fabric) unless you move it. Inside, every piece of data is stored once, named by its SHA-256, in files that are written once and never changed. Each backup is one small file listing what it holds, written last, so a crash or a full disk never leaves a broken backup that looks complete.
+
+Each backup reads the worlds twice. The first read runs while the server saves as usual. The second runs with autosave off and the worlds just written to disk, and reads only what changed since the first. So autosave is off for as little time as possible, and the backup is one exact moment of every world.
+
+Old backups are thinned out by [retention](/xbackup/configuration/#retention): by default the newest three, one an hour for a day, one a day for a week, one a week for a month and one a month for six months.
+
+2.0's repository is 1.x's, byte for byte: 2.0 reads every backup 1.x made, and 1.x reads 2.0's.
+
+## Getting started
+
+1. [Install it](/xbackup/install/). It works out of the box: a backup every hour, kept in the repository folder.
+2. Run `/backup now`, then `/backup status`.
+3. Add a copy somewhere else: [Remotes](/xbackup/remotes/).
+4. Know how to get things back before you need to: [Restoring](/xbackup/restoring/).
+5. Every command: [Commands](/xbackup/commands/).

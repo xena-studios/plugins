@@ -1,19 +1,18 @@
 ---
 title: Configuration
-description: Every setting in xBackup's config.yml.
+description: "Every setting in xBackup's config.yml, with its default."
 sidebar:
-  order: 5
+  order: 4
 ---
 
-import { Code } from "@astrojs/starlight/components";
-import config from "../../../generated/xbackup/config.yml?raw";
+import Reference from "../../../components/reference/Reference.astro";
 
-The config is `plugins/xBackup/config.yml`, written on first start. Apply changes with `/xbackup reload`; every setting applies on reload, remotes included.
+The config is `plugins/xBackup/config.yml` (`config/xbackup/config.yml` on Fabric), written on first start. Apply changes with `/xbackup reload`: every setting applies on reload, remotes included. A bad value falls back to its default with a warning in the console. xBackup's messages are in `lang/`: see [Messages](/xbackup/messages/).
 
 | Section | What it covers |
 | --- | --- |
-| `theme` | The prefix and colours xBackup's messages share: see [the theme](/start/formatting/#the-theme). |
-| `messages` | Shared errors, and optional broadcasts when a backup starts and finishes. |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
+| `broadcasts` | Whether everyone online is told when a backup starts and finishes. |
 | `command` | Whether `/backup` is on, and its aliases. |
 | `repository` | Where backups are kept. |
 | `schedule` | How often backups run. |
@@ -23,26 +22,26 @@ The config is `plugins/xBackup/config.yml`, written on first start. Apply change
 | `performance` | Limits on disk reads and uploads, compression, and the longest autosave may stay off. |
 | `verify` | How often older data is read back and checked. |
 | `remotes` | Copies of the backups elsewhere: see [Remotes](/xbackup/remotes/). Their passwords go in `secrets.yml`, never here. |
-| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+| `updates` | The update checker: [Privacy](/start/privacy/). |
 
 ## Repository
 
-A folder, relative to the server folder or absolute. A second disk is the best place for it: a backup on the same disk as the server doesn't survive that disk failing. A network mount works too. Changing it starts a new, empty repository; the old one stays as it is.
+A folder, relative to the server folder or absolute. Left at its default, it's `plugins/xBackup/repository`, or `config/xbackup/repository` on Fabric. A second disk is the best place for it: a backup on the same disk as the server doesn't survive that disk failing. A network mount works too. Changing it starts a new, empty repository; the old one stays as it is.
 
 ## Schedule
 
-`every: "1h"` backs up once an hour, counted from the last backup, so a restart doesn't reset the clock. `"off"` backs up only with `/backup now`. With `skip-when-idle`, a scheduled backup is skipped when nobody has been online since the last one, since nothing in the worlds has changed. A restart always counts as a change.
+`every: "1h"` backs up once an hour, counted from the last backup, so a restart doesn't reset the clock. The first backup after an install runs a minute after the start. `"off"` backs up only with `/backup now`. With `skip-when-idle`, a scheduled backup is skipped when nobody has been online since the last one, since nothing in the worlds has changed. A restart always counts as a change.
 
 ## Sources
 
-- `worlds`: every loaded world's save folder. On 1.21.11 that's `world`, `world_nether` and `world_the_end`; on 26.x one `world` folder holds every dimension. Worlds read during the autosave pause.
-- `plugins`: the plugins folder, jars and data. xBackup's own repository and restore folders are never included, nor are `secrets.yml`, SFTP key files and the other files holding [passwords](/xbackup/remotes/#passwords).
+- `worlds`: every loaded world's save folder. On 1.21.11 and older Bukkit that's `world`, `world_nether` and `world_the_end`; on 26.x and on Fabric, one `world` folder holds every dimension. Worlds are read during the autosave pause.
+- `plugins`: the plugins folder (the mods folder on Fabric), jars and data. xBackup's own repository and restore folders are never included, nor are `secrets.yml`, SFTP key files and the other files holding [passwords](/xbackup/remotes/#passwords).
 - `server-files`: `server.properties` and the `.yml`, `.json`, `.toml` and `.txt` files beside it (ops, whitelist, bans, `bukkit.yml`), and the `config` folder.
 - `extra`: anything else, by path, such as a world no plugin has loaded.
 
-A source that is a link, such as a world kept on another disk, is backed up as the folder it leads to. A link inside a source is kept as a link; if it leads to a folder outside the server folder, the backup says that folder's files aren't in it.
+A source that is a link, such as a world kept on another disk, is backed up as the folder it leads to. A link inside a source is kept as a link; if it leads outside the server folder, the backup says that folder's files aren't in it.
 
-**Databases:** every SQLite file is copied with SQLite's own `VACUUM INTO`, so a plugin writing to it meanwhile is no problem, and its `-wal` and `-shm` files aren't needed. A database that can't be copied that way (one a plugin holds locked) keeps its previous copy, with a warning; its raw bytes are never copied. MySQL and MariaDB databases live outside the server; back them up with `mysqldump`.
+Databases are never copied as raw bytes: see [Databases](/xbackup/databases/).
 
 ## Retention
 
@@ -50,18 +49,20 @@ Each tier keeps the newest backup of each of its last so many hours, days, weeks
 
 With the defaults (`last: 3`, `hourly: 24`, `daily: 7`, `weekly: 4`, `monthly: 6`), an hourly schedule keeps about 40 backups covering six months.
 
-`max-size` caps the repository, such as `"50GB"`: past it, the oldest backups go first. `min-free-space` is the space a backup always leaves on the repository's disk. A backup that might go under it removes old backups first, and if that's still not enough it doesn't start; one that runs short part way stops cleanly, and nothing it wrote is used.
+`max-size` caps the repository, such as `"50GB"`: past it, the oldest backups go first. `min-free-space` is the space a backup always leaves on the repository's disk. A backup that might go under it removes old backups first, and if that's still not enough it doesn't start. One that runs short part way stops cleanly, and nothing it wrote is used.
 
 ## Performance
 
 `read-limit` and `upload-limit` cap how fast a backup reads from disk and sends to remotes, such as `"50MB"` (per second). A backup runs on one low-priority thread, never on the server's threads. `compression-level` is deflate's, 1 to 9; region files are already compressed and stored as they are.
 
-`max-pause` is the longest autosave may stay off for one backup (15 minutes by default). Usually it's off for under a second; the very first backup of a big world reads everything once, before the pause, so even that's short. If it's ever passed, autosave goes back on and that backup is abandoned. Chunks aren't lost either way: while autosave is off, the server holds them until it's back on.
+`max-pause` is the longest autosave may stay off for one backup (15 minutes by default). Usually it's off for under a second. If it's ever passed, autosave goes back on and that backup is abandoned. Nothing is lost either way: while autosave is off, the server holds changed chunks until it's back on.
 
 ## Verify
 
 Each backup reads back what it wrote before it counts. `every` also reads back `percent` of the older data now and then (10% weekly by default), so a failing disk is found before you need a restore. `/backup verify full` reads everything.
 
-## The full default config
+## Make it look like your server
 
-<Code code={config} lang="yaml" title="plugins/xBackup/config.yml" />
+`messages.theme` sets the look of every message xBackup sends: a prefix, the text colour, and three styles. Each is `shared` until you set it, which takes the value every Xena plugin shares, in `plugins/Xena/config.yml`. `messages.language` is `shared` too, which is `auto` unless the family's file says otherwise: each player reads xBackup's messages in their client's language, and the console in `default-language`.
+
+<Reference plugin="xbackup" show="config" />

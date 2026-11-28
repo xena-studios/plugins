@@ -1,0 +1,18 @@
+---
+title: Messages
+description: "Every message xBackup sends, in English, with the placeholders each fills in."
+sidebar:
+  order: 5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Every message is in `plugins/xBackup/lang/` (`config/xbackup/lang/` on Fabric), one file per language: `en.yml`, `de.yml`, `es.yml`, `fr.yml`, `pt-BR.yml`, `ru.yml`, `pl.yml` and `zh-CN.yml`. Edit any of these files in place and run `/xbackup reload`: your edits are kept, and a message you haven't edited gets the new text when an update changes it. Delete a file to have it written again as shipped. A blank message (`""`) sends nothing.
+
+The broadcasts when a backup starts and finishes (`broadcast.start`, `broadcast.done`) are messages too, sent to everyone online when `broadcasts.start` and `broadcasts.done` are on in the [config](/xbackup/configuration/). A message can use [the theme's tags](/start/formatting/#the-theme) (`<prefix>`, `<highlight>`, `<success>`, `<error>`), any [formatting](/start/formatting/), and the placeholders listed beside it. The `core.*` messages are the ones every Xena plugin shares: errors such as "You don't have permission", and the replies of `/xbackup reload` and `/xbackup debug`.
+
+:::note[The translations are drafts]
+The seven languages besides English were drafted by machine translation and haven't been read by native speakers yet. Corrections are welcome: open an issue or a pull request with the file.
+:::
+
+<Reference plugin="xbackup" show="messages" />

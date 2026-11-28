@@ -153,3 +153,17 @@
 :core:platform-fabric:xvote:1.20.1 710
 :core:platform-fabric:xvote:1.21.11 710
 :core:platform-fabric:xvote:26.3 725
+
+# xBackup 2.0 (M11), shrunk: 856 KiB on Bukkit, over 1.x's 483 KiB and the 500 KiB target, with the
+# reason recorded in decisions/2026-11-27-xbackup-2.md. Of its 781 KiB of compressed entries: 347
+# KiB the shared core it reaches (config, messages, commands, the family, the update checker, the
+# loader and platform-bukkit), 405 KiB xBackup's own (1.x's repository format, chunker and
+# region-file layout byte for byte; the backup and its two passes; the restore and its journal;
+# seven remotes with SigV4, WebDAV, OAuth and the isolated SFTP and FTP loaders; the command-line
+# restore; the API and its Bukkit events; the Paper, Folia and Spigot pauses), 24 KiB the seven
+# translations, 8.5 KiB bStats. Line: size + about 7%.
+:xbackup:bukkit 920
+# On Fabric, 765-779 KiB, shrunk before Loom remaps it, its core relocated (xena.fabric-mod); lines size + 5%.
+:core:platform-fabric:xbackup:1.20.1 805
+:core:platform-fabric:xbackup:1.21.11 805
+:core:platform-fabric:xbackup:26.3 820

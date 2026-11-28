@@ -1,0 +1,52 @@
+---
+title: Developer API
+description: "Build on xBackup: run backups, read the list and status from memory, add sources, keep your files still while they're read, add storage, and the backup events, on every platform."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xBackup's API is the same on Paper, Folia, Spigot and Fabric. Get it with `XBackup.api()` once xBackup is enabled (add it to your plugin's `depend`, or `softdepend` and check `XBackup.isEnabled()` first). On Bukkit it's also in the services manager, as `XBackupApi`.
+
+Every method says how it runs. Reads answer from memory at once, on any thread. Anything that does work returns a `CompletableFuture` that completes off the game threads. Nothing blocks the caller.
+
+:::caution[Not on Maven Central yet]
+2.0's API isn't published until 2.0 is released. Its coordinates will be `co.xenastudios.xbackup:xbackup-api:2.0.0`; until then, compile against the plugin's jar. The [1.x API](/xbackup/v1/developer-api/) is on Maven Central as `1.0.1`.
+:::
+
+```java
+XBackupApi backups = XBackup.api();
+
+// Back up before something risky.
+backups.backupNow("before the event").thenAccept(snapshot ->
+    getLogger().info("Backed up " + snapshot.getShortId() + ", the server paused " + snapshot.getPauseMillis() + " ms"));
+
+// The newest backup and what's running, from memory.
+BackupStatus status = backups.getStatus();
+
+// Back up a folder outside the plugins folder, without its cache.
+backups.registerSource(getName(), "custom-data", List.of("custom-data/cache/**"));
+
+// Keep this plugin's files still while xBackup reads them.
+backups.registerQuietMoment(getName(), "plugins/MyPlugin", new QuietMoment() {
+    public void pause() { writer.pauseAndFlush(); }
+    public void resume() { writer.resume(); }
+});
+```
+
+What a plugin registers goes when that plugin is disabled, or with `unregisterSources` and `unregisterQuietMoment`. SQLite databases need no quiet moment: xBackup copies them through SQLite, or through the Xena plugin that writes them (see [Databases](/xbackup/databases/)).
+
+## Storage
+
+`registerBackend(owner, type, backend)` adds a place backups can be copied to: implement `StorageBackend` (put, get, list and delete whole files), and a remote with `type: <type>` in the config uses it.
+
+## Events
+
+Listen on `XBackup.api().getEvents()`. `BackupStartEvent` can be cancelled to skip that backup, such as during an event; `BackupFinishedEvent` comes once a backup is stored, and `BackupFailedEvent` when one failed (nothing half-written is kept). On Bukkit each is also a Bukkit event, in `co.xenastudios.xbackup.api.bukkit`: `BukkitBackupStartEvent` on the main thread, the other two async. Events are only built when something listens.
+
+<Reference plugin="xbackup" show="events" />
+
+## From 1.x
+
+`XBackupApi.get()` is `XBackup.api()`. Plugins are named by name (`getName()`) rather than passed as `Plugin`, paths are strings relative to the server folder, and durations are milliseconds (`getPauseMillis()`), so the API is the same on every platform. The events are xBackup's own, with Bukkit events beside them under new names.

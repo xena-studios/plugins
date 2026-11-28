@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "xbackup",
+  "version": "${version}",
+  "name": "xBackup",
+  "description": "Backups that never stall the server: deduplicated, checked, copied off-site, restored safely. Server-side: players install nothing.",
+  "authors": ["Xena Studios"],
+  "contact": {
+    "homepage": "https://plugins.xenastudios.co/xbackup/",
+    "sources": "https://github.com/xena-studios/plugins",
+    "issues": "https://github.com/xena-studios/plugins/issues"
+  },
+  "license": "GPL-3.0-only",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.xbackup.fabric.XBackupMod" }
+    ]
+  },
+  "depends": {
+    "fabricloader": "${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${flk}"
+  }
+}

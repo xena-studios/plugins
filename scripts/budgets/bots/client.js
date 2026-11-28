@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>] [--fabric] [--fixed-language]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -37,7 +37,9 @@
 // (xvote-network: the votes sent to the proxy's receiver, Friend paid on lobby as Friend first
 // joins, then on game, where Friend moved, and Joiner on lobby), or xMarket's (with --xmoney: /shop's
 // menus, a category and the amount screen clicked through to a purchase that xMoney debits, /sell
-// hand that it credits, /shop buy and /worth, all in German).
+// hand that it credits, /shop buy and /worth, all in German), or xBackup's (Joiner builds, backs
+// up and plans, stages and calls off a restore of the world, all in German, with /backup's
+// completion; Friend, no operator, is refused).
 //
 // The same scenarios run on Fabric (scripts/boot-fabric.sh's "client:" step, which adds --fabric):
 // a check that differs there by design takes Fabric's side, as each says (xUtilities' /back,
@@ -639,6 +641,7 @@ async function run () {
   if (plugin === 'xmoney') return xmoney()
   if (plugin === 'xteleport') return xteleport()
   if (plugin === 'xbans') return xbans()
+  if (plugin === 'xbackup') return xbackup()
   if (plugin === 'xbans-network') return xbansNetwork()
   if (plugin === 'xvanish') return xvanish()
   if (plugin === 'xvote') return xvote()
@@ -719,6 +722,36 @@ async function xmarket () {
   await sleep(500)
   await command('/worth', de('Stone verkauft sich für $0.30 pro Stück, $19.20 für 64.', 'Stone sells for $0.30 each, $19.20 for 64.'), '/worth prices the held stack')
   if (withXMoney) await command('/balance', de('Kontostand: $796.00', 'Balance: $796.00'), 'xMoney took 200 and 64, and paid 60')
+  finish()
+}
+
+// xBackup as an operator uses it in game: Joiner (in German) changes a block, backs up, then plans,
+// stages and calls off a restore of the world; replies from xBackup's lang/de.yml. Friend, who
+// isn't an operator, can't back up.
+async function xbackup () {
+  const at = bot.entity.position.floored()
+  // Beside Joiner, not under them.
+  const block = `${at.x + 2} ${at.y + 1} ${at.z + 2}`
+  bot.chat(`/setblock ${block} minecraft:gold_block`)
+  await sleep(1000)
+  await command('/backup now from the client', de('Gesichert', 'Backed up'), '/backup now backs up, answering in German')
+  const sub = await completions('/backup ')
+  check('tab completion of /backup', ['now', 'list', 'status', 'restore'].every((s) => sub.includes(s)), `/backup  completed to ${JSON.stringify(sub)}`)
+  await command('/backup list', 'from the client', '/backup list shows the backup and its reason')
+  bot.chat(`/setblock ${block} minecraft:air`)
+  await sleep(1000)
+  await command('/backup restore latest world', de('würde', 'would change'), 'a restore is planned first, in German')
+  await command('/backup restore latest world confirm', de('Vorbereitet', 'Staged'), 'confirmed, it is staged for the next start')
+  await command('/backup status', de('Wiederherstellung wartet', 'Restore waiting'), '/backup status says a restore is waiting')
+  await command('/backup restore cancel', de('Abgebrochen', 'Cancelled'), 'the restore is called off')
+  const friend = friendBot({ version: false })
+  check('Friend joins', await friend.until(() => friend.spawned), 'Friend never spawned')
+  await sleep(1500)
+  const from = friend.heard.length
+  friend.bot.chat('/backup now')
+  // On Fabric, Minecraft's command tree hides what a player may not run, so it's an unknown argument there.
+  check("a player without xbackup.now can't back up", await friend.hears(onFabric ? 'Incorrect argument' : 'permission', from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  try { friend.bot.quit() } catch {}
   finish()
 }
 

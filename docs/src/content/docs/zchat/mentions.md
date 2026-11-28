@@ -31,7 +31,7 @@ Players aren't pinged by their own name, by someone who can't see them (so vanis
 | `/reply <message>` | `r` | `zchat.command.reply` (**everyone**) |
 | `/socialspy` | `spy` | `zchat.command.socialspy` |
 
-`/msg` replaces Minecraft's `/msg`, `/tell` and `/w`, and gives them back if you turn it off. Like Minecraft's, it takes selectors such as `@p` or `@a[distance=..10]` from anyone with Minecraft's `minecraft.command.selector` permission (operators, the console and command blocks by default), on Paper and Spigot 1.12.2 or newer; Folia can't safely look across regions for them, and Fabric reads them as names. For everyone else, `@a` is just a name, so a player can't message the whole server at once. `/reply` answers whoever you last messaged, or who last messaged you, the console included. Command blocks can send private messages but can't be replied to.
+`/msg` replaces Minecraft's `/msg`, `/tell` and `/w`, and gives them back if you turn it off. Like Minecraft's, it takes selectors such as `@p` or `@a[distance=..10]` from anyone with Minecraft's `minecraft.command.selector` permission (operators, the console and command blocks by default), on Paper and Spigot 1.12.2 or newer; Folia can't safely look across regions for them, and Fabric, NeoForge and Forge read them as names. For everyone else, `@a` is just a name, so a player can't message the whole server at once. `/reply` answers whoever you last messaged, or who last messaged you, the console included. Command blocks can send private messages but can't be replied to.
 
 ```yaml
 private-messages:

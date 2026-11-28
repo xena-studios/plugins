@@ -1,6 +1,6 @@
 ---
 title: zChat
-description: "zChat: a light chat plugin for Paper, Folia, Spigot and Fabric servers, with chat formats per rank, a filter that's hard to dodge, anti-spam, mentions and private messages."
+description: "zChat: a light chat plugin for Paper, Folia, Spigot, Fabric, NeoForge and Forge servers, with chat formats per rank, a filter that's hard to dodge, anti-spam, mentions and private messages."
 sidebar:
   label: Overview
   order: 0
@@ -30,7 +30,7 @@ Replace the jar and restart: your config is carried forward, your edited message
 
 ## Where it runs
 
-One jar for every Bukkit-family server from 1.8.8 to the newest, Folia included, and a jar per Minecraft line on Fabric, server-side only: players install nothing.
+One jar for every Bukkit-family server from 1.8.8 to the newest, Folia included, and a jar per Minecraft line on Fabric, NeoForge and Forge 1.20.1, server-side only: players install nothing.
 
 <Reference plugin="zchat" show="platforms" />
 
@@ -39,11 +39,11 @@ A few things depend on the server:
 | | |
 | --- | --- |
 | **Chat signing** | On Paper and Folia, chat keeps the player's signature: a player who reports a message reports what they signed, and a client may mark a line zChat formatted or censored as changed by the server. On Spigot 1.19 and newer, and on Fabric, a formatted line goes out as the server's own message, unsigned and not reportable; that's how those servers send chat a plugin changed. Players with **Only Show Secure Chat** on may see a censored word uncensored on Paper. |
-| `%placeholders%` in formats | Bukkit, with [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi). Fabric has none yet; other plugins can still give formats tags through the [API](/zchat/developer-api/#placeholders). |
-| Selectors in `/msg` (`@p`) | Paper and Spigot 1.12.2 or newer, for those Minecraft lets use them. Not Folia or Fabric, where `@a` is read as a name. |
-| Network chat | Velocity 3.4+ or BungeeCord (Waterfall) in front of Bukkit-family servers, with zChat on the proxy too: see [Network chat](/zchat/network/). Not Fabric servers yet. |
+| `%placeholders%` in formats | Bukkit, with [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi). Fabric, NeoForge and Forge have none yet; other plugins can still give formats tags through the [API](/zchat/developer-api/#placeholders). |
+| Selectors in `/msg` (`@p`) | Paper and Spigot 1.12.2 or newer, for those Minecraft lets use them. Not Folia, Fabric, NeoForge or Forge, where `@a` is read as a name. |
+| Network chat | Velocity 3.4+ or BungeeCord (Waterfall) in front of Bukkit-family servers, with zChat on the proxy too: see [Network chat](/zchat/network/). Not Fabric, NeoForge or Forge servers yet. |
 | Another plugin's vanish | Bukkit's own visibility on Bukkit; on both, a vanish plugin through the [API](/zchat/developer-api/#hidden-players). |
-| Each player's own language | Bukkit from 1.8.8 (Spigot), Fabric from 1.20.2. On CraftBukkit before 1.12 and Fabric 1.20.1, players read `default-language`. |
+| Each player's own language | Bukkit from 1.8.8 (Spigot), Fabric from 1.20.2, NeoForge, Forge 1.20.1. On CraftBukkit before 1.12 and Fabric 1.20.1, players read `default-language`. |
 
 <CardGrid>
   <LinkCard title="Install" href="/zchat/install/" description="The steps for your platform." />

@@ -61,7 +61,7 @@ The words are saved to `filter.words` in `config.yml`, the same list you'd edit 
 
 ### Patterns
 
-For anything words can't express, `patterns` are regular expressions (Java's, on Bukkit and Fabric), matched anywhere in the message as typed, ignoring case: `"free\\s*money"`. They aren't smart. A pattern that isn't a valid regular expression is skipped, with a warning in the console.
+For anything words can't express, `patterns` are regular expressions (Java's, on Bukkit, Fabric, NeoForge and Forge), matched anywhere in the message as typed, ignoring case: `"free\\s*money"`. They aren't smart. A pattern that isn't a valid regular expression is skipped, with a warning in the console.
 
 Words and patterns are compiled when the config loads, not per message. Players with `zchat.bypass.filter` are never filtered.
 

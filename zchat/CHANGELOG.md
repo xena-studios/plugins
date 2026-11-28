@@ -4,7 +4,7 @@
 
 Not released yet: 4.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 3.2 is the release, and 3.x gets its fixes.
 
-The rewrite: the same formats, filter, commands, permissions and settings as 3.2, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, and **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), with zChat's messages in eight languages. Keep the 3.2 jar to go back to.
+The rewrite: the same formats, filter, commands, permissions and settings as 3.2, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, **Fabric 1.20.1, 1.21.11 and 26.3**, **NeoForge 1.21.1, 1.21.11 and 26.3** and **Forge 1.20.1** (server-side: players install nothing), with zChat's messages in eight languages. Keep the 3.2 jar to go back to.
 
 ### Upgrading from 3.x
 
@@ -27,6 +27,7 @@ Replace the jar and restart. Your `config.yml` is carried forward and the old on
 ### Added
 
 - **Spigot, CraftBukkit and Fabric**, from 1.8.8 and 1.20.1, beside Paper and Folia.
+- **NeoForge 1.21.1, 1.21.11 and 26.3** and **Forge 1.20.1**, a jar per line, with Kotlin for Forge, as on Fabric: the same formats, filter, mentions and private messages.
 - **Network chat** through **Velocity and BungeeCord**: with zChat on the proxy too, chat reaches every server's players, and `/msg` and `/reply` reach players on any server. Turn it on with `network.enabled` on each server. See [Network chat](https://plugins.xenastudios.co/zchat/network/).
 - **Translations:** zChat's messages in German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese, each player in their client's language.
 - **`/zchat debug`** (health checks and a report to share) and **`/zchat forget <player>`**.
@@ -35,7 +36,7 @@ Replace the jar and restart. Your `config.yml` is carried forward and the old on
 ### Changed
 
 - A message another chat plugin changed before zChat (an `[item]` tag) is shown with its text, but without the hover it added, once zChat draws the format: the core's chat bridge works on text on every platform.
-- On Spigot 1.19 and newer and on Fabric, a formatted line is sent as the server's own message, unsigned, as those servers do for any chat a plugin changes. Paper and Folia keep the player's signature.
+- On Spigot 1.19 and newer and on Fabric, NeoForge and Forge, a formatted line is sent as the server's own message, unsigned, as those servers do for any chat a plugin changes. Paper and Folia keep the player's signature.
 
 ## 3.2.0
 

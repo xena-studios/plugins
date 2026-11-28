@@ -133,6 +133,10 @@ runPaper.folia.registerTask {
 // line's jar, its core relocated, in that build's build/libs. Locally, run it before a dry run.
 val fabricLibs = rootProject.layout.projectDirectory.dir("core/platform-fabric/build/libs")
 val fabricLines = listOf("1.20.1" to 17, "1.21.11" to 21, "26.3" to 25)
+// And the NeoForge and Forge 1.20.1 jars, from platform-neoforge's own build the same way (`./gradlew
+// -p core/platform-neoforge collect`; decisions/2026-11-28-neoforge-and-forge.md).
+val neoForgeLibs = rootProject.layout.projectDirectory.dir("core/platform-neoforge/build/libs")
+val neoForgeLines = listOf("1.21.1" to 21, "1.21.11" to 21, "26.3" to 25)
 
 xenaRelease {
     pluginId = "zchat"
@@ -177,6 +181,23 @@ xenaRelease {
             gameVersions = listOf(line)
             this.java = java
         }
+    }
+    neoForgeLines.forEach { (line, java) ->
+        jar("neoforge-$line") {
+            platform = ReleasePlatform.NEOFORGE
+            file = neoForgeLibs.file("zchat-neoforge-${project.version}+$line.jar")
+            gameVersions = listOf(line)
+            this.java = java
+            label = "NeoForge $line"
+        }
+    }
+    // Forge 1.20.1, platform-neoforge's 1.20.1-forge node.
+    jar("forge-1.20.1") {
+        platform = ReleasePlatform.FORGE
+        file = neoForgeLibs.file("zchat-forge-${project.version}+1.20.1.jar")
+        gameVersions = listOf("1.20.1")
+        java = 17
+        label = "Forge 1.20.1"
     }
 }
 

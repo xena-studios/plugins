@@ -1,0 +1,34 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "GPL-3.0-only"
+issueTrackerURL = "https://github.com/xena-studios/plugins/issues"
+
+[[mods]]
+modId = "zchat"
+version = "${version}"
+displayName = "zChat"
+authors = "Xena Studios"
+displayURL = "https://plugins.xenastudios.co/zchat/"
+description = "Format your chat. Keep it clean. Server-side: players install nothing."
+
+[[dependencies.zchat]]
+modId = "neoforge"
+type = "required"
+versionRange = "${loader}"
+ordering = "NONE"
+side = "SERVER"
+
+[[dependencies.zchat]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "SERVER"
+
+# The Kotlin stdlib.
+[[dependencies.zchat]]
+modId = "kotlinforforge"
+type = "required"
+versionRange = "${kff}"
+ordering = "NONE"
+side = "SERVER"

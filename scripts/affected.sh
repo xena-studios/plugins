@@ -77,6 +77,7 @@ declare -A rewriteOnly=(
   [build-logic/src/main/kotlin/XenaR8Extension.kt]="rewrite bukkit fabric proxy"
   [build-logic/src/main/kotlin/XenaReferenceExtension.kt]="rewrite"
   [build-logic/src/main/kotlin/XenaReleaseExtension.kt]="rewrite"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/ApiFloor.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/BenchmarkBudget.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/GeneratedReference.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/JarBudget.kt]="rewrite bukkit fabric proxy"

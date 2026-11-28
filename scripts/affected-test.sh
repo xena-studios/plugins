@@ -263,6 +263,8 @@ check "Today's plugin" xstats/src/main/java/co/xenastudios/xstats/XStats.java \
   $'units=xstats\ncompile=:xstats:compileJava :xstats:api:compileJava\nchecks=xstats/boot-checks.txt\nboot='
 check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric proxy'
+# The floor check reads the shrunk jars and changes none, so nothing boots again.
+check "Rewrite's API floor check" build-logic/src/main/kotlin/co/xenastudios/gradle/ApiFloor.kt "$rewrite"$'\nboot='
 check "Today's convention" build-logic/src/main/kotlin/xena.plugin.gradle.kts everything
 check "build-logic's own build" build-logic/build.gradle.kts everything
 check "Rewrite's jar budgets" gradle/jar-budgets.txt "$rewrite"$'\nboot=bukkit fabric proxy'

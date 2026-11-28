@@ -14,6 +14,7 @@ A rewrite on the new core. Replace the jar and restart: your 2.x config is carri
 - **Every message in each player's language**: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese (the seven besides English are drafts, awaiting native speakers). Messages are in `lang/` now; the ones you changed in 2.x's `config.yml` are copied into `lang/en.yml`.
 - `/xlimbo list` (who's in limbo and their place in line), `/xlimbo send <player>`, `/xlimbo back <player|all>`, and the admin subcommands every Xena plugin has: `/xlimbo reload`, `debug` (a report to share when asking for help) and `forget`.
 - The welcome is sent a second after a player joins, once their client has said which language it's in.
+- **No work while limbo is empty.** The action bar, the return queue and the entity sweep run only while someone is in limbo, and start again with the next arrival.
 
 ### Changed
 

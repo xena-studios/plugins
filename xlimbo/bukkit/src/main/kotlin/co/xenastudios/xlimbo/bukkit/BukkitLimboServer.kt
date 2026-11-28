@@ -9,7 +9,6 @@ import co.xenastudios.core.common.config.Config
 import co.xenastudios.core.common.family.PlayerCache
 import co.xenastudios.core.common.text.Component
 import co.xenastudios.xlimbo.LimboServer
-import co.xenastudios.xlimbo.Switch
 import co.xenastudios.xlimbo.XLimboPlugin
 import co.xenastudios.xlimbo.api.ReturnRoute
 import co.xenastudios.xlimbo.api.XLimbo
@@ -188,14 +187,11 @@ internal class BukkitLimboServer(
         world.sync(WorldSettings.of(config, platform.log))
     }
 
+    override fun sweep() {
+        Listeners.sweep(world)
+    }
+
     override fun listen(switch: Int, plugin: XLimboPlugin): AutoCloseable {
-        if (switch == Switch.CLEANUP) {
-            val seconds = plugin.config[XLimboConfig.protections.entities.cleanupIntervalSeconds]
-            val task = platform.scheduler.run(co.xenastudios.core.common.scheduler.Where.Global, kotlin.time.Duration.parse("${seconds}s"), kotlin.time.Duration.parse("${seconds}s")) {
-                Listeners.sweep(world)
-            }
-            return AutoCloseable { task.cancel() }
-        }
         val listener: Listener = Listeners.of(switch, this)
         server.pluginManager.registerEvents(listener, this.plugin)
         if (listener is Listeners.HideOthers) listener.start()

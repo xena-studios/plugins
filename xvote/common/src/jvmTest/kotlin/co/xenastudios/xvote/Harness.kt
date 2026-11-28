@@ -33,9 +33,9 @@ import co.xenastudios.xvote.config.XVoteConfig
 import co.xenastudios.xvote.vote.Zones
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
 import kotlin.time.Instant
 
@@ -106,17 +106,18 @@ class TestPlatform(threading: Threading = Threading.MAIN_THREAD, start: Instant 
 /** A server's players, as xVote's adapter would see them: what each was sent and given, what the console read and ran. */
 class FakeVoteServer(override val proxy: Boolean = false, private val platform: () -> TestPlatform? = { null }) : VoteServer, OnlinePlayers, LanguageSource {
     class Player(val ref: PlayerRef, val name: String, val permissions: MutableSet<String>, var locale: String? = null) {
-        val received: MutableList<String> = Collections.synchronizedList(ArrayList())
-        val items: MutableList<String> = Collections.synchronizedList(ArrayList())
+        // Written from the database's threads while a test reads: each read sees a snapshot.
+        val received: MutableList<String> = CopyOnWriteArrayList()
+        val items: MutableList<String> = CopyOnWriteArrayList()
 
         /** Free slots: items past it don't fit. */
         var room: Int = 1000
     }
 
     val players: MutableMap<PlayerRef, Player> = ConcurrentHashMap()
-    val console: MutableList<String> = Collections.synchronizedList(ArrayList())
-    val dispatched: MutableList<String> = Collections.synchronizedList(ArrayList())
-    val sounds: MutableList<String> = Collections.synchronizedList(ArrayList())
+    val console: MutableList<String> = CopyOnWriteArrayList()
+    val dispatched: MutableList<String> = CopyOnWriteArrayList()
+    val sounds: MutableList<String> = CopyOnWriteArrayList()
     val known: MutableMap<String, PlayerRef> = ConcurrentHashMap()
 
     fun join(name: String, vararg permissions: String): Player {
@@ -205,8 +206,8 @@ class FakeVoteServer(override val proxy: Boolean = false, private val platform: 
 /** A log any thread can write to, as the receiver's threads do: each line's message. */
 class ListLog : co.xenastudios.core.common.platform.Log {
     // Read while the receiver's threads write: a test reads a copy, never the list being added to.
-    private val kept: MutableList<String> = Collections.synchronizedList(ArrayList())
-    val lines: List<String> get() = synchronized(kept) { ArrayList(kept) }
+    private val kept: MutableList<String> = CopyOnWriteArrayList()
+    val lines: List<String> get() = ArrayList(kept)
 
     override fun info(message: String) {
         kept += message
@@ -223,7 +224,7 @@ class ListLog : co.xenastudios.core.common.platform.Log {
 
 /** An economy that records every payment. */
 class FakeEconomy : Economy {
-    val paid: MutableList<Pair<PlayerRef, Double>> = Collections.synchronizedList(ArrayList())
+    val paid: MutableList<Pair<PlayerRef, Double>> = CopyOnWriteArrayList()
     override val name: String = "Fake"
     override val ready: Boolean = true
     override fun give(player: PlayerRef, amount: Double): Pending<String?> {

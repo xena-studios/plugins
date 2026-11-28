@@ -1,0 +1,61 @@
+# xBackup on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks,
+# through boot.sh): a backup with the pause and flush (World#save(true) per region on Folia,
+# World#save() and a wait for the region files on Spigot), then a check, a staged restore and a
+# clean-up, every reply drawn from lang/en.yml.
+logged: xBackup 2.0.0 on
+run: xbackup info
+expect: xBackup 2.0.0 on
+
+run: backup now boot test
+expect: Backed up
+run: backup list
+expect: backups,
+run: backup status
+expect: Problem: none
+
+# The flush really writes a changed chunk before the backup reads it: on Folia that means
+# World#save(true) on each region's own thread. The changed chunk must be read.
+paper run: forceload add 400 400 415 415
+paper expect: Marked
+paper run: backup now baseline
+paper expect: Backed up
+paper run: setblock 405 70 405 minecraft:gold_block
+paper expect: Changed the block
+paper run: backup now after a change
+paper expect: changed chunk
+folia run: forceload add 400 400 415 415
+folia expect: Marked
+folia run: backup now baseline
+folia expect: Backed up
+folia run: setblock 405 70 405 minecraft:gold_block
+folia expect: Changed the block
+folia run: backup now after a change
+folia expect: changed chunk
+
+run: backup verify full
+expect: All good.
+
+# Remote passwords live in secrets.yml, which is never backed up; config.yml is.
+run: backup restore latest plugins/xBackup/secrets.yml
+expect: has no plugins/xBackup/secrets.yml
+run: backup restore latest server.properties
+expect: would change
+
+# A restore is planned first, staged on confirm, and can be called off.
+run: backup restore latest server.properties confirm
+expect: Staged
+run: backup status
+expect: Restore waiting
+run: backup restore cancel
+expect: Cancelled
+
+run: backup prune
+expect: Removed
+run: xbackup reload
+expect: Reloaded xBackup
+run: backup now after a reload
+expect: Backed up
+
+# The health checks, and the report written to debug/ (boot.sh turns the upload off).
+run: xbackup debug
+expect: Debug report saved as debug/debug-

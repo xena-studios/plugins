@@ -1,0 +1,2491 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xbackup",
+    "name": "xBackup",
+    "version": "unspecified",
+    "description": "Backups that never stall the server: deduplicated, checked, copied off-site, restored safely."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "spigot",
+      "name": "Spigot",
+      "kind": "server",
+      "minVersion": "1.8.8",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "neoforge",
+      "name": "NeoForge",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "id": "sponge",
+      "name": "Sponge",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    },
+    {
+      "id": "pumpkin",
+      "name": "Pumpkin",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    },
+    {
+      "id": "hytale",
+      "name": "Hytale",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "xbackup",
+      "usage": "/xbackup [info|reload|debug]",
+      "aliases": [
+        "xb"
+      ],
+      "description": "Shows xBackup's version, and holds its admin subcommands.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xbackup info",
+          "usage": "/xbackup info",
+          "aliases": [],
+          "description": "Shows xBackup's version and repository.",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xbackup reload",
+          "usage": "/xbackup reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "xbackup.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xbackup debug",
+          "usage": "/xbackup debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "xbackup.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "backup",
+      "usage": "/backup <now|list|status|verify|restore|prune|pin|unpin|forget|copy|link|repair>",
+      "aliases": [
+        "backups"
+      ],
+      "description": "Run, list, check and restore backups.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": false,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "backup now",
+          "usage": "/backup now [reason]",
+          "aliases": [],
+          "description": "Back up now.",
+          "permission": "xbackup.now",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "reason",
+              "type": "text",
+              "required": false,
+              "greedy": true,
+              "description": "Shown in the list.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup list",
+          "usage": "/backup list [page]",
+          "aliases": [],
+          "description": "List backups, newest first.",
+          "permission": "xbackup.list",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "page",
+              "type": "integer",
+              "required": false,
+              "greedy": false,
+              "description": "The page.",
+              "choices": [],
+              "min": 1
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup status",
+          "usage": "/backup status",
+          "aliases": [],
+          "description": "What xBackup is doing, and how the last backup went.",
+          "permission": "xbackup.status",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup verify",
+          "usage": "/backup verify [full]",
+          "aliases": [],
+          "description": "Read back stored data and check it.",
+          "permission": "xbackup.verify",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "full",
+              "type": "choice",
+              "required": false,
+              "greedy": false,
+              "description": "Everything, not a sample.",
+              "choices": [
+                "full"
+              ]
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup restore",
+          "usage": "/backup restore <backup> [paths]",
+          "aliases": [],
+          "description": "Restore a backup on the next start.",
+          "permission": "xbackup.restore",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "backup",
+              "type": "word",
+              "required": true,
+              "greedy": false,
+              "description": "A backup's id, latest, or cancel.",
+              "choices": []
+            },
+            {
+              "name": "paths",
+              "type": "text",
+              "required": false,
+              "greedy": true,
+              "description": "Paths to restore, and confirm to stage it.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup prune",
+          "usage": "/backup prune",
+          "aliases": [],
+          "description": "Remove backups retention doesn't keep, and give back their space.",
+          "permission": "xbackup.prune",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup pin",
+          "usage": "/backup pin <backup>",
+          "aliases": [],
+          "description": "Keep a backup forever.",
+          "permission": "xbackup.pin",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "backup",
+              "type": "word",
+              "required": true,
+              "greedy": false,
+              "description": "A backup's id, or latest.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup unpin",
+          "usage": "/backup unpin <backup>",
+          "aliases": [],
+          "description": "Let retention remove a backup again.",
+          "permission": "xbackup.unpin",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "backup",
+              "type": "word",
+              "required": true,
+              "greedy": false,
+              "description": "A backup's id, or latest.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup forget",
+          "usage": "/backup forget <backup> [confirm]",
+          "aliases": [],
+          "description": "Remove one backup now.",
+          "permission": "xbackup.forget",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "backup",
+              "type": "word",
+              "required": true,
+              "greedy": false,
+              "description": "A backup's id, or latest.",
+              "choices": []
+            },
+            {
+              "name": "confirm",
+              "type": "choice",
+              "required": false,
+              "greedy": false,
+              "description": "Remove it.",
+              "choices": [
+                "confirm"
+              ]
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup copy",
+          "usage": "/backup copy <remote> [tidy]",
+          "aliases": [],
+          "description": "Copy the backups to a remote now.",
+          "permission": "xbackup.copy",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "remote",
+              "type": "word",
+              "required": true,
+              "greedy": false,
+              "description": "A remote's name in config.yml.",
+              "choices": []
+            },
+            {
+              "name": "tidy",
+              "type": "text",
+              "required": false,
+              "greedy": true,
+              "description": "tidy, to find what only the remote has; tidy confirm removes it.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup link",
+          "usage": "/backup link <remote> [code]",
+          "aliases": [],
+          "description": "Link a Google Drive, OneDrive or Dropbox remote.",
+          "permission": "xbackup.link",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "remote",
+              "type": "word",
+              "required": true,
+              "greedy": false,
+              "description": "A remote's name in config.yml.",
+              "choices": []
+            },
+            {
+              "name": "code",
+              "type": "word",
+              "required": false,
+              "greedy": false,
+              "description": "The code Dropbox shows.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "backup repair",
+          "usage": "/backup repair",
+          "aliases": [],
+          "description": "Rebuild the index from the stored data.",
+          "permission": "xbackup.repair",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xbackup.now",
+      "description": "Back up now: /backup now.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup now"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.list",
+      "description": "List backups: /backup list.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup list"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.status",
+      "description": "See what xBackup is doing: /backup status.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup status"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.verify",
+      "description": "Read back stored data and check it: /backup verify.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup verify"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.restore",
+      "description": "Plan, stage and cancel restores: /backup restore.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup restore"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.prune",
+      "description": "Remove backups retention doesn't keep: /backup prune.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup prune"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.pin",
+      "description": "Keep a backup forever: /backup pin.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup pin"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.unpin",
+      "description": "Let retention remove a backup again: /backup unpin.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup unpin"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.forget",
+      "description": "Remove one backup now: /backup forget. Also needed to remove a remote's backups with /backup copy <remote> tidy confirm.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup forget"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.copy",
+      "description": "Copy the backups to a remote now: /backup copy.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup copy"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.link",
+      "description": "Link a Google Drive, OneDrive or Dropbox remote: /backup link.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup link"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.repair",
+      "description": "Rebuild the index from the stored data: /backup repair.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "backup repair"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xbackup.admin",
+      "description": "Every admin subcommand of xBackup, and its update notices.",
+      "default": "op",
+      "children": {
+        "xbackup.admin.reload": true,
+        "xbackup.admin.debug": true,
+        "xbackup.admin.update": true
+      },
+      "commands": [],
+      "builtIn": true
+    },
+    {
+      "node": "xbackup.admin.reload",
+      "description": "Use /xbackup reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xbackup reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xbackup.admin.debug",
+      "description": "Use /xbackup debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xbackup debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xbackup.admin.update",
+      "description": "Hear about newer versions of xBackup when joining.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 2,
+    "header": [
+      "xBackup: incremental backups that cost almost nothing, and a restore you can trust.",
+      "Docs: https://plugins.xenastudios.co/xbackup/configuration/",
+      "",
+      "Apply changes with /xbackup reload: every setting applies, remotes included. A bad value",
+      "falls back to its default with a warning in the console; xBackup never stops over config.",
+      "The messages are in lang/. Remotes' passwords go in secrets.yml, never here."
+    ],
+    "entries": [
+      {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "broadcasts",
+        "type": "section",
+        "comment": [
+          "Told to everyone online. The words are in lang/ (broadcast.start, broadcast.done)."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "broadcasts.start",
+            "type": "boolean",
+            "comment": [
+              "When a backup starts."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "broadcasts.done",
+            "type": "boolean",
+            "comment": [
+              "When a backup is done, with how long it took."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "command",
+        "type": "section",
+        "comment": [
+          "/backup: run, list, check and restore backups. Each subcommand has its own permission,",
+          "xbackup.<subcommand>, which operators have by default."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "command.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "command.aliases",
+            "type": "list<alias>",
+            "comment": [],
+            "default": [
+              "backups"
+            ],
+            "defaultText": "[\"backups\"]",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "repository",
+        "type": "string",
+        "comment": [
+          "Where backups are kept: a folder, relative to the server folder or absolute. Put it on",
+          "a second disk if you have one. Changing it starts a new, empty repository there; the",
+          "old one is left as it is. On Fabric the default is config/xbackup/repository."
+        ],
+        "default": "plugins/xBackup/repository",
+        "defaultText": "\"plugins/xBackup/repository\"",
+        "choices": [],
+        "entries": []
+      },
+      {
+        "path": "schedule",
+        "type": "section",
+        "comment": [
+          "When backups run."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "schedule.every",
+            "type": "string",
+            "comment": [
+              "How often a backup runs, such as 1h, 30m or 6h. \"off\" runs them only when asked",
+              "(/backup now). Counted from the last backup, so a restart doesn't reset it."
+            ],
+            "default": "1h",
+            "defaultText": "\"1h\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "schedule.skip-when-idle",
+            "type": "boolean",
+            "comment": [
+              "Skip a scheduled backup when nobody has been online since the last one."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "sources",
+        "type": "section",
+        "comment": [
+          "What's backed up."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "sources.worlds",
+            "type": "boolean",
+            "comment": [
+              "Every loaded world's save folder, with its nether and end."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "sources.plugins",
+            "type": "boolean",
+            "comment": [
+              "The plugins folder: every plugin's data and jar (on Fabric, the mods folder). xBackup's",
+              "own repository is never included. The Xena plugins' databases are copied by each",
+              "plugin's own writer, so none is caught mid-write."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "sources.server-files",
+            "type": "boolean",
+            "comment": [
+              "The server's own settings: server.properties, the .yml, .json, .toml and .txt files",
+              "beside it (ops, whitelist, bans), and the config folder."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "sources.extra",
+            "type": "list<string>",
+            "comment": [
+              "More paths to back up, relative to the server folder, such as an unloaded world."
+            ],
+            "default": [],
+            "defaultText": "[]",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "exclude",
+        "type": "list<string>",
+        "comment": [
+          "Paths to leave out, relative to the server folder. * is anything but /, ** is anything,",
+          "so \"plugins/*/logs/**\" leaves out every plugin's logs folder."
+        ],
+        "default": [
+          "**/session.lock",
+          "plugins/.paper-remapped/**",
+          "plugins/*/logs/**",
+          "plugins/*/cache/**",
+          "plugins/bStats/**",
+          "**/*.tmp",
+          "**/*.lck"
+        ],
+        "defaultText": "[\"**/session.lock\", \"plugins/.paper-remapped/**\", \"plugins/*/logs/**\", \"plugins/*/cache/**\", \"plugins/bStats/**\", \"**/*.tmp\", \"**/*.lck\"]",
+        "choices": [],
+        "entries": []
+      },
+      {
+        "path": "retention",
+        "type": "section",
+        "comment": [
+          "Which backups to keep. Each tier keeps the newest backup of each of its last so many",
+          "hours, days, weeks or months; a backup can count for several. The newest backup and",
+          "pinned ones (/backup pin) are always kept. Space is given back once a day."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "retention.last",
+            "type": "integer",
+            "comment": [
+              "Always keep this many of the newest backups, however close together."
+            ],
+            "default": 3,
+            "defaultText": "3",
+            "choices": [],
+            "min": 0,
+            "max": 10000,
+            "entries": []
+          },
+          {
+            "path": "retention.hourly",
+            "type": "integer",
+            "comment": [],
+            "default": 24,
+            "defaultText": "24",
+            "choices": [],
+            "min": 0,
+            "max": 10000,
+            "entries": []
+          },
+          {
+            "path": "retention.daily",
+            "type": "integer",
+            "comment": [],
+            "default": 7,
+            "defaultText": "7",
+            "choices": [],
+            "min": 0,
+            "max": 10000,
+            "entries": []
+          },
+          {
+            "path": "retention.weekly",
+            "type": "integer",
+            "comment": [],
+            "default": 4,
+            "defaultText": "4",
+            "choices": [],
+            "min": 0,
+            "max": 10000,
+            "entries": []
+          },
+          {
+            "path": "retention.monthly",
+            "type": "integer",
+            "comment": [],
+            "default": 6,
+            "defaultText": "6",
+            "choices": [],
+            "min": 0,
+            "max": 10000,
+            "entries": []
+          },
+          {
+            "path": "retention.max-size",
+            "type": "string",
+            "comment": [
+              "The most space the repository may use, such as 50GB. Past it, the oldest backups go",
+              "first. \"off\" for no limit."
+            ],
+            "default": "off",
+            "defaultText": "\"off\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "retention.min-free-space",
+            "type": "string",
+            "comment": [
+              "Free space a backup always leaves on the repository's disk. A backup that would go",
+              "under it removes old backups first, and if that's not enough, doesn't start."
+            ],
+            "default": "2GB",
+            "defaultText": "\"2GB\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "performance",
+        "type": "section",
+        "comment": [
+          "Keeping backups cheap to run. Hashing and compressing happen off the server's threads;",
+          "these keep them from crowding the disk or the network."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "performance.read-limit",
+            "type": "string",
+            "comment": [
+              "The most a backup reads from disk per second, such as 50MB. \"off\" for no limit."
+            ],
+            "default": "off",
+            "defaultText": "\"off\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "performance.upload-limit",
+            "type": "string",
+            "comment": [
+              "The most sent to remotes per second, such as 5MB. \"off\" for no limit."
+            ],
+            "default": "off",
+            "defaultText": "\"off\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "performance.compression-level",
+            "type": "integer",
+            "comment": [
+              "Deflate level for files that compress, 1 (fastest) to 9 (smallest). Region files are",
+              "already compressed and stored as they are."
+            ],
+            "default": 6,
+            "defaultText": "6",
+            "choices": [],
+            "min": 1,
+            "max": 9,
+            "entries": []
+          },
+          {
+            "path": "performance.max-pause",
+            "type": "string",
+            "comment": [
+              "The longest autosave may stay off for a backup. If reading the worlds takes longer,",
+              "autosave goes back on and that backup is abandoned. Nothing is lost either way."
+            ],
+            "default": "15m",
+            "defaultText": "\"15m\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "verify",
+        "type": "section",
+        "comment": [
+          "Each backup checks what it just wrote. This also reads back a share of the older data",
+          "now and then, so damage on the disk is found before you need a restore."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "verify.every",
+            "type": "string",
+            "comment": [
+              "How often to read back older data, such as 7d. \"off\" never does."
+            ],
+            "default": "7d",
+            "defaultText": "\"7d\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "verify.percent",
+            "type": "integer",
+            "comment": [
+              "What share of the data each check reads, in percent."
+            ],
+            "default": 10,
+            "defaultText": "10",
+            "choices": [],
+            "min": 1,
+            "max": 100,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "remotes",
+        "type": "remotes",
+        "comment": [
+          "Copies of the repository somewhere else, updated after each backup. Only new files are",
+          "sent. Name each one; the docs list every type and its settings:",
+          "https://plugins.xenastudios.co/xbackup/remotes/"
+        ],
+        "default": {},
+        "defaultText": "{}",
+        "choices": [],
+        "entries": []
+      },
+      {
+        "path": "updates",
+        "type": "section",
+        "comment": [
+          "Telling you when a newer version is out: in the console, and to players with",
+          "<plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,",
+          "sending only the plugin's version, the platform and the Minecraft version."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "updates.check",
+            "type": "boolean",
+            "comment": [
+              "Whether to ask at all."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "updates.channel",
+            "type": "enum",
+            "comment": [
+              "Which releases to hear of: release, beta (betas and releases) or alpha (everything)."
+            ],
+            "default": "release",
+            "defaultText": "\"release\"",
+            "choices": [
+              "release",
+              "beta",
+              "alpha"
+            ],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [],
+  "messages": [
+    {
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.update.available",
+      "english": "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+      "comment": [
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page."
+      ],
+      "placeholders": [
+        "plugin",
+        "current",
+        "latest",
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
+      ],
+      "placeholders": [
+        "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "core.reload.done",
+      "english": "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+      "comment": [
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise."
+      ],
+      "placeholders": [
+        "plugin",
+        "count",
+        "has_one",
+        "has_many"
+      ]
+    },
+    {
+      "key": "core.reload.problem",
+      "english": "<gold>!</gold> Problem: <problem>",
+      "comment": [
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too."
+      ],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "core.reload.module-off",
+      "english": "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+      "comment": [
+        "/<plugin> reload: a module that failed, and why, in English."
+      ],
+      "placeholders": [
+        "module",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.reload.failed",
+      "english": "<prefix><error>Reloading <plugin> failed; the console has the details.",
+      "comment": [
+        "/<plugin> reload: something went wrong; the settings from before are still in use."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.command.unknown",
+      "english": "<prefix><error>Unknown command.",
+      "comment": [
+        "Rare: a command that went away as it was typed."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.no-permission",
+      "english": "<prefix><error>You don't have permission to do that.",
+      "comment": [
+        "The sender lacks the command's permission."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.players-only",
+      "english": "<prefix><error>Only players can use this command.",
+      "comment": [
+        "The console or a command block ran a command only players can use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.usage",
+      "english": "<prefix><error>Usage:</error> <usage>",
+      "comment": [
+        "The command was typed with missing or extra words. <usage> is how to type it."
+      ],
+      "placeholders": [
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.unknown-player",
+      "english": "<prefix><error>No player called <highlight><player></highlight> is online.",
+      "comment": [
+        "No player the sender can see is online by the name typed (<player>)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.command.not-a-number",
+      "english": "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+      "comment": [
+        "A number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-an-integer",
+      "english": "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+      "comment": [
+        "A whole number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-small",
+      "english": "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+      "comment": [
+        "A number below the least the command takes (<min>)."
+      ],
+      "placeholders": [
+        "input",
+        "min",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-large",
+      "english": "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+      "comment": [
+        "A number above the most the command takes (<max>)."
+      ],
+      "placeholders": [
+        "input",
+        "max",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-a-choice",
+      "english": "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+      "comment": [
+        "A word that isn't one of those the command takes (<choices>, comma-separated)."
+      ],
+      "placeholders": [
+        "input",
+        "choices",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.invalid",
+      "english": "<prefix><error><reason></error> Usage: <usage>",
+      "comment": [
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.cooldown",
+      "english": "<prefix><error>You can use that again in <time>.",
+      "comment": [
+        "The command has a cooldown. <time> is how long is left."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.confirm",
+      "english": "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+      "comment": [
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is."
+      ],
+      "placeholders": [
+        "line",
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.error",
+      "english": "<prefix><error>Something went wrong running that command; the console has the details.",
+      "comment": [
+        "The command hit an error. The console has what happened."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "info",
+      "english": "<prefix>xBackup <highlight><version></highlight> on <platform>: <backups> backups, <size>, in <repository>. <gray>/xbackup reload | debug",
+      "comment": [
+        "/xbackup on its own."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "backups",
+        "size",
+        "repository"
+      ]
+    },
+    {
+      "key": "failed",
+      "english": "<prefix><error><reason></error>",
+      "comment": [
+        "A job that failed: <reason> says why."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "skipped",
+      "english": "<prefix>Skipped: <reason>.",
+      "comment": [
+        "A backup that didn't run, on purpose."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "reading",
+      "english": "<prefix><gray>Reading the repository...</gray>",
+      "comment": [
+        "Just after a start, before the list of backups is in memory."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "find.none",
+      "english": "<prefix><error>There are no backups yet.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "find.too-short",
+      "english": "<prefix><error>Give at least 4 characters of the backup's id, or latest.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "find.ambiguous",
+      "english": "<prefix><error>More than one backup starts with <id>; give more of it.",
+      "comment": [],
+      "placeholders": [
+        "id"
+      ]
+    },
+    {
+      "key": "find.unknown",
+      "english": "<prefix><error>No backup's id starts with <id>. /backup list shows them.",
+      "comment": [],
+      "placeholders": [
+        "id"
+      ]
+    },
+    {
+      "key": "restore.bad-path",
+      "english": "<prefix><error>A restore path can't go up with \"..\".",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "remote.unknown",
+      "english": "<prefix><error>There's no remote named <name> in config.yml.",
+      "comment": [],
+      "placeholders": [
+        "name"
+      ]
+    },
+    {
+      "key": "now.started",
+      "english": "<prefix><gray>Backing up...</gray>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "now.queued",
+      "english": "<prefix>Backing up after the job that's running (<activity>).",
+      "comment": [],
+      "placeholders": [
+        "activity"
+      ]
+    },
+    {
+      "key": "now.done",
+      "english": "<prefix><success>Backed up</success> <highlight><id></highlight>: <files> files, <size>, <highlight><added></highlight> new (<chunks>), in <time>. The server paused <highlight><pause> ms</highlight>.",
+      "comment": [
+        "<chunks> is chunks.none, chunks.one or chunks.many."
+      ],
+      "placeholders": [
+        "id",
+        "files",
+        "size",
+        "added",
+        "chunks",
+        "time",
+        "pause"
+      ]
+    },
+    {
+      "key": "now.warnings",
+      "english": "<prefix><error><count> warnings</error>; the console lists them.",
+      "comment": [],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "chunks.none",
+      "english": "no chunks changed",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "chunks.one",
+      "english": "1 changed chunk",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "chunks.many",
+      "english": "<count> changed chunks",
+      "comment": [],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "list.empty",
+      "english": "<prefix>No backups yet. <highlight>/backup now</highlight> makes one.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "list.header",
+      "english": "<prefix><highlight><count></highlight> backups, <size> in all. Click one to restore it.",
+      "comment": [],
+      "placeholders": [
+        "count",
+        "size"
+      ]
+    },
+    {
+      "key": "list.line",
+      "english": "<click:suggest_command:'/backup restore <id> '><hover:show_text:'<time>'><highlight><id></highlight></hover></click> <gray><ago></gray> <reason> <gray>·</gray> <size> <gray>+<added></gray><pinned><warned>",
+      "comment": [
+        "One backup. <time> is when, in full; <ago> is ago or just-now; <pinned> list.pinned or nothing, <warned> list.warned or nothing."
+      ],
+      "placeholders": [
+        "id",
+        "time",
+        "ago",
+        "reason",
+        "size",
+        "added",
+        "pinned",
+        "warned"
+      ]
+    },
+    {
+      "key": "list.pinned",
+      "english": " <success>pinned</success>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "list.warned",
+      "english": " <error>!</error>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "list.next",
+      "english": "<gray>Page <page> of <pages></gray> <click:run_command:'/backup list <next>'><highlight>Next page »</highlight></click>",
+      "comment": [],
+      "placeholders": [
+        "page",
+        "pages",
+        "next"
+      ]
+    },
+    {
+      "key": "ago",
+      "english": "<time> ago",
+      "comment": [],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "just-now",
+      "english": "just now",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.repository",
+      "english": "<prefix><highlight>Repository</highlight>: <path>, <count> backups, <size>",
+      "comment": [],
+      "placeholders": [
+        "path",
+        "count",
+        "size"
+      ]
+    },
+    {
+      "key": "status.last-none",
+      "english": "<highlight>Last backup</highlight>: none yet",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.last",
+      "english": "<highlight>Last backup</highlight>: <ago>, <files> files, +<added> in <time>",
+      "comment": [],
+      "placeholders": [
+        "ago",
+        "files",
+        "added",
+        "time"
+      ]
+    },
+    {
+      "key": "status.pause",
+      "english": "<highlight>Server pause</highlight>: <pause> ms saving, autosave off for <off>",
+      "comment": [],
+      "placeholders": [
+        "pause",
+        "off"
+      ]
+    },
+    {
+      "key": "status.next-off",
+      "english": "<highlight>Next backup</highlight>: off (/backup now only)",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.next",
+      "english": "<highlight>Next backup</highlight>: in <time>",
+      "comment": [],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "status.running-none",
+      "english": "<highlight>Running</highlight>: nothing",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.running",
+      "english": "<highlight>Running</highlight>: <activity>",
+      "comment": [],
+      "placeholders": [
+        "activity"
+      ]
+    },
+    {
+      "key": "status.check-never",
+      "english": "<highlight>Last check</highlight>: never",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.check",
+      "english": "<highlight>Last check</highlight>: <ago>, <result>",
+      "comment": [],
+      "placeholders": [
+        "ago",
+        "result"
+      ]
+    },
+    {
+      "key": "status.remote",
+      "english": "<highlight>Remote <name></highlight> (<type>): <state>",
+      "comment": [],
+      "placeholders": [
+        "name",
+        "type",
+        "state"
+      ]
+    },
+    {
+      "key": "status.remote-off",
+      "english": "off",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.remote-never",
+      "english": "not copied since the server started",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.family",
+      "english": "<highlight>Databases copied by their plugin</highlight>: <list>",
+      "comment": [
+        "The Xena plugins whose SQLite databases each backup has their own writer copy."
+      ],
+      "placeholders": [
+        "list"
+      ]
+    },
+    {
+      "key": "status.external",
+      "english": "<highlight>Not in the backups</highlight>: <list>. Back those up with the database's own tools (mysqldump).",
+      "comment": [
+        "Plugins that keep their data in MySQL or MariaDB, outside the server."
+      ],
+      "placeholders": [
+        "list"
+      ]
+    },
+    {
+      "key": "status.problem-none",
+      "english": "<highlight>Problem</highlight>: none",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.problem",
+      "english": "<highlight>Problem</highlight>: <error><problem></error>",
+      "comment": [],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "status.restore",
+      "english": "<prefix><highlight>Restore waiting</highlight>: backup <id> (<count> paths), on the next start. <highlight>/backup restore cancel</highlight> to call it off.",
+      "comment": [],
+      "placeholders": [
+        "id",
+        "count"
+      ]
+    },
+    {
+      "key": "verify.started-full",
+      "english": "<prefix><gray>Checking everything...</gray>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "verify.started",
+      "english": "<prefix><gray>Checking a sample...</gray>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "verify.ok",
+      "english": "<prefix><success>All good.</success> Read back <checked> of <total> packs (<size>) across <backups> backups.",
+      "comment": [],
+      "placeholders": [
+        "checked",
+        "total",
+        "size",
+        "backups"
+      ]
+    },
+    {
+      "key": "verify.problems",
+      "english": "<prefix><error>Found <count> problems</error>, the first: <first> The console lists them all; <highlight>/backup repair</highlight> rebuilds the index if that's what's damaged.",
+      "comment": [],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "restore.cancelled",
+      "english": "<prefix><success>Cancelled</success> the restore that was waiting for the next start.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "restore.none",
+      "english": "<prefix>No restore is waiting.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "restore.everything",
+      "english": "everything",
+      "comment": [
+        "What a restore with no path restores, in restore.plan and restore.staging."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "restore.plan",
+      "english": "<prefix>Restoring <highlight><what></highlight> from backup <highlight><id></highlight> (<ago>) would change <changed> files<chunks>, bring back <added> and set aside <removed>. Confirm to stage it: it's swapped in on the next start, before any world loads, and what's there now is kept in <replaced>.",
+      "comment": [
+        "<chunks> is restore.chunks, or nothing when no region chunk changes."
+      ],
+      "placeholders": [
+        "what",
+        "id",
+        "ago",
+        "changed",
+        "chunks",
+        "added",
+        "removed",
+        "replaced"
+      ]
+    },
+    {
+      "key": "restore.chunks",
+      "english": " (<count> region chunks)",
+      "comment": [],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "restore.example",
+      "english": "<gray><line></gray>",
+      "comment": [
+        "One changed path: + comes back, ~ changes, - is set aside."
+      ],
+      "placeholders": [
+        "line"
+      ]
+    },
+    {
+      "key": "restore.button",
+      "english": "<click:run_command:'<command>'><hover:show_text:'<command>'><success>[Restore it]</success></hover></click>",
+      "comment": [],
+      "placeholders": [
+        "command"
+      ]
+    },
+    {
+      "key": "restore.staging",
+      "english": "<prefix><gray>Staging <what> from backup <id>...</gray>",
+      "comment": [],
+      "placeholders": [
+        "what",
+        "id"
+      ]
+    },
+    {
+      "key": "restore.staged",
+      "english": "<prefix><success>Staged</success> <files> files (<size>), each checked against its backup. <highlight>Restart the server</highlight> to put them in place. <highlight>/backup restore cancel</highlight> calls it off.",
+      "comment": [],
+      "placeholders": [
+        "files",
+        "size"
+      ]
+    },
+    {
+      "key": "restore.jars",
+      "english": "<prefix><error><count> plugin jars are in it (<first>).</error> The server loads plugin jars before xBackup puts files back, so these take effect only from the start after. To restore jars at once, stop the server and use the command-line restore.",
+      "comment": [],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "prune.started",
+      "english": "<prefix><gray>Cleaning up...</gray>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "prune.done",
+      "english": "<prefix><success>Removed</success> <removed> backups retention doesn't keep (<kept> kept), and gave back <size>.",
+      "comment": [],
+      "placeholders": [
+        "removed",
+        "kept",
+        "size"
+      ]
+    },
+    {
+      "key": "pin.pinned",
+      "english": "<prefix><success>Pinned</success> <id>: retention will always keep it.",
+      "comment": [],
+      "placeholders": [
+        "id"
+      ]
+    },
+    {
+      "key": "pin.unpinned",
+      "english": "<prefix>Unpinned <id>: retention can remove it again.",
+      "comment": [],
+      "placeholders": [
+        "id"
+      ]
+    },
+    {
+      "key": "forget.confirm",
+      "english": "<prefix>This removes backup <highlight><id></highlight> (<ago>) for good. <click:run_command:'<command>'><hover:show_text:'<command>'><error>[Remove it]</error></hover></click>",
+      "comment": [],
+      "placeholders": [
+        "id",
+        "ago",
+        "command"
+      ]
+    },
+    {
+      "key": "forget.done",
+      "english": "<prefix>Removed backup <id>. Its space comes back at the next clean-up (<highlight>/backup prune</highlight>).",
+      "comment": [],
+      "placeholders": [
+        "id"
+      ]
+    },
+    {
+      "key": "copy.started",
+      "english": "<prefix><gray>Copying to <name>...</gray>",
+      "comment": [],
+      "placeholders": [
+        "name"
+      ]
+    },
+    {
+      "key": "copy.done",
+      "english": "<prefix><success>Copied</success> to <name>: <sent> files (<size>) sent, <removed> removed.",
+      "comment": [],
+      "placeholders": [
+        "name",
+        "sent",
+        "size",
+        "removed"
+      ]
+    },
+    {
+      "key": "copy.held",
+      "english": "<prefix><error>Kept some files: <held>.</error>",
+      "comment": [],
+      "placeholders": [
+        "held"
+      ]
+    },
+    {
+      "key": "tidy.needs-forget",
+      "english": "<prefix><error>Removing a remote's backups needs xbackup.forget as well as xbackup.copy.</error>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "tidy.looking",
+      "english": "<prefix><gray>Looking at <name>...</gray>",
+      "comment": [],
+      "placeholders": [
+        "name"
+      ]
+    },
+    {
+      "key": "tidy.applying",
+      "english": "<prefix><gray>Copying to <name>, then tidying it...</gray>",
+      "comment": [],
+      "placeholders": [
+        "name"
+      ]
+    },
+    {
+      "key": "tidy.done",
+      "english": "<prefix><success>Tidied</success> <name>: removed <backups> backups only it had, and <packs> packs (<size>).",
+      "comment": [],
+      "placeholders": [
+        "name",
+        "backups",
+        "packs",
+        "size"
+      ]
+    },
+    {
+      "key": "tidy.kept",
+      "english": "<prefix>Kept <packs> packs that hold data backups here need and this server lost.",
+      "comment": [],
+      "placeholders": [
+        "packs"
+      ]
+    },
+    {
+      "key": "tidy.nothing",
+      "english": "<prefix><name> has nothing this server's repository doesn't.",
+      "comment": [],
+      "placeholders": [
+        "name"
+      ]
+    },
+    {
+      "key": "tidy.header",
+      "english": "<prefix><name> has <highlight><count></highlight> backups this server doesn't",
+      "comment": [],
+      "placeholders": [
+        "name",
+        "count"
+      ]
+    },
+    {
+      "key": "tidy.line",
+      "english": " <gray><id></gray> <ago> (<reason>)",
+      "comment": [],
+      "placeholders": [
+        "id",
+        "ago",
+        "reason"
+      ]
+    },
+    {
+      "key": "tidy.more",
+      "english": " and <count> more",
+      "comment": [],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "tidy.footer",
+      "english": "Removing them frees about <size> there<kept>. They can't be restored after. <click:run_command:'<command>'><hover:show_text:'<command>'><error>[Remove them]</error></hover></click>",
+      "comment": [
+        "<kept> is tidy.keeping, or nothing."
+      ],
+      "placeholders": [
+        "size",
+        "kept",
+        "command"
+      ]
+    },
+    {
+      "key": "tidy.keeping",
+      "english": ", keeping <packs> packs backups here need",
+      "comment": [],
+      "placeholders": [
+        "packs"
+      ]
+    },
+    {
+      "key": "link.not-a-drive",
+      "english": "<prefix><error><name> is a <type> remote; only drive, onedrive and dropbox are linked.",
+      "comment": [],
+      "placeholders": [
+        "name",
+        "type"
+      ]
+    },
+    {
+      "key": "link.dropbox",
+      "english": "<prefix>Open <click:open_url:'<url>'><highlight><underlined>this link</underlined></highlight></click>, allow xBackup, then run <highlight>/backup link <name> \\<code></highlight> with the code Dropbox shows.",
+      "comment": [],
+      "placeholders": [
+        "url",
+        "name"
+      ]
+    },
+    {
+      "key": "link.device",
+      "english": "<prefix>Go to <click:open_url:'<url>'><highlight><underlined><url></underlined></highlight></click> on any device and enter <highlight><code></highlight>. Waiting...",
+      "comment": [],
+      "placeholders": [
+        "url",
+        "code"
+      ]
+    },
+    {
+      "key": "link.done",
+      "english": "<prefix><success>Linked</success> <name>. Backups are copied to it from the next one; <highlight>/backup copy <name></highlight> copies them now.",
+      "comment": [],
+      "placeholders": [
+        "name"
+      ]
+    },
+    {
+      "key": "link.failed",
+      "english": "<prefix><error>Couldn't link <name>: <reason></error>",
+      "comment": [],
+      "placeholders": [
+        "name",
+        "reason"
+      ]
+    },
+    {
+      "key": "repair.started",
+      "english": "<prefix><gray>Rebuilding the index from the packs...</gray>",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "repair.done",
+      "english": "<prefix><success>Rebuilt</success> the index: <blobs> pieces in <packs> packs.",
+      "comment": [],
+      "placeholders": [
+        "blobs",
+        "packs"
+      ]
+    },
+    {
+      "key": "repair.damaged",
+      "english": "<prefix><error><count> packs are damaged</error>; the console lists them. Run <highlight>/backup verify full</highlight> to see which backups that touches.",
+      "comment": [],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "broadcast.start",
+      "english": "<prefix><gray>Backing up the server...</gray>",
+      "comment": [
+        "To everyone online, when broadcasts.start is on."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "broadcast.done",
+      "english": "<prefix><gray>Backed up, in <time>.</gray>",
+      "comment": [
+        "To everyone online, when broadcasts.done is on."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "key": "xbackup:start",
+      "className": "co.xenastudios.xbackup.api.event.BackupStartEvent",
+      "description": "A backup is about to start. Cancel it to skip that backup.",
+      "cancellable": true,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xbackup:finished",
+      "className": "co.xenastudios.xbackup.api.event.BackupFinishedEvent",
+      "description": "A backup finished and is in the repository.",
+      "cancellable": false,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xbackup:failed",
+      "className": "co.xenastudios.xbackup.api.event.BackupFailedEvent",
+      "description": "A backup failed; nothing half-written was kept.",
+      "cancellable": false,
+      "since": "1.0.0"
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+# xBackup: incremental backups that cost almost nothing, and a restore you can trust.
+# Docs: https://plugins.xenastudios.co/xbackup/configuration/
+#
+# Apply changes with /xbackup reload. A bad value falls back to its default with a
+# warning in the console; xBackup never stops over config. All text is MiniMessage:
+# https://plugins.xenastudios.co/start/formatting/
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# The look xBackup's messages share. The default messages use these as tags, so changing
+# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
+# <#5AA9FF>, or <gold><bold>.
+theme:
+  # <prefix> starts the default messages. Make it your server's name, such as
+  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+  prefix: "<#5AA9FF>»</#5AA9FF> "
+  # The colour of message text that has no tag of its own.
+  base: "<gray>"
+  # <highlight>: names and values, such as a player or a speed.
+  highlight: "<#5AA9FF>"
+  # <success>: something turned on or done.
+  success: "<#5EE08A>"
+  # <error>: something refused or turned off.
+  error: "<#FF6B6B>"
+
+# What players and staff are told.
+messages:
+  error:
+    # The console or a command block ran a command only players can use.
+    player-only: "<prefix><error>Only players can use this command."
+    # The sender lacks the command's permission.
+    no-permission: "<prefix><error>You don't have permission to do that."
+    # No online player has that name. <player> is the name typed.
+    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
+    # The command was typed wrong. <usage> is how to type it.
+    usage: "<prefix><error>Usage:</error> <usage>"
+    # The command hit an error. The console has the details.
+    failed: "<prefix><error>Something went wrong. The console has the details."
+  # Told to everyone online when a backup starts. Blank says nothing.
+  broadcast-start: ""
+  # Told to everyone online when a backup is done. <time> is how long it took. Blank says nothing.
+  broadcast-done: ""
+
+# /backup: run, list, check and restore backups. Each subcommand has its own permission,
+# xbackup.<subcommand>, which operators have by default.
+command:
+  enabled: true
+  aliases: ["backups"]
+
+# Where backups are kept: a folder, relative to the server folder or absolute. Put it on
+# a second disk if you have one. Changing it starts a new, empty repository there; the
+# old one is left as it is.
+repository: "plugins/xBackup/repository"
+
+# When backups run.
+schedule:
+  # How often a backup runs, such as 1h, 30m or 6h. "off" runs them only when asked
+  # (/backup now). Counted from the last backup, so a restart doesn't reset it.
+  every: "1h"
+  # Skip a scheduled backup when nobody has been online since the last one.
+  skip-when-idle: true
+
+# What's backed up.
+sources:
+  # Every loaded world's save folder, with its nether and end.
+  worlds: true
+  # The plugins folder: every plugin's data and jar. xBackup's own repository is never included.
+  plugins: true
+  # The server's own settings: server.properties, the .yml, .json, .toml and .txt files
+  # beside it (ops, whitelist, bans), and the config folder.
+  server-files: true
+  # More paths to back up, relative to the server folder, such as an unloaded world.
+  extra: []
+
+# Paths to leave out, relative to the server folder. * is anything but /, ** is anything,
+# so "plugins/*/logs/**" leaves out every plugin's logs folder.
+exclude: ["**/session.lock", "plugins/.paper-remapped/**", "plugins/*/logs/**", "plugins/*/cache/**", "plugins/bStats/**", "**/*.tmp", "**/*.lck"]
+
+# Which backups to keep. Each tier keeps the newest backup of each of its last so many
+# hours, days, weeks or months; a backup can count for several. The newest backup and
+# pinned ones (/backup pin) are always kept. Space is given back once a day.
+retention:
+  # Always keep this many of the newest backups, however close together.
+  last: 3
+  hourly: 24
+  daily: 7
+  weekly: 4
+  monthly: 6
+  # The most space the repository may use, such as 50GB. Past it, the oldest backups go
+  # first. "off" for no limit.
+  max-size: "off"
+  # Free space a backup always leaves on the repository's disk. A backup that would go
+  # under it removes old backups first, and if that's not enough, doesn't start.
+  min-free-space: "2GB"
+
+# Keeping backups cheap to run. Hashing and compressing happen off the server's threads;
+# these keep them from crowding the disk or the network.
+performance:
+  # The most a backup reads from disk per second, such as 50MB. "off" for no limit.
+  read-limit: "off"
+  # The most sent to remotes per second, such as 5MB. "off" for no limit.
+  upload-limit: "off"
+  # Deflate level for files that compress, 1 (fastest) to 9 (smallest). Region files are
+  # already compressed and stored as they are.
+  compression-level: 6
+  # The longest autosave may stay off for a backup. If reading the worlds takes longer,
+  # autosave goes back on and that backup is abandoned. Nothing is lost either way.
+  max-pause: "15m"
+
+# Each backup checks what it just wrote. This also reads back a share of the older data
+# now and then, so damage on the disk is found before you need a restore.
+verify:
+  # How often to read back older data, such as 7d. "off" never does.
+  every: "7d"
+  # What share of the data each check reads, in percent.
+  percent: 10
+
+# Copies of the repository somewhere else, updated after each backup. Only new files are
+# sent. Name each one; the docs list every type and its settings:
+# https://plugins.xenastudios.co/xbackup/remotes/
+remotes: {}
+
+# Tells you when a new version is out.
+update-checker:
+  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
+  # only the plugin version, the platform and the Minecraft version.
+  enabled: true
+  # Logged, and shown to admins when they join, when a newer version is out.
+  # <plugin>, <current>, <latest> and <url> are filled in.
+  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"

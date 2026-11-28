@@ -1,46 +1,45 @@
 # xBackup: incremental backups that cost almost nothing, and a restore you can trust.
 # Docs: https://plugins.xenastudios.co/xbackup/configuration/
 #
-# Apply changes with /xbackup reload. A bad value falls back to its default with a
-# warning in the console; xBackup never stops over config. All text is MiniMessage:
-# https://plugins.xenastudios.co/start/formatting/
+# Apply changes with /xbackup reload: every setting applies, remotes included. A bad value
+# falls back to its default with a warning in the console; xBackup never stops over config.
+# The messages are in lang/. Remotes' passwords go in secrets.yml, never here.
 
 # Managed by the plugin, to carry your settings forward on updates. Don't edit it.
-config-version: 1
+config-version: 2
 
-# The look xBackup's messages share. The default messages use these as tags, so changing
-# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#5AA9FF>, or <gold><bold>.
-theme:
-  # <prefix> starts the default messages. Make it your server's name, such as
-  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
-  prefix: "<#5AA9FF>»</#5AA9FF> "
-  # The colour of message text that has no tag of its own.
-  base: "<gray>"
-  # <highlight>: names and values, such as a player or a speed.
-  highlight: "<#5AA9FF>"
-  # <success>: something turned on or done.
-  success: "<#5EE08A>"
-  # <error>: something refused or turned off.
-  error: "<#FF6B6B>"
-
-# What players and staff are told.
+# How this plugin's messages look, and the language they're in. shared uses the
+# setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is
+# this plugin's own.
 messages:
-  error:
-    # The console or a command block ran a command only players can use.
-    player-only: "<prefix><error>Only players can use this command."
-    # The sender lacks the command's permission.
-    no-permission: "<prefix><error>You don't have permission to do that."
-    # No online player has that name. <player> is the name typed.
-    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
-    # The command was typed wrong. <usage> is how to type it.
-    usage: "<prefix><error>Usage:</error> <usage>"
-    # The command hit an error. The console has the details.
-    failed: "<prefix><error>Something went wrong. The console has the details."
-  # Told to everyone online when a backup starts. Blank says nothing.
-  broadcast-start: ""
-  # Told to everyone online when a backup is done. <time> is how long it took. Blank says nothing.
-  broadcast-done: ""
+  # The language players see messages in: auto for each player's own (their client's
+  # language setting), or one language for everyone, such as de or pt-BR.
+  language: "shared"
+  # The language of the console, and of players whose language has no file in lang/.
+  default-language: "shared"
+
+  # The look every message shares, used in messages as tags: <prefix>, <highlight>,
+  # <success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,
+  # italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>.
+  theme:
+    # <prefix> starts the default messages. Make it your server's name, such as
+    # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+    prefix: "shared"
+    # The colour of message text that has no tag of its own.
+    base: "shared"
+    # <highlight>: names and values, such as a player or a speed.
+    highlight: "shared"
+    # <success>: something turned on or done.
+    success: "shared"
+    # <error>: something refused or turned off.
+    error: "shared"
+
+# Told to everyone online. The words are in lang/ (broadcast.start, broadcast.done).
+broadcasts:
+  # When a backup starts.
+  start: false
+  # When a backup is done, with how long it took.
+  done: false
 
 # /backup: run, list, check and restore backups. Each subcommand has its own permission,
 # xbackup.<subcommand>, which operators have by default.
@@ -50,7 +49,7 @@ command:
 
 # Where backups are kept: a folder, relative to the server folder or absolute. Put it on
 # a second disk if you have one. Changing it starts a new, empty repository there; the
-# old one is left as it is.
+# old one is left as it is. On Fabric the default is config/xbackup/repository.
 repository: "plugins/xBackup/repository"
 
 # When backups run.
@@ -65,7 +64,9 @@ schedule:
 sources:
   # Every loaded world's save folder, with its nether and end.
   worlds: true
-  # The plugins folder: every plugin's data and jar. xBackup's own repository is never included.
+  # The plugins folder: every plugin's data and jar (on Fabric, the mods folder). xBackup's
+  # own repository is never included. The Xena plugins' databases are copied by each
+  # plugin's own writer, so none is caught mid-write.
   plugins: true
   # The server's own settings: server.properties, the .yml, .json, .toml and .txt files
   # beside it (ops, whitelist, bans), and the config folder.
@@ -75,7 +76,14 @@ sources:
 
 # Paths to leave out, relative to the server folder. * is anything but /, ** is anything,
 # so "plugins/*/logs/**" leaves out every plugin's logs folder.
-exclude: ["**/session.lock", "plugins/.paper-remapped/**", "plugins/*/logs/**", "plugins/*/cache/**", "plugins/bStats/**", "**/*.tmp", "**/*.lck"]
+exclude:
+  - "**/session.lock"
+  - "plugins/.paper-remapped/**"
+  - "plugins/*/logs/**"
+  - "plugins/*/cache/**"
+  - "plugins/bStats/**"
+  - "**/*.tmp"
+  - "**/*.lck"
 
 # Which backups to keep. Each tier keeps the newest backup of each of its last so many
 # hours, days, weeks or months; a backup can count for several. The newest backup and
@@ -121,11 +129,11 @@ verify:
 # https://plugins.xenastudios.co/xbackup/remotes/
 remotes: {}
 
-# Tells you when a new version is out.
-update-checker:
-  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
-  # only the plugin version, the platform and the Minecraft version.
-  enabled: true
-  # Logged, and shown to admins when they join, when a newer version is out.
-  # <plugin>, <current>, <latest> and <url> are filled in.
-  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"
+# Telling you when a newer version is out: in the console, and to players with
+# <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
+# sending only the plugin's version, the platform and the Minecraft version.
+updates:
+  # Whether to ask at all.
+  check: true
+  # Which releases to hear of: release, beta (betas and releases) or alpha (everything).
+  channel: "release"

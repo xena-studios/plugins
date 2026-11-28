@@ -1,0 +1,4 @@
+# A real client (boot.sh ... --seed scripts/boot-seeds/client --checks xbackup/bukkit/client-checks.txt):
+# Joiner, an operator in German, backs up and plans, stages and calls off a restore of the world;
+# Friend, no operator, is refused.
+client: --plugin xbackup --timeout 120

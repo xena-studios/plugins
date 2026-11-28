@@ -1,0 +1,104 @@
+public final class co/xenastudios/xbackup/api/BackupSnapshot {
+	public fun <init> (Ljava/lang/String;Lkotlin/time/Instant;JLjava/lang/String;JJJJZLjava/util/List;)V
+	public final fun getAddedBytes ()J
+	public final fun getBytes ()J
+	public final fun getDurationMillis ()J
+	public final fun getFiles ()J
+	public final fun getId ()Ljava/lang/String;
+	public final fun getPauseMillis ()J
+	public final fun getPinned ()Z
+	public final fun getReason ()Ljava/lang/String;
+	public final fun getShortId ()Ljava/lang/String;
+	public final fun getTime ()Lkotlin/time/Instant;
+	public final fun getWarnings ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xbackup/api/BackupStatus {
+	public fun <init> (Ljava/lang/String;Lco/xenastudios/xbackup/api/BackupSnapshot;Lkotlin/time/Instant;IJLjava/lang/String;)V
+	public final fun getActivity ()Ljava/lang/String;
+	public final fun getBusy ()Z
+	public final fun getLast ()Lco/xenastudios/xbackup/api/BackupSnapshot;
+	public final fun getNextBackup ()Lkotlin/time/Instant;
+	public final fun getProblem ()Ljava/lang/String;
+	public final fun getRepositoryBytes ()J
+	public final fun getSnapshots ()I
+}
+
+public abstract interface class co/xenastudios/xbackup/api/QuietMoment {
+	public abstract fun pause ()V
+	public abstract fun resume ()V
+}
+
+public abstract interface class co/xenastudios/xbackup/api/StorageBackend {
+	public abstract fun delete (Ljava/lang/String;)V
+	public abstract fun describe ()Ljava/lang/String;
+	public abstract fun get (Ljava/lang/String;)[B
+	public abstract fun list (Ljava/lang/String;)Ljava/util/List;
+	public abstract fun put (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/xbackup/api/StoredFile {
+	public fun <init> (Ljava/lang/String;J)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSize ()J
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xbackup/api/XBackup {
+	public static final field INSTANCE Lco/xenastudios/xbackup/api/XBackup;
+	public static final fun api ()Lco/xenastudios/xbackup/api/XBackupApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xbackup/api/XBackupApi;)V
+}
+
+public abstract interface class co/xenastudios/xbackup/api/XBackupApi {
+	public abstract fun backupNow (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getStatus ()Lco/xenastudios/xbackup/api/BackupStatus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun listSnapshots ()Ljava/util/List;
+	public abstract fun registerBackend (Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xbackup/api/StorageBackend;)V
+	public abstract fun registerQuietMoment (Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xbackup/api/QuietMoment;)V
+	public fun registerSource (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun registerSource (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
+	public abstract fun unregisterBackend (Ljava/lang/String;)V
+	public abstract fun unregisterQuietMoment (Ljava/lang/String;)V
+	public abstract fun unregisterSources (Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/xbackup/api/XBackupApi$DefaultImpls {
+	public static fun registerSource (Lco/xenastudios/xbackup/api/XBackupApi;Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/xbackup/api/event/BackupFailedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xbackup/api/event/BackupFailedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xbackup/api/event/BackupFailedEvent$Companion {
+}
+
+public final class co/xenastudios/xbackup/api/event/BackupFinishedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xbackup/api/event/BackupFinishedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xbackup/api/BackupSnapshot;)V
+	public final fun getSnapshot ()Lco/xenastudios/xbackup/api/BackupSnapshot;
+}
+
+public final class co/xenastudios/xbackup/api/event/BackupFinishedEvent$Companion {
+}
+
+public final class co/xenastudios/xbackup/api/event/BackupStartEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xbackup/api/event/BackupStartEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getReason ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xbackup/api/event/BackupStartEvent$Companion {
+}
+

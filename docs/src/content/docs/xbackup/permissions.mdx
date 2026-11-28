@@ -1,0 +1,14 @@
+---
+title: Permissions
+description: "Every xBackup permission, and who has it by default."
+sidebar:
+  order: 2.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Each `/backup` subcommand's permission is `xbackup.<subcommand>` (`xbackup.now`, `xbackup.restore`), operators' by default, as in 1.x. `/backup copy <remote> tidy confirm`, which removes a remote's backups, needs `xbackup.forget` as well as `xbackup.copy`. `/xbackup reload`, `info` and `debug` need `xbackup.admin`.
+
+On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api; without one, operators (level 2) have the operator permissions.
+
+<Reference plugin="xbackup" show="permissions" />

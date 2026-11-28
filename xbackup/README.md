@@ -29,27 +29,31 @@ Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Nothing 
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xbackup:build       # compile, test, and check the jar's size budget
-./gradlew :xbackup:runServer   # a Paper server with xBackup, in xbackup/run/
+./gradlew :xbackup:common:build :xbackup:bukkit:build           # tests on the JVM and wasmWasi, the R8 jar and its budget
+./gradlew :xbackup:bukkit:runServer                             # a Paper server with the jar, in xbackup/bukkit/run/
+./gradlew -p core/platform-fabric :xbackup:26.3:collect         # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+xbackup/bukkit/boot.sh paper 26.3 --java <JDK 25 home>          # the boot checks on a real server (--family with xMoney and xBans)
+./gradlew :xbackup:api:updateKotlinAbi                          # after a deliberate API change
+./gradlew :xbackup:common:updateXenaManifest                    # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-src/main/java/co/xenastudios/xbackup/
-  XBackup.java         the plugin: the engine, /backup, the API and the idle listener
-  XBackupBootstrap.java  puts a staged restore in place on start, before worlds load
-  store/               the repository: packs, index, trees, region layouts, snapshots, verify, GC (pure Java)
-  backup/              what a backup reads: the two passes, region files chunk by chunk, SQLite copies
-  restore/             finding, dry-running and writing a restore, and the journaled swap
-  remote/              S3 (SigV4), WebDAV, the cloud drives and OAuth, copying and fetching
-  remote/lib/          SFTP and FTP, loaded with libraries fetched at runtime
-  server/              the worker thread, the schedule, the autosave pause on Paper and Folia
-  command/             /backup
-  cli/                 java -jar xbackup.jar list|restore|verify
-api/                   the developer API (co.xenastudios.xbackup:xbackup-api)
-boot-checks.txt        console commands CI runs on real Paper and Folia servers
+api/             the developer API (XBackupApi, XBackup.api(), sources, quiet moments, storage, events), platform-neutral
+common/          everything xBackup does, in Kotlin Multiplatform. commonMain: the config and its migration from 1.x,
+                 the messages (lang/ in its resources), the commands, and the repository's formats (packs, index,
+                 trees, region layouts, snapshots, the chunker), retention and the restore's rules, which run on
+                 Wasm too. jvmMain: the repository on disk, the two-pass backup and the family's databases, the
+                 restore and its journaled swap, the remotes (S3, WebDAV, the drives; SFTP and FTP in remote/lib/,
+                 loaded with libraries fetched at runtime), the engine and its schedule, and the command line
+bukkit/          the Paper, Folia, Spigot and CraftBukkit jar, 1.8.8 on: the world pause for each, the Bukkit events,
+                 `java -jar xBackup.jar` (XBackupCli), and the release of every jar
+fabric/          the Fabric mod, a branch of core/platform-fabric's own build
+*-checks.txt, boot.sh   what the boot tests run and expect
+CHANGELOG.md     one section per release; the release workflow publishes it
+modrinth.md      the Modrinth and Hangar project page, published when it changes on main
 ```
 
-The store engine, the backup scanner and restores are pure Java with no server classes, so they're tested without a server: `StoreTest`, `BackupTest` (real-format region files, restores compared byte for byte), `CrashTest` (every operation killed at a random write anywhere in it, 160 rounds), `KillTest` (a second JVM killed with SIGKILL mid-backup), `SwapTest` (the restore swap stopped or failing at every step), `RestoreSafetyTest` (a hostile repository can't write outside the restore), `MirrorTest` (what a copy may delete from a remote) and `AutosaveGateTest` (autosave is never left off).
+The repository, backups and restores are tested without a server: `BackupTest` (real-format region files, restores compared chunk by chunk), `CompatTest` (1.0.1's jar reads and restores 2.0's repository, and 2.0 1.0.1's), `CrashTest` (every job killed at a random write, 160 rounds), `KillTest` (a second JVM killed with SIGKILL mid-backup), `SwapTest` (the restore swap cut off or failing), `RestoreSafetyTest` (a hostile repository can't write outside the restore), `MirrorTest` (what a copy may delete from a remote), `FamilyTest` (xMoney's and xBans' databases copied by their own writers while they're written), `CliTest`, `CommandsTest` and `MigrationTest` (1.x's config).
 
 `RemoteTest` runs every network remote against real servers in Docker when `XB_REMOTES` is set:
 
@@ -67,12 +71,10 @@ openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/key.pem -out certs/cert.
 docker run -d -p 12990:21 -p 21100-21110:21100-21110 -e "USERS=xbackup|pass" -e ADDRESS=127.0.0.1 \
   -e MIN_PORT=21100 -e MAX_PORT=21110 -e "TLS_CERT=/certs/cert.pem -orequire_ssl_reuse=NO" -e TLS_KEY=/certs/key.pem \
   -v "$PWD/certs:/certs:ro" delfer/alpine-ftp-server
-XB_REMOTES=1 XB_FTPS_PIN="$(openssl x509 -in certs/cert.pem -noout -fingerprint -sha256 | cut -d= -f2)" ./gradlew :xbackup:test
+XB_REMOTES=1 XB_FTPS_PIN="$(openssl x509 -in certs/cert.pem -noout -fingerprint -sha256 | cut -d= -f2)" ./gradlew :xbackup:common:jvmTest
 ```
 
-The cloud drives are tested against local stand-ins for their APIs (`CloudDrivesTest`).
-
-The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
+The cloud drives are tested against local stand-ins for their APIs (`CloudDrivesTest`). The shared core (config, messages, commands, the family and its backup seam, the update checker, bStats) is in [`core/`](../core).
 
 ## Licence
 

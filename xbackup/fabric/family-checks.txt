@@ -1,0 +1,10 @@
+# The family on Fabric (scripts/boot-fabric.sh with the xMoney and xBans jars beside xBackup's):
+# their SQLite databases are copied by their own writers, through each mod's relocated core.
+logged: xBackup 2.0.0 on
+logged: [xMoney] xMoney 2.0.0 on
+run: backup now family
+expect: Backed up
+run: backup status
+expect: Databases copied by their plugin: xBans, xMoney
+run: backup verify full
+expect: All good.

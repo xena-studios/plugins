@@ -1,0 +1,21 @@
+---
+title: Install
+description: "Install xBackup on your server: the steps for Paper, Folia, Spigot and Fabric."
+sidebar:
+  order: 1.2
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="xbackup" />
+
+On the first start xBackup writes `config.yml` and one file per language in `lang/`, in `plugins/xBackup/` (Bukkit) or `config/xbackup/` (Fabric). The first backup runs a minute after the start, then once an hour. Settings every Xena plugin shares, such as the language and the look of messages, are in `plugins/Xena/config.yml` (`config/xena/` on Fabric).
+
+- Move the repository to a second disk if you have one: a backup on the server's own disk doesn't survive that disk. See [Configuration](/xbackup/configuration/#repository).
+- Add a [remote](/xbackup/remotes/) for a copy off the machine.
+
+## Coming from 1.x
+
+Replace the jar and restart: see [Upgrading from 1.x](/xbackup/upgrade/). The [1.x docs](/xbackup/v1/) stay up while 1.x gets fixes.

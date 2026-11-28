@@ -1,0 +1,76 @@
+---
+title: Developer API
+description: "Build on xPlots: read every field and plot, rent plots out and change members behind cancellable events, change prices, decide who may build, and tell another region system about every field, on every platform."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xPlots 2.0 has its first API. It's the same on Paper, Folia and Spigot today and on Fabric and NeoForge later: worlds are `WorldRef`s (by name), players `PlayerRef`s (by UUID), plots `PlotInfo` copies that don't change after you get them. Get it with `XPlots.api()` once xPlots is enabled (add it to your plugin's `depend`, or `softdepend` and check `XPlots.isEnabled()` first). On Bukkit it's also in the services manager, as `XPlotsApi`.
+
+Reads answer from memory on any thread. Changes return a `CompletableFuture<ChangeResult>` that's complete once the change is made in memory and handed to the database writer; signs and the world follow on their own threads. Until the plots are read as xPlots starts (`isReady()`), reads are empty and changes complete `NOT_READY`.
+
+:::caution[Not on Maven Central yet]
+The API isn't published until 2.0 is released. Its coordinates will be `co.xenastudios.xplots:xplots-api:2.0.0`; until then, compile against the plugin's jar.
+:::
+
+## Read
+
+```java
+XPlotsApi plots = XPlots.api();
+PlotInfo here = plots.plotAt(WorldRef.of("world"), x, y, z);   // null on a path or outside every field
+if (here != null && !here.isFree()) {
+    getLogger().info(here.getId() + " is " + here.getOwnerName() + "'s until " + here.getExpiresAt());
+}
+for (PlotInfo mine : plots.plotsOf(PlayerRefs.of(player.getUniqueId()))) { /* ... */ }
+boolean may = plots.mayBuild(ref, world, x, y, z);   // owners and members, after access rules; not xplots.bypass
+```
+
+`fields()`, `field(name)`, `plot(id)` and `isInField(...)` do the rest. A `PlotInfo` has the plot's box, owner, members, slots, expiry and whether it's being reset.
+
+## Change
+
+```java
+plots.setOwner("box-12", ref, "Steve");          // a free plot for one period, free; a rented one handed over
+plots.addMember("box-12", friend, "Alex");       // ignoring slots, as staff do
+plots.removeMember("box-12", friend);
+plots.extend("box-12", Duration.ofDays(1).toMillis());   // free time, past max-prepaid if need be
+plots.evict("box-12");                           // reset if its field resets plots
+```
+
+Each fires the same events xPlots' own commands do, so a listener can refuse it (`CANCELLED`).
+
+## Events
+
+On xPlots' bus (`api.getEvents()`), fired only when something listens, on the thread making the change (the player's, or the global thread for expiry and renewals).
+
+| Event | When | Cancellable |
+| --- | --- | --- |
+| `PlotClaimEvent` / `PlotClaimedEvent` | A player rents a free plot (or staff give one), with the price | Yes: nothing is charged |
+| `PlotUnclaimEvent` / `PlotUnclaimedEvent` | A plot's rent ends: `ABANDONED`, `EXPIRED` or `EVICTED` | Yes: it stays rented (for `EXPIRED`, also `extend` it) |
+| `MemberAddEvent` / `MemberAddedEvent` | A member is added, by the owner or staff | Yes |
+| `MemberRemoveEvent` / `MemberRemovedEvent` | A member is removed | Yes |
+| `RentPayEvent` / `RentPaidEvent` | Rent paid ahead (`PAY`), renewed on its own (`RENEW`, owner online or not) or a slot bought (`SLOT`) | Yes: nothing is charged |
+
+On Bukkit each is also a Bukkit event, for plugins and Skript scripts that listen the Bukkit way: `BukkitPlotClaimEvent` and the rest in `co.xenastudios.xplots.api.bukkit`, each with `getEvent()`. Cancelling one cancels xPlots' own. They may fire off the server thread (a payment the economy confirmed later), and say so with `isAsynchronous()`.
+
+<Reference plugin="xplots" show="events" />
+
+## Add-ons
+
+```java
+plots.registerPriceModifier("Ranks", (player, plot, kind, price) -> vip(player) ? price * 0.8 : price);
+plots.registerAccessRule("Contest", (player, plot, world, x, y, z) -> judges.contains(player) ? Access.ALLOW : Access.DEFAULT);
+plots.registerRegionBackend("MyClaims", new RegionBackend() {
+    public void define(String id, WorldRef world, PlotBox columns) { /* a region that lets xPlots decide */ }
+    public void remove(String id, WorldRef world) { /* ... */ }
+});
+plots.unregisterAll("Ranks");
+```
+
+- A **price modifier** is asked whenever a price is shown or charged: rent, paying ahead, renewals and slots, in the order registered.
+- An **access rule** is asked about every block a player changes or uses in a field, on that place's thread; the first that isn't `DEFAULT` decides. `xplots.bypass` still builds anywhere.
+- A **region backend** is another region system's side of xPlots' fields, as WorldGuard's is on Bukkit: told about every field there is as it registers, and about every field and plot made or deleted after. It's the seam Fabric's and NeoForge's regions will use.
+
+Inside xPlots' jar, the core's types the API uses (`WorldRef`, `PlayerRef`, `EventBus`, `Pending`) are relocated with its own copy of the core, as every Xena plugin's are. The published API will carry the same names.

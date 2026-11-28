@@ -1,0 +1,18 @@
+# Beside xMoney, xTeleport, xRewind and xVanish 2.0 (boot.sh --family): xPlots finds each through
+# its API, by name through its own class loader. Rent goes through xMoney's ledger; a rollback in
+# a plot through xRewind's. A real client checks renting, members and plot homes
+# (client-checks.txt).
+run: xplots info
+expect: Rent: xMoney.
+run: xplots select world 400 64 400 411 70 404
+expect: Selected
+run: xplots field create family size:5 path:2
+expect: = 2 plots of
+run: xplots confirm
+expect: Made field family
+run: xplots plot rollback family-1 1h Nobody
+expect: changed nothing in family-1
+run: xplots field delete family
+expect: Delete family
+run: xplots confirm
+expect: Deleted family

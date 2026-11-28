@@ -51,13 +51,6 @@ dependencyResolutionManagement {
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") {
             content { includeModule("org.spigotmc", "spigot-api") }
         }
-        // WorldGuard and WorldEdit, which xPlots uses when they're installed.
-        maven("https://maven.enginehub.org/repo/") {
-            content {
-                includeGroupByRegex("com\\.sk89q.*")
-                includeGroupByRegex("org\\.enginehub.*")
-            }
-        }
         mavenCentral()
     }
 }

@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import catalog from "../data/plugins.json" with { type: "json" };
-import { isUnreleased } from "../plugins.ts";
+import { guideOf, isUnreleased } from "../plugins.ts";
 import { routeData } from "../routeData.ts";
 import { manifestOf } from "./data.ts";
 
@@ -25,7 +25,7 @@ export function apiInfo(id?: string) {
         maven: p.maven ?? null,
         version: p.version,
         released: p.released,
-        guide: `${p.docs}developer-api/`,
+        guide: guideOf(p.id, p.docs),
         rewritten: kotlin,
         unreleasedRewrite: kotlin && isUnreleased(p.id),
         newVersion: manifest?.plugin.version ?? null,

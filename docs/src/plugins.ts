@@ -48,7 +48,7 @@ interface Versioned {
    * Merged but not released: its last release's facts, which the brand catalog keeps until it
    * ships. Empty for a new plugin, which has had no release.
    */
-  unreleased?: { version?: string; jarBudgetKb?: number };
+  unreleased?: { version?: string; jarBudgetKb?: number; api?: boolean };
 }
 const versioned: Versioned[] = versions.plugins;
 const versionsOf = (id: string) => versioned.find((v) => v.id === id);
@@ -70,6 +70,14 @@ const unreleased = new Map(
 
 /** Whether [id]'s newest major is merged but not released. */
 export const isUnreleased = (id: string) => unreleased.has(id);
+
+/**
+ * Where [id]'s developer API guide is, given its docs' root [docs] ("/xplots/"): the released
+ * major's, or the unreleased one's (/<id>/next/) when the release had no API (`"api": false` in
+ * its "unreleased", as xPlots 1.x had none).
+ */
+export const guideOf = (id: string, docs: string) =>
+  versionsOf(id)?.unreleased?.api === false ? `/${nextId(id)}/developer-api/` : `${docs}developer-api/`;
 
 /** Where a plugin's unreleased major is served meanwhile: "xutilities/next". */
 const nextId = (id: string) => `${id}/next`;

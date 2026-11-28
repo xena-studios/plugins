@@ -23,7 +23,7 @@ The grid is centred in your selection, and whatever is left over at the edges be
 
 A field can have its own: `/xplots field set box sign-position middle`, or `sign-rotation diagonal`. Its signs move as soon as you set it. After changing the config's, run `/xplots field signs box` to move a field's signs to match; that also undoes signs moved by hand.
 
-From the console, select by typing the corners: `/xplots select world 0 64 0 40 70 30`.
+From the console, select by typing the corners: `/xplots select world 0 64 0 40 70 30`. With WorldEdit installed, `/xplots select` on its own takes your WorldEdit selection.
 
 ## What's protected
 
@@ -58,10 +58,21 @@ Every field starts with the settings under `plots` in the [config](/xplots/confi
 | `abandon-refund` | How much of the unused rent abandoning gives back, in percent. |
 | `sign-position` | `left-corner`, `right-corner` or `middle`: see [Where signs go](#where-signs-go). |
 | `sign-rotation` | `straight` or `diagonal`. |
+| `auto-renew` | 2.0: whether rent renews on its own from the owner's balance an hour before it runs out. See [Renewals](#renewals). |
 
 ## A warp
 
 Stand where players should arrive and run `/xplots field setwarp box`. Players then use `/plots warp box`, or just `/plots warp` if only one field has a warp. Teleports wait 3 seconds, cancelled if the player moves (`teleport-warmup`, skipped with `xplots.warmup.bypass`).
+
+## Renewals
+
+With `auto-renew` on (the config's `plots.auto-renew`, or one field's), a rented plot renews for one more period an hour before it runs out, charged from its owner's balance through the economy, whether they're online or not; they're told then, or when they next join. An owner turns it off for their plot in its menu. A balance that doesn't cover it is tried once: the owner is told, and the plot runs out as it would have. Item currency can't renew (the item is in an inventory, not a balance).
+
+Each renewal is charged once at most, even if the server stops in the middle of one: the charge is written down before the money is taken and cleared in the same write that extends the rent, and a start that finds one left asks xMoney's ledger whether it went through. With Vault, which keeps no ledger to ask, it's taken as paid.
+
+## Rolling back griefing
+
+With [xRewind](/xrewind/) 2.0 installed, an owner undoes what a player did in their plot, and only in their plot: `/plots rollback Steve` (the last day) or `/plots rollback Steve 2h`. Staff do the same for any plot with `/xplots plot rollback box-12 2h Steve`.
 
 ## Fixing things up
 

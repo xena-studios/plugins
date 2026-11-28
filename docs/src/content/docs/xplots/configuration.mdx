@@ -1,45 +1,35 @@
 ---
 title: Configuration
-description: Every setting in xPlots' config.yml.
+description: "Every setting in xPlots' config.yml, with its default."
 sidebar:
   order: 4
 ---
 
-import { Code } from "@astrojs/starlight/components";
-import config from "../../../generated/xplots/config.yml?raw";
+import Reference from "../../../components/reference/Reference.astro";
 
-The config is `plugins/xPlots/config.yml`, written on first start. Apply changes with `/xplots reload`; only `storage` needs a restart.
+The config is `plugins/xPlots/config.yml`, written on first start. Apply changes with `/xplots reload`; only `storage` needs a restart. A bad value falls back to its default with a warning in the console; xPlots never stops over config. Every message, the signs' four lines and the menus' titles, names and lore are in `lang/`: see [Messages](/xplots/messages/).
 
-| Section | What it covers |
+| Section | What it's for |
 | --- | --- |
-| `theme` | The prefix and colours xPlots' messages share: see [the theme](/start/formatting/#the-theme). |
-| `messages` | What players are told, and shared errors under `messages.error`. |
-| `plots` | Every field's settings unless the field changes one: see [Prices and settings](/xplots/setting-up/#prices-and-settings). |
-| `currency` | Vault, or an item. |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
+| `plots` | Every field's settings unless the field changes one: see [Prices and settings](/xplots/setting-up/#prices-and-settings). `auto-renew` (2.0) renews rent on its own. |
+| `currency` | The server's economy (xMoney or Vault), or an item. |
 | `max-plots` | How many plots a player may rent at once; `xplots.limit.<n>` raises it. |
-| `signs` | The four lines of a free, rented and nearly expired plot's sign, which sign is placed, and where: see [Where signs go](/xplots/setting-up/#where-signs-go). |
-| `menus` | Every menu's title and buttons: each button's material, name and lines. |
+| `signs` | Which sign is placed and where, and when a sign shows its "running out" lines: see [Where signs go](/xplots/setting-up/#where-signs-go). What they say is in `lang/` (`signs.free`, `signs.rented`, `signs.expiring`). |
+| `menus` | Each menu button's item. Their names and lore are in `lang/` (`menus.*`). |
 | `teleport-warmup` | Seconds to stand still before `/plots home` and `/plots warp`. |
 | `reset-ms-per-tick` | How long putting plots back may work each tick. |
-| `storage` | Where plots are kept: SQLite in the plugin's folder (`plots.db`), or MySQL/MariaDB. |
-| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+| `storage` | Where plots are kept: SQLite in the plugin's folder (`plots.db`), MySQL/MariaDB, or the family's shared database. |
+| `updates` | The update checker: [Privacy](/start/privacy/). |
 
 ## Currency
 
-`type: vault` takes rent through the server's economy, which needs [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin such as EssentialsX. Until both are installed, plots can't be rented and the console says why when someone tries. A field whose price is 0 is free either way.
+`type: economy` (1.x's `vault` means the same, and still works) takes rent through the server's economy: [xMoney](/xmoney/)'s API when xMoney is installed, so each payment is in its ledger with the plot ("xPlots: rent for box-12"), or any economy plugin through Vault (EssentialsX, CMI). Until one is installed, plots can't be rented and the console says why when someone tries. A field whose price is 0 is free either way.
 
-`type: item` takes an item from the player's inventory instead. It matches `material`, and `name` (as players see it, without colours) and `custom-model-data` when they're set, so a box server's Coin item works as it is. Amounts are whole items, rounded up. `singular` and `plural` are how amounts are written: "1 Coin", "5 Coins".
-
-## Signs and menus
-
-Sign lines and menu text are MiniMessage, with these placeholders: `<plot>` the plot's name, `<price>` and `<period>` its rent, `<owner>`, `<time>` left, `<slots>` (members) and `<max-slots>`, `<size>`. A sign is written only when what it shows has changed, and the time left on signs is checked once a minute.
+`type: item` takes an item from the player's inventory instead. It matches `material`, and `name` (as players see it, without colours) and `custom-model-data` (1.14 on) when they're set, so a box server's Coin item works as it is. Amounts are whole items, rounded up. `singular` and `plural` are how amounts are written: "1 Coin", "5 Coins". Rent paid in an item can't renew on its own.
 
 ## Storage
 
-`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) and fill in `mysql` to keep plots in a database server. Plots are read once when the server starts, before anyone can join, so they're never unprotected; that's why a change here applies on restart, not on reload. Plots aren't copied between databases.
+`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) and fill in `mysql` to keep plots in a database server, or `shared` for the database every Xena plugin can share, set in `plugins/Xena/config.yml`. Plots are read once as the server starts, off the server thread; until they're in, nobody can change a block, so they're never unprotected. A change here applies on restart, not on reload, and plots aren't copied between databases. The tables are 1.x's, so going back to 1.0.2 reads them as they are.
 
-A bad value falls back to its default with a warning in the console.
-
-## The full default config
-
-<Code code={config} lang="yaml" title="plugins/xPlots/config.yml" />
+<Reference plugin="xplots" show="config" />

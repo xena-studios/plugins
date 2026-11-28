@@ -149,9 +149,9 @@ jobs:
       # gradle/jar-budgets.txt.
       - run: >-
           ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble :xutilities:bukkit:assemble :zchat:bukkit:assemble
-          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble :xvote:bukkit:assemble :xbackup:bukkit:assemble :xrewind:bukkit:assemble :xlimits:bukkit:assemble :xlimbo:bukkit:assemble
+          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble :xvote:bukkit:assemble :xbackup:bukkit:assemble :xrewind:bukkit:assemble :xlimits:bukkit:assemble :xlimbo:bukkit:assemble :xplots:bukkit:assemble
           :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget :zchat:bukkit:checkJarBudget
-          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget :xbackup:bukkit:checkJarBudget :xrewind:bukkit:checkJarBudget :xlimits:bukkit:checkJarBudget :xlimbo:bukkit:checkJarBudget
+          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget :xbackup:bukkit:checkJarBudget :xrewind:bukkit:checkJarBudget :xlimits:bukkit:checkJarBudget :xlimbo:bukkit:checkJarBudget :xplots:bukkit:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: bukkit-jars
@@ -173,6 +173,7 @@ jobs:
             xrewind/bukkit/build/r8/xRewind.jar
             xlimits/bukkit/build/r8/xLimits.jar
             xlimbo/bukkit/build/r8/xLimbo.jar
+            xplots/bukkit/build/r8/xPlots.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -630,7 +631,40 @@ jobs:
         env:
           JAVA: ${{ steps.java.outputs.path }}
         run: xlimbo/bukkit/boot.sh paper "$VERSION" --family --java "$JAVA" --seed scripts/boot-seeds/client
-      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish, xMarket, xVote, xBackup, (from 1.13) xRewind and (on Paper from 1.21.11) xLimbo beside xSample, each with its own relocated core,
+      # xPlots, from 1.13 (block data's first version, its floor; older cells skip it): a field made
+      # with its signs, settings, a plot's info, a reload, debug and the field deleted; with
+      # WorldGuard and WorldEdit beside it (pinned, with their sha256) on Paper and Spigot 1.13.2,
+      # the field's region (worldguard-checks.txt); on a `family` or `client` cell and at its floor,
+      # beside xMoney, xTeleport, xRewind and xVanish, rent through xMoney's ledger and a rollback
+      # through xRewind's (family-checks.txt); on a `client` cell and on Spigot 1.13.2 a real client
+      # in German rents a plot through its sign and menu, paid through xMoney, has a non-member
+      # refused and a member let build, and goes to the plot home through xTeleport's /home
+      # (xplots/bukkit/client-checks.txt). WorldGuard doesn't run on Folia or its forks.
+      - name: boot xPlots
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+          SEED: ${{ matrix.cell.seed }}
+          REGIONS: ${{ matrix.cell.regions }}
+          KIND: ${{ matrix.cell.server }}
+          FAMILY: ${{ matrix.cell.family }}
+          CLIENT: ${{ matrix.cell.client || matrix.cell.id == 'spigot-1.13.2' }}
+          RESOLVED: ${{ steps.server.outputs.version }}
+        run: |
+          if [[ -n $RESOLVED && $(printf '%s\n' "$RESOLVED" 1.13 | sort -V | head -1) != 1.13 ]]; then
+            echo "xPlots starts at 1.13; this is $RESOLVED."
+            exit 0
+          fi
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          opts=()
+          case "$KIND:$RESOLVED" in paper:1.13* | paper:1.21* | paper:26.* | spigot:1.13*) opts+=(--worldguard) ;; esac
+          [[ $FAMILY != true && $CLIENT != true ]] || opts+=(--family)
+          args=()
+          [[ -z $SEED ]] || args+=(--seed "$SEED")
+          [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xplots/bukkit/client-checks.txt)
+          xplots/bukkit/boot.sh "${target[@]}" "${opts[@]}" --java "$JAVA" "${args[@]}"
+      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish, xMarket, xVote, xBackup, (from 1.13) xRewind and xPlots and (on Paper from 1.21.11) xLimbo beside xSample, each with its own relocated core,
       # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),
       # and each answering its own commands.
       - name: family test
@@ -642,7 +676,8 @@ jobs:
         run: |
           if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
           rewind=()
-          [[ $(printf '%s\n1.13\n' "$RESOLVED" | sort -V | head -1) != 1.13 ]] || rewind=(--checks xrewind/bukkit/boot-checks.txt xrewind/bukkit/build/r8/xRewind.jar)
+          [[ $(printf '%s\n1.13\n' "$RESOLVED" | sort -V | head -1) != 1.13 ]] || rewind=(--checks xrewind/bukkit/boot-checks.txt xrewind/bukkit/build/r8/xRewind.jar
+            --checks xplots/bukkit/boot-checks.txt xplots/bukkit/build/r8/xPlots.jar)
           # xLimbo too on Paper from 1.21.11, its floor (Paper only).
           [[ $SERVER != paper || $(printf '%s\n1.21.11\n' "$RESOLVED" | sort -V | head -1) != 1.21.11 ]] || rewind+=(--checks xlimbo/bukkit/boot-checks.txt xlimbo/bukkit/build/r8/xLimbo.jar)
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
@@ -1184,6 +1219,7 @@ jobs:
           - {id: xlimits, name: xLimits, jar: xlimits/bukkit/build/r8/xLimits.jar}
           # With its limbo given a folder it won't touch, so the heap is xLimbo's and not its world's (the seed's config says why).
           - {id: xlimbo, name: xLimbo, jar: xlimbo/bukkit/build/r8/xLimbo.jar, seed: xlimbo/bukkit/budgets-seed}
+          - {id: xplots, name: xPlots, jar: xplots/bukkit/build/r8/xPlots.jar}
     permissions:
       contents: read
     steps:

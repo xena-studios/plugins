@@ -1,0 +1,52 @@
+---
+title: xPlots
+description: "xPlots: free rentable plots for Paper, Folia and Spigot from 1.13: select an area and it becomes a grid of plots with signs, rented through xMoney, Vault or an item, renewed on their own, with WorldGuard beside it."
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Current version: **2.0.0**
+
+xPlots rents small plots to players for in-game money, the box-server staple. Instead of a region and a sign for every plot made by hand, you select the whole area, say how big each plot is, and confirm: every plot and every sign is made for you.
+
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
+- **On every server you run.** One jar for Paper, Folia, Spigot and CraftBukkit from 1.13 to the newest. WorldGuard and WorldEdit are used when they're there, never needed.
+- **Setup in a minute.** One selection becomes a grid of plots with paths between them, outlined in particles before anything changes. Signs go up on their own. See [Setting up](/xplots/setting-up/).
+- **Plots come back clean.** Each plot is saved when it's made and put back when its rent runs out, a few milliseconds per tick.
+- **Rent that renews itself.** With `auto-renew`, a plot renews from its owner's balance an hour before it runs out, online or not, charged once even across a crash.
+- **You won't feel it running.** Finding a block's plot is arithmetic on the grid, the same for ten plots or ten thousand. One timer for the next lease to end, and a once-a-minute check of signs in loaded chunks; with no field, nothing runs at all.
+- **With the family.** Rent through [xMoney](/xmoney/) (each payment in its ledger), plot homes in [xTeleport](/xteleport/)'s `/homes`, an owner's `/plots rollback` through [xRewind](/xrewind/), and [xVanish](/xvanish/)'s hidden players left out of the member picker.
+- **In your players' languages.** Every message, sign and menu in each player's client's language: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese.
+
+:::caution[Not released yet]
+2.0 isn't released yet: it ships with the other plugins' rewrites. Until then 1.0.2 is the release, and these pages are a preview. The [1.x docs](/xplots/v1/) stay up while 1.x gets fixes.
+:::
+
+:::note[Coming from xPlots 1.x?]
+Replace the jar and restart: your fields, plots, rents and saved blocks are read as they are, your config is carried forward, your edited messages, sign lines and menu texts move to `lang/en.yml`, and the old file is kept as `config.yml.bak-v1`. See [Upgrading from 1.x](/xplots/upgrade/).
+:::
+
+## Where it runs
+
+<Reference plugin="xplots" show="platforms" />
+
+| | |
+| --- | --- |
+| **Paper** | Everything. Chunks load off the server thread to save and put back plots, held with a ticket while they're worked on; teleports don't block. |
+| **Folia** | Everything, each sign and each plot's reset on the thread of its own region. WorldGuard doesn't run on Folia, so xPlots protects its fields alone there, as it always does: a field's region is only for a world-wide `build deny`. |
+| **Spigot and CraftBukkit** | Everything, from 1.13 (block data's first version). Chunks load on the server thread. Signs can't be edited once placed before 1.20, so there's no wax to add. |
+| **Fabric and NeoForge** | Later, with xPlots' own regions in place of WorldGuard's (the plugin's logic is already the same on every platform). |
+
+## How it works
+
+1. Staff select an area with `/xplots wand` (or WorldEdit) and run `/xplots field create box size:5 path:2`.
+2. Players click a free plot's sign, check the price in a menu, and rent it.
+3. `/plots` manages it: pay ahead, members, member slots, renewing, a teleport home, or giving it up.
+4. When the rent runs out, the plot is put back as it was made and its sign says it's free again.
+
+## For developers
+
+Read every field and plot, rent them out and change members behind cancellable events, change prices, decide who may build, or tell another region system about every field: the [Developer API](/xplots/developer-api/).

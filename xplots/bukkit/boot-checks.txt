@@ -1,0 +1,49 @@
+# xPlots on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks, through
+# boot.sh): 1.x's checks, on 2.0, from 1.13 on Spigot to the newest Paper and Folia. The database
+# opens on an async task with the SQLite driver the server ships.
+logged: xPlots 2.0.0 on
+logged: Loaded 0 fields with 0 plots from the SQLite database plots.db.
+run: xplots info
+expect: xPlots 2.0.0 on
+
+# A field from a typed selection: two 5×5 plots with a 2-block path, each with its sign. Paper and
+# Folia keep the chunks loaded (forceload, 1.14 on); without it, xPlots loads them itself to save
+# each plot's blocks and place its signs.
+paper run: forceload add 192 192 223 223
+paper expect: Marked
+folia run: forceload add 192 192 223 223
+folia expect: Marked
+run: xplots select world 200 64 200 211 70 204
+expect: Selected
+run: xplots field create boot size:5 path:2
+expect: = 2 plots of
+run: xplots confirm
+expect: Made field boot
+# Folia's console can't test blocks with execute.
+paper run: execute if block 200 65 205 #minecraft:standing_signs run say SIGN PLACED
+paper expect: SIGN PLACED
+
+run: xplots field set boot price 250
+expect: Set boot's price to 250
+run: xplots field info boot
+expect: auto-renew: false
+run: xplots plot info boot-2
+expect: free.
+run: xplots plot setowner boot-1 Steve
+expect: has never played here.
+
+# Reloading keeps every plot.
+run: xplots reload
+expect: Reloaded xPlots
+run: xplots field list
+expect: 0 of 2 rented
+run: xplots debug
+expect: debug
+
+# Deleting asks first, then takes the signs down.
+run: xplots field delete boot
+expect: Delete boot
+run: xplots confirm
+expect: Deleted boot
+paper run: execute if block 200 65 205 minecraft:air run say SIGN GONE
+paper expect: SIGN GONE

@@ -6,7 +6,6 @@
 <a href="https://plugins.xenastudios.co/xplots/download/"><img alt="Available on GitHub" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/github.svg"></a>
 <img alt="Runs on Paper" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/paper.svg">
 <img alt="Runs on Purpur" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/purpur.svg">
-<img alt="Runs on Folia" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/folia.svg">
 <a href="https://plugins.xenastudios.co/xplots/"><img alt="Read the Docs" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/docs.svg"></a>
 <!-- badges:end -->
 

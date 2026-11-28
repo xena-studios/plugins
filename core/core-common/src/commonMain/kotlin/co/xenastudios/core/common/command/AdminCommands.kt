@@ -18,6 +18,7 @@ import co.xenastudios.core.common.db.DatabaseSettings
 import co.xenastudios.core.common.i18n.CoreMessages
 import co.xenastudios.core.common.i18n.MessageKey
 import co.xenastudios.core.common.isFatal
+import co.xenastudios.core.common.locked
 import co.xenastudios.core.common.module.Module
 import co.xenastudios.core.common.module.ModuleSet
 import co.xenastudios.core.common.module.ModuleStatus
@@ -65,14 +66,15 @@ public enum class AdminSubcommand(
  * - `debug` runs [debug]'s health checks and shows them, then uploads its report (or writes
  *   it to a file) off the server's threads and gives the link.
  * - `import <source> [--dry-run]` runs one of [imports]' importers, completing their ids.
- * - `migrate <sqlite|mysql> [--force]` moves the data with [migration], once confirmed.
+ * - `migrate <sqlite|mysql> [--force]` moves the data with [migration] (or what [makeMigration]
+ *   makes), once confirmed.
  * - `forget <player>` deletes what [playerData] has about a player, by name or UUID, once
  *   confirmed.
  *
  * Replies are [co.xenastudios.core.common.i18n.CoreMessages], drawn by [text] in the reader's
  * language.
  *
- * [debug] and [playerData] are made the first time `debug` or `forget` runs, not as the plugin
+ * [debug], [makeMigration] and [playerData] are made the first time `debug`, `migrate` or `forget` runs, not as the plugin
  * starts: few servers ever run them, and their classes (the report, its paste service, the
  * health checks) would otherwise load at every start (decisions/2026-11-25-a-lighter-core.md).
  * Pass each as an `object : () -> Debug { ... }` rather than a lambda: the JVM links a lambda
@@ -93,6 +95,11 @@ public class AdminCommands(
     private val imports: Imports? = null,
     /** How the plugin's database moves, for `migrate`; `null` if it has no database. */
     private val migration: StorageMigration? = null,
+    /**
+     * Makes [migration] the first time `migrate` runs, instead: its table declarations and the
+     * migration's classes then don't load as the plugin starts. Ignored when [migration] is given.
+     */
+    private val makeMigration: (() -> StorageMigration)? = null,
     /** Makes what the plugin keeps per player, for `forget`, once, as it first runs; `null` if it keeps nothing. */
     private val playerData: (() -> PlayerDataRegistry)? = null,
     /** Draws the replies for each reader. */
@@ -103,7 +110,7 @@ public class AdminCommands(
         when (it) {
             AdminSubcommand.RELOAD, AdminSubcommand.DEBUG -> true
             AdminSubcommand.IMPORT -> imports != null
-            AdminSubcommand.MIGRATE -> migration != null
+            AdminSubcommand.MIGRATE -> migration != null || makeMigration != null
             AdminSubcommand.FORGET -> playerData != null
         }
     }
@@ -112,12 +119,16 @@ public class AdminCommands(
 
     private var report: Debug? = null
     private var registry: PlayerDataRegistry? = null
+    private var madeMigration: StorageMigration? = migration
 
     // Made on first use. A command runs on its source's thread, so two may race: each makes its
     // own and one is kept, which is harmless.
     private fun report(): Debug = report ?: debug().also { report = it }
 
     private fun registry(make: () -> PlayerDataRegistry): PlayerDataRegistry = registry ?: make().also { registry = it }
+
+    // Unlike the others, one is kept for good once made: it knows whether a move is running.
+    private fun migration(): StorageMigration = locked(this) { madeMigration ?: makeMigration!!().also { madeMigration = it } }
 
     /** `<plugin>.admin`, which grants every admin subcommand's permission. */
     public val admin: Permission
@@ -160,7 +171,6 @@ public class AdminCommands(
                     executes(Handler(sub, source, dryRun))
                 }
                 AdminSubcommand.MIGRATE -> {
-                    checkNotNull(migration)
                     val to = argument("to", ArgumentTypes.choice("sqlite", "mysql"), "The storage type to move the data to.")
                     val force = optional("force", ArgumentTypes.choice(FORCE), "Replaces what the target database already has.")
                     confirm()
@@ -187,7 +197,7 @@ public class AdminCommands(
                 AdminSubcommand.RELOAD -> reload(context.source)
                 AdminSubcommand.DEBUG -> debug(context.source)
                 AdminSubcommand.IMPORT -> import(context, imports!!, context[args[0]], context.getOrNull(args[1]) != null)
-                AdminSubcommand.MIGRATE -> migrate(context, migration!!, context[args[0]], context.getOrNull(args[1]) != null)
+                AdminSubcommand.MIGRATE -> migrate(context, migration(), context[args[0]], context.getOrNull(args[1]) != null)
                 AdminSubcommand.FORGET -> forget(context.source, registry(playerData!!), context[args[0]])
             }
         }

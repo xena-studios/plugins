@@ -12,6 +12,12 @@ import co.xenastudios.core.common.db.Migration
 import co.xenastudios.core.common.db.Row
 import co.xenastudios.core.common.db.SqlValue
 import co.xenastudios.core.common.db.Table
+import co.xenastudios.core.common.command.AdminCommands
+import co.xenastudios.core.common.command.CommandDispatcher
+import co.xenastudios.core.common.command.CommandResult
+import co.xenastudios.core.common.command.Reloader
+import co.xenastudios.core.common.command.commands
+import co.xenastudios.core.testing.FakeCommandSource
 import co.xenastudios.core.testing.FakeDatabase
 import co.xenastudios.core.testing.FakePlatform
 import co.xenastudios.core.testing.FakeSession
@@ -19,6 +25,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
@@ -146,5 +153,34 @@ class StorageMigrationTest {
         )
         assertEquals(emptyList(), switched)
         assertFailsWith<IllegalArgumentException> { migration.run(DatabaseSettings.Type.SQLITE, force = false, Heard()) }
+    }
+
+    @Test
+    fun aMigrationMadeOnFirstUseIsMadeOnceAsMigrateRuns() {
+        var made = 0
+        val admin = AdminCommands(
+            "xtest", "xTest", platform, Reloader { error("") },
+            makeMigration = object : () -> StorageMigration {
+                override fun invoke(): StorageMigration {
+                    made++
+                    return migration
+                }
+            },
+        )
+        val dispatcher = CommandDispatcher(commands { root("xtest", "") { mount(admin) } }, platform.clock, platform.log)
+        assertEquals("/xtest migrate <to> [force]", dispatcher.tree.root("xtest")!!.child("migrate")!!.usage)
+        assertEquals(0, made, "not as the plugin starts")
+
+        val console = FakeCommandSource.console()
+        assertIs<CommandResult.ConfirmNeeded>(dispatcher.dispatch(console, "xtest migrate mysql"))
+        assertEquals(CommandResult.Ran, dispatcher.dispatch(console, "xtest migrate mysql"))
+        platform.scheduler.advance(1.seconds)
+        assertEquals(listOf(DatabaseSettings.Type.MYSQL), switched)
+        assertEquals(1, made)
+        assertTrue(console.replies.last().contains("3"), console.replies.toString())
+
+        dispatcher.dispatch(console, "xtest migrate mysql")
+        dispatcher.dispatch(console, "xtest migrate mysql")
+        assertEquals(1, made, "kept once made")
     }
 }

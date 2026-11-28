@@ -24,8 +24,10 @@ import java.util.List;
  * library or five, DECISIONS.md), and whose class loader rewrites every class it loads. Spigot
  * and Paper before 1.19.3 ignore {@code paper-plugin.yml} and keep reading {@code plugin.yml}.
  *
- * <p>Java 17 class files, as Paper 1.19.3 to 1.20.4 run on 17; Paper's API is compiled
- * against, never shipped.
+ * <p>Java 8 class files like the rest of the jar, which Spigot's Commodore of every version
+ * reads (1.13.2's can't read Java 17's); Paper's API is compiled against, never shipped. Never
+ * in the jar's startup list (R8Shrink): Paper loads it in a class loader of its own before the
+ * plugin's, and no other server has Paper's API.
  */
 public final class PaperLibraryLoader implements PluginLoader {
 

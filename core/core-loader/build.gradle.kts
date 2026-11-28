@@ -12,9 +12,11 @@ dependencies {
 
 // Paper's plugin loader (paper-plugin.yml's `loader`), which hands Paper the plugin's libraries
 // from the family's cache instead of plugin.yml's `libraries:` (PaperLibraryLoader). Compiled
-// against Paper's API, never shipped with it, to Java 17 class files: Paper plugins exist from
-// 1.19.3, which ran on Java 17. Main's classes don't see it, so a server without Paper's API
-// never loads it.
+// against Paper's API, never shipped with it, to Java 8 class files like the rest of the jar:
+// Spigot's Commodore (1.13 on) rewrites a plugin's classes with the ASM of its day, and 1.13.2's
+// can't read Java 17 class files, so a newer class file there is a logged error even when
+// nothing uses it. Main's classes don't see it, nor does the startup list (R8Shrink), so a server
+// without Paper's API never loads it.
 val paper = sourceSets.create("paper") {
     compileClasspath += sourceSets.main.get().output
 }
@@ -25,11 +27,13 @@ dependencies {
     "paperCompileOnly"(libs.paper.api)
 }
 tasks.named<JavaCompile>("compilePaperJava") {
-    // Paper's API is Java 21 class files, which --release 17 can't read, so -source/-target.
+    // Paper's API is Java 21 class files, which --release 8 can't read, so -source/-target
+    // against the build's JDK; the class uses nothing of Java's newer than 8.
     options.release.unset()
-    sourceCompatibility = "17"
-    targetCompatibility = "17"
+    sourceCompatibility = "8"
+    targetCompatibility = "8"
     options.compilerArgs.remove("-Werror")
+    options.compilerArgs.add("-Xlint:-options")
 }
 // The proxies' shims, each against its proxy's API in a source set of its own, as Paper's loader
 // is: VelocityBootstrap to Java 21 class files (Velocity's API is Java 21, which it needs from

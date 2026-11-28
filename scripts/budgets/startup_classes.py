@@ -72,6 +72,10 @@ for line in open(a.log, errors="replace"):
     if not (ours or library) or "$$Lambda" in name or "/0x" in name:
         continue
     name = original.get(name, name) if ours else name
+    # The core's Paper loader: Paper loads it in a class loader of its own before the plugin's,
+    # and no other server can load it, so the shim never should (build-logic's R8Shrink drops it).
+    if ours and re.match(r"^co\.xenastudios\.[^.]+\.core\.loader\.paper\.", name):
+        continue
     if name not in seen:
         seen.add(name)
         names.append(name)

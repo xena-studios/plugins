@@ -54,7 +54,11 @@ import org.gradle.process.ExecOperations
  * own names (recorded on a real server by `scripts/budgets/check.sh --record-startup`): it goes
  * into the jar as [STARTUP_CLASSES] in the names R8 gave them, for the shim to load on a thread
  * of its own before the server enables the plugin. A class R8 removed, or that the jar no longer
- * has, is left out; the list is a hint, so a missing class only loads when it's first used.
+ * has, is left out; the list is a hint, so a missing class only loads when it's first used. The
+ * core's Paper loader (`core.loader.paper`) is left out too, though a recording on Paper lists
+ * it: Paper loads it in a class loader of its own before the plugin's, so the shim loading it
+ * again is a second copy there, and elsewhere a class for an API the server doesn't have, which
+ * Spigot's Commodore rewrites (and logs an error for, on 1.13.2) before it fails to load.
  */
 @CacheableTask
 abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : DefaultTask() {
@@ -228,6 +232,7 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
             .mapNotNull { name ->
                 val now = renamed[name] ?: name
                 when {
+                    PAPER_LOADER.containsMatchIn(name) -> null
                     now in present -> now
                     name.startsWith("co.xenastudios.") -> null
                     else -> now
@@ -298,6 +303,9 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
     companion object {
         /** Where the startup list goes in the jar, which the shim reads (core-loader's BukkitBootstrap). */
         const val STARTUP_CLASSES = "META-INF/xena/startup-classes.txt"
+
+        /** The core's Paper-only loader classes, relocated into any plugin's package: never preloaded. */
+        private val PAPER_LOADER = Regex("""^co\.xenastudios\.[^.]+\.core\.loader\.paper\.""")
 
         /** Every shipped `lang/<tag>.yml` of a jar, one after another, each after a `@@ <tag>` line (core-jvm's LangFolder). */
         const val LANG_BUNDLE = "lang/shipped.txt"

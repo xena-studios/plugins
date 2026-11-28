@@ -1,3 +1,4 @@
+import co.xenastudios.gradle.ApiFloor
 import co.xenastudios.gradle.JarBudget
 import co.xenastudios.gradle.R8Shrink
 
@@ -9,7 +10,9 @@ import co.xenastudios.gradle.R8Shrink
 // `shrinkJar` (part of `assemble`) writes build/r8/<jar> and its mapping file; `checkJarBudget`
 // (part of `check`) fails when that jar is over its line in gradle/jar-budgets.txt, or has
 // none. Tests get both jars' paths (xena.r8.jar, xena.r8.inputJar) to boot them. The keep rules: build-logic's xena/r8/common.pro, the project's r8/*.pro, and what the
-// jar's plugin.yml, fabric.mod.json and services name (R8Shrink). `xenaR8 { }` changes the
+// jar's plugin.yml, fabric.mod.json and services name (R8Shrink). On a `:bukkit` project,
+// `checkApiFloor` (part of `check`) fails when the shrunk jar calls server API its floor lacks
+// and its api-floor.txt doesn't list (ApiFloor). `xenaR8 { }` changes the
 // input jar, the library jars or the package renamed classes go to.
 plugins {
     java
@@ -86,3 +89,30 @@ tasks.withType<Test>().configureEach {
 
 tasks.named("assemble") { dependsOn(shrinkJar) }
 tasks.named("check") { dependsOn(checkJarBudget) }
+
+// A Bukkit adapter's shrunk jar against its floor's API, the one its main code compiles against
+// (ApiFloor): R8 shrinks against the newest, and can turn a call the floor has into one it
+// hasn't (#238). What it calls only after checking is listed in api-floor.txt beside it.
+if (path.endsWith(":bukkit")) {
+    fun ApiFloor.configure(write: Boolean) {
+        jar.set(shrinkJar.flatMap { it.outputJar })
+        mapping.set(shrinkJar.flatMap { it.mapping })
+        floor.from(configurations.named("compileClasspath"))
+        allowed.set(layout.projectDirectory.file("api-floor.txt"))
+        update.set(write)
+    }
+    val checkApiFloor = tasks.register<ApiFloor>("checkApiFloor") {
+        group = "verification"
+        description = "Fails if the shrunk jar calls server API its floor lacks that api-floor.txt doesn't list."
+        configure(write = false)
+        // Read as an input here (not by updateApiFloor, which writes it).
+        inputs.file(allowed).optional().withPropertyName("allowed").withPathSensitivity(PathSensitivity.NONE)
+    }
+    tasks.register<ApiFloor>("updateApiFloor") {
+        group = "verification"
+        description = "Writes api-floor.txt: the server API members the shrunk jar uses that its floor lacks."
+        configure(write = true)
+        outputs.file(allowed)
+    }
+    tasks.named("check") { dependsOn(checkApiFloor) }
+}

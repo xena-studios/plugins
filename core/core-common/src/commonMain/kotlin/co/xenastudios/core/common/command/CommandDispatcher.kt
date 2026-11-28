@@ -95,11 +95,12 @@ public class CommandDispatcher(
             return if (at == typed) matching(visible(node, source).map { it.name }, partial) else emptyList()
         }
         if (node.playerOnly && source.player == null) return emptyList()
-        // Which argument the last word is: a greedy one takes everything after it.
+        // Which argument the last word is: a greedy one takes everything after it, and completes
+        // each of its words from what it suggests (CoreProtect-style parameters, `u:` `t:`...).
         var index = 0
         while (at < typed) {
             val argument = node.arguments.getOrNull(index) ?: return emptyList()
-            if (argument.type.greedy) return emptyList()
+            if (argument.type.greedy) return matching(argument.type.suggest(source), partial)
             at++
             index++
         }

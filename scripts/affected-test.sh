@@ -260,9 +260,9 @@ check "xLimits' boot seed" xlimits/bukkit/boot-seed/plugins/xLimits/config.yml \
 check "xLimits' Fabric mod (platform-fabric's build)" xlimits/fabric/src/main/kotlin/co/xenastudios/xlimits/fabric/FabricLimitsServer.kt \
   $'tasks=:build :xlimits:api:build :xlimits:bukkit:build :xlimits:common:build\nchecks=\nboot=fabric'
 check "xLimbo's common code" xlimbo/common/src/commonMain/kotlin/co/xenastudios/xlimbo/XLimboPlugin.kt \
-  $'tasks=:build :xlimbo:api:build :xlimbo:bukkit:build :xlimbo:common:build\nchecks=\nboot=bukkit fabric'
+  $'tasks=:build :xlimbo:api:build :xlimbo:bukkit:build :xlimbo:common:build\nchecks=\nboot=bukkit'
 check "xLimbo's API" xlimbo/api/src/commonMain/kotlin/co/xenastudios/xlimbo/api/XLimboApi.kt \
-  $'tasks=:build :xlimbo:api:build :xlimbo:bukkit:build :xlimbo:common:build\nchecks=\nboot=bukkit fabric'
+  $'tasks=:build :xlimbo:api:build :xlimbo:bukkit:build :xlimbo:common:build\nchecks=\nboot=bukkit'
 check "xLimbo's Paper adapter" xlimbo/bukkit/src/main/kotlin/co/xenastudios/xlimbo/bukkit/BukkitLimboServer.kt \
   $'tasks=:build :xlimbo:api:build :xlimbo:bukkit:build :xlimbo:common:build\nchecks=\nboot=bukkit'
 check "xLimbo's budgets seed" xlimbo/bukkit/budgets-seed/plugins/xLimbo/config.yml \

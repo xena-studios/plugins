@@ -218,7 +218,9 @@ if [[ $all == false ]]; then
               */velocity/* | */bungee/*) bootProxy=true ;;
               *.md) ;;
               *)
-                bootBukkit=true bootFabric=true
+                # A plugin with no fabric/ (xLimbo 3, xPlots 2.0) has nothing to boot on Fabric.
+                bootBukkit=true
+                [[ ! -d $top/fabric ]] || bootFabric=true
                 [[ ! -d $top/velocity && ! -d $top/bungee && ! -f $top/bukkit/network.sh ]] || bootProxy=true ;;
             esac
           fi

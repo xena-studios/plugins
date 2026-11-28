@@ -73,7 +73,13 @@ abstract class ApiFloor : DefaultTask() {
         val listed = if (file.isFile) read(file) else emptySet()
         val new = missing.filterKeys { it !in listed }
         val stale = listed - missing.keys
-        if (new.isEmpty() && stale.isEmpty()) {
+        // A listed member the jar no longer uses is only a note: R8's output isn't byte-identical
+        // between machines (a branch it can prove dead on one build stays on another), so the same
+        // source can use a guarded member in one jar and not in the next. A new one always fails.
+        if (stale.isNotEmpty()) {
+            logger.warn("${file.path} lists members this jar doesn't use: ${stale.joinToString()}. Harmless; ./gradlew ${path.substringBeforeLast(':')}:updateApiFloor tidies it.")
+        }
+        if (new.isEmpty()) {
             logger.lifecycle("${jar.get().asFile.name}: every server API member is at its floor, or one of ${listed.size} guarded")
             return
         }
@@ -87,7 +93,6 @@ abstract class ApiFloor : DefaultTask() {
                         "If the code checks the server has it first, list it in ${file.path}.\n",
                 )
             }
-            if (stale.isNotEmpty()) append("${file.path} lists members the jar no longer uses: ${stale.joinToString()}. Take them out.\n")
             append("./gradlew ${path.substringBeforeLast(':')}:updateApiFloor rewrites the file from the jar.")
         })
     }

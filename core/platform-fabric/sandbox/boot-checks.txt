@@ -1,5 +1,7 @@
 # What scripts/boot-fabric.sh checks on each Minecraft line with xSample, after the server starts.
 logged: [xSample] Enabled on
+# The world hooks' mixins, as the server starts: an explosion heard, an item's spawn stopped (WorldCheck).
+logged: WORLD PASS
 # A player-only command from the console: our dispatcher's answer, through Brigadier.
 run: xsample
 expect: Only players can use this command.

@@ -45,9 +45,10 @@ import kotlin.uuid.toJavaUuid
  * through [server] once the server is starting, and work scheduled before then waits for the
  * first tick.
  *
- * Everything here is Fabric API's callbacks and Minecraft's own classes: no mixins, so it can't
- * clash with another mod's and needs nothing changed per Minecraft version but a few names
- * (ROADMAP.md, Fast, robust, light).
+ * Everything here is Fabric API's callbacks and Minecraft's own classes, with no mixins, so it
+ * can't clash with another mod's and needs nothing changed per Minecraft version but a few
+ * names (ROADMAP.md, Fast, robust, light); the one exception is the world hooks ([world]),
+ * which Fabric API has no events for, and whose mixins a mod carries only if it asks for them.
  *
  * - **Scheduler:** [TickScheduler], driven by the start of every server tick, and a small async
  *   pool. Fabric has one server thread, so global, place and entity work all run there.
@@ -151,6 +152,16 @@ public class FabricPlatform(
      */
     @JvmOverloads
     public fun chat(priority: EventPriority = EventPriority.NORMAL): ChatBridge = FabricChat({ running }, priority, log)
+
+    /**
+     * Starts the world hooks for the plugin at [priority] among other mods (DECISIONS.md, "The
+     * world hooks"): block, container and entity changes, from the mod's world mixins, which its
+     * `fabric.mod.json` lists (`xena.fabric-mod`'s `worldHooks`). Nothing is heard until a
+     * listener asks; [co.xenastudios.core.common.world.WorldHooks.close] stops it.
+     */
+    @JvmOverloads
+    public fun world(priority: EventPriority = EventPriority.NORMAL): co.xenastudios.core.common.world.WorldHooks =
+        co.xenastudios.core.fabric.world.FabricWorldHooks(priority, log) { running }
 
     /** Sends drawn messages to players by reference, and to the console. */
     public val delivery: FabricDelivery = FabricDelivery { running }

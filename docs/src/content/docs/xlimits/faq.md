@@ -13,6 +13,6 @@ sidebar:
 
 **A player says their spawn egg does nothing.** They're told why ("This chunk has 40 of 40 animals"); give builders `xlimits.bypass` if they need to go past caps.
 
-**Does it work with plot and claim plugins?** Through the API: a plugin registers a limit provider for its areas. xPlots 2.0 will; others can.
+**Does it work with plot and claim plugins?** Through the API: a plot or claim plugin can register a [limit provider](/xlimits/developer-api/) that changes the limits in its areas. Limits stay per chunk; xPlots doesn't register one yet.
 
 **Why didn't it catch the first hopper in a chunk?** The first block xLimits sees placed in a chunk starts that chunk's count, off the server's threads; until it's done (a moment), placements are allowed and added to it after.

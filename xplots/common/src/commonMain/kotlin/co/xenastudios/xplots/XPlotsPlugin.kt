@@ -166,6 +166,9 @@ public class XPlotsPlugin(
     @Volatile
     internal var storedRenewals: Map<co.xenastudios.xplots.model.Plot, co.xenastudios.xplots.store.Renewal> = emptyMap()
 
+    // Renewal notices kept for owners who were away, read with the plots.
+    internal var storedNotices: List<co.xenastudios.xplots.store.Notice> = emptyList()
+
     @Volatile
     private var madeExpiry: Expiry? = null
     public val expiry: Expiry get() = madeExpiry ?: locked(this) { madeExpiry ?: Expiry(this).also { madeExpiry = it } }
@@ -292,7 +295,7 @@ public class XPlotsPlugin(
                 return@onSettled failedToOpen("Couldn't bring ${db.description}'s tables up to date: ${(result as? Outcome.Err)?.error ?: error}")
             }
             db.write(Tables.extras(db.sql)).onSettled { extras, _ ->
-                if (extras is Outcome.Err) log.warn("Couldn't make the renewals' table (${extras.error}); renewals stay off until it can be.")
+                if (extras is Outcome.Err) log.warn("Couldn't make the renewals' tables (${extras.error}); renewals stay off until it can be.")
                 StoreReader(db, log).load().onSettled { read, readError ->
                     if (read !is Outcome.Ok) {
                         db.close()
@@ -318,6 +321,7 @@ public class XPlotsPlugin(
             this.database = db
             plots = stored.plots
             storedRenewals = stored.renewals
+            storedNotices = stored.notices
             ready = true
         }
         failure = null

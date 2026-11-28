@@ -243,9 +243,16 @@ stop() {
 }
 
 # Two full GCs, then the heap ($1.heap), class loaders ($1.loaders) and our classes ($1.histogram).
+# The heap is read three times, two GCs before each ($1.heap.1..3; $1.heap is the last): what a
+# full GC leaves still moves by a few MB with the server's own work between reads (chunk and
+# entity caches, its async threads), and the budget is the difference of two such readings, so
+# analyze.py takes the lowest of each side's three.
 snapshot() {
-  "$jcmd" "$pid" GC.run >/dev/null && sleep 2 && "$jcmd" "$pid" GC.run >/dev/null && sleep 1
-  "$jcmd" "$pid" GC.heap_info >"$1.heap"
+  for k in 1 2 3; do
+    "$jcmd" "$pid" GC.run >/dev/null && sleep 2 && "$jcmd" "$pid" GC.run >/dev/null && sleep 1
+    "$jcmd" "$pid" GC.heap_info >"$1.heap.$k"
+  done
+  cp "$1.heap.3" "$1.heap"
   "$jcmd" "$pid" VM.classloader_stats >"$1.loaders"
   "$jcmd" "$pid" GC.class_histogram >"$1.histogram"
 }

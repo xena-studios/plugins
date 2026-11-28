@@ -110,10 +110,18 @@ def samples(path, packages):
 
 
 def heap_used_mb(path):
-    m = re.search(r"used (\d+)K", open(path).read())
-    if not m:
+    """Used heap after full GCs, in MB: the lowest of the readings snapshot() took (path.1..3),
+    or path alone from an older run. A full GC's leftover only ever adds noise, so the lowest
+    reading is the steadiest."""
+    readings = []
+    for candidate in [f"{path}.{k}" for k in (1, 2, 3)] + [path]:
+        if os.path.exists(candidate):
+            m = re.search(r"used (\d+)K", open(candidate).read())
+            if m:
+                readings.append(int(m.group(1)) / 1024)
+    if not readings:
         raise ValueError(f"no used heap in {path}")
-    return int(m.group(1)) / 1024
+    return min(readings)
 
 
 def plugin_metaspace(path):

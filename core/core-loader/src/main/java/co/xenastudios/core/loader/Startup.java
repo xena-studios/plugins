@@ -100,8 +100,14 @@ public final class Startup {
      * Linking is the bytecode verifier's pass over the class, which a class from a plugin's jar
      * gets and which otherwise falls to the first thread that uses it, the server's; nothing in
      * the classes runs, so no listener, task or static state of a module starts here.
+     *
+     * <p>Nothing is preloaded where a plugin's class loader {@linkplain #definesForOthers defines
+     * classes for other plugins} (Bukkit before 1.16.5): there it isn't safe off the server's thread.
      */
     public static void preload(List<Library> libraries, ClassLoader jar, final ClassLoader loader, String name) {
+        if (definesForOthers(jar)) {
+            return;
+        }
         final List<String> names = startupClasses(jar);
         if (names.isEmpty()) {
             boolean kotlin = false;
@@ -138,6 +144,27 @@ public final class Startup {
             thread.setDaemon(true);
             thread.setPriority(Thread.NORM_PRIORITY - 1);
             thread.start();
+        }
+    }
+
+    /**
+     * Whether {@code jar} is old Bukkit's plugin class loader (1.8.8 to 1.16.4), which shares its
+     * classes with every other plugin's: a plugin's loader that can't find a class asks each other
+     * plugin's {@code findClass(String, boolean)}, which defines it there, from that plugin's jar
+     * or a library added to it, without that loader's lock. So a class two threads want at once,
+     * one of them through another plugin, can be defined twice ({@code LinkageError: attempted
+     * duplicate class definition}), and is then unusable for the whole server
+     * ({@code NoClassDefFoundError: Could not initialize class}). There, {@link Libraries} adds
+     * the libraries to the server's class loader, which every plugin's asks first, under its own
+     * locks, and {@link #preload} starts no thread. Bukkit 1.16.5 and later, Paper's plugin loader
+     * and the proxies' look other plugins' classes up through {@code loadClass}, under its lock.
+     */
+    static boolean definesForOthers(ClassLoader jar) {
+        try {
+            jar.getClass().getDeclaredMethod("findClass", String.class, boolean.class);
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
         }
     }
 

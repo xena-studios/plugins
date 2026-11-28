@@ -1,0 +1,189 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.harness.scenario;
+
+import co.xenastudios.neoskript.harness.Environment;
+import co.xenastudios.neoskript.harness.HarnessFailure;
+import co.xenastudios.neoskript.harness.Scenario;
+import co.xenastudios.neoskript.harness.ScenarioContext;
+import co.xenastudios.neoskript.harness.ServerBuilder;
+import co.xenastudios.neoskript.harness.ServerProcess;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
+
+/**
+ * M3's exit check: variables round-trip between Skript and NeoSkript byte for byte.
+ *
+ * <ol>
+ *   <li>The reference Skript saves a {@code variables.csv} with many kinds of values.
+ *   <li>NeoSkript picks it up (through the Skript migration), reads it, and rewrites it: the result has to
+ *       be identical to Skript's file.
+ *   <li>NeoSkript saves its own variables; Skript has to read them, and its rewrite has to be identical to
+ *       NeoSkript's file.
+ *   <li>Skript's file with its last line cut short, as a crash under Skript can leave it: NeoSkript backs it up,
+ *       skips that line, loads the rest, and never writes over it with less.
+ * </ol>
+ */
+public final class NeoSkriptVariablesScenario implements Scenario {
+
+    private static final Duration WAIT = Duration.ofMinutes(3);
+
+    @Override
+    public String name() {
+        return "neoskript-variables";
+    }
+
+    @Override
+    public Group group() {
+        return Group.SMOKE;
+    }
+
+    @Override
+    public boolean supports(Environment environment) {
+        return environment.skriptReference();
+    }
+
+    @Override
+    public void run(ScenarioContext context) throws Exception {
+        Path runs = context.config().runsDir().resolve(context.environment().name()).resolve(name());
+
+        // 1. Skript saves its variables.
+        ServerBuilder skript = context.server(runs.resolve("1-skript-writes"))
+                .plugin(context.skriptJar())
+                .file("plugins/Skript/scripts/set.sk", context.script("variables-skript.sk"));
+        stopAfter(skript, Pattern.compile("\\[harness] variables set"));
+        byte[] skriptFile = Files.readAllBytes(skript.runDir().resolve("plugins/Skript/variables.csv"));
+
+        // 2. NeoSkript takes over the install, reads the variables and rewrites them.
+        ServerBuilder neoskript = context.server(runs.resolve("2-neoskript-reads"))
+                .plugin(context.neoskriptJar())
+                .file("plugins/Skript/variables.csv", new String(skriptFile, StandardCharsets.UTF_8))
+                .file("plugins/Skript/scripts/read.sk", context.script("variables-neoskript-read.sk"));
+        List<String> read = stopAfter(neoskript, Pattern.compile("\\[harness] read loc: .*"));
+        String values = read.stream().filter(line -> line.contains("[harness] read: ")).findFirst().orElse("");
+        String expected = "hello | héllo ✓ 日本 | say \"hi\" | 42 | 2.5 | true | 5 minutes | a, b and ten | diamond sword named x";
+        if (!values.endsWith(expected)) {
+            throw new HarnessFailure("NeoSkript read: '" + values + "', expected it to end with '" + expected + "'");
+        }
+        String items = read.stream().filter(line -> line.contains("[harness] read items: ")).findFirst().orElse("");
+        String expectedItems = "diamond sword named x | diamond sword | stone | 32 | diamond sword"
+                + " | 3 diamonds | creative";
+        if (!items.endsWith(expectedItems)) {
+            throw new HarnessFailure("NeoSkript read items: '" + items + "', expected it to end with '" + expectedItems + "'");
+        }
+        String particles = read.stream().filter(line -> line.contains("[harness] read particles: ")).findFirst()
+                .orElse("");
+        // A value NeoSkript can't decode shows as its type: '<particle>'.
+        if (particles.isEmpty() || particles.contains("particle>") || particles.contains("<none>")) {
+            throw new HarnessFailure("NeoSkript didn't decode Skript's particles: '" + particles + "'");
+        }
+        if (read.stream().anyMatch(line -> line.contains("read loc: <location>"))) {
+            throw new HarnessFailure("NeoSkript didn't decode the location");
+        }
+        byte[] rewritten = Files.readAllBytes(neoskript.runDir().resolve("plugins/NeoSkript/variables.csv"));
+        context.summary("variables", new String(skriptFile, StandardCharsets.UTF_8).lines()
+                .filter(line -> !line.isBlank() && !line.startsWith("#")).count());
+        if (!Arrays.equals(skriptFile, rewritten)) {
+            Files.write(runs.resolve("skript-variables.csv"), skriptFile);
+            Files.write(runs.resolve("neoskript-variables.csv"), rewritten);
+            throw new HarnessFailure("NeoSkript's rewrite of Skript's variables differs. Compare "
+                    + runs.resolve("skript-variables.csv") + " and " + runs.resolve("neoskript-variables.csv"));
+        }
+
+        // 3. NeoSkript saves variables of its own, and Skript reads and rewrites them.
+        ServerBuilder neoskriptWrites = context.server(runs.resolve("3-neoskript-writes"))
+                .plugin(context.neoskriptJar())
+                .file("plugins/NeoSkript/scripts/write.sk", context.script("variables-neoskript-write.sk"));
+        stopAfter(neoskriptWrites, ServerProcess.DONE);
+        byte[] neoskriptFile = Files.readAllBytes(neoskriptWrites.runDir().resolve("plugins/NeoSkript/variables.csv"));
+
+        ServerBuilder skriptReads = context.server(runs.resolve("4-skript-reads"))
+                .plugin(context.skriptJar())
+                .file("plugins/Skript/variables.csv", new String(neoskriptFile, StandardCharsets.UTF_8))
+                .file("plugins/Skript/scripts/read.sk", context.script("variables-skript-read.sk"));
+        List<String> skriptRead = stopAfter(skriptReads, Pattern.compile("\\[harness] skript read: .*"));
+        String skriptItems = skriptRead.stream().filter(line -> line.contains("[harness] skript items: ")).findFirst()
+                .orElse("");
+        if (!skriptItems.endsWith("y | 5 | 2 | creative")) {
+            throw new HarnessFailure("Skript read NeoSkript's items as: '" + skriptItems + "', expected 'y | 5 | 2 | creative'");
+        }
+        String skriptValues = skriptRead.stream().filter(line -> line.contains("[harness] skript read: ")).findFirst()
+                .orElse("");
+        String skriptExpected = "from neoskript ✓ | 7 | 0.25 | false | 2 hours and 3 seconds | x, y and z";
+        if (!skriptValues.endsWith(skriptExpected)) {
+            throw new HarnessFailure("Skript read: '" + skriptValues + "', expected it to end with '" + skriptExpected + "'");
+        }
+        byte[] skriptRewrite = Files.readAllBytes(skriptReads.runDir().resolve("plugins/Skript/variables.csv"));
+        if (!Arrays.equals(neoskriptFile, skriptRewrite)) {
+            Files.write(runs.resolve("neoskript-own-variables.csv"), neoskriptFile);
+            Files.write(runs.resolve("skript-rewrite-variables.csv"), skriptRewrite);
+            throw new HarnessFailure("Skript's rewrite of NeoSkript's variables differs. Compare "
+                    + runs.resolve("neoskript-own-variables.csv") + " and " + runs.resolve("skript-rewrite-variables.csv"));
+        }
+
+        // 5. A file with its last line cut short.
+        damagedFile(context, runs, skriptFile);
+    }
+
+    /**
+     * Skript's file with a line cut short at the end, as Skript leaves it when the server crashes while it appends
+     * a change. Before, the bad hex escaped NeoSkript's load and the shutdown save wrote an empty file over it.
+     */
+    private static void damagedFile(ScenarioContext context, Path runs, byte[] skriptFile) throws Exception {
+        String original = new String(skriptFile, StandardCharsets.UTF_8);
+        String damaged = original.stripTrailing() + "\nharness::cut, string, 80037\n";
+        ServerBuilder neoskript = context.server(runs.resolve("5-neoskript-damaged"))
+                .plugin(context.neoskriptJar())
+                .file("plugins/Skript/variables.csv", damaged)
+                .file("plugins/Skript/scripts/read.sk", context.script("variables-neoskript-read.sk"));
+        List<String> read = stopAfter(neoskript, Pattern.compile("\\[harness] read loc: .*"));
+        String values = read.stream().filter(line -> line.contains("[harness] read: ")).findFirst().orElse("");
+        if (!values.endsWith("hello | héllo ✓ 日本 | say \"hi\" | 42 | 2.5 | true | 5 minutes | a, b and ten"
+                + " | diamond sword named x")) {
+            throw new HarnessFailure("NeoSkript didn't load the readable variables of a damaged file: '" + values + "'");
+        }
+        if (read.stream().noneMatch(line -> line.contains("1 variable could not be loaded!"))
+                || read.stream().noneMatch(line -> line.contains("Affected variables: harness::cut"))) {
+            throw new HarnessFailure("NeoSkript didn't report the line it skipped. See " + neoskript.runDir());
+        }
+        Path dir = neoskript.runDir().resolve("plugins/NeoSkript");
+        List<Path> backups;
+        try (var files = Files.list(dir.resolve("backups"))) {
+            backups = files.toList();
+        }
+        if (backups.isEmpty()) {
+            throw new HarnessFailure("NeoSkript didn't back up the damaged variables.csv");
+        }
+        for (Path backup : backups) {
+            if (!Files.readString(backup, StandardCharsets.UTF_8).equals(damaged)) {
+                throw new HarnessFailure("The backup " + backup + " isn't the file as it was");
+            }
+        }
+        // Either nothing changed and the file is as it was, or it was saved without the line cut short.
+        String after = Files.readString(dir.resolve("variables.csv"), StandardCharsets.UTF_8);
+        if (!after.equals(damaged) && !after.equals(original)) {
+            throw new HarnessFailure("NeoSkript wrote over the damaged variables.csv with less. See "
+                    + dir.resolve("variables.csv"));
+        }
+    }
+
+    /** Starts the server, waits for {@code marker}, stops it cleanly, and returns its console lines. */
+    private static List<String> stopAfter(ServerBuilder builder, Pattern marker) throws Exception {
+        try (ServerProcess server = builder.start()) {
+            server.await(marker, WAIT);
+            server.await(ServerProcess.DONE, WAIT);
+            int exit = server.stop();
+            if (exit != 0) {
+                throw new HarnessFailure("Server exited with code " + exit + ". See " + server.logFile());
+            }
+            return server.linesMatching(Pattern.compile(".*"));
+        }
+    }
+}

@@ -1,0 +1,76 @@
+---
+title: Moving from Skript
+description: Swap the jar. NeoSkript copies your scripts, variables and alias files on its first start, and leaves Skript's folder as it was.
+---
+
+import { Aside, FileTree, Steps } from "@astrojs/starlight/components";
+
+Swapping the jar is the whole move.
+
+## Check your scripts first
+
+The script checker, `neoskript-cli`, tells you before you switch what NeoSkript makes of your scripts. Download `neoskript-cli-0.1.0.jar` from [its release](https://github.com/xena-studios/plugins/releases/tag/neoskript-cli-v0.1.0) (it needs Java 21, or 25 to check against Minecraft 26.3), then point it at Skript's scripts folder:
+
+```sh
+java -jar neoskript-cli-0.1.0.jar check plugins/Skript/scripts
+```
+
+It reads the alias files in `plugins/Skript/aliases`, as Skript does. It starts a throwaway headless Paper server (downloaded once into `~/.neoskript/cache` and checked against its SHA-256), loads the scripts there without running them, and lists each line NeoSkript won't load, Skript's warnings, and hints on what may behave differently on Folia or cost a lot of server time. Options: `--json <file>`, `--hints-only`, `--quiet`, `--minecraft 26.3|1.21.4`, `--aliases <folder>`, `--verbose`. It exits with 0 when every script loads, 1 when some don't, and 2 when the check couldn't run. See [the CLI](/docs/cli/) for more.
+
+The lines it reports are usually syntax from a Skript addon, which NeoSkript doesn't load yet. See [addons](/docs/addons/).
+
+## Switching
+
+<Steps>
+
+1. Stop the server.
+
+2. Take `Skript.jar` out of `plugins/`. Leave the `plugins/Skript` folder where it is.
+
+3. Put the NeoSkript jar in `plugins/`.
+
+4. Start the server.
+
+</Steps>
+
+On its first start, NeoSkript copies `scripts/`, `variables.csv`, `aliases/` (with `aliases-english.zip`, if you have one) and any `lang/` folder from `plugins/Skript` into `plugins/NeoSkript`, then leaves a marker so it never copies again. It **copies** rather than moves, so Skript's folder stays exactly as it was, and switching back means putting `Skript.jar` back. If you turned on [native variable storage](/docs/server/variables/#native-storage), set the database's `type` back to `csv` and restart once first, so NeoSkript writes `variables.csv` for Skript, and copy that file to `plugins/Skript`.
+
+If Skript's `config.sk` has a `databases:` section, NeoSkript copies it to `config.yml` as is, backup settings included (Skript's default keeps every backup, and so does the copy), and with it every CSV and SQLite file it names in `plugins/Skript` (an SQLite file with its journal), each backed up before it's first loaded. A file outside Skript's folder, which other servers may share, is used where it is. A MySQL database is used as it is: NeoSkript reads and writes Skript's table, so switching back to Skript keeps those variables too. NeoSkript doesn't need SQLibrary. See [databases](/docs/server/variables/#databases).
+
+<FileTree>
+- plugins/
+  - Skript/ left as it was
+    - config.sk
+    - aliases/
+    - scripts/
+    - variables.csv
+  - NeoSkript/
+    - .migrated-from-skript the marker
+    - config.yml
+    - aliases/ copied from Skript
+    - scripts/ copied from Skript
+    - variables.csv copied from Skript
+    - backups/
+      - variables_2026-11-12_16-03-07.csv the copy, backed up before its first load
+</FileTree>
+
+Nothing is copied if `plugins/NeoSkript/scripts` already exists, for example after a start before you moved your scripts. Then copy them yourself. Alias files are copied last, file by file: one `plugins/NeoSkript/aliases` already has is kept, and the console says so. A file or folder that can't be read is named in the console, the rest are still copied, and the next start tries again. A server that moved over before NeoSkript read alias files gets `aliases/` copied once on its next start, in the same way: files already in `plugins/NeoSkript/aliases` are kept, and Skript's others are added.
+
+Skript's `config.sk` settings that change how scripts behave carry over to NeoSkript's `config.yml` in that first start, read as Skript reads them, so a server that changed one keeps Skript's behaviour: the language, `load default aliases`, the date format, number accuracy, case sensitivity, how text is formatted (safe tags, links, colours resetting formatting), the target block distance, the player name pattern, player UUIDs in variable names, the player variable fix, the event priority, listening to cancelled events, the runtime error limits, effect commands, and the `databases:` section with the files it names. The console lists what was copied. [Configuration](/docs/server/configuration/#moving-from-skript) has the full list, and the settings that don't apply to NeoSkript with why.
+
+`/skript` and `/sk` keep Skript's subcommands and arguments, so what you type and any console automation still work. Their messages are NeoSkript's own: see [commands](/docs/server/commands/).
+
+## What stays the same
+
+- **Your scripts**, unchanged: Skript 2.17's syntax, with Skript's error messages.
+- **`variables.csv`**, in Skript's format, byte for byte. Skript can read the file NeoSkript writes.
+- **`/skript`**, `/sk` and their subcommands and arguments, and Skript's permissions: `skript.admin`, `skript.effectcommands`, `skript.reloadnotify` and `skript.see_runtime_errors`. See [commands and permissions](/docs/server/commands/).
+- **Vault, WorldGuard and GriefPrevention** syntax, when those plugins are installed.
+
+## What's different
+
+NeoSkript aims to behave exactly as Skript does, scripts' messages included. A few things are different on purpose: a reload with errors keeps the old script running, and some of Skript's bugs are fixed. The [differences from Skript](/docs/reference/differences/) page lists them, and the [progress log](https://github.com/xena-studios/plugins/blob/main/neoskript/docs/PROGRESS.md) has the detail of each batch's known differences.
+
+<Aside type="caution">
+Skript addons don't load on NeoSkript yet. If your scripts need SkBee, skript-reflect or another addon, the lines that use it won't load. The script checker shows which lines those are.
+</Aside>

@@ -1,0 +1,9 @@
+# For the differential scenario's probes: prints a label and values, so the values don't have to be
+# written inside a text's %...%.
+
+function show(label: text, values: objects):
+	send "%{_label}%: %{_values::*}%" to console
+
+# For probes/load-order: this script is in the scripts folder itself, the probes in a folder of it.
+on load:
+	add "differential-show.sk" to {diff::load-order::*}

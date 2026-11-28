@@ -1,0 +1,167 @@
+name: NeoSkript
+
+# NeoSkript (neoskript/), its own Gradle build until N1 (#203) joins it to the root one.
+# Pull requests always run, so the `neoskript-ok` check main requires always reports;
+# `changes` skips the rest when nothing under neoskript/ (or this workflow) changed.
+on:
+  push:
+    branches: [main]
+    paths: ["neoskript/**", ".github/workflows/neoskript.yml"]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A newer push supersedes an older run, on main too: only the newest commit's results matter.
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: neoskript
+
+jobs:
+  changes:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - id: check
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ $GITHUB_EVENT_NAME != pull_request ]]; then echo run=true >> "$GITHUB_OUTPUT"; exit 0; fi
+          # The changed files, paged; if the call fails, everything runs, never skipped.
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
+            --jq '.[] | .filename, (.previous_filename // empty)') || { echo run=true >> "$GITHUB_OUTPUT"; exit 0; }
+          if grep -qE '^(neoskript/|\.github/workflows/neoskript\.yml$)' <<< "$files"; then run=true; else run=false; fi
+          echo "run=$run" | tee -a "$GITHUB_OUTPUT"
+
+  build:
+    name: Build and unit tests
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          # The last one listed becomes the default JAVA_HOME. Gradle finds both through JAVA_HOME_*_X64.
+          java-version: |
+            25
+            21
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          build-root-directory: neoskript
+      - run: ./gradlew build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: NeoSkript
+          path: neoskript/neoskript-plugin/build/libs/NeoSkript-*.jar
+          if-no-files-found: error
+
+  harness:
+    name: Harness (${{ matrix.env }})
+    needs: build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [paper-1.21.4, paper-26.3, folia-1.21.4, folia-26.3]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            25
+            21
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          build-root-directory: neoskript
+      - name: Cache server jars and unpacked servers
+        uses: actions/cache@v6
+        with:
+          path: neoskript/.harness-cache
+          key: harness-${{ matrix.env }}-${{ hashFiles(format('neoskript/test-harness/environments/{0}.json', matrix.env), 'neoskript/test-harness/reference-skript.properties') }}
+      - run: ./gradlew :test-harness:harness -Pharness.env=${{ matrix.env }} -Pharness.group=smoke
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: harness-${{ matrix.env }}
+          path: |
+            neoskript/test-harness/build/harness/reports
+            neoskript/test-harness/build/harness/runs/**/harness-console.log
+          if-no-files-found: ignore
+
+  # Every push to main that passes the build and all four harness servers is published as
+  # the rolling "neoskript-dev" prerelease: the development build neoskript.dev/download
+  # offers. The tag moves to each new commit; the jar keeps its version (a SNAPSHOT) and the
+  # release notes name the commit. Never marked latest, so the plugins' releases stay on top.
+  dev-build:
+    name: Publish development build
+    needs: [build, harness]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'xena-studios/plugins' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    concurrency:
+      group: neoskript-dev-build
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: NeoSkript
+          path: dist
+      - name: Checksum
+        working-directory: dist
+        run: sha256sum NeoSkript-*.jar > SHA256SUMS
+      - name: Publish the dev prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          short=$(echo "$GITHUB_SHA" | cut -c1-7)
+          notes=$(printf 'Development build of NeoSkript at [%s](https://github.com/%s/commit/%s), built %s.\n\nNot a release: for testing on a server you can afford to break. Every push to main that passes CI replaces it.' \
+            "$short" "$GH_REPO" "$GITHUB_SHA" "$(date -u +%Y-%m-%d)")
+          if gh release view neoskript-dev >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$GH_REPO/git/refs/tags/neoskript-dev" -f sha="$GITHUB_SHA" -F force=true
+            gh release edit neoskript-dev --prerelease --latest=false --title "NeoSkript development build ($short)" --notes "$notes"
+            # Replace the jar: its name only changes with the version.
+            for asset in $(gh release view neoskript-dev --json assets -q '.assets[].name'); do gh release delete-asset neoskript-dev "$asset" -y; done
+          else
+            gh release create neoskript-dev --prerelease --latest=false --target "$GITHUB_SHA" --title "NeoSkript development build ($short)" --notes "$notes"
+          fi
+          gh release upload neoskript-dev dist/NeoSkript-*.jar dist/SHA256SUMS --clobber
+
+  # The one check main requires: green when everything that ran passed, or nothing needed to.
+  neoskript-ok:
+    needs: [changes, build, harness]
+    if: always()
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for r in $RESULTS; do [[ $r == success || $r == skipped ]] || exit 1; done

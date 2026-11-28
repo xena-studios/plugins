@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.runtime;
+
+import co.xenastudios.neoskript.runtime.variables.VariableStore;
+
+/**
+ * What a waiting trigger needs to carry on: which {@code wait} it stopped at, its local variables, and the
+ * state of the loops around that {@code wait}. The generated code fills it in and reads it back.
+ */
+public final class Frame {
+
+    public int state;
+    public VariableStore locals;
+    public Object parseLogs;
+    public Object[] slots;
+    /**
+     * On Folia, inside {@code run on X:}, what the trigger carries on on after this wait: X. Otherwise
+     * {@code null}, and it carries on on the trigger's own thread.
+     */
+    public Object owner;
+    /**
+     * After a pausing effect or expression, what its stage completed with (see {@link Pauses}), or
+     * {@link Pauses#FAILED}.
+     */
+    public Object result;
+}

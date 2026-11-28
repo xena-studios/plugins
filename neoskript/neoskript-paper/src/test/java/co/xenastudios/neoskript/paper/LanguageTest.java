@@ -1,0 +1,803 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.paper;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import co.xenastudios.neoskript.compiler.CompiledScripts;
+import co.xenastudios.neoskript.compiler.Library;
+import co.xenastudios.neoskript.compiler.ScriptCompiler;
+import co.xenastudios.neoskript.frontend.parse.ParsedScript;
+import co.xenastudios.neoskript.frontend.parse.ScriptLoader;
+import co.xenastudios.neoskript.frontend.source.SourceFile;
+import co.xenastudios.neoskript.runtime.ScriptRuntimeException;
+import co.xenastudios.neoskript.runtime.SimpleTriggerContext;
+import co.xenastudios.neoskript.runtime.Values;
+import co.xenastudios.neoskript.runtime.variables.VariableStore;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
+/** The core language, run through the real standard library and compiler without a server. */
+class LanguageTest {
+
+    private final List<String> said = new ArrayList<>();
+    private final VariableStore globals = new VariableStore();
+
+    private List<String> run(String script) {
+        Library library = new Library();
+        StandardLibrary.register(library);
+        library.effect("TestSay", info -> (context, args) -> said.add(Values.text(args[0])), "say %objects%");
+        library.expression("TestLoc", "location", info -> (context, args) -> new org.bukkit.Location(null, 1, 2, 3), "testloc");
+        List<ParsedScript> parsed = new ScriptLoader(library.registry()).load(List.of(new SourceFile("test.sk", script)));
+        assertEquals(List.of(), errors(parsed.getFirst().diagnostics()), "parse problems");
+        CompiledScripts compiled = new ScriptCompiler(library, globals).compile(parsed);
+        assertEquals(List.of(), errors(compiled.diagnostics()), "compile problems");
+        compiled.linkFunctions();
+        compiled.triggers().forEach(t -> t.trigger().execute(new SimpleTriggerContext(null)));
+        return said;
+    }
+
+    /** The errors among {@code diagnostics}: warnings, as Skript gives for some of what's tested, don't count. */
+    private static List<co.xenastudios.neoskript.frontend.source.Diagnostic> errors(
+            List<co.xenastudios.neoskript.frontend.source.Diagnostic> diagnostics) {
+        return diagnostics.stream()
+                .filter(d -> d.severity() == co.xenastudios.neoskript.frontend.source.Severity.ERROR).toList();
+    }
+
+    @Test
+    void valuesReadAsInSkript() {
+        // Not '1.5 rounded down': Skript reads that as '(1.5 rounded) down', 2 meters below.
+        assertEquals(List.of("-2", "1", "2", "5", "7", "abc", "-0", "1.01",
+                "1 day and 1 hour and 33 minutes and 31.15 seconds", "1 year and 1 month and 1 week", "1.5 seconds",
+                "6:00", "18:30", "5 and 7"), run("""
+                on load:
+                \tsay round(-2.5)
+                \tsay 1.5 floored
+                \tsay 1.5 ceiled
+                \tset {_t} to "Hello World"
+                \tsay index of "o" in {_t}
+                \tsay last index of "o" in {_t}
+                \tset {_x} to "abc"
+                \tadd 1 to {_x}
+                \tsay {_x}
+                \tsay -0.004
+                \tsay 1.005
+                \tsay 1 second + 2 minutes + 1.5 hours + 1 day + 3 ticks + 90 seconds
+                \tsay 1 week + 1 month + 1 year
+                \tsay 30 ticks
+                \tsay 6:00
+                \tsay 6:30 pm
+                \tsay (index of "o" in {_t}, last index of "o" in {_t})
+                """));
+    }
+
+    @Test
+    void arithmeticFollowsPrecedence() {
+        assertEquals(List.of("7", "5", "9", "512", "2.5", "ab", "-3", "4.5"), run("""
+                on load:
+                \tsay 1 + 2 * 3
+                \tsay 8 - 2 - 1
+                \tsay (1 + 2) * 3
+                \tsay 2 ^ 3 ^ 2
+                \tsay 10 / 4
+                \tsay "a" + "b"
+                \tsay 2 - 5
+                \tsay 1.5 * 3
+                """));
+    }
+
+    @Test
+    void loopValuesDontSwallowWhatFollows() {
+        // Lists, as Skript can't loop one value.
+        assertEquals(List.of("world", "hi", "****", "**", "ab"), run("""
+                on load:
+                \tloop "WORLD" and "Hi":
+                \t\tsay loop-value in lower case
+                \tloop "abcd" and "ab":
+                \t\tset {_stars} to ""
+                \t\tloop length of loop-value-1 times:
+                \t\t\tset {_stars} to "%{_stars}%*"
+                \t\tsay {_stars}
+                \tsay first (length of "abc" - 1) characters of "abc"
+                """));
+    }
+
+    @Test
+    void inlineFunctions() {
+        assertEquals(List.of("foo", "1", "15", "Hello World", "3, 4 and 5", "2 and 4", "1", "c, a and b"), run("""
+                on load:
+                \tset {_list::*} to "foo", "bar" and "foobar"
+                \tsay first element of ({_list::*} where [input is "foo"])
+                \tsay size of ({_list::*} where [input is "bar"])
+                \tset {_n::*} to 1, 2, 3, 4 and 5
+                \tsay {_n::*} reduced with [reduced value + input]
+                \tsay ("Hello", " " and "World") reduced with ["%reduced value%%input%"]
+                \tsay (1, 2 and 3) transformed using [input + 2]
+                \tfilter {_n::*} to match:
+                \t\tmod(input, 2) = 0
+                \tsay {_n::*}
+                \tsay {_list::*} where [input index is "1"] transformed using [length of input - 2]
+                \tset {_s::a} to 2
+                \tset {_s::b} to 3
+                \tset {_s::c} to 1
+                \tset {_k::*} to "a", "b" and "c"
+                \tsort {_k::*} by {_s::%input%}
+                \tsay {_k::*}
+                """));
+    }
+
+    @Test
+    void defaultValues() {
+        assertEquals(List.of("nothing", "set", "nothing"), run("""
+                on load:
+                \tsay {_none} ? "nothing"
+                \tset {_some} to "set"
+                \tsay {_some} ? "nothing"
+                \tset {_t} to {_none} ? "nothing"
+                \tsay {_t}
+                """));
+    }
+
+    @Test
+    void variables() {
+        assertEquals(List.of("7", "6", "4", "<none>", "x and y"), run("""
+                on load:
+                \tset {_x} to 1 + 2 * 3
+                \tsay {_x}
+                \tset {count} to 5
+                \tadd 2 to {count}
+                \tremove 1 from {count}
+                \tsay {count}
+                \tset {_name} to "count"
+                \tsay {%{_name}%} - 2
+                \tdelete {count}
+                \tsay {count}
+                \tset {_parts::*} to "x" and "y"
+                \tsay {_parts::*}
+                """));
+    }
+
+    @Test
+    void listsAndLoops() {
+        // List indices sort numbers by value: 2 comes before 10.
+        assertEquals(List.of("4", "1=c", "2=a", "3=b", "4=d", "c, b and d", "1:1", "2:2", "3:3", "2=b", "10=a"),
+                run("""
+                        on load:
+                        \tset {_l::*} to "c", "a" and "b"
+                        \tadd "d" to {_l::*}
+                        \tsay size of {_l::*}
+                        \tloop {_l::*}:
+                        \t\tsay "%loop-index%=%loop-value%"
+                        \tremove "a" from {_l::*}
+                        \tsay {_l::*}
+                        \tloop 3 times:
+                        \t\tsay "%loop-counter%:%loop-value%"
+                        \tset {_m::10} to "a"
+                        \tset {_m::2} to "b"
+                        \tloop {_m::*}:
+                        \t\tsay "%loop-index%=%loop-value%"
+                        """));
+    }
+
+    @Test
+    void conditionals() {
+        assertEquals(List.of("seven", "medium", "any", "not all", "implicit"), run("""
+                on load:
+                \tset {_x} to 7
+                \tif {_x} is 7:
+                \t\tsay "seven"
+                \telse:
+                \t\tsay "other"
+                \tif {_x} > 10:
+                \t\tsay "big"
+                \telse if {_x} >= 7:
+                \t\tsay "medium"
+                \telse:
+                \t\tsay "small"
+                \tif any:
+                \t\t1 is 2
+                \t\t2 is 2
+                \tthen:
+                \t\tsay "any"
+                \tif all:
+                \t\t1 is 2
+                \t\t2 is 2
+                \tthen:
+                \t\tsay "all"
+                \telse:
+                \t\tsay "not all"
+                \t{_x} is not 3:
+                \t\tsay "implicit"
+                """));
+    }
+
+    @Test
+    void whileExitAndContinue() {
+        assertEquals(List.of("1", "2", "4", "5", "done"), run("""
+                on load:
+                \tset {_i} to 0
+                \twhile {_i} < 10:
+                \t\tadd 1 to {_i}
+                \t\tif {_i} is 3:
+                \t\t\tcontinue
+                \t\tif {_i} is 6:
+                \t\t\texit loop
+                \t\tsay {_i}
+                \tsay "done"
+                \tsuppress unreachable code warnings
+                \tstop
+                \tsay "unreachable"
+                """));
+    }
+
+    @Test
+    void conditionsStopTheTrigger() {
+        assertEquals(List.of("a"), run("on load:\n\tsay \"a\"\n\t1 is 2\n\tsay \"b\"\n"));
+    }
+
+    @Test
+    void functions() {
+        assertEquals(List.of("55", "Hi A!", "Hi B?", "2", "9", "1", "3"), run("""
+                function fib(n: number) :: number:
+                \tif {_n} <= 1:
+                \t\treturn {_n}
+                \treturn fib({_n} - 1) + fib({_n} - 2)
+
+                function greet(name: text, punctuation: text = "!") :: text:
+                \treturn "Hi %{_name}%%{_punctuation}%"
+
+                function count(xs: objects) :: number:
+                \treturn size of {_xs::*}
+
+                on load:
+                \tsay fib(10)
+                \tsay greet("A")
+                \tsay greet("B", "?")
+                \tsay floor(2.7)
+                \tsay max(3, 9, 4)
+                \tsay mod(-5, 3)
+                \tsay count(1, 2 and 3)
+                """));
+    }
+
+    @Test
+    void runawayRecursionStopsTheInnermostCallAsInSkript() {
+        // As Skript's TriggerItem.walk: admins are told once, the call with room to spare returns nothing, and the
+        // trigger carries on.
+        List<String> reported = new ArrayList<>();
+        co.xenastudios.neoskript.runtime.Overflows.install(reported::add);
+        try {
+            assertEquals(List.of("after"), run("""
+                    function forever(n: number) :: number:
+                    \treturn forever({_n} + 1)
+                    on load:
+                    \tset {_x} to forever(1)
+                    \tsay "after"
+                    """));
+        } finally {
+            co.xenastudios.neoskript.runtime.Overflows.install(null);
+        }
+        assertEquals(List.of("test.sk"), reported);
+    }
+
+    @Test
+    void waitsCarryOnWithLocalsAndLoopState() {
+        java.util.ArrayDeque<Runnable> later = new java.util.ArrayDeque<>();
+        List<Long> delays = new ArrayList<>();
+        co.xenastudios.neoskript.runtime.Waits.install(new co.xenastudios.neoskript.runtime.scheduler.Scheduler() {
+            @Override
+            public void runGlobal(Runnable task) {
+                later.add(task);
+            }
+
+            @Override
+            public void runGlobalLater(long ticks, Runnable task) {
+                delays.add(ticks);
+                later.add(task);
+            }
+
+            @Override
+            public Runnable runGlobalRepeating(long ticks, Runnable task) {
+                throw new UnsupportedOperationException();
+            }
+        }, e -> {
+            throw e;
+        });
+        run("""
+                on load:
+                \tset {_x} to "kept"
+                \tsay "before"
+                \twait 1 second
+                \tsay "after %{_x}%"
+                \tset {_l::*} to "a", "b" and "c"
+                \tloop {_l::*}:
+                \t\twait 2 ticks
+                \t\tsay "%loop-index%=%loop-value%"
+                \tsay "done"
+                """);
+        assertEquals(List.of("before"), said);
+        while (!later.isEmpty()) {
+            later.poll().run();
+        }
+        assertEquals(List.of("before", "after kept", "1=a", "2=b", "3=c", "done"), said);
+        assertEquals(List.of(20L, 2L, 2L, 2L), delays);
+    }
+
+    @Test
+    void delayedSectionsRunLaterWithACopyOfTheLocals() {
+        java.util.ArrayDeque<Runnable> later = new java.util.ArrayDeque<>();
+        List<Long> delays = new ArrayList<>();
+        co.xenastudios.neoskript.runtime.Waits.install(new co.xenastudios.neoskript.runtime.scheduler.Scheduler() {
+            @Override
+            public void runGlobal(Runnable task) {
+                later.add(task);
+            }
+
+            @Override
+            public void runGlobalLater(long ticks, Runnable task) {
+                delays.add(ticks);
+                later.add(task);
+            }
+
+            @Override
+            public Runnable runGlobalRepeating(long ticks, Runnable task) {
+                throw new UnsupportedOperationException();
+            }
+        }, e -> {
+            throw e;
+        });
+        run("""
+                on load:
+                \tset {_x} to "then"
+                \tsay "first"
+                \twait 1 second:
+                \t\tsay "third %{_x}%"
+                \tset {_x} to "now"
+                \tsay "second %{_x}%"
+                """);
+        assertEquals(List.of("first", "second now"), said);
+        while (!later.isEmpty()) {
+            later.poll().run();
+        }
+        assertEquals(List.of("first", "second now", "third then"), said);
+        assertEquals(List.of(20L), delays);
+    }
+
+    @Test
+    void functionsThatWaitLetTheirCallerGoOn() {
+        java.util.ArrayDeque<Runnable> later = new java.util.ArrayDeque<>();
+        co.xenastudios.neoskript.runtime.Waits.install(new co.xenastudios.neoskript.runtime.scheduler.Scheduler() {
+            @Override
+            public void runGlobal(Runnable task) {
+                later.add(task);
+            }
+
+            @Override
+            public void runGlobalLater(long ticks, Runnable task) {
+                later.add(task);
+            }
+
+            @Override
+            public Runnable runGlobalRepeating(long ticks, Runnable task) {
+                throw new UnsupportedOperationException();
+            }
+        }, e -> {
+            throw e;
+        });
+        run("""
+                function count(id: integer):
+                \tset {_n} to 0
+                \twhile {_n} < 2:
+                \t\tadd 1 to {_n}
+                \t\tsay "%{_id}%:%{_n}%"
+                \t\twait 1 tick
+                \tsay "%{_id}% done"
+
+                on load:
+                \tcount(1)
+                \tcount(2)
+                \tsay "caller"
+                """);
+        assertEquals(List.of("1:1", "2:1", "caller"), said);
+        while (!later.isEmpty()) {
+            later.poll().run();
+        }
+        assertEquals(List.of("1:1", "2:1", "caller", "1:2", "2:2", "1 done", "2 done"), said);
+    }
+
+    @Test
+    void timesLoopsCountAsTheyGoAsSkriptsIteratorDoes() {
+        // A billion times would need gigabytes as an array: counted as it goes, 'exit loop' stops it at once.
+        assertEquals(List.of("3", "2", "0", "0", "0", "0", "0", "1:1 2", "2:2 3", "3:3 none", "3", "x1", "x2",
+                "1=1", "2=2", "1000000"), run("""
+                on load:
+                \tloop 1000000000 times:
+                \t\tif loop-value is 3:
+                \t\t\tsay loop-number
+                \t\t\texit loop
+                \tset {_n} to 0
+                \tloop 2.9 times:
+                \t\tadd 1 to {_n}
+                \tsay {_n}
+                \tset {_n} to 0
+                \tset {_m} to -4
+                \tloop {_m} times:
+                \t\tadd 1 to {_n}
+                \tsay {_n}
+                \tloop {_nothing} times:
+                \t\tadd 1 to {_n}
+                \tsay {_n}
+                \t# From 2^63 up Skript's range is empty.
+                \tloop 1e30 times:
+                \t\tadd 1 to {_n}
+                \tsay {_n}
+                \tloop (0 / 0) times:
+                \t\tadd 1 to {_n}
+                \tsay {_n}
+                \tloop (1 / 0) times:
+                \t\tadd 1 to {_n}
+                \tsay {_n}
+                \tset {_k} to 3
+                \tloop {_k} times:
+                \t\tset {_k} to 100
+                \t\tsay "%loop-counter%:%loop-value% %next loop-value ? "none"%"
+                \tsay {_n} + 3
+                \tloop twice:
+                \t\tsay "x%loop-iteration%"
+                \tfor {_i}, {_v} in 2 times:
+                \t\tsay "%{_i}%=%{_v}%"
+                \tset {_c} to 0
+                \tloop 1000000 times:
+                \t\tset {_c} to loop-value
+                \tsay {_c}
+                """));
+    }
+
+    @Test
+    void timesOutsideALoopHasALimitInsteadOfRunningOutOfMemory() {
+        List<String> errors = new ArrayList<>();
+        co.xenastudios.neoskript.runtime.RuntimeErrors.install(new co.xenastudios.neoskript.runtime.RuntimeErrors.Consumer() {
+            @Override
+            public void printError(co.xenastudios.neoskript.runtime.errors.RuntimeError error) {
+                errors.add(error.source().lineNumber() + ": " + error.error());
+            }
+
+            @Override
+            public void printFrameOutput(co.xenastudios.neoskript.runtime.errors.ErrorFrame.Output output,
+                    co.xenastudios.neoskript.runtime.errors.RuntimeError.Level level) {}
+
+            @Override
+            public void logError(String message) {
+                errors.add(message);
+            }
+        }, co.xenastudios.neoskript.runtime.errors.ErrorFrame.Limits.DEFAULT,
+                co.xenastudios.neoskript.runtime.errors.ErrorFrame.Limits.DEFAULT);
+        try {
+            assertEquals(List.of("0", "3", "1000000"), run("""
+                    on load:
+                    \tset {_x::*} to 1000000000 times
+                    \tsay size of {_x::*}
+                    \tset {_y::*} to 3 times
+                    \tsay size of {_y::*}
+                    \tset {_z::*} to 1000000 times
+                    \tsay size of {_z::*}
+                    """));
+            assertEquals(List.of("2: '1000000000 times' would make a list of 1000000000 numbers, more than the 1000000"
+                    + " allowed. Loop it ('loop 1000000000 times:') to count that far"), errors);
+        } finally {
+            co.xenastudios.neoskript.runtime.RuntimeErrors.install(null,
+                    co.xenastudios.neoskript.runtime.errors.ErrorFrame.Limits.DEFAULT,
+                    co.xenastudios.neoskript.runtime.errors.ErrorFrame.Limits.DEFAULT);
+        }
+    }
+
+    @Test
+    void timesLoopsCarryOnAfterAWait() {
+        java.util.ArrayDeque<Runnable> later = new java.util.ArrayDeque<>();
+        co.xenastudios.neoskript.runtime.Waits.install(new co.xenastudios.neoskript.runtime.scheduler.Scheduler() {
+            @Override
+            public void runGlobal(Runnable task) {
+                later.add(task);
+            }
+
+            @Override
+            public void runGlobalLater(long ticks, Runnable task) {
+                later.add(task);
+            }
+
+            @Override
+            public Runnable runGlobalRepeating(long ticks, Runnable task) {
+                throw new UnsupportedOperationException();
+            }
+        }, e -> {
+            throw e;
+        });
+        run("""
+                on load:
+                \tloop 3 times:
+                \t\tsay "%loop-value% %previous loop-value ? 0%"
+                \t\twait 1 tick
+                \tsay "done"
+                """);
+        while (!later.isEmpty()) {
+            later.poll().run();
+        }
+        assertEquals(List.of("1 0", "2 1", "3 2", "done"), said);
+    }
+
+    @Test
+    void delayStateFollowsSkriptsRules() {
+        Library library = new Library();
+        library.enableTesting();
+        StandardLibrary.register(library);
+        library.effect("TestSay", info -> (context, args) -> said.add(Values.text(args[0])), "say %objects%");
+        List<ParsedScript> parsed = new ScriptLoader(library.registry()).load(List.of(new SourceFile("test.sk", """
+                test "delays":
+                \tsay has delay before
+                \tparse:
+                \t\tif true is true:
+                \t\t\tstop
+                \t\telse:
+                \t\t\twait 1 second
+                \tsay has delay before
+                \tparse:
+                \t\twait 1 tick
+                \tsay has delay before
+                \tparse:
+                \t\tif true is true:
+                \t\t\twait 1 second
+                \t\telse if has delay before is true failing if wrong:
+                \t\t\tstop
+                \tsay last parse logs
+                \tparse:
+                \t\tif true is true:
+                \t\t\twait 1 second
+                \t\t\tstop
+                \tsay has delay before
+                """)));
+        assertEquals(List.of(), parsed.getFirst().diagnostics());
+        CompiledScripts compiled = new ScriptCompiler(library, globals).compile(parsed);
+        assertEquals(List.of(), compiled.diagnostics());
+        compiled.linkFunctions();
+        compiled.triggers().getFirst().trigger().execute(new SimpleTriggerContext(null));
+        assertEquals(List.of("false", "unknown", "true", "<none>", "true"), said);
+    }
+
+    @Test
+    void delayStateComparesWithItsWords() {
+        Library library = new Library();
+        library.enableTesting();
+        StandardLibrary.register(library);
+        library.effect("TestSay", info -> (context, args) -> said.add(Values.text(args[0])), "say %objects%");
+        List<ParsedScript> parsed = new ScriptLoader(library.registry()).load(List.of(new SourceFile("test.sk", """
+                test "delays":
+                \tif has delay before is false:
+                \t\tsay "not delayed"
+                \tif {_never} is set:
+                \t\twait 1 second
+                \tif has delay before is unknown:
+                \t\tsay "maybe delayed"
+                \tif has delay before is not false:
+                \t\tsay "not surely undelayed"
+                """)));
+        assertEquals(List.of(), parsed.getFirst().diagnostics());
+        CompiledScripts compiled = new ScriptCompiler(library, globals).compile(parsed);
+        assertEquals(List.of(), compiled.diagnostics());
+        compiled.linkFunctions();
+        compiled.triggers().getFirst().trigger().execute(new SimpleTriggerContext(null));
+        assertEquals(List.of("not delayed", "maybe delayed", "not surely undelayed"), said);
+    }
+
+    /** Each error compiling {@code script}, as {@code <line>: <message>}. */
+    private List<String> lineErrors(String script) {
+        Library library = new Library();
+        library.enableTesting();
+        StandardLibrary.register(library);
+        library.effect("TestSay", info -> (context, args) -> said.add(Values.text(args[0])), "say %objects%");
+        List<ParsedScript> parsed = new ScriptLoader(library.registry()).load(List.of(new SourceFile("test.sk", script)));
+        List<co.xenastudios.neoskript.frontend.source.Diagnostic> found = new ArrayList<>(errors(parsed.getFirst().diagnostics()));
+        found.addAll(errors(new ScriptCompiler(library, globals).compile(parsed).diagnostics()));
+        return found.stream().sorted(java.util.Comparator.comparingInt(
+                co.xenastudios.neoskript.frontend.source.Diagnostic::line)).map(d -> d.line() + ": " + d.message()).toList();
+    }
+
+    @Test
+    void returnAfterAWaitIsRefusedAsInSkript() {
+        String useless = "A return statement after a delay is useless, as the calling trigger will resume when the delay"
+                + " starts (and won't get any returned value)";
+        assertEquals(List.of("3: " + useless, "8: " + useless, "14: " + useless, "15: " + useless,
+                "22: " + useless, "26: The return statement cannot be used here", "31: " + useless,
+                "35: " + useless), lineErrors("""
+                function a() :: number:
+                \twait 1 tick
+                \treturn 1
+
+                function b(x: number) :: number:
+                \tif {_x} is 1:
+                \t\twait 1 tick
+                \treturn 1
+
+                function c(x: number) :: number:
+                \tloop 2 times:
+                \t\tif {_x} is 1:
+                \t\t\twait 1 tick
+                \t\treturn 1
+                \treturn 2
+
+                function d(x: number) :: number:
+                \tif {_x} is 1:
+                \t\treturn 1
+                \telse:
+                \t\twait 1 tick
+                \treturn 2
+
+                function e() :: number:
+                \twait 1 tick:
+                \t\treturn 1
+                \treturn 2
+
+                function f(x: number) :: number:
+                \twait 1 tick
+                \treturn 1 if {_x} is 1
+
+                function g():
+                \twait 1 tick
+                \treturn 1
+
+                function h(x: number) :: number:
+                \tif {_x} is 1:
+                \t\twait 1 tick
+                \t\tstop
+                \treturn 2
+                """));
+    }
+
+    @Test
+    void aBranchThatSurelyStopsLeavesNoWait() {
+        // The branch waits, but every way through it stops: as Skript's execution intents, the wait doesn't count.
+        assertEquals(List.of(), lineErrors("""
+                function f(x: number) :: number:
+                \tif {_x} is 1:
+                \t\twait 1 tick
+                \t\tif {_x} is 2:
+                \t\t\tstop
+                \t\telse:
+                \t\t\tstop
+                \treturn 1
+                """));
+    }
+
+    @Test
+    void codeInADelayedSectionHasNotWaitedToSkript() {
+        // Skript loads it as a trigger of its own, which resets its parser's delay; the code after it hasn't waited.
+        // The checks fail while parsing if they're wrong.
+        Library library = new Library();
+        library.enableTesting();
+        StandardLibrary.register(library);
+        assertEquals(List.of(), errors(new ScriptLoader(library.registry()).load(List.of(new SourceFile("test.sk", """
+                test "delayed section":
+                \twait 1 tick:
+                \t\thas delay before is false failing if wrong
+                \t\twait 1 tick
+                \t\thas delay before is true failing if wrong
+                \thas delay before is false failing if wrong
+                \twait 1 tick if true is true
+                \thas delay before is true failing if wrong
+                """))).getFirst().diagnostics()));
+    }
+
+    @Test
+    void unreachableCodeFollowsSkriptsExecutionIntents() {
+        Library library = new Library();
+        StandardLibrary.register(library);
+        List<ParsedScript> parsed = new ScriptLoader(library.registry()).load(List.of(new SourceFile("test.sk", """
+                function a(x: number):
+                \tif {_x} is 1:
+                \t\tstop
+                \telse:
+                \t\tstop
+                \tset {_y} to 1
+
+                function b(x: number):
+                \tloop 2 times:
+                \t\tif {_x} is 1:
+                \t\t\texit loop
+                \t\telse:
+                \t\t\texit loop
+                \t\tset {_y} to 1
+                \tloop 1, 2 and 3:
+                \t\tstop
+                \tset {_y} to 1
+
+                function c(x: number):
+                \tstop
+                \tzzz
+                \tset {_y} to 1
+                """)));
+        assertEquals(List.of(6, 17, 22), parsed.getFirst().diagnostics().stream()
+                .filter(d -> d.message().startsWith("Unreachable code")).map(d -> d.line()).toList());
+    }
+
+    @Test
+    void chanceDatesAndText() {
+        assertEquals(List.of("true", "false", "true", "true", "false", "true", "false", "x: 2, y: 0, z: 0"), run("""
+                on load:
+                \tsay whether chance of 100%
+                \tsay whether chance of 0%
+                \tsay whether chance of 0% fails
+                \tsay whether "abc123" is alphanumeric
+                \tsay whether "abc 123" is alphanumeric
+                \tsay whether now was less than 1 minute ago
+                \tsay whether now was more than 1 minute ago
+                \tsay vector projection of vector(2, 3, 0) onto vector(1, 0, 0)
+                """));
+    }
+
+    @Test
+    void directionsReadAndPointAsInSkript() {
+        assertEquals(List.of("north", "5 meters north", "2 meters east and 2 meters north", "5 meters east and north",
+                "at", "0 meters in front of and to the right of", "x: 0, y: 0, z: -1", "x: 1, y: 0, z: 0",
+                "x: 0, y: 1, z: 0", "x: 1, y: 0, z: -1", "true", "false", "2 meters above"), run("""
+                on load:
+                \tsay north
+                \tsay 5 meters north
+                \tsay 2 meters north east
+                \tsay north 5 east
+                \tsay at
+                \tsay left
+                \tsay vector from left
+                \tsay forwards vector
+                \tsay vector from upwards
+                \tsay northeastern vector
+                \tsay whether north is north
+                \tsay whether north is south
+                \tsay 2 above
+                """));
+    }
+
+    @Test
+    void directionsMoveLocations() {
+        assertEquals(List.of("x: 1, y: 2, z: 3, yaw: 0, pitch: 0", "x: 1, y: 4, z: 3, yaw: 0, pitch: 0",
+                "x: 1, y: 2, z: 2, yaw: 0, pitch: 0", "x: 4, y: 2, z: 1, yaw: 0, pitch: 0",
+                "x: 1, y: 2, z: 6, yaw: 0, pitch: 0", "x: 1, y: 2, z: 2, yaw: 0, pitch: 0",
+                "x: -2, y: 4, z: 3, yaw: 0, pitch: 0"), run("""
+                on load:
+                \tset {_l} to testloc
+                \tsay {_l}
+                \tsay location 2 above {_l}
+                \tsay location north of {_l}
+                \tsay location 2 meters north 3 meters east of {_l}
+                \tset {_d} to 3 south
+                \tsay location {_d} {_l}
+                \tsay location 1 meter horizontally behind {_l}
+                \tsay location 2 meters above and 3 meters to the right of {_l}
+                """));
+    }
+
+    @Test
+    void aLoopOverValuesExceptSomeLeavesThemOut() {
+        // Fixed, not copied: Skript 2.17.0's ExprExcept overrides get but not iterator, so a loop over it goes over
+        // every value, the excluded ones too (its WrapperExpression says both must be overridden).
+        assertEquals(List.of("a", "c"), run("""
+                on load:
+                \tset {_l::*} to "a", "b" and "c"
+                \tloop {_l::*} except "b":
+                \t\tsay loop-value
+                """));
+    }
+
+    @Test
+    void theWorldWithNothingGivenIsNotSet() {
+        // As Skript 2.17.0: in 'on load', 'world' is its world expression with nothing given, which is nothing.
+        assertEquals(List.of("false"), run("""
+                on load:
+                \tset {_w} to world
+                \tsay whether {_w} is set
+                """));
+    }
+}

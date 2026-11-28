@@ -1,0 +1,246 @@
+/* The syntax reference's entries (src/components/syntax): one pane each, as the site's console panes: a title
+   strip with the name and its labels, the patterns on the ground, then the description and rows that open.
+   Flat: tone and hairlines, no shadows. Unscoped, under .entry,
+   so the pages' thousands of elements carry no scoping classes. */
+
+.entry {
+  border: 1px solid var(--rule);
+  border-radius: var(--pane-radius);
+  background: var(--raised);
+  overflow: hidden;
+  scroll-margin-top: 6rem;
+}
+.entry + .entry {
+  margin-top: 1rem;
+}
+.entry[hidden] {
+  display: none;
+}
+
+/* The title strip: the name in text, its link in the accent. */
+.entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.7rem 1rem 0.7rem 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--raised);
+  color: var(--text);
+}
+.entry h2 {
+  flex: 1 1 14rem;
+  min-width: 0;
+  font-size: 1.3125rem;
+  letter-spacing: -0.025em;
+  overflow-wrap: break-word;
+}
+.entry .anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 6px;
+  color: var(--accent);
+  transition: background-color 180ms var(--ease);
+}
+.entry .anchor:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.entry .anchor:focus-visible {
+  outline-offset: 0;
+}
+.entry .anchor.copied {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+.entry .badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.entry .badges li {
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--ground);
+  color: var(--muted);
+  font-family: var(--label);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.entry .badges .flag {
+  background: transparent;
+  color: var(--string);
+  border-color: color-mix(in srgb, var(--string) 50%, var(--rule));
+}
+.entry:target {
+  border-color: var(--magenta);
+}
+
+/* Patterns: words as typed, marks muted, %type% slots magenta, <regex> pale. */
+.entry .patterns {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--ground);
+  border-bottom: 1px solid var(--rule);
+}
+.pattern {
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.pattern .p {
+  color: var(--muted);
+}
+.pattern .s {
+  color: var(--magenta);
+}
+.pattern .r {
+  color: var(--string);
+}
+
+.entry-body {
+  padding: 1rem 1.1rem 1.1rem;
+}
+.entry .description {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 72ch;
+  color: var(--text);
+}
+.entry .description code,
+.entry .meta code {
+  font-size: 0.875em;
+}
+.entry .description a {
+  color: var(--text);
+}
+.entry .description ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.entry .undocumented {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.entry .meta {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+.entry .meta > div {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: baseline;
+}
+.entry .meta dt {
+  font-size: 0.6875rem;
+}
+.entry .meta dd {
+  font-size: 0.9375rem;
+  overflow-wrap: break-word;
+}
+.entry .meta a {
+  color: var(--text);
+}
+.entry .values,
+.entry .params {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.entry .params {
+  flex-direction: column;
+}
+.entry .muted,
+.entry .id {
+  color: var(--muted);
+}
+
+/* Rows that open: View examples, View event values. Full width, a chevron at the end. */
+.entry .more {
+  border-top: 1px solid var(--rule);
+}
+.entry .more summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 44px;
+  padding: 0 1.1rem;
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+  transition: background-color 180ms var(--ease);
+}
+.entry .more summary::-webkit-details-marker {
+  display: none;
+}
+.entry .more summary:hover {
+  background: color-mix(in srgb, var(--magenta) 8%, transparent);
+}
+.entry .more summary:focus-visible {
+  outline-offset: -2px;
+}
+.entry .more summary .icon {
+  color: var(--muted);
+  transition: transform 180ms var(--ease);
+}
+.entry .more[open] summary .icon {
+  transform: rotate(180deg);
+  color: var(--magenta);
+}
+.entry .more-body {
+  padding: 0 1.1rem 1.1rem;
+}
+.entry .usage {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+.entry .examples {
+  display: grid;
+  /* minmax(0, 1fr), not auto: a long line scrolls inside its example
+     instead of widening the page. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+.example {
+  margin: 0;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--ground);
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  tab-size: 4;
+  overflow-x: auto;
+}
+
+@media (max-width: 36rem) {
+  .entry .meta > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.1rem;
+  }
+  .entry-head {
+    padding-right: 0.75rem;
+  }
+}

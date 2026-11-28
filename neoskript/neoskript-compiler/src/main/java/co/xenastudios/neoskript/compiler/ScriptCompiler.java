@@ -1,0 +1,931 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.compiler;
+
+import co.xenastudios.neoskript.api.registration.ScriptEvent;
+import co.xenastudios.neoskript.frontend.parse.CommandPattern;
+import co.xenastudios.neoskript.frontend.parse.Expr;
+import co.xenastudios.neoskript.frontend.parse.ParsedScript;
+import co.xenastudios.neoskript.frontend.parse.ParsedStructure;
+import co.xenastudios.neoskript.frontend.parse.Statement;
+import co.xenastudios.neoskript.frontend.registry.FunctionInfo;
+import co.xenastudios.neoskript.frontend.source.Diagnostic;
+import co.xenastudios.neoskript.frontend.source.Severity;
+import co.xenastudios.neoskript.frontend.structure.Line;
+import co.xenastudios.neoskript.runtime.FunctionHandle;
+import co.xenastudios.neoskript.runtime.Timespan;
+import co.xenastudios.neoskript.runtime.Trigger;
+import co.xenastudios.neoskript.runtime.variables.VariableStore;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Compiles parsed scripts into triggers and functions. Calls to script functions go through a
+ * {@link FunctionHandle} per function, so scripts can call each other whatever order they compile in.
+ */
+public final class ScriptCompiler {
+
+    /** The lines, as {@code file:line}, of the statements that failed to compile and were left out. */
+    private java.util.Set<String> failedLines = new java.util.HashSet<>();
+    /** The lines, as {@code file:line}, of sections whose header failed: see {@link CompiledScripts#unparsed}. */
+    private java.util.Set<String> unparsedLines = new java.util.HashSet<>();
+
+    private final Library library;
+    private final VariableStore globals;
+    private final Map<FunctionInfo, FunctionHandle> handles;
+    /** Where the warnings found while compiling go, as {@link #compile} collects them. */
+    private List<Diagnostic> warnings = new ArrayList<>();
+
+    /** @param globals where global variables live; generated code refers to it directly */
+    public ScriptCompiler(Library library, VariableStore globals) {
+        this(library, globals, new java.util.concurrent.ConcurrentHashMap<>());
+    }
+
+    /**
+     * @param handles the function handles to call functions through, kept from one load to the next so
+     *     scripts that aren't reloaded keep calling the current version. Missing ones are added.
+     */
+    public ScriptCompiler(Library library, VariableStore globals, Map<FunctionInfo, FunctionHandle> handles) {
+        this.library = library;
+        this.globals = globals;
+        this.handles = handles;
+    }
+
+    /** Whether the code being compiled on this thread is the code of syntax a script declared. */
+    public static boolean compilingDeclaredSyntax() {
+        return TriggerCompiler.compilingDeclaredSyntax();
+    }
+
+    public CompiledScripts compile(List<ParsedScript> scripts) {
+        // Syntax scripts declared is bound, for this load, to its declaring structure's code.
+        java.util.function.Function<co.xenastudios.neoskript.frontend.registry.SyntaxInfo, Object> before =
+                Library.SCRIPT_SYNTAX.get();
+        Map<FunctionHandle, Set<String>> uses = new java.util.concurrent.ConcurrentHashMap<>();
+        Library.SCRIPT_SYNTAX.set(syntax -> {
+            // Which scripts use which declared syntax, so a script whose syntax goes can name the ones still using it.
+            FunctionHandle code = handles.get(syntax.script().body());
+            String user = co.xenastudios.neoskript.runtime.ScriptFeatures.compilingScript();
+            if (code != null && user != null) {
+                uses.computeIfAbsent(code, k -> java.util.concurrent.ConcurrentHashMap.newKeySet()).add(user);
+            }
+            return ScriptSyntaxBindings.factory(syntax, handles);
+        });
+        try {
+            CompiledScripts compiled = compileScripts(scripts);
+            return compiled.withDeclaredSyntax(declaredSyntax(scripts), Map.copyOf(uses));
+        } finally {
+            if (before == null) {
+                Library.SCRIPT_SYNTAX.remove();
+            } else {
+                Library.SCRIPT_SYNTAX.set(before);
+            }
+        }
+    }
+
+    /** The declared syntax's code that {@code scripts} declare. */
+    private static Set<FunctionInfo> declaredSyntax(List<ParsedScript> scripts) {
+        Set<FunctionInfo> declared = new java.util.HashSet<>();
+        for (ParsedScript script : scripts) {
+            for (ParsedStructure structure : script.structures()) {
+                if (structure instanceof ParsedStructure.Function function && function.declaredSyntax()) {
+                    declared.add(function.signature());
+                }
+            }
+        }
+        return Set.copyOf(declared);
+    }
+
+    private CompiledScripts compileScripts(List<ParsedScript> scripts) {
+        // Used by compiled functions when the stack runs out, when there's no stack left to load it with.
+        co.xenastudios.neoskript.runtime.Overflows.ready();
+        List<CompiledScripts.CompiledTrigger> triggers = new ArrayList<>();
+        List<Diagnostic> diagnostics = new ArrayList<>();
+        warnings = diagnostics;
+        unparsedLines = new java.util.HashSet<>();
+        failedLines = new java.util.HashSet<>();
+        Map<String, String> unrunnableTests = new java.util.LinkedHashMap<>();
+        Set<String> crashed = new java.util.LinkedHashSet<>();
+        Map<FunctionInfo, FunctionHandle> functions = handles;
+        List<CompiledScripts.CompiledFunctionBody> bodies = new ArrayList<>();
+        List<CompiledCommand> commands = new ArrayList<>();
+        // Each command's name, with the script defining it.
+        Map<String, String> commandScripts = new HashMap<>();
+        for (ParsedScript script : scripts) {
+            java.util.Set<String> features = new java.util.HashSet<>();
+            for (ParsedStructure structure : script.structures()) {
+                if (structure instanceof ParsedStructure.Function function) {
+                    functions.computeIfAbsent(function.signature(), f -> new FunctionHandle(f.name()))
+                            .script(script.file().name());
+                }
+                // 'using script reflection': an experimental feature the script turns on.
+                if (structure.structure().kind() == co.xenastudios.neoskript.frontend.structure.Structure.Kind.USING) {
+                    Line using = structure.structure().node().line();
+                    String feature = co.xenastudios.neoskript.frontend.structure.Structure.usingName(using);
+                    features.add(feature.toLowerCase(java.util.Locale.ROOT));
+                    // A language extension isn't one of Skript's experiments: the parser says if it doesn't exist.
+                    String warning = co.xenastudios.neoskript.frontend.parse.LanguageExtensions.extensionName(feature)
+                            != null ? null : co.xenastudios.neoskript.runtime.ScriptFeatures.usingWarning(feature);
+                    if (warning != null) {
+                        diagnostics.add(new Diagnostic(Severity.WARNING, script.file().name(), using.number(), 0, 0,
+                                warning));
+                    }
+                }
+            }
+            co.xenastudios.neoskript.runtime.ScriptFeatures.set(script.file().name(), features);
+            Map<String, String> aliases = new java.util.LinkedHashMap<>();
+            co.xenastudios.neoskript.runtime.ScriptAliases.set(script.file().name(), aliases);
+            co.xenastudios.neoskript.runtime.ScriptFeatures.compiling(script.file().name());
+            for (ParsedStructure structure : script.structures()) {
+                if (structure.structure().kind() == co.xenastudios.neoskript.frontend.structure.Structure.Kind.ALIASES) {
+                    for (AliasProblem problem : aliases(structure.structure().section(), aliases, script.file().name())) {
+                        diagnostics.add(new Diagnostic(Severity.ERROR, script.file().name(), problem.line(), 0, 0,
+                                problem.message()));
+                    }
+                }
+            }
+            co.xenastudios.neoskript.runtime.ScriptAliases.set(script.file().name(), aliases);
+            co.xenastudios.neoskript.runtime.ScriptFeatures.compiling(null);
+        }
+        String loadingBefore = co.xenastudios.neoskript.frontend.parse.LoadingScript.current();
+        try {
+        for (ParsedScript script : scripts) {
+            String name = script.file().name();
+            co.xenastudios.neoskript.runtime.ScriptFeatures.compiling(name);
+            co.xenastudios.neoskript.frontend.parse.LoadingScript.set(name);
+            Map<Integer, String> parseProblems = new HashMap<>();
+            script.diagnostics().forEach(d -> parseProblems.putIfAbsent(d.line(), d.message()));
+            for (ParsedStructure structure : script.structures()) {
+                Line header = structure.structure().node().line();
+                String testName = testName(structure);
+                try {
+                    switch (structure) {
+                        case ParsedStructure.Event event -> {
+                            Object binding = library.binding(event.event().syntax());
+                            if (binding instanceof ScriptEvent scriptEvent) {
+                                triggers.add(new CompiledScripts.CompiledTrigger(name, header.number(), scriptEvent, null,
+                                        null, null, skipping(functions, script,
+                                                compiler -> compiler.compileScriptTrigger(name, event.body()))));
+                            } else if (binding instanceof Library.ServerEvent serverEvent) {
+                                TriggerCompiler[] used = new TriggerCompiler[1];
+                                co.xenastudios.neoskript.runtime.Trigger trigger = skipping(functions, script, compiler -> {
+                                    used[0] = compiler;
+                                    return compiler.compileTrigger(name, event, serverEvent);
+                                });
+                                // The filter may have narrowed the classes listened to.
+                                triggers.add(new CompiledScripts.CompiledTrigger(name, header.number(), null,
+                                        used[0].eventClasses(), null, null, trigger, null,
+                                        event.event().syntax().id(), used[0].eventFilter()));
+                            } else if (binding instanceof Library.Core core && core.id().equals(CoreSyntax.PERIODICAL)) {
+                                triggers.add(new CompiledScripts.CompiledTrigger(name, header.number(), null, null,
+                                        period(header.number(), event), null, skipping(functions, script,
+                                                compiler -> compiler.compilePeriodical(name, event.body())),
+                                        worlds(header.number(), header.key(), event)));
+                            } else {
+                                throw new CompileException(header.number(), "NeoSkript can't run this event yet: '"
+                                        + header.key() + "'");
+                            }
+                        }
+                        case ParsedStructure.Function function -> bodies.add(new CompiledScripts.CompiledFunctionBody(name,
+                                functions.get(function.signature()),
+                                skipping(functions, script, compiler -> compiler.compileFunction(name, function))));
+                        case ParsedStructure.Custom custom when library.binding(custom.syntax().syntax())
+                                instanceof Library.Core core && core.id().equals(CoreSyntax.EXAMPLE) -> {}
+                        case ParsedStructure.Custom custom when testName != null -> triggers.add(
+                                new CompiledScripts.CompiledTrigger(name, header.number(), null, null, null, testName,
+                                        test(name, script, functions, custom)));
+                        case ParsedStructure.Command command -> {
+                            // As in Skript, the first script loaded (they load in order of their names) keeps a name.
+                            String defined = commandScripts.get(command.name().toLowerCase(java.util.Locale.ROOT));
+                            if (defined != null) {
+                                throw new CompileException(header.number(), "A command with the name /" + command.name()
+                                        + " is already defined in the script '" + defined + "'");
+                            }
+                            CompiledCommand compiled = command(name, script, functions, command);
+                            commandScripts.put(command.name().toLowerCase(java.util.Locale.ROOT), name);
+                            commands.add(compiled);
+                        }
+                        case ParsedStructure.Data data -> defaultVariables(data, name);
+                        // Watched by the plugin, which reloads the script when its file changes.
+                        case ParsedStructure.AutoReload autoReload -> {}
+                        case ParsedStructure.Parse parse -> parseResults(parse, name, script, functions);
+                        default -> throw new CompileException(header.number(),
+                                "NeoSkript can't run this yet: '" + header.key() + "'");
+                    }
+                } catch (StackOverflowError tooDeep) {
+                    // Code nested so deeply the compiler runs out of stack: an error in the script, as the parser
+                    // gives for lines it can't follow that deep.
+                    diagnostics.add(new Diagnostic(Severity.ERROR, name, header.number(), 0, 0, TOO_DEEP));
+                    if (testName != null) {
+                        unrunnableTests.put(testName, "line " + header.number() + ": " + TOO_DEEP);
+                    }
+                } catch (RuntimeException | LinkageError e) {
+                    // Code too big for a method is the script's doing; anything else is a bug in NeoSkript, not
+                    // the script. Either way this structure is left out and the rest still load.
+                    boolean big = tooBig(e);
+                    String message = big ? TOO_BIG_TRIGGER
+                            : "NeoSkript couldn't compile this (" + e + "). Please report it.";
+                    diagnostics.add(new Diagnostic(Severity.ERROR, name, header.number(), 0, 0, message));
+                    if (!big) {
+                        crashed.add(name);
+                    }
+                    if (testName != null) {
+                        unrunnableTests.put(testName, "line " + header.number() + ": " + message);
+                    }
+                } catch (CompileException e) {
+                    if (!e.alreadyReported()) {
+                        diagnostics.add(new Diagnostic(Severity.ERROR, name, e.line(), 0, 0, e.getMessage()));
+                    }
+                    for (Throwable more : e.getSuppressed()) {
+                        if (more instanceof CompileException other && !other.alreadyReported()) {
+                            diagnostics.add(new Diagnostic(Severity.ERROR, name, other.line(), 0, 0, other.getMessage()));
+                        }
+                    }
+                    if (testName != null) {
+                        String reason = e.alreadyReported() ? parseProblems.get(e.line()) : e.getMessage();
+                        unrunnableTests.put(testName, "line " + e.line() + ": " + reason);
+                    }
+                }
+            }
+        }
+        } finally {
+            co.xenastudios.neoskript.frontend.parse.LoadingScript.set(loadingBefore);
+        }
+        co.xenastudios.neoskript.runtime.ScriptFeatures.compiling(null);
+        // An unreachable warning after a statement that failed to compile isn't one: that statement doesn't stop
+        // anything, as it isn't there.
+        Set<String> unreachableAfterFailure = new java.util.HashSet<>();
+        for (ParsedScript script : scripts) {
+            script.unreachableAfter().forEach((warned, stopper) -> {
+                if (failedLines.contains(script.file().name() + ":" + stopper)) {
+                    unreachableAfterFailure.add(script.file().name() + ":" + warned);
+                }
+            });
+        }
+        return new CompiledScripts(triggers, bodies, diagnostics, unrunnableTests, commands, unparsedLines, crashed,
+                unreachableAfterFailure);
+    }
+
+    /** One line of code compiled on its own, for Skript's effect commands: its trigger, or else its errors. */
+    public record CompiledLine(Trigger trigger, List<String> errors) {}
+
+    /** The start of the parser's error for a line nothing understands, which Skript's effect commands don't give. */
+    private static final String NOT_UNDERSTOOD = "Can't understand this condition/effect: ";
+
+    /**
+     * Parses and compiles {@code text} as one effect on its own, as Skript's effect commands do with what follows
+     * the token: a function call or an effect, not a condition. Its code runs for events of {@code eventClass}
+     * (called {@code eventName} in errors) and can call the global functions of the handles this compiler was given
+     * that are loaded, and use the global variables. {@code name} is the script name it runs as. Nothing about the
+     * loaded scripts changes, and warnings are left out, as Skript's effect commands leave them out.
+     *
+     * <p>The errors are Skript's for the line, without the generic one for a line nothing understands, for which
+     * Skript has no specific information.
+     */
+    public CompiledLine compileLine(String name, String text, Class<?> eventClass, String eventName) {
+        return compileLine(name, text, eventClass, eventName, library.registry());
+    }
+
+    /**
+     * {@link #compileLine(String, String, Class, String)}, parsed with {@code syntax}: the registry with the syntax the
+     * loaded scripts declared ({@code ScriptLoader.declaredRegistry()}), as skript-reflect's custom syntax works in
+     * effect commands.
+     */
+    public CompiledLine compileLine(String name, String text, Class<?> eventClass, String eventName,
+            co.xenastudios.neoskript.frontend.registry.SyntaxRegistry syntax) {
+        Map<String, List<FunctionInfo>> callable = new HashMap<>();
+        handles.forEach((info, handle) -> {
+            if (info.localTo() == null && handle.loaded()) {
+                callable.computeIfAbsent(info.name(), k -> new ArrayList<>()).add(info);
+            }
+        });
+        LibraryEventValues values = library.registry().eventValues() instanceof LibraryEventValues v ? v : null;
+        co.xenastudios.neoskript.frontend.parse.ScriptLoader.ParsedLine parsed =
+                new co.xenastudios.neoskript.frontend.parse.ScriptLoader(syntax).parseLine(name, text,
+                        callable, values == null ? null : values.scope(List.of(eventClass)));
+        List<String> errors = new ArrayList<>();
+        for (Diagnostic diagnostic : parsed.script().diagnostics()) {
+            if (diagnostic.severity() == Severity.ERROR && !diagnostic.message().startsWith(NOT_UNDERSTOOD)) {
+                errors.add(diagnostic.message());
+            }
+        }
+        boolean effect = parsed.statement() instanceof co.xenastudios.neoskript.frontend.parse.Statement.Effect
+                || parsed.statement() instanceof co.xenastudios.neoskript.frontend.parse.Statement.Call;
+        if (!effect || !errors.isEmpty()) {
+            return new CompiledLine(null, errors);
+        }
+        java.util.function.Function<co.xenastudios.neoskript.frontend.registry.SyntaxInfo, Object> before =
+                Library.SCRIPT_SYNTAX.get();
+        Library.SCRIPT_SYNTAX.set(declared -> ScriptSyntaxBindings.factory(declared, handles));
+        try {
+            return new CompiledLine(new TriggerCompiler(library, handles, globals, parsed.script())
+                    .compileLine(name, parsed.statement(), List.of(eventClass), eventName), List.of());
+        } catch (CompileException e) {
+            return new CompiledLine(null, e.alreadyReported() ? List.of() : List.of(e.getMessage()));
+        } catch (StackOverflowError tooDeep) {
+            return new CompiledLine(null, List.of(TOO_DEEP));
+        } catch (RuntimeException | LinkageError e) {
+            return new CompiledLine(null, List.of(tooBig(e) ? TOO_BIG
+                    : "NeoSkript couldn't compile this (" + e + "). Please report it."));
+        } finally {
+            if (before == null) {
+                Library.SCRIPT_SYNTAX.remove();
+            } else {
+                Library.SCRIPT_SYNTAX.set(before);
+            }
+        }
+    }
+
+    /** The error for code nested too deeply to compile. */
+    static final String TOO_DEEP = "This code is nested too deeply to be compiled";
+
+    /** The error for a line whose expressions are nested too deeply to compile, or code too big for its method. */
+    static final String TOO_BIG = "This line is too complex to be compiled";
+
+    /** The error for a trigger whose code, line by line within the limits, is too big for one method. */
+    static final String TOO_BIG_TRIGGER = "This trigger is too big to be compiled";
+
+    /** Whether {@code e} is ASM saying the code is too big for a method or class: the script's doing, not a bug. */
+    static boolean tooBig(Throwable e) {
+        String type = e.getClass().getName();
+        return type.startsWith("org.objectweb.asm.") && (type.endsWith("TooLargeException")
+                || type.endsWith("LimitExceededException"));
+    }
+
+    /** Compiles code with a {@link TriggerCompiler}: one of its {@code compile...} methods. */
+    @FunctionalInterface
+    private interface Compile<T> {
+        T with(TriggerCompiler compiler) throws CompileException;
+    }
+
+    /**
+     * How many times code is compiled again without the statements that failed before giving up on it. Each time
+     * leaves out at least one more statement, and almost always the first is the last.
+     */
+    private static final int MAX_RECOMPILES = 32;
+
+    /**
+     * Compiles code as Skript loads it: a statement that fails (a line, or a section with its header) is reported
+     * and left out, and the code still runs without it. The code is compiled once to find every error, then again
+     * leaving out the statements that failed, so nothing compiled refers to them. The errors are reported here.
+     *
+     * <p>What fails outside the statements, such as an event's filter or a command argument's default value, still
+     * fails the whole trigger, as in Skript: that's thrown as before, not reported.
+     */
+    private <T> T skipping(Map<FunctionInfo, FunctionHandle> functions, ParsedScript script, Compile<T> compile)
+            throws CompileException {
+        java.util.Set<Statement> leaveOut = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (int attempt = 0; ; attempt++) {
+            TriggerCompiler compiler = attempt == 0 ? compiler(functions, script) : quietCompiler(functions, script);
+            try {
+                return compile.with(compiler.leaveOut(leaveOut));
+            } catch (CompileException e) {
+                compiler.failedStatements().forEach(failed -> failedLines.add(script.file().name() + ":"
+                        + failed.line().number()));
+                if (!leaveOut.addAll(compiler.failedStatements()) || attempt == MAX_RECOMPILES) {
+                    if (attempt == 0) {
+                        throw e;
+                    }
+                    report(script.file().name(), e);
+                    throw new CompileException(e.line(), null);
+                }
+                report(script.file().name(), e);
+            }
+        }
+    }
+
+    /** Reports {@code e} and the errors suppressed in it, each once. */
+    private void report(String name, CompileException e) {
+        List<CompileException> all = new ArrayList<>();
+        all.add(e);
+        for (Throwable more : e.getSuppressed()) {
+            if (more instanceof CompileException other) {
+                all.add(other);
+            }
+        }
+        for (CompileException error : all) {
+            if (error.alreadyReported()) {
+                continue;
+            }
+            Diagnostic diagnostic = new Diagnostic(Severity.ERROR, name, error.line(), 0, 0, error.getMessage());
+            if (!reported(diagnostic)) {
+                warnings.add(diagnostic);
+            }
+        }
+    }
+
+    /** Whether a problem with the same severity, script, line and message has been reported. */
+    private boolean reported(Diagnostic diagnostic) {
+        return warnings.stream().anyMatch(d -> d.severity() == diagnostic.severity() && d.line() == diagnostic.line()
+                && d.file().equals(diagnostic.file()) && d.message().equals(diagnostic.message()));
+    }
+
+    /**
+     * A compiler for code compiled again without the statements that failed: what it finds was found the first
+     * time, so only problems that weren't are reported.
+     */
+    private TriggerCompiler quietCompiler(Map<FunctionInfo, FunctionHandle> functions, ParsedScript script) {
+        String name = script.file().name();
+        java.util.Set<String> skipped = unparsedLines;
+        return new TriggerCompiler(library, functions, globals, script)
+                .warnings((at, message) -> {
+                    Diagnostic warning = new Diagnostic(Severity.WARNING, name, at, 0, 0, message);
+                    if (!reported(warning)) {
+                        warnings.add(warning);
+                    }
+                })
+                .unparsed(line -> skipped.add(name + ":" + line));
+    }
+
+    /** A compiler for code in {@code script}, whose warnings are reported with the other problems. */
+    /** What each script's compile here is: its version, which becomes the loaded one if it loads. */
+    private final Map<String, Object> versions = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * The version of {@code script} this compiler made, for {@link co.xenastudios.neoskript.runtime.ScriptVersions}
+     * once it loads, or {@code null} if it compiled no code of that script.
+     */
+    public Object version(String script) {
+        return versions.get(script);
+    }
+
+    private TriggerCompiler compiler(Map<FunctionInfo, FunctionHandle> functions, ParsedScript script) {
+        String name = script.file().name();
+        Object version = versions.computeIfAbsent(name, k -> new Object());
+        List<Diagnostic> into = warnings;
+        java.util.Set<String> skipped = unparsedLines;
+        return new TriggerCompiler(library, functions, globals, script).version(version)
+                .warnings((at, message) -> into.add(new Diagnostic(Severity.WARNING, name, at, 0, 0, message)))
+                .unparsed(line -> skipped.add(name + ":" + line));
+    }
+
+    /** How often an {@code every <timespan>} event runs: its timespan, which has to be written out. */
+    private static Timespan period(int line, ParsedStructure.Event event) throws CompileException {
+        if (event.event().match().values().getFirst() instanceof Expr.Literal literal && literal.type().equals("timespan")) {
+            Timespan period = Timespan.parse(literal.text());
+            if (period != null && period.ticks() > 0) {
+                return period;
+            }
+        }
+        throw new CompileException(line, "'every' needs a timespan of at least a tick, like 'every 5 minutes'");
+    }
+
+    /**
+     * The names of the worlds a periodical event runs in ({@code every 5 seconds in "world" and "nether"}), or
+     * {@code null} if it doesn't say. {@code source} is the event's line, which the values' positions are in.
+     */
+    private static List<String> worlds(int line, String source, ParsedStructure.Event event) throws CompileException {
+        List<Object> values = event.event().match().values();
+        if (event.event().pattern() != 1 || values.size() < 2) {
+            return null;
+        }
+        List<String> names = new ArrayList<>();
+        Object worlds = values.get(1);
+        for (Object world : worlds instanceof Expr.ListOf list ? list.items() : List.of(worlds)) {
+            switch (world) {
+                case Expr.Text text when text.embedded().isEmpty() && text.end() <= source.length() ->
+                        names.add(source.substring(text.start() + 1, text.end() - 1).replace("\"\"", "\""));
+                case Expr.Literal literal -> names.add(literal.text());
+                default -> throw new CompileException(line, "The worlds of a periodical event must be given by name, "
+                        + "like 'every 5 seconds in \"world\"'");
+            }
+        }
+        return names;
+    }
+
+    /**
+     * {@code variables:}: each {@code {name} = value} sets the global variable if it isn't set yet, as in
+     * Skript. Values are literals: text, numbers, booleans, or words like items.
+     */
+    /** One of Skript's errors for an {@code aliases:} structure, on the line of the alias it's about. */
+    record AliasProblem(int line, String message) {}
+
+    /**
+     * Reads an {@code aliases:} structure's {@code name = items} lines into {@code into}, by each name's
+     * forms ({@code boot¦s} is {@code boot} and {@code boots}), and returns Skript's errors for them.
+     * Variation sections ({@code {kind}:}) are accepted and their names may be used.
+     */
+    static List<AliasProblem> aliases(co.xenastudios.neoskript.frontend.structure.Node.Section section,
+            Map<String, String> into, String script) {
+        List<AliasProblem> problems = new ArrayList<>();
+        java.util.Set<String> variations = new java.util.HashSet<>();
+        for (co.xenastudios.neoskript.frontend.structure.Node child : section.children()) {
+            if (child instanceof co.xenastudios.neoskript.frontend.structure.Node.Section variation) {
+                variations.add(variation.line().key().strip().toLowerCase(java.util.Locale.ROOT));
+            }
+        }
+        for (co.xenastudios.neoskript.frontend.structure.Node child : section.children()) {
+            if (child instanceof co.xenastudios.neoskript.frontend.structure.Node.Section) {
+                continue;
+            }
+            String line = child.line().text().strip();
+            int equals = line.indexOf('=');
+            if (equals < 0) {
+                // As Skript, which reads the section's lines as entries first.
+                problems.add(new AliasProblem(child.line().number(), "'" + line + "' is not an entry (like 'name = value')"));
+                continue;
+            }
+            String names = line.substring(0, equals).strip().toLowerCase(java.util.Locale.ROOT);
+            String definition = line.substring(equals + 1).strip();
+            java.util.regex.Matcher variation = java.util.regex.Pattern.compile("\\{[^}]*\\}").matcher(names);
+            while (variation.find()) {
+                if (!variations.contains(variation.group())) {
+                    problems.add(new AliasProblem(child.line().number(),
+                            "The variation " + variation.group() + " has not been defined before"));
+                }
+            }
+            String problem;
+            try {
+                problem = co.xenastudios.neoskript.runtime.ScriptAliases.check(definition);
+            } catch (RuntimeException | LinkageError | StackOverflowError e) {
+                // A bug in an item type's parser stops this alias, not every script's load.
+                problem = "NeoSkript couldn't compile this (" + e + "). Please report it.";
+            }
+            if (problem != null) {
+                problems.add(new AliasProblem(child.line().number(), problem));
+                continue;
+            }
+            for (String form : co.xenastudios.neoskript.frontend.parse.AliasNames.forms(names)) {
+                into.put(form, definition);
+            }
+            // Later aliases can be made of earlier ones.
+            if (script != null) {
+                co.xenastudios.neoskript.runtime.ScriptAliases.set(script, into);
+            }
+        }
+        return problems;
+    }
+
+    private void defaultVariables(ParsedStructure.Data data, String script) {
+        if (!data.structure().node().line().key().strip().equalsIgnoreCase("variables")) {
+            return;
+        }
+        // As Skript's, a line that's wrong is reported and left out, and the others are still set.
+        List<co.xenastudios.neoskript.frontend.structure.Node> entries = new ArrayList<>();
+        for (co.xenastudios.neoskript.frontend.structure.Node child : data.structure().section().children()) {
+            String line = child.line().text().strip();
+            if (child instanceof co.xenastudios.neoskript.frontend.structure.Node.Section || line.indexOf('=') < 0) {
+                // Skript reads every line as an entry first, so these come before the others' problems.
+                variablesError(script, child, "'" + (child instanceof co.xenastudios.neoskript.frontend.structure
+                        .Node.Section ? child.line().key().strip() : line) + "' is not an entry (like 'name = value')");
+            } else {
+                entries.add(child);
+            }
+        }
+        for (co.xenastudios.neoskript.frontend.structure.Node child : entries) {
+            String line = child.line().text().strip();
+            int equals = line.indexOf('=');
+            String name = line.substring(0, equals).strip();
+            String valueText = line.substring(equals + 1).strip();
+            if (name.startsWith("{") && name.endsWith("}")) {
+                name = name.substring(1, name.length() - 1);
+            } else {
+                // As Skript, which still takes it.
+                warnings.add(new Diagnostic(Severity.WARNING, script, child.line().number(), 0, 0, "It is suggested to"
+                        + " use brackets around the name of a variable. Example: {example::%player%} = 5\nExcluding"
+                        + " brackets is deprecated, meaning this warning will become an error in the future."));
+            }
+            // Skript's errors name it in lower case.
+            String lower = name.toLowerCase(java.util.Locale.ENGLISH);
+            if (name.startsWith("_")) {
+                variablesError(script, child, "'" + lower + "' cannot be a local variable in default variables structure");
+                continue;
+            }
+            if (name.contains("<") || name.contains(">")) {
+                variablesError(script, child, "'" + lower + "' cannot have symbol '<' or '>' within the definition");
+                continue;
+            }
+            String problem = templateProblem(lower);
+            if (problem != null) {
+                variablesError(script, child, problem);
+                continue;
+            }
+            Object value = literal(valueText);
+            if (value == null) {
+                variablesError(script, child, "Can't understand the value '" + valueText + "'");
+                continue;
+            }
+            // NeoSkript doesn't keep defaults for names with types in them ({x::%player%}) yet.
+            if (!name.contains("%") && !name.isEmpty() && globals.get(name) == null) {
+                globals.set(name, value);
+            }
+        }
+    }
+
+    private void variablesError(String script, co.xenastudios.neoskript.frontend.structure.Node node, String message) {
+        warnings.add(new Diagnostic(Severity.ERROR, script, node.line().number(), 0, 0, message));
+    }
+
+    /** Skript's error for the types in a default variable's name ({@code {x::%player%}}), or {@code null}. */
+    private String templateProblem(String name) {
+        java.util.regex.Matcher type = java.util.regex.Pattern.compile("%(.+?)%").matcher(name);
+        StringBuilder rest = new StringBuilder();
+        while (type.find()) {
+            String text = type.group(1);
+            if (text.contains("{") || text.contains("}") || text.contains("%")) {
+                return "'" + name + "' is not a valid name for a default variable";
+            }
+            if (library.registry().resolveType(text) == null) {
+                return "Can't understand the type '" + text + "'";
+            }
+            type.appendReplacement(rest, "");
+        }
+        type.appendTail(rest);
+        return rest.indexOf("%") >= 0 ? "Invalid use of percent signs in variable name" : null;
+    }
+
+    private Object literal(String text) {
+        if (text.length() >= 2 && text.startsWith("\"") && text.endsWith("\"")) {
+            return text.substring(1, text.length() - 1).replace("\"\"", "\"");
+        }
+        switch (text.toLowerCase(java.util.Locale.ROOT)) {
+            case "true", "yes", "on" -> {
+                return Boolean.TRUE;
+            }
+            case "false", "no", "off" -> {
+                return Boolean.FALSE;
+            }
+            default -> {}
+        }
+        try {
+            return text.contains(".") ? (Object) Double.parseDouble(text) : (Object) Long.parseLong(text);
+        } catch (NumberFormatException e) {
+            return library.literal(text);
+        }
+    }
+
+    /** Compiles a command: a trigger for each route, and its messages. */
+    private CompiledCommand command(String name, ParsedScript script, Map<FunctionInfo, FunctionHandle> functions,
+            ParsedStructure.Command command) throws CompileException {
+        ParsedStructure.CommandNode root = command.root();
+        Map<String, String> entries = root.entries();
+        int line = command.structure().node().line().number();
+        CompiledCommand.CooldownStorage storage = null;
+        Expr storageName = root.messages().get("cooldown storage");
+        if (storageName != null) {
+            String value = entries.get("cooldown storage");
+            Line storageLine = root.entryLines().get("cooldown storage");
+            try {
+                storage = new CompiledCommand.CooldownStorage(compiler(functions, script).compileCooldownStorage(name,
+                        storageLine == null ? line : storageLine.number(), '"' + value.replace("\"", "\"\"") + '"',
+                        storageName), globals);
+            } catch (CompileException e) {
+                // As in Skript, reported at its entry, and the command loads without it.
+                report(name, e);
+            }
+        }
+        Timespan cooldown = null;
+        if (entries.containsKey("cooldown")) {
+            // As in Skript, one that isn't a timespan is no cooldown.
+            cooldown = Timespan.parse(entries.get("cooldown"));
+        }
+        Trigger cooldownMessage = message(name, script, functions, root, "cooldown message");
+        if (cooldown == null) {
+            // Skript's warnings, for the entries that loaded: a cooldown message whose code fails isn't one.
+            for (String unused : List.of("message", "bypass", "storage")) {
+                boolean set = switch (unused) {
+                    case "message" -> cooldownMessage != null;
+                    case "bypass" -> entries.containsKey("cooldown bypass");
+                    default -> storage != null;
+                };
+                if (set) {
+                    warnings.add(new Diagnostic(Severity.WARNING, name, line, 0, 0,
+                            "There is a cooldown " + unused + " set, but not a cooldown"));
+                }
+            }
+        }
+        List<String> aliases = new ArrayList<>();
+        if (entries.containsKey("aliases")) {
+            for (String alias : ALIAS_SEPARATOR.split(entries.get("aliases").strip())) {
+                String a = alias.strip();
+                if (a.startsWith("/")) {
+                    a = a.substring(1);
+                }
+                if (!a.isEmpty()) {
+                    aliases.add(a);
+                }
+            }
+        }
+        // Only checked, for Skript's errors: the usage is shown as written.
+        message(name, script, functions, root, "usage");
+        List<CompiledCommand.Route> routes = new ArrayList<>();
+        Map<CommandPattern.Argument, CompiledCommand.Suggester> suggesters = new java.util.IdentityHashMap<>();
+        routes(name, script, functions, root, List.of(), Set.of(), entries.get("permission"),
+                command.structure().node().line().key(), routes, suggesters);
+        return new CompiledCommand(name, line, command.name(), aliases, entries.get("description"), entries.get("usage"),
+                entries.get("permission"), message(name, script, functions, root, "permission message"), cooldown,
+                entries.get("cooldown bypass"), cooldownMessage, storage,
+                entries.get("prefix"), routes, suggesters);
+    }
+
+    private static final java.util.regex.Pattern ALIAS_SEPARATOR =
+            java.util.regex.Pattern.compile("\\s*,\\s*(?:and\\s+)?|\\s+and\\s+");
+
+    /** Adds the routes of {@code node} and its subcommands, subcommands first. */
+    private void routes(String name, ParsedScript script, Map<FunctionInfo, FunctionHandle> functions,
+            ParsedStructure.CommandNode node, List<CommandPattern.Part> prefix, Set<String> executors, String permission,
+            String header, List<CompiledCommand.Route> routes,
+            Map<CommandPattern.Argument, CompiledCommand.Suggester> suggesters) throws CompileException {
+        List<CommandPattern.Part> pattern = new ArrayList<>(prefix);
+        pattern.addAll(node.pattern());
+        if (node.entries().containsKey("executable by")) {
+            executors = executors(node.entries().get("executable by"));
+        }
+        if (node.entries().containsKey("permission")) {
+            permission = node.entries().get("permission");
+        }
+        for (ParsedStructure.CommandNode subcommand : node.subcommands()) {
+            routes(name, script, functions, subcommand, pattern, executors, permission,
+                    subcommand.group() ? header : subcommand.line().key(), routes, suggesters);
+        }
+        if (node.suggestions() != null) {
+            suggester(name, script, functions, node, pattern, suggesters);
+        }
+        if (node.trigger() != null) {
+            List<CommandPattern.Argument> arguments = new ArrayList<>();
+            CommandPattern.arguments(pattern, arguments);
+            List<CommandPattern.Choice> choices = new ArrayList<>();
+            CommandPattern.choices(pattern, choices);
+            Trigger trigger = skipping(functions, script, compiler -> compiler
+                    .compileCommand(name, node.line().number(), header, arguments, choices.size(), node.trigger()));
+            routes.add(new CompiledCommand.Route(pattern, executors, permission, trigger,
+                    new CompiledCommand.Matcher(pattern, arguments, choices, library::parser)));
+        }
+    }
+
+    /**
+     * Compiles a {@code suggestions:} entry. As in Skript, it works out the suggestions of the arguments of its
+     * own command or subcommand that its code changes the suggestions of.
+     */
+    private void suggester(String name, ParsedScript script, Map<FunctionInfo, FunctionHandle> functions,
+            ParsedStructure.CommandNode node, List<CommandPattern.Part> pattern,
+            Map<CommandPattern.Argument, CompiledCommand.Suggester> suggesters) throws CompileException {
+        List<CommandPattern.Argument> arguments = new ArrayList<>();
+        CommandPattern.arguments(pattern, arguments);
+        List<CommandPattern.Choice> choices = new ArrayList<>();
+        CommandPattern.choices(pattern, choices);
+        Set<Integer> suggesting = new java.util.TreeSet<>();
+        Trigger trigger = skipping(functions, script, compiler -> {
+            // What code left out on the next try said doesn't count.
+            suggesting.clear();
+            return compiler.compileSuggestions(name, node.suggestionsLine().number(), node.suggestionsLine().key(),
+                    arguments, choices.size(), node.suggestions(), suggesting);
+        });
+        CompiledCommand.Suggester suggester = new CompiledCommand.Suggester(trigger, arguments, choices.size());
+        List<CommandPattern.Argument> own = new ArrayList<>();
+        CommandPattern.arguments(node.pattern(), own);
+        for (int index : suggesting) {
+            CommandPattern.Argument argument = arguments.get(index);
+            if (own.stream().anyMatch(a -> a == argument)) {
+                suggesters.put(argument, suggester);
+            }
+        }
+    }
+
+    private static Set<String> executors(String entry) {
+        Set<String> executors = new java.util.LinkedHashSet<>();
+        for (String word : entry.strip().toLowerCase(java.util.Locale.ROOT)
+                .split("\\s*(?:,\\s*(?:and\\s+|or\\s+)?|\\s+and\\s+|\\s+or\\s+)\\s*")) {
+            executors.add(switch (word) {
+                case "player", "players" -> "players";
+                case "console", "the console" -> "console";
+                case "op", "ops", "operator", "operators" -> "operators";
+                case "block", "blocks", "command block", "command blocks" -> "command blocks";
+                default -> "entities";
+            });
+        }
+        return executors;
+    }
+
+    /** A trigger working out one of the command's messages, or {@code null} if it doesn't have it. */
+    private Trigger message(String name, ParsedScript script, Map<FunctionInfo, FunctionHandle> functions,
+            ParsedStructure.CommandNode root, String entry) throws CompileException {
+        Expr message = root.messages().get(entry);
+        if (message == null) {
+            return null;
+        }
+        Line entryLine = root.entryLines().get(entry);
+        int line = entryLine == null ? root.line().number() : entryLine.number();
+        String value = root.entries().get(entry);
+        try {
+            return compiler(functions, script).compileCommandMessage(name, line,
+                    '"' + value.replace("\"", "\"\"") + '"', message);
+        } catch (CompileException e) {
+            // As in Skript, a message whose code fails is reported at its entry, and the command loads without it.
+            report(script.file().name(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Skript's test-only top-level {@code parse:} block: the problems its code had are stored in the list
+     * variable named by its {@code results:} entry, for tests to check.
+     */
+    private void parseResults(ParsedStructure.Parse parse, String name, ParsedScript script,
+            Map<FunctionInfo, FunctionHandle> functions) {
+        List<Object> messages = new ArrayList<>(parse.captured().stream().map(Diagnostic::message).toList());
+        // What its code's elements say while being set up, as compiling it would: 'cancel event' in 'on quit'.
+        for (ParsedStructure code : parse.code()) {
+            if (code.structure().kind() == co.xenastudios.neoskript.frontend.structure.Structure.Kind.ALIASES) {
+                aliases(code.structure().section(), new java.util.HashMap<>(), null)
+                        .forEach(problem -> messages.add(problem.message()));
+                continue;
+            }
+            if (code instanceof ParsedStructure.Parse inner) {
+                String results = resultsEntry(inner);
+                if (results != null && !(results.startsWith("{") && results.endsWith("::*}"))) {
+                    messages.add(results + " cannot be set to strings");
+                }
+                continue;
+            }
+            try {
+                if (code instanceof ParsedStructure.Event event
+                        && library.binding(event.event().syntax()) instanceof Library.ServerEvent serverEvent) {
+                    new TriggerCompiler(library, functions, globals, script).warnings((at, message) -> messages.add(message)).compileTrigger(name, event, serverEvent);
+                } else if (code instanceof ParsedStructure.Function function) {
+                    new TriggerCompiler(library, functions, globals, script).warnings((at, message) -> messages.add(message))
+                            .compileFunction(name, function);
+                } else if (code instanceof ParsedStructure.Event event
+                        && library.binding(event.event().syntax()) instanceof ScriptEvent) {
+                    new TriggerCompiler(library, functions, globals, script).warnings((at, message) -> messages.add(message)).compileScriptTrigger(name, event.body());
+                }
+            } catch (CompileException e) {
+                if (!e.alreadyReported() && !e.getMessage().startsWith("NeoSkript can't")) {
+                    messages.add(e.getMessage());
+                }
+                for (Throwable more : e.getSuppressed()) {
+                    if (more instanceof CompileException other && !other.alreadyReported()
+                            && !other.getMessage().startsWith("NeoSkript can't")) {
+                        messages.add(other.getMessage());
+                    }
+                }
+            } catch (RuntimeException e) {
+                // Only problems with the script are results.
+            }
+        }
+        for (co.xenastudios.neoskript.frontend.structure.Node child : parse.structure().section().children()) {
+            String text = child.line().text().strip();
+            if (text.toLowerCase(java.util.Locale.ROOT).startsWith("results:")) {
+                String variable = text.substring("results:".length()).strip();
+                if (variable.startsWith("{") && variable.endsWith("::*}")) {
+                    globals.setList(variable.substring(1, variable.length() - 4), messages.toArray());
+                } else if (variable.startsWith("{") && variable.endsWith("}") && !variable.contains("%")) {
+                    // A single variable is set to the first problem, as setting it to several sets it to one.
+                    globals.set(variable.substring(1, variable.length() - 1), messages.isEmpty() ? null : messages.getFirst());
+                }
+            }
+        }
+    }
+
+    /** What a {@code parse:} block's {@code results:} entry says, or {@code null} if it has none. */
+    private static String resultsEntry(ParsedStructure.Parse parse) {
+        for (co.xenastudios.neoskript.frontend.structure.Node child : parse.structure().section().children()) {
+            String text = child.line().text().strip();
+            if (text.toLowerCase(java.util.Locale.ROOT).startsWith("results:")) {
+                return text.substring("results:".length()).strip();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * A test's trigger. As Skript's test structure does, a {@code when} condition that's false when the script loads
+     * skips the test without its code being loaded: {@code test "x" when running minecraft "1.21.11":} uses what
+     * older versions don't have. The test is then only its condition, which skips it when it runs.
+     */
+    private co.xenastudios.neoskript.runtime.Trigger test(String name, ParsedScript script,
+            Map<FunctionInfo, FunctionHandle> functions, ParsedStructure.Custom test) throws CompileException {
+        if (test.syntax().match().regexValues().getFirst() instanceof co.xenastudios.neoskript.frontend.parse.ParsedSyntax) {
+            co.xenastudios.neoskript.runtime.Trigger condition = compiler(functions, script).compileTest(name, test, false);
+            co.xenastudios.neoskript.runtime.testing.TestRun.begin();
+            try {
+                condition.execute(new co.xenastudios.neoskript.runtime.SimpleTriggerContext(
+                        new co.xenastudios.neoskript.runtime.testing.TestEvent()));
+            } catch (RuntimeException e) {
+                // Not something to decide at load: the test runs, and its condition with it.
+            }
+            boolean skipped = co.xenastudios.neoskript.runtime.testing.TestRun.skipped();
+            co.xenastudios.neoskript.runtime.testing.TestRun.begin();
+            if (skipped) {
+                return condition;
+            }
+        }
+        return compiler(functions, script).compileTest(name, test, true);
+    }
+
+    /** The name of a {@code test "name":} structure, or {@code null} if it isn't one. */
+    private String testName(ParsedStructure structure) {
+        if (!(structure instanceof ParsedStructure.Custom custom)
+                || !(library.binding(custom.syntax().syntax()) instanceof Library.Core core)
+                || !core.id().equals(CoreSyntax.TEST)
+                || !(custom.syntax().match().values().getFirst() instanceof co.xenastudios.neoskript.frontend.parse.Expr.Text text)) {
+            return null;
+        }
+        String key = custom.structure().node().line().key();
+        return key.substring(text.start() + 1, text.end() - 1).replace("\"\"", "\"");
+    }
+}

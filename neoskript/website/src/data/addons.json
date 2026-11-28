@@ -1,0 +1,38 @@
+{
+  "_": "Official NeoSkript addons: made and maintained by Xena Studios, released and tested with NeoSkript. Shown on /addons/. Each entry: name, summary (one sentence), adds (what syntax it gives scripts), example (a few lines of script), version, status (beta or stable), and links (modrinth, source, docs; any can be left out).",
+  "official": [
+    {
+      "name": "NeoSkript YAML",
+      "summary": "YAML files from scripts, with skript-yaml's syntax: scripts written for skript-yaml run unchanged.",
+      "adds": "Loading, reading, changing and saving YAML files, with their comments and headers. Saves are written off the server's threads and never half written, on Paper and Folia.",
+      "example": "load yaml \"plugins/MyScript/config.yml\" as \"config\"\nset yaml value \"spawn.world\" of \"config\" to \"world\"\nsave yaml \"config\"",
+      "status": "beta",
+      "links": {
+        "docs": "/docs/addons/yaml/",
+        "source": "https://github.com/xena-studios/plugins/tree/main/neoskript/addons/yaml"
+      }
+    },
+    {
+      "name": "NeoSkriptWeb",
+      "summary": "HTTP requests, webhooks and JSON for scripts, without blocking the server. Scripts written for Reqn, or for skJson's requests and JSON, run unchanged.",
+      "adds": "Requests that wait for their answer without blocking the server, JSON from text and the web, and JSON into list variables and back.",
+      "example": "send a \"POST\" request to {webhook} with header \"Content-Type: application/json\" and body {_body}\nset {_json} to json from url \"https://api.example.com/data.json\"\nmap {_json} to {_data::*}",
+      "status": "beta",
+      "links": {
+        "docs": "/docs/addons/web/",
+        "source": "https://github.com/xena-studios/plugins/tree/main/neoskript/addons/web"
+      }
+    },
+    {
+      "name": "NeoSkript Reflect",
+      "summary": "Java from scripts, with skript-reflect's syntax: its imports, Java calls and events work unchanged, with custom syntax to come.",
+      "adds": "Imports, Java methods, fields and constructors, arrays, and triggers for any Bukkit event. Calls are looked up once and compiled to method handles, on Paper and Folia.",
+      "example": "import:\n\tjava.lang.Math\n\non load:\n\tsend \"%Math.max(3, 7)%\" to console",
+      "status": "beta",
+      "links": {
+        "docs": "/docs/addons/reflect/",
+        "source": "https://github.com/xena-studios/plugins/tree/main/neoskript/addons/reflect"
+      }
+    }
+  ]
+}

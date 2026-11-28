@@ -1,0 +1,37 @@
+name: NeoSkript
+version: '${version}'
+main: co.xenastudios.neoskript.plugin.NeoSkriptPlugin
+api-version: '1.21.4'
+folia-supported: true
+# Plugins NeoSkript hooks into, as Skript does, so they're enabled first.
+softdepend: [Vault, WorldGuard, GriefPrevention]
+description: A fast, modern drop-in replacement for Skript.
+website: https://xenastudios.co
+authors: [Xena Studios]
+commands:
+  skript:
+    description: NeoSkript's main command, as Skript's /skript. Type '/sk help' for more information.
+    usage: /sk help
+    aliases: [sk, neoskript, ns]
+    permission: skript.admin
+# Skript's permissions.
+permissions:
+  skript.*:
+    default: false
+    children:
+      skript.effectcommands: true
+      skript.reloadnotify: true
+      skript.admin: true
+      skript.see_runtime_errors: true
+  skript.effectcommands:
+    default: false
+    description: Allows to use effects as commands, e.g. '!set health to 10'
+  skript.reloadnotify:
+    default: false
+    description: Notifies when others are reloading script files.
+  skript.admin:
+    default: op
+    description: Allows use of administrative commands and receiving notifications of new versions.
+  skript.see_runtime_errors:
+    default: op
+    description: Shows notifications in chat when runtime errors occur.

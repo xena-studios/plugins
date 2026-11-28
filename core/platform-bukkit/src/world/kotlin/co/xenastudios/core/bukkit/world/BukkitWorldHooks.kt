@@ -185,11 +185,21 @@ internal object Keys {
 
     fun of(type: org.bukkit.entity.EntityType): String = entities[type.ordinal] ?: entityKey(type).also { entities[type.ordinal] = it }
 
-    // EntityType is Keyed from 1.14; on 1.13 its savegame name is the id's path.
+    /**
+     * EntityType has getKey() from 1.14 (it became Keyed). Looked up by reflection, once: a plain
+     * `(type as? Keyed)?.key` is rewritten by R8, which shrinks against the newest API where every
+     * EntityType is Keyed, into a direct EntityType.getKey() call that 1.13 doesn't have.
+     */
+    private val getKey: java.lang.reflect.Method? = try {
+        org.bukkit.entity.EntityType::class.java.getMethod("getKey")
+    } catch (e: NoSuchMethodException) {
+        null
+    }
+
+    // On 1.13 its savegame name is the id's path. Each type's id is worked out once (see [of]).
     @Suppress("DEPRECATION")
     private fun entityKey(type: org.bukkit.entity.EntityType): String {
-        val keyed = (type as Any) as? org.bukkit.Keyed
-        if (keyed != null) return keyed.key.toString()
+        getKey?.let { return it.invoke(type).toString() }
         // getName(), the savegame id, not the enum constant's name (which Kotlin's .name would be).
         val id: String? = type.getName()
         return "minecraft:" + (id ?: type.toString().lowercase())

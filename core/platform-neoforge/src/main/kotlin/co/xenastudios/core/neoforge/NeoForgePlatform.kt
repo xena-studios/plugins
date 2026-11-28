@@ -28,6 +28,7 @@ import co.xenastudios.core.jvm.db.DriverFetcher
 import co.xenastudios.core.jvm.db.OnDemandDriverFetcher
 import co.xenastudios.core.jvm.platform.FolderStorage
 import co.xenastudios.core.jvm.platform.Slf4jLog
+import co.xenastudios.core.jvm.scheduler.TickScheduler
 import co.xenastudios.core.jvm.update.JvmHttp
 import co.xenastudios.core.loader.OnDemandLibraries
 import net.minecraft.server.MinecraftServer

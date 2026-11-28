@@ -14,6 +14,7 @@ The rewrite: the same commands, permissions, settings, remotes and repository as
 - **Messages in `lang/`**, in English, German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese, each player in their own.
 - **`/xbackup debug`** writes a report to share when asking for help.
 - **The command-line restore runs on Java 8** and newer, and restores a Fabric server's backups too.
+- **A backup during a download or a save leaves the unfinished file out.** A library a plugin is still downloading (`*.part`) or a file being saved (`.<name>.<random>.tmp`) is never backed up, and a file that goes away or keeps changing while it's read is left out of that backup with a note in the console, keeping its copy from the last backup if there is one; the next backup reads it again. Before, it could be copied mid-write with a warning.
 
 ### Upgrading from 1.x
 

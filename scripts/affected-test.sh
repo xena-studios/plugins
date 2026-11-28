@@ -292,8 +292,7 @@ check "xStats' Velocity side" xstats/velocity/src/main/kotlin/co/xenastudios/xst
 check "xStats' network test" xstats/velocity/network.sh \
   $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=proxy'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
-check "Today's plugin" xplots/src/main/java/co/xenastudios/xplots/XPlots.java \
-  $'units=xplots\ncompile=:xplots:compileJava\nchecks=xplots/boot-checks.txt\nboot='
+# No "today's plugin" case: xStats 2.0 was the last plugin still on today's Java core.
 check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric proxy'
 # The floor check reads the shrunk jars and changes none, so nothing boots again.

@@ -18,13 +18,19 @@ import java.nio.charset.StandardCharsets
 
 /**
  * xUtilities as a server-side NeoForge mod: the shared plugin on platform-neoforge, as its
- * Fabric mod is on platform-fabric. `config.yml` (in `config/xutilities/`) is read as the mod is
- * made, so its commands are registered when Minecraft builds its command tree; the family's
+ * Fabric mod is on platform-fabric. `config.yml` (in `config/xutilities/`) is read as the mod
+ * starts, so its commands are registered when Minecraft builds its command tree; the family's
  * settings and `lang/` are read off the server thread after, and apply once the server ticks.
  */
 @Mod(XUtilitiesPlugin.PLUGIN_ID)
 public class XUtilitiesMod {
+    // NeoForge makes every mod at once, on several threads, before Minecraft is set up: the
+    // plugin starts at common setup instead, on the main thread (NeoForgePlatform.whenSetUp).
     init {
+        NeoForgePlatform.whenSetUp(XUtilitiesPlugin.PLUGIN_ID) { start() }
+    }
+
+    private fun start() {
         val platform = NeoForgePlatform(XUtilitiesPlugin.PLUGIN_ID, XUtilitiesPlugin.NAME)
         val family = platform.family
         val files = JvmFiles(platform.storage.root, family.family, shipped(), platform.log)

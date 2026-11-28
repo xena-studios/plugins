@@ -59,12 +59,15 @@
 :core:platform-fabric:twin:26.3 310
 # xSample on NeoForge (core/platform-neoforge/sandbox, its own build), one jar a Minecraft line:
 # the adapter and the core relocated, Kotlin for Forge's stdlib and the YAML parser downloaded,
-# no world hooks yet: 356 KiB shrunk (1,518 KiB before). Lines size + about 10%.
+# no world hooks yet: 356 KiB shrunk (1,518 KiB before), on Forge 1.20.1 too (its node, measured
+# before the jar is remapped to SRG names, which adds 5-10 KiB). Lines size + about 10%.
+:core:platform-neoforge:sandbox:1.20.1-forge 390
 :core:platform-neoforge:sandbox:1.21.1 390
 :core:platform-neoforge:sandbox:1.21.11 390
 :core:platform-neoforge:sandbox:26.3 390
 # xTwin on NeoForge, the family test's second mod, packaged as every mod is (xena.neoforge-mod):
 # 280 KiB. Never released.
+:core:platform-neoforge:twin:1.20.1-forge 310
 :core:platform-neoforge:twin:1.21.1 310
 :core:platform-neoforge:twin:1.21.11 310
 :core:platform-neoforge:twin:26.3 310
@@ -77,7 +80,9 @@
 :core:platform-fabric:xutilities:1.20.1 476
 :core:platform-fabric:xutilities:1.21.11 477
 :core:platform-fabric:xutilities:26.3 490
-# On NeoForge, 461 KiB on every line, shrunk, its core relocated (xena.neoforge-mod); lines size + about 10%.
+# On NeoForge, 461 KiB on every line, shrunk, its core relocated (xena.neoforge-mod), and on Forge
+# 1.20.1 (measured before the SRG remap); lines size + about 10%.
+:core:platform-neoforge:xutilities:1.20.1-forge 505
 :core:platform-neoforge:xutilities:1.21.1 505
 :core:platform-neoforge:xutilities:1.21.11 505
 :core:platform-neoforge:xutilities:26.3 505

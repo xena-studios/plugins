@@ -43,8 +43,7 @@ core/
   core-testing       KMP: a fake platform with virtual time, for every plugin's tests
   platform-bukkit    1.8.8 → latest, with Paper and Folia paths picked once at startup
   platform-fabric    server-side, one jar per Minecraft line through Stonecutter
-  platform-neoforge  likewise
-  platform-forge     1.20.1 only
+  platform-neoforge  likewise, with Forge 1.20.1 as a node of the same tree (decisions/2026-11-28-neoforge-and-forge.md)
   platform-sponge    API 8+
   platform-velocity  3.4 → 4.x, a plugin's proxy side; the proxy layer to its servers is in common
   platform-bungee    BungeeCord and Waterfall
@@ -56,7 +55,7 @@ neoskript/   NeoSkript: its engine, standard library, add-ons, CLI, editors and 
 <plugin>/
   api/      the public API, platform-neutral
   common/   KMP: all the plugin's logic
-  bukkit/ fabric/ neoforge/ forge/ sponge/ velocity/ pumpkin/ vine/ minestom/ hytale/   thin adapters
+  bukkit/ fabric/ neoforge/ (Forge 1.20.1 too) sponge/ velocity/ pumpkin/ vine/ minestom/ hytale/   thin adapters
 ```
 
 - Until a plugin's rewrite replaces it, today's Java stays on `main` beside the rewrite: the Java core is `core/` itself (the `:core` project), with the modules above as subprojects in its folder, and each plugin's Java stays in its folder until its milestone rewrites it in place.

@@ -12,7 +12,7 @@ description = "The core's sample plugin on NeoForge, for boot tests. Never relea
 [[dependencies.xsample]]
 modId = "neoforge"
 type = "required"
-versionRange = "${neoforge}"
+versionRange = "${loader}"
 ordering = "NONE"
 side = "BOTH"
 

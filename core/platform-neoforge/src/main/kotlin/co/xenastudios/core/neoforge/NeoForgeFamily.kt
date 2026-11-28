@@ -16,6 +16,7 @@ import net.neoforged.fml.loading.FMLPaths
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.entity.player.PlayerEvent
 import java.util.concurrent.ConcurrentMap
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -32,7 +33,8 @@ import kotlin.time.Duration.Companion.seconds
  *
  * **Joins, quits and language changes go into the player cache,** which every plugin's messages
  * read the language from: the languages of the players online are compared every
- * [LANGUAGE_CHECK], as on Fabric.
+ * [LANGUAGE_CHECK], as on Fabric, and on Forge 1.20.1 a joining player's more often for its
+ * first seconds, until its client's options have come.
  *
  * Made by [NeoForgePlatform.family] as the mod starts. It reads `config/xena/config.yml` there,
  * while mods load and before the server's thread exists, and [reload] reads it again on a reload,
@@ -62,9 +64,25 @@ public class NeoForgeFamily internal constructor(private val platform: NeoForgeP
         NeoForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, PlayerEvent.PlayerLoggedInEvent::class.java) { event ->
             val player = event.entity as? ServerPlayer ?: return@addListener
             players.joined(player.ref, player.scoreboardName, NeoForgeLanguages.clientLocale(player))
+            //? if forge {
+            /*// Forge 1.20.1 hears the client's language from its options packet, which comes just
+            // after the login: it's read again every quarter second for the first two seconds.
+            var left = 8
+            platform.scheduler.run(Where.Global, period = 250.milliseconds) { task ->
+                if (player.hasDisconnected() || left-- <= 0) task.cancel() else recordLanguage(player)
+            }
+            *///?}
         }
+        //? if forge {
+        /*NeoForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, PlayerEvent.Clone::class.java) { event ->
+            val original = event.original as? ServerPlayer
+            val respawned = event.entity as? ServerPlayer
+            if (original != null && respawned != null) NeoForgeLanguages.respawned(original, respawned)
+        }
+        *///?}
         NeoForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, PlayerEvent.PlayerLoggedOutEvent::class.java) { event ->
-            (event.entity as? ServerPlayer)?.let { players.left(it.ref) }
+            val player = event.entity as? ServerPlayer ?: return@addListener
+            players.left(player.ref)
         }
         platform.scheduler.every(Where.Global, LANGUAGE_CHECK) {
             val server = platform.server ?: return@every

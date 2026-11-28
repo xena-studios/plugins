@@ -14,6 +14,28 @@ plugins {
 stonecutter active "26.3"
 
 stonecutter parameters {
+    // Forge 1.20.1's node (settings.gradle.kts): NeoForge's names, as the source has them, become
+    // Forge's. Longest first, so a package's own rule wins over the shorter one around it. The
+    // source is always NeoForge's: don't make the Forge node the active one.
+    val forge = current.project.endsWith("-forge")
+    constants["forge"] = forge
+    replacements {
+        string(forge) {
+            replace("net.neoforged.neoforge.common.NeoForge", "net.minecraftforge.common.MinecraftForge")
+        }
+        string(forge) {
+            replace("NeoForge.EVENT_BUS", "MinecraftForge.EVENT_BUS")
+        }
+        string(forge) {
+            replace("net.neoforged.neoforge.", "net.minecraftforge.")
+        }
+        string(forge) {
+            replace("net.neoforged.fml.", "net.minecraftforge.fml.")
+        }
+        string(forge) {
+            replace("net.neoforged.bus.api.", "net.minecraftforge.eventbus.api.")
+        }
+    }
     // Minecraft 1.21.5 made click and hover events records, one class per action.
     constants["click_records"] = current.parsed >= "1.21.5"
     // 1.21.11 renamed ResourceLocation to Identifier, and ResourceKey.location() to identifier().

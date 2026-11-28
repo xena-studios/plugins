@@ -25,7 +25,13 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent
  */
 @Mod("xsample")
 public class XSampleMod {
+    // NeoForge makes every mod at once, on several threads, before Minecraft is set up: the
+    // plugin starts at common setup instead, on the main thread (NeoForgePlatform.whenSetUp).
     init {
+        NeoForgePlatform.whenSetUp("xsample") { start() }
+    }
+
+    private fun start() {
         val platform = NeoForgePlatform("xsample", "xSample")
         val family = platform.family
         // English from the code, read for each source's language: the plugin's lang/ files and

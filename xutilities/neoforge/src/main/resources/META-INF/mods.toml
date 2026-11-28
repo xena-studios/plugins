@@ -1,0 +1,34 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "GPL-3.0-only"
+issueTrackerURL = "https://github.com/xena-studios/plugins/issues"
+
+[[mods]]
+modId = "xutilities"
+version = "${version}"
+displayName = "xUtilities"
+authors = "Xena Studios"
+displayURL = "https://plugins.xenastudios.co/xutilities/"
+description = "Every command you need. None you don't. Server-side: players install nothing."
+
+[[dependencies.xutilities]]
+modId = "forge"
+mandatory = true
+versionRange = "${loader}"
+ordering = "NONE"
+side = "SERVER"
+
+[[dependencies.xutilities]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "SERVER"
+
+# The Kotlin stdlib.
+[[dependencies.xutilities]]
+modId = "kotlinforforge"
+mandatory = true
+versionRange = "${kff}"
+ordering = "NONE"
+side = "SERVER"

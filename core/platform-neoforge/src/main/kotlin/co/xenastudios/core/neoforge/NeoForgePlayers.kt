@@ -61,16 +61,37 @@ public class NeoForgeOnlinePlayers(private val server: () -> MinecraftServer?) :
  * [co.xenastudios.core.common.i18n.LanguageSource]).
  *
  * Minecraft 1.20.1 doesn't keep the client's language after reading its options packet (1.20.2
- * started to), and reaching that packet would take a mixin, so on 1.20.1 every player reads the
- * family's `default-language`.
+ * started to), but Forge 1.20.1 does: its `ServerPlayer.getLanguage()`. Forge doesn't copy it to
+ * the new player a respawn makes (`restoreFrom`), which would read `en_us` until the client's next
+ * login, so on Forge [respawned] puts it back ([NeoForgeFamily] hears the respawn).
  */
 public object NeoForgeLanguages {
-    /** [player]'s client locale, or `null` where Minecraft doesn't keep it (1.20.1). */
+    /** [player]'s client locale. */
     public fun clientLocale(player: ServerPlayer): String? =
         //? if client_information {
         player.clientInformation().language()
         //?} else
-        //null
+        //player.language
+
+    //? if forge {
+    /*// Forge's own field, which keeps its name on a server (only vanilla's members are SRG
+    // names there); `null` if a Forge build ever renames it, and then a respawn reads en_us.
+    private val language: java.lang.reflect.Field? by lazy {
+        try {
+            ServerPlayer::class.java.getDeclaredField("language").apply { isAccessible = true }
+        } catch (_: ReflectiveOperationException) {
+            null
+        } catch (_: RuntimeException) {
+            null
+        }
+    }
+
+    /** Gives [respawned], the player Minecraft made from [original], [original]'s language. */
+    internal fun respawned(original: ServerPlayer, respawned: ServerPlayer) {
+        val kept = original.language
+        if (kept != respawned.language) language?.set(respawned, kept)
+    }
+    *///?}
 }
 
 /**

@@ -15,7 +15,13 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent
  */
 @Mod("xtwin")
 public class XTwinMod {
+    // NeoForge makes every mod at once, on several threads, before Minecraft is set up: the
+    // plugin starts at common setup instead, on the main thread (NeoForgePlatform.whenSetUp).
     init {
+        NeoForgePlatform.whenSetUp("xtwin") { start() }
+    }
+
+    private fun start() {
         val platform = NeoForgePlatform("xtwin", "xTwin")
         val family = platform.family
         val twin = XTwin(platform, family.family, family.players, platform.commands, about = platform::about) {

@@ -28,6 +28,7 @@ import co.xenastudios.core.jvm.db.DriverFetcher
 import co.xenastudios.core.jvm.db.OnDemandDriverFetcher
 import co.xenastudios.core.jvm.platform.FolderStorage
 import co.xenastudios.core.jvm.platform.Slf4jLog
+import co.xenastudios.core.jvm.scheduler.TickScheduler
 import co.xenastudios.core.jvm.update.JvmHttp
 import co.xenastudios.core.loader.OnDemandLibraries
 import net.minecraft.server.MinecraftServer
@@ -39,6 +40,7 @@ import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.entity.player.PlayerEvent
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent
 import net.neoforged.neoforge.event.server.ServerStoppedEvent
+//? if !forge
 import net.neoforged.neoforge.event.tick.ServerTickEvent
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
@@ -47,8 +49,8 @@ import net.neoforged.neoforge.event.server.ServerStartedEvent as NeoServerStarte
 import net.neoforged.neoforge.event.server.ServerStoppingEvent as NeoServerStopping
 
 /**
- * The core's [Platform] on a NeoForge server, made once by each plugin as its mod is made (its
- * `@Mod` class's constructor), before there's a server: everything it needs from the server it
+ * The core's [Platform] on a NeoForge server, made once by each plugin as it starts (at its mod's
+ * common setup, [whenSetUp]), before there's a server: everything it needs from the server it
  * reaches through [server] once the server is starting, and work scheduled before then waits for
  * the first tick. The twin of platform-fabric's `FabricPlatform`, member for member, so a
  * plugin's NeoForge entry reads as its Fabric one (decisions/2026-11-28-neoforge-and-forge.md).
@@ -91,7 +93,7 @@ public class NeoForgePlatform(
         NeoForgeLibraries.load(log)
     }
 
-    override val name: String = "NeoForge ${version("minecraft")}"
+    override val name: String = "$LOADER ${version("minecraft")}"
 
     override val threading: Threading get() = Threading.MAIN_THREAD
 
@@ -170,12 +172,12 @@ public class NeoForgePlatform(
      */
     public fun about(): Map<String, String> {
         val mods = ModList.get().mods
-            .filter { it.modId != "minecraft" && it.modId != "neoforge" }
+            .filter { it.modId != "minecraft" && it.modId != LOADER_ID }
             .map { "${it.modId} ${it.version}" }
             .sorted()
         return linkedMapOf(
             "Java" to "${System.getProperty("java.version")} (${System.getProperty("java.vendor")})",
-            "Server" to "$name, NeoForge ${version("neoforge")}",
+            "Server" to "$name, $LOADER ${version(LOADER_ID)}",
             "Mods" to "${mods.size}: ${mods.joinToString(", ")}",
         )
     }
@@ -233,7 +235,7 @@ public class NeoForgePlatform(
             override fun mayKnow(player: PlayerRef): Boolean =
                 running?.player(player)?.let { permissions.has(it, node) } == true
         }
-        val releases = ModrinthReleases(project, "neoforge", version("minecraft"), current, JvmHttp())
+        val releases = ModrinthReleases(project, LOADER_ID, version("minecraft"), current, JvmHttp())
         val checker = UpdateChecker(this, displayName, current, releases, notices)
         val joins = bus.subscribe(PlayerJoinEvent.TYPE) { event -> checker.joined(event.player) }
         updates?.let { (old, subscription) -> subscription.cancel(); old.close() }
@@ -257,6 +259,11 @@ public class NeoForgePlatform(
             scheduler.close(wait = 10.seconds)
             running = null
         }
+        //? if forge {
+        /*game.addListener(NeoPriority.NORMAL, false, net.minecraftforge.event.TickEvent.ServerTickEvent::class.java) { event ->
+            if (event.phase == net.minecraftforge.event.TickEvent.Phase.START) scheduler.tick()
+        }
+        *///?} else
         game.addListener(NeoPriority.NORMAL, false, ServerTickEvent.Pre::class.java) { _ -> scheduler.tick() }
         game.addListener(NeoPriority.NORMAL, false, PlayerEvent.PlayerLoggedInEvent::class.java) { event ->
             val player = event.entity as? ServerPlayer ?: return@addListener
@@ -280,13 +287,46 @@ public class NeoForgePlatform(
         return server.allLevels.any { it.getEntity(uuid) != null }
     }
 
-    private companion object {
-        /** A loaded mod's version, `minecraft` and `neoforge` among them; `?` for none. */
-        fun version(mod: String): String =
+    public companion object {
+        /**
+         * Runs [start], a plugin's start (making its platform among it), once the game is set up:
+         * at the mod's common setup, on the main thread, one mod at a time (`enqueueWork`). Call it
+         * from the `@Mod` class's constructor, and nothing else there.
+         *
+         * NeoForge (and Forge) make every mod at once, on several threads, before Minecraft's own
+         * classes are set up: two mods setting the same class up at once can each wait for the
+         * other for good (a server hung so with xBans and zChat), and NeoForge's own mod is made
+         * then too. By common setup, Minecraft is bootstrapped and its registries are made, and
+         * the server's commands aren't built yet, so a plugin's commands still come with them.
+         */
+        @JvmStatic
+        public fun whenSetUp(modId: String, start: Runnable) {
+            val container = ModList.get().getModContainerById(modId).orElseThrow { IllegalStateException("No mod $modId is loaded") }
+            //? if forge {
+            /*val bus = (container as net.minecraftforge.fml.javafmlmod.FMLModContainer).eventBus
+            *///?} else
+            val bus = container.eventBus ?: error("$modId has no event bus")
+            bus.addListener(NeoPriority.NORMAL, false, net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent::class.java) { event ->
+                event.enqueueWork(start)
+            }
+        }
+
+        // The loader, by name and by its mod's id (Modrinth's loader too): NeoForge, or Forge on
+        // Forge 1.20.1's node.
+        //? if forge {
+        /*private const val LOADER = "Forge"
+        private const val LOADER_ID = "forge"
+        *///?} else {
+        private const val LOADER = "NeoForge"
+        private const val LOADER_ID = "neoforge"
+        //?}
+
+        /** A loaded mod's version, `minecraft` and the loader's among them; `?` for none. */
+        private fun version(mod: String): String =
             ModList.get().getModContainerById(mod).map { it.modInfo.version.toString() }.orElse("?")
 
         /** Whether this is a real server, not ModDevGradle's run. */
-        fun production(): Boolean =
+        private fun production(): Boolean =
             //? if fml_environment_methods {
             net.neoforged.fml.loading.FMLEnvironment.isProduction()
             //?} else

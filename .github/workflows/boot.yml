@@ -11,6 +11,7 @@ name: Boot
 # then 21), and a real client joining Spigot 1.8.8 and Paper 1.21.11, the newest Minecraft mineflayer speaks, and
 # Fabric 1.20.1 and 1.21.11 (mineflayer can't join 26.3 yet: decisions/2026-11-27-real-clients-on-fabric.md);
 # NeoForge's oldest and newest lines, a real client on the oldest and the family test on the newest;
+# Forge 1.20.1 with a real client and the family test;
 # for the proxies, Velocity's floor (3.4.0) and newest and BungeeCord, the newest Velocity in
 # front of Paper 1.21.11 and BungeeCord in front of Spigot 1.8.8 with a real client joining
 # through the proxy (scripts/boot-proxy.sh); SpongeVanilla at API 8 (1.16.5) and the newest
@@ -111,15 +112,17 @@ jobs:
           ] | map({pr: false, family: false, client: false, "allow-failure": false} + .)')
           # NeoForge's oldest and newest lines, from platform-neoforge's Stonecutter versions, and
           # 1.21.11 between them, with real clients on the 1.21 lines, as on Fabric, and the family
-          # test on the newest (decisions/2026-11-28-neoforge-and-forge.md).
+          # test on the newest; and Forge 1.20.1, that tree's 1.20.1-forge node, with a real client
+          # and the family test (decisions/2026-11-28-neoforge-and-forge.md).
           read -r -a neo_lines <<< "$(sed -n 's/^ *versions(\(.*\))/\1/p' core/platform-neoforge/settings.gradle.kts | tr -d '",')"
           neo_oldest=${neo_lines[0]} neo_newest=${neo_lines[-1]}
           neoforge=$(jq -nc --arg oldest "$neo_oldest" --arg newest "$neo_newest" \
             --argjson oldJava "$(java_for "$neo_oldest")" --argjson newJava "$(java_for "$neo_newest")" '[
             {id: "neoforge-\($oldest)", name: "NeoForge \($oldest)", version: $oldest, java: $oldJava, pr: true, client: true},
             {id: "neoforge-1.21.11", name: "NeoForge 1.21.11", version: "1.21.11", java: 21, client: true},
-            {id: "neoforge-\($newest)", name: "NeoForge \($newest)", version: $newest, java: $newJava, pr: true, family: true}
-          ] | map({pr: false, family: false, client: false, "allow-failure": false} + .)')
+            {id: "neoforge-\($newest)", name: "NeoForge \($newest)", version: $newest, java: $newJava, pr: true, family: true},
+            {id: "forge-1.20.1", name: "Forge 1.20.1", loader: "forge", version: "1.20.1", java: 17, pr: true, client: true, family: true}
+          ] | map({loader: "neoforge", pr: false, family: false, client: false, "allow-failure": false} + .)')
           # The proxies: each boots xSample's proxy side alone, with its startup against the
           # first-plugin budget; a cell with a `backend` also runs the pair test, xSample on that
           # backend behind the proxy and a real client joining through it. Velocity's newest
@@ -281,11 +284,12 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      # Java 25 runs Gradle; the 1.21 lines compile on 21 through toolchains.
+      # Java 25 runs Gradle; Forge 1.20.1 and the 1.21 lines compile on 17 and 21 through toolchains.
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: |
+            17
             21
             25
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
@@ -1362,6 +1366,7 @@ jobs:
         cell: ${{ fromJSON(needs.changes.outputs.neoforge) }}
     name: boot (${{ matrix.cell.name }})
     env:
+      LOADER: ${{ matrix.cell.loader }}
       VERSION: ${{ matrix.cell.version }}
     steps:
       - uses: actions/checkout@v7
@@ -1374,8 +1379,8 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: .cache/neoforge
-          key: neoforge-${{ matrix.cell.version }}-${{ hashFiles('core/platform-neoforge/stonecutter.properties.toml') }}
-          restore-keys: neoforge-${{ matrix.cell.version }}-
+          key: neoforge-${{ matrix.cell.loader }}-${{ matrix.cell.version }}-${{ hashFiles('core/platform-neoforge/stonecutter.properties.toml') }}
+          restore-keys: neoforge-${{ matrix.cell.loader }}-${{ matrix.cell.version }}-
       - id: java
         uses: actions/setup-java@v6
         with:
@@ -1400,9 +1405,9 @@ jobs:
         run: |
           args=()
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks core/platform-neoforge/sandbox/client-checks.txt)
-          scripts/boot-neoforge.sh --version "$VERSION" --java "$JAVA" \
+          scripts/boot-neoforge.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks core/platform-neoforge/sandbox/boot-checks.txt "${args[@]}" \
-            core/platform-neoforge/build/libs/xsample-neoforge-*+"$VERSION".jar
+            core/platform-neoforge/build/libs/xsample-"$LOADER"-*+"$VERSION".jar
       - name: boot xUtilities
         env:
           JAVA: ${{ steps.java.outputs.path }}
@@ -1411,19 +1416,19 @@ jobs:
           libs=core/platform-neoforge/build/libs
           args=()
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xutilities/neoforge/client-checks.txt)
-          scripts/boot-neoforge.sh --version "$VERSION" --java "$JAVA" \
+          scripts/boot-neoforge.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks xutilities/neoforge/boot-checks.txt "${args[@]}" \
-            "$libs"/xutilities-neoforge-*+"$VERSION".jar
+            "$libs"/xutilities-"$LOADER"-*+"$VERSION".jar
       - name: family test
         if: matrix.cell.family
         env:
           JAVA: ${{ steps.java.outputs.path }}
         run: |
           libs=core/platform-neoforge/build/libs
-          scripts/boot-neoforge.sh --version "$VERSION" --java "$JAVA" \
+          scripts/boot-neoforge.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks core/platform-neoforge/sandbox/boot-checks.txt --checks core/core-testing/twin/family-checks.txt \
             --checks xutilities/neoforge/boot-checks.txt \
-            "$libs"/xsample-neoforge-*+"$VERSION".jar "$libs"/xtwin-neoforge-*+"$VERSION".jar "$libs"/xutilities-neoforge-*+"$VERSION".jar
+            "$libs"/xsample-"$LOADER"-*+"$VERSION".jar "$libs"/xtwin-"$LOADER"-*+"$VERSION".jar "$libs"/xutilities-"$LOADER"-*+"$VERSION".jar
       - if: failure()
         uses: actions/upload-artifact@v7
         with:

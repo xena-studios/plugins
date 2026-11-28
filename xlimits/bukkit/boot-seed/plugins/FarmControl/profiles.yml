@@ -1,0 +1,26 @@
+# A FarmControl setup, in its own format, for xLimits' import (import-checks.txt).
+profiles:
+  nerf-animal-farms:
+    group:
+      types:
+        - "category:animal"
+      count: 15
+      distance: 5
+    actions:
+      - disable-collisions
+      - disable-breeding
+  trim-villagers:
+    group:
+      types:
+        - "villager"
+      count: 11
+      distance: same-chunk
+    actions:
+      - kill
+  unused:
+    group:
+      types:
+        - "category:monster"
+      count: 30
+    actions:
+      - disable-collisions

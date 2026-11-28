@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind|xlimits] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>] [--fabric] [--fixed-language]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -39,7 +39,10 @@
 // menus, a category and the amount screen clicked through to a purchase that xMoney debits, /sell
 // hand that it credits, /shop buy and /worth, all in German), or xBackup's (Joiner builds, backs
 // up and plans, stages and calls off a restore of the world, all in German, with /backup's
-// completion; Friend, no operator, is refused).
+// completion; Friend, no operator, is refused), or xLimits' (with xlimits/bukkit's
+// boot seed, a cap of 3 cows and 1 hopper per chunk: /xlimits here in German, three cows
+// summoned then a spawn egg refused with the player told why, one hopper placed and a second
+// refused and gone).
 //
 // The same scenarios run on Fabric (scripts/boot-fabric.sh's "client:" step, which adds --fabric):
 // a check that differs there by design takes Fabric's side, as each says (xUtilities' /back,
@@ -655,6 +658,7 @@ async function run () {
   if (plugin === 'xmarket') return xmarket()
   if (plugin === 'xvanish-network') return xvanishNetwork()
   if (plugin === 'xrewind') return xrewind()
+  if (plugin === 'xlimits') return xlimits()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")
@@ -803,6 +807,82 @@ async function xrewind () {
   check('the undo takes the planks away again', bot.blockAt(broken) && bot.blockAt(broken).name === 'air', `found ${bot.blockAt(broken) && bot.blockAt(broken).name}`)
   await command('/xr inspect', de('Inspektor', 'Inspector'), 'the inspector turns on')
   await command('/xr inspect', de('Inspektor', 'Inspector'), 'and off')
+  finish()
+}
+
+// xLimits as a player meets it, with xlimits/bukkit's boot seed (3 cows and 1 hopper per chunk):
+// Joiner, an operator (who has no xlimits.bypass), in German, reads /xlimits here, fills their
+// chunk with cows, has a spawn egg refused and is told why (the world hooks name the player), then
+// places a hopper and has a second refused, the block gone again. Hoppers first, so no cow
+// stands where one goes.
+async function xlimits () {
+  const { Vec3 } = require('vec3')
+  await command('/xlimits here', de('Profil', 'profile'), '/xlimits here answers in German')
+  const chunkOf = (p) => `${Math.floor(p.x) >> 4},${Math.floor(p.z) >> 4}`
+  const here = chunkOf(bot.entity.position)
+  // Two ground blocks beside the player, in the player's own chunk, with room above: air (not a
+  // flower, which a block isn't placed over) and no mob (the server refuses a block placed into an
+  // entity without an event; a new world's animals stand about, seen on 1.13.2).
+  const feet = bot.entity.position.floored()
+  const solid = (p) => bot.blockAt(p) && bot.blockAt(p).boundingBox === 'block'
+  const free = (p) => bot.blockAt(p) && bot.blockAt(p).name === 'air' &&
+    !Object.values(bot.entities).some((e) => e !== bot.entity && e.position &&
+      Math.abs(e.position.x - (p.x + 0.5)) < 0.7 + (e.width || 1) / 2 && Math.abs(e.position.z - (p.z + 0.5)) < 0.7 + (e.width || 1) / 2 &&
+      e.position.y < p.y + 1.5 && e.position.y + (e.height || 2) > p.y - 0.5)
+  const spots = [new Vec3(1, -1, 0), new Vec3(-1, -1, 0), new Vec3(0, -1, 1), new Vec3(0, -1, -1), new Vec3(1, -1, 1), new Vec3(-1, -1, -1),
+    new Vec3(2, -1, 0), new Vec3(-2, -1, 0), new Vec3(0, -1, 2), new Vec3(0, -1, -2)]
+    .map((o) => feet.plus(o)).filter((p) => chunkOf(p) === here && solid(p) && free(p.plus(new Vec3(0, 1, 0))))
+  check('two ground blocks in the player\'s chunk', spots.length >= 2, `found ${spots.length}`)
+  if (spots.length < 2) return finish()
+  // The given item can take a moment to arrive, and the server must know the new held slot before
+  // the click that uses it, or the first click lands with the old hand (seen on CI's 1.13.2 cell:
+  // the first hopper never placed, the second did, so the cap was tested one block late).
+  const count = (name) => bot.inventory.items().filter((i) => i.name === name).reduce((n, i) => n + i.count, 0)
+  const hold = async (name) => {
+    let item
+    for (let waited = 0; waited < 5000 && !item; waited += 250) {
+      await sleep(250)
+      item = bot.inventory.items().find((i) => i.name === name)
+    }
+    if (!item) return false
+    await bot.equip(item, 'hand')
+    await sleep(750)
+    return bot.heldItem != null && bot.heldItem.name === name
+  }
+  const placed = []
+  bot.chat(`/give ${username} hopper 2`)
+  check('the client holds hoppers', await hold('hopper'), 'no hoppers given')
+  const above = (p) => p.plus(new Vec3(0, 1, 0))
+  try { await bot.placeBlock(bot.blockAt(spots[0]), new Vec3(0, 1, 0)) } catch (e) { placed.push(`first: ${e.message}`) }
+  await sleep(1000)
+  check('the first hopper is placed', bot.blockAt(above(spots[0])).name === 'hopper', `there: ${bot.blockAt(above(spots[0])).name}${placed.length ? `; ${placed.join('; ')}` : ''}`)
+  let from = heard.length
+  try { await bot.placeBlock(bot.blockAt(spots[1]), new Vec3(0, 1, 0)) } catch (e) { /* refused */ }
+  check('a hopper past the cap is refused, in German',
+    await hear(de('Dieser Chunk hat 1 von 1 hopper.', 'This chunk has 1 of 1 hopper.'), from) != null, `heard ${JSON.stringify(heard.slice(from)).slice(0, 400)}`)
+  await sleep(1000)
+  check('the refused hopper isn\'t there', bot.blockAt(above(spots[1])).name !== 'hopper', `there: ${bot.blockAt(above(spots[1])).name}`)
+  for (let i = 0; i < 3; i++) bot.chat('/summon cow ~ ~ ~')
+  await sleep(1500)
+  bot.chat(`/give ${username} cow_spawn_egg 1`)
+  check('the client holds a spawn egg', await hold('cow_spawn_egg'), 'no egg given')
+  // A refused egg stays in the hand, so whether it was used shows only in what's heard. A click
+  // the server never took (the egg still held, nothing heard) is clicked again, once; the note
+  // says which it was.
+  from = heard.length
+  const told = de('Dieser Chunk hat 3 von 3 cow.', 'This chunk has 3 of 3 cow.')
+  const notes = []
+  const egg = async () => {
+    try { await bot.activateBlock(bot.blockAt(spots[2] || spots[1]), new Vec3(0, 1, 0)) } catch (e) { notes.push(e.message) }
+    return hear(told, from, 5000)
+  }
+  let refused = await egg()
+  if (refused == null && count('cow_spawn_egg') > 0) {
+    notes.push('nothing heard with the egg still held: clicked again')
+    refused = await egg()
+  }
+  check('a spawn egg past the cap is refused, and the player told why, in German', refused != null,
+    `heard ${JSON.stringify(heard.slice(from)).slice(0, 400)}; ${count('cow_spawn_egg')} eggs held${notes.length ? `; ${notes.join('; ')}` : ''}`)
   finish()
 }
 

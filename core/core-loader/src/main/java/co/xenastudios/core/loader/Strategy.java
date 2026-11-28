@@ -7,7 +7,9 @@ import java.util.Locale;
 
 /**
  * How downloaded jars are made visible to the plugin's classes on a server that doesn't put
- * them there itself, as the M0 spike proved on Spigot 1.8.8 to 1.16.4 (sandbox/m0/bukkit).
+ * them there itself, as the M0 spike proved on Spigot 1.8.8 to 1.16.4 (sandbox/m0/bukkit). On
+ * those servers {@link #REFLECT} and {@link #LOOKUP} add them to the server's class loader,
+ * which every plugin's shares, rather than the plugin's ({@link Startup#definesForOthers}).
  */
 public enum Strategy {
 

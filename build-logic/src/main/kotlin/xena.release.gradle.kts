@@ -45,6 +45,7 @@ val isDryRun = providers.gradleProperty("xena.release.dryRun").map { it.toBoolea
 val releaseOutput = providers.gradleProperty("xena.release.root")
     .flatMap { root -> release.pluginId.map { rootProject.layout.projectDirectory.dir(root).dir(it) } }
     .orElse(layout.buildDirectory.dir("release"))
+extra["xenaReleaseOutput"] = releaseOutput
 
 tasks.register("releaseInfo") {
     group = "publishing"
@@ -164,4 +165,12 @@ tasks.register("release") {
     group = "publishing"
     description = "Assembles the release and publishes it everywhere (-Pxena.release.dryRun=true prints instead)."
     dependsOn(releaseAssemble, releasePublish)
+}
+
+// A rewritten plugin with a developer API (<plugin>/api beside this project) publishes it to
+// Maven Central with the release (xena.release-api).
+if (project.parent?.projectDir?.resolve("api/build.gradle.kts")?.isFile == true &&
+    project.parent?.projectDir?.resolve("common/build.gradle.kts")?.isFile == true
+) {
+    apply(plugin = "xena.release-api")
 }

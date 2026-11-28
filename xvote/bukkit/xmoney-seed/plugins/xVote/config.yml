@@ -1,0 +1,19 @@
+# The family test's rewards: 1.x's vote reward, and 25 through xMoney's API.
+config-version: 2
+rewards:
+  vote:
+    chance: 100
+    money: 25
+    items: ["diamond 1"]
+    commands: []
+    message: "<prefix><success>Thanks for voting</success> on <highlight><site></highlight>! Here's a diamond."
+    broadcast: ""
+    sound: "entity.player.levelup"
+    custom: []
+  streak:
+    items: ["diamond 5"]
+    message: "<prefix>A <highlight><streak>-day</highlight> voting streak! Here are 5 more diamonds."
+  party:
+    items: ["golden_apple 1"]
+    message: "<prefix><success>Vote party!</success> Here's a golden apple."
+    sound: "entity.firework_rocket.blast"

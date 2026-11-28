@@ -9,7 +9,7 @@ sidebar:
 
 Server lists send votes to xVote's receiver, on port **8192** by default. It isn't your Minecraft port, and it has to be reachable from the internet.
 
-1. Start the server once. xVote makes its keys in `plugins/xVote/rsa/` and a token in `plugins/xVote/tokens.yml`, and the console says `Listening for votes on 0.0.0.0:8192`. If NuVotifier was installed, its keys, tokens and port are taken over instead.
+1. Start the server once (on a network, the proxy: see [Networks](/xvote/networks/)). xVote makes its keys in `plugins/xVote/rsa/` (`config/xvote/rsa/` on Fabric, `plugins/xvote/rsa/` on Velocity) and a token in `plugins/xVote/tokens.yml`, and the console says `Listening for votes on 0.0.0.0:8192`. If NuVotifier was installed, its keys, tokens and port are taken over instead.
 2. Open the port in your firewall, or ask your host for it (see [One port](#your-host-gives-you-one-port) below).
 3. On each list's page for your server, fill in its Votifier settings:
    - **Address:** your server's address, without the Minecraft port.
@@ -76,7 +76,7 @@ Votes from a list that isn't in `sites` still count and earn `every-vote` reward
 
 ## Test it
 
-`/vote test <player> [site]` sends a signed vote to the receiver through its own port, as a list would, so it tests the whole path: the port, the token, the ledger and the rewards. Leave out the site for one with no cooldown, so you can send it again and again. It counts like a real vote.
+`/vote test <player> [site]` (`/xvoteproxy test` on the proxy) sends a signed vote to the receiver through its own port, as a list would, so it tests the whole path: the port, the token, the ledger and the rewards. Leave out the site for one with no cooldown, so you can send it again and again. It counts like a real vote.
 
 ## Names
 
@@ -86,12 +86,4 @@ Bedrock players through Floodgate have a prefix (`.` by default) that they often
 
 ## Networks
 
-For a network (Velocity or BungeeCord with several backends), no proxy plugin is needed:
-
-1. Put every backend's xVote on the same MySQL or MariaDB database: `storage.type: mysql`, the same `mysql` settings and `table-prefix`.
-2. Turn on `network.enabled` on every backend.
-3. Run the receiver on one backend (turn `receiver.enabled` off on the others), and point every list at that backend's address and receiver port.
-
-A vote for a player online on another backend reaches it within `network.check-every` seconds and is paid there. A vote for an offline player is paid by whichever backend they join first. Each vote is taken by one server in the database before it's paid, so it's never paid twice, even when two servers try at once. The vote party starts on every backend at the same time.
-
-`storage` and `network` apply on restart.
+On a network, run the receiver on the proxy, with xVote on every server and the proxy sharing one MySQL or MariaDB database: see [Networks](/xvote/networks/).

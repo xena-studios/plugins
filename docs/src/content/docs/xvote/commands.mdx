@@ -1,0 +1,21 @@
+---
+title: Commands
+description: "xVote's commands: /vote, its leaderboards and claims, and /xvote for admins, on every server and the proxy."
+sidebar:
+  order: 3
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`<angle brackets>` are required, `[square brackets]` optional.
+
+- **`/vote`** lists every site with its link and when it opens again, the player's total and streak, and the vote party's count.
+- **`/vote top [day|week|month|all] [page]`** shows a leaderboard, this month's by default.
+- **`/vote claim`** hands out reward items that didn't fit.
+- **`/vote test <player> [site]`** sends a signed test vote through the receiver's own port: see [Setting up](/xvote/setting-up/#test-it).
+- **`/xvote status`** shows the receiver, the database, votes waiting and the last votes, with the service name each list sends. **`/xvote key`** and **`/xvote token [service]`** show what lists ask for, and make a token for a list that wants its own.
+- **`/xvote import <nuvotifier|votingplugin|superbvote> [again]`**: see [Switching](/xvote/switching/). **`/xvote party [start]`** shows the vote party's count, or starts it now.
+- **`/xvote forget <player>`** deletes everything xVote keeps about a player (their votes, totals and held items), for a data-erasure request. **`/xvote debug`** writes a report to share when asking for help; **`/xvote reload`** applies the config and lang files.
+- **On the proxy**, the command is `/xvoteproxy` (`/xvp`), so `/xvote` typed in game still reaches the server: `status`, `key`, `token`, `test`, `reload`, `debug` and `forget`.
+
+<Reference plugin="xvote" show="commands" />

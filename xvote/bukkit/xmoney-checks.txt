@@ -1,0 +1,7 @@
+# The family test (boot.sh ... --xmoney): xMoney beside xVote, and a real client's vote paying the
+# seeded reward's 25 through xMoney's API, recorded as xVote's (scripts/budgets/bots/client.js,
+# xvote --xmoney).
+logged: Money rewards are paid through xMoney.
+client: --plugin xvote --xmoney --vote-token xvote-boot-test --timeout 120
+run: eco history Joiner
+expect: xVote

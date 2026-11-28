@@ -137,3 +137,19 @@
 :core:platform-fabric:xmarket:1.20.1 755
 :core:platform-fabric:xmarket:1.21.11 760
 :core:platform-fabric:xmarket:26.3 750
+# xVote 2.0 (M8), shrunk: 787 KiB on Bukkit, over the 500 KiB target with the reason recorded in
+# decisions/2026-11-27-xvote-2.md: about 420 KiB the shared core xVote reaches (as xBans': its
+# database layer and change feed, the proxy layer's server end, commands, config, messages, the
+# family), about 330 KiB xVote's own and its API (the Votifier v1 and v2 receiver with its RSA keys,
+# tokens and HMAC, the ledger and its 1.x statements, rewards, streaks, milestones, the vote party,
+# reminders, every command, three importers, the five events and their Bukkit events, PlaceholderAPI,
+# Vault and xMoney), 22 KiB the seven translations, 7 KiB bStats, 3 KiB the startup list. Line: size + 8%.
+:xvote:bukkit 850
+# Its proxy side, the same plugin on Velocity and BungeeCord (the receiver, the ledger, commands,
+# importers, the database): 691 and 683 KiB, shrunk, with their startup lists; lines size + 9%.
+:xvote:velocity 750
+:xvote:bungee 745
+# On Fabric, 675-690 KiB, shrunk before Loom remaps it, its core relocated (xena.fabric-mod); lines size + 5%.
+:core:platform-fabric:xvote:1.20.1 710
+:core:platform-fabric:xvote:1.21.11 710
+:core:platform-fabric:xvote:26.3 725

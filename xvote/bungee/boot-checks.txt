@@ -1,0 +1,19 @@
+# xVote on a proxy alone (scripts/boot-proxy.sh --checks): the database opens on the proxy's own
+# SQLite file (a network shares MySQL instead, which the warning says), the receiver listens, a test
+# vote goes through its port, and /xvoteproxy answers with its admin subcommands.
+logged: xVote 2.0.0 on
+logged: Loaded 0 voters from the SQLite database votes.db.
+allow: which the servers don't share, so no server pays those votes
+logged: Listening for votes on 0.0.0.0:8192 (Votifier v1 and v2).
+run: xvoteproxy
+expect: the player's server pays each vote
+run: xvoteproxy test Steve
+expect: Test vote for Steve from test stored through the receiver on port 8192
+run: xvoteproxy status
+expect: xVote on the proxy needs the servers' database.
+run: xvp key
+expect: The public key for lists that use Votifier v1
+run: xvp reload
+expect: Reloaded xVote
+run: xvoteproxy debug
+expect: Debug report saved as

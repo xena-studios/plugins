@@ -1,0 +1,17 @@
+name: xVote
+version: '${version}'
+main: co.xenastudios.xvote.bukkit.XVoteBootstrap
+# Ignored before 1.13; stops 1.13+ from treating the plugin as legacy.
+api-version: '1.13'
+folia-supported: true
+description: Votes in. Rewards out.
+website: https://plugins.xenastudios.co/xvote/
+authors: [Xena Studios]
+# Optional: money rewards through xMoney (or Vault's economy), placeholders for PlaceholderAPI.
+# Loaded first when they're there.
+softdepend: [xMoney, Vault, PlaceholderAPI]
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+# No commands or permissions here: they're registered at runtime, so every change to them applies
+# on /xvote reload.

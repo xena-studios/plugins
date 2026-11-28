@@ -1,0 +1,151 @@
+public final class co/xenastudios/xvote/api/PartyProgress {
+	public fun <init> (II)V
+	public final fun getLeft ()I
+	public final fun getNeeded ()I
+	public final fun getVotes ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xvote/api/Period : java/lang/Enum {
+	public static final field ALL Lco/xenastudios/xvote/api/Period;
+	public static final field DAY Lco/xenastudios/xvote/api/Period;
+	public static final field MONTH Lco/xenastudios/xvote/api/Period;
+	public static final field WEEK Lco/xenastudios/xvote/api/Period;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xvote/api/Period;
+	public static fun values ()[Lco/xenastudios/xvote/api/Period;
+}
+
+public abstract interface class co/xenastudios/xvote/api/RewardType {
+	public abstract fun give (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/xvote/api/TopVoter {
+	public fun <init> (ILco/xenastudios/core/api/PlayerRef;Ljava/lang/String;I)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getRank ()I
+	public final fun getVotes ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xvote/api/VoteResult : java/lang/Enum {
+	public static final field CANCELLED Lco/xenastudios/xvote/api/VoteResult;
+	public static final field COUNTED Lco/xenastudios/xvote/api/VoteResult;
+	public static final field DUPLICATE Lco/xenastudios/xvote/api/VoteResult;
+	public static final field FAILED Lco/xenastudios/xvote/api/VoteResult;
+	public static final field INVALID Lco/xenastudios/xvote/api/VoteResult;
+	public static final field WAITING Lco/xenastudios/xvote/api/VoteResult;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xvote/api/VoteResult;
+	public static fun values ()[Lco/xenastudios/xvote/api/VoteResult;
+}
+
+public final class co/xenastudios/xvote/api/VoteSource : java/lang/Enum {
+	public static final field API Lco/xenastudios/xvote/api/VoteSource;
+	public static final field FORWARDED Lco/xenastudios/xvote/api/VoteSource;
+	public static final field TEST Lco/xenastudios/xvote/api/VoteSource;
+	public static final field VOTIFIER_V1 Lco/xenastudios/xvote/api/VoteSource;
+	public static final field VOTIFIER_V2 Lco/xenastudios/xvote/api/VoteSource;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xvote/api/VoteSource;
+	public static fun values ()[Lco/xenastudios/xvote/api/VoteSource;
+}
+
+public final class co/xenastudios/xvote/api/VoterStats {
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;IIIIIILjava/util/Map;)V
+	public final fun getBestStreak ()I
+	public final fun getLastVotes ()Ljava/util/Map;
+	public final fun getMonth ()I
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getStreak ()I
+	public final fun getToday ()I
+	public final fun getTotal ()I
+	public final fun getWeek ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun votes (Lco/xenastudios/xvote/api/Period;)I
+}
+
+public final class co/xenastudios/xvote/api/XVote {
+	public static final field INSTANCE Lco/xenastudios/xvote/api/XVote;
+	public static final fun api ()Lco/xenastudios/xvote/api/XVoteApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xvote/api/XVoteApi;)V
+}
+
+public abstract interface class co/xenastudios/xvote/api/XVoteApi {
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun party ()Lco/xenastudios/xvote/api/PartyProgress;
+	public abstract fun registerRewardType (Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xvote/api/RewardType;)V
+	public abstract fun stats (Lco/xenastudios/core/api/PlayerRef;)Lco/xenastudios/xvote/api/VoterStats;
+	public abstract fun submitVote (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun top (Lco/xenastudios/xvote/api/Period;I)Ljava/util/List;
+	public abstract fun unregisterRewardType (Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/xvote/api/event/VoteCountedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xvote/api/event/VoteCountedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Ljava/lang/String;IIZJ)V
+	public final fun getAt ()J
+	public final fun getFirstToday ()Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getSite ()Ljava/lang/String;
+	public final fun getStreak ()I
+	public final fun getTotal ()I
+}
+
+public final class co/xenastudios/xvote/api/event/VoteCountedEvent$Companion {
+}
+
+public final class co/xenastudios/xvote/api/event/VotePartyEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xvote/api/event/VotePartyEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Ljava/util/List;)V
+	public final fun getPlayers ()Ljava/util/List;
+}
+
+public final class co/xenastudios/xvote/api/event/VotePartyEvent$Companion {
+}
+
+public final class co/xenastudios/xvote/api/event/VoteReceivedEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xvote/api/event/VoteReceivedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xvote/api/VoteSource;)V
+	public final fun getAddress ()Ljava/lang/String;
+	public final fun getSite ()Ljava/lang/String;
+	public final fun getSource ()Lco/xenastudios/xvote/api/VoteSource;
+	public final fun getTimestamp ()Ljava/lang/String;
+	public final fun getUsername ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xvote/api/event/VoteReceivedEvent$Companion {
+}
+
+public final class co/xenastudios/xvote/api/event/VoteRewardEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xvote/api/event/VoteRewardEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Ljava/util/List;)V
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getRewards ()Ljava/util/List;
+	public final fun getSite ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xvote/api/event/VoteRewardEvent$Companion {
+}
+
+public final class co/xenastudios/xvote/api/event/VoteRewardedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xvote/api/event/VoteRewardedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Ljava/util/List;)V
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getRewards ()Ljava/util/List;
+	public final fun getSite ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xvote/api/event/VoteRewardedEvent$Companion {
+}
+

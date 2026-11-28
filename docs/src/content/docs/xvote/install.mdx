@@ -1,0 +1,22 @@
+---
+title: Install
+description: "Install xVote on your server or proxy: the steps for Paper, Folia, Spigot, Fabric, Velocity and BungeeCord."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="xvote" />
+
+On the first start xVote writes `config.yml`, one file per language in `lang/`, its SQLite database `votes.db`, a key pair in `rsa/` and a token in `tokens.yml`, in `plugins/xVote/` (Bukkit and BungeeCord), `plugins/xvote/` (Velocity) or `config/xvote/` (Fabric). Then it listens for votes on port 8192. Fabric servers and the proxies have no database driver of their own, so the one xVote needs (SQLite's, or MySQL's) is downloaded once into the family's `libraries/` folder.
+
+- Remove NuVotifier first: xVote takes over its keys, tokens and port. See [Setting up](/xvote/setting-up/).
+- On a network, install it on the proxy too, with every server on one MySQL or MariaDB database: see [Networks](/xvote/networks/).
+- With [xMoney](/xmoney/) installed, money rewards are paid through it with nothing to set up.
+
+## Coming from 1.x
+
+Replace the jar and restart: see [Upgrading from 1.x](/xvote/upgrade/). The [1.x docs](/xvote/v1/) stay up while 1.x gets fixes.

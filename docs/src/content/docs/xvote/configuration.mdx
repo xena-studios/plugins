@@ -1,29 +1,27 @@
 ---
 title: Configuration
-description: Every setting in xVote's config.yml.
+description: "Every setting in xVote's config.yml, with its default."
 sidebar:
-  order: 5
+  order: 4
 ---
 
-import { Code } from "@astrojs/starlight/components";
-import config from "../../../generated/xvote/config.yml?raw";
+import Reference from "../../../components/reference/Reference.astro";
 
-The config is `plugins/xVote/config.yml`, written on first start. Apply changes with `/xvote reload`; only `storage` and `network` need a restart. Keys and tokens aren't in it: they're in `rsa/` and `tokens.yml` ([Keys and tokens](/xvote/setting-up/#keys-and-tokens)).
+The config is `plugins/xVote/config.yml` (`plugins/xvote/` on Velocity, `config/xvote/config.yml` on Fabric), written on first start. Apply changes with `/xvote reload` (`/xvoteproxy reload` on the proxy); only `storage` and `network` need a restart. Keys and tokens aren't in it: they're in `rsa/` and `tokens.yml` ([Keys and tokens](/xvote/setting-up/#keys-and-tokens)). xVote's messages are in `lang/`: see [Messages](/xvote/messages/). A bad value falls back to its default with a warning in the console; xVote never stops over config.
 
 | Section | What it covers |
 | --- | --- |
-| `theme` | The prefix and colours xVote's messages share: see [the theme](/start/formatting/#the-theme). |
-| `messages` | `/vote`, `/vote top`, held items, and shared errors under `messages.error`. |
-| `receiver` | Where lists send votes: the port, v1, and the limits. See [The receiver](/xvote/setting-up/#the-receiver). |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
+| `receiver` | Where lists send votes: the port, v1, the limits, and NuVotifier's forwarding channel. See [The receiver](/xvote/setting-up/#the-receiver). |
 | `sites` | The sites `/vote` lists, each with its service name, link, cooldown and own rewards: see [Sites](/xvote/setting-up/#sites). |
 | `rewards` | What can be given, by name. |
 | `triggers` | Which rewards which votes earn. |
-| `party` | The vote party. |
-| `reminders` | Telling players they can vote. |
+| `party` | The vote party. Its broadcasts are in `lang/`. |
+| `reminders` | Telling players they can vote. The words are in `lang/`. |
 | `counting` | The time zone, the day weeks start, the Bedrock prefix, and how long votes for unknown names wait. |
-| `storage` | Where votes are kept: SQLite in the plugin's folder (`votes.db`), or MySQL/MariaDB. |
-| `network` | Servers sharing one database: see [Networks](/xvote/setting-up/#networks). |
-| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+| `storage` | Where votes are kept: SQLite in the plugin's folder (`votes.db`), MySQL/MariaDB, or the family's shared database. |
+| `network` | Servers (and the proxy) sharing one database: see [Networks](/xvote/networks/). |
+| `updates` | The update checker: [Privacy](/start/privacy/). |
 
 ## Rewards and triggers
 
@@ -43,10 +41,11 @@ rewards:
 ```
 
 - `chance` is in percent. Each reward rolls its own.
-- `money` is paid through [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin. Without them, money is skipped and the console says so once.
-- `items` are written like `/give`, then an amount. Items that don't fit wait for `/vote claim`; nothing is dropped.
+- `money` is paid through [xMoney](/xmoney/)'s API, which records it in `/eco history` as xVote's, or on Bukkit through Vault's economy (any economy plugin). Without either, money is skipped and the console says so once.
+- `items` are written like `/give`, then an amount: components (`diamond_sword[enchantments={sharpness:3}]`) on Paper and Spigot 1.20.5 on and on Fabric, a material name (and `:data` before 1.13) below. Items that don't fit wait for `/vote claim`; nothing is dropped. On Fabric they're given with `/give`, which drops what doesn't fit at the player's feet.
 - `commands` run from the console, one after another.
 - `custom` lists reward types other plugins add, such as a crate key, as `"<type> <argument>"`.
+- A reward's `message` and `broadcast` stay here, not in `lang/`: they're part of the reward you wrote.
 - Commands, messages and broadcasts can use `<player>`, `<uuid>`, `<site>`, `<total>` (the player's votes) and `<streak>`.
 - In `commands` and `custom`, `<site>` is a listed site's key, such as `planetminecraft`, so it's one word even when its `name` has spaces. For a site that isn't listed, it's the name the list sent with anything but letters, digits, `.`, `_` and `-` made `_`, so a vote can't add arguments or commands of its own.
 
@@ -70,6 +69,6 @@ Days, weeks and months start at midnight in `counting.time-zone`, and weeks on `
 
 A bad value falls back to its default with a warning in the console.
 
-## The full default config
+## Every setting
 
-<Code code={config} lang="yaml" title="plugins/xVote/config.yml" />
+<Reference plugin="xvote" show="config" />

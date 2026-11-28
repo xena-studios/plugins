@@ -1,0 +1,54 @@
+---
+title: Developer API
+description: "Build on xVote: totals, streaks and leaderboards from memory, votes from elsewhere, reward types for the config, and cancellable events, on every server and the proxy."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xVote's API is the same on Paper, Folia, Spigot, Fabric, Velocity and BungeeCord: players are `PlayerRef`s (by UUID), and every read answers from memory at once, on any thread. Get it with `XVote.api()` once xVote is enabled (add it to your plugin's `depend`, or `softdepend` and check `XVote.isEnabled()` first). On Bukkit it's also in the services manager, as `XVoteApi`.
+
+:::caution[Not on Maven Central yet]
+2.0's API isn't published until 2.0 is released. Its coordinates will be `co.xenastudios.xvote:xvote-api:2.0.0`; until then, compile against the plugin's jar. The [1.x API](/xvote/v1/developer-api/) is on Maven Central as `1.0.1`.
+:::
+
+## Read
+
+```java
+XVoteApi xvote = XVote.api();
+PlayerRef player = PlayerRefs.of(bukkitPlayer.getUniqueId());
+VoterStats stats = xvote.stats(player);
+bukkitPlayer.sendMessage(stats.getTotal() + " votes, a " + stats.getStreak() + "-day streak");
+for (TopVoter top : xvote.top(Period.MONTH, 3)) { /* rank, player, name, votes */ }
+```
+
+`stats`, `top` and `party` answer from memory, cheaply enough for a scoreboard. Totals for a day, week or month that's over read 0.
+
+## Votes from elsewhere
+
+`submitVote(site, username, address)` counts a vote through the same ledger, checks and rewards as one from a list: a website's webhook, a Discord bot. It returns a `CompletableFuture<VoteResult>`: `COUNTED`, `WAITING` (the name hasn't joined yet), `DUPLICATE`, `INVALID`, `CANCELLED` or `FAILED`.
+
+## Reward types
+
+```java
+xvote.registerRewardType("MyCrates", "crate", (player, argument) -> giveKey(player, argument));
+```
+
+A reward's `custom` list in xVote's config then names it: `custom: ["crate vote"]`. `give` runs on the player's own thread, while they're online on this server. Unregister it as your plugin is disabled.
+
+## Events
+
+On xVote's own bus (`xvote.getEvents()`), the same everywhere, and on Bukkit as Bukkit events too (`co.xenastudios.xvote.api.bukkit.BukkitVoteReceivedEvent` and the rest), so Skript sees them. Each is fired only when something listens.
+
+- `VoteReceivedEvent` (cancellable): a vote arrived, before it's stored, where it was received (on the proxy, on a network).
+- `VoteCountedEvent`: a vote was counted for a player, once per vote on the whole network: for stats plugins.
+- `VoteRewardEvent` (cancellable): a player is about to be rewarded, on their server; change its reward names.
+- `VoteRewardedEvent`: the rewards were given.
+- `VotePartyEvent` (cancellable): the party is about to reward this server's players; change who.
+
+<Reference plugin="xvote" show="events" />
+
+## From 1.x
+
+1.x's `XVoteApi.get()` is `XVote.api()`; players are `PlayerRef`s rather than `UUID`s; `registerRewardType` takes your plugin's name rather than its `Plugin`, and a `RewardType` gets a `PlayerRef`. 1.x's Bukkit events are `co.xenastudios.xvote.api.bukkit.BukkitVoteReceivedEvent`, `BukkitVoteRewardEvent` and `BukkitVotePartyEvent` now, each wrapping xVote's own event.

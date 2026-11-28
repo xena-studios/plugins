@@ -17,7 +17,7 @@ The console says `Took over NuVotifier's keys and tokens`. Your RSA keys (`rsa/`
 
 If xVote had already made its own, run `/xvote import nuvotifier`: what NuVotifier has (its keys, its tokens, or both) takes the place of xVote's, which are kept as `.before-import` files. What NuVotifier doesn't have is left as it is.
 
-Plugins that listened for NuVotifier's vote event need NuVotifier, which can't run beside xVote: both want the same port. Use xVote's rewards in their place, or ask the plugin's author to use [xVote's API](/xvote/developer-api/).
+Plugins that listened for NuVotifier's vote event need NuVotifier, which can't run beside xVote on one machine's port. If your proxy runs NuVotifier and forwards to the servers, see [Networks](/xvote/networks/#nuvotifier-on-the-proxy). Use xVote's rewards in their place, or ask the plugin's author to use [xVote's API](/xvote/developer-api/).
 
 ## From VotingPlugin
 
@@ -25,7 +25,7 @@ Plugins that listened for NuVotifier's vote event need NuVotifier, which can't r
 2. Keep VotingPlugin's folder, remove its jar (and NuVotifier's, as above), and start the server with xVote.
 3. Run `/xvote import votingplugin`.
 
-It reads VotingPlugin's SQLite database (`plugins/VotingPlugin/Users.db`) and adds each player's all-time total to xVote's, with when they last voted. Day, week and month totals start from the switch, since VotingPlugin doesn't keep single votes. A VotingPlugin on MySQL can't be imported yet: switch its storage to SQLite first.
+It reads a copy of VotingPlugin's SQLite database (`plugins/VotingPlugin/Users.db`, so VotingPlugin's own file is never opened) and adds each player's all-time total to xVote's, with when they last voted. Day, week and month totals start from the switch, since VotingPlugin doesn't keep single votes. A VotingPlugin on MySQL can't be imported yet: switch its storage to SQLite first.
 
 ## From SuperbVote
 

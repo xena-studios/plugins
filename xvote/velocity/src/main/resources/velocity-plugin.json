@@ -1,0 +1,10 @@
+{
+  "id": "xvote",
+  "name": "xVote",
+  "version": "${version}",
+  "description": "Votes in. Rewards out. On the proxy: the network's votes received once, and paid on the server each player is on.",
+  "url": "https://plugins.xenastudios.co/xvote/",
+  "authors": ["Xena Studios"],
+  "dependencies": [],
+  "main": "co.xenastudios.xvote.velocity.XVoteVelocityBootstrap"
+}

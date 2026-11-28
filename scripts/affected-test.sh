@@ -210,9 +210,25 @@ check "xMarket's real-client checks" xmarket/bukkit/xmoney-client-checks.txt \
   $'tasks=:build :xmarket:api:build :xmarket:bukkit:build :xmarket:common:build\nchecks=\nboot=bukkit'
 check "xMarket's Fabric mod (platform-fabric's build)" xmarket/fabric/src/main/kotlin/co/xenastudios/xmarket/fabric/FabricMarketServer.kt \
   $'tasks=:build :xmarket:api:build :xmarket:bukkit:build :xmarket:common:build\nchecks=\nboot=fabric'
+check "xVote's common code" xvote/common/src/commonMain/kotlin/co/xenastudios/xvote/Votes.kt \
+  $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=bukkit fabric proxy'
+check "xVote's API" xvote/api/src/commonMain/kotlin/co/xenastudios/xvote/api/XVoteApi.kt \
+  $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=bukkit fabric proxy'
+check "xVote's receiver" xvote/common/src/jvmMain/kotlin/co/xenastudios/xvote/receiver/Receiver.kt \
+  $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=bukkit fabric proxy'
+check "xVote's Bukkit adapter" xvote/bukkit/src/main/kotlin/co/xenastudios/xvote/bukkit/BukkitVoteServer.kt \
+  $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=bukkit'
+check "xVote's family checks" xvote/bukkit/xmoney-checks.txt \
+  $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=bukkit'
+check "xVote's Fabric mod (platform-fabric's build)" xvote/fabric/src/main/kotlin/co/xenastudios/xvote/fabric/XVoteMod.kt \
+  $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=fabric'
+check "xVote's Velocity side" xvote/velocity/src/main/kotlin/co/xenastudios/xvote/velocity/XVoteVelocity.kt \
+  $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=proxy'
+check "xVote's network test" xvote/velocity/network.sh \
+  $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=proxy'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
-check "Today's plugin" xvote/src/main/java/co/xenastudios/xvote/XVote.java \
-  $'units=xvote\ncompile=:xvote:compileJava :xvote:api:compileJava\nchecks=xvote/boot-checks.txt\nboot='
+check "Today's plugin" xstats/src/main/java/co/xenastudios/xstats/XStats.java \
+  $'units=xstats\ncompile=:xstats:compileJava :xstats:api:compileJava\nchecks=xstats/boot-checks.txt\nboot='
 check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric proxy'
 check "Today's convention" build-logic/src/main/kotlin/xena.plugin.gradle.kts everything

@@ -1,0 +1,8 @@
+# Real clients and real Votifier v2 votes (boot.sh ... --seed scripts/boot-seeds/client
+# --seed xvote/bukkit/client-seed --checks client-checks.txt): a vote for Friend before Friend has
+# ever joined, paid as Friend joins; one for Joiner, paid at once; /vote in German
+# (scripts/budgets/bots/client.js, xvote). The seed's token signs the votes.
+client: --plugin xvote --vote-token xvote-boot-test --timeout 120
+logged: Vote for Friend from PlanetMinecraft.com (v2): held until Friend first joins.
+logged: Paying Friend for 1 votes from while they were away.
+logged: Vote for Joiner from PlanetMinecraft.com (v2): paid.

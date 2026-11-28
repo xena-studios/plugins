@@ -2,6 +2,7 @@ package co.xenastudios.xstats.data
 
 import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.common.concurrentMap
+import co.xenastudios.core.common.locked
 import co.xenastudios.core.common.db.ChangeFeed
 import co.xenastudios.core.common.platform.Log
 import co.xenastudios.xstats.api.Period
@@ -53,8 +54,32 @@ public class Engine(
 
     internal val players = concurrentMap<PlayerRef, PlayerRecord>()
     internal val byName = concurrentMap<String, PlayerRecord>()
-    internal val events: Inbox = Inbox(log)
-    public val leaderboards: Leaderboards = Leaderboards()
+    @Volatile
+    private var madeEvents: Inbox? = null
+
+    /** What waits for the next save: made with the first event (a join, a reading, another plugin's change), or the first save. */
+    internal val events: Inbox
+        get() = madeEvents ?: locked(players) { madeEvents ?: Inbox(log).also { madeEvents = it } }
+    @Volatile
+    private var madeBoards: Leaderboards? = null
+
+    // No board was worked out because nobody had played yet: the next one works them all out. Under players' lock.
+    private var boardsSkipped = false
+
+    /**
+     * Every stat's boards, as of the last save. Made with the first player, or the first time
+     * they're asked for: before anyone has played, empty boards for every stat, as a save makes.
+     */
+    public val leaderboards: Leaderboards
+        get() = madeBoards ?: locked(players) {
+            madeBoards ?: Leaderboards().also { made ->
+                if (boardsSkipped) {
+                    val stats = catalog.snapshot.stats
+                    made.compute(emptyList(), stats, settings.calendar, today(), BooleanArray(stats.size), true, emptySet(), null)
+                }
+                madeBoards = made
+            }
+        }
     internal var changedSinceBoards = BooleanArray(0)
 
     @Volatile public var store: Store? = null
@@ -71,13 +96,16 @@ public class Engine(
     @Volatile internal var banned: Set<PlayerRef> = emptySet()
 
     /** Players kept off leaderboards while it says so: xVanish's vanished players, from the family's cache. */
-    @Volatile public var vanished: (PlayerRef) -> Boolean = NOBODY
+    @Volatile public var vanished: ((PlayerRef) -> Boolean)? = null
+
+    /** The family's player cache, which xVanish keeps: its vanished players are kept off leaderboards too. */
+    @Volatile public var vanishedIn: co.xenastudios.core.common.family.PlayerCache? = null
 
     @Volatile internal var sortedNames: Array<String> = emptyArray()
 
     @Volatile internal var sortedPlayers: Array<PlayerRecord> = emptyArray()
 
-    @Volatile public var lastSave: LastSave = LastSave(0, 0, 0, null)
+    @Volatile public var lastSave: LastSave? = null
         internal set
 
     /** When the network's numbers were last read, on the proxy. */
@@ -92,10 +120,10 @@ public class Engine(
     internal var knownSources: MutableMap<String, String>? = null
 
     /** Told on the database thread when someone is hidden from the website or shown again, to make its pages again. */
-    @Volatile public var onHiddenChanged: () -> Unit = NOTHING
+    @Volatile public var onHiddenChanged: (() -> Unit)? = null
 
     /** Told on the database thread of each board with a new leader, with the one before. */
-    @Volatile public var onNewLeader: (Board, PlayerRecord?) -> Unit = NO_LEADER
+    @Volatile public var onNewLeader: ((Board, PlayerRecord?) -> Unit)? = null
 
     internal var namesChanged = true
 
@@ -124,7 +152,7 @@ public class Engine(
     }
 
     /** Whether [player] is left out of leaderboards: excluded, banned (as last read) or vanished. */
-    public fun leftOut(player: PlayerRecord): Boolean = player.excluded || player.id in banned || vanished(player.id)
+    public fun leftOut(player: PlayerRecord): Boolean = player.excluded || player.id in banned || isVanished(player.id)
 
     /** A player's place on a board, or 0. Players left out of boards have none. */
     public fun rank(player: PlayerRecord, stat: StatDef, period: Period): Int {
@@ -133,43 +161,13 @@ public class Engine(
         return board.rankOf(value(player, stat, period))
     }
 
-    /**
-     * A player's place among those the website shows: players who keep their stats private don't
-     * count, so a place never gives away that someone private is above. 0 if none.
-     */
-    public fun visibleRank(player: PlayerRecord, stat: StatDef, period: Period): Int {
-        val board = leaderboards[stat.id, period] ?: return 0
-        if (leftOut(player)) return 0
-        return board.visibleRankOf(value(player, stat, period), hiddenVersion)
-    }
-
-    /** Names starting with [prefix], ignoring case, at most [limit], skipping players [skip] says to. */
-    public fun search(prefix: String, limit: Int, skip: (PlayerRecord) -> Boolean): List<PlayerRecord> {
-        val lower = prefix.lowercase()
-        val names = sortedNames
-        val records = sortedPlayers
-        // The first name not before the prefix, as sorted.
-        var low = 0
-        var high = names.size
-        while (low < high) {
-            val mid = (low + high) ushr 1
-            if (names[mid] < lower) low = mid + 1 else high = mid
-        }
-        val at = low
-        val found = ArrayList<PlayerRecord>()
-        var i = at
-        while (i < names.size && found.size < limit && names[i].startsWith(lower)) {
-            if (!skip(records[i])) found += records[i]
-            i++
-        }
-        return found
-    }
+    private fun isVanished(player: PlayerRef): Boolean = vanishedIn?.isVanished(player) == true || vanished?.invoke(player) == true
 
     /** Stat changes waiting for the next save. */
-    public val waiting: Int get() = events.size
+    public val waiting: Int get() = madeEvents?.size ?: 0
 
     /** Changes dropped because too many waited. */
-    public val dropped: Long get() = events.dropped
+    public val dropped: Long get() = madeEvents?.dropped ?: 0
 
     // ---- queueing, from any thread ----
 
@@ -306,7 +304,7 @@ public class Engine(
         lastRead = now()
         networkDirty = false
         boards(true, today)
-        if (hiddenChanged) onHiddenChanged()
+        if (hiddenChanged) onHiddenChanged?.invoke()
     }
 
     internal fun rename(player: PlayerRecord, name: String?) {
@@ -334,15 +332,25 @@ public class Engine(
 
 
     internal fun boards(everything: Boolean, today: Int) {
+        // Nobody has played: there's nothing to rank, so a server that's never had a player doesn't
+        // load the boards' code. Decided under players' lock, which making the boards takes.
+        val skipped = locked(players) {
+            if (players.isEmpty() && madeBoards == null) {
+                boardsSkipped = true
+                null
+            } else {
+                boardsSkipped.also { boardsSkipped = false }
+            }
+        } ?: return
+        val all = everything || skipped
         val stats = catalog.snapshot
         val leftOut = HashSet<PlayerRef>(banned)
-        val vanish = vanished
         for (player in players.values) {
-            if (player.excluded || vanish(player.id)) leftOut += player.id
+            if (player.excluded || isVanished(player.id)) leftOut += player.id
         }
         val changed = changedSinceBoards
         changedSinceBoards = BooleanArray(changed.size)
-        leaderboards.compute(players.values, stats.stats, settings.calendar, today, changed, everything, leftOut, onNewLeader)
+        leaderboards.compute(players.values, stats.stats, settings.calendar, today, changed, all, leftOut, onNewLeader)
         if (namesChanged) {
             namesChanged = false
             val named = players.values.filter { it.name != null }.sortedWith(Comparator { a, b -> a.name!!.compareTo(b.name!!, ignoreCase = true) })
@@ -365,24 +373,10 @@ public class Engine(
 
 
 
-    /** `/xstats forget` took [id]'s rows: forget them in memory too, and rank everyone again. On the database thread. */
-    public fun forgot(id: PlayerRef) {
-        val player = players.remove(id) ?: return
-        player.name?.let { if (byName[it.lowercase()] === player) byName.remove(it.lowercase()) }
-        namesChanged = true
-        hiddenVersion++
-        boards(true, today())
-        onHiddenChanged()
-    }
-
 
 
     public companion object {
         /** A player's last reading of a stat whose source changed since: the next reading is its new value. */
         internal const val REBASE: Long = -2
-
-        private val NOTHING: () -> Unit = {}
-        private val NO_LEADER: (Board, PlayerRecord?) -> Unit = { _, _ -> }
-        private val NOBODY: (PlayerRef) -> Boolean = { false }
     }
 }

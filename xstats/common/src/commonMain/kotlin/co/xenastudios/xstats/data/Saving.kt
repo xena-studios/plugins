@@ -66,7 +66,7 @@ internal fun Engine.saveNow(q: Q, started: Long): Boolean {
     if (written && networkDirty && current.network) refresh(q)
     boards(false, today)
     val took = now() - started
-    lastSave = Engine.LastSave(at, touched, took, if (written && unread == null) null else lastSave.problem)
+    lastSave = Engine.LastSave(at, touched, took, if (written && unread == null) null else lastSave?.problem)
     return written
 }
 
@@ -374,7 +374,7 @@ private fun Engine.write(q: Q, store: Store, stats: Catalog.Snapshot, today: Int
 }
 
 private fun Engine.problem(message: String) {
-    lastSave = Engine.LastSave(lastSave.at, lastSave.players, lastSave.millis, message)
+    lastSave = Engine.LastSave(lastSave?.at ?: 0, lastSave?.players ?: 0, lastSave?.millis ?: 0, message)
     if (!failing) {
         failing = true
         log.warn(message)
@@ -396,7 +396,7 @@ internal fun Engine.hideNow(q: Q, player: PlayerRecord, hidden: Boolean) {
     if (player.hidden != hidden) {
         player.hidden = hidden
         hiddenVersion++
-        onHiddenChanged()
+        onHiddenChanged?.invoke()
     }
     val store = store
     if (player.dbId == 0 || store == null) {
@@ -428,7 +428,7 @@ internal fun Engine.refreshHiddenNow(q: Q, id: PlayerRef) {
         if (hidden != player.hidden) {
             player.hidden = hidden
             hiddenVersion++
-            onHiddenChanged()
+            onHiddenChanged?.invoke()
         }
     } catch (e: DbFailed) {
         // The next network reload reads everyone's again, this player's included.
@@ -462,4 +462,48 @@ internal fun Engine.raiseImportedNow(imported: List<Store.Imported>) {
 internal fun Engine.afterImportNow(q: Q) {
     for (player in players.values) player.localLoaded = false
     reload(q)
+}
+
+// What a page, a search or forget asks of the engine, loaded with the first.
+
+/**
+ * A player's place among those the website shows: players who keep their stats private don't
+ * count, so a place never gives away that someone private is above. 0 if none.
+ */
+public fun Engine.visibleRank(player: PlayerRecord, stat: StatDef, period: Period): Int {
+    val board = leaderboards[stat.id, period] ?: return 0
+    if (leftOut(player)) return 0
+    return board.visibleRankOf(value(player, stat, period), hiddenVersion)
+}
+
+/** Names starting with [prefix], ignoring case, at most [limit], skipping players [skip] says to. */
+public fun Engine.search(prefix: String, limit: Int, skip: (PlayerRecord) -> Boolean): List<PlayerRecord> {
+    val lower = prefix.lowercase()
+    val names = sortedNames
+    val records = sortedPlayers
+    // The first name not before the prefix, as sorted.
+    var low = 0
+    var high = names.size
+    while (low < high) {
+        val mid = (low + high) ushr 1
+        if (names[mid] < lower) low = mid + 1 else high = mid
+    }
+    val at = low
+    val found = ArrayList<PlayerRecord>()
+    var i = at
+    while (i < names.size && found.size < limit && names[i].startsWith(lower)) {
+        if (!skip(records[i])) found += records[i]
+        i++
+    }
+    return found
+}
+
+/** `/xstats forget` took [id]'s rows: forget them in memory too, and rank everyone again. On the database thread. */
+public fun Engine.forgot(id: PlayerRef) {
+    val player = players.remove(id) ?: return
+    player.name?.let { if (byName[it.lowercase()] === player) byName.remove(it.lowercase()) }
+    namesChanged = true
+    hiddenVersion++
+    boards(true, today())
+    onHiddenChanged?.invoke()
 }

@@ -34,7 +34,10 @@ public object Tables {
         Migration(1, "players, stats, totals, daily and monthly rows, boards", co.xenastudios.xstats.Startup(co.xenastudios.xstats.STARTUP_TABLES) as (Sql) -> List<Statement>),
         Migration(2, "the source each stat was read from", co.xenastudios.xstats.Startup(co.xenastudios.xstats.STARTUP_SOURCES) as (Sql) -> List<Statement>),
     )
+}
 
+/** The statements that make the tables, read only when a migration runs: a new database, or 1.0.0's. */
+internal object Ddl {
     private val STEP_1 = listOf(
         "CREATE TABLE IF NOT EXISTS {p}servers (id {rowid}, name VARCHAR(64) NOT NULL UNIQUE){table}",
         "CREATE TABLE IF NOT EXISTS {p}stats (id {rowid}, name VARCHAR(64) NOT NULL UNIQUE){table}",
@@ -112,7 +115,22 @@ public class Q(public val session: SqlSession, public val sql: Sql) {
         is Outcome.Err -> throw DbFailed(outcome.error)
     }
 
+    /** An id from a two-column dictionary table (servers, stats), adding the name if it's new. */
+    public fun dictionary(table: String, name: String): Int {
+        val select = "SELECT id FROM {p}$table WHERE name = ?"
+        rows(select, name).firstOrNull()?.let { return it.num(0).toInt() }
+        // Another server may add it at the same moment: ignore that, then read whichever won.
+        exec(insertIgnore + " INTO {p}$table (name) VALUES (?)", name)
+        return rows(select, name).firstOrNull()?.num(0)?.toInt()
+            ?: throw DbFailed(DbError(DbError.Kind.CONSTRAINT, "couldn't add $name to $table"))
+    }
+
+    internal val insertIgnore: String get() = if (mysql) "INSERT IGNORE" else "INSERT OR IGNORE"
+
     public companion object {
+        /** The SQLite file, in the plugin's folder: 1.x's. */
+        public const val FILE: String = "stats.db"
+
         public fun value(arg: Any?): SqlValue = when (arg) {
             null -> SqlValue.Null
             is String -> SqlValue.Text(arg)
@@ -229,7 +247,7 @@ public class Store(
     public fun statId(q: Q, stat: String, added: MutableMap<String, Int>): Int {
         statIds[stat]?.let { return it }
         added[stat]?.let { return it }
-        val id = dictionary(q, "stats", stat)
+        val id = q.dictionary("stats", stat)
         added[stat] = id
         return id
     }
@@ -355,20 +373,4 @@ public class Store(
 
 
 
-    public companion object {
-        /** The SQLite file, in the plugin's folder: 1.x's. */
-        public const val FILE: String = "stats.db"
-
-        /** An id from a two-column dictionary table (servers, stats), adding the name if it's new. */
-        public fun dictionary(q: Q, table: String, name: String): Int {
-            val select = "SELECT id FROM {p}$table WHERE name = ?"
-            q.rows(select, name).firstOrNull()?.let { return it.num(0).toInt() }
-            // Another server may add it at the same moment: ignore that, then read whichever won.
-            q.exec(insertIgnore(q) + " INTO {p}$table (name) VALUES (?)", name)
-            return q.rows(select, name).firstOrNull()?.num(0)?.toInt()
-                ?: throw DbFailed(DbError(DbError.Kind.CONSTRAINT, "couldn't add $name to $table"))
-        }
-
-        internal fun insertIgnore(q: Q): String = if (q.mysql) "INSERT IGNORE" else "INSERT OR IGNORE"
-    }
 }

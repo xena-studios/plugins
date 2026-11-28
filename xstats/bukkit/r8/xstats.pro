@@ -19,3 +19,9 @@
 -keep class co.xenastudios.xstats.bukkit.Placeholders { *; }
 -keep,allowobfuscation class co.xenastudios.xstats.bukkit.PlaceholderHook { *; }
 -keep,allowobfuscation class co.xenastudios.xstats.bukkit.Fill { *; }
+# A save's code and the store's writes, with the first save or command (data/Saving.kt, store/Writes.kt,
+# Calls.kt); boards' code with the first board.
+-keep,allowobfuscation class co.xenastudios.xstats.CallsKt { *; }
+-keep,allowobfuscation class co.xenastudios.xstats.data.SavingKt { *; }
+-keep,allowobfuscation class co.xenastudios.xstats.store.WritesKt { *; }
+-keep,allowobfuscation class co.xenastudios.xstats.store.Ddl { *; }

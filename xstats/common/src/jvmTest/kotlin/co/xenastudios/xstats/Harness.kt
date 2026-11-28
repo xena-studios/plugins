@@ -217,7 +217,7 @@ class Harness(
 
     val extras: Extras? = extras(this)
 
-    val plugin: XStatsPlugin = XStatsPlugin(platform, server, files, server, server, null, opener, extras = this.extras, zones = Zones.UTC_ONLY)
+    val plugin: XStatsPlugin = XStatsPlugin(platform, server, files, server, server, null, opener, makeExtras = this.extras?.let { made -> { made } }, zones = Zones.UTC_ONLY)
         .also { it.networkOnAnyDatabase = network }
 
     val console: FakeCommandSource = FakeCommandSource.console()

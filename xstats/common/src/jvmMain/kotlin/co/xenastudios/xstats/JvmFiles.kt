@@ -128,7 +128,7 @@ public class JvmDatabase(
 ) : Opener {
     override fun open(config: Config): Outcome<Database, String> {
         val plan = family.storage(config, XStatsConfig.storage)
-        val file = if (plan.inFamilyFolder) familyFolder.resolve(Family.DATABASE_FILE.toString()) else folder.resolve(Store.FILE)
+        val file = if (plan.inFamilyFolder) familyFolder.resolve(Family.DATABASE_FILE.toString()) else folder.resolve(co.xenastudios.xstats.store.Q.FILE)
         plan.problem?.let(log::warn)
         val settings = plan.database
         return when (val opened: Outcome<Database, DbError> = JdbcDatabase.open(settings, file, drivers, log, XStatsPlugin.NAME)) {

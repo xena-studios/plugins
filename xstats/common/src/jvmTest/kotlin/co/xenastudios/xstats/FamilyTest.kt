@@ -40,6 +40,11 @@ class FamilyTest {
     }
 
     @Test
+    fun theAdaptersListOfTheFamilyIsTheIntegrations() {
+        assertEquals(Integrations.SPECS.joinToString(",") { it.plugin }, XStatsPlugin.FAMILY)
+    }
+
+    @Test
     fun votesAndMoneyBecomeStats() {
         XVote.register(api<XVoteApi>(voteBus))
         XMoney.register(api<XMoneyApi>(moneyBus))

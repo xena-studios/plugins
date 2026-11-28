@@ -12,8 +12,8 @@ import co.xenastudios.xstats.store.Tables
  */
 internal class Startup(private val kind: Int) : (Any?) -> Any? {
     override fun invoke(value: Any?): Any? = when (kind) {
-        STARTUP_TABLES -> Tables.first(value as Sql)
-        STARTUP_SOURCES -> Tables.second(value as Sql)
+        STARTUP_TABLES -> co.xenastudios.xstats.store.Ddl.first(value as Sql)
+        STARTUP_SOURCES -> co.xenastudios.xstats.store.Ddl.second(value as Sql)
         else -> Legacy.toTwo(value as MigrationScope)
     }
 }

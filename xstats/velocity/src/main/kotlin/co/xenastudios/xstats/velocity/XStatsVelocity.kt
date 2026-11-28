@@ -75,10 +75,9 @@ public class XStatsVelocity(private val bootstrap: VelocityBootstrap) : PluginEn
             opener = JvmDatabase(family, folder, plugins.resolve("Xena"), drivers, platform.log),
             registrar = platform.commands,
             permissionRegistrar = platform.permissions,
-            about = platform::about,
             paste = if (System.getProperty("xena.debug.paste") == "false") null else MclogsPaste(),
             // The website can run here, for the whole network; there's no world to import from.
-            extras = JvmExtras(folder, NoWorld, folder, NoNames, javaClass.classLoader),
+            makeExtras = { JvmExtras(folder, NoWorld, folder, NoNames, XStatsVelocity::class.java.classLoader) },
             zones = JvmZones,
             version = platform.container.description.version.orElse(XStatsPlugin.VERSION),
         )
@@ -127,6 +126,8 @@ internal class VelocityStatsServer(private val platform: VelocityPlatform) : Sta
     private val network = platform.server
 
     override val proxy: Boolean get() = true
+
+    override fun about(): Map<String, String> = platform.about()
 
     override fun online(): List<PlayerRef> = network.allPlayers.map { it.uniqueId.toPlayerRef() }
 

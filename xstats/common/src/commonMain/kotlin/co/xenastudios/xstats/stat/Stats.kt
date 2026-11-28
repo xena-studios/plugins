@@ -90,27 +90,28 @@ public object Definitions {
         public val decimals: Int,
     )
 
-    /** The config's stats, then those other plugins registered. A stat with a problem is left out, and [warn] says why. */
+    /** The config's stats, then those other plugins registered. A stat with a problem is left out, and [warnings] says why. */
     public fun build(
         settings: Map<String, StatSettings>,
         registered: List<Registered>,
         catalog: Catalog,
         reader: VanillaReader?,
-        warn: (String) -> Unit,
-        /** Told what isn't wrong but worth knowing: a stat this server's Minecraft is too old for. */
-        note: (String) -> Unit = warn,
+        /** Where each problem goes, as `config.yml: ...`. */
+        warnings: MutableList<String>,
+        /** What isn't wrong but worth knowing: a stat this server's Minecraft is too old for. */
+        notes: MutableList<String> = warnings,
     ): List<StatDef> {
         val stats = ArrayList<StatDef>()
         for ((id, stat) in settings) {
             try {
-                stats += define(id, stat, catalog, reader, note)
+                stats += define(id, stat, catalog, reader, notes)
             } catch (e: IllegalArgumentException) {
-                warn("stats.$id: ${e.message}. It's left out until that's fixed.")
+                warnings += "config.yml: stats.$id: ${e.message}. It's left out until that's fixed."
             }
         }
         for (stat in registered) {
             if (stats.any { it.id == stat.id }) {
-                warn("${stat.plugin} registered the stat ${stat.id}, but the config already has one by that name; the config's is used.")
+                warnings += "config.yml: ${stat.plugin} registered the stat ${stat.id}, but the config already has one by that name; the config's is used."
                 continue
             }
             stats += StatDef(
@@ -121,7 +122,7 @@ public object Definitions {
         return stats
     }
 
-    internal fun define(id: String, settings: StatSettings, catalog: Catalog, reader: VanillaReader?, note: (String) -> Unit): StatDef {
+    internal fun define(id: String, settings: StatSettings, catalog: Catalog, reader: VanillaReader?, notes: MutableList<String>): StatDef {
         require(ID.matches(id)) { "an id is 1 to 32 lowercase letters, digits and _" }
         clash(id)?.let { throw IllegalArgumentException(it) }
         val source = settings.source.trim()
@@ -165,7 +166,7 @@ public object Definitions {
                 val prepared = reader?.prepare(terms)
                 // A part this server's Minecraft doesn't have yet reads 0 (the newest mounts, on an older server).
                 if (prepared != null && prepared.missing.size == terms.size) {
-                    note("stats.$id: this server's Minecraft has none of ${prepared.missing.joinToString(", ")}, so it reads 0 here.")
+                    notes += "config.yml: stats.$id: this server's Minecraft has none of ${prepared.missing.joinToString(", ")}, so it reads 0 here."
                 }
                 parsed = StatDef.Vanillas(terms, prepared)
                 unit = first ?: StatUnit.COUNT

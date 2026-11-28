@@ -16,6 +16,9 @@ public interface StatsServer {
     /** Whether this is the proxy (Velocity): it reads the network's stats and counts none itself. */
     public val proxy: Boolean get() = false
 
+    /** What `/xstats debug`'s report says about the server: its software, version and plugins. */
+    public fun about(): Map<String, String> = emptyMap()
+
     /** Every online player: on the proxy, everyone on the network. */
     public fun online(): List<PlayerRef>
 

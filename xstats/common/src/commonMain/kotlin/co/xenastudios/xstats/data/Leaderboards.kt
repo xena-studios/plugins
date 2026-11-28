@@ -137,7 +137,7 @@ public class Leaderboards {
         changed: BooleanArray,
         everything: Boolean,
         leftOut: Set<PlayerRef>,
-        newLeader: (Board, PlayerRecord?) -> Unit,
+        newLeader: ((Board, PlayerRecord?) -> Unit)?,
     ) {
         val old = boards
         val exclusionsChanged = leftOut != this.leftOut
@@ -162,7 +162,7 @@ public class Leaderboards {
                 val previous = before?.leader
                 // A new leader on the same board: not a new day emptying it, nor the first boards after a start.
                 if (before != null && before.key == key && leader != null && (previous == null || previous.id != leader.id)) {
-                    newLeader(board, previous)
+                    newLeader?.invoke(board, previous)
                 }
             }
         }

@@ -107,7 +107,7 @@ private fun Store.insertPlayer(q: Q, row: Store.PlayerRow): Int {
         return existing
     }
     q.exec(
-        Store.insertIgnore(q) + " INTO {p}players (uuid, name, name_lower, first_join, last_seen, hidden, excluded) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        q.insertIgnore + " INTO {p}players (uuid, name, name_lower, first_join, last_seen, hidden, excluded) VALUES (?, ?, ?, ?, ?, ?, ?)",
         row.uuid.toString(), row.name, row.name?.lowercase(), row.firstJoin, row.lastSeen, if (row.hidden) 1 else 0, if (row.excluded) 1 else 0,
     )
     val id = playerId(q, row.uuid)
@@ -187,7 +187,7 @@ internal fun Store.importRows(q: Q, players: List<Store.Imported>): Int {
             val id = importPlayer(tx, player)
             for ((stat, value) in player.values) {
                 tx.exec(
-                    Store.insertIgnore(tx) + " INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)",
+                    tx.insertIgnore + " INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)",
                     id, statId(tx, stat, added), server, value, if (player.counters[stat] == true) value else -1L,
                     // Older than anything counted since: when they were last seen in the files.
                     player.lastSeen,
@@ -215,7 +215,7 @@ private fun Store.importPlayer(q: Q, player: Store.Imported): Int {
 private fun Store.totalRows(q: Q): Long = q.rows("SELECT COUNT(*) FROM {p}totals WHERE server = ?", server).firstOrNull()?.num(0) ?: 0
 
 internal fun Store.setFlag(q: Q, name: String) {
-    q.exec(Store.insertIgnore(q) + " INTO {p}meta (name, value) VALUES (?, '1')", "$name:$server")
+    q.exec(q.insertIgnore + " INTO {p}meta (name, value) VALUES (?, '1')", "$name:$server")
 }
 
 internal fun Store.addBoard(q: Q, board: Store.BoardRow): Int {

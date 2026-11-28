@@ -10,8 +10,10 @@ import co.xenastudios.core.common.admin.HealthChecks
 import co.xenastudios.core.common.admin.PlayerData
 import co.xenastudios.core.common.admin.PlayerDataRegistry
 import co.xenastudios.core.common.admin.PlayerLookup
+import co.xenastudios.xstats.data.Engine
 import co.xenastudios.xstats.store.Q
 import co.xenastudios.xstats.store.forget
+import co.xenastudios.xstats.data.forgot
 
 /** What `/xstats debug` and `/xstats forget` run on, made the first time each runs: not as the server starts. */
 internal object AdminParts {
@@ -23,17 +25,17 @@ internal object AdminParts {
         ),
         about = {
             val engine = plugin.engine
-            plugin.about() + mapOf(
+            plugin.server.about() + mapOf(
                 "Players known" to engine.playerCount.toString(),
                 "Stats" to plugin.catalog.snapshot.stats.joinToString(", ") { it.id },
-                "Last save" to engine.lastSave.let { if (it.at == 0L) "not yet" else "${it.players} players, ${it.millis} ms" + (it.problem?.let { p -> ", $p" } ?: "") },
+                "Last save" to (engine.lastSave ?: Engine.LastSave(0, 0, 0, null)).let { if (it.at == 0L) "not yet" else "${it.players} players, ${it.millis} ms" + (it.problem?.let { p -> ", $p" } ?: "") },
                 "Waiting" to "${engine.waiting} changes, ${engine.dropped} dropped",
                 "Network" to when {
                     plugin.database == null -> "no database: ${plugin.failure ?: "opening"}"
                     engine.feed != null -> "sharing stats with the other servers" + if (plugin.server.proxy) ", read on the proxy" else ""
                     else -> "this server alone"
                 },
-                "Website" to if (plugin.extras?.webPort?.let { it > 0 } == true) "on port ${plugin.extras.webPort}" else "off",
+                "Website" to if (plugin.extrasIfMade?.webPort?.let { it > 0 } == true) "on port ${plugin.extrasIfMade?.webPort}" else "off",
                 "Integrations" to Integrations.describe(plugin),
             )
         },

@@ -10,6 +10,7 @@ import co.xenastudios.core.common.locked
 import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.text.Component
+import co.xenastudios.xstats.data.Engine
 import co.xenastudios.xstats.api.Period
 import co.xenastudios.xstats.api.event.PrivacyChangeEvent
 import co.xenastudios.xstats.config.XStatsConfig
@@ -263,7 +264,7 @@ internal class Actions private constructor(private val plugin: XStatsPlugin) {
     }
 
     private fun report(source: CommandSource, table: Any, online: Int, rows: Any) {
-        val last = engine.lastSave
+        val last = engine.lastSave ?: Engine.LastSave(0, 0, 0, null)
         val saved: Any = if (last.at == 0L) XStatsMessages.statusNotSaved
         else Texts.Word(XStatsMessages.statusSaved, "ago" to Format.time((plugin.now() - last.at) / 1000), "players" to last.players, "millis" to last.millis)
         texts.reply(
@@ -282,7 +283,7 @@ internal class Actions private constructor(private val plugin: XStatsPlugin) {
     }
 
     private fun website(): Any {
-        val port = plugin.extras?.webPort ?: 0
+        val port = plugin.extrasIfMade?.webPort ?: 0
         return when {
             !plugin.config[XStatsConfig.web.enabled] -> XStatsMessages.statusWebOff
             port == 0 -> XStatsMessages.statusWebDown
@@ -318,7 +319,7 @@ internal class Actions private constructor(private val plugin: XStatsPlugin) {
             return
         }
         val started = plugin.save { written ->
-            val last = engine.lastSave
+            val last = engine.lastSave ?: Engine.LastSave(0, 0, 0, null)
             if (written && last.problem == null) texts.reply(source, XStatsMessages.saved, "players" to last.players, "millis" to last.millis)
             else texts.reply(source, XStatsMessages.saveFailed, "reason" to (last.problem ?: "it didn't reach the database"))
         }

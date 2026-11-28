@@ -2,6 +2,7 @@ package co.xenastudios.xstats
 
 import co.xenastudios.xstats.api.Period
 import co.xenastudios.xstats.api.StatUnit
+import co.xenastudios.xstats.data.visibleRank
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -40,6 +41,30 @@ class EngineTest {
         assertEquals(5, h.value("Steve", "kills", Period.MONTHLY))
         assertEquals(1, h.plugin.rank(FakeStatsServer.ref("Steve"), "kills", Period.ALL))
         assertEquals("Steve", h.plugin.top("kills", Period.ALL, 3).single().name)
+    }
+
+    @Test
+    fun beforeAnyoneHasPlayedEveryBoardIsThereAndEmpty() {
+        val h = harness()
+        // Nobody has played, so the open worked out no board; asked for, every stat has an empty one.
+        val boards = h.plugin.engine.leaderboards
+        assertEquals(0, boards["kills", Period.ALL]?.top(10, false)?.size)
+        assertEquals(0, boards["playtime", Period.DAILY]?.top(10, false)?.size)
+        assertNull(boards["nothing", Period.ALL])
+        // The first player's save works out every board, not only the stats they changed.
+        h.join("Steve").counters["player_kills"] = 2
+        h.save()
+        assertEquals("Steve", h.plugin.top("kills", Period.ALL, 3).single().name)
+        assertEquals("Steve", h.plugin.top("sessions", Period.ALL, 3).single().name)
+    }
+
+    @Test
+    fun theFirstPlayersSaveMakesTheBoardsNobodyAskedFor() {
+        val h = harness()
+        h.join("Alex").counters["jump"] = 7
+        h.save()
+        assertEquals(listOf("Alex" to 7L), h.plugin.top("jumps", Period.ALL, 3).map { it.name to it.value })
+        assertEquals(1, h.plugin.top("sessions", Period.ALL, 3).size)
     }
 
     @Test

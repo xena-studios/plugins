@@ -136,14 +136,13 @@ public class XStatsPlugin(
     private val opener: Opener,
     internal val registrar: CommandRegistrar? = null,
     internal val permissionRegistrar: PermissionRegistrar? = null,
-    /** What `/xstats debug`'s report says about the server. */
-    internal val about: () -> Map<String, String> = { emptyMap() },
     /** Where `/xstats debug` uploads its report; `null` to write a file. */
     internal val paste: PasteService? = null,
-    public val extras: Extras? = null,
+    /** Makes the website's and the import's code: called the first time either is wanted, not as the plugin starts. */
+    private val makeExtras: (() -> Extras)? = null,
     private val zones: Zones = Zones.UTC_ONLY,
     override val version: String = VERSION,
-) : XStatsApi {
+) : XStatsApi, (Task) -> Unit, () -> Unit, (Board, PlayerRecord?) -> Unit {
 
     /** Where the plugin's console lines go; the last 50 warnings and errors are kept for `/xstats debug`. */
     public val log: RecentErrors = RecentErrors(platform.log, platform.clock)
@@ -169,7 +168,7 @@ public class XStatsPlugin(
 
     public val catalog: Catalog = Catalog()
 
-    private val registered = ArrayList<Definitions.Registered>()
+    internal val registered = ArrayList<Definitions.Registered>()
 
     public val engine: Engine = Engine(catalog, settings(XStatsConfig.defaults), log, platform.clock, readOnly = server.proxy)
 
@@ -188,16 +187,35 @@ public class XStatsPlugin(
 
     @Volatile
     public var running: Boolean = false
-        private set
+        internal set
 
-    public val sections: Sections = Sections(this)
+    @Volatile
+    private var madeExtras: Extras? = null
+
+    /** The website and the import, made the first time they're wanted. */
+    public val extras: Extras?
+        get() = madeExtras ?: makeExtras?.let { make -> locked(this) { madeExtras ?: make().also { madeExtras = it } } }
+
+    /** [extras] if anything has made it yet: whether the website could be running. */
+    internal val extrasIfMade: Extras? get() = madeExtras
+
+    @Volatile
+    private var madeSections: Sections? = null
+
+    /** Other plugins' profile sections, made with the first one or the first profile. */
+    public val sections: Sections
+        get() = madeSections ?: locked(this) { madeSections ?: Sections(this).also { madeSections = it } }
+
+    /** The save every `collecting.save-every-minutes` (the proxy's refresh), and what it was started with. */
+    internal var collector: Task? = null
+    private var collectorEvery = 0
 
     /** Boards in the world, as last read. */
     @Volatile
     internal var boards: List<Store.BoardRow> = emptyList()
 
-    private val saveLock = Any()
-    private var saving = false
+    internal val saveLock = Any()
+    internal var saving = false
 
     /** `/xstats reload`, `debug` and `forget`, or on the proxy `/xstatsproxy`'s. */
     @Suppress("UNCHECKED_CAST")
@@ -239,10 +257,10 @@ public class XStatsPlugin(
     /** Turns the plugin on with what [Files] read: the stats, permissions and commands. The database comes with [open]. */
     public fun start(loaded: Loaded) {
         running = true
-        engine.vanished = Vanished(this)
-        engine.onNewLeader = NewLeader(this)
+        engine.vanishedIn = cache
+        engine.onNewLeader = this
         // Someone hidden or shown again: the website's pages are made again straight away, not at the next save.
-        engine.onHiddenChanged = HiddenChanged(this)
+        engine.onHiddenChanged = this
         apply(loaded)
     }
 
@@ -310,14 +328,16 @@ public class XStatsPlugin(
                     }
                     XStats.register(plugin)
                     plugin.ready.resolve(true)
-                    plugin.modules.sync(plugin.wantedModules())
+                    plugin.syncCollector()
+                    val wanted = plugin.wantedModules()
+                    if (wanted.isNotEmpty()) plugin.modules.sync(wanted)
                     plugin.afterSave()
                     // Players online already (a reload of the server): treat them as joining now.
                     plugin.rejoin()
-                    val extras = plugin.extras
-                    if (!plugin.server.proxy && extras != null && plugin.config[XStatsConfig.collecting.importOnFirstStart] && !imported) {
+                    if (!plugin.server.proxy && !imported && plugin.config[XStatsConfig.collecting.importOnFirstStart]) {
+                        val extras = plugin.extras
                         // Off the database's thread, which the import waits on.
-                        plugin.platform.scheduler.run(Where.Async) { _ -> extras.importHistory(plugin, true, plugin.logReply()) }
+                        if (extras != null) plugin.platform.scheduler.run(Where.Async) { _ -> extras.importHistory(plugin, true, plugin.logReply()) }
                     }
                 }
             }
@@ -344,7 +364,7 @@ public class XStatsPlugin(
     private class Load(private val plugin: XStatsPlugin, private val db: Database, private val feed: ChangeFeed?, private val serverName: String) :
         (co.xenastudios.core.common.db.SqlSession) -> Outcome<Boolean, DbError> {
         override fun invoke(session: co.xenastudios.core.common.db.SqlSession): Outcome<Boolean, DbError> = Q.run(session, db.sql) { q ->
-            val id = if (plugin.server.proxy) 0 else Store.dictionary(q, "servers", serverName)
+            val id = if (plugin.server.proxy) 0 else q.dictionary("servers", serverName)
             val store = Store(id, serverName)
             plugin.engine.open(q, store, feed)
             if (plugin.server.proxy) {
@@ -381,26 +401,7 @@ public class XStatsPlugin(
     }
 
     /** Turns the plugin off, as the server stops: the API, then one last save (without placeholders: other plugins may be gone), then the database. */
-    public fun stop(lastReadings: List<Event.Sample> = emptyList()): Pending<Unit> {
-        running = false
-        XStats.register(null)
-        updates?.close()
-        updates = null
-        modules.clear()
-        registrar?.clear()
-        permissionRegistrar?.sync(emptyList())
-        val db = database ?: return pendingOf(Unit)
-        for (reading in lastReadings) engine.queue(reading)
-        val done = newPending<Unit>()
-        db.session { session ->
-            Q.run(session, db.sql) { q -> engine.save(q, now()) }
-            Outcome.Ok(Unit)
-        }.onSettled { _, _ ->
-            engine.feed?.close()
-            db.close().onSettled { _, _ -> done.resolve(Unit) }
-        }
-        return done
-    }
+    public fun stop(lastReadings: List<Event.Sample> = emptyList()): Pending<Unit> = stopNow(lastReadings)
 
     @Suppress("UNCHECKED_CAST")
     private fun reloader(): ModuleReloader =
@@ -417,39 +418,33 @@ public class XStatsPlugin(
         }
     }
 
-    /**
-     * The modules the config turns on: the save (a server's one repeating task) or the proxy's
-     * refresh, once the database is open, and the website while `web.enabled` is on.
-     */
+    /** The modules the config turns on: the website while `web.enabled` is on, once the database is open. */
     internal fun wantedModules(): Map<String, () -> Module> {
-        if (database == null) return emptyMap()
-        val wanted = LinkedHashMap<String, () -> Module>()
-        val minutes = config[XStatsConfig.collecting.saveEveryMinutes]
-        if (server.proxy) {
-            val seconds = config[XStatsConfig.proxy.refreshSeconds]
-            wanted["refresh:$seconds"] = ModuleFactory(this, ModuleFactory.REFRESH, seconds)
-        } else {
-            wanted["collector:$minutes"] = ModuleFactory(this, ModuleFactory.COLLECTOR, minutes)
-        }
-        val extras = extras
-        if (extras != null && config[XStatsConfig.web.enabled]) wanted[webKey()] = ModuleFactory(this, ModuleFactory.WEB, 0)
-        return wanted
+        if (database == null || makeExtras == null || !config[XStatsConfig.web.enabled]) return emptyMap()
+        return mapOf(webKey() to WebFactory(this))
     }
 
-    // The website's module key: its settings, so a change restarts it, and a count bumped after it
-    // failed to start (the port was taken), so a reload tries again.
+    /**
+     * Starts the save (a server's one repeating task), or the proxy's refresh, at what the config
+     * says, again if that changed. A plain task, not a module: it's always on once the database is.
+     */
+    internal fun syncCollector() {
+        val every = if (server.proxy) config[XStatsConfig.proxy.refreshSeconds] else config[XStatsConfig.collecting.saveEveryMinutes]
+        locked(saveLock) {
+            if (!running || database == null || (collector != null && every == collectorEvery)) return
+            collector?.cancel()
+            val period = if (server.proxy) every.seconds else every.minutes
+            collectorEvery = every
+            collector = platform.scheduler.run(Where.Async, delay = period, period = period, action = this)
+        }
+    }
+
+    // Bumped when the website fails to start (the port was taken), so a reload tries again (webKey).
     @Volatile
-    private var webFailures = 0
+    internal var webFailures = 0
 
     internal fun webFailed() {
         webFailures++
-    }
-
-    private fun webKey(): String {
-        val w = XStatsConfig.web
-        val c = config
-        return "web:" + listOf(c[w.bind], c[w.port], c[w.site], c[w.corsOrigins], c[w.requestsPerMinute], c[w.maxConcurrent], c[w.trustedProxies],
-            c[w.clientIpHeader], c[w.avatars.url], c[w.avatars.proxy]).hashCode() + ":" + webFailures
     }
 
     /** Uses what [Files] read: the stats and commands rebuilt, periods read again if they changed. On the global thread. */
@@ -470,6 +465,7 @@ public class XStatsPlugin(
         problems = loaded.problems + warnings
         updates?.apply(updateSettings)
         if (database != null) {
+            syncCollector()
             // A new time zone or first day of the week: this day's, week's and month's numbers are read again for it.
             val newCalendar = before.calendar != settings.calendar
             onDatabase { q ->
@@ -496,10 +492,15 @@ public class XStatsPlugin(
     }
 
     // The config's stats, then the registered ones, as the catalog.
-    private fun rebuildStats(warnings: MutableList<String>? = null) {
+    internal fun rebuildStats(warnings: MutableList<String>? = null) {
         val list = locked(registered) { registered.toList() }
-        val stats = Definitions.build(config[XStatsConfig.stats], list, catalog, server.vanilla, Warn(warnings, log, false), Warn(null, log, true))
+        val problems = warnings ?: ArrayList()
+        val notes = ArrayList<String>()
+        val stats = Definitions.build(config[XStatsConfig.stats], list, catalog, server.vanilla, problems, notes)
         catalog.set(stats)
+        // A problem goes with the config's (or, outside a load, to the log); a note is only information.
+        for (note in notes) log.info(note)
+        if (warnings == null) for (problem in problems) log.warn(problem)
     }
 
     /** Runs [work] on the database's writer, after what's queued, with its errors logged. Does nothing before the database is open. */
@@ -532,76 +533,12 @@ public class XStatsPlugin(
      * the database. Each online player is read on their own thread, [XStatsConfig.Collecting.readsPerTick]
      * a tick; then, once every reading is in, the save runs on the database's writer. Any thread.
      */
-    public fun save(done: ((Boolean) -> Unit)? = null): Boolean {
-        val db = database ?: return false
-        if (!engine.ready) return false
-        val start = locked(saveLock) { if (saving) false else true.also { saving = true } }
-        if (!start) return false
-        try {
-            val started = now()
-            if (server.proxy) {
-                db.session(SaveRun(this, db, started, done))
-                return true
-            }
-            val online = server.online()
-            val each = config[XStatsConfig.collecting.readsPerTick].coerceAtLeast(1)
-            val stats = catalog.snapshot
-            for ((i, player) in online.withIndex()) {
-                platform.scheduler.run(Where.On(player.uuid), delay = TICK * (1 + i / each), action = Reading(this, player, stats))
-            }
-            if (config[XStatsConfig.leaderboards.excludeBanned]) platform.scheduler.run(Where.Global, action = Banned(this))
-            // Every reading is in by then, with room for a slow tick or two; a late one waits for the next save.
-            val wait = (2L + (online.size + each - 1) / each + 10) * 50
-            platform.scheduler.run(Where.Async, delay = wait.milliseconds) { _ -> db.session(SaveRun(this, db, started, done)) }
-            return true
-        } catch (e: RuntimeException) {
-            locked(saveLock) { saving = false }
-            throw e
-        }
-    }
-
-    /** One player's reading for a save, on their thread. */
-    private class Reading(private val plugin: XStatsPlugin, private val player: PlayerRef, private val stats: Catalog.Snapshot) : (Task) -> Unit {
-        override fun invoke(task: Task) {
-            plugin.server.read(player, stats, quit = false, placeholders = true)?.let(plugin.engine::queue)
-        }
-    }
-
-    /** The server's ban list, on the global thread where it's kept. */
-    private class Banned(private val plugin: XStatsPlugin) : (Task) -> Unit {
-        override fun invoke(task: Task) {
-            plugin.engine.bannedPlayers(plugin.server.banned())
-        }
-    }
-
-    private class SaveRun(private val plugin: XStatsPlugin, private val db: Database, private val started: Long, private val done: ((Boolean) -> Unit)?) :
-        (co.xenastudios.core.common.db.SqlSession) -> Outcome<Boolean, DbError> {
-        override fun invoke(session: co.xenastudios.core.common.db.SqlSession): Outcome<Boolean, DbError> {
-            var written = false
-            try {
-                written = when (val ran = Q.run(session, db.sql) { q -> plugin.engine.save(q, started) }) {
-                    is Outcome.Ok -> ran.value
-                    is Outcome.Err -> false.also { plugin.log.warn("The save couldn't use ${db.description}: ${ran.error.detail}") }
-                }
-                plugin.afterSave()
-                if (written && plugin.hasListeners(StatsSavedEvent.TYPE)) {
-                    val last = plugin.engine.lastSave
-                    plugin.bus.fire(StatsSavedEvent.TYPE, StatsSavedEvent(last.players, last.millis))
-                }
-            } catch (e: Exception) {
-                plugin.log.error("The save went wrong", e)
-            } finally {
-                locked(plugin.saveLock) { plugin.saving = false }
-                done?.invoke(written)
-            }
-            return Outcome.Ok(written)
-        }
-    }
+    public fun save(done: ((Boolean) -> Unit)? = null): Boolean = saveNow(done)
 
     /** After each save, on the database thread: the website's pages, then boards in the world. */
     internal fun afterSave() {
         try {
-            extras?.pagesChanged(this)
+            madeExtras?.pagesChanged(this)
         } catch (e: Exception) {
             log.warn("Couldn't make the website's pages: $e")
         }
@@ -610,11 +547,17 @@ public class XStatsPlugin(
 
     /** Sets every board's text from the leaderboards just worked out, each on its own place's thread. */
     internal fun updateBoards() {
-        val host = server.boards ?: return
         val rows = boards
+        // No boards, and none since the start: nothing to show or stop listening for.
+        if (rows.isEmpty() && !hadBoards) return
+        val host = server.boards ?: return
         host.listen(rows)
+        hadBoards = rows.isNotEmpty()
         for (row in rows) host.show(row, Boards.text(this, row))
     }
+
+    @Volatile
+    private var hadBoards = false
 
     // ---- players ----
 
@@ -660,64 +603,22 @@ public class XStatsPlugin(
 
     // ---- the API ----
 
-    override fun stats(): List<StatInfo> = catalog.snapshot.stats.map { it.info }
+    override fun stats(): List<StatInfo> = statsNow()
 
     override fun stat(id: String): StatInfo? = catalog.snapshot[id]?.info
 
-    override fun value(player: PlayerRef, stat: String, period: Period): Long {
-        val def = catalog.snapshot[stat] ?: return 0
-        val record = engine.player(player) ?: return 0
-        return engine.value(record, def, period)
-    }
+    override fun value(player: PlayerRef, stat: String, period: Period): Long = valueNow(player, stat, period)
 
-    override fun rank(player: PlayerRef, stat: String, period: Period): Int {
-        val def = catalog.snapshot[stat] ?: return 0
-        val record = engine.player(player) ?: return 0
-        return engine.rank(record, def, period)
-    }
+    override fun rank(player: PlayerRef, stat: String, period: Period): Int = rankNow(player, stat, period)
 
-    override fun top(stat: String, period: Period, count: Int): List<LeaderboardEntry> {
-        val board = engine.leaderboards[stat, period] ?: return emptyList()
-        return board.top(count.coerceIn(0, config[XStatsConfig.leaderboards.size]), false)
-    }
+    override fun top(stat: String, period: Period, count: Int): List<LeaderboardEntry> = topNow(stat, period, count)
 
-    override fun profile(player: PlayerRef): Pending<StatsProfile?> {
-        val record = engine.player(player) ?: return pendingOf(null)
-        val stats = catalog.snapshot.stats
-        val values = LinkedHashMap<Period, Map<String, Long>>()
-        for (period in Period.entries) {
-            val map = LinkedHashMap<String, Long>()
-            for (stat in stats) if (period == Period.ALL || stat.periods) map[stat.id] = engine.value(record, stat, period)
-            values[period] = map
-        }
-        return pendingOf(StatsProfile(record.id, record.name, record.firstJoin, record.lastSeen, record.hidden, values))
-    }
+    override fun profile(player: PlayerRef): Pending<StatsProfile?> = profileNow(player)
 
     override fun isPrivate(player: PlayerRef): Boolean = engine.player(player)?.hidden ?: false
 
-    override fun registerStat(owner: String, id: String, name: String, unit: StatUnit, latest: Boolean, decimals: Int): CustomStat {
-        require(Definitions.ID.matches(id)) { "a stat's id is 1 to 32 lowercase letters, digits and _, not \"$id\"" }
-        val full = owner.lowercase().filter { it.isLetterOrDigit() || it == '_' } + "_" + id
-        require(Definitions.ID.matches(full)) { "\"$full\" is too long for a stat's id: 32 characters at most" }
-        Definitions.clash(full)?.let { throw IllegalArgumentException(it) }
-        require(full !in config[XStatsConfig.stats]) { "the config already has a stat called $full" }
-        val stat = Definitions.Registered(full, name, unit, owner, latest, decimals.coerceIn(0, 4))
-        val changed = locked(registered) {
-            val old = registered.firstOrNull { it.id == full }
-            if (old != null && old.name == stat.name && old.unit == stat.unit && old.latest == stat.latest && old.decimals == stat.decimals) {
-                false
-            } else {
-                registered.removeAll { it.id == full }
-                registered += stat
-                true
-            }
-        }
-        if (changed) {
-            rebuildStats()
-            onDatabase { _ -> engine.recomputeBoards() }
-        }
-        return Custom(this, full)
-    }
+    override fun registerStat(owner: String, id: String, name: String, unit: StatUnit, latest: Boolean, decimals: Int): CustomStat =
+        registerStatNow(owner, id, name, unit, latest, decimals)
 
     override fun unregisterStats(owner: String) {
         val removed = locked(registered) { registered.removeAll { it.plugin == owner } }
@@ -732,26 +633,35 @@ public class XStatsPlugin(
         sections.remove(owner, id)
     }
 
-    /** A registered stat: each change waits in memory for the next save. */
-    private class Custom(private val plugin: XStatsPlugin, override val id: String) : CustomStat {
-        override fun increment(player: PlayerRef, amount: Long) {
-            change(player, amount, false)
-        }
+    // ---- what the scheduler and the engine call: one class with the plugin, not one each ----
 
-        override fun set(player: PlayerRef, value: Long) {
-            change(player, value, true)
-        }
+    /**
+     * The save, xStats' one repeating task on a server, every `collecting.save-every-minutes`; on the
+     * proxy, a check every `proxy.refresh-seconds` whether a server saved, which reads the network's
+     * numbers again only if one did. Not for other plugins.
+     */
+    override fun invoke(task: Task) {
+        if (server.proxy && !engine.dirty) return
+        save()
+    }
 
-        private fun change(player: PlayerRef, amount: Long, set: Boolean) {
-            var value = amount
-            if (plugin.hasListeners(StatChangeEvent.TYPE)) {
-                val event = plugin.bus.fire(StatChangeEvent.TYPE, StatChangeEvent(player, id, amount, set))
-                if (event.isCancelled) return
-                value = event.amount
-            }
-            if (!set && value == 0L) return
-            plugin.engine.queue(if (set) Event.Set(player, id, value, value, 0) else Event.Increment(player, id, value))
+    /** Someone went private or public: the website's pages again, on the database thread. Not for other plugins. */
+    override fun invoke() {
+        try {
+            madeExtras?.pagesChanged(this)
+        } catch (e: Exception) {
+            log.warn("Couldn't make the website's pages: $e")
         }
+    }
+
+    /** A board with a new leader, at a save: the API's event, only when something listens. Not for other plugins. */
+    override fun invoke(board: Board, previous: PlayerRecord?) {
+        if (!hasListeners(LeaderboardChangeEvent.TYPE)) return
+        val leader = board.leader ?: return
+        bus.fire(
+            LeaderboardChangeEvent.TYPE,
+            LeaderboardChangeEvent(board.stat.id, board.period, leader.id, leader.name ?: leader.id.toString(), previous?.id, board.values[0]),
+        )
     }
 
     public companion object {
@@ -761,83 +671,17 @@ public class XStatsPlugin(
         /** xStats' version. The adapters' builds check theirs is the same. */
         public const val VERSION: String = "2.0.0"
 
+        /**
+         * The plugins [Integrations] keeps stats for, by name: a constant, so an adapter can ask
+         * whether one is installed without loading the hooks' code. FamilyTest checks it's theirs.
+         */
+        public const val FAMILY: String = "xVote,xMoney,xBans,xTeleport,xRewind,xMarket,zChat"
+
         private val SERVER_NAME = Regex("[A-Za-z0-9_-]{1,64}")
     }
 }
 
-/** The modules: the save, the proxy's refresh and the website, one class told apart by [kind]. */
-internal class ModuleFactory(private val plugin: XStatsPlugin, private val kind: Int, private val every: Int) : () -> Module {
-    override fun invoke(): Module = when (kind) {
-        WEB -> plugin.extras!!.webModule(plugin)
-        else -> Repeating(plugin, kind, every)
-    }
-
-    companion object {
-        const val COLLECTOR = 0
-        const val REFRESH = 1
-        const val WEB = 2
-    }
-}
-
-/**
- * The save, xStats' one repeating task on a server, every `collecting.save-every-minutes`; on the
- * proxy, a check every `proxy.refresh-seconds` whether a server saved, which reads the network's
- * numbers again only if one did.
- */
-internal class Repeating(private val plugin: XStatsPlugin, private val kind: Int, private val every: Int) : Module, (Task) -> Unit {
-    private var task: Task? = null
-
-    override fun enable(context: ModuleContext) {
-        val period = if (kind == ModuleFactory.REFRESH) every.seconds else every.minutes
-        task = context.scheduler.run(Where.Async, delay = period, period = period, action = this)
-    }
-
-    override fun invoke(task: Task) {
-        if (kind == ModuleFactory.REFRESH && !plugin.engine.dirty) return
-        plugin.save()
-    }
-
-    override fun disable() {
-        task?.cancel()
-        task = null
-    }
-}
-
-/** Whether a player is vanished, from the family's cache (xVanish keeps it): left off leaderboards. */
-internal class Vanished(private val plugin: XStatsPlugin) : (PlayerRef) -> Boolean {
-    override fun invoke(player: PlayerRef): Boolean = plugin.cache?.isVanished(player) ?: false
-}
-
-/** A problem with a stat in the config: into [into] as the config loads, else to the log; a [note] is only information. */
-internal class Warn(private val into: MutableList<String>?, private val log: co.xenastudios.core.common.platform.Log, private val note: Boolean) : (String) -> Unit {
-    override fun invoke(text: String) {
-        when {
-            note -> log.info("config.yml: $text")
-            into != null -> into += "config.yml: $text"
-            else -> log.warn("config.yml: $text")
-        }
-    }
-}
-
-/** Someone went private or public: the website's pages again, on the database thread. */
-internal class HiddenChanged(private val plugin: XStatsPlugin) : () -> Unit {
-    override fun invoke() {
-        try {
-            plugin.extras?.pagesChanged(plugin)
-        } catch (e: Exception) {
-            plugin.log.warn("Couldn't make the website's pages: $e")
-        }
-    }
-}
-
-/** A board with a new leader, at a save: the API's event, only when something listens. */
-internal class NewLeader(private val plugin: XStatsPlugin) : (Board, PlayerRecord?) -> Unit {
-    override fun invoke(board: Board, previous: PlayerRecord?) {
-        if (!plugin.hasListeners(LeaderboardChangeEvent.TYPE)) return
-        val leader = board.leader ?: return
-        plugin.bus.fire(
-            LeaderboardChangeEvent.TYPE,
-            LeaderboardChangeEvent(board.stat.id, board.period, leader.id, leader.name ?: leader.id.toString(), previous?.id, board.values[0]),
-        )
-    }
+/** The website's module, made when it's turned on. */
+internal class WebFactory(private val plugin: XStatsPlugin) : () -> Module {
+    override fun invoke(): Module = plugin.extras!!.webModule(plugin)
 }

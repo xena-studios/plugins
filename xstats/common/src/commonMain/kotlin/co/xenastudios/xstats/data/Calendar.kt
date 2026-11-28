@@ -42,13 +42,12 @@ public class Calendar(public val zone: Zone, public val weekStarts: XStatsConfig
 
     public fun week(day: Int): Int = week(day, weekStarts)
 
-    /** The key a period's bucket has on a day: the day, its week or its month. */
-    public fun key(period: Period, day: Int): Int = when (period) {
-        Period.DAILY -> day
-        Period.WEEKLY -> week(day)
-        Period.MONTHLY -> month(day)
-        Period.ALL -> 0
-    }
+    /**
+     * The key a period's bucket has on a day: the day, its week or its month. Compared, not a
+     * `when` over [Period], which (an enum of another module) would be a class of its own.
+     */
+    public fun key(period: Period, day: Int): Int =
+        if (period === Period.DAILY) day else if (period === Period.WEEKLY) week(day) else if (period === Period.MONTHLY) month(day) else 0
 
     /** The earliest day the current week or month needs, for loading them from daily rows. */
     public fun earliestNeeded(day: Int): Int = minOf(week(day), firstDay(month(day)))

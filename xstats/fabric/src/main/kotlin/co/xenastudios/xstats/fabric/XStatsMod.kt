@@ -65,15 +65,13 @@ public object XStatsMod : ModInitializer {
         val config = files.config()
         val drivers = Drivers(XStatsMod::class.java.classLoader, platform.drivers(XStatsMod::class.java.classLoader))
         val gameDir = FabricLoader.getInstance().gameDir
-        val extras = JvmExtras(folder, World(platform), gameDir, NoNames, XStatsMod::class.java.classLoader)
         val xstats = XStatsPlugin(
             platform, server, files, family.players, platform.players, family.players,
             opener = JvmDatabase(family.family, folder, FabricLoader.getInstance().configDir.resolve("xena"), drivers, platform.log),
             registrar = platform.commands,
             permissionRegistrar = platform.permissions,
-            about = platform::about,
             paste = if (System.getProperty("xena.debug.paste") == "false") null else MclogsPaste(),
-            extras = extras,
+            makeExtras = { JvmExtras(folder, World(platform), gameDir, NoNames, XStatsMod::class.java.classLoader) },
             zones = JvmZones,
             version = version,
         )
@@ -167,6 +165,8 @@ internal class FabricStatsServer(private val platform: FabricPlatform, private v
     private fun player(ref: PlayerRef): ServerPlayer? = server()?.player(ref)
 
     override val vanilla: VanillaReader get() = this
+
+    override fun about(): Map<String, String> = platform.about()
 
     override fun online(): List<PlayerRef> = server()?.playerList?.players?.map { it.ref }.orEmpty()
 

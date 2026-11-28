@@ -14,6 +14,8 @@ import co.xenastudios.xstats.stat.Format
 import co.xenastudios.xstats.stat.StatDef
 import co.xenastudios.xstats.store.Store
 import kotlin.concurrent.Volatile
+import co.xenastudios.xstats.data.search
+import co.xenastudios.xstats.data.visibleRank
 
 /** JSON written as it goes, for the web API: objects, arrays, and every value escaped. */
 public class Json {
@@ -140,7 +142,7 @@ public class Pages(private val plugin: XStatsPlugin) {
             val pages = HashMap<String, Page>()
             pages[BASE + "server"] = Page(200, server(stats), 60)
             val size = plugin.config[XStatsConfig.leaderboards.size]
-            val saved = engine.lastSave.at.takeIf { it > 0 } ?: engine.lastRead
+            val saved = engine.lastSave?.at?.takeIf { it > 0 } ?: engine.lastRead
             for (period in Period.entries) {
                 val summary = Json().obj().field("period", period.id).field("saved", saved).key("boards").array()
                 for (stat in stats) {
@@ -194,7 +196,7 @@ public class Pages(private val plugin: XStatsPlugin) {
             .field("players", engine.playerCount)
             // Players online now, vanished ones left out (2.0).
             .field("online", plugin.server.online().count { plugin.cache?.isVanished(it) != true })
-            .field("saved", engine.lastSave.at.takeIf { it > 0 } ?: engine.lastRead)
+            .field("saved", engine.lastSave?.at?.takeIf { it > 0 } ?: engine.lastRead)
             .field("network", c[XStatsConfig.network.enabled])
         json.key("periods").array()
         for (period in Period.entries) json.obj().field("id", period.id).field("name", Actions.periodName(plugin, null, period)).end()

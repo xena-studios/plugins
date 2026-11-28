@@ -1120,6 +1120,23 @@ jobs:
     if: needs.changes.outputs.bukkit != '[]'
     runs-on: ubuntu-26.04
     timeout-minutes: 30
+    # One plugin a job, side by side: one job booting them all in turn outgrew its 30 minutes.
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin:
+          - {id: newest, name: xSample, jar: core/core-testing/sample/bukkit/build/r8/XSample.jar}
+          - {id: xutilities, name: xUtilities, jar: xutilities/bukkit/build/r8/xUtilities.jar}
+          - {id: zchat, name: zChat, jar: zchat/bukkit/build/r8/zChat.jar}
+          - {id: xmoney, name: xMoney, jar: xmoney/bukkit/build/r8/xMoney.jar}
+          - {id: xteleport, name: xTeleport, jar: xteleport/bukkit/build/r8/xTeleport.jar}
+          - {id: xbans, name: xBans, jar: xbans/bukkit/build/r8/xBans.jar}
+          - {id: xbackup, name: xBackup, jar: xbackup/bukkit/build/r8/xBackup.jar}
+          - {id: xvanish, name: xVanish, jar: xvanish/bukkit/build/r8/xVanish.jar}
+          - {id: xmarket, name: xMarket, jar: xmarket/bukkit/build/r8/xMarket.jar}
+          - {id: xvote, name: xVote, jar: xvote/bukkit/build/r8/xVote.jar}
+          - {id: xrewind, name: xRewind, jar: xrewind/bukkit/build/r8/xRewind.jar}
+          - {id: xlimits, name: xLimits, jar: xlimits/bukkit/build/r8/xLimits.jar}
     permissions:
       contents: read
     steps:
@@ -1149,86 +1166,22 @@ jobs:
       # async-profiler's CPU samples need perf events, which the runner's kernel keeps from
       # unprivileged processes.
       - run: sudo sysctl kernel.perf_event_paranoid=1
-      - name: runtime budgets (newest Paper)
+      # Every rewritten plugin and xSample, measured the same way, against the same budgets
+      # (startup and metaspace failing too since decisions/2026-11-25-a-lighter-core.md).
+      - name: runtime budgets, ${{ matrix.plugin.name }} (newest Paper)
+        env:
+          ID: ${{ matrix.plugin.id }}
+          JAR: ${{ matrix.plugin.jar }}
         run: |
           newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/newest \
-            core/core-testing/sample/bukkit/build/r8/XSample.jar
-      # Every rewritten plugin, measured the same way, against the same budgets (startup and
-      # metaspace failing too since decisions/2026-11-25-a-lighter-core.md).
-      - name: runtime budgets, xUtilities (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xutilities \
-            xutilities/bukkit/build/r8/xUtilities.jar
-      - name: runtime budgets, zChat (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/zchat \
-            zchat/bukkit/build/r8/zChat.jar
-      - name: runtime budgets, xMoney (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xmoney \
-            xmoney/bukkit/build/r8/xMoney.jar
-      - name: runtime budgets, xTeleport (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xteleport \
-            xteleport/bukkit/build/r8/xTeleport.jar
-      - name: runtime budgets, xBans (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xbans \
-            xbans/bukkit/build/r8/xBans.jar
-      - name: runtime budgets, xBackup (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xbackup \
-            xbackup/bukkit/build/r8/xBackup.jar
-      - name: runtime budgets, xVanish (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xvanish \
-            xvanish/bukkit/build/r8/xVanish.jar
-      - name: runtime budgets, xMarket (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xmarket \
-            xmarket/bukkit/build/r8/xMarket.jar
-      - name: runtime budgets, xVote (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xvote \
-            xvote/bukkit/build/r8/xVote.jar
-      - name: runtime budgets, xRewind (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xrewind \
-            xrewind/bukkit/build/r8/xRewind.jar
-      - name: runtime budgets, xLimits (newest Paper)
-        run: |
-          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
-          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out build/budgets/xlimits \
-            xlimits/bukkit/build/r8/xLimits.jar
+            --out "build/budgets/$ID" "$JAR"
       # Its startup is reported, not budgeted: Paper 1.21.11 loads a plugin about 4 times
       # slower than 26.3 on these 2-core runners (its JIT threads and loader, not our code: the
       # server thread spends 6-7 ms of CPU in our enable), and startup is budgeted, failing, on
       # the newest Paper above. The load, heap, metaspace and idle budgets fail here as before.
       - name: BotMark load (Paper 1.21.11, 10 bots)
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && matrix.plugin.id == 'newest'
         run: |
           scripts/budgets/check.sh --version 1.21.11 --java "$JAVA_HOME_21_X64" --bots 10 \
             --report-only startup-first-ms,startup-ms \
@@ -1238,7 +1191,7 @@ jobs:
       - if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: budgets
+          name: budgets-${{ matrix.plugin.id }}
           path: |
             build/budgets/*/report.md
             build/budgets/*/results.json

@@ -22,7 +22,7 @@ val xena = extensions.create<XenaPluginExtension>("xena").apply {
 
 val libs = the<VersionCatalogsExtension>().named("libs")
 
-// "1.21.11-R0.1-SNAPSHOT" -> "1.21.11"
+// "1.21.11-R0.1-20260511.115010-91" (a pinned build of 1.21.11-R0.1-SNAPSHOT) -> "1.21.11"
 val minecraftVersion = libs.findVersion("paper").get().requiredVersion.substringBefore("-R0.1")
 
 dependencies {

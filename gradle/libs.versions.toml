@@ -1,15 +1,22 @@
 [versions]
+# Paper's and Spigot's APIs are published only as snapshots, so each is pinned to one build
+# (its timestamped version): a moving -SNAPSHOT changes the jars between a release PR's dry run
+# and the release, and R8's output with them (decisions/2026-11-28-pin-the-server-apis.md).
+# Bumped by hand: the version is the <value> in the snapshot's maven-metadata.xml.
 # The rewrite's Kotlin, for every Xena plugin at once: servers before 1.15 share the first
 # plugin's stdlib, so the family moves together (DECISIONS.md, M0).
 kotlin = "2.4.21"
 # The oldest Bukkit the rewrite runs on: the core's Java shim compiles against it, so it uses
-# nothing newer (core/core-loader).
-spigot-floor = "1.8.8-R0.1-SNAPSHOT"
+# nothing newer (core/core-loader). 1.8.8-R0.1-SNAPSHOT's last build.
+spigot-floor = "1.8.8-R0.1-20160221.082514-43"
 # The oldest Bukkit with block data (1.13), which the world hooks compile against
 # (core/platform-bukkit's world source set), and the floor of the plugins that use them.
-spigot-world = "1.13.2-R0.1-SNAPSHOT"
+# 1.13.2-R0.1-SNAPSHOT's last build.
+spigot-world = "1.13.2-R0.1-20190423.030901-214"
 # The oldest Paper every plugin supports. Raising it is a breaking change for server owners.
-paper = "1.21.11-R0.1-SNAPSHOT"
+# 1.21.11-R0.1-SNAPSHOT's build 91 (2026-05-11), its last so far; build-logic reads "1.21.11"
+# from the part before "-R0.1".
+paper = "1.21.11-R0.1-20260511.115010-91"
 junit = "6.1.3"
 mockbukkit = "4.116.3"
 bstats = "3.2.1"

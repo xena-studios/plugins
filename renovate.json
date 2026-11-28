@@ -5,7 +5,7 @@
   ],
   "packageRules": [
     {
-      "description": "The oldest Paper the plugins support. Raising it drops every server still on it, so it's changed by hand. The newest Paper is tracked by .github/workflows/minecraft.yml.",
+      "description": "The oldest Paper the plugins support, pinned to one timestamped snapshot build (gradle/libs.versions.toml) so a release builds the same jars its dry run did. Raising it drops every server still on it, and a new build of the same snapshot changes the jars and R8's output, so both are changed by hand (decisions/2026-11-28-pin-the-server-apis.md). The newest Paper is tracked by .github/workflows/minecraft.yml.",
       "matchPackageNames": [
         "io.papermc.paper:paper-api"
       ],

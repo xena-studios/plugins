@@ -1,0 +1,11 @@
+# The server APIs are pinned to one build each (2026-11-28)
+
+Paper's API is published only as a snapshot (`1.21.11-R0.1-SNAPSHOT`), and so are Spigot's (`1.8.8-R0.1-SNAPSHOT`, `1.13.2-R0.1-SNAPSHOT`). A snapshot moves: a new build can land between a release PR's CI dry run and the release, and the release then refuses, since the jars' checksums no longer match the dry run's; R8's output drifts with it, which `checkApiFloor` would see as new or stale members.
+
+- **Chosen: the timestamped version of one build.** `gradle/libs.versions.toml` names the `<value>` from each snapshot's `maven-metadata.xml`, which Gradle resolves to exactly that build:
+  - `paper = "1.21.11-R0.1-20260511.115010-91"` (build 91, the newest of 1.21.11 on repo.papermc.io; Paper's new numbering, `26.x.build.N-stable`, starts at 26.1, so 1.21.11 has no release version);
+  - `spigot-floor = "1.8.8-R0.1-20160221.082514-43"` and `spigot-world = "1.13.2-R0.1-20190423.030901-214"` (the last builds; they haven't moved in years, but nothing stops them).
+  The build was rebuilt on them and every `<plugin>/bukkit/api-floor.txt` still passes unchanged. build-logic reads the Minecraft version (`api-version`, `1.21.11`) from the part before `-R0.1`, as before.
+- **Not pinned: the rest.** Velocity (`3.4.0`), BungeeCord (`1.21-R0.4`), Adventure and bungeecord-chat are releases. Folia's API isn't a dependency (Folia boots use Paper's API). The Fabric build pins Minecraft, Loader, Fabric API and the mappings to releases already. `-Pxena.newestPaper` (plugins.yml's compile check against the newest Paper) names a release build (`26.x.build.N-stable`).
+- **Renovate stays off for these** (it was already off for `paper-api` and `spigot-api`; the rule's description now says why): a new build of the same snapshot changes the jars, and raising the floor drops servers, so both are bumped by hand. The newest Paper is still tracked by `.github/workflows/minecraft.yml`.
+- **To bump:** read `https://repo.papermc.io/repository/maven-public/io/papermc/paper/paper-api/<version>-R0.1-SNAPSHOT/maven-metadata.xml`, put the jar's `<value>` in the catalog, build, and run `./gradlew :<plugin>:bukkit:updateApiFloor` for any project whose `checkApiFloor` fails.

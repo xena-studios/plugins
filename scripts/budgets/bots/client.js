@@ -998,6 +998,9 @@ async function xplots () {
   const g = at.y - 1
   const x0 = at.x + 3
   const z0 = at.z + 3
+  // No mobs: the flat world spawns slimes, and one that kills Joiner (or Friend) respawns them
+  // somewhere else, which a check of where they stand then reads as the plugin's doing.
+  await command('/difficulty peaceful', 'Peaceful', 'no mobs to get in the way')
   // Flat ground of dirt under the field and the path beside it, clear air above: the world's own
   // terrain doesn't matter.
   await command(`/fill ${x0 - 2} ${g} ${z0 - 3} ${x0 + 13} ${g} ${z0 + 7} minecraft:dirt`, '', 'the ground is made')
@@ -1054,12 +1057,13 @@ async function xplots () {
   try { friend.bot.quit() } catch {}
   if (withXMoney) {
     await command('/homes', 'client-1', "xTeleport's /homes lists the plot home")
-    bot.chat(`/tp ${username} ~ ~ ~30`)
-    await sleep(1500)
+    // Away from the plot's front, on the ground made above: nothing of the world's own around.
+    const fromFront = () => Math.hypot(bot.entity.position.x - (x0 + 0.5), bot.entity.position.z - (z0 + 5.5))
+    await command(`/tp ${username} ${x0 + 12.5} ${g + 1} ${z0 - 2.5}`, '', 'Joiner steps away from the plot')
+    for (let waited = 0; waited < 5000 && fromFront() < 10; waited += 100) await sleep(100)
     await command('/home client-1', de('Willkommen in client-1', 'Welcome to client-1'), '/home goes to the plot home, through xTeleport')
-    await sleep(1000)
-    const d = Math.hypot(bot.entity.position.x - (x0 + 0.5), bot.entity.position.z - (z0 + 5.5))
-    check('Joiner is at the plot\'s front', d < 2, `at ${bot.entity.position}`)
+    for (let waited = 0; waited < 5000 && fromFront() >= 2; waited += 100) await sleep(100)
+    check('Joiner is at the plot\'s front', fromFront() < 2, `at ${bot.entity.position}`)
   }
   finish()
 }

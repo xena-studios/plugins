@@ -61,6 +61,25 @@ class XRewindTest {
     }
 
     @Test
+    fun aBlockPlacedOverSnowGrassOrWaterIsAPlaceAndItsRollbackPutsThemBack() {
+        // Not the world hooks' isPlace (air before only): any player change to a block is a place,
+        // with what it replaced kept as the state before.
+        val h = harness()
+        val alex = h.server.join("Alex", Center("world", 20, 64, 20))
+        val replaced = listOf("minecraft:snow[layers=3]", "minecraft:short_grass", "minecraft:water[level=0]")
+        replaced.forEachIndexed { i, before ->
+            h.server.blocks[Spot("world", 20 + i, 64, 20)] = "minecraft:stone"
+            assertNotNull(h.server.world.change(at(20 + i, 64, 20), before, "minecraft:stone", ChangeCause.PLAYER, alex, "Alex"))
+        }
+        val staff = h.server.source(alex)
+        h.run("xrewind lookup t:1h", staff) { h.replies(staff).count { "placed stone" in it } >= 3 }
+        assertEquals(3, h.replies(staff).count { "Alex placed stone" in it }, h.replies(staff).toString())
+
+        h.run("xrewind rollback u:Alex t:1h", staff) { h.replies(staff).any { "Rolled back" in it } }
+        replaced.forEachIndexed { i, before -> assertEquals(before, h.server.state("world", 20 + i, 64, 20)) }
+    }
+
+    @Test
     fun onlyWhatIsSwitchedOnIsListenedFor() {
         val h = harness("log:\n  explosions: false\n  pistons: false\n  mobs: false\n  fire: false\n  liquids: false\n  containers: false\n  kills: false\n")
         assertEquals(setOf(WorldHook.BLOCK_PLAYER), h.server.world.active)

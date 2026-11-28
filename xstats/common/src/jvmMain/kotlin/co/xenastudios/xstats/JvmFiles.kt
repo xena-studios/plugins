@@ -52,6 +52,12 @@ public open class JvmFiles(
         return translations(config.config, config.problems)
     }
 
+    override fun useStorage(type: co.xenastudios.core.common.family.StorageType): String? =
+        when (val edited = file.edit { this[XStatsConfig.storage.type] = type }) {
+            is Outcome.Ok -> null
+            is Outcome.Err -> edited.error.message
+        }
+
     /** `config.yml` alone, carried forward if it's old: what a server's startup reads as the plugin enables. */
     public fun config(): Loaded {
         val problems = ArrayList<String>()
@@ -158,7 +164,23 @@ public class JvmDatabase(
         val plan = family.storage(config, XStatsConfig.storage)
         val file = if (plan.inFamilyFolder) familyFolder.resolve(Family.DATABASE_FILE.toString()) else folder.resolve(co.xenastudios.xstats.store.Q.FILE)
         plan.problem?.let(log::warn)
-        val settings = plan.database
+        return open(plan.database, file)
+    }
+
+    // /xstats migrate's target: this plugin's own SQLite file, or storage.mysql.
+    override fun openAs(config: Config, type: co.xenastudios.core.common.db.DatabaseSettings.Type): Outcome<Database, String> {
+        val storage = XStatsConfig.storage
+        val readers = storage.pool.read(config)
+        val prefix = config[storage.tablePrefix]
+        val settings = when (type) {
+            co.xenastudios.core.common.db.DatabaseSettings.Type.MYSQL ->
+                co.xenastudios.core.common.db.DatabaseSettings(type, prefix, storage.mysql.read(config), readers)
+            else -> co.xenastudios.core.common.db.DatabaseSettings(type, prefix, readers = readers)
+        }
+        return open(settings, folder.resolve(co.xenastudios.xstats.store.Q.FILE))
+    }
+
+    private fun open(settings: co.xenastudios.core.common.db.DatabaseSettings, file: Path): Outcome<Database, String> {
         return when (val opened: Outcome<Database, DbError> = JdbcDatabase.open(settings, file, drivers, log, XStatsPlugin.NAME)) {
             is Outcome.Ok -> Outcome.Ok(opened.value)
             is Outcome.Err -> Outcome.Err(

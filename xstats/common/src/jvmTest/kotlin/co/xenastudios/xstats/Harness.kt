@@ -197,21 +197,39 @@ class Harness(
     config: String = "",
     network: Boolean = false,
     extras: (Harness) -> Extras? = { null },
+    /** `/xstats migrate`'s target, by the type asked for; `null` for a server that can't open one. */
+    private val target: ((DatabaseSettings.Type) -> Database)? = null,
 ) {
     val platform: TestPlatform = TestPlatform(if (proxy) Threading.PROXY else Threading.MAIN_THREAD)
     val server: FakeStatsServer = FakeStatsServer(proxy) { platform }
     private var text = config
-    private val files = co.xenastudios.xstats.Files { load() }
+    /** What `/xstats migrate` set `storage.type` to, in order. */
+    val storageWrites: MutableList<co.xenastudios.core.common.family.StorageType> = Collections.synchronizedList(ArrayList())
+
+    private val files = object : co.xenastudios.xstats.Files {
+        override fun load(): Loaded = this@Harness.load()
+
+        override fun useStorage(type: co.xenastudios.core.common.family.StorageType): String? {
+            storageWrites += type
+            return null
+        }
+    }
 
     fun load(): Loaded {
         val loaded = Configs.load(XStatsConfig, text, TestYaml)
         return Loaded((loaded as Outcome.Ok).value.config, Translations.of(XStatsMessages.catalog, emptyMap()))
     }
 
-    private val opener = Opener { config: Config ->
-        when (val opened = JdbcDatabase.open(DatabaseSettings(DatabaseSettings.Type.SQLITE, config[XStatsConfig.storage.tablePrefix]), folder.resolve("stats.db"), Drivers.serverOnly(javaClass.classLoader), platform.log, "Test")) {
-            is Outcome.Ok -> Outcome.Ok<Database>(opened.value)
-            is Outcome.Err -> Outcome.Err(opened.error.detail)
+    private val opener = object : Opener {
+        override fun open(config: Config): Outcome<Database, String> =
+            when (val opened = JdbcDatabase.open(DatabaseSettings(DatabaseSettings.Type.SQLITE, config[XStatsConfig.storage.tablePrefix]), folder.resolve("stats.db"), Drivers.serverOnly(javaClass.classLoader), platform.log, "Test")) {
+                is Outcome.Ok -> Outcome.Ok<Database>(opened.value)
+                is Outcome.Err -> Outcome.Err(opened.error.detail)
+            }
+
+        override fun openAs(config: Config, type: DatabaseSettings.Type): Outcome<Database, String> {
+            val make = target ?: return Outcome.Err("no target in this test")
+            return Outcome.Ok(make(type))
         }
     }
 

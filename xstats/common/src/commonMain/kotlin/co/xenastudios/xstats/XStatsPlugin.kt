@@ -72,11 +72,21 @@ public class Loaded(
 /** xStats' files: on the JVM, `JvmFiles`. [load] reads `config.yml` and `lang/`. */
 public fun interface Files {
     public fun load(): Loaded
+
+    /** Sets `storage.type` in config.yml (for `/xstats migrate`), or says why it couldn't, in English. */
+    public fun useStorage(type: co.xenastudios.core.common.family.StorageType): String? = "config.yml can't be changed here"
 }
 
 /** Opens the database a config names (on the JVM, `JvmDatabase`), off the server's threads, or says why it couldn't, in English. */
 public fun interface Opener {
     public fun open(config: Config): Outcome<Database, String>
+
+    /**
+     * Opens the database of [type] from [config]'s settings for it (`storage.mysql`, or the
+     * plugin's own SQLite file), whatever `storage.type` says: `/xstats migrate`'s target.
+     */
+    public fun openAs(config: Config, type: co.xenastudios.core.common.db.DatabaseSettings.Type): Outcome<Database, String> =
+        Outcome.Err("this server can't open another database")
 }
 
 /**
@@ -166,10 +176,10 @@ public class XStatsPlugin(
 
     public val engine: Engine = Engine(catalog, settings(XStatsConfig.defaults), log, platform.clock, readOnly = server.proxy)
 
-    /** The database, or `null` before it's open. */
+    /** The database, or `null` before it's open. Another once `/xstats migrate` has moved the stats. */
     @Volatile
     public var database: Database? = null
-        private set
+        internal set
 
     /** Why there's no database, if opening it failed. */
     @Volatile
@@ -217,6 +227,7 @@ public class XStatsPlugin(
         PLUGIN_ID, NAME, platform, reloader(),
         debug = Reloading(2) as () -> co.xenastudios.core.common.admin.Debug,
         playerData = if (server.proxy) null else Reloading(3) as () -> co.xenastudios.core.common.admin.PlayerDataRegistry,
+        makeMigration = if (server.proxy) null else Reloading(4) as () -> co.xenastudios.core.common.admin.StorageMigration,
         text = texts.admin,
     )
 
@@ -408,7 +419,8 @@ public class XStatsPlugin(
             0 -> apply(files.load())
             1 -> wantedModules()
             2 -> AdminParts.debug(this@XStatsPlugin)
-            else -> AdminParts.playerData(this@XStatsPlugin)
+            3 -> AdminParts.playerData(this@XStatsPlugin)
+            else -> co.xenastudios.xstats.store.Moving.migration(this@XStatsPlugin, files, opener)
         }
     }
 

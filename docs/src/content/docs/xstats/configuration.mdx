@@ -21,7 +21,7 @@ The config is `plugins/xStats/config.yml` (`plugins/xstats/` on Velocity, `confi
 | `integrations` | The family's stats, each one on until you turn it off. |
 | `proxy` | xStats on Velocity: its two network commands, and how soon it reads the network again. |
 | `server-name` | This server's name in the database, for networks. |
-| `storage` | Where stats are kept: SQLite in the plugin's folder (`stats.db`), MySQL/MariaDB, or the family's shared database. |
+| `storage` | Where stats are kept: SQLite in the plugin's folder (`stats.db`), MySQL/MariaDB, or the family's shared database. To move existing stats between SQLite and MySQL, use [`/xstats migrate`](/xstats/commands/). |
 | `network` | Servers (and the proxy) sharing one database: see [Networks](/xstats/networks/). |
 | `updates` | The update checker: [Privacy](/start/privacy/). |
 

@@ -156,7 +156,7 @@
     },
     {
       "path": "xstats",
-      "usage": "/xstats [info|status|save|import|board|web|reload|debug|forget]",
+      "usage": "/xstats [info|status|save|import|board|web|reload|debug|migrate|forget]",
       "aliases": [],
       "description": "Shows xStats' version, and holds its admin subcommands.",
       "playerOnly": false,
@@ -396,6 +396,41 @@
           "subcommands": []
         },
         {
+          "path": "xstats migrate",
+          "usage": "/xstats migrate <to> [force]",
+          "aliases": [],
+          "description": "Moves the data to another storage type.",
+          "permission": "xstats.admin.migrate",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "to",
+              "type": "choice",
+              "required": true,
+              "greedy": false,
+              "description": "The storage type to move the data to.",
+              "choices": [
+                "sqlite",
+                "mysql"
+              ]
+            },
+            {
+              "name": "force",
+              "type": "choice",
+              "required": false,
+              "greedy": false,
+              "description": "Replaces what the target database already has.",
+              "choices": [
+                "--force"
+              ]
+            }
+          ],
+          "executable": true,
+          "confirm": true,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
           "path": "xstats forget",
           "usage": "/xstats forget <player>",
           "aliases": [],
@@ -452,6 +487,7 @@
       "children": {
         "xstats.admin.reload": true,
         "xstats.admin.debug": true,
+        "xstats.admin.migrate": true,
         "xstats.admin.forget": true,
         "xstats.admin.update": true
       },
@@ -481,6 +517,16 @@
       "children": {},
       "commands": [
         "xstats debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xstats.admin.migrate",
+      "description": "Use /xstats migrate.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xstats migrate"
       ],
       "builtIn": true
     },

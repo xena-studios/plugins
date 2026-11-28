@@ -16,7 +16,10 @@ import org.bukkit.potion.PotionType
 internal object Modern {
     fun key(material: Material): String = material.key.toString()
 
-    fun items(): Set<String> = Material.entries.filter { !it.name.startsWith("LEGACY_") && it.isItem && !it.isAir }.map { it.key.toString() }.toSet()
+    /** Air by name: `Material.isAir` is 1.14 on, and this runs from 1.13. */
+    fun items(): Set<String> = Material.entries.filter { !it.name.startsWith("LEGACY_") && it.isItem && it.name !in AIR }.map { it.key.toString() }.toSet()
+
+    private val AIR = setOf("AIR", "CAVE_AIR", "VOID_AIR")
 
     fun enchantmentKey(enchantment: Enchantment): String = enchantment.key.toString()
 

@@ -84,6 +84,20 @@ public class StoreReader(private val db: Database, private val log: Log) {
                 renewals[plot] = Renewal(int(v[2]) != 0, (v[3] as? SqlValue.Integer)?.value)
             }
         }
+        val notices = ArrayList<Notice>()
+        val noticeRows = session.query(sql.raw("SELECT field, number, owner_most, owner_least, kind, price FROM {p}notice"))
+        if (noticeRows is Outcome.Ok) {
+            for (row in noticeRows.value) {
+                val v = row.values
+                val plot = byKey[key(int(v[0]), int(v[1]))] ?: continue
+                val price = when (val p = v[5]) {
+                    is SqlValue.Real -> p.value
+                    is SqlValue.Integer -> p.value.toDouble()
+                    else -> 0.0
+                }
+                notices += Notice(plot, player(v[2], v[3]), text(v[4]) ?: continue, price)
+            }
+        }
         for (field in fields.values) {
             for (plot in field.plots()) {
                 val lease = leases[plot] ?: continue
@@ -91,7 +105,7 @@ public class StoreReader(private val db: Database, private val log: Log) {
             }
             plots.index(field)
         }
-        return Outcome.Ok(Stored(plots, renewals))
+        return Outcome.Ok(Stored(plots, renewals, notices))
     }
 
 }

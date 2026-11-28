@@ -9,7 +9,7 @@ Replace the jar and restart. Your fields, plots, rents, members, signs and saved
 ### Added
 
 - **Spigot, CraftBukkit and Folia, from 1.13.** One jar from Spigot 1.13 to the newest Paper and Folia; 1.x ran on Paper 1.21.11 and newer only. On Folia each sign and each plot's reset runs on its own region's thread.
-- **Rent that renews itself.** `plots.auto-renew` (or one field's `auto-renew`) renews a plot from its owner's balance an hour before it runs out, online or not; the owner can turn it off in the plot's menu. Each renewal is charged once at most, even across a crash: it's written down before the money is taken, and a start that finds one unsettled checks xMoney's ledger.
+- **Rent that renews itself.** `plots.auto-renew` (or one field's `auto-renew`) renews a plot from its owner's balance an hour before it runs out, online or not; the owner can turn it off in the plot's menu. Each renewal is charged once at most, even across a crash: it's written down before the money is taken, and a start that finds one unsettled checks xMoney's ledger. An owner who was away is told when they next join, even after a restart.
 - **xMoney.** Rent is paid through xMoney's API when it's installed, each payment in its ledger with the plot ("xPlots: rent for box-12"); any economy through Vault otherwise. `currency.type: economy` is the new name for 1.x's `vault`, which still works.
 - **Plot homes in xTeleport.** With xTeleport 2.0, each plot a player rents is in `/homes` and `/home box-12`.
 - **Rolling back griefing in a plot.** With xRewind 2.0, `/plots rollback <player> [time]` undoes what a player did in your plot, and only there; staff have `/xplots plot rollback <plot> <time> <player>`. New permission `xplots.rollback`, everyone's.

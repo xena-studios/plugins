@@ -11,8 +11,8 @@ import co.xenastudios.core.common.db.Statement
  * grid is worked out again; each plot keeps its own box and sign so either can change. 1.x's
  * `meta` table is the core's ([co.xenastudios.core.common.db.Migrations.Meta]), the same columns.
  *
- * 2.0's one addition, renewals, is a table of its own made beside the schema ([RENEWAL]), not a
- * step of it: the schema stays at 1, so the 1.x jar still opens the database, and ignores it.
+ * 2.0's one addition, renewals, is two tables of its own made beside the schema ([RENEWAL] and
+ * [NOTICE]), not a step of it: the schema stays at 1, so the 1.x jar still opens the database, and ignores it.
  */
 public object Tables {
     public val MIGRATIONS: List<Migration> = listOf(
@@ -48,10 +48,19 @@ public object Tables {
     public const val RENEWAL: String = "CREATE TABLE IF NOT EXISTS {p}renewal (field INT NOT NULL, number INT NOT NULL, auto TINYINT NOT NULL," +
         " charge BIGINT, PRIMARY KEY (field, number)){table}"
 
+    /**
+     * 2.0's renewal notices for owners who were away: one row per plot and owner, the latest
+     * (`kind` the message's key, `renewed` or `renew-failed`, and the price), delivered and
+     * deleted as they next join. Its own table so a renewal table made before it is left as it is.
+     */
+    public const val NOTICE: String = "CREATE TABLE IF NOT EXISTS {p}notice (field INT NOT NULL, number INT NOT NULL," +
+        " owner_most BIGINT NOT NULL, owner_least BIGINT NOT NULL, kind VARCHAR(16) NOT NULL, price DOUBLE NOT NULL," +
+        " PRIMARY KEY (field, number, owner_most, owner_least)){table}"
+
     internal fun statements(sql: Sql): List<Statement> = STEP_1.map { sql.raw(fill(it, sql.dialect)) }
 
-    /** The renewals' table, made if it isn't there yet, after the schema is up to date. */
-    public fun extras(sql: Sql): List<Statement> = listOf(sql.raw(fill(RENEWAL, sql.dialect)))
+    /** The renewals' tables, made if they aren't there yet, after the schema is up to date. */
+    public fun extras(sql: Sql): List<Statement> = listOf(sql.raw(fill(RENEWAL, sql.dialect)), sql.raw(fill(NOTICE, sql.dialect)))
 
     /** 1.x's placeholders: `{blob}` bytes, `{table}` what follows a `CREATE TABLE`. */
     internal fun fill(text: String, dialect: Dialect): String = when (dialect) {

@@ -121,7 +121,7 @@ nothing=$'tasks=\nchecks=\nboot='
 rewrite="tasks=$rewriteTasks"$'\nchecks='
 
 check "Rewrite core only" core/core-common/src/commonMain/kotlin/co/xenastudios/core/common/text/Component.kt \
-  "$rewrite"$'\nboot=bukkit fabric neoforge proxy'
+  "$rewrite"$'\nboot=bukkit fabric neoforge proxy sponge'
 check "Rewrite's Bukkit platform" core/platform-bukkit/src/main/kotlin/co/xenastudios/core/bukkit/BukkitText.kt \
   "$rewrite"$'\nboot=bukkit'
 check "Rewrite's Fabric platform (its own build)" core/platform-fabric/src/main/kotlin/co/xenastudios/core/fabric/FabricCommands.kt \
@@ -143,6 +143,11 @@ check "The real client" scripts/budgets/bots/client.js $'tasks=\nchecks=\nboot=b
 check "The real client's operator seed" scripts/boot-seeds/client/ops.json $'tasks=\nchecks=\nboot=bukkit fabric neoforge'
 check "Fabric boot script" scripts/boot-fabric.sh $'tasks=\nchecks=\nboot=fabric'
 check "NeoForge boot script" scripts/boot-neoforge.sh $'tasks=\nchecks=\nboot=neoforge'
+check "Sponge boot script" scripts/boot-sponge.sh $'tasks=\nchecks=\nboot=sponge'
+check "Rewrite's Sponge platform" core/platform-sponge/src/main/kotlin/co/xenastudios/core/sponge/SpongeCommands.kt \
+  "$rewrite"$'\nboot=sponge'
+check "xSample's Sponge plugin" core/core-testing/sample/sponge/boot-checks.txt "$rewrite"$'\nboot=sponge'
+check "Rewrite's Sponge convention" build-logic/src/main/kotlin/xena.sponge-plugin.gradle.kts "$rewrite"$'\nboot=sponge'
 check "NeoForge mods' convention" build-logic/src/main/kotlin/xena.neoforge-mod.gradle.kts "$rewrite"$'\nboot=neoforge'
 check "A rewritten plugin's Fabric real-client checks" xutilities/fabric/client-checks.txt $'checks=\nboot=fabric'
 check "A rewritten plugin's common code" xutilities/common/src/commonMain/kotlin/co/xenastudios/xutilities/Commands.kt \
@@ -298,21 +303,21 @@ check "xStats' network test" xstats/velocity/network.sh \
   $'tasks=:build :xstats:api:build :xstats:bukkit:build :xstats:common:build :xstats:velocity:build\nchecks=\nboot=proxy'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 # No "today's plugin" case: xStats 2.0 was the last plugin still on today's Java core.
-check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric neoforge proxy'
-check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric neoforge proxy'
+check "Rewrite's convention" build-logic/src/main/kotlin/xena.r8.gradle.kts "$rewrite"$'\nboot=bukkit fabric neoforge proxy sponge'
+check "Rewrite's build-logic class" build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt "$rewrite"$'\nboot=bukkit fabric neoforge proxy sponge'
 # The floor check reads the shrunk jars and changes none, so nothing boots again.
 check "Rewrite's API floor check" build-logic/src/main/kotlin/co/xenastudios/gradle/ApiFloor.kt "$rewrite"$'\nboot='
 check "Today's convention" build-logic/src/main/kotlin/xena.plugin.gradle.kts everything
 check "build-logic's own build" build-logic/build.gradle.kts everything
-check "Rewrite's jar budgets" gradle/jar-budgets.txt "$rewrite"$'\nboot=bukkit fabric neoforge proxy'
-check "Rewrite's shrinking rules" build-logic/src/main/resources/xena/r8/common.pro "$rewrite"$'\nboot=bukkit fabric neoforge proxy'
+check "Rewrite's jar budgets" gradle/jar-budgets.txt "$rewrite"$'\nboot=bukkit fabric neoforge proxy sponge'
+check "Rewrite's shrinking rules" build-logic/src/main/resources/xena/r8/common.pro "$rewrite"$'\nboot=bukkit fabric neoforge proxy sponge'
 check "Version catalog" gradle/libs.versions.toml everything
 check "Runtime budgets script" scripts/budgets/check.sh $'tasks=\nchecks=\nboot=bukkit'
 check "Paper and Folia boot script" scripts/boot-test.sh everything
 check "Docs only" $'docs/src/content/docs/index.mdx\nREADME.md' "$nothing"
 check "A decision" $'decisions/2026-11-24-decisions-one-file-each.md\nDECISIONS.md\nscripts/decisions.ts' "$nothing"
 check "Plugins workflow" .github/workflows/plugins.yml everything
-check "Boot workflow" .github/workflows/boot.yml $'tasks=\nchecks=\nboot=bukkit fabric neoforge proxy'
+check "Boot workflow" .github/workflows/boot.yml $'tasks=\nchecks=\nboot=bukkit fabric neoforge proxy sponge'
 check "Another workflow" .github/workflows/docs.yml "$nothing"
 check "A new top-level file" Makefile everything
 

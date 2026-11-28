@@ -1,0 +1,35 @@
+{
+  "loader": {
+    "name": "java_plain",
+    "version": "1.0"
+  },
+  "license": "GPL-3.0-only",
+  "plugins": [
+    {
+      "id": "xsample",
+      "name": "xSample",
+      "version": "${version}",
+      "entrypoint": "co.xenastudios.xsample.sponge.XSampleSponge",
+      "description": "The core's sample plugin on Sponge, for boot tests. Never released.",
+      "links": {
+        "homepage": "https://plugins.xenastudios.co/",
+        "source": "https://github.com/xena-studios/plugins",
+        "issues": "https://github.com/xena-studios/plugins/issues"
+      },
+      "contributors": [
+        {
+          "name": "Xena Studios",
+          "description": "Author"
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "spongeapi",
+          "version": "[8.0.0,)",
+          "load-order": "after",
+          "optional": false
+        }
+      ]
+    }
+  ]
+}

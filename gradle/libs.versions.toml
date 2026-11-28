@@ -76,6 +76,12 @@ bungeecord-chat = "1.16-R0.4"
 # libraries: (Waterfall's too).
 velocity-api = "3.4.0"
 bungeecord-api = "1.21-R0.4"
+# SpongeAPI, compile-only (core/platform-sponge and the plugins' sponge/ adapters): the floor, API 8
+# (SpongeVanilla 1.16.5), which every jar compiles against, so nothing newer is called; and the
+# newest released API, which the shrunk jars are checked against for anything a later API took
+# away (xena.sponge-plugin's checkApiNewest). From Sponge's repository (settings.gradle.kts).
+spongeapi = "8.2.0"
+spongeapi-newest = "17.0.0"
 # Brigadier's API, which core-jvm's BrigadierTree builds on: Minecraft's own on Fabric,
 # Velocity's fork of it there. Compile-only, Mojang's, the release Minecraft 1.20.1 (Fabric's
 # oldest line) ships, so nothing newer is called.
@@ -126,6 +132,8 @@ bungeecord-chat = { module = "net.md-5:bungeecord-chat", version.ref = "bungeeco
 velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity-api" }
 bungeecord-api = { module = "net.md-5:bungeecord-api", version.ref = "bungeecord-api" }
 brigadier = { module = "com.mojang:brigadier", version.ref = "brigadier" }
+spongeapi = { module = "org.spongepowered:spongeapi", version.ref = "spongeapi" }
+spongeapi-newest = { module = "org.spongepowered:spongeapi", version.ref = "spongeapi-newest" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 bstats-velocity = { module = "org.bstats:bstats-velocity", version.ref = "bstats" }
 bstats-bungeecord = { module = "org.bstats:bstats-bungeecord", version.ref = "bstats" }

@@ -1,0 +1,18 @@
+# What scripts/boot-sponge.sh checks on each SpongeVanilla with xSample, after the server starts.
+logged: [xsample]: Enabled on
+# A player-only command from the console: our dispatcher's answer, through the raw command.
+run: xsample
+expect: Only players can use this command.
+# An argument our parser refuses, with our usage line.
+run: xsample give Nobody 5
+expect: No player called Nobody is online.
+# The admin reload: on the global thread's next tick, so the tick scheduler ran it. One module:
+# the chat format has no chat bridge on Sponge yet, so it stays off.
+run: xsample reload
+expect: Reloaded xSample: 1 module on.
+# The rebuilt commands answer after the reload.
+run: coins
+expect: Only players can use this command.
+# The debug report: health checks, then the report written to config/xsample/debug/.
+run: xsample debug
+expect: Debug report saved as

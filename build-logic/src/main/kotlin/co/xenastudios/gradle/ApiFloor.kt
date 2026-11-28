@@ -99,7 +99,7 @@ abstract class ApiFloor : DefaultTask() {
 
     companion object {
         /** The server's packages: what a plugin finds on the server, not in its own jar or the JDK. */
-        val SERVER_PACKAGES = listOf("org/bukkit/", "org/spigotmc/", "com/destroystokyo/", "io/papermc/", "net/kyori/")
+        val SERVER_PACKAGES = listOf("org/bukkit/", "org/spigotmc/", "com/destroystokyo/", "io/papermc/", "net/kyori/", "org/spongepowered/")
 
         private const val HEADER = "# Server API members this plugin's shrunk jar uses that its floor's API lacks, each called only\n" +
             "# once the code has checked the server has it. The build's checkApiFloor fails on one not listed\n" +

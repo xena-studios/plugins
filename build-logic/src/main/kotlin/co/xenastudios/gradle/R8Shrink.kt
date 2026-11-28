@@ -36,8 +36,8 @@ import org.gradle.process.ExecOperations
  * rules this task writes from the jar itself, so a plugin never repeats what its files say:
  * - `plugin.yml`'s and `paper-plugin.yml`'s `main` (and Paper's `bootstrapper` and `loader`),
  *   which the server makes by name;
- * - every entry point in `fabric.mod.json` (`main`, `server`, `client` and the rest), and
- *   `velocity-plugin.json`'s `main`;
+ * - every entry point in `fabric.mod.json` (`main`, `server`, `client` and the rest),
+ *   `velocity-plugin.json`'s `main`, and each `entrypoint` in `META-INF/sponge_plugins.json`;
  * - every service in `META-INF/services/`, and the interface it's for;
  * - the core's api types the plugin's own API exposes ([exposedCoreApi]), which keep their names
  *   and members like the API itself (common.pro keeps the API but not the relocated core's);
@@ -227,6 +227,16 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
                         val owner = value.toString().substringBefore("::")
                         append("# fabric.mod.json $kind\n-keep class $owner { *; }\n")
                     }
+                }
+            }
+
+            // A Sponge plugin's main classes, which Sponge makes with Guice (its @Inject constructor).
+            text("META-INF/sponge_plugins.json")?.let { json ->
+                @Suppress("UNCHECKED_CAST")
+                val plugins = (JsonSlurper().parseText(json) as Map<String, Any?>)["plugins"] as? List<Any?>
+                for (entry in plugins.orEmpty()) {
+                    val main = (entry as? Map<*, *>)?.get("entrypoint") ?: continue
+                    append("# sponge_plugins.json entrypoint\n-keep class $main { <init>(...); }\n")
                 }
             }
 

@@ -36,6 +36,11 @@
 # the chat bridge and their startup class lists (DECISIONS.md, "The proxy platforms"). Never released.
 :core:core-testing:sample:velocity 470
 :core:core-testing:sample:bungee 460
+# xSample on Sponge (core/core-testing/sample/sponge): the same core as on Bukkit without the world
+# hooks or the chat bridge, with the Kotlin stdlib and the YAML parser inside, relocated and shrunk:
+# Sponge has no library loader (xena.sponge-plugin). 687 KiB shrunk (4,293 KiB before R8), about
+# 160 KiB of it the stdlib's and the parser's. Never released.
+:core:core-testing:sample:sponge 760
 
 # xSample on Fabric (core/platform-fabric/sandbox, its own build), one jar a Minecraft line:
 # the adapter and the core, with fabric-language-kotlin's stdlib and the YAML parser downloaded.

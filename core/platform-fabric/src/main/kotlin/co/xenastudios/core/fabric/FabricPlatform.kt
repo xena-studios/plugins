@@ -29,6 +29,7 @@ import co.xenastudios.core.jvm.db.DriverFetcher
 import co.xenastudios.core.jvm.db.OnDemandDriverFetcher
 import co.xenastudios.core.jvm.platform.FolderStorage
 import co.xenastudios.core.jvm.platform.Slf4jLog
+import co.xenastudios.core.jvm.scheduler.TickScheduler
 import co.xenastudios.core.loader.OnDemandLibraries
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents

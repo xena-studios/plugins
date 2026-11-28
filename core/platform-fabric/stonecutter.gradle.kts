@@ -45,4 +45,8 @@ stonecutter parameters {
     constants["equine"] = current.parsed >= "1.21.11"
     // 26.1 sends action-bar text with sendOverlayMessage, not displayClientMessage (xTeleport).
     constants["overlay_message"] = current.parsed >= "26.1"
+    // 1.21.6 read and wrote block entities through ValueInput and ValueOutput, not CompoundTags (xRewind).
+    constants["value_io"] = current.parsed >= "1.21.6"
+    // 1.21.2 made a registry its own lookup, with no asLookup() (xRewind).
+    constants["registry_lookup"] = current.parsed >= "1.21.2"
 }

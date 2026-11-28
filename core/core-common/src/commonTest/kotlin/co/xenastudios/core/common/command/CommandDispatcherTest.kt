@@ -175,6 +175,26 @@ class CommandDispatcherTest {
     }
 
     @Test
+    fun aGreedyArgumentCompletesEachOfItsWords() {
+        val parameters = object : ArgumentType<String> {
+            override val name: String = "parameters"
+            override val greedy: Boolean = true
+            override fun parse(input: String, source: CommandSource) = co.xenastudios.core.common.Outcome.Ok(input)
+            override fun suggest(source: CommandSource): List<String> = listOf("u:", "t:1h", "t:1d", "#preview")
+        }
+        val look = CommandDispatcher(commands {
+            root("look", "Looks the history up.") {
+                optional("parameters", parameters, "What to look for.")
+                executes { }
+            }
+        }, platform.clock, platform.log)
+        assertEquals(listOf("u:", "t:1h", "t:1d", "#preview"), look.suggest(steve, "look "))
+        assertEquals(listOf("t:1h", "t:1d"), look.suggest(steve, "look u:Steve t"))
+        assertEquals(listOf("#preview"), look.suggest(steve, "look u:Steve t:1h #"))
+        assertEquals(CommandResult.Ran, look.dispatch(steve, "look u:Steve t:1h #preview"))
+    }
+
+    @Test
     fun theEnglishFeedbackSaysWhatWentWrong() {
         fun text(result: CommandResult) = CommandFeedback.ENGLISH.message(result)?.plain()
         assertEquals(null, text(CommandResult.Ran))

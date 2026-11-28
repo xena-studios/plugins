@@ -185,11 +185,19 @@ internal object Keys {
 
     fun of(type: org.bukkit.entity.EntityType): String = entities[type.ordinal] ?: entityKey(type).also { entities[type.ordinal] = it }
 
-    // EntityType is Keyed from 1.14; on 1.13 its savegame name is the id's path.
+    // EntityType is Keyed from 1.14; on 1.13 its savegame name is the id's path. Found by name,
+    // once: a cast to Keyed would do on the server, but R8 shrinks the jar against Paper's API, where
+    // EntityType is Keyed, so it drops the cast and calls getKey(), which 1.13 doesn't have.
+    private val keyedEntities: Boolean = try {
+        org.bukkit.entity.EntityType::class.java.getMethod("getKey")
+        true
+    } catch (e: NoSuchMethodException) {
+        false
+    }
+
     @Suppress("DEPRECATION")
     private fun entityKey(type: org.bukkit.entity.EntityType): String {
-        val keyed = (type as Any) as? org.bukkit.Keyed
-        if (keyed != null) return keyed.key.toString()
+        if (keyedEntities) return ((type as Any) as org.bukkit.Keyed).key.toString()
         // getName(), the savegame id, not the enum constant's name (which Kotlin's .name would be).
         val id: String? = type.getName()
         return "minecraft:" + (id ?: type.toString().lowercase())

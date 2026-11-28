@@ -33,11 +33,11 @@ import java.time.ZoneId
  * then `lang/`. Coming from 1.x, the messages an owner edited in `config.yml` go into `lang/en.yml`
  * first ([Legacy.messages]), as the file's starting point.
  */
-public class JvmFiles(
+public open class JvmFiles(
     private val folder: Path,
     private val family: Family,
-    /** The jar's translations: [LangFolder.shipped] of [LANGUAGES]. */
-    private val shipped: Map<LanguageTag, String>,
+    /** Where the jar's translations are: [shipped] reads them through it. */
+    private val jar: ClassLoader?,
     private val log: Log,
 ) : Files {
     private val path = folder.resolve("config.yml")
@@ -69,6 +69,7 @@ public class JvmFiles(
         }
         last = config
         yaml.forget()
+        releaseYamlBuffers()
         return Loaded(config, Translations.of(XStatsMessages.catalog, emptyMap()), problems)
     }
 
@@ -80,12 +81,19 @@ public class JvmFiles(
         familyLoad.problems.forEach { problems += it.describe("plugins/Xena/config.yml") }
         familyLoad.notices.forEach { log.info("plugins/Xena/config.yml: ${it.message}") }
         val look = family.look(config, XStatsConfig.messages)
-        val lang = LangFolder(folder, XStatsMessages.catalog, shipped).load(look.languages, look.theme)
+        val lang = LangFolder(folder, XStatsMessages.catalog, shipped()).load(look.languages, look.theme)
         lang.notices.forEach { log.info(it.message) }
         lang.problems.forEach { problems += it.message }
         problems.forEach(log::warn)
+        releaseYamlBuffers()
         return Loaded(config, lang.translations, problems)
     }
+
+    /**
+     * The jar's translations ([LangFolder.shipped] of [LANGUAGES]), read again at each load rather
+     * than kept: an idle server has no use for every language's file as text (~180 KB).
+     */
+    protected open fun shipped(): Map<LanguageTag, String> = jar?.let { LangFolder.shipped(it, LANGUAGES) }.orEmpty()
 
     // A 1.x config's edited messages, into lang/en.yml before anything else writes it.
     private fun carryMessages(problems: MutableList<String>) {
@@ -108,6 +116,26 @@ public class JvmFiles(
     }
 
     public companion object {
+        /**
+         * Hands back to the GC the buffers okio (the YAML library's I/O) pools after a read: up to
+         * 64 KiB of spent 8 KiB segments per pool bucket, the one of this thread, kept for the next
+         * read. xStats reads YAML only as it loads and on /xstats reload, so an idle server would
+         * hold them for nothing. Nothing happens where okio isn't there or has changed.
+         */
+        internal fun releaseYamlBuffers() {
+            try {
+                val pool = Class.forName("okio.SegmentPool", false, JvmFiles::class.java.classLoader)
+                val instance = pool.getField("INSTANCE").get(null)
+                val pooled = pool.getMethod("getByteCount")
+                val take = pool.getMethod("take")
+                // At most 8 a bucket (64 KiB of 8 KiB segments); 0 also while another thread holds it.
+                var left = 16
+                while (left-- > 0 && (pooled.invoke(instance) as Int) > 0) take.invoke(null)
+            } catch (e: Throwable) {
+                // Another okio, or none: its pool stays as it is.
+            }
+        }
+
         /** The languages the jar ships besides English: drafts until native speakers have read them. */
         @JvmField
         public val LANGUAGES: List<LanguageTag> = listOf("de", "es", "fr", "pt-BR", "ru", "pl", "zh-CN").map { LanguageTag.of(it) }

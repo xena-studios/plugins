@@ -10,7 +10,6 @@ import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.text.Component
 import co.xenastudios.core.jvm.admin.MclogsPaste
 import co.xenastudios.core.jvm.db.Drivers
-import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.core.loader.PluginEntry
 import co.xenastudios.core.loader.velocity.VelocityBootstrap
 import co.xenastudios.core.velocity.VelocityPlatform
@@ -66,7 +65,7 @@ public class XStatsVelocity(private val bootstrap: VelocityBootstrap) : PluginEn
     private fun make(platform: VelocityPlatform, cache: PlayerCache): XStatsPlugin {
         val family = platform.family
         val folder = bootstrap.dataFolder()
-        val files = JvmFiles(folder, family, LangFolder.shipped(javaClass.classLoader, JvmFiles.LANGUAGES), platform.log)
+        val files = JvmFiles(folder, family, javaClass.classLoader, platform.log)
         val config = files.config()
         val drivers = Drivers(javaClass.classLoader, platform.driverFetcher())
         val plugins = folder.toAbsolutePath().parent

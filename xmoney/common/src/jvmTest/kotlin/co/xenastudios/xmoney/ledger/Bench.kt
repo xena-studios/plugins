@@ -66,6 +66,9 @@ class Faults {
     @Volatile var slow = 0L
     @Volatile var commits = 0
 
+    /** Statements the writer has begun to run, counted before any [slow] wait. */
+    val executions = java.util.concurrent.atomic.AtomicInteger()
+
     fun wrap(connect: () -> Connection): () -> Connection = {
         if (down) throw SQLNonTransientConnectionException("the database is down (test)", "08001")
         val real = connect()
@@ -90,6 +93,7 @@ class Faults {
     private fun statement(real: Connection, statement: PreparedStatement): PreparedStatement =
         Proxy.newProxyInstance(PreparedStatement::class.java.classLoader, arrayOf(PreparedStatement::class.java), handler(statement) { method, args ->
             if (method.name.startsWith("execute")) {
+                executions.incrementAndGet()
                 if (slow > 0) Thread.sleep(slow)
                 if (down || killNext) {
                     killNext = false

@@ -206,6 +206,15 @@ class ReceiverTest {
     private fun send(port: Int, token: String = Fixtures.TOKEN, name: String = "Steve", timestamp: String = "1") =
         VoteClient.sendV2("127.0.0.1", port, token, "List", name, "1.2.3.4", timestamp, 2000)
 
+    /** Every connection the receiver took is over and its slot free, however long its threads took to notice. */
+    private fun freed(r: Receiver) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
+        while (r.inFlight.get() > 0 || r.openFrom.isNotEmpty()) {
+            assertTrue(System.nanoTime() < deadline, "connections still open: ${r.inFlight.get()} in flight, from ${r.openFrom}")
+            Thread.sleep(5)
+        }
+    }
+
     private fun readLine(input: InputStream): String {
         val out = ByteArrayOutputStream()
         while (true) {
@@ -328,7 +337,7 @@ class ReceiverTest {
         } finally {
             held.forEach(Socket::close)
         }
-        Thread.sleep(300)
+        freed(r)
         assertNull(send(r.port))
     }
 
@@ -401,7 +410,7 @@ class ReceiverTest {
         } finally {
             held.forEach(Socket::close)
         }
-        Thread.sleep(300)
+        freed(r)
         assertNull(send(r.port))
         assertTrue(log.lines.any { "per-ip-connections" in it }, log.lines.toList().toString())
         assertTrue(log.lines.none { "127.0.0.1" in it }, "noise doesn't name the address: ${log.lines}")

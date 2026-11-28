@@ -204,17 +204,20 @@ class FakeVoteServer(override val proxy: Boolean = false, private val platform: 
 
 /** A log any thread can write to, as the receiver's threads do: each line's message. */
 class ListLog : co.xenastudios.core.common.platform.Log {
-    val lines: MutableList<String> = Collections.synchronizedList(ArrayList())
+    // Read while the receiver's threads write: a test reads a copy, never the list being added to.
+    private val kept: MutableList<String> = Collections.synchronizedList(ArrayList())
+    val lines: List<String> get() = synchronized(kept) { ArrayList(kept) }
+
     override fun info(message: String) {
-        lines += message
+        kept += message
     }
 
     override fun warn(message: String, cause: Throwable?) {
-        lines += message
+        kept += message
     }
 
     override fun error(message: String, cause: Throwable?) {
-        lines += message
+        kept += message
     }
 }
 

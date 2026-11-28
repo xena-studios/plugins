@@ -92,11 +92,11 @@ class LocalImportTest {
                     "Found in LiteBans: 2 bans, 1 mutes, 1 warnings, 1 kicks and 2 players. Nothing was imported yet: run it again with confirm on the end.",
                     "1 wildcard IP bans (such as 192.168.1.*) aren't imported: xBans bans whole addresses only.",
                 ),
-                import(h, "xbans import litebans"),
+                import(h, "xbans import litebans", ::wildcards),
             )
-            assertEquals("Imported 5 punishments from LiteBans (0 already there).", import(h, "xbans import litebans confirm").first { it.startsWith("Imported") })
+            assertEquals("Imported 5 punishments from LiteBans (0 already there).", import(h, "xbans import litebans confirm", ::wildcards).first { it.startsWith("Imported") })
             assertNotNull(h.plugin.banOnJoin(steve, null), "a ban in force is enforced")
-            assertEquals("Imported 0 punishments from LiteBans (5 already there).", import(h, "xbans import litebans confirm").first { it.startsWith("Imported") })
+            assertEquals("Imported 0 punishments from LiteBans (5 already there).", import(h, "xbans import litebans confirm", ::wildcards).first { it.startsWith("Imported") })
 
             assertEquals(
                 listOf(
@@ -256,16 +256,20 @@ class LocalImportTest {
 
     private fun names(dir: Path): Set<String> = Files.newDirectoryStream(dir).use { all -> all.map { it.fileName.toString() }.toSet() }
 
-    // Each import into a harness, waited on until it says how it went; what it said, without the prefix.
-    private fun import(h: Harness, line: String): List<String> {
+    // Each import into a harness, waited on until it says how it went, or until its [last] line when
+    // more follow that (LiteBans' wildcard bans are counted on the line after, from the same callback,
+    // so a fixed wait could read between the two); what it said, without the prefix.
+    private fun import(h: Harness, line: String, last: (String) -> Boolean = ::ended): List<String> {
         val before = h.replies(h.console).size
-        h.run(line) { h.replies(h.console).drop(before).any { it.contains("Found in") || it.contains("Couldn't") || it.contains("Imported") || it.contains("still using") } }
-        // A dry run of LiteBans also counts its wildcard bans, the line after.
-        h.platform.until("the last line") { h.replies(h.console).size > before }
-        Thread.sleep(50)
+        h.run(line) { h.replies(h.console).drop(before).any(last) }
         h.platform.pump()
         return h.replies(h.console).drop(before).map { it.removePrefix("» ") }
     }
+
+    private fun ended(reply: String): Boolean =
+        reply.contains("Found in") || reply.contains("Couldn't") || reply.contains("Imported") || reply.contains("still using")
+
+    private fun wildcards(reply: String): Boolean = reply.contains("wildcard IP bans")
 
     // ---- the fixtures, written as the plugins write them ----
 

@@ -729,6 +729,15 @@ jobs:
           path: .cache/servers
           key: servers-${{ matrix.cell.id }}-${{ steps.server.outputs.build }}-${{ steps.backend.outputs.build }}
           restore-keys: servers-${{ matrix.cell.id }}-
+      # BungeeCord's and Waterfall's downloads of the plugins' libraries: (bungee.yml), one repository
+      # every boot shares (scripts/boot-proxy.sh): a proxy downloading from Maven Central on every
+      # boot sometimes stalled there past the start's 120s (#248). Keyed on the versions they name.
+      - if: matrix.cell.proxy != 'velocity'
+        uses: actions/cache@v6
+        with:
+          path: .cache/bungee-libraries
+          key: bungee-libraries-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: bungee-libraries-
       # BuildTools' Java, only when a Spigot backend isn't cached.
       - id: buildtools
         if: matrix.cell.backend == 'spigot' && steps.cache.outputs.cache-hit != 'true'

@@ -106,6 +106,14 @@ esac
 root=$(cd "$(dirname "$0")/.." && pwd)
 cache="$root/.cache/servers"
 java=${java_home:+$java_home/bin/}java
+jcmd=${java_home:+$java_home/bin/}jcmd
+# BungeeCord and Waterfall download their plugins' libraries: (bungee.yml) from Maven Central into
+# libraries/ in the proxy's folder, on the thread that loads plugins, with Maven Resolver's
+# timeouts that no flag reaches: a stalled download held the proxy past 120s on CI (#248). Every
+# boot's folder is new, so each boot downloaded them again. They share one repository instead,
+# linked into each folder, which the Boot workflow caches between runs: only a new library is
+# downloaded, once.
+bungee_libraries="$root/.cache/bungee-libraries"
 mkdir -p "$cache"
 
 # ---- the jars ----
@@ -140,6 +148,19 @@ read -r -a names <<<"$(printf '%s\n' "${names[@]}" | sort -fu | tr '\n' ' ')"
 ours=$(IFS='|'; echo "${names[*]}")
 
 proxy_pid="" backend_pid="" game_pid=""
+# What every thread of the proxy is doing, for a proxy that hangs: printed, and kept beside its log.
+thread_dump() {
+  [[ -n $proxy_pid ]] && kill -0 "$proxy_pid" 2>/dev/null || return 0
+  local out="${proxy_log%/*}/threads.txt"
+  if command -v "$jcmd" >/dev/null && "$jcmd" "$proxy_pid" Thread.print >"$out" 2>&1; then
+    echo "---- the proxy's threads ($out) ----" >&2
+    cat "$out" >&2
+  else
+    echo "---- couldn't take the proxy's threads with $jcmd ----" >&2
+    cat "$out" >&2 2>/dev/null || true
+  fi
+}
+
 fail() {
   echo "FAIL: $*" >&2
   for file in "${proxy_log:-}" "${backend_log:-}" "${game_log:-}"; do
@@ -229,6 +250,10 @@ proxy_files() {
   mkdir -p "$dir/plugins"
   [[ ${#jars[@]} -eq 0 ]] || cp "${jars[@]}" "$dir/plugins/"
   [[ -z $proxy_seed ]] || cp -R "$proxy_seed/." "$dir/"
+  if [[ $proxy != velocity ]]; then
+    mkdir -p "$bungee_libraries"
+    ln -s "$bungee_libraries" "$dir/libraries"
+  fi
   if [[ $proxy == velocity ]]; then
     local mode=none
     [[ -z $to ]] || mode=modern
@@ -316,6 +341,7 @@ start_proxy() {
     kill -0 "$proxy_pid" 2>/dev/null || fail "the proxy exited while starting"
     sleep 0.5
   done
+  thread_dump
   fail "the proxy didn't start within 120s"
 }
 
@@ -326,7 +352,10 @@ stop_proxy() {
     kill -0 "$proxy_pid" 2>/dev/null || break
     sleep 0.5
   done
-  kill -0 "$proxy_pid" 2>/dev/null && fail "the proxy didn't stop within 30s"
+  if kill -0 "$proxy_pid" 2>/dev/null; then
+    thread_dump
+    fail "the proxy didn't stop within 30s"
+  fi
   wait "$proxy_pid" || fail "the proxy exited with status $?"
   exec 3>&-
   proxy_pid=""
@@ -486,15 +515,14 @@ with zipfile.ZipFile(sys.argv[1]) as src, zipfile.ZipFile(sys.argv[2], "w", zipf
 PY
       done
     fi
-    # The first run's downloads: the family's library cache, and BungeeCord's for libraries:.
-    # The family's folder is moved from boot to boot, not copied, as a restarted proxy keeps it:
+    # The first run's downloads: the family's library cache (BungeeCord's for libraries: is shared,
+    # linked by proxy_files). The family's folder is moved from boot to boot, not copied, as a restarted proxy keeps it:
     # a copy is a new file to the loader (inode, modified time), which hashes it again.
     if [[ -d $xena ]]; then
       rm -rf "$dir/plugins/Xena"
       mv "$xena" "$dir/plugins/Xena"
       xena="$dir/plugins/Xena"
     fi
-    [[ ! -d $base/proxy/libraries ]] || cp -R "$base/proxy/libraries" "$dir/"
     if [[ $boot == 0 ]]; then
       start_proxy "$dir" "-Xlog:class+load=info:file=$dir/classload.log:uptimemillis"
       # The JVM's uptime as the proxy said it was done, give or take the half second start_proxy polls.

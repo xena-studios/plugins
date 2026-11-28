@@ -351,13 +351,15 @@ async function zchatNetwork () {
 }
 
 // A second player for xBans' checks, who can be kicked and come back: their lines, whether and why
-// they were kicked, and a way to wait for either.
+// they were kicked, whether the server let them in at all (loggedIn: past the login, into the
+// game), and a way to wait for either.
 function friendBot (opts = {}) {
   const friend = mineflayer.createBot({ host: '127.0.0.1', port, username: opts.name ?? 'Friend', auth: 'offline', version: opts.version ?? version })
-  const state = { bot: friend, heard: [], kicked: null, spawned: false, ended: false }
+  const state = { bot: friend, heard: [], kicked: null, loggedIn: false, spawned: false, ended: false }
   friend.on('message', (msg) => state.heard.push((msg.unsigned || msg).toString()))
   friend.on('kicked', (reason) => { state.kicked = typeof reason === 'string' ? reason : JSON.stringify(reason) })
   friend.on('error', () => {})
+  friend.once('login', () => { state.loggedIn = true })
   friend.once('spawn', () => { state.spawned = true })
   friend.on('end', () => { state.ended = true })
   state.until = async (test, ms = 15000) => {
@@ -381,7 +383,9 @@ async function xbans () {
   check('a tempban kicks Friend with the ban screen', await friend.until(() => friend.kicked != null) && /banned/i.test(friend.kicked), `kicked: ${friend.kicked}`)
   await sleep(1000)
   friend = friendBot({ version: false })
-  check('the tempban keeps Friend out', await friend.until(() => friend.kicked != null || friend.ended) && !friend.spawned && /banned/i.test(friend.kicked || ''), `spawned ${friend.spawned}, kicked: ${friend.kicked}`)
+  // Kept out at the door, during the login: a ban that only kicks once they're in the game races
+  // the client's first packets, and the ban screen can be lost with the connection.
+  check('the tempban keeps Friend out', await friend.until(() => friend.kicked != null || friend.ended) && !friend.loggedIn && /banned/i.test(friend.kicked || ''), `logged in ${friend.loggedIn}, spawned ${friend.spawned}, kicked: ${friend.kicked}`)
   await sleep(15000)
   friend = friendBot({ version: false })
   check('once it ends, Friend joins again', await friend.until(() => friend.spawned), `kicked: ${friend.kicked}`)

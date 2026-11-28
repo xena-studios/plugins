@@ -1,0 +1,46 @@
+---
+title: Configuration
+description: "Every setting in xStats' config.yml, with its default."
+sidebar:
+  order: 4
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+The config is `plugins/xStats/config.yml` (`plugins/xstats/` on Velocity, `config/xstats/config.yml` on Fabric), written on first start. Apply changes with `/xstats reload` (`/xstatsproxy reload` on the proxy); only `storage`, `server-name` and `network` need a restart. xStats' messages are in `lang/`: see [Messages](/xstats/messages/). A bad value falls back to its default with a warning in the console; xStats never stops over config.
+
+| Section | What it covers |
+| --- | --- |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
+| `commands` | `/stats` and `/leaderboard`: on or off, their aliases and permissions. |
+| `stats` | The stats xStats keeps, in the order `/stats` and the website show them: see [Choosing stats](/xstats/setting-up/#choosing-stats). |
+| `collecting` | How often it saves, how many players it reads a tick, AFK-aware playtime, and the first start's import. |
+| `leaderboards` | Places kept, banned players left out, the page size, and the lines on boards in the world. |
+| `periods` | The time zone days start in, the day weeks start, and how long each day's numbers are kept. |
+| `web` | The website: see [The website](/xstats/website/). |
+| `integrations` | The family's stats, each one on until you turn it off. |
+| `proxy` | xStats on Velocity: its two network commands, and how soon it reads the network again. |
+| `server-name` | This server's name in the database, for networks. |
+| `storage` | Where stats are kept: SQLite in the plugin's folder (`stats.db`), MySQL/MariaDB, or the family's shared database. |
+| `network` | Servers (and the proxy) sharing one database: see [Networks](/xstats/networks/). |
+| `updates` | The update checker: [Privacy](/start/privacy/). |
+
+## The family's stats
+
+With one of these installed, xStats keeps its numbers as stats, owned by that plugin, on `/stats`, `/leaderboard`, placeholders and the website, per day, week and month too. Each has a switch under `integrations`:
+
+| Plugin | Stats |
+| --- | --- |
+| xVote | `xvote_votes`: votes paid on this server. |
+| xMoney | `xmoney_balance` (the latest any server saw) and `xmoney_earned` (money received: payments, rewards, sales). |
+| xBans | `xbans_punishments`: bans, mutes, kicks and warnings a player received. |
+| xTeleport | `xteleport_teleports`: homes, warps, spawn and tpa. |
+| xRewind | `xrewind_rollbacks`: blocks a member of staff put back with rollbacks. |
+| xMarket | `xmarket_bought` and `xmarket_sold`: items bought from and sold to the market. |
+| zChat | `zchat_messages`: chat messages sent. |
+
+Players xVanish hides are left out of leaderboards while they're hidden, and shown as offline on the website.
+
+## Every setting
+
+<Reference plugin="xstats" show="config" />

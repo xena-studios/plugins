@@ -1,0 +1,7 @@
+# The family test (boot.sh ... --xmoney): xMoney 2.0 beside xStats. xStats finds xMoney's API by
+# name once its database is open, listens on xMoney's own bus, and keeps xmoney_balance and
+# xmoney_earned as stats (FamilyHooks): /xstats status lists xMoney, and its stat has a leaderboard.
+run: xstats status
+expect: xMoney
+run: leaderboard xmoney_earned
+expect: Nobody's on this leaderboard yet.

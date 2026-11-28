@@ -1,0 +1,14 @@
+---
+title: Permissions
+description: "Every xStats permission, and who has it by default."
+sidebar:
+  order: 3.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+1.x's: `xstats.admin` (every `/xstats` command) is operators', and so is `xstats.staff` (on `/stats`, the sections other plugins only show staff, such as a full punishment history). `xstats.private` (`/stats private`) is everyone's. `xstats.leaderboard.exclude` leaves a player out of every leaderboard, such as staff who shouldn't compete: nobody has it unless you give it, operators included.
+
+Each admin subcommand also has its own, `xstats.admin.<subcommand>`. A command whose `permission` is set in the config needs that permission too. On the proxy, the proxy's own permissions (LuckPerms on the proxy) answer for `/xstatsproxy` and the network commands.
+
+<Reference plugin="xstats" show="permissions" />

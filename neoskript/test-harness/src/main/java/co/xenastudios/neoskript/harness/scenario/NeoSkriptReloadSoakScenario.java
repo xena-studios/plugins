@@ -99,6 +99,7 @@ public final class NeoSkriptReloadSoakScenario implements Scenario {
             // is pending and would count in the sample.
             server.await(Pattern.compile("\\[NeoSkript] Loaded 0 scripts with 0 triggers in \\d+ ms$"), WAIT);
             Map<String, Long> empty = sample(server, "empty");
+            String emptyTasks = tasks(server, "empty");
             int start = server.mark();
             server.command("sk enable all");
             server.await(line("[harness] soak extras 0"), start, WAIT);
@@ -141,8 +142,11 @@ public final class NeoSkriptReloadSoakScenario implements Scenario {
             report(context, empty, samples, disabled, reloads);
             for (String key : List.of("listeners", "brigadier", "tasks")) {
                 if (!disabled.get(key).equals(empty.get(key))) {
+                    String which = key.equals("tasks")
+                            ? " Before: " + emptyTasks + ". After: " + tasks(server, "disabled") + "."
+                            : "";
                     throw new HarnessFailure("After /sk disable all, " + key + " are " + disabled.get(key) + ", "
-                            + empty.get(key) + " before any script loaded. See " + server.logFile());
+                            + empty.get(key) + " before any script loaded." + which + " See " + server.logFile());
                 }
             }
             if (disabled.get("commands") != 0) {
@@ -246,6 +250,13 @@ public final class NeoSkriptReloadSoakScenario implements Scenario {
     private static String version(String source, int round) {
         return source.replace("VERSION", Integer.toString(round))
                 .replace("BROKEN", round % 2 == 1 ? "this line is not valid syntax" : "add 1 to {-soak::flakyLoads}");
+    }
+
+    /** NeoSkript's pending tasks, by the class of the code each runs ({@code bot tasks}). */
+    private static String tasks(ServerProcess server, String label) throws Exception {
+        int mark = server.mark();
+        server.command("bot tasks " + label);
+        return server.await(Pattern.compile("\\[bot] tasks " + label + " (.*)$"), mark, WAIT).group(1);
     }
 
     private static Map<String, Long> sample(ServerProcess server, String label) throws Exception {

@@ -142,6 +142,10 @@ final class Bots implements Listener {
             LOG.info("[bot] stats " + args[1] + " " + ServerStats.sample("NeoSkript"));
             return true;
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("tasks")) {
+            LOG.info("[bot] tasks " + args[1] + " " + ServerStats.describeTasks("NeoSkript"));
+            return true;
+        }
         if (args.length < 2) {
             return false;
         }

@@ -20,8 +20,11 @@ How each number is read (as M0 did, sandbox/m0/budgets/analyze.py):
   package R8 moved renamed classes to, the plugin's id).
   Server thread ms a tick = sampled ms / (seconds x 20); off-thread = sampled ms a second on
   every other thread.
-- heap: used heap after two full GCs, less the same server's without the plugins, shared
-  equally between the plugins; metaspace of the plugins' own class loaders (PluginClassLoader),
+- heap: what each plugin's class loader alone keeps alive (Retained.java, from a heap dump of
+  the measured boot: the objects the GC roots reach only through the loader, its classes and
+  their instances), the budget; and, reported, the used heap after full GCs less the same
+  server's without the plugins, which moves by about 2 MB with the server from boot to boot;
+  metaspace of the plugins' own class loaders (PluginClassLoader),
   with the loaders holding their libraries: (the stdlib) reported beside it but not budgeted;
   our instances' shallow bytes from the class histogram, before the bots and after them.
 """
@@ -179,7 +182,7 @@ def plugin_info(jar):
     own = ".".join(main.split(".")[:3])
     others = sorted({n.rsplit("/", 1)[0].replace("/", ".") for n in classes
                      if "/" in n and not n.startswith(own.replace(".", "/") + "/")})
-    return name, [own] + others, os.path.getsize(jar)
+    return name, [own] + others, os.path.getsize(jar), main
 
 
 def main():
@@ -199,6 +202,7 @@ def main():
     plugins = [plugin_info(j) for j in args.jars]
     names = [p[0] for p in plugins]
     package_of = dict(zip(names, (p[1] for p in plugins)))
+    main_of = dict(zip(names, (p[3] for p in plugins)))
     packages = [q for p in plugins for q in p[1]]
 
     checks = []  # (what, value, limit, unit)
@@ -225,10 +229,12 @@ def main():
     # ---- heap ----
     base = heap_used_mb(os.path.join(out, "base.heap"))
     used = heap_used_mb(os.path.join(out, "before.heap"))
-    per_plugin = (used - base) / len(names)
+    retained = json.load(open(os.path.join(out, "before.retained.json")))
+    retained_mb = {name: retained[main_of[name]]["bytes"] / 1048576 for name in names}
     meta = plugin_metaspace(os.path.join(out, "before.loaders"))
     ours_before = our_instances_kb(os.path.join(out, "before.histogram"), packages)
-    check("heap over the server without plugins, per plugin", per_plugin, "heap-mb", "MB")
+    for name in names:
+        check(f"{name} heap: what its class loader alone keeps alive", retained_mb[name], "heap-mb", "MB")
     check("metaspace in the plugins' own class loaders, per plugin", meta["own_mb"] / len(names), "metaspace-mb", "MB")
 
     # ---- tick cost ----
@@ -274,7 +280,7 @@ def main():
     failed = [c for c in checks if not c["ok"] and not c["report_only"]]
     warned = [c for c in checks if not c["ok"] and c["report_only"]]
     md = [f"## Runtime budgets: {'PASS' if not failed else 'FAIL'}{' (with warnings)' if warned and not failed else ''}", ""]
-    md.append("Plugins: " + ", ".join(f"{n} ({size / 1024:.0f} KiB)" for n, _, size in plugins))
+    md.append("Plugins: " + ", ".join(f"{n} ({size / 1024:.0f} KiB)" for n, _, size, _ in plugins))
     md.append("")
     md.append("| Budget | Measured | Limit | |")
     md.append("|---|--:|--:|---|")
@@ -293,9 +299,15 @@ def main():
         md.append(f"| {name} | {r['libraries']:.0f} | {r['load']:.1f} | {r['enable']:.1f} | {r['total']:.1f} | "
                   f"{', '.join(str(b) for b in r['boots'])} | {r['first boot']} |")
     md.append("")
-    md.append("### Heap (after two full GCs)")
+    md.append("### Heap (after full GCs)")
     md.append("")
-    md.append(f"Without plugins {base:.1f} MB, with them {used:.1f} MB. The plugins' own class loaders hold"
+    for name in names:
+        top = ", ".join(f"{t[0]} {t[1] / 1024:.0f} KB" for t in retained[main_of[name]]["top"][:6])
+        md.append(f"- {name}'s class loader alone keeps {retained_mb[name]:.3f} MB alive"
+                  f" ({retained[main_of[name]]['objects']} objects): {top}.")
+    md.append("")
+    md.append(f"Used heap without plugins {base:.1f} MB, with them {used:.1f} MB ({used - base:+.2f} MB; reported,"
+              f" not budgeted: the server alone moves by about 2 MB from boot to boot). The plugins' own class loaders hold"
               f" {meta['own_classes']} classes in {meta['own_mb']:.2f} MB of metaspace, their libraries: loaders"
               f" {meta['libraries_classes']} in {meta['libraries_mb']:.2f} MB (not budgeted: the Kotlin stdlib's)."
               f" Our instances {ours_before:.0f} KB"
@@ -313,7 +325,7 @@ def main():
     report = "\n".join(md) + "\n"
     open(os.path.join(out, "report.md"), "w").write(report)
     json.dump({"pass": not failed, "checks": checks, "startup": startup_rows, "ticks": ticks, "bots": bots,
-               "heap": {"base_mb": base, "used_mb": used, "metaspace": meta,
+               "heap": {"retained_mb": retained_mb, "base_mb": base, "used_mb": used, "metaspace": meta,
                         "ours_kb": ours_before, "growth_kb": growth}},
               open(os.path.join(out, "results.json"), "w"), indent=2)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")

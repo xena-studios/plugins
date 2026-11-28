@@ -617,7 +617,9 @@ jobs:
           CLIENT: ${{ matrix.cell.client }}
         run: |
           if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
-          args=()
+          # Spigot 1.8.8's Netty can't use Linux's native transport past Java 15 (it resets a
+          # client's connection), so this boot turns it off, as owners on a newer Java do.
+          args=(--property use-native-transport=false)
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks core/core-testing/sample/bukkit/client-checks.txt)
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false "${args[@]}" \
             --checks core/core-testing/twin/family-checks.txt --checks xutilities/bukkit/boot-checks.txt --checks zchat/bukkit/boot-checks.txt \

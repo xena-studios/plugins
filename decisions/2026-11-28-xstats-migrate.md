@@ -1,0 +1,9 @@
+# /xstats migrate moves the stats in place (2026-11-28)
+
+Part of #270 (xStats 2.0 follow-ups). `/xstats migrate <sqlite|mysql> [--force]` is the first plugin use of the core's `StorageMigration` ([the admin subcommands](2026-11-24-the-admin-subcommands.md)).
+
+- **Made on first use.** The tables the migration reads (`Moving`, xStats' eight tables as core `Table`s, columns in key order) and the migration itself are made the first time the command runs (`AdminCommands.makeMigration`, #276): xStats is at the edge of Bukkit's metaspace budget, and none of it is needed at startup.
+- **Saves wait for the copy.** The count check catches rows added during a copy, not rows changed: a save updating a total already copied would be lost without a sign. So the target's `open` claims the save lock (refusing if a save is running), and `StorageSwitch.ended` (#276) releases it however the move ends. Counting goes on in memory meanwhile, and lands in the next save.
+- **Used at once, no restart.** Unlike every other `storage` change, which waits for a restart, a finished move reopens the target as the plugin's own (schema checked), carries `meta`'s `imported:<server>` flags (so the first start's import doesn't run again; the core's `writer:` rows are each writer's own and stay behind), sets `storage.type` in config.yml, and swaps the database. Ids are copied as they are, so the players, stats and servers in memory keep theirs. The old database is closed and left as it was, which is the way back.
+- **Not in network mode**: every server and the proxy share one MySQL database, so one server moving its copy would split the network. Not on the proxy (it only reads).
+- Tested from SQLite to a second SQLite file standing in for MySQL, and to MariaDB with `XR_MYSQL` (CI's service; run here against a local MariaDB 11).

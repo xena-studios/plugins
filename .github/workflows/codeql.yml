@@ -57,12 +57,13 @@ jobs:
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended
           # The default configs the tests write for the docs, and xMoney 1.x's shipped
-          # configs its migration tests read: sample YAML, whose blank MySQL password is
+          # configs its migration tests read, and NeoSkript Proxy's default config: sample YAML, whose blank MySQL password is
           # the setting owners fill in, not a credential.
           config: |
             paths-ignore:
               - docs/src/generated
               - xmoney/common/src/jvmTest/resources
+              - neoskript/addons/proxy/src/main/resources/config.yml
       # CodeQL reads the code as javac and kotlinc compile it, so every source file has
       # to really compile here: no build cache, no daemon, every task rerun, and Kotlin's
       # compiler inside the traced build rather than in its own daemon. The Kotlin tasks

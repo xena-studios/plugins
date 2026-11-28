@@ -37,6 +37,13 @@ public interface StorageSwitch {
      * opens the new database and closes the old one. Or says why it couldn't, in English.
      */
     public fun switchTo(type: DatabaseSettings.Type): Pending<Outcome<Unit, String>>
+
+    /**
+     * The migration [open] started has ended, [switched] or not (refused, failed, or a target
+     * that wasn't empty), before the listener hears. A plugin that paused its writes in [open]
+     * resumes them here. Not called when [open] wasn't.
+     */
+    public fun ended(switched: Boolean) {}
 }
 
 /** Told how a migration is going, from whichever thread it's on. */
@@ -124,8 +131,11 @@ public class StorageMigration(
     ) {
         var target: Database? = null
         var total = 0L
+        var opened = false
+        var moved = false
 
         fun begin() = step {
+            opened = true
             storage.open(to).then("couldn't open the $to database") { opened ->
                 target = opened
                 opened.migrate(migrations).then("couldn't make the tables in ${opened.description}") { emptyEnough(opened) }
@@ -192,6 +202,7 @@ public class StorageMigration(
                                 error != null -> fail("couldn't switch the config: $error")
                                 switched is Outcome.Err -> fail("couldn't switch the config: ${switched.error}")
                                 else -> {
+                                    moved = true
                                     platform.log.info("Moved $total rows from ${source.description} to $to.")
                                     end { listener.finished(total) }
                                 }
@@ -245,6 +256,15 @@ public class StorageMigration(
         }
 
         fun end(tell: () -> Unit) {
+            if (opened) {
+                opened = false
+                try {
+                    storage.ended(moved)
+                } catch (e: Throwable) {
+                    if (isFatal(e)) throw e
+                    platform.log.error("Moving the data to $to: the plugin's end of it failed", e)
+                }
+            }
             locked(lock) { running = false }
             tell()
         }

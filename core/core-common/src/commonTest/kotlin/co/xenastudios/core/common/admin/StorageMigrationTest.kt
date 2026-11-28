@@ -80,6 +80,7 @@ class StorageMigrationTest {
         }
     }
     private val switched = mutableListOf<DatabaseSettings.Type>()
+    private val ended = mutableListOf<Boolean>()
     private val storage = object : StorageSwitch {
         override val currentType: DatabaseSettings.Type get() = DatabaseSettings.Type.SQLITE
         override val current: Database get() = source
@@ -87,6 +88,10 @@ class StorageMigrationTest {
         override fun switchTo(type: DatabaseSettings.Type): Pending<Outcome<Unit, String>> {
             switched += type
             return pendingOf(Outcome.Ok(Unit))
+        }
+
+        override fun ended(switched: Boolean) {
+            ended += switched
         }
     }
     private val migration = StorageMigration(platform, storage, listOf(Coins), listOf(Migration(1, "coins") { it.createTable(Coins) }), batch = 2)
@@ -108,6 +113,7 @@ class StorageMigrationTest {
         platform.scheduler.advance(1.seconds)
         assertEquals(listOf("started", "copied 3 of coins", "finished 3"), heard.lines)
         assertEquals(listOf(DatabaseSettings.Type.MYSQL), switched)
+        assertEquals(listOf(true), ended, "told once, as it ends")
         // Two pages of two rows: each one transaction of inserts through the writer.
         val writes = target.session.log.joinToString("\n")
         assertTrue("CREATE TABLE IF NOT EXISTS test_coins (player VARCHAR(16) NOT NULL, amount INT NOT NULL, PRIMARY KEY (player)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4" in writes, writes)
@@ -128,6 +134,7 @@ class StorageMigrationTest {
         platform.scheduler.advance(1.seconds)
         assertEquals(listOf("not empty {coins=4}"), refused.lines)
         assertEquals(emptyList(), switched)
+        assertEquals(listOf(false), ended, "a refusal ends it too")
 
         val forced = Heard()
         migration.run(DatabaseSettings.Type.MYSQL, force = true, forced)
@@ -152,6 +159,7 @@ class StorageMigrationTest {
             heard.lines.last(),
         )
         assertEquals(emptyList(), switched)
+        assertEquals(listOf(false), ended)
         assertFailsWith<IllegalArgumentException> { migration.run(DatabaseSettings.Type.SQLITE, force = false, Heard()) }
     }
 

@@ -31,7 +31,11 @@ tasks.withType<Test>().configureEach {
     // -Pneoskript.fuzz.seed=S.
     // A line the parser can't read in this time is an error (10 s on servers); in tests it comes sooner.
     systemProperty("neoskript.parse.lineTimeLimitMillis", "3000")
-    for (property in listOf("neoskript.fuzz.iterations", "neoskript.fuzz.seed")) {
+    // -Pneoskript.compiler.target=8 runs the tests with Java 8 classes from the compiler; -Pneoskript.jdk8.home=<JDK 8>
+    // lets the Java 8 target's test check them against Java 8's API, and -Pneoskript.compiler.dump=<dir> writes every
+    // compiled class to a directory, which the test checks too with -Pneoskript.java8.scan=<dir> (#202).
+    for (property in listOf("neoskript.fuzz.iterations", "neoskript.fuzz.seed", "neoskript.compiler.target",
+            "neoskript.jdk8.home", "neoskript.compiler.dump", "neoskript.java8.scan")) {
         providers.gradleProperty(property).orNull?.let { systemProperty(property, it) }
     }
 }

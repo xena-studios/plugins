@@ -59,7 +59,9 @@ class StackFramesTest {
                 \tinner(1)
                 """);
         compiled.triggers().getFirst().trigger().execute(new SimpleTriggerContext(null));
-        assertTrue(Arrays.stream(captured.getFirst()).noneMatch(frame -> "loops/spin.sk".equals(frame.getFileName())));
+        // Java 8 classes aren't hidden ones: their frames are in stack traces, with the script's name (#202).
+        boolean shown = "8".equals(System.getProperty(TriggerCompiler.TARGET_PROPERTY));
+        assertEquals(shown, Arrays.stream(captured.getFirst()).anyMatch(frame -> "loops/spin.sk".equals(frame.getFileName())));
     }
 
     @Test

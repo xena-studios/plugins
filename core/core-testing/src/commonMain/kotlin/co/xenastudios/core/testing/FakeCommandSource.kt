@@ -3,6 +3,8 @@ package co.xenastudios.core.testing
 import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.common.command.CommandSource
 import co.xenastudios.core.common.text.Component
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.uuid.Uuid
 
 /**
@@ -15,6 +17,7 @@ import kotlin.uuid.Uuid
  * assertEquals(listOf("Home base set."), steve.replies)
  * ```
  */
+@OptIn(ExperimentalAtomicApi::class)
 public class FakeCommandSource(
     override val name: String,
     override val player: PlayerRef?,
@@ -25,23 +28,28 @@ public class FakeCommandSource(
     /** The nodes it has. */
     public val permissions: MutableSet<String> = permissions.toMutableSet()
 
-    private val received = mutableListOf<Component>()
+    // Replies can come from any thread (an import's worker, a database callback) while a test reads
+    // them on its own, so each reply makes a new list: a reader always sees a whole one.
+    private val received = AtomicReference<List<Component>>(emptyList())
 
     /** What it was sent, as plain text, oldest first. */
-    public val replies: List<String> get() = received.map { it.plain() }
+    public val replies: List<String> get() = received.load().map { it.plain() }
 
     /** What it was sent, as sent. */
-    public val components: List<Component> get() = received.toList()
+    public val components: List<Component> get() = received.load()
 
     override fun hasPermission(node: String): Boolean = everything || node in permissions
 
     override fun reply(message: Component) {
-        received += message
+        while (true) {
+            val now = received.load()
+            if (received.compareAndSet(now, now + message)) return
+        }
     }
 
     /** Forgets what it was sent. */
     public fun clear() {
-        received.clear()
+        received.store(emptyList())
     }
 
     public companion object {

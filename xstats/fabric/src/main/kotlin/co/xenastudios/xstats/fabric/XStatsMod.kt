@@ -58,7 +58,9 @@ public object XStatsMod : ModInitializer {
         val platform = FabricPlatform(XStatsPlugin.PLUGIN_ID, XStatsPlugin.NAME)
         val family = platform.family
         val folder = platform.storage.root
-        val files = JvmFiles(folder, family.family, shipped(), platform.log)
+        val files = object : JvmFiles(folder, family.family, null, platform.log) {
+            override fun shipped(): Map<LanguageTag, String> = this@XStatsMod.shipped()
+        }
         val version = FabricLoader.getInstance().getModContainer(XStatsPlugin.PLUGIN_ID).map { it.metadata.version.friendlyString }
             .orElse(XStatsPlugin.VERSION).substringBefore('+')
         val server = FabricStatsServer(platform, family.players)

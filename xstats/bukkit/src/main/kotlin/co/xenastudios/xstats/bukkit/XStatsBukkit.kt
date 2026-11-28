@@ -9,7 +9,6 @@ import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.jvm.admin.MclogsPaste
 import co.xenastudios.core.jvm.db.Drivers
-import co.xenastudios.core.jvm.i18n.LangFolder
 import co.xenastudios.core.loader.PluginEntry
 import co.xenastudios.xstats.Extras
 import co.xenastudios.xstats.FamilyHooks
@@ -64,7 +63,7 @@ public class XStatsBukkit(private val plugin: JavaPlugin) : PluginEntry, Listene
         platform.record(cache)
         val server = BukkitStatsServer(platform)
         val folder = plugin.dataFolder.toPath()
-        val files = JvmFiles(folder, family, LangFolder.shipped(plugin.javaClass.classLoader, JvmFiles.LANGUAGES), platform.log)
+        val files = JvmFiles(folder, family, plugin.javaClass.classLoader, platform.log)
         val config = files.config()
         val drivers = Drivers(plugin.javaClass.classLoader, platform.driverFetcher())
         val plugins = folder.toAbsolutePath().parent

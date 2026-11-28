@@ -40,7 +40,7 @@ class MigrationTest {
 
     private fun resource(name: String) = String(MigrationTest::class.java.getResourceAsStream("/$name")!!.readBytes(), StandardCharsets.UTF_8)
 
-    private fun files(): JvmFiles = JvmFiles(folder.resolve("xStats"), Family(FolderStorage(folder.resolve("Xena")), MemoryBoard(), JvmYaml), emptyMap(), log)
+    private fun files(): JvmFiles = JvmFiles(folder.resolve("xStats"), Family(FolderStorage(folder.resolve("Xena")), MemoryBoard(), JvmYaml), null, log)
 
     private fun write(name: String, text: String): Path = folder.resolve("xStats").resolve(name).also {
         Files.createDirectories(it.parent)

@@ -227,8 +227,8 @@ jobs:
           path: core/platform-fabric/build/libs/*.jar
           if-no-files-found: error
 
-  # platform-neoforge's own build, as platform-fabric's: its tests, and xSample's and xTwin's jar
-  # for every line.
+  # platform-neoforge's own build, as platform-fabric's: its tests, and xSample's, xTwin's and the
+  # rewritten plugins' NeoForge jars for every line.
   build-neoforge:
     needs: changes
     if: needs.changes.outputs.neoforge != '[]'
@@ -1360,14 +1360,27 @@ jobs:
           scripts/boot-neoforge.sh --version "$VERSION" --java "$JAVA" \
             --checks core/platform-neoforge/sandbox/boot-checks.txt "${args[@]}" \
             core/platform-neoforge/build/libs/xsample-neoforge-*+"$VERSION".jar
+      - name: boot xUtilities
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
+        run: |
+          libs=core/platform-neoforge/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xutilities/neoforge/client-checks.txt)
+          scripts/boot-neoforge.sh --version "$VERSION" --java "$JAVA" \
+            --checks xutilities/neoforge/boot-checks.txt "${args[@]}" \
+            "$libs"/xutilities-neoforge-*+"$VERSION".jar
       - name: family test
         if: matrix.cell.family
         env:
           JAVA: ${{ steps.java.outputs.path }}
         run: |
+          libs=core/platform-neoforge/build/libs
           scripts/boot-neoforge.sh --version "$VERSION" --java "$JAVA" \
             --checks core/platform-neoforge/sandbox/boot-checks.txt --checks core/core-testing/twin/family-checks.txt \
-            core/platform-neoforge/build/libs/xsample-neoforge-*+"$VERSION".jar core/platform-neoforge/build/libs/xtwin-neoforge-*+"$VERSION".jar
+            --checks xutilities/neoforge/boot-checks.txt \
+            "$libs"/xsample-neoforge-*+"$VERSION".jar "$libs"/xtwin-neoforge-*+"$VERSION".jar "$libs"/xutilities-neoforge-*+"$VERSION".jar
       - if: failure()
         uses: actions/upload-artifact@v7
         with:

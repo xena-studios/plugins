@@ -20,6 +20,7 @@ The rewrite: the same commands, permissions, settings, stats, boards and website
 - **Players xVanish hides** are left out of leaderboards while they're hidden, and shown as offline on the website.
 - **Placeholders on Fabric** through Text Placeholder API: `%xstats:stat kills_monthly%` and the rest, and `%xstats:kd%`.
 - **Messages in your players' languages**: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese, in `lang/`.
+- **`/xstats migrate <sqlite|mysql>`** moves the stats between SQLite and MySQL in place: copied, counted, then used at once without a restart (saves wait while it copies).
 - **`/xstats forget <player>`** deletes everything xStats keeps about a player, for an erasure request, and **`/xstats debug`** writes a report to share when asking for help.
 - **For developers**: the API is the same on every platform, with players as `PlayerRef`s; `registerStat` takes decimals, `unregisterStats` takes a plugin's stats out of use, and two cancellable events join the two 1.x had: `StatChangeEvent` and `PrivacyChangeEvent`.
 

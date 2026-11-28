@@ -14,7 +14,7 @@
 #
 #   scripts/budgets/check.sh [--version 1.21.11] [--boots 3] [--bots 10] [--idle 60]
 #     [--load 60] [--commands "xsample,coins,pay {other} 1"] [--java <JDK home>]
-#     [--out <folder>] [--report-only <budget>,...] [--record-startup] plugin.jar...
+#     [--out <folder>] [--report-only <budget>,...] [--record-startup] [--seed <folder>]... plugin.jar...
 #
 # Run it after building the jars (./gradlew :core:core-testing:sample:bukkit:assemble for
 # xSample's shrunk jar in build/r8/). --bots 0 skips the load. The report is <out>/report.md
@@ -25,7 +25,10 @@
 # packages (npm ci) are fetched on first use and cached in .cache/. --record-startup also boots
 # once more after the first boot, logging its class loading, and writes each plugin's startup class list to
 # <out>/startup-classes-<plugin>.txt (startup_classes.py), to copy to the plugin's project as
-# startup-classes.txt.
+# startup-classes.txt. --seed copies a folder's contents into the server's folder of every boot
+# with the plugins (not the one without them), such as a plugin's config: xLimbo's budgets run
+# with its limbo on the server's own world, so the heap budget measures xLimbo and not the world
+# it makes on purpose, which ROADMAP.md's heap budget leaves aside.
 #
 # Exit codes: 0 every budget met; 1 over a budget (the report says which); 2 a usage error;
 # 3 the measurement itself failed (a download, the server not starting, the bots not joining),
@@ -46,6 +49,7 @@ java_home=""
 out=""
 report_only=""
 record_startup=false
+seeds=()
 jars=()
 while (($#)); do
   case "$1" in
@@ -60,6 +64,8 @@ while (($#)); do
     --out) out=$2; shift 2 ;;
     --report-only) report_only=$2; shift 2 ;;
     --record-startup) record_startup=true; shift ;;
+    --seed) [[ -d $2 ]] || { echo "no folder at $2 to seed" >&2; exit 2; }
+            seeds+=("$(cd "$2" && pwd)"); shift 2 ;;
     -h | --help) sed -n '2,32p' "$0"; exit 0 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) [[ -f $1 ]] || { echo "no plugin jar at $1" >&2; exit 2; }
@@ -148,8 +154,9 @@ fi
 # ---- the plugins ----
 names=()
 for jar in "${jars[@]}"; do
-  name=$({ unzip -p "$jar" plugin.yml 2>/dev/null || true; } | sed -n 's/^name: *//p' | head -1 | tr -d "'\"")
-  [[ -n $name ]] || { echo "$(basename "$jar") has no plugin.yml with a name" >&2; exit 2; }
+  # plugin.yml, or paper-plugin.yml for a Paper-only plugin (xLimbo), which has no plugin.yml.
+  name=$({ unzip -p "$jar" plugin.yml 2>/dev/null || unzip -p "$jar" paper-plugin.yml 2>/dev/null || true; } | sed -n 's/^name: *//p' | head -1 | tr -d "'\"")
+  [[ -n $name ]] || { echo "$(basename "$jar") has no plugin.yml or paper-plugin.yml with a name" >&2; exit 2; }
   names+=("$name")
 done
 
@@ -166,7 +173,10 @@ prepare() {
     mkdir -p "$cache/servers/paper-$version/$shared"
     ln -s "$cache/servers/paper-$version/$shared" "$dir/$shared"
   done
-  (($#)) && cp "$@" "$dir/plugins/"
+  if (($#)); then
+    cp "$@" "$dir/plugins/"
+    for seed in ${seeds[@]+"${seeds[@]}"}; do cp -R "$seed/." "$dir/"; done
+  fi
   # bStats starts as on any server, but sends nothing from a measurement (a released plugin's
   # jar has its real service id).
   mkdir -p "$dir/plugins/bStats"

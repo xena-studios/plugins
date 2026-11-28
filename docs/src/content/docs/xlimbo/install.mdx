@@ -1,0 +1,20 @@
+---
+title: Install
+description: "Install xLimbo on a Paper server: the jar, the first start, and what it writes."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+xLimbo is Paper only, from 1.21.11 (and Purpur), on Java 21.
+
+<InstallTabs plugin="xlimbo" />
+
+On the first start xLimbo writes `config.yml` and one file per language in `lang/`, in `plugins/xLimbo/`, and makes its world, `xlimbo`: the console says when the land around its spawn is ready. Settings every Xena plugin shares, such as the language and the look of messages, are in `plugins/Xena/config.yml`.
+
+By default xLimbo is a network's fallback: every player who joins lands in limbo. Set up the proxy next: [Network setup](/xlimbo/network-setup/). For a limbo world on a server players play on instead, see [On one server](/xlimbo/on-one-server/).
+
+## Coming from 2.x
+
+Replace the jar and restart: see [Upgrading from 2.x](/xlimbo/upgrade/). The [2.x docs](/xlimbo/v2/) stay up while 2.x gets fixes.

@@ -1,0 +1,19 @@
+---
+title: Commands
+description: "xLimbo's commands: /join, and /xlimbo's list, send, back and admin subcommands."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+- **`/join`** (`/server`, `/lobby`) sends you back: to `main-server` through the proxy, or with [`send-back.via: teleport`](/xlimbo/on-one-server/) to `send-back.destination`. Everyone has it (`xlimbo.join`, or the permission `join-command.permission` names; blank lets anyone). It has a cooldown of `cooldown-seconds` (default 3) per player, so nobody can spam your proxy, and takes the player out of the [return queue](/xlimbo/network-setup/#pacing). Turn it off with `join-command.enabled: false`.
+- **`/xlimbo`** (or `/xlimbo info`) shows the version, how many are in limbo and how many are waiting to go back.
+- **`/xlimbo list`** names everyone in limbo, with each one's place in line. Vanished players ([xVanish](/xlimbo/on-one-server/#xvanish)) are listed and counted only for staff who can see them.
+- **`/xlimbo send <player>`** sends a player into limbo on this server. With `send-back.via: teleport`, where they were is kept for `destination: previous`.
+- **`/xlimbo back <player|all>`** sends a player, or everyone, back: through the queue while it's on, otherwise at once.
+- **`/xlimbo reload`**, **`/xlimbo debug`** and **`/xlimbo forget <player>`** are the admin subcommands every Xena plugin has: the config and lang files applied (everything, the world included), a report to share when asking for help, and what xLimbo keeps about a player in memory (their tries at going back, for the [three-in-five-minutes limit](/xlimbo/network-setup/#send-everyone-back-when-its-up), and their `/join` cooldown) cleared.
+
+Every change applies with `/xlimbo reload`, `/join`'s aliases and permission included.
+
+<Reference plugin="xlimbo" show="commands" />

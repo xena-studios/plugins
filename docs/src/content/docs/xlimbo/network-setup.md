@@ -5,7 +5,7 @@ sidebar:
   order: 2
 ---
 
-xLimbo runs on its **own** Paper server behind your proxy, next to your main server. Two things connect it:
+This is xLimbo as it has always been, and the default (`send-back.via: proxy`): xLimbo runs on its **own** Paper server behind your proxy, next to your main server. (For a limbo world on a server players play on, see [On one server](/xlimbo/on-one-server/).) Two things connect it:
 
 1. Your **proxy** sends players to xLimbo when the main server is unavailable.
 2. **`main-server`** in xLimbo's config names the server `/join` sends them back to.
@@ -52,7 +52,7 @@ main-server: "main"
 
 ## Send everyone back when it's up
 
-With **server-check** on, xLimbo asks your main server for its status every few seconds, the way the multiplayer screen does. The moment it answers, everyone waiting is sent back:
+With **server-check** on, xLimbo asks your main server for its status every few seconds, the way the multiplayer screen does. The moment it answers, everyone waiting is sent back, and told so (`server-check.up` in `lang/`):
 
 ```yaml
 server-check:
@@ -72,20 +72,18 @@ Sending a whole network back in the same second can flatten a server that's just
 ```yaml
 queue:
   per-second: 5
-  action-bar: "<white>Sending you back: <highlight><bold>#<position></bold></highlight> of <total> in line"
 ```
 
-`per-second: 0` sends everyone at once.
+`per-second: 0` sends everyone at once. The line on the action bar is `queue.action-bar` in [`lang/`](/xlimbo/messages/); a vanished player ([xVanish](/xlimbo/on-one-server/#xvanish)) isn't counted in anyone else's place or total. A plugin can put some players ahead (a donor rank, say) with the API's [priority hook](/xlimbo/developer-api/#add-ons), or hold players back (a login plugin) with a hold.
 
 ## Send players back after a delay
 
-Without server-check, players can be sent back on their own after a delay, paced by the same queue. With server-check on, it takes over: players go back as soon as the main server is up, and only `auto-join.message` is used, as the message each player gets when they're sent.
+Without server-check, players can be sent back on their own after a delay, paced by the same queue. With server-check on, it takes over: players go back as soon as the main server is up, and only `auto-join.sending` in `lang/` is used, as the message each player gets when they're sent.
 
 ```yaml
 auto-join:
   enabled: true
   delay-seconds: 30
-  message: "<prefix>Sending you back to the server..."
 ```
 
 ## Test it

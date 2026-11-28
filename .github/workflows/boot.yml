@@ -1,7 +1,7 @@
 name: Boot
 
 # The rewrite's boot matrix (ROADMAP.md, "Build, CI and releases"): xSample, the core's sample
-# plugin, and each rewritten plugin (xUtilities, zChat, xMoney, xTeleport, xBans, xVanish, xMarket, xVote) on real servers of every platform they ship
+# plugin, and each rewritten plugin (xUtilities, zChat, xMoney, xTeleport, xBans, xVanish, xMarket, xVote, xBackup, xRewind, xLimits and xLimbo, Paper only) on real servers of every platform they ship
 # for, and the family test, xSample, xTwin and the rewritten plugins on one server. The Plugins workflow
 # boots today's plugins; this one boots the rewrite.
 #
@@ -149,9 +149,9 @@ jobs:
       # gradle/jar-budgets.txt.
       - run: >-
           ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble :xutilities:bukkit:assemble :zchat:bukkit:assemble
-          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble :xvote:bukkit:assemble :xbackup:bukkit:assemble :xrewind:bukkit:assemble :xlimits:bukkit:assemble
+          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble :xvote:bukkit:assemble :xbackup:bukkit:assemble :xrewind:bukkit:assemble :xlimits:bukkit:assemble :xlimbo:bukkit:assemble
           :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget :zchat:bukkit:checkJarBudget
-          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget :xbackup:bukkit:checkJarBudget :xrewind:bukkit:checkJarBudget :xlimits:bukkit:checkJarBudget
+          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget :xbackup:bukkit:checkJarBudget :xrewind:bukkit:checkJarBudget :xlimits:bukkit:checkJarBudget :xlimbo:bukkit:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: bukkit-jars
@@ -172,6 +172,7 @@ jobs:
             xbackup/bukkit/build/r8/xBackup.jar
             xrewind/bukkit/build/r8/xRewind.jar
             xlimits/bukkit/build/r8/xLimits.jar
+            xlimbo/bukkit/build/r8/xLimbo.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -391,7 +392,7 @@ jobs:
                      xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar xmarket/bukkit/build/r8/xMarket.jar \
                      xvote/bukkit/build/r8/xVote.jar \
                      xbackup/bukkit/build/r8/xBackup.jar xrewind/bukkit/build/r8/xRewind.jar \
-                     xlimits/bukkit/build/r8/xLimits.jar; do
+                     xlimits/bukkit/build/r8/xLimits.jar xlimbo/bukkit/build/r8/xLimbo.jar; do
             [[ -f $jar ]] || { echo "::error::$jar is missing: the bukkit-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/*' | head -20; exit 1; }
           done
       # xMoney beside vault-consumer (a plugin.yml plugin that depends on Vault) and, on Paper and
@@ -605,7 +606,31 @@ jobs:
           [[ $REGIONS != true ]] || export XLIMITS_SPAWNS=false
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xlimits/bukkit/client-checks.txt)
           xlimits/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
-      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish, xMarket, xVote, xBackup and (from 1.13) xRewind beside xSample, each with its own relocated core,
+      # xLimbo alone, on Paper from 1.21.11 (it's Paper only; other cells skip it): its world and
+      # floor, every console command, a reload and debug; on a `client` cell also a real client
+      # landing on the floor in German, the hint, hide-others and /join (xlimbo/bukkit/client-checks.txt).
+      - name: boot xLimbo
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
+          RESOLVED: ${{ steps.server.outputs.version }}
+        run: |
+          if [[ $SERVER != paper || $(printf '%s\n1.21.11\n' "$RESOLVED" | sort -V | head -1) != 1.21.11 ]]; then
+            echo "xLimbo is Paper only, from 1.21.11; this is $SERVER $RESOLVED."
+            exit 0
+          fi
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xlimbo/bukkit/client-checks.txt)
+          xlimbo/bukkit/boot.sh paper "$VERSION" --java "$JAVA" "${args[@]}"
+      # xLimbo as a world on the server, with xTeleport and xVanish beside it (send-back.via:
+      # teleport), on a `client` cell: a real client sends Friend to limbo and Friend's /join comes
+      # back through xTeleport's spawn, a vanished player left out of Friend's count (family-checks.txt).
+      - name: boot xLimbo with xTeleport and xVanish
+        if: matrix.cell.client && matrix.cell.server == 'paper'
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: xlimbo/bukkit/boot.sh paper "$VERSION" --family --java "$JAVA" --seed scripts/boot-seeds/client
+      # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish, xMarket, xVote, xBackup, (from 1.13) xRewind and (on Paper from 1.21.11) xLimbo beside xSample, each with its own relocated core,
       # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),
       # and each answering its own commands.
       - name: family test
@@ -618,6 +643,8 @@ jobs:
           if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
           rewind=()
           [[ $(printf '%s\n1.13\n' "$RESOLVED" | sort -V | head -1) != 1.13 ]] || rewind=(--checks xrewind/bukkit/boot-checks.txt xrewind/bukkit/build/r8/xRewind.jar)
+          # xLimbo too on Paper from 1.21.11, its floor (Paper only).
+          [[ $SERVER != paper || $(printf '%s\n1.21.11\n' "$RESOLVED" | sort -V | head -1) != 1.21.11 ]] || rewind+=(--checks xlimbo/bukkit/boot-checks.txt xlimbo/bukkit/build/r8/xLimbo.jar)
           core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false \
             --checks core/core-testing/twin/family-checks.txt --checks xutilities/bukkit/boot-checks.txt --checks zchat/bukkit/boot-checks.txt \
             --checks xteleport/bukkit/boot-checks.txt --checks xbans/bukkit/boot-checks.txt --checks xvanish/bukkit/boot-checks.txt --checks xmarket/bukkit/boot-checks.txt \
@@ -1146,6 +1173,8 @@ jobs:
           - {id: xvote, name: xVote, jar: xvote/bukkit/build/r8/xVote.jar}
           - {id: xrewind, name: xRewind, jar: xrewind/bukkit/build/r8/xRewind.jar}
           - {id: xlimits, name: xLimits, jar: xlimits/bukkit/build/r8/xLimits.jar}
+          # With its limbo given a folder it won't touch, so the heap is xLimbo's and not its world's (the seed's config says why).
+          - {id: xlimbo, name: xLimbo, jar: xlimbo/bukkit/build/r8/xLimbo.jar, seed: xlimbo/bukkit/budgets-seed}
     permissions:
       contents: read
     steps:
@@ -1181,10 +1210,13 @@ jobs:
         env:
           ID: ${{ matrix.plugin.id }}
           JAR: ${{ matrix.plugin.jar }}
+          SEED: ${{ matrix.plugin.seed }}
         run: |
           newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
+          seed=()
+          [[ -z $SEED ]] || seed=(--seed "$SEED")
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
-            --out "build/budgets/$ID" "$JAR"
+            "${seed[@]}" --out "build/budgets/$ID" "$JAR"
       # Its startup is reported, not budgeted: Paper 1.21.11 loads a plugin about 4 times
       # slower than 26.3 on these 2-core runners (its JIT threads and loader, not our code: the
       # server thread spends 6-7 ms of CPU in our enable), and startup is budgeted, failing, on

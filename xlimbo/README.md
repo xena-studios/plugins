@@ -20,32 +20,28 @@ xLimbo turns a small Paper server into your network's fallback: when your main s
 
 **[Download on Modrinth](https://modrinth.com/plugin/xlimbo)** · [Docs](https://plugins.xenastudios.co/xlimbo/) · [Commands](https://plugins.xenastudios.co/xlimbo/commands/) · [Network setup](https://plugins.xenastudios.co/xlimbo/network-setup/) · [Developer API](https://plugins.xenastudios.co/xlimbo/developer-api/) · [Changelog](CHANGELOG.md)
 
-Needs Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. Not for Folia: Folia can't create worlds, and a limbo has nothing for Folia to spread across threads.
+Needs Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. Not for Folia: Folia can't create worlds, and a limbo has nothing for Folia to spread across threads. 3.0, the rewrite on the new core, is on `main` and not released yet; 2.x is on the `maintenance` branch.
 
 ## Developing
 
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xlimbo:build       # compile, test, and check the jar's size budget
-./gradlew :xlimbo:runServer   # a Paper server with xLimbo, in xlimbo/run/
+./gradlew :xlimbo:common:build :xlimbo:bukkit:build   # compile, test, shrink and check the jar's budget
+./gradlew :xlimbo:bukkit:runServer                    # a Paper server with xLimbo, in xlimbo/bukkit/run/
+xlimbo/bukkit/boot.sh paper 1.21.11                   # its boot checks on a real server
 ```
 
 ```
-api/               the developer API (co.xenastudios.xlimbo:xlimbo-api), shipped inside the jar
-src/main/java/co/xenastudios/xlimbo/
-  XLimbo.java      the plugin: declares the config and, in setup, the features it turns on
-  Api.java         the developer API's implementation, registered while the plugin is enabled
-  world/           the void world, arrivals, the action bar and hiding players from each other
-  network/         the proxy connection, the return queue and the status ping to the main server
-  protect/         the protections
-  config/          the config records; XLConfig carries a 1.x config forward
-boot-checks.txt    console commands CI runs on real Paper servers, and what each must log
-CHANGELOG.md       one section per release; the release workflow publishes it
-modrinth.md        the Modrinth project page, published when it changes on main
+api/       the developer API (co.xenastudios.xlimbo:xlimbo-api), Kotlin Multiplatform, its ABI in api/api/
+common/    xLimbo's logic for every platform: the config, messages, the return queue and its status
+           ping, /join and /xlimbo, the API; jvmMain reads the files and carries a 2.x config forward
+bukkit/    the Paper adapter: the world and its void generator, the listeners and protections,
+           xTeleport's and xVanish's bridges, the Bukkit events, boot checks and budgets
+CHANGELOG.md, modrinth.md
 ```
 
-xLimbo only ever deletes or rebuilds a world folder carrying its `xlimbo.dat` marker; keep it that way ([its decision](../decisions/2026-10-22-xlimbo-is-paper-only.md) explains why). The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
+xLimbo only ever deletes or rebuilds a world folder carrying its `xlimbo.dat` marker; keep it that way ([its decision](../decisions/2026-10-22-xlimbo-is-paper-only.md) explains why, and [3.0's](../decisions/2026-11-28-xlimbo-3.md) what the rewrite kept). The shared core (reloading, config migration, translations, the update checker, bStats) is in [`core/`](../core).
 
 ## Licence
 

@@ -1,0 +1,7 @@
+# For scripts/budgets/check.sh --seed (the Boot workflow's budgets job): xLimbo with every module on
+# and no world of its own, so the heap budget measures xLimbo and not the world it makes on purpose
+# and the land around its spawn it keeps loaded (ROADMAP.md: "worlds a plugin makes on purpose
+# aside"). The world it's given is a folder it didn't make (seeded beside this file's server, in
+# both of Minecraft's layouts), which it refuses to touch and says so once in the console.
+world:
+  name: budgets-not-ours

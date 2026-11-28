@@ -1,0 +1,1964 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xlimbo",
+    "name": "xLimbo",
+    "version": "unspecified",
+    "description": "Never drop a player again."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.21.11",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "velocity",
+      "name": "Velocity",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "xlimbo",
+      "usage": "/xlimbo [info|list|send|back|reload|debug|forget]",
+      "aliases": [],
+      "description": "Shows xLimbo's version, and holds its admin subcommands.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xlimbo info",
+          "usage": "/xlimbo info",
+          "aliases": [],
+          "description": "Shows xLimbo's version, and who's in limbo.",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimbo list",
+          "usage": "/xlimbo list",
+          "aliases": [],
+          "description": "Lists who's in limbo, and their place in line.",
+          "permission": "xlimbo.list",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimbo send",
+          "usage": "/xlimbo send <player>",
+          "aliases": [],
+          "description": "Sends a player into limbo on this server.",
+          "permission": "xlimbo.send",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player",
+              "required": true,
+              "greedy": false,
+              "description": "The player to send.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimbo back",
+          "usage": "/xlimbo back <player>",
+          "aliases": [],
+          "description": "Sends a player back, or everyone with all: through the queue while it's on.",
+          "permission": "xlimbo.back",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player",
+              "required": true,
+              "greedy": false,
+              "description": "The player to send back, or all.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimbo reload",
+          "usage": "/xlimbo reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "xlimbo.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xlimbo debug",
+          "usage": "/xlimbo debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "xlimbo.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xlimbo forget",
+          "usage": "/xlimbo forget <player>",
+          "aliases": [],
+          "description": "Deletes everything kept about one player.",
+          "permission": "xlimbo.admin.forget",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player name or UUID",
+              "required": true,
+              "greedy": false,
+              "description": "The player whose data is deleted, online or not.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": true,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "join",
+      "usage": "/join",
+      "aliases": [
+        "server",
+        "lobby"
+      ],
+      "description": "Go back to the main server.",
+      "permission": "xlimbo.join",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": []
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xlimbo.join",
+      "description": "Use /join to go back.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "join"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xlimbo.list",
+      "description": "See who's in limbo and their place in line: /xlimbo list.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimbo list"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xlimbo.send",
+      "description": "Send a player into limbo on this server: /xlimbo send <player>.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimbo send"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xlimbo.back",
+      "description": "Send a player, or everyone, back: /xlimbo back <player|all>.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimbo back"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xlimbo.admin",
+      "description": "Every admin subcommand of xLimbo, and its update notices.",
+      "default": "op",
+      "children": {
+        "xlimbo.admin.reload": true,
+        "xlimbo.admin.debug": true,
+        "xlimbo.admin.forget": true,
+        "xlimbo.admin.update": true
+      },
+      "commands": [],
+      "builtIn": true
+    },
+    {
+      "node": "xlimbo.admin.reload",
+      "description": "Use /xlimbo reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimbo reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xlimbo.admin.debug",
+      "description": "Use /xlimbo debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimbo debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xlimbo.admin.forget",
+      "description": "Use /xlimbo forget.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimbo forget"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xlimbo.admin.update",
+      "description": "Hear about newer versions of xLimbo when joining.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 3,
+    "header": [
+      "xLimbo: never drop a player again.",
+      "Docs: https://plugins.xenastudios.co/xlimbo/configuration/",
+      "",
+      "Apply changes with /xlimbo reload. Everything applies, even the world's name and",
+      "floor. A bad value falls back to its default with a warning in the console; xLimbo",
+      "never stops over config. The messages are in lang/: one file per language."
+    ],
+    "entries": [
+      {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "world",
+        "type": "section",
+        "comment": [
+          "The void world players wait in: one floor layer, nothing else. Changing its name,",
+          "floor-block or floor-y rebuilds it on /xlimbo reload; players are moved out and back."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "world.name",
+            "type": "string",
+            "comment": [
+              "The limbo world, created on startup. To use the server's main world instead, set",
+              "this to its name (level-name in server.properties) and give it xLimbo's generator",
+              "in bukkit.yml (worlds: <name>: generator: xLimbo)."
+            ],
+            "default": "xlimbo",
+            "defaultText": "\"xlimbo\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "world.floor-block",
+            "type": "block",
+            "comment": [
+              "The one-block-thick floor everyone stands on: a block as Minecraft names it, such as",
+              "white_stained_glass. It must be solid and not fall."
+            ],
+            "default": "purple_stained_glass",
+            "defaultText": "\"purple_stained_glass\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "world.floor-y",
+            "type": "integer",
+            "comment": [
+              "The floor's height. Players stand one block above it."
+            ],
+            "default": 64,
+            "defaultText": "64",
+            "choices": [],
+            "min": -63,
+            "max": 318,
+            "entries": []
+          },
+          {
+            "path": "world.auto-save",
+            "type": "boolean",
+            "comment": [
+              "false keeps the world off disk: it starts fresh every time the server does. true",
+              "saves it, for builds that should last."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "world.reset-on-startup",
+            "type": "boolean",
+            "comment": [
+              "Start fresh on every startup even when auto-save is on."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "world.border",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "world.border.size",
+                "type": "integer",
+                "comment": [
+                  "The world border's width in blocks. It caps how much world can ever exist."
+                ],
+                "default": 10000,
+                "defaultText": "10000",
+                "choices": [],
+                "min": 64,
+                "max": 1000000,
+                "entries": []
+              },
+              {
+                "path": "world.border.spawn-radius",
+                "type": "integer",
+                "comment": [
+                  "Arriving players land up to this many blocks from the centre, so they don't stack.",
+                  "Small keeps a mass arrival to a handful of chunks; the land around it is kept ready."
+                ],
+                "default": 64,
+                "defaultText": "64",
+                "choices": [],
+                "min": 0,
+                "max": 500000,
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "world.view-distance",
+            "type": "integer",
+            "comment": [
+              "Chunks sent to players in this world, 2 to 32. -1 keeps the server's setting."
+            ],
+            "default": 4,
+            "defaultText": "4",
+            "choices": [],
+            "min": -1,
+            "max": 32,
+            "entries": []
+          },
+          {
+            "path": "world.simulation-distance",
+            "type": "integer",
+            "comment": [
+              "Chunks that tick around players in this world, 2 to 32. -1 keeps the server's setting."
+            ],
+            "default": 4,
+            "defaultText": "4",
+            "choices": [],
+            "min": -1,
+            "max": 32,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "player",
+        "type": "section",
+        "comment": [
+          "What arriving players get."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "player.set-creative",
+            "type": "boolean",
+            "comment": [
+              "Put arriving players in creative."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "player.enable-flight",
+            "type": "boolean",
+            "comment": [
+              "Give arriving players flight, and keep it on."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "player.hide-others",
+            "type": "boolean",
+            "comment": [
+              "Players can't see each other. With hundreds arriving at once, everyone tracking",
+              "everyone else is the biggest load a limbo has; this takes it away."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "join",
+        "type": "section",
+        "comment": [
+          "Arriving. The welcome message is join.welcome in lang/."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "join.suppress-join-message",
+            "type": "boolean",
+            "comment": [
+              "Hide the \"joined the game\" broadcast."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "join.clear-chat-on-join",
+            "type": "boolean",
+            "comment": [
+              "Clear the arriving player's chat first."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "quit",
+        "type": "section",
+        "comment": [],
+        "choices": [],
+        "entries": [
+          {
+            "path": "quit.suppress-quit-message",
+            "type": "boolean",
+            "comment": [
+              "Hide the \"left the game\" broadcast."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "death",
+        "type": "section",
+        "comment": [],
+        "choices": [],
+        "entries": [
+          {
+            "path": "death.suppress-death-message",
+            "type": "boolean",
+            "comment": [
+              "Hide death messages."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "main-server",
+        "type": "string",
+        "comment": [
+          "The server /join and automatic returns send players to: its name in your proxy's",
+          "config, such as \"main\". Only with send-back.via: proxy."
+        ],
+        "default": "main",
+        "defaultText": "\"main\"",
+        "choices": [],
+        "entries": []
+      },
+      {
+        "path": "send-back",
+        "type": "section",
+        "comment": [
+          "How players go back. proxy: xLimbo is your network's fallback server, and players go",
+          "to main-server through the proxy (BungeeCord, Waterfall or Velocity). teleport: xLimbo",
+          "is a world on this server (/xlimbo send puts players in it), and players go back with",
+          "a teleport, through xTeleport when it's installed."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "send-back.via",
+            "type": "enum",
+            "comment": [],
+            "default": "proxy",
+            "defaultText": "\"proxy\"",
+            "choices": [
+              "proxy",
+              "teleport"
+            ],
+            "entries": []
+          },
+          {
+            "path": "send-back.destination",
+            "type": "string",
+            "comment": [
+              "With via: teleport, where to: previous (where they were before limbo, or spawn if",
+              "that isn't known), spawn (xTeleport's /spawn, or the main world's), warp:<name>",
+              "(an xTeleport warp), or the name of a destination another plugin gave xTeleport."
+            ],
+            "default": "previous",
+            "defaultText": "\"previous\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "auto-join",
+        "type": "section",
+        "comment": [
+          "Send players back on their own this long after they arrive. The message they get is",
+          "auto-join.sending in lang/."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "auto-join.enabled",
+            "type": "boolean",
+            "comment": [
+              "Only without server-check, which sends players back as soon as the main server is up."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "auto-join.delay-seconds",
+            "type": "integer",
+            "comment": [
+              "How long after arriving."
+            ],
+            "default": 30,
+            "defaultText": "30",
+            "choices": [],
+            "min": 1,
+            "max": 86400,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "server-check",
+        "type": "section",
+        "comment": [
+          "Watch the main server, and send everyone back as soon as it's up, instead of waiting",
+          "for /join or auto-join. Only with send-back.via: proxy. Everyone here is told",
+          "(server-check.up in lang/) when it comes back."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "server-check.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "server-check.address",
+            "type": "string",
+            "comment": [
+              "Your main server's address as xLimbo can reach it (not the proxy's), such as",
+              "\"127.0.0.1:25566\". xLimbo asks it for its status, as a server list does."
+            ],
+            "default": "127.0.0.1:25566",
+            "defaultText": "\"127.0.0.1:25566\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "server-check.interval-seconds",
+            "type": "integer",
+            "comment": [],
+            "default": 5,
+            "defaultText": "5",
+            "choices": [],
+            "min": 1,
+            "max": 300,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "queue",
+        "type": "section",
+        "comment": [
+          "How automatic returns are paced. While a player waits their turn, their action bar",
+          "shows queue.action-bar from lang/ (blank shows the normal one instead)."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "queue.per-second",
+            "type": "integer",
+            "comment": [
+              "How many players are sent back each second, so the main server isn't flooded the",
+              "moment it's back. 0 sends everyone at once."
+            ],
+            "default": 5,
+            "defaultText": "5",
+            "choices": [],
+            "min": 0,
+            "max": 1000,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "join-command",
+        "type": "section",
+        "comment": [
+          "/join: sends you back. Everyone has it by default. Its messages are join-command.* in lang/."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "join-command.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "join-command.aliases",
+            "type": "list<string>",
+            "comment": [],
+            "default": [
+              "server",
+              "lobby"
+            ],
+            "defaultText": "[\"server\", \"lobby\"]",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "join-command.permission",
+            "type": "string",
+            "comment": [
+              "Blank (\"\") lets anyone."
+            ],
+            "default": "xlimbo.join",
+            "defaultText": "\"xlimbo.join\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "join-command.cooldown-seconds",
+            "type": "integer",
+            "comment": [
+              "Seconds between uses, per player, so nobody can spam your proxy."
+            ],
+            "default": 3,
+            "defaultText": "3",
+            "choices": [],
+            "min": 0,
+            "max": 3600,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "action-bar",
+        "type": "section",
+        "comment": [
+          "A hint repeated on every player's action bar: action-bar.hint in lang/."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "action-bar.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "action-bar.interval-ticks",
+            "type": "integer",
+            "comment": [
+              "Ticks between updates (20 is one second)."
+            ],
+            "default": 40,
+            "defaultText": "40",
+            "choices": [],
+            "min": 1,
+            "max": 1200,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "protections",
+        "type": "section",
+        "comment": [
+          "Players here are in creative, so these stop them breaking, lagging or escaping the",
+          "server. Each can be turned off; one that's off costs nothing."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "protections.floor",
+            "type": "boolean",
+            "comment": [
+              "The floor can't be broken, pushed, or built under."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "protections.void",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "protections.void.enabled",
+                "type": "boolean",
+                "comment": [
+                  "Put players who fall below threshold-y back on the floor."
+                ],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "protections.void.threshold-y",
+                "type": "integer",
+                "comment": [],
+                "default": 0,
+                "defaultText": "0",
+                "choices": [],
+                "min": -2048,
+                "max": 2048,
+                "entries": []
+              },
+              {
+                "path": "protections.void.cancel-void-damage",
+                "type": "boolean",
+                "comment": [
+                  "No void or fall damage, so a rescue never becomes a death loop."
+                ],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "protections.portals",
+            "type": "boolean",
+            "comment": [
+              "Nether and End portals, and Eyes of Ender in End portal frames."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "protections.liquids",
+            "type": "boolean",
+            "comment": [
+              "Placing water and lava, and liquids flowing."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "protections.gravity-blocks",
+            "type": "boolean",
+            "comment": [
+              "Sand, gravel, anvils, concrete powder and other blocks that fall."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "protections.fire",
+            "type": "boolean",
+            "comment": [
+              "Fire spreading, burning and being lit."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "protections.explosions",
+            "type": "boolean",
+            "comment": [
+              "Every explosion."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "protections.mob-spawns",
+            "type": "boolean",
+            "comment": [
+              "Mobs spawning."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "protections.redstone",
+            "type": "boolean",
+            "comment": [
+              "Redstone, pistons and dispensers."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "protections.item-drops",
+            "type": "boolean",
+            "comment": [
+              "Dropped items."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "protections.entities",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "protections.entities.block-entity-items",
+                "type": "boolean",
+                "comment": [
+                  "Armour stands, boats, minecarts, item frames, paintings, End crystals and spawn eggs."
+                ],
+                "default": true,
+                "defaultText": "true",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "protections.entities.cleanup-interval-seconds",
+                "type": "integer",
+                "comment": [
+                  "Removes stray entities this often: everything but players and what builds are made of",
+                  "(armour stands, item frames, paintings, displays, interactions, markers), and anything",
+                  "tagged xlimbo.keep. 0 turns it off."
+                ],
+                "default": 300,
+                "defaultText": "300",
+                "choices": [],
+                "min": 0,
+                "max": 86400,
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "protections.build-guard",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "protections.build-guard.enabled",
+                "type": "boolean",
+                "comment": [
+                  "Limits how fast each player can place blocks, against lag machines."
+                ],
+                "default": false,
+                "defaultText": "false",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "protections.build-guard.max-places-per-second",
+                "type": "integer",
+                "comment": [],
+                "default": 30,
+                "defaultText": "30",
+                "choices": [],
+                "min": 1,
+                "max": 1000,
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "updates",
+        "type": "section",
+        "comment": [
+          "Telling you when a newer version is out: in the console, and to players with",
+          "<plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,",
+          "sending only the plugin's version, the platform and the Minecraft version."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "updates.check",
+            "type": "boolean",
+            "comment": [
+              "Whether to ask at all."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "updates.channel",
+            "type": "enum",
+            "comment": [
+              "Which releases to hear of: release, beta (betas and releases) or alpha (everything)."
+            ],
+            "default": "release",
+            "defaultText": "\"release\"",
+            "choices": [
+              "release",
+              "beta",
+              "alpha"
+            ],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [],
+  "messages": [
+    {
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.update.available",
+      "english": "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+      "comment": [
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page."
+      ],
+      "placeholders": [
+        "plugin",
+        "current",
+        "latest",
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
+      ],
+      "placeholders": [
+        "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "core.reload.done",
+      "english": "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+      "comment": [
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise."
+      ],
+      "placeholders": [
+        "plugin",
+        "count",
+        "has_one",
+        "has_many"
+      ]
+    },
+    {
+      "key": "core.reload.problem",
+      "english": "<gold>!</gold> Problem: <problem>",
+      "comment": [
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too."
+      ],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "core.reload.module-off",
+      "english": "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+      "comment": [
+        "/<plugin> reload: a module that failed, and why, in English."
+      ],
+      "placeholders": [
+        "module",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.reload.failed",
+      "english": "<prefix><error>Reloading <plugin> failed; the console has the details.",
+      "comment": [
+        "/<plugin> reload: something went wrong; the settings from before are still in use."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.command.unknown",
+      "english": "<prefix><error>Unknown command.",
+      "comment": [
+        "Rare: a command that went away as it was typed."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.no-permission",
+      "english": "<prefix><error>You don't have permission to do that.",
+      "comment": [
+        "The sender lacks the command's permission."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.players-only",
+      "english": "<prefix><error>Only players can use this command.",
+      "comment": [
+        "The console or a command block ran a command only players can use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.usage",
+      "english": "<prefix><error>Usage:</error> <usage>",
+      "comment": [
+        "The command was typed with missing or extra words. <usage> is how to type it."
+      ],
+      "placeholders": [
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.unknown-player",
+      "english": "<prefix><error>No player called <highlight><player></highlight> is online.",
+      "comment": [
+        "No player the sender can see is online by the name typed (<player>)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.command.not-a-number",
+      "english": "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+      "comment": [
+        "A number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-an-integer",
+      "english": "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+      "comment": [
+        "A whole number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-small",
+      "english": "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+      "comment": [
+        "A number below the least the command takes (<min>)."
+      ],
+      "placeholders": [
+        "input",
+        "min",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-large",
+      "english": "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+      "comment": [
+        "A number above the most the command takes (<max>)."
+      ],
+      "placeholders": [
+        "input",
+        "max",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-a-choice",
+      "english": "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+      "comment": [
+        "A word that isn't one of those the command takes (<choices>, comma-separated)."
+      ],
+      "placeholders": [
+        "input",
+        "choices",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.invalid",
+      "english": "<prefix><error><reason></error> Usage: <usage>",
+      "comment": [
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.cooldown",
+      "english": "<prefix><error>You can use that again in <time>.",
+      "comment": [
+        "The command has a cooldown. <time> is how long is left."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.confirm",
+      "english": "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+      "comment": [
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is."
+      ],
+      "placeholders": [
+        "line",
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.error",
+      "english": "<prefix><error>Something went wrong running that command; the console has the details.",
+      "comment": [
+        "The command hit an error. The console has what happened."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "info",
+      "english": "<prefix>xLimbo <highlight><version></highlight> on <platform>: <count> in limbo, <waiting> waiting to go back. <gray>/xlimbo reload | debug | list | send | back | forget",
+      "comment": [
+        "/xlimbo on its own."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "count",
+        "waiting"
+      ]
+    },
+    {
+      "key": "join.welcome",
+      "english": "<prefix>The server is unavailable right now, so you're waiting here. Type <highlight>/join</highlight> to go back.",
+      "comment": [
+        "Sent to a player when they arrive (2.x's join.custom-join-message). Blank for none."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "join.sent",
+      "english": "<prefix>You're in limbo for now. Type <highlight>/join</highlight> to go back.",
+      "comment": [
+        "Sent to a player sent into limbo on this server (/xlimbo send, the API, xTeleport). Blank for none."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "join-command.sending",
+      "english": "<prefix>Connecting you to <highlight><server></highlight>...",
+      "comment": [
+        "/join, as the player goes. <server> is main-server, or the teleport's destination."
+      ],
+      "placeholders": [
+        "server"
+      ]
+    },
+    {
+      "key": "join-command.cooldown",
+      "english": "<prefix><error>Wait <highlight><seconds>s</highlight> before trying again.",
+      "comment": [
+        "/join used again too soon. <seconds> is the whole seconds left."
+      ],
+      "placeholders": [
+        "seconds"
+      ]
+    },
+    {
+      "key": "join-command.not-in-limbo",
+      "english": "<prefix><error>You're not in limbo.",
+      "comment": [
+        "/join from outside limbo, with send-back.via: teleport."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "auto-join.sending",
+      "english": "<prefix>Sending you back to the server...",
+      "comment": [
+        "Sent as a player is sent back on their own (auto-join, server-check, the queue). Blank for none."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "server-check.up",
+      "english": "<prefix><success>The server is back up!</success> Sending everyone back...",
+      "comment": [
+        "To everyone here when server-check sees the main server come back up. Blank for none."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "queue.action-bar",
+      "english": "<white>Sending you back: <highlight><bold>#<position></bold></highlight> of <total> in line",
+      "comment": [
+        "The action bar while a player waits their turn. Blank shows the hint instead. Vanished players aren't counted."
+      ],
+      "placeholders": [
+        "position",
+        "total"
+      ]
+    },
+    {
+      "key": "action-bar.hint",
+      "english": "<white>Type <highlight><bold>/join</bold></highlight> to go back to the server",
+      "comment": [
+        "Repeated on every player's action bar (action-bar.enabled)."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "send-back.failed",
+      "english": "<prefix><error>You couldn't be sent back just now.</error> Try <highlight>/join</highlight> again in a moment.",
+      "comment": [
+        "With send-back.via: teleport, a teleport back that didn't happen (unsafe, or its destination is gone)."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "list.header",
+      "english": "<prefix>In limbo (<count>), <waiting> waiting to go back:",
+      "comment": [
+        "/xlimbo list, before the names. Vanished players are counted only for those who can see them."
+      ],
+      "placeholders": [
+        "count",
+        "waiting"
+      ]
+    },
+    {
+      "key": "list.entry",
+      "english": " <highlight><player></highlight>",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "list.entry-queued",
+      "english": " <highlight><player></highlight> <dark_gray>#<position> in line</dark_gray>",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "position"
+      ]
+    },
+    {
+      "key": "list.none",
+      "english": "<prefix>Nobody is in limbo.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "send.done",
+      "english": "<prefix>Sent <highlight><player></highlight> to limbo.",
+      "comment": [
+        "/xlimbo send."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "send.already",
+      "english": "<prefix><error><highlight><player></highlight> is already in limbo.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "send.refused",
+      "english": "<prefix><error><highlight><player></highlight> wasn't sent: another plugin stopped it, or the limbo world isn't ready.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "back.done",
+      "english": "<prefix>Sending <highlight><player></highlight> back.",
+      "comment": [
+        "/xlimbo back <player>."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "back.all",
+      "english": "<prefix>Sending everyone in limbo back (<count>).",
+      "comment": [
+        "/xlimbo back all."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "back.not-in-limbo",
+      "english": "<prefix><error><highlight><player></highlight> isn't in limbo.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "back.refused",
+      "english": "<prefix><error><highlight><player></highlight> stays: a hold, another plugin, or the main server being down kept them.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "key": "xlimbo:pre_enter",
+      "className": "co.xenastudios.xlimbo.api.event.PreEnterLimboEvent",
+      "description": "A player on this server is about to be sent into limbo. Cancel it to keep them where they are.",
+      "cancellable": true,
+      "since": "3.0.0"
+    },
+    {
+      "key": "xlimbo:entered",
+      "className": "co.xenastudios.xlimbo.api.event.EnteredLimboEvent",
+      "description": "A player arrived in limbo, with why as far as xLimbo can tell.",
+      "cancellable": false,
+      "since": "3.0.0"
+    },
+    {
+      "key": "xlimbo:pre_return",
+      "className": "co.xenastudios.xlimbo.api.event.PreReturnEvent",
+      "description": "A player is about to be sent back. Cancel it to keep them in limbo.",
+      "cancellable": true,
+      "since": "3.0.0"
+    },
+    {
+      "key": "xlimbo:returned",
+      "className": "co.xenastudios.xlimbo.api.event.ReturnedEvent",
+      "description": "A player was sent back, through the proxy or by a teleport.",
+      "cancellable": false,
+      "since": "3.0.0"
+    },
+    {
+      "key": "xlimbo:main_server_status",
+      "className": "co.xenastudios.xlimbo.api.event.MainServerStatusEvent",
+      "description": "Server-check saw the main server go up or down.",
+      "cancellable": false,
+      "since": "3.0.0"
+    }
+  ]
+}

@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind|xlimits] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind|xlimits|xlimbo|xlimbo-family] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>] [--fabric] [--fixed-language]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -42,7 +42,12 @@
 // completion; Friend, no operator, is refused), or xLimits' (with xlimits/bukkit's
 // boot seed, a cap of 3 cows and 1 hopper per chunk: /xlimits here in German, three cows
 // summoned then a spawn egg refused with the player told why, one hopper placed and a second
-// refused and gone).
+// refused and gone), or xLimbo's as a network's fallback (xlimbo: Joiner lands on the limbo's
+// floor without a teleport, is welcomed and shown the action bar's hint in German, can't see
+// Friend, and /join goes out with its cooldown), or xLimbo as a world on a server with xTeleport and
+// xVanish beside it (xlimbo-family, send-back.via: teleport: Joiner sets xTeleport's spawn and sends
+// Friend into limbo in adventure mode; Joiner, vanished, follows and isn't counted for Friend;
+// Friend's /join takes them back through xTeleport's spawn, their game mode given back).
 //
 // The same scenarios run on Fabric (scripts/boot-fabric.sh's "client:" step, which adds --fabric):
 // a check that differs there by design takes Fabric's side, as each says (xUtilities' /back,
@@ -659,6 +664,8 @@ async function run () {
   if (plugin === 'xvanish-network') return xvanishNetwork()
   if (plugin === 'xrewind') return xrewind()
   if (plugin === 'xlimits') return xlimits()
+  if (plugin === 'xlimbo') return xlimbo()
+  if (plugin === 'xlimbo-family') return xlimboFamily()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")
@@ -896,6 +903,73 @@ async function xlimits () {
   }
   check('a spawn egg past the cap is refused, and the player told why, in German', refused != null,
     `heard ${JSON.stringify(heard.slice(from)).slice(0, 400)}; ${count('cow_spawn_egg')} eggs held${notes.length ? `; ${notes.join('; ')}` : ''}`)
+  finish()
+}
+
+// xLimbo as a network's fallback, on its own server: everyone who joins lands in limbo.
+async function xlimbo () {
+  const under = (b) => b.blockAt(b.entity.position.offset(0, -1, 0))?.name
+  check('Joiner lands on the purple glass floor', under(bot) === 'purple_stained_glass' && Math.abs(bot.entity.position.y - 65) < 0.5,
+    `at ${bot.entity.position}, on ${under(bot)}`)
+  check('and is welcomed in German', await hear(de('Der Server ist gerade nicht erreichbar', 'The server is unavailable right now'), 0) != null, `heard ${JSON.stringify(heard)}`)
+  check('in creative, flying', bot.game.gameMode === 'creative', `game mode ${bot.game.gameMode}`)
+  // Paper sends the action bar as its own packet, which mineflayer reads into no event: its text,
+  // a component of a few parts (Gib, /join, ein...), is read off the packet as it is.
+  const bars = []
+  bot.on('actionBar', (msg) => bars.push(msg.toString()))
+  bot._client.on('action_bar', (packet) => bars.push(JSON.stringify(packet)))
+  const hint = (b) => b.includes('/join') && b.includes(de('Gib', 'Type'))
+  for (let waited = 0; waited < 6000 && !bars.some(hint); waited += 100) await sleep(100)
+  check('the action bar shows the hint in German', bars.some(hint), `action bars ${JSON.stringify(bars.slice(-3)).slice(0, 300)}`)
+  const friend = friendBot({ version: false })
+  check('Friend joins', await friend.until(() => friend.spawned), 'Friend never spawned')
+  await sleep(2500)
+  const sees = Object.values(bot.entities).some((e) => e.type === 'player' && e.username === 'Friend')
+  check("hide-others: Friend isn't in Joiner's world", !sees, 'Joiner sees Friend')
+  await command('/xlimbo list', de('In Limbo (2)', 'In limbo (2)'), '/xlimbo list counts both, in German')
+  await command('/join', de('Verbinde dich mit main', 'Connecting you to main'), "/join asks the proxy for main, in German")
+  await command('/server', de('Warte', 'Wait'), "/join's alias shares its cooldown")
+  try { friend.bot.quit() } catch {}
+  finish()
+}
+
+// xLimbo as a world on a server players play on, through xTeleport and xVanish (boot.sh --family).
+async function xlimboFamily () {
+  const friend = friendBot({ version: false })
+  check('Friend joins', await friend.until(() => friend.spawned), 'Friend never spawned')
+  await sleep(2000)
+  bot.chat('/gamemode survival Friend')
+  check("Friend joins in the main world, not limbo", friend.bot.game.gameMode === 'survival' || await friend.until(() => friend.bot.game.gameMode === 'survival', 3000), `Friend's game mode ${friend.bot.game.gameMode}`)
+  // xTeleport's spawn, where Joiner stands: where /join takes Friend back.
+  bot.chat('/setspawn')
+  await sleep(1500)
+  const spawn = bot.entity.position.clone()
+  const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
+  const under = (b) => b.blockAt(b.entity.position.offset(0, -1, 0))?.name
+  let from = friend.heard.length
+  await command('/xlimbo send Friend', de('wurde nach Limbo geschickt', 'to limbo'), '/xlimbo send answers in German')
+  check('Friend is told, in their own language', await friend.hears("You're in limbo for now", from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  check("Friend stands on limbo's floor", await friend.until(() => under(friend.bot) === 'purple_stained_glass', 5000), `Friend at ${friend.bot.entity.position} on ${under(friend.bot)}`)
+  check('in adventure mode, so nothing from limbo comes back with them', await friend.until(() => friend.bot.game.gameMode === 'adventure', 3000), `game mode ${friend.bot.game.gameMode}`)
+  // Joiner vanishes and follows: Friend's count leaves Joiner out, Joiner's doesn't.
+  await command('/vanish', de('Du bist unsichtbar.', "You're vanished."), 'Joiner vanishes')
+  await command('/xlimbo send Joiner', de('wurde nach Limbo geschickt', 'to limbo'), 'Joiner sends themselves to limbo')
+  await sleep(1500)
+  await command('/xlimbo', de('2 in Limbo', '2 in limbo'), 'Joiner, who can see vanished players, counts both')
+  from = friend.heard.length
+  friend.bot.chat('/xlimbo')
+  check("Friend's count leaves the vanished Joiner out", await friend.hears('1 in limbo', from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  // Friend's /join: through xTeleport's spawn, their game mode given back.
+  from = friend.heard.length
+  friend.bot.chat('/join')
+  check('Friend is sent back', await friend.hears('Connecting you to spawn', from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
+  check("Friend arrives at xTeleport's spawn", await friend.until(() => distance(friend.bot.entity.position, spawn) < 2, 10000), `Friend at ${friend.bot.entity.position}, spawn ${spawn}`)
+  check('in survival again', await friend.until(() => friend.bot.game.gameMode === 'survival', 3000), `game mode ${friend.bot.game.gameMode}`)
+  await command('/join', de('Verbinde dich mit spawn', 'Connecting you to spawn'), "Joiner's /join, in German")
+  await sleep(1500)
+  check('Joiner is back at spawn', distance(bot.entity.position, spawn) < 2, `at ${bot.entity.position}, spawn ${spawn}`)
+  await command('/vanish', de('wieder sichtbar', 'visible'), 'Joiner shows again')
+  try { friend.bot.quit() } catch {}
   finish()
 }
 

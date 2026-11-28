@@ -1,0 +1,120 @@
+public final class co/xenastudios/xlimbo/api/EnterReason : java/lang/Enum {
+	public static final field MAIN_SERVER_DOWN Lco/xenastudios/xlimbo/api/EnterReason;
+	public static final field REFUSED Lco/xenastudios/xlimbo/api/EnterReason;
+	public static final field SENT Lco/xenastudios/xlimbo/api/EnterReason;
+	public static final field UNKNOWN Lco/xenastudios/xlimbo/api/EnterReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xlimbo/api/EnterReason;
+	public static fun values ()[Lco/xenastudios/xlimbo/api/EnterReason;
+}
+
+public abstract interface class co/xenastudios/xlimbo/api/HoldHook {
+	public abstract fun holds (Lco/xenastudios/core/api/PlayerRef;)Z
+}
+
+public abstract interface class co/xenastudios/xlimbo/api/PriorityHook {
+	public abstract fun priority (Lco/xenastudios/core/api/PlayerRef;)I
+}
+
+public final class co/xenastudios/xlimbo/api/ReturnCause : java/lang/Enum {
+	public static final field ADMIN Lco/xenastudios/xlimbo/api/ReturnCause;
+	public static final field JOIN_COMMAND Lco/xenastudios/xlimbo/api/ReturnCause;
+	public static final field PLUGIN Lco/xenastudios/xlimbo/api/ReturnCause;
+	public static final field QUEUE Lco/xenastudios/xlimbo/api/ReturnCause;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xlimbo/api/ReturnCause;
+	public static fun values ()[Lco/xenastudios/xlimbo/api/ReturnCause;
+}
+
+public final class co/xenastudios/xlimbo/api/ReturnRoute : java/lang/Enum {
+	public static final field PROXY Lco/xenastudios/xlimbo/api/ReturnRoute;
+	public static final field TELEPORT Lco/xenastudios/xlimbo/api/ReturnRoute;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xlimbo/api/ReturnRoute;
+	public static fun values ()[Lco/xenastudios/xlimbo/api/ReturnRoute;
+}
+
+public final class co/xenastudios/xlimbo/api/XLimbo {
+	public static final field DESTINATION Ljava/lang/String;
+	public static final field INSTANCE Lco/xenastudios/xlimbo/api/XLimbo;
+	public static final fun api ()Lco/xenastudios/xlimbo/api/XLimboApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xlimbo/api/XLimboApi;)V
+}
+
+public abstract interface class co/xenastudios/xlimbo/api/XLimboApi {
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun isInLimbo (Lco/xenastudios/core/api/PlayerRef;)Z
+	public abstract fun isMainServerUp ()Z
+	public abstract fun isServerCheckEnabled ()Z
+	public abstract fun playersInLimbo ()Ljava/util/List;
+	public abstract fun queuePosition (Lco/xenastudios/core/api/PlayerRef;)I
+	public abstract fun queueSize ()I
+	public abstract fun registerHold (Ljava/lang/String;Lco/xenastudios/xlimbo/api/HoldHook;)V
+	public abstract fun registerPriority (Ljava/lang/String;Lco/xenastudios/xlimbo/api/PriorityHook;)V
+	public abstract fun route ()Lco/xenastudios/xlimbo/api/ReturnRoute;
+	public abstract fun sendBack (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun sendBackAll ()V
+	public abstract fun sendToLimbo (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun unregisterAll (Ljava/lang/String;)V
+	public abstract fun visibleCount ()I
+}
+
+public final class co/xenastudios/xlimbo/api/event/EnteredLimboEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xlimbo/api/event/EnteredLimboEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xlimbo/api/EnterReason;)V
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getReason ()Lco/xenastudios/xlimbo/api/EnterReason;
+}
+
+public final class co/xenastudios/xlimbo/api/event/EnteredLimboEvent$Companion {
+}
+
+public final class co/xenastudios/xlimbo/api/event/MainServerStatusEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xlimbo/api/event/MainServerStatusEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Z)V
+	public final fun getUp ()Z
+}
+
+public final class co/xenastudios/xlimbo/api/event/MainServerStatusEvent$Companion {
+}
+
+public final class co/xenastudios/xlimbo/api/event/PreEnterLimboEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xlimbo/api/event/PreEnterLimboEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;)V
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+}
+
+public final class co/xenastudios/xlimbo/api/event/PreEnterLimboEvent$Companion {
+}
+
+public final class co/xenastudios/xlimbo/api/event/PreReturnEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xlimbo/api/event/PreReturnEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xlimbo/api/ReturnCause;Lco/xenastudios/xlimbo/api/ReturnRoute;Ljava/lang/String;)V
+	public final fun getCause ()Lco/xenastudios/xlimbo/api/ReturnCause;
+	public final fun getDestination ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getRoute ()Lco/xenastudios/xlimbo/api/ReturnRoute;
+}
+
+public final class co/xenastudios/xlimbo/api/event/PreReturnEvent$Companion {
+}
+
+public final class co/xenastudios/xlimbo/api/event/ReturnedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xlimbo/api/event/ReturnedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xlimbo/api/ReturnCause;Lco/xenastudios/xlimbo/api/ReturnRoute;Ljava/lang/String;)V
+	public final fun getCause ()Lco/xenastudios/xlimbo/api/ReturnCause;
+	public final fun getDestination ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getRoute ()Lco/xenastudios/xlimbo/api/ReturnRoute;
+}
+
+public final class co/xenastudios/xlimbo/api/event/ReturnedEvent$Companion {
+}
+

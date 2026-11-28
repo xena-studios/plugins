@@ -23,6 +23,7 @@ class ConfigFileTest {
 
     @AfterTest
     fun cleanUp() {
+        ConfigFile.blockedTemp = null
         dir.toFile().setWritable(true)
         Files.walk(dir).sorted(Comparator.reverseOrder()).forEach {
             it.toFile().setWritable(true)
@@ -102,6 +103,7 @@ class ConfigFileTest {
         // The temporary file's place is taken, so the write fails.
         Files.createDirectory(dir.resolve("config.yml.tmp"))
         Files.write(dir.resolve("config.yml.tmp/keep"), byteArrayOf())
+        ConfigFile.blockedTemp = dir.resolve("config.yml.tmp")
         val loaded = load()
         assertEquals("Bob's", loaded.config[ShopConfig.name])
         assertEquals(ConfigProblem.Kind.SAVE_FAILED, loaded.problems.single().kind)
@@ -114,6 +116,7 @@ class ConfigFileTest {
         write("config-version: 1\nshop-name: Bob's\n")
         Files.createDirectory(dir.resolve("config.yml.tmp"))
         Files.write(dir.resolve("config.yml.tmp/keep"), byteArrayOf())
+        ConfigFile.blockedTemp = dir.resolve("config.yml.tmp")
         val loaded = load()
         assertEquals("Bob's", loaded.config[ShopConfig.name])
         assertEquals(ConfigProblem.Kind.SAVE_FAILED, loaded.problems.single().kind)

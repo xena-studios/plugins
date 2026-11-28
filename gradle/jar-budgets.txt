@@ -170,3 +170,18 @@
 :core:platform-fabric:xbackup:1.20.1 805
 :core:platform-fabric:xbackup:1.21.11 805
 :core:platform-fabric:xbackup:26.3 820
+
+# xRewind 2.0 (M12), shrunk: 815 KiB on Bukkit, over the 500 KiB target (and 1.x's 327) with the
+# reason recorded in decisions/2026-11-27-xrewind-2.md: about 420 KiB the shared core (its
+# database layer, commands, config, messages, the family) and its world hooks (about 50 KiB of
+# Bukkit listeners), the rest xRewind's own with its API: the writer and dictionaries, 1.x's
+# lookups across five tables, the planner and the chunked applier (one main thread or Folia's
+# regions) with its restart record, purges, the CoreProtect import, the inspector, 1.x's config
+# migration, the Paper and Spigot ways of contents and items, the three Bukkit events, and seven
+# translations. 1.x ran only on Paper 1.21.11+, with the old core. Line: size + about 10%.
+:xrewind:bukkit 880
+# On Fabric, 686-701 KiB, shrunk before Loom remaps it, its core relocated and the world hooks'
+# mixins carried as they are (xena.fabric-mod); lines size + about 10%.
+:core:platform-fabric:xrewind:1.20.1 755
+:core:platform-fabric:xrewind:1.21.11 757
+:core:platform-fabric:xrewind:26.3 770

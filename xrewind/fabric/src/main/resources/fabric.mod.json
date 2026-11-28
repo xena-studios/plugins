@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "xrewind",
+  "version": "${version}",
+  "name": "xRewind",
+  "description": "Every change, logged. Any of it, undone. Server-side: players install nothing.",
+  "authors": ["Xena Studios"],
+  "contact": {
+    "homepage": "https://plugins.xenastudios.co/xrewind/",
+    "sources": "https://github.com/xena-studios/plugins",
+    "issues": "https://github.com/xena-studios/plugins/issues"
+  },
+  "license": "GPL-3.0-only",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.xrewind.fabric.XRewindMod" }
+    ]
+  },
+  "mixins": ["xrewind-world.mixins.json"],
+  "depends": {
+    "fabricloader": "${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${flk}"
+  }
+}

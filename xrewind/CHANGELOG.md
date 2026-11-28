@@ -1,5 +1,38 @@
 # xRewind changelog
 
+## 2.0.0 (unreleased)
+
+Not released yet: 2.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 1.1.1 is the release, and 1.x gets its fixes.
+
+The rewrite: the same commands, parameters, permissions, settings and history as 1.1.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.13 to 26.3** and **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), with xRewind's messages in eight languages. Keep the 1.1.1 jar to go back to.
+
+### New
+
+- **Spigot, CraftBukkit and Fabric.** Every change is heard through the core's world hooks, the same on each platform: on Fabric through mixins, which cost one check of a field for a kind of change nothing listens for. On Fabric a block's whole contents come back with a rollback (a chest's items, a sign's text, a banner's patterns); signs and commands are logged on Bukkit only, as Fabric has no event for them.
+- **A rollback the server stopped carries on** as it starts again, with what it hadn't done yet: each chunk's changes are marked as that chunk is done, and what the rollback was is kept in `rollback-running.txt` until it finishes.
+- **Rollbacks within one region**, for plot plugins: the API's `Query.Builder.area` and `filter`. [xPlots](https://plugins.xenastudios.co/xplots/) uses them.
+- **Filters** in the API, to keep a plugin's own changes (a minigame's arena) out of the history.
+- **`/xrewind debug`** writes a report to share when asking for help, and **`/xrewind forget <player>`** deletes a player's chat, commands, joins and quits: see [Privacy](https://plugins.xenastudios.co/xrewind/privacy/).
+- **Replies in each staff member's language**: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese.
+- **The CoreProtect import reads with a driver of its own** on a server that has none.
+
+### Upgrading from 1.x
+
+Replace the jar and restart. Your `config.yml` is carried forward and the old one is kept beside it as `config.yml.bak-v1`; your history stays where it is (`history.db`, or your MySQL tables), untouched: 2.0 reads and writes it exactly as 1.x does. See [Upgrading from 1.x](https://plugins.xenastudios.co/xrewind/upgrade/).
+
+- **Messages are in `lang/` now**, one file per language, no longer in `config.yml`. Every message you changed in 1.x is copied into `lang/en.yml` on the first start, and then xRewind sends English to everyone (`messages.language: en`), as 1.x did. Set it to `auto` to give each staff member their own language.
+- **`theme` moved into `messages.theme`**, shared with the other Xena plugins in `plugins/Xena/config.yml` unless you set it here. Colours you changed in 1.x stay xRewind's own.
+- The error messages (`messages.error.*`) are the core's now: `core.command.*` in `lang/`.
+- `update-checker` is `updates` now: `update-checker.enabled` is carried to `updates.check`.
+- **Going back to 1.1.1:** stop the server, put the 1.1.1 jar back, and rename `config.yml.bak-v1` to `config.yml` (keep 2.0's as `config.yml.v2`). Your history needs nothing: 1.1.1 reads the database as 2.0 left it.
+
+### For developers: the API's breaking changes
+
+- `XRewind.api()` replaces `XRewindApi.get()`; it's in Bukkit's services manager as before. Worlds are `WorldRef`s and players `PlayerRef`s, block states text and items ids, so one API works on every platform; `BukkitRewind` takes Bukkit's own `Location`, `BlockData` and `ItemStack`.
+- `Query.Builder.time` takes seconds, `radius` a world and coordinates, `blocks` ids; `RollbackResult.getTookMillis()` replaces `took()`.
+- `pause()` and `WriterHold` are gone: every Xena plugin's database is copied safely for a backup by the core, with nothing to hold.
+- The events are xRewind's own, on `api.getEvents()` (`LookupEvent`, `RollbackEvent`, `RollbackFinishedEvent`, each with its `TYPE`), and on Bukkit also Bukkit events in `co.xenastudios.xrewind.api.bukkit`, which replace 1.x's.
+
 ## 1.1.1
 
 ### Fixed

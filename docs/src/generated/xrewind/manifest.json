@@ -1,0 +1,2242 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xrewind",
+    "name": "xRewind",
+    "version": "unspecified",
+    "description": "Every change, logged. Any of it, undone."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.13",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "spigot",
+      "name": "Spigot",
+      "kind": "server",
+      "minVersion": "1.13",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "neoforge",
+      "name": "NeoForge",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "id": "pumpkin",
+      "name": "Pumpkin",
+      "kind": "server",
+      "minVersion": "latest",
+      "maxVersion": "latest",
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "xrewind",
+      "usage": "/xrewind [info|inspect|lookup|page|near|rollback|restore|apply|cancel|undo|purge|import|status|reload|debug|forget]",
+      "aliases": [
+        "xr"
+      ],
+      "description": "Every change, logged. Any of it, undone: xRewind's commands.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xrewind info",
+          "usage": "/xrewind info",
+          "aliases": [],
+          "description": "Shows xRewind's version and where its history is kept.",
+          "permission": "xrewind.admin",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind inspect",
+          "usage": "/xrewind inspect",
+          "aliases": [
+            "i"
+          ],
+          "description": "Turns the inspector on or off: click a block to see its history.",
+          "permission": "xrewind.inspect",
+          "playerOnly": true,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind lookup",
+          "usage": "/xrewind lookup [parameters]",
+          "aliases": [
+            "l"
+          ],
+          "description": "Searches the history, newest first, 7 to a page.",
+          "permission": "xrewind.lookup",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "parameters",
+              "type": "parameters",
+              "required": false,
+              "greedy": true,
+              "description": "u:, t:, r:, a:, i:, e:, w:, and #preview, #count, #silent.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind page",
+          "usage": "/xrewind page <number>",
+          "aliases": [],
+          "description": "Another page of your last lookup.",
+          "permission": "xrewind.lookup",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "number",
+              "type": "integer",
+              "required": true,
+              "greedy": false,
+              "description": "Which page.",
+              "choices": [],
+              "min": 1,
+              "max": 500
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind near",
+          "usage": "/xrewind near",
+          "aliases": [],
+          "description": "What changed within 5 blocks in the last 3 days.",
+          "permission": "xrewind.lookup",
+          "playerOnly": true,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind rollback",
+          "usage": "/xrewind rollback [parameters]",
+          "aliases": [
+            "rb"
+          ],
+          "description": "Undoes matching changes. Needs t:; add #preview to see it first.",
+          "permission": "xrewind.rollback",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "parameters",
+              "type": "parameters",
+              "required": false,
+              "greedy": true,
+              "description": "u:, t:, r:, a:, i:, e:, w:, and #preview, #count, #silent.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind restore",
+          "usage": "/xrewind restore [parameters]",
+          "aliases": [
+            "rs"
+          ],
+          "description": "Puts back what a rollback undid.",
+          "permission": "xrewind.restore",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "parameters",
+              "type": "parameters",
+              "required": false,
+              "greedy": true,
+              "description": "u:, t:, r:, a:, i:, e:, w:, and #preview, #count, #silent.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind apply",
+          "usage": "/xrewind apply",
+          "aliases": [],
+          "description": "Applies your preview.",
+          "permission": "xrewind.rollback",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind cancel",
+          "usage": "/xrewind cancel",
+          "aliases": [],
+          "description": "Drops your preview.",
+          "permission": "xrewind.rollback",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind undo",
+          "usage": "/xrewind undo",
+          "aliases": [],
+          "description": "Reverts your last rollback or restore.",
+          "permission": "xrewind.rollback",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind purge",
+          "usage": "/xrewind purge [parameters]",
+          "aliases": [],
+          "description": "Deletes history older than a time, at least a day: t:30d.",
+          "permission": "xrewind.purge",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "parameters",
+              "type": "parameters",
+              "required": false,
+              "greedy": true,
+              "description": "u:, t:, r:, a:, i:, e:, w:, and #preview, #count, #silent.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind import",
+          "usage": "/xrewind import <source> [again]",
+          "aliases": [],
+          "description": "Imports CoreProtect's history: /xrewind import coreprotect [#again].",
+          "permission": "xrewind.admin",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "source",
+              "type": "choice",
+              "required": true,
+              "greedy": false,
+              "description": "coreprotect.",
+              "choices": [
+                "coreprotect"
+              ]
+            },
+            {
+              "name": "again",
+              "type": "choice",
+              "required": false,
+              "greedy": false,
+              "description": "#again imports it a second time.",
+              "choices": [
+                "#again"
+              ]
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind status",
+          "usage": "/xrewind status",
+          "aliases": [],
+          "description": "Where the history is kept, what's saved and waiting, and any problem.",
+          "permission": "xrewind.status",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind reload",
+          "usage": "/xrewind reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "xrewind.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind debug",
+          "usage": "/xrewind debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "xrewind.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xrewind forget",
+          "usage": "/xrewind forget <player>",
+          "aliases": [],
+          "description": "Deletes everything kept about one player.",
+          "permission": "xrewind.admin.forget",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player name or UUID",
+              "required": true,
+              "greedy": false,
+              "description": "The player whose data is deleted, online or not.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": true,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xrewind.inspect",
+      "description": "Turn the inspector on and off with /xrewind inspect.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xrewind inspect"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xrewind.lookup",
+      "description": "Search the history: /xrewind lookup, page and near.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xrewind lookup",
+        "xrewind page",
+        "xrewind near"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xrewind.lookup.chat",
+      "description": "See chat and commands in lookups (a:chat, a:command), which are more private than blocks.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xrewind.rollback",
+      "description": "Roll back, preview, apply, cancel and undo: /xrewind rollback, apply, cancel and undo.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xrewind rollback",
+        "xrewind apply",
+        "xrewind cancel",
+        "xrewind undo"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xrewind.rollback.global",
+      "description": "Roll back past rollback.max-radius, or a whole world (r:#world) or every world (r:#global).",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xrewind.restore",
+      "description": "Put back what a rollback undid: /xrewind restore.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xrewind restore"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xrewind.purge",
+      "description": "Delete old history with /xrewind purge.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xrewind purge"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xrewind.status",
+      "description": "See whether logging is keeping up, with /xrewind status.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xrewind status"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xrewind.admin",
+      "description": "Every admin subcommand of xRewind, and its update notices.",
+      "default": "op",
+      "children": {
+        "xrewind.admin.reload": true,
+        "xrewind.admin.debug": true,
+        "xrewind.admin.forget": true,
+        "xrewind.admin.update": true
+      },
+      "commands": [
+        "xrewind info",
+        "xrewind import"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xrewind.admin.reload",
+      "description": "Use /xrewind reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xrewind reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xrewind.admin.debug",
+      "description": "Use /xrewind debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xrewind debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xrewind.admin.forget",
+      "description": "Use /xrewind forget.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xrewind forget"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xrewind.admin.update",
+      "description": "Hear about newer versions of xRewind when joining.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 2,
+    "header": [
+      "xRewind: every change, logged. Any of it, undone.",
+      "Docs: https://plugins.xenastudios.co/xrewind/configuration/",
+      "",
+      "Apply changes with /xrewind reload (or /xr reload): everything applies, what's logged and",
+      "where it's stored included. A bad value falls back to its default with a warning in the",
+      "console; xRewind never stops over config. The messages are in lang/."
+    ],
+    "entries": [
+      {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "storage",
+        "type": "section",
+        "comment": [
+          "Where this plugin keeps its data. Read at startup only: restart after changing it."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "storage.type",
+            "type": "enum",
+            "comment": [
+              "sqlite keeps everything in one file in the plugin's folder, with nothing to set up.",
+              "mysql (or MariaDB) is for networks, or servers with a lot of history.",
+              "shared keeps it in the database every Xena plugin can share, set in plugins/Xena/config.yml."
+            ],
+            "default": "sqlite",
+            "defaultText": "\"sqlite\"",
+            "choices": [
+              "sqlite",
+              "mysql",
+              "shared"
+            ],
+            "entries": []
+          },
+          {
+            "path": "storage.table-prefix",
+            "type": "string",
+            "comment": [
+              "Put in front of every table's name, so plugins and servers can share one database."
+            ],
+            "default": "xrewind_",
+            "defaultText": "\"xrewind_\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "storage.mysql",
+            "type": "section",
+            "comment": [
+              "Only for type: mysql."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "storage.mysql.host",
+                "type": "string",
+                "comment": [],
+                "default": "localhost",
+                "defaultText": "\"localhost\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.port",
+                "type": "integer",
+                "comment": [],
+                "default": 3306,
+                "defaultText": "3306",
+                "choices": [],
+                "min": 1,
+                "max": 65535,
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.database",
+                "type": "string",
+                "comment": [],
+                "default": "minecraft",
+                "defaultText": "\"minecraft\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.username",
+                "type": "string",
+                "comment": [],
+                "default": "minecraft",
+                "defaultText": "\"minecraft\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.password",
+                "type": "string",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.properties",
+                "type": "string",
+                "comment": [
+                  "Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC."
+                ],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "storage.pool",
+            "type": "section",
+            "comment": [
+              "The connections used to read, beside the one that writes."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "storage.pool.readers",
+                "type": "integer",
+                "comment": [
+                  "How many: 0 picks for the database (1 for SQLite, 2 for MySQL). More helps only a",
+                  "MySQL server that many reads wait on."
+                ],
+                "default": 0,
+                "defaultText": "0",
+                "choices": [],
+                "min": 0,
+                "max": 16,
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "log",
+        "type": "section",
+        "comment": [
+          "What's logged. Something that's off isn't even listened for, so it costs nothing.",
+          "Changes apply on /xrewind reload."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "log.block-break",
+            "type": "boolean",
+            "comment": [
+              "Blocks players break, with what they held, and blocks that fall off with them."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.block-place",
+            "type": "boolean",
+            "comment": [
+              "Blocks players place, and what they replaced."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.explosions",
+            "type": "boolean",
+            "comment": [
+              "Blocks explosions destroy. TNT is put down to whoever lit it."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.fire",
+            "type": "boolean",
+            "comment": [
+              "Blocks burnt away, and fires players light."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.liquids",
+            "type": "boolean",
+            "comment": [
+              "Buckets, and flowing water or lava destroying a block. Plain spreading isn't logged."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.pistons",
+            "type": "boolean",
+            "comment": [
+              "Blocks pistons move."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.mobs",
+            "type": "boolean",
+            "comment": [
+              "Endermen, withers, ravagers, falling sand. Sheep eating grass and villagers farming aren't."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.signs",
+            "type": "boolean",
+            "comment": [
+              "Text written on signs. Bukkit only: Fabric has no event for it."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.containers",
+            "type": "boolean",
+            "comment": [
+              "Items players put into or take out of containers."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.hoppers",
+            "type": "boolean",
+            "comment": [
+              "Items hoppers and droppers move. Busy on farms."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.kills",
+            "type": "boolean",
+            "comment": [
+              "Mobs and players killed by players."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.clicks",
+            "type": "boolean",
+            "comment": [
+              "Doors, trapdoors, gates, levers and buttons players use."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.leaf-decay",
+            "type": "boolean",
+            "comment": [
+              "Leaves decaying."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.sessions",
+            "type": "boolean",
+            "comment": [
+              "Players joining and quitting, and where."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.chat",
+            "type": "boolean",
+            "comment": [
+              "Chat messages. Off by default for players' privacy; lookups need xrewind.lookup.chat."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.commands",
+            "type": "boolean",
+            "comment": [
+              "Commands players run. Off by default; lookups need xrewind.lookup.chat. Bukkit only:",
+              "Fabric has no event before a command runs."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "log.excluded-worlds",
+            "type": "list<string>",
+            "comment": [
+              "Worlds nothing is logged in, by name: world_nether on Bukkit, minecraft:the_nether on Fabric."
+            ],
+            "default": [],
+            "defaultText": "[]",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "rollback",
+        "type": "section",
+        "comment": [
+          "Rollbacks and restores. Blocks are set a few milliseconds per tick, chunk by chunk (each",
+          "region on its own thread on Folia), so even a big one doesn't freeze the server, and",
+          "without physics, so nothing cascades. One stopped by a restart carries on when the",
+          "server starts again."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "rollback.ms-per-tick",
+            "type": "integer",
+            "comment": [
+              "How long a rollback may work each tick, in milliseconds. A tick is 50."
+            ],
+            "default": 10,
+            "defaultText": "10",
+            "choices": [],
+            "min": 1,
+            "max": 40,
+            "entries": []
+          },
+          {
+            "path": "rollback.default-radius",
+            "type": "integer",
+            "comment": [
+              "The radius, in blocks, when a rollback doesn't give one with r:."
+            ],
+            "default": 10,
+            "defaultText": "10",
+            "choices": [],
+            "min": 0,
+            "max": 1000,
+            "entries": []
+          },
+          {
+            "path": "rollback.max-radius",
+            "type": "integer",
+            "comment": [
+              "The largest r: without the xrewind.rollback.global permission, which r:#world and",
+              "r:#global also need."
+            ],
+            "default": 100,
+            "defaultText": "100",
+            "choices": [],
+            "min": 0,
+            "max": 100000,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "purge",
+        "type": "section",
+        "comment": [
+          "Deleting old history, so the database doesn't grow forever."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "purge.keep-days",
+            "type": "integer",
+            "comment": [
+              "Delete history older than this many days, once a day. 0 keeps everything. A",
+              "rollback can't reach further back than what's kept."
+            ],
+            "default": 30,
+            "defaultText": "30",
+            "choices": [],
+            "min": 0,
+            "max": 10000,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "updates",
+        "type": "section",
+        "comment": [
+          "Telling you when a newer version is out: in the console, and to players with",
+          "<plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,",
+          "sending only the plugin's version, the platform and the Minecraft version."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "updates.check",
+            "type": "boolean",
+            "comment": [
+              "Whether to ask at all."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "updates.channel",
+            "type": "enum",
+            "comment": [
+              "Which releases to hear of: release, beta (betas and releases) or alpha (everything)."
+            ],
+            "default": "release",
+            "defaultText": "\"release\"",
+            "choices": [
+              "release",
+              "beta",
+              "alpha"
+            ],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [],
+  "messages": [
+    {
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.update.available",
+      "english": "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+      "comment": [
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page."
+      ],
+      "placeholders": [
+        "plugin",
+        "current",
+        "latest",
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
+      ],
+      "placeholders": [
+        "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "core.reload.done",
+      "english": "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+      "comment": [
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise."
+      ],
+      "placeholders": [
+        "plugin",
+        "count",
+        "has_one",
+        "has_many"
+      ]
+    },
+    {
+      "key": "core.reload.problem",
+      "english": "<gold>!</gold> Problem: <problem>",
+      "comment": [
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too."
+      ],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "core.reload.module-off",
+      "english": "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+      "comment": [
+        "/<plugin> reload: a module that failed, and why, in English."
+      ],
+      "placeholders": [
+        "module",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.reload.failed",
+      "english": "<prefix><error>Reloading <plugin> failed; the console has the details.",
+      "comment": [
+        "/<plugin> reload: something went wrong; the settings from before are still in use."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.command.unknown",
+      "english": "<prefix><error>Unknown command.",
+      "comment": [
+        "Rare: a command that went away as it was typed."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.no-permission",
+      "english": "<prefix><error>You don't have permission to do that.",
+      "comment": [
+        "The sender lacks the command's permission."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.players-only",
+      "english": "<prefix><error>Only players can use this command.",
+      "comment": [
+        "The console or a command block ran a command only players can use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.usage",
+      "english": "<prefix><error>Usage:</error> <usage>",
+      "comment": [
+        "The command was typed with missing or extra words. <usage> is how to type it."
+      ],
+      "placeholders": [
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.unknown-player",
+      "english": "<prefix><error>No player called <highlight><player></highlight> is online.",
+      "comment": [
+        "No player the sender can see is online by the name typed (<player>)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.command.not-a-number",
+      "english": "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+      "comment": [
+        "A number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-an-integer",
+      "english": "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+      "comment": [
+        "A whole number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-small",
+      "english": "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+      "comment": [
+        "A number below the least the command takes (<min>)."
+      ],
+      "placeholders": [
+        "input",
+        "min",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-large",
+      "english": "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+      "comment": [
+        "A number above the most the command takes (<max>)."
+      ],
+      "placeholders": [
+        "input",
+        "max",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-a-choice",
+      "english": "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+      "comment": [
+        "A word that isn't one of those the command takes (<choices>, comma-separated)."
+      ],
+      "placeholders": [
+        "input",
+        "choices",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.invalid",
+      "english": "<prefix><error><reason></error> Usage: <usage>",
+      "comment": [
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.cooldown",
+      "english": "<prefix><error>You can use that again in <time>.",
+      "comment": [
+        "The command has a cooldown. <time> is how long is left."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.confirm",
+      "english": "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+      "comment": [
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is."
+      ],
+      "placeholders": [
+        "line",
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.error",
+      "english": "<prefix><error>Something went wrong running that command; the console has the details.",
+      "comment": [
+        "The command hit an error. The console has what happened."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "info",
+      "english": "<prefix>xRewind <highlight><version></highlight> on <platform>: <storage>. <gray>/xrewind lookup | rollback | restore | status | reload | debug",
+      "comment": [
+        "/xrewind on its own, and /xrewind info."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "storage"
+      ]
+    },
+    {
+      "key": "lookup.header",
+      "english": "<prefix>Lookup: <highlight><count></highlight> changes",
+      "comment": [
+        "Above a page of results. <count> is how many there are in all."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "lookup.header-at",
+      "english": "<prefix>History of <highlight><x> <y> <z></highlight> in <world>",
+      "comment": [
+        "Above the history of one block, from the inspector."
+      ],
+      "placeholders": [
+        "x",
+        "y",
+        "z",
+        "world"
+      ]
+    },
+    {
+      "key": "lookup.line",
+      "english": "<gray><ago> ago</gray> <highlight><user></highlight> <action> <highlight><block></highlight> <gray>at <x> <y> <z></gray>",
+      "comment": [
+        "One change. <ago> is how long ago, <user> who, <action> what they did, <block> what",
+        "to (a block, items, a mob, or what they wrote), <x> <y> <z> <world> where."
+      ],
+      "placeholders": [
+        "ago",
+        "user",
+        "action",
+        "block",
+        "x",
+        "y",
+        "z",
+        "world"
+      ]
+    },
+    {
+      "key": "lookup.line-undone",
+      "english": "<strikethrough><gray><ago> ago</gray> <user> <action> <block> <gray>at <x> <y> <z></gray></strikethrough> <gray>(undone)",
+      "comment": [
+        "A change that's been rolled back."
+      ],
+      "placeholders": [
+        "ago",
+        "user",
+        "action",
+        "block",
+        "x",
+        "y",
+        "z",
+        "world"
+      ]
+    },
+    {
+      "key": "lookup.footer",
+      "english": "<gray>Page <page> of <pages></gray> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next page »",
+      "comment": [
+        "Below a page. <page>, <pages>, and <next>: the command for the next page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "next"
+      ]
+    },
+    {
+      "key": "lookup.none",
+      "english": "<prefix>Nothing found.",
+      "comment": [
+        "Nothing matched."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.working",
+      "english": "<prefix><gray>Looking...",
+      "comment": [
+        "Sent while waiting on the database."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.invalid",
+      "english": "<prefix><error><reason>",
+      "comment": [
+        "The parameters were wrong. <reason> says how (params.*)."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "lookup.no-previous",
+      "english": "<prefix><error>Look something up first, then use /xrewind page.",
+      "comment": [
+        "There's no previous lookup for /xrewind page."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.not-ready",
+      "english": "<prefix><error>The database isn't ready yet. /xrewind status says why.",
+      "comment": [
+        "The database isn't ready yet."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.inspector-on",
+      "english": "<prefix>Inspector <success>on</success>. Click a block to see its history; place one to see what was there.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.inspector-off",
+      "english": "<prefix>Inspector <highlight>off</highlight>.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.placed",
+      "english": "placed",
+      "comment": [
+        "The words for each kind of change, as <action> shows them."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.broke",
+      "english": "broke",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.clicked",
+      "english": "used",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.added",
+      "english": "added",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.took",
+      "english": "took",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.killed",
+      "english": "killed",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.wrote",
+      "english": "wrote",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.said",
+      "english": "said",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.ran",
+      "english": "ran",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.joined",
+      "english": "joined",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "lookup.words.quit",
+      "english": "quit",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "params.not-a-flag",
+      "english": "<arg> isn't a flag. Use #preview, #count or #silent.",
+      "comment": [
+        "1.x had these in English only."
+      ],
+      "placeholders": [
+        "arg"
+      ]
+    },
+    {
+      "key": "params.not-a-parameter",
+      "english": "<arg> isn't a parameter. Use u:, t:, r:, a:, i:, e: or w:, such as t:1h.",
+      "comment": [],
+      "placeholders": [
+        "arg"
+      ]
+    },
+    {
+      "key": "params.needs-value",
+      "english": "<arg> needs something after the colon.",
+      "comment": [],
+      "placeholders": [
+        "arg"
+      ]
+    },
+    {
+      "key": "params.unknown-key",
+      "english": "<key>: isn't a parameter. Use u:, t:, r:, a:, i:, e: or w:.",
+      "comment": [],
+      "placeholders": [
+        "key"
+      ]
+    },
+    {
+      "key": "params.bad-radius",
+      "english": "r:<value> isn't a radius. Use a number of blocks, #world or #global.",
+      "comment": [],
+      "placeholders": [
+        "value"
+      ]
+    },
+    {
+      "key": "params.bad-action",
+      "english": "a:<value> isn't an action. Use block, +block, -block, container, +container, -container, kill, click, sign, chat, command or session.",
+      "comment": [],
+      "placeholders": [
+        "value"
+      ]
+    },
+    {
+      "key": "params.bad-block",
+      "english": "<value> isn't a block or an item.",
+      "comment": [],
+      "placeholders": [
+        "value"
+      ]
+    },
+    {
+      "key": "params.bad-time",
+      "english": "t:<value> isn't a time. Use a number and a unit, such as 30m, 6h, 2d or 1w.",
+      "comment": [],
+      "placeholders": [
+        "value"
+      ]
+    },
+    {
+      "key": "params.console-lookup",
+      "english": "From the console, add w:\\<world> or r:#global.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "params.console-rollback",
+      "english": "From the console, use r:#world with w:\\<world>, or r:#global.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.need-time",
+      "english": "<prefix><error>Add a time, such as <highlight>t:1h</highlight>, so it can't reach further back than you meant.",
+      "comment": [
+        "A rollback or restore without t:."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.too-far",
+      "english": "<prefix><error>That's past the <highlight><max></highlight>-block limit. r:#world, r:#global and bigger radii need <highlight>xrewind.rollback.global</highlight>.",
+      "comment": [
+        "Past max-radius without permission. <max> is the limit."
+      ],
+      "placeholders": [
+        "max"
+      ]
+    },
+    {
+      "key": "rollback.busy",
+      "english": "<prefix><error>Another rollback is running. Wait for it to finish.",
+      "comment": [
+        "Another one is already running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.nothing",
+      "english": "<prefix>Nothing to change.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.preview",
+      "english": "<prefix>Previewing <highlight><count></highlight> blocks, for you only. <click:run_command:'/xrewind apply'><hover:show_text:'/xrewind apply'><success>[Apply]</success></hover></click> <click:run_command:'/xrewind cancel'><hover:show_text:'/xrewind cancel'><error>[Cancel]</error></hover></click>",
+      "comment": [
+        "A #preview is showing. <count> is how many blocks."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "rollback.no-preview",
+      "english": "<prefix><error>You have no preview. Add #preview to a rollback or restore.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.cancelled",
+      "english": "<prefix>Preview cancelled. Nothing changed.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.progress",
+      "english": "<highlight><verb></highlight>: <done> of <total> blocks",
+      "comment": [
+        "On the action bar while it works."
+      ],
+      "placeholders": [
+        "verb",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "rollback.done",
+      "english": "<prefix><success><verb></success> <highlight><count></highlight> blocks in <seconds>s.",
+      "comment": [
+        "When it's finished."
+      ],
+      "placeholders": [
+        "verb",
+        "count",
+        "seconds"
+      ]
+    },
+    {
+      "key": "rollback.skipped",
+      "english": "<prefix><error><count> blocks were stored by a Minecraft version this one can't read, and were left as they are.",
+      "comment": [
+        "Stored blocks this server couldn't read."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "rollback.no-undo",
+      "english": "<prefix><error>Nothing to undo. Undo works on your last rollback or restore since the server started.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.stopped",
+      "english": "<prefix><error>Another plugin stopped it before it started. Nothing changed.",
+      "comment": [
+        "Another plugin stopped a rollback, restore or undo before it started."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.verbs.rollback",
+      "english": "Rolled back",
+      "comment": [
+        "<verb> in rollback.progress and rollback.done."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.verbs.restore",
+      "english": "Restored",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.verbs.undo",
+      "english": "Undid",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "upkeep.purge-too-recent",
+      "english": "<prefix><error>Purge history at least a day old: <highlight>t:1d</highlight> or more.",
+      "comment": [
+        "A purge of less than a day."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "upkeep.purging",
+      "english": "<prefix><gray>Purging...",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "upkeep.purged",
+      "english": "<prefix><success>Purged</success> <highlight><count></highlight> changes older than <time>.",
+      "comment": [
+        "<count> changes deleted; <time> how old."
+      ],
+      "placeholders": [
+        "count",
+        "time"
+      ]
+    },
+    {
+      "key": "upkeep.importing",
+      "english": "<prefix>Importing CoreProtect's history from <highlight><source></highlight>. Logging carries on meanwhile; the console shows progress.",
+      "comment": [
+        "<source> is where CoreProtect's history is read from."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "upkeep.imported",
+      "english": "<prefix><success>Imported</success> <highlight><count></highlight> changes from CoreProtect in <seconds>s.",
+      "comment": [],
+      "placeholders": [
+        "count",
+        "seconds"
+      ]
+    },
+    {
+      "key": "upkeep.imported-before",
+      "english": "<prefix><error>CoreProtect's history was already imported (<date>). <highlight>#again</highlight> imports it again, and what came across before shows twice.",
+      "comment": [
+        "It was imported before."
+      ],
+      "placeholders": [
+        "date"
+      ]
+    },
+    {
+      "key": "upkeep.import-failed",
+      "english": "<prefix><error>Couldn't read CoreProtect's history: <reason>",
+      "comment": [
+        "CoreProtect's database couldn't be read."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "upkeep.import-running",
+      "english": "<prefix><error>An import is already running.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "upkeep.purge-interrupted",
+      "english": "<prefix><error>The purge was stopped partway, after deleting <highlight><count></highlight> changes. Run it again to finish.",
+      "comment": [
+        "The server stopped a purge partway."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "upkeep.import-interrupted",
+      "english": "<prefix><error>The import was stopped partway. Run it again with <highlight>#again</highlight>; what came across before shows twice.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "upkeep.import-not-here",
+      "english": "<prefix><error>CoreProtect is a Bukkit plugin, so there's nothing of it to import on this server.",
+      "comment": [
+        "/xrewind import on Fabric."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "status",
+      "english": "<prefix><highlight>Storage</highlight>: <storage>\n<highlight>Saved</highlight> since startup: <written> changes. Waiting: <waiting>. Missed: <missed>.\n<highlight>Last batch</highlight>: <batch>\n<highlight>Problem</highlight>: <problem>",
+      "comment": [
+        "Whether logging is keeping up. <batch> is status.batch or status.no-batch, <problem> what's stopping writes or status.no-problem."
+      ],
+      "placeholders": [
+        "storage",
+        "written",
+        "waiting",
+        "missed",
+        "batch",
+        "problem"
+      ]
+    },
+    {
+      "key": "status.batch",
+      "english": "<count> changes in <ms> ms",
+      "comment": [],
+      "placeholders": [
+        "count",
+        "ms"
+      ]
+    },
+    {
+      "key": "status.no-batch",
+      "english": "none yet",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.no-problem",
+      "english": "none",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "status.not-ready",
+      "english": "not ready",
+      "comment": [],
+      "placeholders": []
+    }
+  ],
+  "events": [
+    {
+      "key": "xrewind:lookup",
+      "className": "co.xenastudios.xrewind.api.event.LookupEvent",
+      "description": "Someone looked the history up: a command, the inspector or a plugin. For an audit log; not cancellable.",
+      "cancellable": false,
+      "since": "1.1.0"
+    },
+    {
+      "key": "xrewind:rollback",
+      "className": "co.xenastudios.xrewind.api.event.RollbackEvent",
+      "description": "A rollback, restore or undo is about to start. Cancel it to stop it.",
+      "cancellable": true,
+      "since": "1.1.0"
+    },
+    {
+      "key": "xrewind:rollback_finished",
+      "className": "co.xenastudios.xrewind.api.event.RollbackFinishedEvent",
+      "description": "A rollback, restore or undo finished, with what it did and its undo.",
+      "cancellable": false,
+      "since": "1.1.0"
+    }
+  ]
+}

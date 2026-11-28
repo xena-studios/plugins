@@ -1,36 +1,31 @@
 ---
 title: Configuration
-description: Every setting in xRewind's config.yml.
+description: "Every setting in xRewind's config.yml, with its default."
 sidebar:
-  order: 3
+  order: 4
 ---
 
-import { Code } from "@astrojs/starlight/components";
-import config from "../../../generated/xrewind/config.yml?raw";
+import Reference from "../../../components/reference/Reference.astro";
 
-The config is `plugins/xRewind/config.yml`, written on first start. Apply changes with `/xrewind reload`: everything applies, even switching to another database.
+The config is `plugins/xRewind/config.yml` (`config/xrewind/config.yml` on Fabric), written on first start. Apply changes with `/xrewind reload` (`/xr reload`): everything applies, even what's logged and switching to another database. A bad value falls back to its default with a warning in the console; xRewind never stops over config. xRewind's messages are in `lang/`: see [Messages](/xrewind/messages/).
 
-| Section | What it covers |
+| Section | What it's for |
 | --- | --- |
-| `theme` | The prefix and colours xRewind's messages share: see [the theme](/start/formatting/#the-theme). |
-| `messages.error` | Shared errors: players only, no permission, player not found, wrong usage, and a command that hit an error. |
-| `messages.lookup` | What lookups and the inspector say, and the words for each kind of change. |
-| `messages.rollback` | What rollbacks, restores, previews and undo say. |
-| `messages.upkeep` | What `/xr purge` and `/xr import` say. |
-| `storage` | Where the history is kept: SQLite in the plugin's folder (`history.db`), or MySQL/MariaDB. |
+| `messages` | The language and the theme, `shared` with every Xena plugin unless set here. |
+| `storage` | Where the history is kept: SQLite in the plugin's folder (`history.db`), MySQL/MariaDB, or the family's shared database. |
+| `log` | What's logged. Something that's off isn't listened for at all, so it costs nothing. `excluded-worlds` are left out by name. |
 | `rollback` | How fast rollbacks work, and how far they reach without `xrewind.rollback.global`: see [Rolling back](/xrewind/commands/#rolling-back). |
 | `purge` | How many days of history to keep. Older history is deleted once a day. |
-| `log` | What's logged. Something that's off isn't listened for at all, so it costs nothing. |
-| `update-checker` | Checks Modrinth for a new version once a day: [Privacy](/start/privacy/). |
+| `updates` | The update checker: [Privacy](/start/privacy/). |
 
 ## Storage
 
-`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) for a network, or a server with a lot of history, and fill in `mysql`. `table-prefix` goes in front of every table's name, so several servers can share one database by giving each its own prefix.
+`type: sqlite` needs nothing set up. Use `type: mysql` (it works with MariaDB too) for a network, or a server with a lot of history, and fill in `mysql`. `table-prefix` goes in front of every table's name, so several servers can share one database by giving each its own prefix; `shared` keeps it in the database every Xena plugin can share, set in `plugins/Xena/config.yml`.
 
-The database is opened in the background, so a slow or unreachable MySQL never holds up startup. If it can't be opened, the console says why; fix the settings and run `/xrewind reload`. Changing `storage` on a reload switches to the new database, and a reload that can't open the new one keeps using the old one. History isn't copied between databases.
+The database is opened in the background, so a slow or unreachable MySQL never holds up startup, and what's logged meanwhile waits in memory. If it can't be opened, the console says why; fix the settings and run `/xrewind reload`. Changing `storage` on a reload switches to the new database, and a reload that can't open the new one keeps using the old one. History isn't copied between databases.
 
-A bad value falls back to its default with a warning in the console.
+## What's logged on each platform
 
-## The full default config
+`log.signs` and `log.commands` are Bukkit's: Fabric has no event for a sign being written, or for a command before it runs. Everything else is logged the same on every platform. A world in `excluded-worlds` is its name on Bukkit (`world_nether`) and its id on Fabric (`minecraft:the_nether`).
 
-<Code code={config} lang="yaml" title="plugins/xRewind/config.yml" />
+<Reference plugin="xrewind" show="config" />

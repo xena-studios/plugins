@@ -1,0 +1,98 @@
+---
+title: Developer API
+description: "Build on xRewind: log your plugin's changes, look the history up, plan, preview, apply and undo rollbacks (in one plot's region too), filter what's logged, and listen for lookups and rollbacks, on every platform."
+sidebar:
+  order: 6
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xRewind's API is the same on Paper, Folia, Spigot and Fabric: worlds are `WorldRef`s (by name), players `PlayerRef`s (by UUID), block states text as Minecraft writes them (`minecraft:oak_stairs[facing=east,half=bottom]`), items ids (`minecraft:diamond`). Get it with `XRewind.api()` once xRewind is enabled (add it to your plugin's `depend`, or `softdepend` and check `XRewind.isEnabled()` first). On Bukkit it's also in the services manager, as `XRewindApi`, and `BukkitRewind` takes Bukkit's own `Location`, `BlockData` and `ItemStack`.
+
+Logging may be called from any thread: it queues a small record, as xRewind's own listeners do. Everything that reads the database returns a `CompletableFuture` that completes off the server's threads, so never `join()` it on one. Lookups and rollbacks run like the commands: in the background, a few milliseconds per tick, one rollback at a time.
+
+:::caution[Not on Maven Central yet]
+2.0's API isn't published until 2.0 is released. Its coordinates will be `co.xenastudios.xrewind:xrewind-api:2.0.0`; until then, compile against the plugin's jar. The [1.x API](/xrewind/v1/developer-api/) is on Maven Central as `1.1.0`.
+:::
+
+## Log your plugin's changes
+
+```java
+XRewindApi rewind = XRewind.api();
+Actor plots = Actor.source("xplots");            // shows as #xplots in lookups
+WorldRef world = WorldRef.of("world");
+rewind.logRemoval(plots, world, 10, 64, 10, "minecraft:gold_block");
+rewind.logChange(plots, world, 11, 64, 10, "minecraft:stone", "minecraft:grass_block[snowy=false]");
+rewind.logContainerChange(Actor.player(PlayerRefs.of(uuid), "Steve"), world, 12, 64, 10, "minecraft:diamond", -3);
+
+// On Bukkit, with Bukkit's types: the item keeps its name and enchantments.
+BukkitRewind.logChange(plots, location, before, after);
+BukkitRewind.logContainerChange(BukkitRewind.actor(player), chest.getLocation(), itemStack, 3);
+```
+
+A change is logged as a removal when the block becomes air, a placement otherwise. Nothing is logged in a world `log.excluded-worlds` leaves out.
+
+## Look up
+
+```java
+Query query = Query.builder().users("#tnt").time(3600).radius(world, 0, 64, 0, 30).limit(50).build();
+rewind.lookup(query).thenAccept(entries -> {
+    for (Entry e : entries) { /* newest first: e.getActor(), e.getAction(), e.getTarget(), e.getAfter(), e.getRolledBack() */ }
+});
+```
+
+`Query.Builder` takes the same as `/xr lookup`: `users`, `excludeUsers`, `time` (seconds), `radius`, `world`, `global`, `actions`, `blocks` and `excludeBlocks`. A lookup first waits up to a second for what was logged before it to be written, so a change logged a moment ago is in it.
+
+## Roll back, in one region
+
+```java
+Query plot = Query.builder()
+    .time(7 * 86400)
+    .area(world, 100, -64, 100, 131, 320, 131)            // the plot's bounds
+    .filter((w, x, y, z) -> plotShape.contains(x, z))     // and its own shape, if it isn't a box
+    .build();
+rewind.planRollback(plot)
+    .thenCompose(plan -> rewind.apply(plan))
+    .thenAccept(result -> getLogger().info(result.getApplied() + " blocks back; undo with result.getUndo()"));
+```
+
+`planRollback` and `planRestore` work out what would change without changing anything: `plan.getBlocks()` and `plan.getItems()` to preview it, `plan.getUnreadable()` for states this server can't read. `apply` makes the changes a few milliseconds per tick on the threads that own each chunk, as `/xr rollback` does, and completes with a `RollbackResult`: how many changes were made and skipped, how long it took, and the plan that undoes it. A plan is applied once at most; `apply` fails at once if another rollback is running (try again later) or a listener cancels it. `area` and `filter` keep a rollback to a plot: [xPlots](/xplots/) uses them.
+
+## Filter what's logged
+
+```java
+rewind.registerFilter("MyMinigame", (world, x, y, z, actor) -> !arena.contains(world.getName(), x, y, z));
+rewind.unregisterAll("MyMinigame");
+```
+
+A filter is asked about every change before it's logged, on the thread it happens on: keep it quick. One that says no keeps the change out of the history.
+
+## Events
+
+On xRewind's bus (`api.getEvents()`), only when something listens.
+
+| Event | When | Cancellable |
+| --- | --- | --- |
+| `LookupEvent` | Someone looked the history up: a command, the inspector, or a plugin. For an audit log. | No |
+| `RollbackEvent` | A rollback, restore or undo is about to start. | Yes: nothing changes, and the staff member is told another plugin stopped it. |
+| `RollbackFinishedEvent` | It finished, with what it did and its undo. | No |
+
+On Bukkit each is also a Bukkit event, for plugins and Skript scripts that listen the Bukkit way: `BukkitLookupEvent`, `BukkitRollbackEvent` and `BukkitRollbackFinishedEvent` in `co.xenastudios.xrewind.api.bukkit`. Cancelling one cancels xRewind's own.
+
+<Reference plugin="xrewind" show="events" />
+
+## From 1.x
+
+| 1.x | 2.0 |
+| --- | --- |
+| `XRewindApi.get()` | `XRewind.api()` (also in Bukkit's services manager) |
+| `Location`, `BlockData`, `ItemStack`, `OfflinePlayer` | `WorldRef` and coordinates, state text, item ids, `PlayerRef`s; Bukkit's own through `BukkitRewind` |
+| `Actor(UUID, name)` | `Actor.player(PlayerRef, name)`, `Actor.source(name)` |
+| `Query.Builder.time(Duration)`, `radius(Location, int)`, `blocks(Material...)` | `time(seconds)`, `radius(world, x, y, z, blocks)` (or `BukkitRewind.radius`), `blocks(String...)`, plus `area` and `filter` |
+| `Entry.time()`: `Instant` (java.time) | `getTime()`: Kotlin's `Instant`; `toEpochMilliseconds()` from Java |
+| `RollbackResult.took()`: `Duration` | `getTookMillis()` |
+| `pause()` and `WriterHold`, for a backup | Gone: every Xena plugin's database is copied safely by [xBackup](/xbackup/) through the core, with nothing to hold |
+| Bukkit events in `co.xenastudios.xrewind.api.event` | xRewind's own events on `api.getEvents()`, with their `TYPE`; on Bukkit also the `Bukkit*Event`s above |
+| — | `registerFilter`, `getVersion()` |
+
+Inside xRewind's jar, the core's types the API uses (`WorldRef`, `PlayerRef`, `EventBus`, `Pending`) are relocated with its own copy of the core, as every Xena plugin's are. The published API will carry the same names.

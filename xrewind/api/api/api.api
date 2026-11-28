@@ -1,0 +1,221 @@
+public final class co/xenastudios/xrewind/api/Action : java/lang/Enum {
+	public static final field ADD Lco/xenastudios/xrewind/api/Action;
+	public static final field BREAK Lco/xenastudios/xrewind/api/Action;
+	public static final field CHAT Lco/xenastudios/xrewind/api/Action;
+	public static final field CLICK Lco/xenastudios/xrewind/api/Action;
+	public static final field COMMAND Lco/xenastudios/xrewind/api/Action;
+	public static final field JOIN Lco/xenastudios/xrewind/api/Action;
+	public static final field KILL Lco/xenastudios/xrewind/api/Action;
+	public static final field PLACE Lco/xenastudios/xrewind/api/Action;
+	public static final field QUIT Lco/xenastudios/xrewind/api/Action;
+	public static final field REMOVE Lco/xenastudios/xrewind/api/Action;
+	public static final field SIGN Lco/xenastudios/xrewind/api/Action;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xrewind/api/Action;
+	public static fun values ()[Lco/xenastudios/xrewind/api/Action;
+}
+
+public final class co/xenastudios/xrewind/api/Actor {
+	public static final field Companion Lco/xenastudios/xrewind/api/Actor$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public fun hashCode ()I
+	public final fun isPlayer ()Z
+	public static final fun player (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)Lco/xenastudios/xrewind/api/Actor;
+	public static final fun source (Ljava/lang/String;)Lco/xenastudios/xrewind/api/Actor;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xrewind/api/Actor$Companion {
+	public final fun player (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)Lco/xenastudios/xrewind/api/Actor;
+	public final fun source (Ljava/lang/String;)Lco/xenastudios/xrewind/api/Actor;
+}
+
+public abstract interface class co/xenastudios/xrewind/api/BlockFilter {
+	public abstract fun includes (Ljava/lang/String;III)Z
+}
+
+public final class co/xenastudios/xrewind/api/Entry {
+	public fun <init> (Lkotlin/time/Instant;Ljava/lang/String;Ljava/lang/String;IIILco/xenastudios/xrewind/api/Action;Ljava/lang/String;Ljava/lang/String;IZ)V
+	public final fun getAction ()Lco/xenastudios/xrewind/api/Action;
+	public final fun getActor ()Ljava/lang/String;
+	public final fun getAfter ()Ljava/lang/String;
+	public final fun getAmount ()I
+	public final fun getRolledBack ()Z
+	public final fun getTarget ()Ljava/lang/String;
+	public final fun getTime ()Lkotlin/time/Instant;
+	public final fun getWorld ()Ljava/lang/String;
+	public final fun getX ()I
+	public final fun getY ()I
+	public final fun getZ ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class co/xenastudios/xrewind/api/LogFilter {
+	public abstract fun logs (Lco/xenastudios/core/api/WorldRef;IIILjava/lang/String;)Z
+}
+
+public abstract interface class co/xenastudios/xrewind/api/Plan {
+	public abstract fun getBlocks ()Ljava/util/List;
+	public abstract fun getItems ()Ljava/util/List;
+	public abstract fun getKind ()Lco/xenastudios/xrewind/api/Plan$Kind;
+	public abstract fun getUnreadable ()I
+}
+
+public final class co/xenastudios/xrewind/api/Plan$Kind : java/lang/Enum {
+	public static final field RESTORE Lco/xenastudios/xrewind/api/Plan$Kind;
+	public static final field ROLLBACK Lco/xenastudios/xrewind/api/Plan$Kind;
+	public static final field UNDO Lco/xenastudios/xrewind/api/Plan$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xrewind/api/Plan$Kind;
+	public static fun values ()[Lco/xenastudios/xrewind/api/Plan$Kind;
+}
+
+public final class co/xenastudios/xrewind/api/PlanBlock {
+	public fun <init> (Ljava/lang/String;IIILjava/lang/String;)V
+	public final fun getTarget ()Ljava/lang/String;
+	public final fun getWorld ()Ljava/lang/String;
+	public final fun getX ()I
+	public final fun getY ()I
+	public final fun getZ ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xrewind/api/PlanItem {
+	public fun <init> (Ljava/lang/String;IIILjava/lang/String;I)V
+	public final fun getAmount ()I
+	public final fun getItem ()Ljava/lang/String;
+	public final fun getWorld ()Ljava/lang/String;
+	public final fun getX ()I
+	public final fun getY ()I
+	public final fun getZ ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xrewind/api/Query {
+	public static final field Companion Lco/xenastudios/xrewind/api/Query$Companion;
+	public static final fun builder ()Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun getActions ()Ljava/util/Set;
+	public final fun getArea ()Lco/xenastudios/xrewind/api/Query$Area;
+	public final fun getBlocks ()Ljava/util/Set;
+	public final fun getCenterX ()I
+	public final fun getCenterY ()I
+	public final fun getCenterZ ()I
+	public final fun getExcludedBlocks ()Ljava/util/Set;
+	public final fun getExcludedUsers ()Ljava/util/List;
+	public final fun getFilter ()Lco/xenastudios/xrewind/api/BlockFilter;
+	public final fun getLimit ()I
+	public final fun getMaxX ()I
+	public final fun getMaxY ()I
+	public final fun getMaxZ ()I
+	public final fun getMinX ()I
+	public final fun getMinY ()I
+	public final fun getMinZ ()I
+	public final fun getRadius ()I
+	public final fun getSeconds ()J
+	public final fun getUsers ()Ljava/util/List;
+	public final fun getWorld ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xrewind/api/Query$Area : java/lang/Enum {
+	public static final field BOX Lco/xenastudios/xrewind/api/Query$Area;
+	public static final field GLOBAL Lco/xenastudios/xrewind/api/Query$Area;
+	public static final field RADIUS Lco/xenastudios/xrewind/api/Query$Area;
+	public static final field WORLD Lco/xenastudios/xrewind/api/Query$Area;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xrewind/api/Query$Area;
+	public static fun values ()[Lco/xenastudios/xrewind/api/Query$Area;
+}
+
+public final class co/xenastudios/xrewind/api/Query$Builder {
+	public final fun actions ([Lco/xenastudios/xrewind/api/Action;)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun area (Lco/xenastudios/core/api/WorldRef;IIIIII)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun blocks ([Ljava/lang/String;)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun build ()Lco/xenastudios/xrewind/api/Query;
+	public final fun excludeBlocks ([Ljava/lang/String;)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun excludeUsers ([Ljava/lang/String;)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun filter (Lco/xenastudios/xrewind/api/BlockFilter;)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun global ()Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun limit (I)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun radius (Lco/xenastudios/core/api/WorldRef;IIII)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun time (J)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun users ([Ljava/lang/String;)Lco/xenastudios/xrewind/api/Query$Builder;
+	public final fun world (Lco/xenastudios/core/api/WorldRef;)Lco/xenastudios/xrewind/api/Query$Builder;
+}
+
+public final class co/xenastudios/xrewind/api/Query$Companion {
+	public final fun builder ()Lco/xenastudios/xrewind/api/Query$Builder;
+}
+
+public final class co/xenastudios/xrewind/api/RollbackResult {
+	public fun <init> (IIJLco/xenastudios/xrewind/api/Plan;)V
+	public final fun getApplied ()I
+	public final fun getSkipped ()I
+	public final fun getTookMillis ()J
+	public final fun getUndo ()Lco/xenastudios/xrewind/api/Plan;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xrewind/api/XRewind {
+	public static final field INSTANCE Lco/xenastudios/xrewind/api/XRewind;
+	public static final fun api ()Lco/xenastudios/xrewind/api/XRewindApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xrewind/api/XRewindApi;)V
+}
+
+public abstract interface class co/xenastudios/xrewind/api/XRewindApi {
+	public abstract fun apply (Lco/xenastudios/xrewind/api/Plan;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun flush ()Ljava/util/concurrent/CompletableFuture;
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun logChange (Lco/xenastudios/xrewind/api/Actor;Lco/xenastudios/core/api/WorldRef;IIILjava/lang/String;Ljava/lang/String;)V
+	public abstract fun logContainerChange (Lco/xenastudios/xrewind/api/Actor;Lco/xenastudios/core/api/WorldRef;IIILjava/lang/String;I)V
+	public abstract fun logPlacement (Lco/xenastudios/xrewind/api/Actor;Lco/xenastudios/core/api/WorldRef;IIILjava/lang/String;)V
+	public abstract fun logRemoval (Lco/xenastudios/xrewind/api/Actor;Lco/xenastudios/core/api/WorldRef;IIILjava/lang/String;)V
+	public abstract fun lookup (Lco/xenastudios/xrewind/api/Query;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun planRestore (Lco/xenastudios/xrewind/api/Query;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun planRollback (Lco/xenastudios/xrewind/api/Query;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun registerFilter (Ljava/lang/String;Lco/xenastudios/xrewind/api/LogFilter;)V
+	public abstract fun unregisterAll (Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/xrewind/api/event/LookupEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xrewind/api/event/LookupEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/xrewind/api/Query;I)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPage ()I
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getQuery ()Lco/xenastudios/xrewind/api/Query;
+}
+
+public final class co/xenastudios/xrewind/api/event/LookupEvent$Companion {
+}
+
+public final class co/xenastudios/xrewind/api/event/RollbackEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xrewind/api/event/RollbackEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xrewind/api/Plan;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlan ()Lco/xenastudios/xrewind/api/Plan;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+}
+
+public final class co/xenastudios/xrewind/api/event/RollbackEvent$Companion {
+}
+
+public final class co/xenastudios/xrewind/api/event/RollbackFinishedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xrewind/api/event/RollbackFinishedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xrewind/api/Plan;Lco/xenastudios/xrewind/api/RollbackResult;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlan ()Lco/xenastudios/xrewind/api/Plan;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getResult ()Lco/xenastudios/xrewind/api/RollbackResult;
+}
+
+public final class co/xenastudios/xrewind/api/event/RollbackFinishedEvent$Companion {
+}
+

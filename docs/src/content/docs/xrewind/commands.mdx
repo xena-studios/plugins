@@ -1,0 +1,56 @@
+---
+title: Commands
+description: "xRewind's commands, CoreProtect's lookup parameters, and rolling back, previewing, undoing and restoring."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Every command is `/xrewind <subcommand>`, or `/xr` for short. Each has its own permission, all given to operators by default, so you can hand staff only the ones they need: see [Permissions](/xrewind/permissions/).
+
+- **`/xr inspect`** (`i`) turns the inspector on or off: left-click a block to see its history, or place a block to see what was at that spot. Nothing is broken or placed while it's on.
+- **`/xr lookup <params>`** (`l`) searches the history, newest first, 7 to a page; **`/xr page <n>`** shows another page, **`/xr near`** what changed within 5 blocks in the last 3 days.
+- **`/xr rollback <params>`** (`rb`), **`/xr restore <params>`** (`rs`), **`/xr apply`**, **`/xr cancel`** and **`/xr undo`**: see [Rolling back](#rolling-back).
+- **`/xr purge t:<time>`** deletes history older than the time, at least a day; `purge.keep-days` does it every day by itself.
+- **`/xr import coreprotect [#again]`** imports CoreProtect's history: see [Switching from CoreProtect](/xrewind/switching/).
+- **`/xr status`** says where the history is kept, how much has been saved and is waiting, and any problem.
+- **`/xr reload`**, **`/xr debug`** and **`/xr forget <player>`** are the admin subcommands every Xena plugin has: the config and lang files applied, a report to share when asking for help, and a player's chat, commands and joins deleted (see [Privacy](/xrewind/privacy/)).
+
+<Reference plugin="xrewind" show="commands" />
+
+## Lookup parameters
+
+The same as CoreProtect's, so what you know already works. Combine as many as you like: `/xr l u:Steve t:2h r:20 a:-block`.
+
+| Parameter | Means | Examples |
+| --- | --- | --- |
+| `u:` | Who: players, or sources like `#tnt` and `#creeper`. Several with commas. | `u:Steve`, `u:Steve,Alex`, `u:#tnt` |
+| `t:` | How far back, in `w` `d` `h` `m` `s`. | `t:30m`, `t:2w3d` |
+| `r:` | How far from you, in blocks; or `#world` for the whole world, `#global` for every world. Without it, your whole world. | `r:20`, `r:#global` |
+| `a:` | What kind of change. Without it: blocks, containers and kills. | `a:block`, `a:+block` (placed), `a:-block` (broken), `a:container`, `a:+container` (put in), `a:-container` (taken), `a:kill`, `a:click`, `a:sign`, `a:chat`, `a:command`, `a:session` |
+| `i:` | Only these blocks (what was broken, or what was placed) or items. | `i:diamond_ore,chest` |
+| `e:` | Leave out these blocks or players. | `e:dirt,stone`, `e:Steve` |
+| `w:` | Another world than yours: its name on Bukkit, its id on Fabric. | `w:world_nether`, `w:minecraft:the_nether` |
+| `#count` | Only how many changes match. | |
+| `#preview` | Rollback and restore: show the result to you only, then `/xr apply` or `/xr cancel`. | |
+| `#silent` | Rollback and restore: no progress or summary. | |
+
+From the console there's no "you" to measure from, so add `w:<world>` or `r:#global`.
+
+## Rolling back
+
+```
+/xr rollback u:Griefer t:2h r:30
+```
+
+- **A time is required**, so a rollback never reaches further back than you meant.
+- **Without `r:`, it covers 10 blocks around you** (`rollback.default-radius`). Anything past 100 blocks (`rollback.max-radius`), `r:#world` and `r:#global` need `xrewind.rollback.global`.
+- **What a broken block held comes back with it**: a chest's items, a sign's text. Items taken out of containers are put back, and items put in are taken out (`a:container` alone does just that).
+- **Each block is set once.** A block changed 200 times goes straight back to how it was before the first matching change, and blocks are set without physics, so nothing falls or flows on the way.
+- **It doesn't freeze the server.** Chunks are loaded in the background and blocks are set 10 milliseconds per tick (`rollback.ms-per-tick`), or region by region on Folia. Your action bar shows the progress.
+- **Preview it** with `#preview`: only you see the result, until `/xr apply` or `/xr cancel`.
+- **Changed your mind?** `/xr undo` puts every block back as it was before your last rollback or restore. `/xr restore` with the same parameters re-applies what a rollback undid.
+- Rolled-back changes stay in the history, struck through in lookups.
+- One rollback runs at a time, so two can't fight over the same blocks.
+- **A restart doesn't lose it.** While it runs, what it is (its parameters, where you stood, the time it reaches up to) is kept in `rollback-running.txt` in the plugin's folder, and each chunk's changes are marked as that chunk is done. If the server stops partway, it carries on as the server starts again, with what isn't done yet, and the console says so. A plugin's rollback through the API, and an undo, can't be worked out again, so a restart only tells the console about them.

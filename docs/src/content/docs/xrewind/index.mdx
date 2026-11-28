@@ -1,0 +1,62 @@
+---
+title: xRewind
+description: "xRewind: a free block logger with rollback for Paper, Folia, Spigot and Fabric, with CoreProtect's commands, rollbacks that never freeze the server and carry on after a restart, and an import of your CoreProtect history."
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Current version: **2.0.0**
+
+xRewind is a block logger with rollback. When someone griefs spawn or empties the shared chest, it shows you who placed, broke or took what, where and when, and puts it back.
+
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon. Automatic purges included (30 days by default).
+- **On every server you run.** One jar for Paper, Folia, Spigot and CraftBukkit from 1.13 to the newest, and a jar per Minecraft line on Fabric (server-side: players install nothing).
+- **You won't feel it running.** Nothing touches the database on a game thread: each change is queued as a small record and written in batches by one background thread. Logging you turn off isn't listened for at all. See [Performance](/xrewind/performance/).
+- **Rollback that doesn't freeze the server.** A rollback works out each block's final state once, then applies it a few milliseconds per tick, chunk by chunk, region by region on Folia. Preview it first, and undo it after. **A restart doesn't lose it:** one the server stopped carries on as it starts again.
+- **Easy to switch to.** CoreProtect's command syntax, so habits and guides carry over, and your CoreProtect history imported with one command: see [Switching from CoreProtect](/xrewind/switching/).
+- **In your staff's languages.** Every reply in each player's client's language: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese.
+
+:::caution[Not released yet]
+2.0 isn't released yet: it ships with the other plugins' rewrites. Until then 1.1.1 is the release, and these pages are a preview. The [1.x docs](/xrewind/v1/) stay up while 1.x gets fixes.
+:::
+
+:::note[Coming from xRewind 1.x?]
+Replace the jar and restart: your history is read and written as it is, your config is carried forward, your edited messages move to `lang/en.yml`, and the old file is kept as `config.yml.bak-v1`. See [Upgrading from 1.x](/xrewind/upgrade/).
+:::
+
+## What it logs
+
+On by default: blocks placed and broken (with what they held, and the torches, signs and rails that fall off with them), explosions (TNT is put down to whoever lit it), fire, buckets and liquids that destroy something, pistons, mobs that change blocks (endermen, withers, falling sand), sign text, items put in and taken out of containers, kills, and joins and quits. Off by default: hoppers, doors and levers used, leaf decay, chat and commands. See [Configuration](/xrewind/configuration/).
+
+## Where it runs
+
+<Reference plugin="xrewind" show="platforms" />
+
+| | |
+| --- | --- |
+| **Paper and Folia** | Everything. Chunks load off the server thread for a rollback and are kept loaded while it works; on Folia each region works its own chunks on its own thread. Items and containers are kept in Paper's own format (1.x's), and signs with both sides and their wax. |
+| **Spigot and CraftBukkit** | Everything, from 1.13 (block data's first version). Chunks load on the server thread, a few a tick; items are written with Bukkit's own serialization, and signs' front only. |
+| **Fabric** | Every block, container, kill and session change, through the core's mixins, and the inspector, chat and clicks. Minecraft has no event for a sign being written or a command before it runs, so `log.signs` and `log.commands` are Bukkit's. A block's contents (a chest's items, a sign's text, a banner's patterns) are kept as Minecraft saves them. CoreProtect is a Bukkit plugin, so there's nothing to import. |
+
+History written on one platform rolls back on another only for its blocks: Bukkit and Fabric keep items and contents each in their own format, and a rollback leaves what it can't read as it is.
+
+## Rolling back
+
+```
+/xr rollback u:Griefer t:2h r:30 #preview
+/xr apply
+/xr undo
+```
+
+See [Commands](/xrewind/commands/#rolling-back).
+
+## Storage
+
+SQLite out of the box, in one file in the plugin's folder (`history.db`), MySQL/MariaDB, or the family's shared database. The tables are 1.x's, so going back to 1.1.1 reads them as they are. See [Configuration](/xrewind/configuration/).
+
+## For developers
+
+Log your plugin's changes, look the history up, plan, preview, apply and undo rollbacks, keep a rollback to one plot's region, and filter what's logged: the [Developer API](/xrewind/developer-api/).

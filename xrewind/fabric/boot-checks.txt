@@ -1,0 +1,52 @@
+# What scripts/boot-fabric.sh checks on each Minecraft line with xRewind, from the console: the
+# database opened off the server thread, the console's commands, lookups and purges on a real
+# database, and the whole loop through the world hooks' mixins: TNT blows up a block of planks,
+# the explosion is logged as #tnt's, and a rollback puts it back, then an undo takes it away.
+logged: [xRewind] xRewind 2.0.0 on
+logged: Storage ready: the SQLite database history.db, schema 1.
+run: xrewind info
+expect: xRewind 2.0.0 on
+run: xr status
+expect: Problem: none
+run: xr lookup w:minecraft:overworld t:1h u:Nobody
+expect: Nothing found.
+run: xr lookup t:1h
+expect: From the console, add w:<world> or r:#global.
+run: xr rollback t:1h r:#global u:Nobody
+expect: Nothing to change.
+run: xr undo
+expect: Nothing to undo.
+
+run: forceload add 96 96 111 111
+expect: Marked
+run: xr reload
+expect: Reloaded xRewind
+run: fill 100 70 100 104 74 104 minecraft:oak_planks
+expect: Successfully filled
+run: summon minecraft:tnt 102 72 102 {fuse:0,Fuse:0}
+expect: Summoned new
+run: xr reload
+expect: Reloaded xRewind
+run: xr reload
+expect: Reloaded xRewind
+run: execute if block 102 72 102 minecraft:air run say BLOWN UP
+expect: BLOWN UP
+run: xr lookup u:#tnt r:#global #count
+expect: Lookup:
+run: xr rollback u:#tnt t:1h r:#global
+expect: Rolled back
+run: execute if block 102 72 102 minecraft:oak_planks run say PUT BACK
+expect: PUT BACK
+run: xr undo
+expect: Undid
+run: execute if block 102 72 102 minecraft:air run say UNDONE
+expect: UNDONE
+
+run: xr purge t:30d
+expect: Purged
+run: xr import coreprotect
+expect: CoreProtect is a Bukkit plugin
+run: xrewind reload
+expect: Reloaded xRewind
+run: xrewind debug
+expect: Database: the SQLite database history.db answered in

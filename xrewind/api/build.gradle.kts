@@ -1,5 +1,15 @@
 plugins {
-    id("xena.api")
+    id("xena.kmp-api")
 }
 
-description = "xRewind's developer API: logging, lookups, rollbacks and writer control."
+group = "co.xenastudios"
+description = "xRewind's developer API: logging changes, lookups, rollbacks and restores (in one region too), filters and the events, the same on every platform."
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            // Players and events, as every Xena plugin's API has them.
+            api(project(":core:core-api"))
+        }
+    }
+}

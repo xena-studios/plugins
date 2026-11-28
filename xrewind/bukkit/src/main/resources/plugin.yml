@@ -1,0 +1,14 @@
+name: xRewind
+version: '${version}'
+main: co.xenastudios.xrewind.bukkit.XRewindBootstrap
+# 1.13 at least: block data, which every logged state is, starts there.
+api-version: '1.13'
+folia-supported: true
+description: Every change, logged. Any of it, undone.
+website: https://plugins.xenastudios.co/xrewind/
+authors: [Xena Studios]
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+# No commands or permissions here: they're registered at runtime, so every change applies on
+# /xrewind reload.

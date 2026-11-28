@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>] [--fabric] [--fixed-language]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -654,6 +654,7 @@ async function run () {
   if (plugin === 'xvote-network') return xvoteNetwork()
   if (plugin === 'xmarket') return xmarket()
   if (plugin === 'xvanish-network') return xvanishNetwork()
+  if (plugin === 'xrewind') return xrewind()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")
@@ -758,6 +759,50 @@ async function xbackup () {
   // On Fabric, Minecraft's command tree hides what a player may not run, so it's an unknown argument there.
   check("a player without xbackup.now can't back up", await friend.hears(onFabric ? 'Incorrect argument' : 'permission', from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
   try { friend.bot.quit() } catch {}
+  finish()
+}
+
+// xRewind as staff use it: the client breaks a block and places one, both logged by the world
+// hooks; a lookup shows them in German, a rollback puts the broken block back and takes the
+// placed one away, and the inspector turns on and off.
+async function xrewind () {
+  const Vec3 = bot.entity.position.constructor
+  await command(`/gamemode creative ${username}`, '', 'the client is in creative mode')
+  await sleep(1000)
+  const at = bot.entity.position.floored()
+  const ground = at.offset(0, -1, 0)
+  const broken = ground.offset(2, 1, 0)
+  const placedOn = ground.offset(3, 0, 0)
+  await command(`/setblock ${broken.x} ${broken.y} ${broken.z} minecraft:oak_planks`, '', 'a block to break is set')
+  await command(`/setblock ${placedOn.x} ${placedOn.y} ${placedOn.z} minecraft:stone`, '', 'a block to place on is set')
+  await command(`/fill ${placedOn.x} ${placedOn.y + 1} ${placedOn.z} ${placedOn.x} ${placedOn.y + 2} ${placedOn.z} minecraft:air`, '', 'room to place')
+  await sleep(1000)
+  const planks = bot.blockAt(broken)
+  check('the block to break is there', planks && planks.name === 'oak_planks', `found ${planks && planks.name}`)
+  if (!planks || planks.name !== 'oak_planks') return finish()
+  try { await bot.dig(planks, true) } catch (e) { fail(`couldn't break the planks: ${e.message}`) }
+  await command(`/give ${username} minecraft:glass 1`, '', 'the client gets glass')
+  await sleep(1000)
+  const glass = bot.inventory.items().find((i) => i.name === 'glass')
+  check('the client holds glass', glass != null, `inventory ${JSON.stringify(bot.inventory.items().map((i) => i.name))}`)
+  if (glass) {
+    await bot.equip(glass, 'hand')
+    try { await bot.placeBlock(bot.blockAt(placedOn), new Vec3(0, 1, 0)) } catch (e) { /* the place may land after the timeout */ }
+  }
+  await sleep(1500)
+  const placed = placedOn.offset(0, 1, 0)
+  check('the glass is placed', bot.blockAt(placed) && bot.blockAt(placed).name === 'glass', `found ${bot.blockAt(placed) && bot.blockAt(placed).name}`)
+  await command('/xr lookup r:10 t:1h', de('zerstörte', 'broke'), 'a lookup shows the break, in German')
+  check('and the place', (await hear(de('setzte', 'placed'), 0)) != null, `heard ${JSON.stringify(heard.slice(-8))}`)
+  await command(`/xr rollback u:${username} t:1h r:10`, de('Zurückgesetzt', 'Rolled back'), 'the rollback runs and says so')
+  await sleep(1500)
+  check('the broken planks are back', bot.blockAt(broken) && bot.blockAt(broken).name === 'oak_planks', `found ${bot.blockAt(broken) && bot.blockAt(broken).name}`)
+  check('the placed glass is gone', bot.blockAt(placed) && bot.blockAt(placed).name === 'air', `found ${bot.blockAt(placed) && bot.blockAt(placed).name}`)
+  await command('/xr undo', de('Rückgängig gemacht', 'Undid'), 'the rollback is undone')
+  await sleep(1500)
+  check('the undo takes the planks away again', bot.blockAt(broken) && bot.blockAt(broken).name === 'air', `found ${bot.blockAt(broken) && bot.blockAt(broken).name}`)
+  await command('/xr inspect', de('Inspektor', 'Inspector'), 'the inspector turns on')
+  await command('/xr inspect', de('Inspektor', 'Inspector'), 'and off')
   finish()
 }
 

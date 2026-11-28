@@ -28,28 +28,26 @@ Needs Paper 1.21.11 or newer (or Purpur or Folia) and Java 21 or newer. Uses SQL
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xrewind:build       # compile, test, and check the jar's size budget
-./gradlew :xrewind:runServer   # a Paper server with xRewind, in xrewind/run/
+./gradlew :xrewind:common:build :xrewind:bukkit:build          # tests on the JVM and wasmWasi, the R8 jar and its budget
+./gradlew :xrewind:bukkit:runServer                            # a Paper server with the jar, in xrewind/bukkit/run/
+./gradlew -p core/platform-fabric :xrewind:26.3:collect        # the Fabric jar for one Minecraft line, in core/platform-fabric/build/libs/
+xrewind/bukkit/boot.sh paper 26.3 --java <JDK 25 home>         # the boot checks on a real server (TNT logged and rolled back)
+./gradlew :xrewind:api:updateKotlinAbi                         # after a deliberate API change
+./gradlew :xrewind:common:updateXenaManifest                   # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-api/               the developer API (co.xenastudios.xrewind:xrewind-api), shipped inside the jar
-src/main/java/co/xenastudios/xrewind/
-  XRewind.java     the plugin: declares the config and, in setup, the features it turns on
-  Api.java         the developer API's implementation, registered while the plugin is enabled
-  storage/         the database: its tables, and opening it off the server's threads
-  listen/          the listeners, one module per kind of change, each on only when it's logged
-  log/             the queue listeners hand changes to, and the one thread that writes them
-  query/           lookups, the inspector, and CoreProtect-style parameters
-  rollback/        working out a rollback, and applying it a few milliseconds per tick
-  maintain/        purges, and the CoreProtect import
-  command/         /xrewind's subcommands
-boot-checks.txt    console commands CI runs on real Paper and Folia servers, and what each must log
-CHANGELOG.md       one section per release; the release workflow publishes it
-modrinth.md        the Modrinth project page, published when it changes on main
+api/                the developer API (co.xenastudios.xrewind:xrewind-api), platform-neutral, Kotlin Multiplatform
+common/             all of xRewind's logic, Kotlin Multiplatform (no java.*): the config and its 1.x migration,
+                    the log, its queue and writer, lookups, rollbacks, purges, commands; on the JVM the files,
+                    the database and the CoreProtect import
+bukkit/             the adapter for Paper, Folia, Spigot and CraftBukkit 1.13+: contents, items, chunks, events
+fabric/             the adapter as a server-side Fabric mod, one jar per Minecraft line, with the world hooks' mixins
+CHANGELOG.md        one section per release; the release workflow publishes it
+modrinth.md         the Modrinth project page, published when it changes on main
 ```
 
-The shared core (reloading, config migration, the theme, the update checker, bStats) is in [`core/`](../core).
+The shared core (the world hooks, the database layer, commands, config, messages, the family) is in [`core/`](../core).
 
 ## Licence
 

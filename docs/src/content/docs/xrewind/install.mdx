@@ -1,0 +1,24 @@
+---
+title: Install
+description: "Install xRewind on your server: the steps for Paper, Folia, Spigot and Fabric."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="xrewind" />
+
+On the first start xRewind writes `config.yml`, one file per language in `lang/`, and its SQLite database `history.db`, in `plugins/xRewind/` (Bukkit) or `config/xrewind/` (Fabric). Fabric servers have no database driver of their own, so SQLite's (or MySQL's) is downloaded once into the family's `libraries/` folder. Settings every Xena plugin shares, such as the language and the look of messages, are in `plugins/Xena/config.yml` (`config/xena/` on Fabric).
+
+Logging starts at once: changes wait in memory for the database for the moment it takes to open.
+
+## Coming from 1.x
+
+Replace the jar and restart: see [Upgrading from 1.x](/xrewind/upgrade/). The [1.x docs](/xrewind/v1/) stay up while 1.x gets fixes.
+
+## Coming from CoreProtect
+
+Install xRewind, then `/xr import coreprotect` brings CoreProtect's history across: see [Switching from CoreProtect](/xrewind/switching/).

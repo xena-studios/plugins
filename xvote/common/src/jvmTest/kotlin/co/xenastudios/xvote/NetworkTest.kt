@@ -98,6 +98,36 @@ class NetworkTest {
     }
 
     @Test
+    fun aJoinCheckedOnlyAfterThePlayerLeftTakesNothing() {
+        // a's database is slow: its check of Steve's join runs after he left a and a vote for
+        // him was stored, and whatever a would give back waits behind more of a's work. Taken
+        // there, it'd be gone when Steve joins b, and b would pay it only from the feed.
+        val first = java.util.concurrent.CountDownLatch(1)
+        val second = java.util.concurrent.CountDownLatch(1)
+        val db = a.plugin.backend!!.database
+        db.transaction { first.await(); co.xenastudios.core.common.Outcome.Ok(Unit) }
+        onto(a, "a")
+        db.transaction { second.await(); co.xenastudios.core.common.Outcome.Ok(Unit) }
+        try {
+            a.leave("Steve")
+            proxy.leave("Steve")
+            wire.leave(steve)
+            assertEquals(VoteResult.COUNTED, proxy.vote("Steve"))
+            first.countDown()
+            // a's join check is done once a reads Steve's voter row (it does, in the same step).
+            a.platform.until("a's late join check") { a.plugin.stats(steve).total == 1 }
+            onto(b, "b")
+            // Only what's due on b runs: no feed, so this is b's own join.
+            b.platform.until("Steve paid on b, where he joined") { diamonds(b) == 1 }
+        } finally {
+            second.countDown()
+        }
+        for (h in all) h.platform.advance(3.seconds)
+        assertEquals(1, diamonds(b))
+        assertEquals(0, diamonds(a))
+    }
+
+    @Test
     fun twoServersHearingTheSameVoteNeverBothPayIt() {
         // Steve shows as online on both (a switch in flight): both hear, only one takes it.
         a.join("Steve")

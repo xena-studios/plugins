@@ -362,7 +362,10 @@ internal class Votes(private val plugin: XVotePlugin, val backend: Backend) {
                 if (matched.isNotEmpty()) tx.publish(feed, "player", player.toString())
                 Ledger.rename(tx, player, name)
                 val claim = newClaim()
-                val unpaid = if (stopping) emptyList() else Ledger.claimUnpaid(tx, player, claim, now)
+                // Not if they've left already (this ran late): what it took would only go back,
+                // after the server they're on now looked and found it taken, so they'd wait for
+                // the feed. Left now, it's there untaken for that server's join.
+                val unpaid = if (stopping || !online.has(player)) emptyList() else Ledger.claimUnpaid(tx, player, claim, now)
                 Joined(Reads.voter(tx, player, periods, now, window), unpaid, claim, matched)
             }
         }.onSettled { joined, error ->

@@ -5,15 +5,18 @@
 # 1.19.4 on). For CI's boot matrix and by hand, after ./gradlew :xstats:bukkit:assemble. It boots
 # the jar R8 shrank (build/r8/), as a release ships; XSTATS_JAR=<jar> boots another.
 #
-#   xstats/bukkit/boot.sh paper|folia [version] [--xmoney] [--java <JDK home>]
-#   xstats/bukkit/boot.sh <server.jar> [--xmoney] --java <JDK home>
+#   xstats/bukkit/boot.sh paper|folia [version] [--xmoney|--family] [--java <JDK home>]
+#   xstats/bukkit/boot.sh <server.jar> [--xmoney|--family] --java <JDK home>
 #
 # As core/core-testing/sample/bukkit/boot.sh: Paper and Folia are downloaded, Spigot and
 # CraftBukkit come from BuildTools (scripts/server-jar.sh). XSTATS_BOARDS=false leaves out the
 # board, for a server older than 1.19.4 (Spigot 1.13.2, the floor). --xmoney boots xMoney 2.0
 # beside it (xmoney/bukkit/build/r8/xMoney.jar), for the family test: xStats finds xMoney's API by
-# name and keeps its stats (xmoney-checks.txt). Further arguments go to scripts/boot-test.sh, such
-# as more jars and --checks.
+# name and keeps its stats (xmoney-checks.txt). --family boots xBans, xTeleport, xRewind, xMarket
+# and zChat beside them too, and a real client makes each fire its event and checks xStats counted
+# it (family-client-checks.txt). --xmoney, which the Boot workflow's `client` cells pass, is the
+# same as --family.
+# Further arguments go to scripts/boot-test.sh, such as more jars and --checks.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -38,12 +41,18 @@ case "$1" in
 esac
 
 extra=()
-if (($#)) && [[ $1 == --xmoney ]]; then
+if (($#)) && [[ $1 == --xmoney || $1 == --family ]]; then
   shift
   xmoney=$root/xmoney/bukkit/build/r8/xMoney.jar
   [[ -f $xmoney ]] || { echo "no $xmoney: run ./gradlew :xmoney:bukkit:assemble first" >&2; exit 2; }
   extra+=("$xmoney")
-  set -- --checks "$here/xmoney-checks.txt" "$@"
+  family=(xbans/bukkit/build/r8/xBans.jar xteleport/bukkit/build/r8/xTeleport.jar xrewind/bukkit/build/r8/xRewind.jar
+    xmarket/bukkit/build/r8/xMarket.jar zchat/bukkit/build/r8/zChat.jar)
+  for other in "${family[@]}"; do
+    [[ -f $root/$other ]] || { echo "no $root/$other: run ./gradlew :${other%%/*}:bukkit:assemble first" >&2; exit 2; }
+    extra+=("$root/$other")
+  done
+  set -- --checks "$here/xmoney-checks.txt" --checks "$here/family-client-checks.txt" "$@"
 fi
 
 # Old Spigot waits 20 seconds over its age without the first; the second keeps debug reports on

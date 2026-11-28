@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind|xlimits|xlimbo|xlimbo-family|xplots|xstats|xstats-network] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind|xlimits|xlimbo|xlimbo-family|xplots|xstats|xstats-family|xstats-network] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>] [--fabric] [--fixed-language]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -50,7 +50,10 @@
 // Friend's /join takes them back through xTeleport's spawn, their game mode given back), or xPlots'
 // (Joiner makes a field of two plots beside them, rents one through its sign and menu, paid through xMoney with --xmoney; Friend, no operator, can't break a block in it
 // until Joiner adds them with /plots add; and with --xmoney, xTeleport beside it lists the plot home
-// in /homes and /home takes Joiner there; all in German).
+// in /homes and /home takes Joiner there; all in German), or xStats keeping the family's stats
+// (xstats-family: Joiner chats through zChat, goes home through xTeleport, buys and sells through
+// xMarket, rolls back through xRewind and kicks Friend through xBans; each stat's leaderboard then
+// has the player counted).
 //
 // The same scenarios run on Fabric (scripts/boot-fabric.sh's "client:" step, which adds --fabric):
 // a check that differs there by design takes Fabric's side, as each says (xUtilities' /back,
@@ -671,6 +674,7 @@ async function run () {
   if (plugin === 'xlimbo-family') return xlimboFamily()
   if (plugin === 'xplots') return xplots()
   if (plugin === 'xstats') return xstats()
+  if (plugin === 'xstats-family') return xstatsFamily()
   if (plugin === 'xstats-network') return xstatsNetwork()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
@@ -1079,6 +1083,54 @@ async function xstats () {
   await command('/leaderboard jumps', `${username}`, "/leaderboard jumps has the player on it")
   await command('/stats private', de('verborgen', 'hidden'), '/stats private hides them from the website')
   await command('/stats private', de('wieder', 'again'), '/stats private shows them again')
+  finish()
+}
+
+// xStats keeping the family's stats (xstats/bukkit/boot.sh --family): Joiner, an operator, chats
+// through zChat, goes home through xTeleport, buys and sells through xMarket (paid through xMoney),
+// rolls back a block they broke through xRewind, and kicks Friend through xBans. Each plugin's
+// event reaches xStats on that plugin's own bus (FamilyHooks), and after a save each stat's
+// leaderboard has the player it counted: Joiner, or Friend for the punishment.
+async function xstatsFamily () {
+  const friend = friendBot({ version: false })
+  check('Friend joins', await friend.until(() => friend.spawned), 'Friend never spawned')
+  await sleep(1500)
+  await command('counted by xstats', `${username}: counted by xstats`, 'a chat line through zChat')
+  await command('/sethome base', de('Zuhause gesetzt: base.', 'Set home base.'), 'a home through xTeleport')
+  bot.chat(`/tp ${username} ~ ~ ~20`)
+  await sleep(1500)
+  await command('/home base', de('Willkommen in base.', 'Welcome to base.'), '/home teleports through xTeleport')
+  await command(`/eco give ${username} 1000`, username, '/eco gives Joiner money through xMoney')
+  await command('/shop buy stone 64', de('Gekauft: 64× Stone für $64.00.', 'Bought 64× Stone for $64.00.'), 'a purchase through xMarket')
+  await sleep(500)
+  const stone = bot.inventory.items().find((i) => i.name === 'stone')
+  check('Joiner holds the stone bought', stone != null, `inventory ${JSON.stringify(bot.inventory.items().map((i) => i.name))}`)
+  if (stone) {
+    bot.setQuickBarSlot(stone.slot - 36)
+    await sleep(500)
+    await command('/sell hand', de('Verkauft: 64× Stone', 'Sold 64× Stone'), 'a sale through xMarket')
+  }
+  // A block Joiner breaks, logged by the world hooks, then rolled back: a rollback by Joiner.
+  await command(`/gamemode creative ${username}`, '', 'Joiner is in creative mode')
+  await sleep(1000)
+  const spot = bot.entity.position.floored().offset(2, 0, 0)
+  await command(`/setblock ${spot.x} ${spot.y} ${spot.z} minecraft:oak_planks`, '', 'a block to break is set')
+  await sleep(1000)
+  const planks = bot.blockAt(spot)
+  check('the block to break is there', planks && planks.name === 'oak_planks', `found ${planks && planks.name}`)
+  if (planks && planks.name === 'oak_planks') {
+    try { await bot.dig(planks, true) } catch (e) { fail(`couldn't break the planks: ${e.message}`) }
+    await sleep(1500)
+    await command(`/xr rollback u:${username} t:1h r:10`, de('Zurückgesetzt', 'Rolled back'), 'a rollback through xRewind')
+  }
+  bot.chat('/kick Friend counted by xstats')
+  check('a kick through xBans takes Friend off', await friend.until(() => friend.kicked != null), `kicked: ${friend.kicked}`)
+  await sleep(1000)
+  await command('/xstats save', de('Gespeichert', 'Saved'), '/xstats save writes what the hooks counted')
+  for (const [stat, who] of [['zchat_messages', username], ['xteleport_teleports', username], ['xmarket_bought', username],
+    ['xmarket_sold', username], ['xrewind_rollbacks', username], ['xbans_punishments', 'Friend']]) {
+    await command(`/leaderboard ${stat}`, `1. ${who}`, `xStats counted ${stat} for ${who}`)
+  }
   finish()
 }
 

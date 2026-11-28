@@ -20,9 +20,14 @@ load-tick-ms 0.05
 load-family-tick-ms 0.25
 load-offthread-ms-per-s 2
 
-# Heap used after two full GCs, over the same server without the plugins, per plugin; and
-# metaspace in the plugins' own class loaders (their jars; libraries: are reported, not budgeted).
-heap-mb 4
+# Heap that only the plugin's own class loader keeps alive (its objects, its classes, and what
+# only it holds: its libraries: loader on Paper included), from a heap dump of the idle server
+# (scripts/budgets/Retained.java), per plugin. 2.4 MB, not ROADMAP's first 4 MB: that was over the
+# server without plugins, which carried about 1 MB of the server's own per plugin and moved by
+# 2 MB from boot to boot; this way a plugin keeping 2 MB more fails, the lightest too
+# (decisions/2026-11-28-the-heap-budget-is-what-a-plugin-retains.md). And metaspace in the
+# plugins' own class loaders (their jars; libraries: are reported, not budgeted).
+heap-mb 2.4
 metaspace-mb 1.5
 # Our classes' instances after the load against before it: the larger of the two allowances.
 heap-growth-percent 10

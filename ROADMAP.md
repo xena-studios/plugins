@@ -103,7 +103,7 @@ The floors are proposals; M0 confirms them. In the later minors, NeoForge brings
 | Startup | under 100 ms per plugin on the server thread (load + enable, median of 3 boots, family installed); 150 ms for the first plugin, which loads the Kotlin stdlib. First-run downloads and Pumpkin's first compile are separate. | 232 ms (xMoney, its database opened on the server thread) |
 | Idle | under 0.001 ms a tick per plugin, and under 0.5 ms of CPU a second on its own threads | 0.012 ms a tick; 3.5 ms a second (xBackup polling) |
 | Under load (10 bots) | under 0.05 ms a tick per plugin, 0.25 ms for the family; under 2 ms of CPU a second off-thread | 0.010 ms a tick (xLimbo) |
-| Heap after load | under 4 MB per plugin and 1.5 MB metaspace, worlds a plugin makes on purpose aside; then growth over 10% (or 0.5 MB) fails | 9.5 MB (xRewind's block-state table) |
+| Heap after load | under 2.4 MB per plugin of heap only the plugin keeps alive (from a heap dump: first set at 4 MB over the server without plugins, which also counted the server's own ~1 MB and its ~2 MB of boot-to-boot noise) and 1.5 MB metaspace, worlds a plugin makes on purpose aside; then growth over 10% (or 0.5 MB) fails | 9.5 MB (xRewind's block-state table) |
 | Jar | 500 KiB per jar after R8 is the target, every platform (the Kotlin stdlib and YAML parser are downloaded, never shipped); a jar goes over it only when it can't shrink without losing quality or robustness, with the reason recorded in its `decisions/` file. Each jar's own line in `gradle/jar-budgets.txt` sits about 10% over its size, so growth still fails the build | 483 KB (xBackup) |
 
 ## Built once, in the core

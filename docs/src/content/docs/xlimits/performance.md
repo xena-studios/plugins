@@ -22,7 +22,7 @@ On Paper 26.3 (Apple M1 Pro with other servers booting beside it, so loose; CI's
 | --- | --: | --: |
 | Startup on the server thread (median of 5 boots) | 44.3 ms | 150 ms (first plugin) |
 | Metaspace in its own class loaders | 1.35 MB | 1.5 MB |
-| Heap over the server without it | 2.7 MB (21 KB of its own objects) | 4 MB |
+| Heap only its class loader keeps alive (CI) | 0.71 MB | 2.4 MB |
 | Idle, server thread | 0 ms a tick | 0.001 ms |
 | Idle, other threads | 0 ms a second | 0.5 ms |
 | Jar, shrunk | 632 KiB (Bukkit), 539 to 547 KiB (Fabric) | 500 KiB target, over for a recorded reason |

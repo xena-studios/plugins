@@ -9,8 +9,10 @@
 #            plugin's package, from async-profiler's CPU samples, with no players
 #   load     the same with N mineflayer bots (bots/load.js) walking, building, chatting and
 #            running the plugins' commands
-#   heap     heap used after two full GCs over the same server without the plugins, metaspace
-#            in the plugins' class loaders, and our instances' growth across the load
+#   heap     what each plugin's class loader alone keeps alive, from a heap dump (Retained.java),
+#            beside the heap used after full GCs over the same server without the plugins
+#            (reported); metaspace in the plugins' class loaders; our instances' growth across
+#            the load
 #
 #   scripts/budgets/check.sh [--version 1.21.11] [--boots 3] [--bots 10] [--idle 60]
 #     [--load 60] [--commands "xsample,coins,pay {other} 1"] [--java <JDK home>]
@@ -66,13 +68,13 @@ while (($#)); do
     --record-startup) record_startup=true; shift ;;
     --seed) [[ -d $2 ]] || { echo "no folder at $2 to seed" >&2; exit 2; }
             seeds+=("$(cd "$2" && pwd)"); shift 2 ;;
-    -h | --help) sed -n '2,32p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,34p' "$0"; exit 0 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) [[ -f $1 ]] || { echo "no plugin jar at $1" >&2; exit 2; }
        jars+=("$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"); shift ;;
   esac
 done
-((${#jars[@]})) || { sed -n '2,32p' "$0" >&2; exit 2; }
+((${#jars[@]})) || { sed -n '2,34p' "$0" >&2; exit 2; }
 ((boots >= 2)) || { echo "--boots is at least 2: the first boot only creates the world" >&2; exit 2; }
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -153,11 +155,15 @@ fi
 
 # ---- the plugins ----
 names=()
+mains=()
 for jar in "${jars[@]}"; do
   # plugin.yml, or paper-plugin.yml for a Paper-only plugin (xLimbo), which has no plugin.yml.
   name=$({ unzip -p "$jar" plugin.yml 2>/dev/null || unzip -p "$jar" paper-plugin.yml 2>/dev/null || true; } | sed -n 's/^name: *//p' | head -1 | tr -d "'\"")
   [[ -n $name ]] || { echo "$(basename "$jar") has no plugin.yml or paper-plugin.yml with a name" >&2; exit 2; }
   names+=("$name")
+  main=$({ unzip -p "$jar" plugin.yml 2>/dev/null || unzip -p "$jar" paper-plugin.yml 2>/dev/null || true; } | sed -n 's/^main: *//p' | head -1 | tr -d "'\"\r ")
+  [[ -n $main ]] || { echo "$(basename "$jar")'s plugin.yml or paper-plugin.yml has no main" >&2; exit 2; }
+  mains+=("$main")
 done
 
 pid=""
@@ -257,6 +263,21 @@ snapshot() {
   "$jcmd" "$pid" GC.class_histogram >"$1.histogram"
 }
 
+# A heap dump of the live objects ($1.hprof, after a full GC), for what each plugin's class
+# loader alone keeps alive: the heap budget. The server's own heap moves by about 2 MB from boot
+# to boot, so a difference of two servers' used heap can't hold a plugin to 4 MB (#258, #272);
+# what only the plugin's loader reaches doesn't move with it. Read after the server stops
+# (retain), since the dump is as big as the heap.
+dump() {
+  "$jcmd" "$pid" GC.heap_dump "$1.hprof" >"$1.dump.log" 2>&1 || broken "the heap dump failed: $(tail -3 "$1.dump.log")"
+}
+
+retain() {
+  "$java" -Xmx3g "$here/Retained.java" "$1.hprof" "${mains[@]}" >"$1.retained.json" 2>"$1.retained.log" ||
+    broken "couldn't read the heap dump: $(tail -3 "$1.retained.log")"
+  rm -f "$1.hprof"
+}
+
 # CPU samples every 200 µs of CPU time, per thread, as collapsed stacks, for $2 seconds.
 profile() {
   "$asprof" -e cpu -i 200us -t -o collapsed -d "$2" -f "$out/$1.collapsed" "$pid" >"$out/$1.asprof.log" 2>&1 ||
@@ -307,6 +328,7 @@ echo "== measured boot: heap, idle profile$( ((bots)) && echo ", $bots bots")"
 boot "$out/boot$((boots + 1)).log"
 sleep "$settle"
 snapshot "$out/before"
+dump "$out/before"
 echo "== idle for $idle s"
 profile idle "$idle"
 if ((bots)); then
@@ -333,6 +355,7 @@ if ((bots)); then
 fi
 stop
 uptime >>"$out/uptime.txt"
+retain "$out/before"
 
 python3 "$here/analyze.py" --out "$out" --budgets "$root/gradle/perf-budgets.txt" --boots "$boots" \
   --idle "$idle" --load "$load" --bots "$bots" --report-only "$report_only" ${jars[@]+"${jars[@]}"}

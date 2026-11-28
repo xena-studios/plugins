@@ -34,7 +34,8 @@ while IFS= read -r file; do
   unit=${file%%/*}
   case $file in
     core/*/*) continue ;;
-    sandbox/m0/*) continue ;;
+    # The spikes, M0's and NeoSkript's N0, which try the rewrite's conventions in builds of their own.
+    sandbox/m0/* | sandbox/n0/*) continue ;;
   esac
   [[ $unit != "$file" && -f $unit/common/build.gradle.kts && ! -f $unit/build.gradle.kts ]] && continue
   starts+=("$file")

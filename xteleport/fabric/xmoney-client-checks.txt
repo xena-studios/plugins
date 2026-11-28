@@ -1,0 +1,5 @@
+# Two real clients on Fabric with xMoney beside xTeleport (scripts/boot-fabric.sh with xMoney's
+# jar, --seed xmoney-seed, so /spawn costs 5, and --seed scripts/boot-seeds/client), after
+# boot-checks.txt: a home set and gone back to, Friend's /tpa accepted and Friend arriving after
+# the warmup, an /rtp, and Friend paying for /spawn through xMoney.
+client: --plugin xteleport --xmoney

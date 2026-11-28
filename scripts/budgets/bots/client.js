@@ -8,7 +8,7 @@
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
 //   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket] [--zchat] [--xmoney]
-//     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>]
+//     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>] [--fabric] [--fixed-language]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
 // /heal and /back, a teleport and its way back, and /gamemode's completion), or zChat's (a
@@ -39,6 +39,12 @@
 // menus, a category and the amount screen clicked through to a purchase that xMoney debits, /sell
 // hand that it credits, /shop buy and /worth, all in German).
 //
+// The same scenarios run on Fabric (scripts/boot-fabric.sh's "client:" step, which adds --fabric):
+// a check that differs there by design takes Fabric's side, as each says (xUtilities' /back,
+// xSample's English-only sandbox). --fixed-language is for a server that keeps no client
+// language (Fabric on 1.20.1, which boot-fabric.sh passes it for): Joiner reads English there, so
+// each reply expected in German is expected in English, and changes of language aren't checked.
+//
 // The Minecraft version is the server's own (mineflayer asks it first), so one script runs
 // from Spigot 1.8.8 to the newest version mineflayer speaks; --version sets it instead, for a
 // proxy, which speaks every version and answers a ping with the newest. --forge sends a plugin
@@ -57,6 +63,13 @@ const withZChat = process.argv.includes('--zchat')
 const withXMoney = process.argv.includes('--xmoney')
 const votePort = Number(option('--vote-port', 8192))
 const voteToken = option('--vote-token', '')
+// The server is Fabric (scripts/boot-fabric.sh passes it): a few checks differ there by design.
+const onFabric = process.argv.includes('--fabric')
+// The server reads no client language (Fabric on 1.20.1): Joiner reads the default, English.
+const fixedLanguage = process.argv.includes('--fixed-language')
+// What Joiner, whose client is in German, should read: the German, or with --fixed-language the
+// English every player reads there.
+const de = (german, english) => (fixedLanguage ? english : german)
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const failures = []
 const heard = []
@@ -111,20 +124,37 @@ async function completions (text) {
 
 // xUtilities as a player uses it, replies drawn from its lang/de.yml, then lang/en.yml.
 async function xutilities () {
-  await command('/fly', 'Fliegen', '/fly answers the player in German')
-  await command('/heal', 'geheilt', '/heal answers the player in German')
+  await command('/fly', de('Fliegen', 'Flight'), '/fly answers the player in German')
+  await command('/heal', de('geheilt', 'healed'), '/heal answers the player in German')
   const modes = await completions('/gamemode ')
   check('tab completion of /gamemode', ['survival', 'creative'].every((m) => modes.includes(m)), `/gamemode  completed to ${JSON.stringify(modes)}`)
-  // A teleport by a command, which /back remembers, then /back to where the player was.
-  const before = bot.entity.position.y
-  bot.chat(`/tp ${username} ~ ~10 ~`)
-  await sleep(1500)
-  await command('/back', 'Zurück zu deinem vorherigen Ort', '/back after a teleport')
-  await sleep(1000)
-  check('/back took the player back', Math.abs(bot.entity.position.y - before) < 1.5, `y ${bot.entity.position.y}, before the teleport ${before}`)
+  if (onFabric) {
+    // Fabric has no teleport event, so /back remembers deaths there, not vanilla's /tp (the
+    // docs' platform table): away with /tp, die there, respawn, and /back returns to the spot.
+    await command(`/tp ${username} ~ ~ ~40`, 'Teleported', 'vanilla /tp moves the player away')
+    await sleep(1500)
+    const died = bot.entity.position.clone()
+    await command('/back', de('Du hast keinen Ort, zu dem du zurückkehren kannst.', 'You have nowhere to go back to.'), "/back doesn't hear vanilla /tp on Fabric")
+    bot.chat(`/kill ${username}`)
+    await new Promise((resolve) => bot.once('spawn', resolve))
+    await sleep(1500)
+    const flat = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2)
+    check('the player respawned away from where they died', flat(bot.entity.position, died) > 30, `at ${bot.entity.position}, died at ${died}`)
+    await command('/back', de('Zurück zu deinem vorherigen Ort', 'Teleported back to your previous location'), '/back after a death')
+    await sleep(1000)
+    check('/back took the player to where they died', flat(bot.entity.position, died) < 1.5, `at ${bot.entity.position}, died at ${died}`)
+  } else {
+    // A teleport by a command, which /back remembers, then /back to where the player was.
+    const before = bot.entity.position.y
+    bot.chat(`/tp ${username} ~ ~10 ~`)
+    await sleep(1500)
+    await command('/back', 'Zurück zu deinem vorherigen Ort', '/back after a teleport')
+    await sleep(1000)
+    check('/back took the player back', Math.abs(bot.entity.position.y - before) < 1.5, `y ${bot.entity.position.y}, before the teleport ${before}`)
+  }
   // Before 1.12 the server reads a client's language only as it joins (DECISIONS.md, "A real client").
   const [major, minor] = (bot.version || '1.8').split('.').map(Number)
-  if (major > 1 || minor >= 12) {
+  if ((major > 1 || minor >= 12) && !fixedLanguage) {
     bot.setSettings({ locale: 'en_us' })
     await sleep(2000)
     await command('/fly', 'Flight', '/fly answers in the language the client changed to (English)')
@@ -178,8 +208,8 @@ async function zchat () {
   friend.chat('/r got it')
   check('/reply answers the last message', await hear('Friend → You: got it', mine) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
   // A reply from zChat's lang/de.yml.
-  await command('/togglechat', 'ausgeblendet', "/togglechat answers in the client's language (German)")
-  await command('/togglechat', 'angezeigt', '/togglechat again shows chat')
+  await command('/togglechat', de('ausgeblendet', 'hidden'), "/togglechat answers in the client's language (German)")
+  await command('/togglechat', de('angezeigt', 'shown'), '/togglechat again shows chat')
   try { friend.quit() } catch {}
   finish()
 }
@@ -201,10 +231,10 @@ async function xmoney () {
   }
   // Replies from xMoney's lang/de.yml, amounts in the currency's own format.
   await command(`/eco give ${username} 100`, `${username} $100.00`, "/eco give answers the operator in German")
-  await command('/balance', 'Kontostand: $100.00', "/balance answers in the client's language (German)")
+  await command('/balance', de('Kontostand: $100.00', 'Balance: $100.00'), "/balance answers in the client's language (German)")
   // Joiner pays Friend: both sides told, the money moved.
   let from = friendHeard.length
-  await command('/pay Friend 12.5', 'Gesendet: $12.50 an Friend. Dir bleiben $87.50.', '/pay tells the payer what they sent and have left')
+  await command('/pay Friend 12.5', de('Gesendet: $12.50 an Friend. Dir bleiben $87.50.', 'Sent $12.50 to Friend. You have $87.50 left.'), '/pay tells the payer what they sent and have left')
   check('/pay tells whoever is paid', await friendHears(`Received $12.50 from ${username}.`, from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
   from = friendHeard.length
   friend.chat('/balance')
@@ -243,31 +273,31 @@ async function xteleport () {
   }
   const distance = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2)
   // A home, then away with vanilla /tp, then /home brings Joiner back: replies from lang/de.yml.
-  await command('/sethome base', 'Zuhause gesetzt: base.', '/sethome answers the player in German')
+  await command('/sethome base', de('Zuhause gesetzt: base.', 'Set home base.'), '/sethome answers the player in German')
   const home = bot.entity.position.clone()
   bot.chat(`/tp ${username} ~ ~ ~40`)
   await sleep(1500)
   check('vanilla /tp moved the player away', distance(bot.entity.position, home) > 30, `at ${bot.entity.position}, home ${home}`)
-  await command('/home base', 'Willkommen in base.', '/home teleports and says so in German')
+  await command('/home base', de('Willkommen in base.', 'Welcome to base.'), '/home teleports and says so in German')
   await sleep(1000)
   check('/home brought the player back', distance(bot.entity.position, home) < 1.5, `at ${bot.entity.position}, home ${home}`)
-  await command('/homes', 'Deine Zuhause (1/', '/homes lists the home')
+  await command('/homes', de('Deine Zuhause (1/', 'Your homes (1/'), '/homes lists the home')
   // Friend asks to come to Joiner; Joiner accepts; Friend waits out the warmup and arrives.
   let from = friendHeard.length
   let mine = heard.length
   friend.chat(`/tpa ${username}`)
   check('/tpa tells whoever asked', await friendHears(`Asked ${username} if you can teleport to them.`, from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
-  check('/tpa reaches whoever is asked, in their language', await hear('Friend möchte sich zu dir teleportieren.', mine) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
+  check('/tpa reaches whoever is asked, in their language', await hear(de('Friend möchte sich zu dir teleportieren.', 'Friend wants to teleport to you.'), mine) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
   from = friendHeard.length
-  await command('/tpaccept', 'Anfrage von Friend angenommen.', '/tpaccept accepts in German')
+  await command('/tpaccept', de('Anfrage von Friend angenommen.', "Accepted Friend's request."), '/tpaccept accepts in German')
   check('Friend waits out the warmup', await friendHears('Teleporting in 3s', from), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
   check('Friend arrives beside Joiner', await friendHears(`Teleported to ${username}.`, from, 15000), `Friend heard ${JSON.stringify(friendHeard.slice(from))}`)
   await sleep(1000)
   check('Friend is where Joiner is', distance(friend.entity.position, bot.entity.position) < 2, `Friend at ${friend.entity.position}, Joiner at ${bot.entity.position}`)
   // /rtp: a search off the server thread, then the teleport.
   const before = bot.entity.position.clone()
-  await command('/rtp', 'Suche einen sicheren Ort...', '/rtp starts a search')
-  const landed = await hear('teleportiert', heard.length - 1, 30000)
+  await command('/rtp', de('Suche einen sicheren Ort...', 'Looking for a safe spot...'), '/rtp starts a search')
+  const landed = await hear(de('teleportiert', 'Teleported to'), heard.length - 1, 30000)
   check('/rtp finds a spot and teleports there', landed != null, `heard ${JSON.stringify(heard.slice(-5))}`)
   await sleep(1500)
   check('/rtp moved the player far', distance(bot.entity.position, before) > 250, `at ${bot.entity.position}, before ${before}`)
@@ -376,7 +406,7 @@ async function xbans () {
   friend.bot.chat('free at last')
   check('an unmuted player is heard again', (await hear('free at last', mine, 8000)) != null, `heard ${JSON.stringify(heard.slice(mine))}`)
   // A reply in Joiner's language.
-  await command('/history Friend', 'Verlauf', "a lookup answers in the client's language (German)")
+  await command('/history Friend', de('Verlauf', 'history'), "a lookup answers in the client's language (German)")
   bot.chat('/kick Friend bye for now')
   check('a kick takes Friend off with the kick screen', await friend.until(() => friend.kicked != null) && /kicked/i.test(friend.kicked), `kicked: ${friend.kicked}`)
   finish()
@@ -427,7 +457,7 @@ async function xvanish () {
   const inWorld = (f) => Object.values(f.bot.entities).some((e) => e.type === 'player' && e.username === username)
   check('Friend sees Joiner before', listed(friend) && inWorld(friend), `listed ${listed(friend)}, in the world ${inWorld(friend)}`)
   let from = friend.heard.length
-  await command('/vanish', 'Du bist unsichtbar.', '/vanish answers in German')
+  await command('/vanish', de('Du bist unsichtbar.', "You're vanished."), '/vanish answers in German')
   check('Friend hears a fake quit', await friend.hears(`${username} left the game`, from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
   check('Joiner is gone from Friend\'s tab list', await friend.until(() => !listed(friend), 5000), 'still listed')
   check('and from Friend\'s world', await friend.until(() => !inWorld(friend), 5000), 'still in the world')
@@ -458,7 +488,7 @@ async function xvanish () {
   check('a vanished player stays hidden from a player joining', !listed(friend) && !inWorld(friend), `listed ${listed(friend)}, in the world ${inWorld(friend)}`)
   // Visible again: a fake join, and back in the list.
   from = friend.heard.length
-  await command('/vanish', 'wieder sichtbar', '/vanish again shows Joiner')
+  await command('/vanish', de('wieder sichtbar', 'visible'), '/vanish again shows Joiner')
   check('Friend hears a fake join', await friend.hears(`${username} joined the game`, from), `Friend heard ${JSON.stringify(friend.heard.slice(from))}`)
   check('Joiner is back in Friend\'s tab list and world', await friend.until(() => listed(friend) && inWorld(friend), 5000), `listed ${listed(friend)}, in the world ${inWorld(friend)}`)
   try { friend.bot.quit() } catch {}
@@ -517,7 +547,7 @@ async function xvote () {
   const from = heard.length
   await vote(username, 'PlanetMinecraft.com', 'a vote for a player online is taken')
   check("Joiner's vote is paid at once", await hear('Thanks for voting', from, 10000) != null, `heard ${JSON.stringify(heard.slice(from)).slice(0, 400)}`)
-  await command('/vote', 'Stimme für den Server ab', '/vote answers in German')
+  await command('/vote', de('Stimme für den Server ab', 'Vote for the server'), '/vote answers in German')
   if (withXMoney) await command('/balance', '25', "the vote's money reward, paid through xMoney")
   finish()
 }
@@ -618,12 +648,15 @@ async function run () {
   check('tab completion of a player argument', pay.includes(username), `/pay  completed to ${JSON.stringify(pay)}`)
   const sub = await completions('/xsample ')
   check('tab completion of subcommands', ['give', 'reload', 'debug'].every((s) => sub.includes(s)), `/xsample  completed to ${JSON.stringify(sub)}`)
-  // A core message, drawn in the client's language: German.
-  await command('/xsample debug', 'Prüfe', "a reply in the client's language (German)")
+  // A core message, drawn in the client's language: German. xSample's Fabric sandbox ships no
+  // lang/ files (core/platform-fabric/sandbox's XSampleMod), so there it's English.
+  await command('/xsample debug', onFabric || fixedLanguage ? 'Checking xSample' : 'Prüfe', "a reply in the client's language (German)")
   // The client switches to English: the next reply follows.
-  bot.setSettings({ locale: 'en_us' })
-  await sleep(2000)
-  await command('/xsample debug', 'Checking xSample', 'a reply in the language the client changed to (English)')
+  if (!fixedLanguage) {
+    bot.setSettings({ locale: 'en_us' })
+    await sleep(2000)
+    await command('/xsample debug', 'Checking xSample', 'a reply in the language the client changed to (English)')
+  }
   finish()
 }
 
@@ -661,11 +694,11 @@ async function xmarket () {
   next = opened()
   await click(slot)
   w = await next
-  check('the amount screen opens, in German', w != null && title(w).includes('kaufen'), `window ${title(w)}`)
+  check('the amount screen opens, in German', w != null && title(w).includes(de('kaufen', 'Buy')), `window ${title(w)}`)
   if (!w) return finish()
   const from = heard.length
   await click(40)
-  check('buying on the amount screen pays and gives', await hear('Gekauft: 1× Diamond für $200.00', from) != null, `heard ${JSON.stringify(heard.slice(from))}`)
+  check('buying on the amount screen pays and gives', await hear(de('Gekauft: 1× Diamond für $200.00', 'Bought 1× Diamond for $200.00'), from) != null, `heard ${JSON.stringify(heard.slice(from))}`)
   await sleep(1000)
   check('the client holds the one diamond bought, no more', count('diamond') === 1, `holds ${count('diamond')}`)
   if (bot.currentWindow) bot.closeWindow(bot.currentWindow)
@@ -673,15 +706,15 @@ async function xmarket () {
   // It went to the hotbar's first free slot, the one held.
   bot.setQuickBarSlot(bot.inventory.items().find((i) => i.name === 'diamond').slot - 36)
   await sleep(500)
-  await command('/sell hand', 'Verkauft: 1× Diamond für $60.00.', '/sell hand takes the diamond and pays')
+  await command('/sell hand', de('Verkauft: 1× Diamond für $60.00.', 'Sold 1× Diamond for $60.00.'), '/sell hand takes the diamond and pays')
   await sleep(500)
   check('the diamond is gone', count('diamond') === 0, `holds ${count('diamond')}`)
-  await command('/shop buy stone 64', 'Gekauft: 64× Stone für $64.00.', '/shop buy buys without the menu')
+  await command('/shop buy stone 64', de('Gekauft: 64× Stone für $64.00.', 'Bought 64× Stone for $64.00.'), '/shop buy buys without the menu')
   await sleep(500)
   bot.setQuickBarSlot(bot.inventory.items().find((i) => i.name === 'stone').slot - 36)
   await sleep(500)
-  await command('/worth', 'Stone verkauft sich für $0.30 pro Stück, $19.20 für 64.', '/worth prices the held stack')
-  if (withXMoney) await command('/balance', 'Kontostand: $796.00', 'xMoney took 200 and 64, and paid 60')
+  await command('/worth', de('Stone verkauft sich für $0.30 pro Stück, $19.20 für 64.', 'Stone sells for $0.30 each, $19.20 for 64.'), '/worth prices the held stack')
+  if (withXMoney) await command('/balance', de('Kontostand: $796.00', 'Balance: $796.00'), 'xMoney took 200 and 64, and paid 60')
   finish()
 }
 

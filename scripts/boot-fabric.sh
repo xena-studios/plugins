@@ -6,11 +6,26 @@
 #
 #   scripts/boot-fabric.sh --version 1.21.11 [--loader fabric|quilt] [--java <JDK home>] \
 #     [--checks file]... [--run "console command"]... [--expect "log text"]... \
-#     [--logged "log text"]... mod.jar...
+#     [--logged "log text"]... [--client "client.js arguments"]... [--seed folder]... mod.jar...
 #
-# Steps work as in boot-test.sh: each --expect waits for text logged after the --run before
-# it, --logged for text logged at any point; a checks file holds "run: ", "expect: " and
-# "logged: " lines.
+# Steps work as in boot-test.sh: each --expect waits for text logged after the --run (or
+# client:) before it, --logged for text logged at any point; a checks file holds "run: ",
+# "expect: ", "logged: " and "client: " lines.
+#
+# "client: [args]" (or --client) joins real clients, as boot-test.sh's step does: Node.js runs
+# scripts/budgets/bots/client.js (mineflayer, from .cache/budget-bots/) with the server's port and
+# these arguments and --fabric, and the step fails unless it ends with CLIENT PASS. The same
+# scenarios run on Bukkit and Fabric; --fabric picks the Fabric side of the few that differ there
+# by design (client.js says which). --seed scripts/boot-seeds/client makes the client, Joiner, an operator: a
+# vanilla ops.json, which Fabric reads as Paper does. The server is offline-mode, and nothing
+# forwards from a proxy. Minecraft 1.20.1 keeps no client language on Fabric (FabricLanguages),
+# so players there read the family's default-language, English: on 1.20.1 every client step gets
+# --fixed-language, and client.js expects English where it would expect the client's German.
+# Mineflayer joins up to 26.1, so a client step can't join 26.3 yet (decisions/2026-11-27-real-
+# clients-on-fabric.md): run client steps on 1.20.1 and 1.21.11.
+#
+# --seed copies a folder's contents into the server's folder before it starts, as boot-test.sh's
+# does: ops.json, or a mod's config/<mod>/config.yml.
 #
 # The server gets Fabric API and fabric-language-kotlin at the versions platform-fabric builds
 # against for that Minecraft line (core/platform-fabric/stonecutter.properties.toml), checked
@@ -25,6 +40,7 @@ loader=fabric
 version=""
 java_home=""
 steps=()
+seeds=()
 jars=()
 while (($#)); do
   case "$1" in
@@ -34,6 +50,8 @@ while (($#)); do
     --run) steps+=("run: $2"); shift 2 ;;
     --expect) steps+=("expect: $2"); shift 2 ;;
     --logged) steps+=("logged: $2"); shift 2 ;;
+    --client) steps+=("client: $2"); shift 2 ;;
+    --seed) seeds+=("$(cd "$2" && pwd)"); shift 2 ;;
     --checks)
       while IFS= read -r line || [[ -n $line ]]; do
         [[ -z ${line//[[:space:]]/} || $line == \#* ]] || steps+=("$line")
@@ -121,10 +139,40 @@ fail() {
   exit 1
 }
 
-# Waits up to $2 seconds for the fixed string $1 to appear in the log after line $3.
+# The bots' packages, installed once, as boot-test.sh and scripts/budgets/check.sh install them.
+bots="$root/.cache/budget-bots"
+bots_ready() {
+  local here="$root/scripts/budgets/bots"
+  command -v node >/dev/null || fail "a client: step needs Node.js"
+  mkdir -p "$bots"
+  cp "$here/package.json" "$here/package-lock.json" "$bots/"
+  if ! cmp -s "$here/package-lock.json" "$bots/node_modules/.package-lock.json.installed" 2>/dev/null; then
+    (cd "$bots" && npm ci --no-audit --no-fund --loglevel=error) || fail "npm ci for the client failed"
+    cp "$here/package-lock.json" "$bots/node_modules/.package-lock.json.installed"
+  fi
+  cp "$here/client.js" "$bots/"
+}
+
+# Joins the client with the arguments $1, and fails unless it passes.
+client() {
+  local out="$base/client.log" args="$1 --fabric"
+  bots_ready
+  [[ $version != 1.20.1 ]] || args+=" --fixed-language"
+  # Word splitting is the point: $args is the step's arguments.
+  # shellcheck disable=SC2086
+  if ! node "$bots/client.js" "$port" $args >"$out" 2>&1; then
+    cat "$out" >&2
+    fail "the client didn't pass"
+  fi
+  cat "$out"
+}
+
+# Waits up to $2 seconds for the fixed string $1 to appear in the log after line $3. The grep
+# reads to the end, not -q: with pipefail, a grep that stops at an early match fails the pipe
+# once tail, still writing, gets SIGPIPE.
 wait_for() {
   for ((i = 0; i < $2 * 2; i++)); do
-    tail -n "+$((${3:-0} + 1))" "$log" 2>/dev/null | grep -qF -- "$1" && return 0
+    tail -n "+$((${3:-0} + 1))" "$log" 2>/dev/null | grep -F -- "$1" >/dev/null && return 0
     kill -0 "$pid" 2>/dev/null || fail "server exited while waiting for \"$1\""
     sleep 0.5
   done
@@ -142,6 +190,7 @@ done
 [[ ! -f $server_dir/server.jar ]] || ln -s "$server_dir/server.jar" "$base/server.jar"
 echo "serverJar=$server_dir/server.jar" >"$base/fabric-server-launcher.properties"
 cp "${mods[@]}" "${jars[@]}" "$base/mods/"
+for seed in "${seeds[@]+"${seeds[@]}"}"; do cp -R "$seed/." "$base/"; done
 echo "eula=true" >"$base/eula.txt"
 # A port under Linux's ephemeral range, as in boot-test.sh.
 port=$((20000 + RANDOM % 12000))
@@ -172,7 +221,10 @@ for step in "${steps[@]+"${steps[@]}"}"; do
       echo "${step#run: }" >&3 ;;
     "expect: "*) wait_for "${step#expect: }" 60 "$since" ;;
     "logged: "*) wait_for "${step#logged: }" 60 0 ;;
-    *) fail "a step must start with \"run: \", \"expect: \" or \"logged: \": $step" ;;
+    "client:"*)
+      since=$(wc -l <"$log")
+      client "${step#client:}" ;;
+    *) fail "a step must start with \"run: \", \"expect: \", \"logged: \" or \"client:\": $step" ;;
   esac
 done
 

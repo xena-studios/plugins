@@ -102,8 +102,10 @@ declare -A rewriteOnly=(
   [scripts/decisions.ts]=""
 )
 rewriteOnlyDirs=(scripts/budgets/ scripts/boot-seeds/)
-# The real client joins the proxies' pair tests too.
+# The real client joins Bukkit, Fabric (scripts/boot-fabric.sh's client: step) and the proxies'
+# pair tests; its operator seed, Bukkit and Fabric.
 clientDir=scripts/budgets/bots/
+clientSeed=scripts/boot-seeds/client/
 
 # The folders holding plugins (and the sandbox): top-level ones with a Gradle build,
 # other than the two everything is built on, and plugins in the rewrite's layout
@@ -164,7 +166,8 @@ if [[ $all == false ]]; then
       only=" ${rewriteOnly[$file]} "
     else
       for dir in "${rewriteOnlyDirs[@]}"; do [[ $file == "$dir"* ]] && only=" bukkit "; done
-      [[ $file != "$clientDir"* ]] || only=" bukkit proxy "
+      [[ $file != "$clientDir"* ]] || only=" bukkit fabric proxy "
+      [[ $file != "$clientSeed"* ]] || only=" bukkit fabric "
     fi
     if [[ -n $only ]]; then
       [[ $only != *" rewrite "* ]] || rewriteChanged=true

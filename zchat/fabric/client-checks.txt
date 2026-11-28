@@ -1,0 +1,5 @@
+# Two real clients on Fabric (scripts/boot-fabric.sh --checks, with --seed scripts/boot-seeds/client
+# so Joiner is an operator), after boot-checks.txt: scripts/budgets/bots/client.js, Joiner in
+# German and Friend, chat: the format, the filter, a mention and its ping, /msg and /reply, and
+# /togglechat in German.
+client: --plugin zchat

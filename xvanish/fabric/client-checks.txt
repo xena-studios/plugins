@@ -1,0 +1,5 @@
+# Two real clients on Fabric with zChat and xTeleport beside xVanish (scripts/boot-fabric.sh with
+# their jars and --seed scripts/boot-seeds/client), after boot-checks.txt: Joiner vanishes and
+# Friend finds them nowhere, not in the tab list, the world, xTeleport's /tpa, zChat's mentions
+# and /msg or a completion, even after Friend relogs; then Joiner shows again.
+client: --plugin xvanish

@@ -633,6 +633,39 @@ async function xvanishNetwork () {
   finish()
 }
 
+// The N0 game model spike (sandbox/n0/model, never released): its hand-written script's triggers,
+// through the model, for a real player. By now the join trigger has welcomed Joiner, given them 16
+// dirt and set glass two blocks north of them; chat is answered, "cancel me" cancelled; breaking the
+// glass and placing dirt are each answered with the block's type and what Joiner holds.
+async function n0model () {
+  const { Vec3 } = require('vec3')
+  const count = (name) => bot.inventory.items().filter((i) => i.name === name).reduce((n, i) => n + i.count, 0)
+  check('on join: send to player', heard.some((l) => l.includes(`Welcome, ${username}, to `)), `heard ${JSON.stringify(heard).slice(0, 300)}`)
+  check('on join: give player 16 dirt', count('dirt') === 16, `holding ${count('dirt')} dirt`)
+  await command('hello model', 'You said: hello model', 'on chat: the message, sent back')
+  let from = heard.length
+  bot.chat('cancel me')
+  await sleep(2000)
+  check('on chat: cancel event', !heard.slice(from).some((l) => l.includes('cancel me')), `heard ${JSON.stringify(heard.slice(from))}`)
+  const at = bot.entity.position.floored().offset(0, 0, -2)
+  const glass = bot.blockAt(at)
+  check('on join: set block at a location to glass', glass != null && glass.name === 'glass', `the block there is ${glass && glass.name}`)
+  if (glass == null || glass.name !== 'glass') return finish()
+  const dirt = bot.inventory.items().find((i) => i.name === 'dirt')
+  if (dirt) await bot.equip(dirt, 'hand')
+  from = heard.length
+  await bot.dig(glass, true)
+  const broke = await hear('You broke minecraft:glass', from)
+  check('on break: type of block, tool of player', broke != null && broke.includes('holding minecraft:dirt'), `heard ${JSON.stringify(heard.slice(from))}`)
+  from = heard.length
+  await sleep(500)
+  try { await bot.placeBlock(bot.blockAt(at.offset(0, -1, 0)), new Vec3(0, 1, 0)) } catch (e) { console.log(`placeBlock: ${e.message}`) }
+  const placed = await hear('You placed minecraft:dirt', from)
+  check('on place: type of block, item amount of tool', placed != null, `heard ${JSON.stringify(heard.slice(from))}`)
+  if (placed) console.log(`the server said: ${placed}`)
+  finish()
+}
+
 async function run () {
   if (forge) {
     // Looks like a frame of ours ('X', version 1), signed with nothing the network knows.
@@ -654,6 +687,7 @@ async function run () {
   if (plugin === 'xvote-network') return xvoteNetwork()
   if (plugin === 'xmarket') return xmarket()
   if (plugin === 'xvanish-network') return xvanishNetwork()
+  if (plugin === 'n0model') return n0model()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")

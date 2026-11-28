@@ -362,6 +362,7 @@ public class JvmEngine(
                     "Backed up ${snapshot.files} files (${Sizes.format(snapshot.bytes)}) in ${seconds(snapshot.durationMillis)}: ${Sizes.format(snapshot.added)} new. The server paused ${snapshot.pauseMillis} ms.",
                 )
                 for (warning in snapshot.warnings) log.warn("Backup ${snapshot.key.shortHex()}: $warning")
+                for (note in result.notes) log.info("Backup ${snapshot.key.shortHex()}: $note")
                 try {
                     upkeep(repo, now, scheduled)
                 } catch (e: java.io.IOException) {

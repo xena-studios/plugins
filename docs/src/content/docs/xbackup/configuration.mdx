@@ -17,7 +17,7 @@ The config is `plugins/xBackup/config.yml` (`config/xbackup/config.yml` on Fabri
 | `repository` | Where backups are kept. |
 | `schedule` | How often backups run. |
 | `sources` | What's backed up. |
-| `exclude` | Paths to leave out. |
+| `exclude` | Paths to leave out. Files still being written under a temporary name (a download's `*.part`, a save's `.<name>.<random>.tmp`) are always left out, and a file that goes away or keeps changing while it's read is left out of that backup with a note in the console (or keeps its copy from the last backup) and read again by the next. |
 | `retention` | Which backups are kept, the most space they may use, and the space always left free. |
 | `performance` | Limits on disk reads and uploads, compression, and the longest autosave may stay off. |
 | `verify` | How often older data is read back and checked. |

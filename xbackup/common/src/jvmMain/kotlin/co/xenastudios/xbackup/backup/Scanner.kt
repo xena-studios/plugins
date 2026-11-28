@@ -65,11 +65,21 @@ internal class Scanner(
     var chunksReused = 0L
     val warnings = ArrayList<String>()
 
+    /**
+     * Files left out because they vanished or kept changing while they were read, such as a
+     * download finishing: not a problem with the backup, and read again by the next one.
+     */
+    val notes = ArrayList<String>()
+
     /** The stopped signal: the backup was cancelled. */
     class Cancelled : java.io.IOException("The backup was stopped.")
 
     private fun checkCancelled() {
         if (cancelled()) throw Cancelled()
+    }
+
+    private fun note(path: String, what: String) {
+        if (strict && notes.size < MAX_WARNINGS) notes += "${display(path)} $what"
     }
 
     private fun warn(warning: String) {
@@ -162,6 +172,8 @@ internal class Scanner(
             val childPath = if (path.isEmpty()) childName else "$path/$childName"
             val choice = selection.choose(childPath, child)
             if (choice == Selection.Choice.SKIP || childName in skip && stripJournal(childName) in names) continue
+            // A download or a save still being written: the finished file is what's backed up.
+            if (inProgress(childName) && !selection.isSource(childPath)) continue
             val childAttributes = if (choice == Selection.Choice.DESCEND || selection.isSource(childPath)) {
                 // A source, or a folder on the way to one: followed if it's a link.
                 sourceAttributes(child, childPath) ?: continue
@@ -205,7 +217,7 @@ internal class Scanner(
             val content = try {
                 store(file)
             } catch (e: NoSuchFileException) {
-                return null
+                return vanished(path)
             } catch (e: AccessDeniedException) {
                 warn("Couldn't read ${display(path)}: access denied.")
                 return null
@@ -213,21 +225,34 @@ internal class Scanner(
             val after = try {
                 Files.readAttributes(file, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
             } catch (e: NoSuchFileException) {
-                return null
+                return vanished(path)
             }
             val steady = after.size() == content.size && after.lastModifiedTime().toMillis() == mtime
-            // Changing as we read: the strict pass will read it again.
-            if (!steady && !strict) return null
-            if (steady || attempt >= 2) {
-                if (!steady) warn("${display(path)} kept changing while it was read; its copy may be mid-write.")
+            if (steady) {
                 val node = Tree.Node.file(name, mtime, content.size, mode(file), content.blobs, content.hash)
                 remember(path, node, previous)
                 count(node)
                 return node
             }
+            // Changing as we read: the strict pass will read it again.
+            if (!strict) return null
+            if (attempt >= 2) {
+                // Never keep a copy that may be mid-write: the last good one if there is one.
+                if (previous != null && previous.node.kind == Tree.Kind.FILE && stored(previous.node.blobs)) {
+                    note(path, "kept changing while it was read, so the copy from the last backup was kept; it's read again next time.")
+                    return previous.node.named(name).also(::count)
+                }
+                note(path, "kept changing while it was read, so it was left out; it's read again next time.")
+                return null
+            }
             mtime = after.lastModifiedTime().toMillis()
             attempt++
         }
+    }
+
+    private fun vanished(path: String): Tree.Node? {
+        note(path, "went away while it was read, so it was left out; it's read again next time.")
+        return null
     }
 
     private class Content(val blobs: List<Hash>, val size: Long, val hash: Hash)
@@ -279,7 +304,7 @@ internal class Scanner(
             val layout = try {
                 FileChannel.open(file, StandardOpenOption.READ).use { readRegion(it, before, readAtSecond) }
             } catch (e: NoSuchFileException) {
-                return null
+                return vanished(path)
             } catch (e: AccessDeniedException) {
                 warn("Couldn't read ${display(path)}: access denied.")
                 return null
@@ -452,6 +477,13 @@ internal class Scanner(
 
         // Marks a layout that can't be kept chunk by chunk.
         private val UNREADABLE = RegionLayout(0, IntArray(RegionLayout.CHUNKS), IntArray(RegionLayout.CHUNKS), IntArray(RegionLayout.CHUNKS), arrayOfNulls(RegionLayout.CHUNKS))
+
+        /**
+         * A file still being written under a temporary name, moved into place when done: a
+         * download's `.part` (the libraries the core fetches, xBackup's own) or a save's
+         * `.<name>.<random>.tmp`.
+         */
+        fun inProgress(name: String): Boolean = name.endsWith(".part") || name.startsWith(".") && name.endsWith(".tmp")
 
         fun isDatabaseName(name: String, siblings: Set<String>): Boolean {
             val lower = name.lowercase()

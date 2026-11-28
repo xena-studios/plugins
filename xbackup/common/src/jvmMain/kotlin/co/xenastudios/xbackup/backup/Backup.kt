@@ -137,8 +137,19 @@ public object Backup {
         public val external: List<String> = emptyList(),
     )
 
-    /** A finished backup and what it took. */
-    public class Result(public val snapshot: Snapshot, public val chunksRead: Long, public val chunksReused: Long, public val pass1Millis: Long)
+    /**
+     * A finished backup and what it took.
+     *
+     * @param notes files left out because they vanished or kept changing while read (a download
+     *     finishing, say): not warnings, since the next backup reads them again
+     */
+    public class Result(
+        public val snapshot: Snapshot,
+        public val chunksRead: Long,
+        public val chunksReused: Long,
+        public val pass1Millis: Long,
+        public val notes: List<String> = emptyList(),
+    )
 
     /**
      * Runs a backup. Hold the repository's exclusive lock.
@@ -217,7 +228,7 @@ public object Backup {
                         session.addedBytes, pauseMillis, offMillis, plan.source, warnings, plan.external,
                     ),
                 )
-                return Result(snapshot, second.chunksRead + first.chunksRead, second.chunksReused, pass1Millis)
+                return Result(snapshot, second.chunksRead + first.chunksRead, second.chunksReused, pass1Millis, second.notes + rest.notes)
             }
         } finally {
             if (Files.isDirectory(plan.temp)) {

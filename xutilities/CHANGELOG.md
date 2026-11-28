@@ -4,7 +4,7 @@
 
 Not released yet: 3.0 ships with the other plugins' rewrites, once they've all run on our own servers (ROADMAP.md, Release). Until then 2.1 is the release, and 2.x gets its fixes.
 
-The rewrite: the same commands, permissions and settings as 2.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, and **Fabric 1.20.1, 1.21.11 and 26.3** (server-side: players install nothing), in eight languages. Keep the 2.1.0 jar to go back to.
+The rewrite: the same commands, permissions and settings as 2.1, now on **Paper, Folia, Spigot and CraftBukkit from 1.8.8 to 26.3**, **Fabric 1.20.1, 1.21.11 and 26.3** and **NeoForge 1.21.1, 1.21.11 and 26.3** (server-side: players install nothing), in eight languages. Keep the 2.1.0 jar to go back to.
 
 ### Upgrading from 2.x
 
@@ -20,13 +20,14 @@ Replace the jar and restart. Your `config.yml` is carried forward and the old on
 ### For developers: the API's breaking changes
 
 - `XUtilitiesApi.get()` is `XUtilities.api()` (any platform), and the API is still in Bukkit's services manager.
-- Players are `PlayerRef` (by UUID: `PlayerRefs.of(player.getUniqueId())`), and places are the core's `Location`, not Bukkit's `Player` and `Location`, so the same API works on Fabric. `getBackLocation` returns the location or `null` instead of an `Optional`.
+- Players are `PlayerRef` (by UUID: `PlayerRefs.of(player.getUniqueId())`), and places are the core's `Location`, not Bukkit's `Player` and `Location`, so the same API works on Fabric and NeoForge. `getBackLocation` returns the location or `null` instead of an `Optional`.
 - The events are on `XUtilities.api().getEvents()` (`BackRecordEvent.TYPE`, `BackTeleportEvent.TYPE`). On Bukkit they're also Bukkit events, now named `BukkitBackRecordEvent` and `BukkitBackTeleportEvent` in `co.xenastudios.xutilities.api.bukkit`, with Bukkit's `Player` and `Location` as before.
 - See [Developer API](https://plugins.xenastudios.co/xutilities/developer-api/).
 
 ### New
 
 - **Spigot, CraftBukkit and Bukkit 1.8.8 to 26.3**, and **Fabric**. Where a server can't do something, the command says so instead of failing: `/ping` needs 1.17 on Spigot (Paper has it earlier), and the workstation menus other than `/craft` need Paper 1.14 or Spigot 1.21.4. On Fabric, `/back` remembers deaths and xUtilities' own teleports (Fabric has no teleport event for other mods' without a mixin).
+- **NeoForge 1.21.1, 1.21.11 and 26.3**, a jar per line, with Kotlin for Forge. Every command and menu works as on Fabric, and `/back` remembers what it does there.
 - **Eight languages**, each player's own: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish and Simplified Chinese. The seven besides English are machine-drafted, waiting for native speakers to read them; corrections are welcome.
 - `/xutilities debug`: checks that the plugin's tasks run where they should and the config read cleanly, then uploads a report to mclo.gs (passwords and tokens removed) to share when asking for help.
 - The gamemodes' names, flight's "enabled" and "disabled" and the speed types are words in `lang/`, so they're translated too.
@@ -35,7 +36,7 @@ Replace the jar and restart. Your `config.yml` is carried forward and the old on
 
 - "No player named X is online" is "No player called X is online".
 - A command whose alias another xUtilities command already has keeps its name and loses the alias, with a warning, instead of the reload failing.
-- bStats (Bukkit only: bStats has no Fabric platform) and the update checker are the core's now, as above; `plugins/bStats/config.yml` still turns bStats off for every plugin.
+- bStats (Bukkit only: bStats has no Fabric or NeoForge platform) and the update checker are the core's now, as above; `plugins/bStats/config.yml` still turns bStats off for every plugin.
 
 ## 2.1.0
 

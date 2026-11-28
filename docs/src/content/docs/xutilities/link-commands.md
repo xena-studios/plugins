@@ -7,7 +7,7 @@ sidebar:
 
 Link commands are commands you define in the config, with no code: each one sends the player a message, usually a clickable link. xUtilities ships three examples, `/discord`, `/store` and `/website`, pointing at placeholder addresses. **Replace those URLs** before you go live.
 
-They live under `info-commands` in `plugins/xUtilities/config.yml` (`config/xutilities/config.yml` on Fabric). Each key becomes a command:
+They live under `info-commands` in `plugins/xUtilities/config.yml` (`config/xutilities/config.yml` on Fabric and NeoForge). Each key becomes a command:
 
 ```yaml
 info-commands:

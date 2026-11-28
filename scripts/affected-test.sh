@@ -146,11 +146,13 @@ check "NeoForge boot script" scripts/boot-neoforge.sh $'tasks=\nchecks=\nboot=ne
 check "NeoForge mods' convention" build-logic/src/main/kotlin/xena.neoforge-mod.gradle.kts "$rewrite"$'\nboot=neoforge'
 check "A rewritten plugin's Fabric real-client checks" xutilities/fabric/client-checks.txt $'checks=\nboot=fabric'
 check "A rewritten plugin's common code" xutilities/common/src/commonMain/kotlin/co/xenastudios/xutilities/Commands.kt \
-  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nboot=bukkit fabric'
+  $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nboot=bukkit fabric neoforge'
 check "A rewritten plugin's Bukkit adapter" xutilities/bukkit/src/main/kotlin/co/xenastudios/xutilities/bukkit/BukkitXServer.kt \
   $'tasks=:build :xutilities:api:build :xutilities:bukkit:build :xutilities:common:build\nchecks=\nboot=bukkit'
 check "A rewritten plugin's Fabric mod (platform-fabric's build)" xutilities/fabric/src/main/kotlin/co/xenastudios/xutilities/fabric/XUtilitiesMod.kt \
   $'checks=\nboot=fabric'
+check "A rewritten plugin's NeoForge mod (platform-neoforge's build)" xutilities/neoforge/src/main/kotlin/co/xenastudios/xutilities/neoforge/XUtilitiesMod.kt \
+  $'checks=\nboot=neoforge'
 check "zChat's common code" zchat/common/src/commonMain/kotlin/co/xenastudios/zchat/ChatModule.kt \
   $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nboot=bukkit fabric proxy'
 check "zChat's Bukkit adapter" zchat/bukkit/src/main/kotlin/co/xenastudios/zchat/bukkit/ZChatBukkit.kt \

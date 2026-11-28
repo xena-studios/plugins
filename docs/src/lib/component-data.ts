@@ -148,6 +148,13 @@ export function installData(plugin: string) {
           needs: "Fabric Loader and Fabric Language Kotlin, which gives the mod Kotlin. Fabric jars are one per Minecraft line, so pick the one for your version.",
           restart: "Start the server.",
         };
+      case "neoforge":
+      case "forge":
+        return {
+          folder: "mods/",
+          needs: "Kotlin for Forge, which gives the mod Kotlin. The jars are one per Minecraft line, so pick the one for your version.",
+          restart: "Start the server.",
+        };
       case "velocity":
       case "bungeecord":
         return { folder: "plugins/ on the proxy", restart: "Restart the proxy." };

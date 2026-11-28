@@ -1,6 +1,6 @@
 ---
 title: xUtilities
-description: "xUtilities: lightweight essentials for Paper, Folia, Spigot and Fabric servers, with gamemode, fly, heal, /back, workstations anywhere and your own link commands, each one switchable."
+description: "xUtilities: lightweight essentials for Paper, Folia, Spigot, Fabric and NeoForge servers, with gamemode, fly, heal, /back, workstations anywhere and your own link commands, each one switchable."
 sidebar:
   label: Overview
   order: 0
@@ -29,7 +29,7 @@ Replace the jar and restart: your config is carried forward, your edited message
 
 ## Where it runs
 
-One jar for every Bukkit-family server from 1.8.8 to the newest, Folia included, and a jar per Minecraft line on Fabric, server-side only: players install nothing.
+One jar for every Bukkit-family server from 1.8.8 to the newest, Folia included, and a jar per Minecraft line on Fabric and NeoForge, server-side only: players install nothing.
 
 <Reference plugin="xutilities" show="platforms" />
 
@@ -37,10 +37,10 @@ A few things depend on the server. xUtilities checks once as it starts, and a co
 
 | | Needs |
 | --- | --- |
-| `/anvil`, `/grinder`, `/loom`, `/smith`, `/stonecutter`, `/cartography` on Bukkit | Paper 1.14 or newer, or Spigot 1.21.4 or newer. `/craft` works everywhere. Every menu works on Fabric. |
+| `/anvil`, `/grinder`, `/loom`, `/smith`, `/stonecutter`, `/cartography` on Bukkit | Paper 1.14 or newer, or Spigot 1.21.4 or newer. `/craft` works everywhere. Every menu works on Fabric and NeoForge. |
 | `/ping` on Bukkit | Paper, or Spigot 1.17 or newer |
-| `/back` after another plugin's teleport | Bukkit. Fabric has no teleport event without a mixin, so there `/back` remembers deaths and xUtilities' own teleports, and other mods' if they tell it through the [API](/xutilities/developer-api/). |
-| Each player's own language | Bukkit from 1.8.8 (Spigot), Fabric from 1.20.2. On CraftBukkit before 1.12 and Fabric 1.20.1, players read `default-language`. |
+| `/back` after another plugin's teleport | Bukkit. Fabric has no teleport event without a mixin, and NeoForge's covers only some teleports, so there `/back` remembers deaths and xUtilities' own teleports, and other mods' if they tell it through the [API](/xutilities/developer-api/). |
+| Each player's own language | Bukkit from 1.8.8 (Spigot), Fabric from 1.20.2, NeoForge. On CraftBukkit before 1.12 and Fabric 1.20.1, players read `default-language`. |
 
 <CardGrid>
   <LinkCard title="Install" href="/xutilities/install/" description="The steps for your platform." />

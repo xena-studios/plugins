@@ -1419,6 +1419,17 @@ jobs:
           scripts/boot-neoforge.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks xutilities/neoforge/boot-checks.txt "${args[@]}" \
             "$libs"/xutilities-"$LOADER"-*+"$VERSION".jar
+      - name: boot zChat
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
+        run: |
+          libs=core/platform-neoforge/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks zchat/neoforge/client-checks.txt)
+          scripts/boot-neoforge.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks zchat/neoforge/boot-checks.txt "${args[@]}" \
+            "$libs"/zchat-"$LOADER"-*+"$VERSION".jar
       - name: family test
         if: matrix.cell.family
         env:

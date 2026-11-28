@@ -159,7 +159,7 @@ check "A rewritten plugin's Fabric mod (platform-fabric's build)" xutilities/fab
 check "A rewritten plugin's NeoForge mod (platform-neoforge's build)" xutilities/neoforge/src/main/kotlin/co/xenastudios/xutilities/neoforge/XUtilitiesMod.kt \
   $'checks=\nboot=neoforge'
 check "zChat's common code" zchat/common/src/commonMain/kotlin/co/xenastudios/zchat/ChatModule.kt \
-  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nboot=bukkit fabric proxy'
+  $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nboot=bukkit fabric neoforge proxy'
 check "zChat's Bukkit adapter" zchat/bukkit/src/main/kotlin/co/xenastudios/zchat/bukkit/ZChatBukkit.kt \
   $'tasks=:build :zchat:api:build :zchat:bukkit:build :zchat:bungee:build :zchat:common:build :zchat:velocity:build\nchecks=\nboot=bukkit'
 check "zChat's Fabric mod (platform-fabric's build)" zchat/fabric/src/main/kotlin/co/xenastudios/zchat/fabric/ZChatMod.kt \

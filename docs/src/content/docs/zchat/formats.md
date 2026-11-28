@@ -37,7 +37,7 @@ So give your ranks their group permission in your permissions plugin, for exampl
 /lp group staff permission set zchat.group.staff true
 ```
 
-Group permissions are given to nobody by default, operators included, so an operator doesn't get the admin format unless you give it to them. On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api.
+Group permissions are given to nobody by default, operators included, so an operator doesn't get the admin format unless you give it to them. On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api, and on NeoForge and Forge through their permission API.
 
 ## Add a group
 
@@ -58,7 +58,7 @@ To use only one format for everyone, leave `groups` empty (`groups: {}`). To let
 | `<player>` | The sender's name, as plain text. |
 | `<displayname>` | The sender's display name, with any colours a nickname plugin gave it. Clicks and hovers are taken out. |
 | `<message>` | What they typed, after the [filter](/zchat/moderation/#filter), with [mentions](/zchat/mentions/#mentions) highlighted. |
-| `%...%` | Any [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) placeholder, such as `%vault_prefix%` or `%luckperms_prefix%`, when PlaceholderAPI is installed (Bukkit). Without it, and on Fabric for now, they show nothing, and the console says so. |
+| `%...%` | Any [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) placeholder, such as `%vault_prefix%` or `%luckperms_prefix%`, when PlaceholderAPI is installed (Bukkit). Without it, and on Fabric, NeoForge and Forge for now, they show nothing, and the console says so. |
 | `<name>` | A tag another plugin gives formats through zChat's [API](/zchat/developer-api/#placeholders), such as a balance. |
 
 Formats can also use the theme's `<prefix>`, `<highlight>`, `<success>` and `<error>` (see [Configuration](/zchat/configuration/#make-it-look-like-your-server)). Formats are the server's look, so they stay in `config.yml`, the same for every reader; zChat's own messages are in `lang/` ([Messages](/zchat/messages/)).

@@ -34,5 +34,5 @@ The proxy's command is `/zchatproxy` (alias `/zcp`), with `reload` and `debug`. 
 ## Limits
 
 - **A server with nobody on it** gets nothing, and sends nothing: plugin messages ride a player's connection. That's fine for chat, which nobody would see.
-- **Not on Fabric yet.** The proxy layer has no Fabric end, so a Fabric server's chat stays on it, and the console says so if `network.enabled` is on.
+- **Not on Fabric, NeoForge or Forge yet.** The proxy layer has no end on them, so such a server's chat stays on it, and the console says so if `network.enabled` is on.
 - **Signed chat.** A line from another server arrives as a system message, unsigned.

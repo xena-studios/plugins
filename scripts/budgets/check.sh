@@ -68,13 +68,13 @@ while (($#)); do
     --record-startup) record_startup=true; shift ;;
     --seed) [[ -d $2 ]] || { echo "no folder at $2 to seed" >&2; exit 2; }
             seeds+=("$(cd "$2" && pwd)"); shift 2 ;;
-    -h | --help) sed -n '2,32p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,34p' "$0"; exit 0 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) [[ -f $1 ]] || { echo "no plugin jar at $1" >&2; exit 2; }
        jars+=("$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"); shift ;;
   esac
 done
-((${#jars[@]})) || { sed -n '2,32p' "$0" >&2; exit 2; }
+((${#jars[@]})) || { sed -n '2,34p' "$0" >&2; exit 2; }
 ((boots >= 2)) || { echo "--boots is at least 2: the first boot only creates the world" >&2; exit 2; }
 
 here=$(cd "$(dirname "$0")" && pwd)

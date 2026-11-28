@@ -68,7 +68,7 @@ const inReview = new Set(review.inReview);
 
 // A rewrite merged but not released: the lists keep its last release's facts (src/plugins.ts).
 // A new plugin's first major has no last release: its "unreleased" is empty.
-const versions: { plugins: { id: string; unreleased?: { version?: string; jarBudgetKb?: number } }[] } = JSON.parse(
+const versions: { plugins: { id: string; unreleased?: { version?: string; jarBudgetKb?: number; folia?: boolean } }[] } = JSON.parse(
   fs.readFileSync(path.join(DOCS, "src/data/versions.json"), "utf8"),
 );
 const unreleasedOf = (id: string) => versions.plugins.find((v) => v.id === id)?.unreleased;
@@ -94,8 +94,10 @@ function facts(id: string) {
     version: unreleased?.version ?? version,
     /** The build's version, which an unreleased rewrite's own pages show. */
     buildVersion: version,
-    // xena.folia is on unless the plugin turns it off.
-    folia: !/^\s*folia = false/m.test(text),
+    // xena.folia is on unless the plugin turns it off. An unreleased rewrite's lists and store
+    // pages describe its last release, so that release's Folia support (versions.json) wins: a
+    // rewrite that adds Folia mustn't put a "Runs on Folia" badge on the live store page.
+    folia: unreleased?.folia ?? !/^\s*folia = false/m.test(text),
     // The most its jar may weigh: the build fails over it.
     jarBudgetKb: unreleased?.jarBudgetKb !== undefined
       ? unreleased.jarBudgetKb

@@ -12,6 +12,7 @@ import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
@@ -48,7 +49,9 @@ import static org.objectweb.asm.Opcodes.LCONST_1;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
+import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.V1_8;
 import static org.objectweb.asm.Opcodes.V21;
 
 import co.xenastudios.neoskript.api.element.Changeable;
@@ -92,6 +95,7 @@ import co.xenastudios.neoskript.runtime.LongLoops;
 import co.xenastudios.neoskript.runtime.Trigger;
 import co.xenastudios.neoskript.runtime.Values;
 import co.xenastudios.neoskript.runtime.command.CommandEvent;
+import co.xenastudios.neoskript.runtime.generated.ScriptClassLoader;
 import co.xenastudios.neoskript.runtime.generated.TriggerHost;
 import co.xenastudios.neoskript.runtime.variables.VariableStore;
 import java.lang.invoke.MethodHandles;
@@ -247,6 +251,29 @@ final class TriggerCompiler {
     private final Map<FunctionInfo, FunctionHandle> functions;
     private final VariableStore globals;
     private final List<Object> constants = new ArrayList<>();
+
+    /**
+     * The class file version compiled code targets: {@code -Dneoskript.compiler.target=8} makes Java 8 (major 52)
+     * classes for servers that run on Java 8, defined by a class loader of their own; anything else, the default,
+     * Java 21 hidden classes. An N0 spike (#202): see sandbox/n0/java8/README.md in the plugins repo.
+     */
+    static final String TARGET_PROPERTY = "neoskript.compiler.target";
+
+    /** {@code -Dneoskript.compiler.dump=<dir>} writes every class the compiler makes there, for checking (#202). */
+    static final String DUMP_PROPERTY = "neoskript.compiler.dump";
+
+    /** Sees every class the compiler makes, as it's defined: for the tests. */
+    static volatile java.util.function.Consumer<byte[]> definedListener;
+
+    /** Whether the class being generated is a Java 8 one; read from {@link #TARGET_PROPERTY} for each class. */
+    private boolean java8;
+    /** The generated class's internal name. */
+    private String className;
+
+    /** A Java 8 class's constant: a static final field, set from the class's loader as the class is initialized. */
+    private record ConstantField(int index, String descriptor) {}
+
+    private final List<ConstantField> constantFields = new ArrayList<>();
     private final Deque<Block> blocks = new ArrayDeque<>();
     private MethodVisitor method;
     private int nextSlot = PARSE_LOGS_SLOT + 1;
@@ -670,6 +697,9 @@ final class TriggerCompiler {
         sites.clear();
         boolean trigger = function == null;
         String className = PACKAGE + (trigger ? "Trigger" : "Function");
+        this.className = className;
+        java8 = Integer.getInteger(TARGET_PROPERTY, 21) == 8;
+        constantFields.clear();
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
             @Override
             protected String getCommonSuperClass(String first, String second) {
@@ -679,7 +709,7 @@ final class TriggerCompiler {
         String[] interfaces = trigger
                 ? new String[] {Type.getInternalName(Trigger.class), Type.getInternalName(Resumable.class)}
                 : new String[] {Type.getInternalName(CompiledFunction.class), Type.getInternalName(Resumable.class)};
-        writer.visit(V21, ACC_PUBLIC | ACC_FINAL | ACC_SUPER, className, null, OBJECT, interfaces);
+        writer.visit(java8 ? V1_8 : V21, ACC_PUBLIC | ACC_FINAL | ACC_SUPER, className, null, OBJECT, interfaces);
         writer.visitSource(scriptName, null);
 
         MethodVisitor constructor = writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -847,8 +877,42 @@ final class TriggerCompiler {
         dispatch();
         method.visitMaxs(0, 0);
         method.visitEnd();
+        if (java8) {
+            constantFields(writer);
+        }
         writer.visitEnd();
         return writer.toByteArray();
+    }
+
+    /**
+     * A Java 8 class's constants: Java 8 has neither hidden classes' class data nor dynamic constants, so each is a
+     * static final field, which the JIT folds as it does a constant, set in {@code <clinit>} from the
+     * {@link ScriptClassLoader} that defined the class.
+     */
+    private void constantFields(ClassWriter writer) {
+        if (constantFields.isEmpty()) {
+            return;
+        }
+        String loader = Type.getInternalName(ScriptClassLoader.class);
+        MethodVisitor init = writer.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+        init.visitCode();
+        init.visitLdcInsn(Type.getObjectType(className));
+        init.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getClassLoader", "()Ljava/lang/ClassLoader;", false);
+        init.visitTypeInsn(CHECKCAST, loader);
+        init.visitMethodInsn(INVOKEVIRTUAL, loader, "takeConstants", "()" + OBJECTS, false);
+        for (ConstantField field : constantFields) {
+            writer.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, "c" + field.index(), field.descriptor(), null, null)
+                    .visitEnd();
+            init.visitInsn(DUP);
+            init.visitLdcInsn(field.index());
+            init.visitInsn(AALOAD);
+            init.visitTypeInsn(CHECKCAST, Type.getType(field.descriptor()).getInternalName());
+            init.visitFieldInsn(PUTSTATIC, className, "c" + field.index(), field.descriptor());
+        }
+        init.visitInsn(POP);
+        init.visitInsn(RETURN);
+        init.visitMaxs(0, 0);
+        init.visitEnd();
     }
 
     /**
@@ -1156,6 +1220,30 @@ final class TriggerCompiler {
     }
 
     private Object define(byte[] bytes) {
+        java.util.function.Consumer<byte[]> listener = definedListener;
+        if (listener != null) {
+            listener.accept(bytes);
+        }
+        String dump = System.getProperty(DUMP_PROPERTY);
+        if (dump != null && !dump.isBlank()) {
+            try {
+                java.nio.file.Path dir = java.nio.file.Path.of(dump.strip());
+                java.nio.file.Files.createDirectories(dir);
+                java.nio.file.Files.write(dir.resolve(System.nanoTime() + "-" + bytes.length + ".class"), bytes);
+            } catch (java.io.IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+        }
+        if (java8) {
+            try {
+                Class<?> compiled = new ScriptClassLoader(TriggerHost.class.getClassLoader(), constants.toArray())
+                        .define(bytes);
+                registerSites(compiled);
+                return compiled.getConstructor().newInstance();
+            } catch (Throwable e) {
+                throw new IllegalStateException("Couldn't load compiled code", e);
+            }
+        }
         try {
             MethodHandles.Lookup hidden =
                     TriggerHost.lookup().defineHiddenClassWithClassData(bytes, List.copyOf(constants), true);
@@ -5375,6 +5463,11 @@ final class TriggerCompiler {
     /** Pushes {@code value} as a constant of the class, typed as {@code type}. */
     private void constant(Object value, Class<?> type) {
         constants.add(value);
+        if (java8) {
+            constantFields.add(new ConstantField(constants.size() - 1, Type.getDescriptor(type)));
+            method.visitFieldInsn(GETSTATIC, className, "c" + (constants.size() - 1), Type.getDescriptor(type));
+            return;
+        }
         method.visitLdcInsn(new ConstantDynamic("_", Type.getDescriptor(type), CLASS_DATA_AT, constants.size() - 1));
     }
 

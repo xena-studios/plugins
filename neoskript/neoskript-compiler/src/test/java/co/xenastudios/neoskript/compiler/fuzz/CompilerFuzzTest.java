@@ -27,9 +27,9 @@ import org.junit.jupiter.api.Test;
  * reports a bug of its own, and every class it makes passes the JVM's verifier, which runs as it's defined. Triggers
  * that surely end are run too, and nothing but a {@link ScriptRuntimeException} may come out of them.
  */
-class CompilerFuzzTest {
+public class CompilerFuzzTest {
 
-    private static Library library() {
+    public static Library library() {
         Library library = new Library();
         library.type("object", "object", Object.class);
         library.type("string", "text", String.class);
@@ -85,7 +85,7 @@ class CompilerFuzzTest {
         }
     }
 
-    private static void compileAndRun(Library library, ScriptFuzzer.Case fuzzCase) {
+    public static void compileAndRun(Library library, ScriptFuzzer.Case fuzzCase) {
         List<ParsedScript> parsed = new ScriptLoader(library.registry()).load(List.of(new SourceFile("fuzz.sk",
                 fuzzCase.text())));
         CompiledScripts compiled = new ScriptCompiler(library, new VariableStore()).compile(parsed);

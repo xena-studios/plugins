@@ -1,0 +1,30 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "co.xenastudios.core.neoforge.mixin",
+  "compatibilityLevel": "${java}",
+  "mixins": [
+    "BreedingMixin",
+    "CompoundContainerAccess",
+    "DispenserMixin",
+    "EggMixin",
+    "ExplosionMixin",
+    "FireMixin",
+    "FluidMixin",
+    "HopperMixin",
+    "HorseMixin",
+    "LevelMixin",
+    "NaturalSpawnerMixin",
+    "PistonMixin",
+    "PlayerGameModeMixin",
+    "ServerLevelMixin",
+    "ServerPlayerMixin",
+    "SpawnEggMixin",
+    "SpawnerMixin",
+    "SummonMixin",
+    "TameMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -3,6 +3,10 @@ modLoader = "javafml"
 loaderVersion = "[1,)"
 license = "MIT"
 
+# The core's world hooks (xena.neoforge-mod's worldHooks), which WorldCheck checks.
+[[mixins]]
+config = "xsample-world.mixins.json"
+
 [[mods]]
 modId = "xsample"
 version = "${version}"

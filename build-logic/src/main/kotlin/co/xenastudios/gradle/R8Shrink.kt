@@ -149,15 +149,30 @@ abstract class R8Shrink @Inject constructor(private val exec: ExecOperations) : 
         logger.lifecycle("%s: %.1f KiB -> %.1f KiB".format(out.name, original.length() / 1024.0, out.length() / 1024.0))
     }
 
-    /** The packages of the mixin configs the jar's `fabric.mod.json` lists, as paths (`co/xenastudios/x/core/fabric/mixin/`). */
+    /**
+     * The packages of the mixin configs the jar's `fabric.mod.json` lists (or its
+     * `META-INF/neoforge.mods.toml`, in its `[[mixins]]` tables), as paths (`co/xenastudios/x/core/fabric/mixin/`).
+     */
     private fun mixinPackages(jar: File): List<String> = ZipFile(jar).use { zip ->
         fun text(name: String) = zip.getEntry(name)?.let { entry -> zip.getInputStream(entry).use { it.readBytes().decodeToString() } }
-        val mod = text("fabric.mod.json") ?: return emptyList()
-        @Suppress("UNCHECKED_CAST")
-        val configs = ((JsonSlurper().parseText(mod) as Map<String, Any?>)["mixins"] as? List<Any?>).orEmpty()
-            .mapNotNull { (it as? Map<*, *>)?.get("config") ?: it }
+        val descriptor: String
+        val configs: List<Any?>
+        val fabric = text("fabric.mod.json")
+        val neoForge = text("META-INF/neoforge.mods.toml")
+        if (fabric != null) {
+            descriptor = "fabric.mod.json"
+            @Suppress("UNCHECKED_CAST")
+            configs = ((JsonSlurper().parseText(fabric) as Map<String, Any?>)["mixins"] as? List<Any?>).orEmpty()
+                .mapNotNull { (it as? Map<*, *>)?.get("config") ?: it }
+        } else if (neoForge != null) {
+            descriptor = "META-INF/neoforge.mods.toml"
+            // Each [[mixins]] table's config = "...", the only key of one.
+            configs = Regex("""(?m)^\[\[mixins]]\s*\n\s*config\s*=\s*"([^"]+)"""").findAll(neoForge).map { it.groupValues[1] }.toList()
+        } else {
+            return emptyList()
+        }
         configs.mapNotNull { config ->
-            val json = text(config.toString()) ?: throw GradleException("fabric.mod.json lists the mixin config $config, which the jar doesn't have")
+            val json = text(config.toString()) ?: throw GradleException("$descriptor lists the mixin config $config, which the jar doesn't have")
             @Suppress("UNCHECKED_CAST")
             ((JsonSlurper().parseText(json) as Map<String, Any?>)["package"] as? String)?.replace('.', '/')?.plus("/")
         }

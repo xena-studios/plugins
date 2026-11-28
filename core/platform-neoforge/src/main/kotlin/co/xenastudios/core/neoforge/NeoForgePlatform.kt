@@ -156,6 +156,19 @@ public class NeoForgePlatform(
     @JvmOverloads
     public fun chat(priority: EventPriority = EventPriority.NORMAL): ChatBridge = NeoForgeChat({ running }, priority, log)
 
+    //? if !forge {
+    /**
+     * Starts the world hooks for the plugin at [priority] among other mods (DECISIONS.md, "The
+     * world hooks"): block, container and entity changes, from the mod's world mixins, which its
+     * `neoforge.mods.toml` lists (`xena.neoforge-mod`'s `worldHooks`). Nothing is heard until a
+     * listener asks; [co.xenastudios.core.common.world.WorldHooks.close] stops it. NeoForge only:
+     * Forge 1.20.1 runs SRG names, which the mixins aren't remapped to.
+     */
+    @JvmOverloads
+    public fun world(priority: EventPriority = EventPriority.NORMAL): co.xenastudios.core.common.world.WorldHooks =
+        co.xenastudios.core.neoforge.world.NeoForgeWorldHooks(priority, log) { running }
+    //?}
+
     /** Sends drawn messages to players by reference, and to the console. */
     public val delivery: NeoForgeDelivery = NeoForgeDelivery { running }
 

@@ -1,0 +1,34 @@
+# xLimits on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks,
+# through boot.sh, which seeds boot-seed/: small caps in config.yml, FarmControl's and Insights'
+# files). Every command that runs without a player, drawn from lang/en.yml, a reload, debug,
+# and a clean stop. Spawning is spawn-checks.txt's, where the console can summon.
+logged: xLimits 1.0.0 on
+run: xlimits info
+expect: xLimits 1.0.0 on
+run: xlimits here
+expect: Only players can use this command.
+run: xlimits top blocks
+expect: Counting the loaded chunks...
+run: xlimits near Nobody
+expect: No player called Nobody is online.
+# Restoring asks to be typed again, then puts every slowed mob back.
+run: xlimits restore
+expect: again within
+run: xlimits restore
+expect: Restored
+
+# The imports: a dry run each, then FarmControl's into config.yml.
+run: xlimits import farmcontrol --dry-run
+expect: Dry run from FarmControl: 2 of 2 records would be imported
+run: xlimits import insights --dry-run
+expect: Dry run from Insights: 1 of 3 records would be imported, 2 skipped
+run: xlimits import farmcontrol
+expect: Imported from FarmControl: 2.
+
+# Reloading keeps everything running, with what the import wrote. (Its reactive mode and
+# awareness actions, which depend on the server, are ImportTest's.)
+run: xlimits reload
+expect: Reloaded xLimits
+run: xlimits debug
+expect: Modules:
+expect: Debug report saved as debug/debug-

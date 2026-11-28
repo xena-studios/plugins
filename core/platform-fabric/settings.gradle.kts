@@ -61,12 +61,13 @@ stonecutter {
         branch("xvote")
         branch("xbackup")
         branch("xrewind")
+        branch("xlimits")
     }
 }
 
 // A plugin's Fabric adapter lives in its own folder; its branch here is pointed at it, and each
 // Minecraft line's node at its versions/ folder there, as Stonecutter puts a branch's nodes.
-for (plugin in listOf("xutilities", "zchat", "xmoney", "xteleport", "xbans", "xvanish", "xmarket", "xvote", "xbackup", "xrewind")) {
+for (plugin in listOf("xutilities", "zchat", "xmoney", "xteleport", "xbans", "xvanish", "xmarket", "xvote", "xbackup", "xrewind", "xlimits")) {
     val folder = file("../../$plugin/fabric")
     project(":$plugin").projectDir = folder
     for (node in project(":$plugin").children) node.projectDir = folder.resolve("versions/${node.name}").also { it.mkdirs() }
@@ -120,5 +121,6 @@ includeBuild("../..") {
         substitute(module("co.xenastudios:xvote-common")).using(project(":xvote:common"))
         substitute(module("co.xenastudios:xbackup-common")).using(project(":xbackup:common"))
         substitute(module("co.xenastudios:xrewind-common")).using(project(":xrewind:common"))
+        substitute(module("co.xenastudios:xlimits-common")).using(project(":xlimits:common"))
     }
 }

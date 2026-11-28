@@ -1,0 +1,19 @@
+# Paper and Folia from 1.19.3 read this instead of plugin.yml; Spigot and older Paper ignore it.
+# The same plugin, with its libraries handed to Paper by the core's loader from the family's
+# cache rather than resolved by Paper from plugin.yml's libraries: at every boot (DECISIONS.md).
+name: xLimits
+version: '${version}'
+main: co.xenastudios.xlimits.bukkit.XLimitsBootstrap
+# The core's, relocated into the plugin's package with the rest of it.
+loader: co.xenastudios.xlimits.core.loader.paper.PaperLibraryLoader
+api-version: '1.19'
+folia-supported: true
+description: "Farm, entity and redstone limits: caps that refuse what's new, slow crammed farms, and tell players why."
+website: https://plugins.xenastudios.co/xlimits/
+authors: [Xena Studios]
+dependencies:
+  server:
+    # Optional: xRewind, for the alerts' "who built this" button.
+    xRewind:
+      load: BEFORE
+      required: false

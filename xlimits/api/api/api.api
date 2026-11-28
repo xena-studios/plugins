@@ -1,0 +1,134 @@
+public final class co/xenastudios/xlimits/api/ChunkRef {
+	public static final field Companion Lco/xenastudios/xlimits/api/ChunkRef$Companion;
+	public fun <init> (Lco/xenastudios/core/api/WorldRef;II)V
+	public final fun center (D)Lco/xenastudios/core/api/Location;
+	public static synthetic fun center$default (Lco/xenastudios/xlimits/api/ChunkRef;DILjava/lang/Object;)Lco/xenastudios/core/api/Location;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getWorld ()Lco/xenastudios/core/api/WorldRef;
+	public final fun getX ()I
+	public final fun getZ ()I
+	public fun hashCode ()I
+	public static final fun of (Lco/xenastudios/core/api/Location;)Lco/xenastudios/xlimits/api/ChunkRef;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xlimits/api/ChunkRef$Companion {
+	public final fun of (Lco/xenastudios/core/api/Location;)Lco/xenastudios/xlimits/api/ChunkRef;
+}
+
+public final class co/xenastudios/xlimits/api/LimitKind : java/lang/Enum {
+	public static final field BLOCK Lco/xenastudios/xlimits/api/LimitKind;
+	public static final field ENTITY Lco/xenastudios/xlimits/api/LimitKind;
+	public static final field FALLING_BLOCK Lco/xenastudios/xlimits/api/LimitKind;
+	public static final field PET Lco/xenastudios/xlimits/api/LimitKind;
+	public static final field PORTAL Lco/xenastudios/xlimits/api/LimitKind;
+	public static final field REDSTONE Lco/xenastudios/xlimits/api/LimitKind;
+	public static final field TNT Lco/xenastudios/xlimits/api/LimitKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xlimits/api/LimitKind;
+	public static fun values ()[Lco/xenastudios/xlimits/api/LimitKind;
+}
+
+public abstract interface class co/xenastudios/xlimits/api/LimitProvider {
+	public abstract fun limit (Lco/xenastudios/core/api/Location;Ljava/lang/String;I)I
+}
+
+public final class co/xenastudios/xlimits/api/SlowAction : java/lang/Enum {
+	public static final field NO_AI Lco/xenastudios/xlimits/api/SlowAction;
+	public static final field NO_BREEDING Lco/xenastudios/xlimits/api/SlowAction;
+	public static final field NO_COLLISIONS Lco/xenastudios/xlimits/api/SlowAction;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xlimits/api/SlowAction;
+	public static fun values ()[Lco/xenastudios/xlimits/api/SlowAction;
+}
+
+public final class co/xenastudios/xlimits/api/SpawnRoute : java/lang/Enum {
+	public static final field BREEDING Lco/xenastudios/xlimits/api/SpawnRoute;
+	public static final field DISPENSER Lco/xenastudios/xlimits/api/SpawnRoute;
+	public static final field EGG Lco/xenastudios/xlimits/api/SpawnRoute;
+	public static final field NATURAL Lco/xenastudios/xlimits/api/SpawnRoute;
+	public static final field OTHER Lco/xenastudios/xlimits/api/SpawnRoute;
+	public static final field PLACED Lco/xenastudios/xlimits/api/SpawnRoute;
+	public static final field SPAWNER Lco/xenastudios/xlimits/api/SpawnRoute;
+	public static final field SPAWN_EGG Lco/xenastudios/xlimits/api/SpawnRoute;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xlimits/api/SpawnRoute;
+	public static fun values ()[Lco/xenastudios/xlimits/api/SpawnRoute;
+}
+
+public final class co/xenastudios/xlimits/api/XLimits {
+	public static final field BYPASS_PERMISSION Ljava/lang/String;
+	public static final field INSTANCE Lco/xenastudios/xlimits/api/XLimits;
+	public static final field NO_LIMIT I
+	public static final field SLOWED_TAG Ljava/lang/String;
+	public static final fun api ()Lco/xenastudios/xlimits/api/XLimitsApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xlimits/api/XLimitsApi;)V
+}
+
+public abstract interface class co/xenastudios/xlimits/api/XLimitsApi {
+	public abstract fun activeProfile (Lco/xenastudios/xlimits/api/ChunkRef;)Ljava/lang/String;
+	public abstract fun count (Lco/xenastudios/xlimits/api/ChunkRef;Ljava/lang/String;)I
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun limit (Lco/xenastudios/xlimits/api/ChunkRef;Ljava/lang/String;)I
+	public abstract fun limits ()Ljava/util/List;
+	public abstract fun register (Lco/xenastudios/xlimits/api/LimitProvider;)Lco/xenastudios/core/api/event/Subscription;
+}
+
+public final class co/xenastudios/xlimits/api/event/FarmRestoredEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xlimits/api/event/FarmRestoredEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xlimits/api/ChunkRef;Ljava/lang/String;I)V
+	public final fun getChunk ()Lco/xenastudios/xlimits/api/ChunkRef;
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getRestored ()I
+}
+
+public final class co/xenastudios/xlimits/api/event/FarmRestoredEvent$Companion {
+}
+
+public final class co/xenastudios/xlimits/api/event/FarmSlowedEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xlimits/api/event/FarmSlowedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xlimits/api/ChunkRef;Ljava/lang/String;IILjava/util/Set;)V
+	public final fun getActions ()Ljava/util/Set;
+	public final fun getChunk ()Lco/xenastudios/xlimits/api/ChunkRef;
+	public final fun getCount ()I
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getThreshold ()I
+}
+
+public final class co/xenastudios/xlimits/api/event/FarmSlowedEvent$Companion {
+}
+
+public final class co/xenastudios/xlimits/api/event/LimitReachedEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xlimits/api/event/LimitReachedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xlimits/api/LimitKind;Ljava/lang/String;Lco/xenastudios/core/api/Location;Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xlimits/api/SpawnRoute;II)V
+	public final fun getChunk ()Lco/xenastudios/xlimits/api/ChunkRef;
+	public final fun getCount ()I
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getKind ()Lco/xenastudios/xlimits/api/LimitKind;
+	public final fun getLimit ()I
+	public final fun getLocation ()Lco/xenastudios/core/api/Location;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getRoute ()Lco/xenastudios/xlimits/api/SpawnRoute;
+}
+
+public final class co/xenastudios/xlimits/api/event/LimitReachedEvent$Companion {
+}
+
+public final class co/xenastudios/xlimits/api/event/ProfileChangedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xlimits/api/event/ProfileChangedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lco/xenastudios/xlimits/api/ChunkRef;Z)V
+	public final fun getChunk ()Lco/xenastudios/xlimits/api/ChunkRef;
+	public final fun getFrom ()Ljava/lang/String;
+	public final fun getPerRegion ()Z
+	public final fun getTo ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xlimits/api/event/ProfileChangedEvent$Companion {
+}
+

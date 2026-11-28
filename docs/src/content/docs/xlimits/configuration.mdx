@@ -1,0 +1,49 @@
+---
+title: Configuration
+description: "xLimits' config.yml: every limit, farm rule and load profile, what each does, the Paper setting it sits next to, and its default."
+sidebar:
+  order: 4
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`plugins/xLimits/config.yml` (`config/xlimits/` on Fabric). Everything applies on `/xlimits reload`. A feature that's off registers no listener.
+
+## Names
+
+A limit's name is an entity group, an entity type, a block, or a group of your own:
+
+- **Entity groups:** `animals`, `monsters`, `villagers`, `water` (fish, squid, axolotls, dolphins), `ambient` (bats), `golems`, `vehicles` (boats and minecarts), `armor_stands`, `item_frames` (with paintings).
+- **Entity types and blocks** by their Minecraft id: `cow`, `zombified_piglin`, `hopper`, `sticky_piston`.
+- **Your own groups:** `entities.groups` and `blocks.groups`, a name and a list each, counted together.
+
+Every limit that matches is checked: with `animals: 80` and `cow: 20`, the 21st cow is refused even with room for more animals.
+
+**Per world:** `worlds.overrides` sets any limit differently in one world; `worlds.exempt` leaves a world alone. **Per area:** other plugins (a plot plugin, an arena plugin) change limits or exempt an area through the [API](/xlimits/developer-api/).
+
+## Load profiles
+
+```yaml
+profiles:
+  enabled: true
+  minimum-time: 2m
+  list:
+    busy:
+      when: players-online-above
+      on: 80
+      off: 70
+      scale: 0.8
+    strained:
+      when: tps-below
+      on: 17
+      off: 19
+      scale: 0.5
+      limits:
+        hopper: 40
+```
+
+A profile turns on when its condition passes `on`, and turns off once it's back past `off` and has been on for `minimum-time`, so limits don't flip back and forth. A later profile wins over an earlier one; when the later one turns off, the earlier one takes over if its own condition still holds. `scale` multiplies every limit and farm threshold; `limits` set some outright. A profile only tightens new spawns, placements and the farm thresholds: nothing in the world is removed. Staff are told at each switch, and `/xlimits here` shows which is on.
+
+`players-online-above` works everywhere; `tps-below` on Paper (the server's TPS) and Folia (the region's, from `getRegionTPS`); `mspt-above` on Paper only, from its average tick time, which shows trouble at 40 to 45 ms while TPS still says 20. On Folia each region has its own profile: a farm that makes one region lag tightens only that region.
+
+<Reference plugin="xlimits" show="config" />

@@ -1,4 +1,4 @@
-package co.xenastudios.core.fabric
+package co.xenastudios.core.jvm.scheduler
 
 import co.xenastudios.core.common.platform.Log
 import co.xenastudios.core.common.scheduler.Scheduler
@@ -18,7 +18,7 @@ import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 /**
- * The [Scheduler] for a server with one main thread, as Fabric's is ([co.xenastudios.core.common.platform.Threading.MAIN_THREAD]):
+ * The [Scheduler] for a server with one main thread, as Fabric's and Sponge's are ([co.xenastudios.core.common.platform.Threading.MAIN_THREAD]):
  * global, place and entity work all run on the server thread, on its ticks, and async work on
  * a small pool of our own.
  *

@@ -51,6 +51,13 @@ dependencyResolutionManagement {
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") {
             content { includeModule("org.spigotmc", "spigot-api") }
         }
+        // SpongeAPI and what it's built on (plugin-spi, plugin-meta, Configurate), for
+        // core/platform-sponge and the plugins' sponge/ adapters: Sponge's own repository, which
+        // also proxies Maven Central for the group's modules that are there.
+        exclusiveContent {
+            forRepository { maven("https://repo.spongepowered.org/repository/maven-public/") { name = "Sponge" } }
+            filter { includeGroup("org.spongepowered") }
+        }
         mavenCentral()
     }
 }
@@ -92,6 +99,8 @@ include("core:platform-bukkit")
 // The rewrite's proxy platforms, for a plugin's network side: Velocity 3.4 on and 4.x, and
 // BungeeCord (Waterfall boots the same jar).
 include("core:platform-velocity", "core:platform-bungee")
+// The rewrite's platform on Sponge, API 8 (1.16.5) on: one jar for every API line.
+include("core:platform-sponge")
 // A sample plugin on the rewrite's core, never released: its tests run its commands on the
 // fake platform, and its reference manifest is the one the docs' components are checked with.
 include("core:core-testing:sample")
@@ -101,6 +110,8 @@ include("core:core-fuzz")
 include("core:core-testing:sample:bukkit")
 // xSample's proxy side, as a Velocity plugin and a BungeeCord one, for the proxy boot tests.
 include("core:core-testing:sample:velocity", "core:core-testing:sample:bungee")
+// xSample as a Sponge plugin on platform-sponge, for the Sponge boot tests.
+include("core:core-testing:sample:sponge")
 // xTwin, a second plugin on its own relocated core, booted beside xSample in the family test.
 include("core:core-testing:twin", "core:core-testing:twin:bukkit")
 // JMH benchmarks for the core's hot paths, with budgets: never shipped.

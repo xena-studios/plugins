@@ -10,7 +10,7 @@
 #   compile  Gradle tasks for the newest-API compile; empty to skip it
 #   checks   boot-checks files the main boot runs; empty to skip it
 #   boot     the rewrite's platforms the Boot workflow boots xSample and the rewritten plugins
-#            (xUtilities, zChat, xMoney) on, space-separated (bukkit, fabric, neoforge, proxy); empty to skip them
+#            (xUtilities, zChat, xMoney) on, space-separated (bukkit, fabric, neoforge, proxy, sponge); empty to skip them
 #
 # The rules:
 # - Anything everything is built on (today's core, build-logic/, gradle/, the root build
@@ -37,14 +37,15 @@
 #   means everything, and a plugin's API is in its folder.
 # - The rewrite's boot matrix (the Boot workflow) boots a platform when its adapter, the sample
 #   plugins' code for it, a rewritten plugin's code for it (<plugin>/bukkit/, <plugin>/fabric/,
-#   <plugin>/velocity/ and bungee/; its common/ and api/ mean each it has; a bukkit/network.sh, a
+#   <plugin>/velocity/ and bungee/, <plugin>/sponge/; its common/ and api/ mean each it has; a bukkit/network.sh, a
 #   network test behind the proxies, makes its bukkit/ mean the proxies too), or anything under them
 #   changed: core/platform-fabric/ means Fabric; core/platform-neoforge/ and a plugin's neoforge/
 #   mean NeoForge; core/platform-bukkit/ and the samples' bukkit/
 #   folders mean Bukkit; core/platform-velocity/, core/platform-bungee/ and the samples' velocity/
 #   and bungee/ folders mean the proxies (Velocity, BungeeCord, Waterfall, and their pair tests in
-#   front of Paper and Spigot); the loader, which has every shim, means Bukkit and the proxies;
-#   any other module in core/ means all four, as does everything, and the Boot workflow itself.
+#   front of Paper and Spigot); core/platform-sponge/ and the samples' sponge/ folders mean Sponge;
+#   the loader, which has every shim, means Bukkit and the proxies; any other module in core/
+#   means all five, as does everything, and the Boot workflow itself.
 # - Markdown (DECISIONS.md and decisions/ among it), scripts/decisions.ts, the rest of the docs
 #   and the other workflows mean nothing.
 # - neoskript/ means nothing here: it's a Gradle build of its own, which the NeoSkript workflow
@@ -67,42 +68,46 @@ declare -A rewriteOnly=(
   # xena.api and xena.java, and what those reach (scripts/affected-test.sh works it out).
   [build-logic/src/main/kotlin/xena.fabric-mod.gradle.kts]="rewrite fabric"
   [build-logic/src/main/kotlin/xena.neoforge-mod.gradle.kts]="rewrite neoforge"
-  [build-logic/src/main/kotlin/xena.fetched-libraries.gradle.kts]="rewrite bukkit fabric neoforge proxy"
-  [build-logic/src/main/kotlin/xena.java8.gradle.kts]="rewrite bukkit fabric neoforge proxy"
-  [build-logic/src/main/kotlin/xena.kmp-api.gradle.kts]="rewrite bukkit fabric neoforge proxy"
-  [build-logic/src/main/kotlin/xena.kmp.gradle.kts]="rewrite bukkit fabric neoforge proxy"
-  [build-logic/src/main/kotlin/xena.kotlin-jvm.gradle.kts]="rewrite bukkit fabric neoforge proxy"
+  [build-logic/src/main/kotlin/xena.fetched-libraries.gradle.kts]="rewrite bukkit fabric neoforge proxy sponge"
+  [build-logic/src/main/kotlin/xena.java8.gradle.kts]="rewrite bukkit fabric neoforge proxy sponge"
+  [build-logic/src/main/kotlin/xena.kmp-api.gradle.kts]="rewrite bukkit fabric neoforge proxy sponge"
+  [build-logic/src/main/kotlin/xena.kmp.gradle.kts]="rewrite bukkit fabric neoforge proxy sponge"
+  [build-logic/src/main/kotlin/xena.kotlin-jvm.gradle.kts]="rewrite bukkit fabric neoforge proxy sponge"
   [build-logic/src/main/kotlin/xena.manifest.gradle.kts]="rewrite"
-  [build-logic/src/main/kotlin/xena.r8.gradle.kts]="rewrite bukkit fabric neoforge proxy"
+  [build-logic/src/main/kotlin/xena.r8.gradle.kts]="rewrite bukkit fabric neoforge proxy sponge"
   [build-logic/src/main/kotlin/xena.release.gradle.kts]="rewrite"
   [build-logic/src/main/kotlin/XenaFabricModExtension.kt]="rewrite fabric"
   [build-logic/src/main/kotlin/XenaNeoForgeModExtension.kt]="rewrite neoforge"
-  [build-logic/src/main/kotlin/XenaR8Extension.kt]="rewrite bukkit fabric neoforge proxy"
+  [build-logic/src/main/kotlin/xena.sponge-plugin.gradle.kts]="rewrite sponge"
+  [build-logic/src/main/kotlin/XenaSpongePluginExtension.kt]="rewrite sponge"
+  [build-logic/src/main/kotlin/XenaR8Extension.kt]="rewrite bukkit fabric neoforge proxy sponge"
   [build-logic/src/main/kotlin/XenaReferenceExtension.kt]="rewrite"
   [build-logic/src/main/kotlin/XenaReleaseExtension.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/ApiFloor.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/BenchmarkBudget.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/GeneratedReference.kt]="rewrite"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/JarBudget.kt]="rewrite bukkit fabric neoforge proxy"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt]="rewrite bukkit fabric neoforge proxy"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/LibraryPins.kt]="rewrite bukkit fabric neoforge proxy"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/PinnedLibraries.kt]="rewrite bukkit fabric neoforge proxy"
-  [build-logic/src/main/kotlin/co/xenastudios/gradle/R8Shrink.kt]="rewrite bukkit fabric neoforge proxy"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/JarBudget.kt]="rewrite bukkit fabric neoforge proxy sponge"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/KotlinConventions.kt]="rewrite bukkit fabric neoforge proxy sponge"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/LibraryPins.kt]="rewrite bukkit fabric neoforge proxy sponge"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/PinnedLibraries.kt]="rewrite bukkit fabric neoforge proxy sponge"
+  [build-logic/src/main/kotlin/co/xenastudios/gradle/R8Shrink.kt]="rewrite bukkit fabric neoforge proxy sponge"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/ReleaseAssemble.kt]="rewrite"
   [build-logic/src/main/kotlin/co/xenastudios/gradle/Translations.kt]="rewrite"
   # The rewrite's jar budgets (xena.r8), the pins of the libraries its jars download
   # (xena.fetched-libraries), and the runtime budgets the Boot workflow measures.
-  [gradle/jar-budgets.txt]="rewrite bukkit fabric neoforge proxy"
-  [gradle/library-pins.txt]="rewrite bukkit fabric neoforge proxy"
+  [gradle/jar-budgets.txt]="rewrite bukkit fabric neoforge proxy sponge"
+  [gradle/library-pins.txt]="rewrite bukkit fabric neoforge proxy sponge"
   [gradle/perf-budgets.txt]="bukkit proxy"
   # The Boot workflow's scripts: the budgets and the real client, the servers' seeds, Fabric's
   # boots. scripts/boot-test.sh boots both, so it isn't here.
   [scripts/boot-fabric.sh]="fabric"
   [scripts/boot-neoforge.sh]="neoforge"
+  # Sponge's boots.
+  [scripts/boot-sponge.sh]="sponge"
   # The proxies' boots and pair tests.
   [scripts/boot-proxy.sh]="proxy"
   # Every rewrite jar's shrinking rules (xena.r8).
-  [build-logic/src/main/resources/xena/r8/common.pro]="rewrite bukkit fabric neoforge proxy"
+  [build-logic/src/main/resources/xena/r8/common.pro]="rewrite bukkit fabric neoforge proxy sponge"
   # The scaffolder for the rewrite's layout, which the Scaffold workflow runs end to end.
   [scripts/new-rewrite-plugin.ts]=""
   # The decisions' index, which the Docs workflow checks.
@@ -163,7 +168,7 @@ rewrite=$(projects core | grep -vx ':core' || true)
 all=false
 [[ ${1:-} == --all ]] && all=true
 rewriteChanged=false
-bootBukkit=false bootFabric=false bootNeoforge=false bootProxy=false
+bootBukkit=false bootFabric=false bootNeoforge=false bootProxy=false bootSponge=false
 declare -A changed=()
 if [[ $all == false ]]; then
   while IFS= read -r file; do
@@ -184,6 +189,7 @@ if [[ $all == false ]]; then
       [[ $only != *" fabric "* ]] || bootFabric=true
       [[ $only != *" neoforge "* ]] || bootNeoforge=true
       [[ $only != *" proxy "* ]] || bootProxy=true
+      [[ $only != *" sponge "* ]] || bootSponge=true
       continue
     fi
     case $file in
@@ -198,8 +204,9 @@ if [[ $all == false ]]; then
           core/platform-neoforge/*) bootNeoforge=true ;;
           core/platform-bukkit/* | core/core-testing/*/bukkit/*) bootBukkit=true ;;
           core/platform-velocity/* | core/platform-bungee/* | core/core-testing/*/velocity/* | core/core-testing/*/bungee/*) bootProxy=true ;;
+          core/platform-sponge/* | core/core-testing/*/sponge/*) bootSponge=true ;;
           core/core-loader/*) bootBukkit=true bootProxy=true ;;
-          *) bootBukkit=true bootFabric=true bootNeoforge=true bootProxy=true ;;
+          *) bootBukkit=true bootFabric=true bootNeoforge=true bootProxy=true bootSponge=true ;;
         esac ;;
       core/* | build-logic/* | gradle/* | scripts/* | gradle.properties | gradlew | gradlew.bat \
         | .github/workflows/plugins.yml) all=true ;;
@@ -210,7 +217,7 @@ if [[ $all == false ]]; then
         plugin=${file#docs/src/generated/}
         plugin=${plugin%%/*}
         if [[ -n ${known[$plugin]:-} ]]; then changed[$plugin]=1; else all=true; fi ;;
-      .github/workflows/boot.yml) bootBukkit=true bootFabric=true bootNeoforge=true bootProxy=true ;;
+      .github/workflows/boot.yml) bootBukkit=true bootFabric=true bootNeoforge=true bootProxy=true bootSponge=true ;;
       docs/* | .github/* | .claude-plugin/* | neoskript/* | LICENSE | renovate.json | .gitignore) ;;
       # A plugin's folder. Anything else, the root *.gradle.kts files among it, is everything.
       # A rewritten plugin boots in the Boot workflow: its bukkit/ on Bukkit, its fabric/ on
@@ -225,13 +232,15 @@ if [[ $all == false ]]; then
               */fabric/*) bootFabric=true ;;
               */neoforge/*) bootNeoforge=true ;;
               */velocity/* | */bungee/*) bootProxy=true ;;
+              */sponge/*) bootSponge=true ;;
               *.md) ;;
               *)
                 # A plugin with no fabric/ (xLimbo 3, xPlots 2.0) has nothing to boot on Fabric.
                 bootBukkit=true
                 [[ ! -d $top/fabric ]] || bootFabric=true
                 [[ ! -d $top/neoforge ]] || bootNeoforge=true
-                [[ ! -d $top/velocity && ! -d $top/bungee && ! -f $top/bukkit/network.sh ]] || bootProxy=true ;;
+                [[ ! -d $top/velocity && ! -d $top/bungee && ! -f $top/bukkit/network.sh ]] || bootProxy=true
+                [[ ! -d $top/sponge ]] || bootSponge=true ;;
             esac
           fi
         else
@@ -251,7 +260,7 @@ if [[ $all == true ]]; then
   echo "tasks=build"
   echo "compile=compileJava"
   echo "checks=${checks[*]}"
-  echo "boot=bukkit fabric neoforge proxy"
+  echo "boot=bukkit fabric neoforge proxy sponge"
   exit 0
 fi
 
@@ -322,4 +331,5 @@ boot=()
 [[ $bootFabric == false ]] || boot+=(fabric)
 [[ $bootNeoforge == false ]] || boot+=(neoforge)
 [[ $bootProxy == false ]] || boot+=(proxy)
+[[ $bootSponge == false ]] || boot+=(sponge)
 echo "boot=${boot[*]}"

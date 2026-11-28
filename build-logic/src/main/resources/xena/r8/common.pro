@@ -48,6 +48,10 @@
 -keep class **.loader.bungee.BungeeBootstrap { public *; }
 -keep class * extends **.loader.bungee.BungeeBootstrap { <init>(); }
 -keep class * extends org.bukkit.plugin.java.JavaPlugin { <init>(); }
+# Sponge's: every Xena plugin finds the others' family board on their main objects by this class's
+# name (JvmFamilyBoard.fromShims), and Guice reads @Inject on the main class's constructor.
+-keep class **.core.sponge.SpongeBootstrap { public java.lang.Object get(); }
+-keepclassmembers class * extends **.core.sponge.SpongeBootstrap { @com.google.inject.Inject <init>(...); }
 # Copied by its bytes into a fetched JDBC driver's class loader and run there (core-jvm's
 # IsolatedDriver), so it keeps its constructor and run(), and R8 can't fold it into a caller.
 -keep,allowobfuscation class **.loader.DriverRelease { *; }

@@ -1,4 +1,4 @@
-package co.xenastudios.core.fabric
+package co.xenastudios.core.jvm.scheduler
 
 import co.xenastudios.core.api.Location
 import co.xenastudios.core.api.WorldRef

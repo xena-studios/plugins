@@ -1,0 +1,3 @@
+# Server API members this plugin's shrunk jar uses that its floor's API lacks, each called only
+# once the code has checked the server has it. The build's checkApiFloor fails on one not listed
+# here (decisions/2026-11-28-api-floor-check.md); updateApiFloor rewrites it from the jar.

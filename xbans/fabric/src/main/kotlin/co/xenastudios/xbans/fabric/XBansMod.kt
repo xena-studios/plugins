@@ -99,26 +99,32 @@ public object XBansMod : ModInitializer {
     }
 
     private fun listen(platform: FabricPlatform, xbans: XBansPlugin, server: FabricBansServer) {
-        // The door: once the player's profile is known, before they're in the world.
+        // The door: once the player's profile is known, before they're in the world. A refused
+        // login is held (a wait that never ends) until its connection closes: Fabric API accepts
+        // the player once its waits are done, and on 1.20.1 a disconnect doesn't stop that, so
+        // Minecraft would still put them in the game.
         ServerLoginConnectionEvents.QUERY_START.register { handler, _, _, synchronizer ->
-            val decide = Runnable {
-                val (id, name, address) = LoginDetails.of(handler) ?: return@Runnable
-                val player = PlayerRef.of(id.toKotlinUuid())
-                if (xbans.backend == null) {
-                    handler.disconnect(MinecraftRenderer.draw(xbans.denied(player, name, null)))
-                    return@Runnable
+            // Whether [handler]'s player is turned away, and if so, turns them away.
+            val refused = {
+                val screen = LoginDetails.of(handler)?.let { (id, name, address) ->
+                    val player = PlayerRef.of(id.toKotlinUuid())
+                    if (xbans.backend == null) xbans.denied(player, name, null)
+                    else xbans.banOnJoin(player, address)?.let { xbans.denied(player, name, it) }
                 }
-                val ban = xbans.banOnJoin(player, address) ?: return@Runnable
-                handler.disconnect(MinecraftRenderer.draw(xbans.denied(player, name, ban)))
+                screen?.let { handler.disconnect(MinecraftRenderer.draw(it)) }
+                screen != null
             }
             if (xbans.backend != null) {
-                decide.run()
+                if (refused()) synchronizer.waitFor(CompletableFuture<Unit>())
             } else {
                 // Just after a start: the login waits for the bans, at most 10 seconds, without the server thread.
                 val waited = CompletableFuture<Unit>()
                 xbans.ready.whenComplete { _, _ -> waited.complete(Unit) }
                 platform.scheduler.later(Where.Async, XBansPlugin.WAIT_SECONDS.seconds) { _ -> waited.complete(Unit) }
-                synchronizer.waitFor(waited.thenRunAsync({ platform.server?.execute(decide) ?: decide.run() }, Runnable::run))
+                val decided = CompletableFuture<Unit>()
+                val decide = Runnable { if (!refused()) decided.complete(Unit) }
+                waited.thenRun { platform.server?.execute(decide) ?: decide.run() }
+                synchronizer.waitFor(decided)
             }
         }
         ServerPlayConnectionEvents.JOIN.register { handler, _, _ ->
@@ -163,6 +169,11 @@ public object XBansMod : ModInitializer {
  * Who's logging in, at the login's query stage: the profile and the connection Minecraft keeps on
  * its login listener, found once by their types (their fields are private, and their names differ
  * between lines), and the profile's uuid and name by either accessor (a record from 1.21.9).
+ *
+ * On 1.20.1 an offline-mode server's profile has no uuid yet at this stage: Minecraft gives it the
+ * offline one only after the queries (`createFakeProfile`, in `handleAcceptedLogin`). That uuid is
+ * the name's, so it's made the same way here; without it the door let banned players into the
+ * game, kicked only at join, where a client can lose the ban screen with the connection.
  */
 internal object LoginDetails {
     @Volatile
@@ -175,12 +186,16 @@ internal object LoginDetails {
         val type = handler.javaClass
         val profileField = profile ?: find(type, "com.mojang.authlib.GameProfile")?.also { profile = it } ?: return null
         val game = profileField.get(handler) ?: return null
-        val id = call(game, "getId", "id") as? java.util.UUID ?: return null
-        val name = call(game, "getName", "name") as? String ?: id.toString()
+        val named = call(game, "getName", "name") as? String
+        val id = call(game, "getId", "id") as? java.util.UUID ?: named?.let(::offline) ?: return null
+        val name = named ?: id.toString()
         val connectionField = connection ?: find(type, "net.minecraft.network.Connection")?.also { connection = it }
         val address = (connectionField?.get(handler)?.let { call(it, "getRemoteAddress") } as? InetSocketAddress)?.address?.hostAddress
         return Triple(id, name, address)
     }
+
+    // Minecraft's UUIDUtil.createOfflinePlayerUUID.
+    internal fun offline(name: String): java.util.UUID = java.util.UUID.nameUUIDFromBytes("OfflinePlayer:$name".toByteArray(StandardCharsets.UTF_8))
 
     private fun find(type: Class<*>, name: String): Field? {
         var current: Class<*>? = type

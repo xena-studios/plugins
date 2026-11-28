@@ -145,6 +145,8 @@ xenaRelease {
     }
     jar("bungeecord") {
         platform = ReleasePlatform.BUNGEECORD
+        // Hangar takes it as Waterfall's, whose versions are its own lines: 1.21, the one CI boots.
+        hangarVersions = listOf("1.21")
         file = project(":xvote:bungee").tasks.named<co.xenastudios.gradle.R8Shrink>("shrinkJar").flatMap { it.outputJar }
         minecraft("1.8.8")
         java = 17

@@ -48,8 +48,8 @@ import net.neoforged.neoforge.event.server.ServerStartedEvent as NeoServerStarte
 import net.neoforged.neoforge.event.server.ServerStoppingEvent as NeoServerStopping
 
 /**
- * The core's [Platform] on a NeoForge server, made once by each plugin as its mod is made (its
- * `@Mod` class's constructor), before there's a server: everything it needs from the server it
+ * The core's [Platform] on a NeoForge server, made once by each plugin as it starts (at its mod's
+ * common setup, [whenSetUp]), before there's a server: everything it needs from the server it
  * reaches through [server] once the server is starting, and work scheduled before then waits for
  * the first tick. The twin of platform-fabric's `FabricPlatform`, member for member, so a
  * plugin's NeoForge entry reads as its Fabric one (decisions/2026-11-28-neoforge-and-forge.md).
@@ -286,23 +286,46 @@ public class NeoForgePlatform(
         return server.allLevels.any { it.getEntity(uuid) != null }
     }
 
-    private companion object {
+    public companion object {
+        /**
+         * Runs [start], a plugin's start (making its platform among it), once the game is set up:
+         * at the mod's common setup, on the main thread, one mod at a time (`enqueueWork`). Call it
+         * from the `@Mod` class's constructor, and nothing else there.
+         *
+         * NeoForge (and Forge) make every mod at once, on several threads, before Minecraft's own
+         * classes are set up: two mods setting the same class up at once can each wait for the
+         * other for good (a server hung so with xBans and zChat), and NeoForge's own mod is made
+         * then too. By common setup, Minecraft is bootstrapped and its registries are made, and
+         * the server's commands aren't built yet, so a plugin's commands still come with them.
+         */
+        @JvmStatic
+        public fun whenSetUp(modId: String, start: Runnable) {
+            val container = ModList.get().getModContainerById(modId).orElseThrow { IllegalStateException("No mod $modId is loaded") }
+            //? if forge {
+            /*val bus = (container as net.minecraftforge.fml.javafmlmod.FMLModContainer).eventBus
+            *///?} else
+            val bus = container.eventBus ?: error("$modId has no event bus")
+            bus.addListener(NeoPriority.NORMAL, false, net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent::class.java) { event ->
+                event.enqueueWork(start)
+            }
+        }
+
         // The loader, by name and by its mod's id (Modrinth's loader too): NeoForge, or Forge on
         // Forge 1.20.1's node.
         //? if forge {
-        /*const val LOADER = "Forge"
-        const val LOADER_ID = "forge"
+        /*private const val LOADER = "Forge"
+        private const val LOADER_ID = "forge"
         *///?} else {
-        const val LOADER = "NeoForge"
-        const val LOADER_ID = "neoforge"
+        private const val LOADER = "NeoForge"
+        private const val LOADER_ID = "neoforge"
         //?}
 
         /** A loaded mod's version, `minecraft` and the loader's among them; `?` for none. */
-        fun version(mod: String): String =
+        private fun version(mod: String): String =
             ModList.get().getModContainerById(mod).map { it.modInfo.version.toString() }.orElse("?")
 
         /** Whether this is a real server, not ModDevGradle's run. */
-        fun production(): Boolean =
+        private fun production(): Boolean =
             //? if fml_environment_methods {
             net.neoforged.fml.loading.FMLEnvironment.isProduction()
             //?} else

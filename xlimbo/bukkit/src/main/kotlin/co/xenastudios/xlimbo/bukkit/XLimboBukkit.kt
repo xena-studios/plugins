@@ -17,10 +17,12 @@ import co.xenastudios.xlimbo.api.XLimboApi
 import co.xenastudios.xlimbo.config.XLimboConfig
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.event.server.PluginEnableEvent
+import org.bukkit.event.world.WorldLoadEvent
 import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -28,9 +30,15 @@ import org.bukkit.plugin.java.JavaPlugin
  * xLimbo on Paper 1.21.11 and newer: the shared plugin on platform-bukkit, loaded by the core's
  * Java shim once the stdlib is there. Paper only, by design.
  *
- * - `config.yml` is read as the plugin enables, before the worlds load (`load: STARTUP`), so a
- *   world in bukkit.yml can use xLimbo's generator; the limbo world itself is made on the first
- *   tick, once the server's own are loaded. The lang files follow on an async task.
+ * - The plugin enables before the worlds load (`load: STARTUP`), so a world in bukkit.yml can use
+ *   xLimbo's generator (which [XLimboBootstrap] answers for on its own). It starts as the first of
+ *   the server's worlds loads: still before any plugin that loads after the worlds, any tick and
+ *   any player, but by then the core's loader has loaded and verified the classes it needs on
+ *   its own thread, as the world loaded, instead of the server's thread doing all of them as the
+ *   plugin enables (a plugin enabled at STARTUP is enabled straight after it's loaded). A plugin
+ *   enabled once the worlds are there (`/reload confirm`, a plugin manager) starts at once.
+ * - `config.yml` is read as it starts; the limbo world itself is made on the first tick, once
+ *   the server's own are loaded. The lang files follow on an async task.
  * - xTeleport and xVanish, when they're enabled: sending players back with xTeleport's teleports
  *   and destinations (and giving it the `xlimbo` destination), and xVanish's say on who's hidden.
  * - The API's events as Bukkit events too, and the API in the services manager.
@@ -41,7 +49,28 @@ public class XLimboBukkit(private val plugin: JavaPlugin) : PluginEntry, Listene
     private var xlimbo: XLimboPlugin? = null
     private var server: BukkitLimboServer? = null
 
+    // Enabled, and waiting for the first of the server's worlds to load to start. Server thread.
+    private var waiting = false
+
     override fun enable() {
+        plugin.server.pluginManager.registerEvents(this, plugin)
+        if (plugin.server.worlds.isEmpty()) waiting = true else start(loadingWorlds = false)
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public fun onWorldLoad(event: WorldLoadEvent) {
+        WorldLoadEvent.getHandlerList().unregister(this as Listener)
+        if (!waiting) return
+        waiting = false
+        try {
+            start(loadingWorlds = true)
+        } catch (e: Throwable) {
+            plugin.logger.log(java.util.logging.Level.SEVERE, "${plugin.name} couldn't start: $e", e)
+            plugin.server.pluginManager.disablePlugin(plugin)
+        }
+    }
+
+    private fun start(loadingWorlds: Boolean) {
         val started = System.nanoTime()
         val platform = BukkitPlatform.create(plugin, development = java.lang.Boolean.getBoolean("xena.development"))
         val family = platform.family
@@ -67,12 +96,12 @@ public class XLimboBukkit(private val plugin: JavaPlugin) : PluginEntry, Listene
         xlimbo.beforeFirstEvent = EventBridge(plugin.server, xlimbo.bus)
         plugin.server.servicesManager.register(XLimboApi::class.java, xlimbo, plugin, ServicePriority.Normal)
         plugin.server.messenger.registerOutgoingPluginChannel(plugin, BukkitLimboServer.CHANNEL)
-        plugin.server.pluginManager.registerEvents(this, plugin)
 
         // The config now, so the commands are the server's from the start.
         val config = files.config()
         // xLimbo 1.x made its world without a marker; the one its config names is ours.
         server.world.adoptUnmarked = files.carriedFrom == 1
+        server.loadingWorlds = loadingWorlds
         xlimbo.start(config)
         platform.scheduler.run(Where.Async, action = Steps(platform, xlimbo, cache, files, config))
         xlimbo.updates = platform.checkUpdates(XLimboPlugin.PLUGIN_ID, xlimbo.admin.updates, XLimboConfig.updates.settings(config.config)) {
@@ -80,12 +109,13 @@ public class XLimboBukkit(private val plugin: JavaPlugin) : PluginEntry, Listene
         }
         platform.metrics(BSTATS)
         val millis = (System.nanoTime() - started) / 1_000_000
-        platform.log.info("xLimbo ${xlimbo.version} on ${platform.name}: sending back ${xlimbo.route.name.lowercase()}, enabled in $millis ms")
+        platform.log.info("xLimbo ${xlimbo.version} on ${platform.name}: sending back ${xlimbo.route.name.lowercase()}, started in $millis ms")
     }
 
     override fun disable() {
-        val platform = platform ?: return
+        waiting = false
         HandlerList.unregisterAll(this as Listener)
+        val platform = platform ?: return
         server?.teleport?.unregisterAll(XLimboPlugin.NAME)
         plugin.server.servicesManager.unregisterAll(plugin)
         xlimbo?.stop()

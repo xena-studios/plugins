@@ -7,7 +7,7 @@ sidebar:
 
 import Reference from "../../../components/reference/Reference.astro";
 
-xLimbo's API is by `PlayerRef` (a player's UUID), the same as every Xena plugin's. Get it with `XLimbo.api()` once xLimbo is enabled (add it to your plugin's `depend`, or `softdepend` and check `XLimbo.isEnabled()` first). It's also in Paper's services manager, as `XLimboApi`.
+xLimbo's API is by `PlayerRef` (a player's UUID), the same as every Xena plugin's. Get it with `XLimbo.api()` once xLimbo is enabled (add it to your plugin's `depend`, or `softdepend` and check `XLimbo.isEnabled()` first). It's also in Paper's services manager, as `XLimboApi`. xLimbo is enabled before the server's worlds load and starts as the first of them loads, so a plugin that loads after the worlds (the default, `load: POSTWORLD`) always finds it there; one that loads at `STARTUP` too gets it from the first `WorldLoadEvent` on.
 
 :::caution[Not on Maven Central yet]
 The API isn't published until 3.0 is released. Its coordinates will be `co.xenastudios.xlimbo:xlimbo-api:3.0.0` (and `xlimbo-api-bukkit` for the Bukkit events); until then, compile against the plugin's jar.

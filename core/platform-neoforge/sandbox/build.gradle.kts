@@ -97,6 +97,9 @@ kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.fromTarget(requiredJava.majorVersion)
         allWarningsAsErrors = true
+        // Forge 1.20.1 deprecates vanilla's registries (BuiltInRegistries) for its own, which are
+        // the same ones: its node doesn't warn of deprecations, which the NeoForge lines still check.
+        if (forge) freeCompilerArgs.add("-Xwarning-level=DEPRECATION:disabled")
     }
 }
 

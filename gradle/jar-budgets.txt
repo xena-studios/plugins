@@ -80,7 +80,9 @@
 :core:platform-fabric:xutilities:1.20.1 476
 :core:platform-fabric:xutilities:1.21.11 477
 :core:platform-fabric:xutilities:26.3 490
-# On NeoForge, 461 KiB on every line, shrunk, its core relocated (xena.neoforge-mod); lines size + about 10%.
+# On NeoForge, 461 KiB on every line, shrunk, its core relocated (xena.neoforge-mod), and on Forge
+# 1.20.1 (measured before the SRG remap); lines size + about 10%.
+:core:platform-neoforge:xutilities:1.20.1-forge 505
 :core:platform-neoforge:xutilities:1.21.1 505
 :core:platform-neoforge:xutilities:1.21.11 505
 :core:platform-neoforge:xutilities:26.3 505

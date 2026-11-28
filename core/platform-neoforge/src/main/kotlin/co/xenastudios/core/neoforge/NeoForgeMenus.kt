@@ -192,8 +192,6 @@ public class NeoForgeMenus internal constructor(
     // A name or lore line as the menu wrote it, not in the italics Minecraft gives custom text.
     private fun plain(text: Component): McComponent = McComponent.empty().append(MinecraftRenderer.draw(text)).withStyle { it.withItalic(false) }
 
-    // Forge 1.20.1 deprecates vanilla's item registry for its own, which is the same registry.
-    @Suppress("DEPRECATION")
     private fun base(id: String): ItemStack? {
         //? if identifier {
         val key = Identifier.tryParse(id) ?: return null
@@ -250,8 +248,6 @@ public class NeoForgeMenus internal constructor(
         }
     }
 
-    // Forge 1.20.1 deprecates vanilla's item registry for its own, which is the same registry.
-    @Suppress("DEPRECATION")
     private fun finish(open: Open, online: Boolean) {
         val handler = open.deposit ?: return
         open.closed = true

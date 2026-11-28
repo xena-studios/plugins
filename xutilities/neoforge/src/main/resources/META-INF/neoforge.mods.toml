@@ -14,7 +14,7 @@ description = "Every command you need. None you don't. Server-side: players inst
 [[dependencies.xutilities]]
 modId = "neoforge"
 type = "required"
-versionRange = "${neoforge}"
+versionRange = "${loader}"
 ordering = "NONE"
 side = "SERVER"
 

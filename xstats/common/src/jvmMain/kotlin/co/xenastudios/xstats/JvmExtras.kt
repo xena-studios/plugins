@@ -28,6 +28,9 @@ import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
+import co.xenastudios.xstats.store.history
+import co.xenastudios.xstats.store.importRows
+import co.xenastudios.xstats.store.setFlag
 
 /**
  * What only the JVM has, for every JVM platform: the website (on the JDK's own HTTP server), its

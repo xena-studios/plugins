@@ -168,7 +168,7 @@ public class Store(
     public val serverName: String,
 ) {
     /** Stat ids by name, as stored; filled as they're read or added. Any thread reads, the writer adds. */
-    private val statIds = co.xenastudios.core.common.concurrentMap<String, Int>()
+    internal val statIds = co.xenastudios.core.common.concurrentMap<String, Int>()
 
     // ---- what a save writes ----
 
@@ -238,32 +238,9 @@ public class Store(
         statIds.putAll(added)
     }
 
-    /** What each stat of Minecraft's counters was last read from on this server, by stat name. */
-    public fun sources(q: Q): Map<String, String> {
-        val found = HashMap<String, String>()
-        for (row in q.rows("SELECT s.name, x.source FROM {p}sources x JOIN {p}stats s ON s.id = x.stat WHERE x.server = ?", server)) {
-            found[row.str(0) ?: continue] = row.str(1) ?: ""
-        }
-        return found
-    }
 
-    /**
-     * Records the source a stat is read from now. If it had another one, every player's last reading
-     * of it on this server is marked `-2`: the next reading is the new counter's value, not a rise on
-     * the old one's.
-     */
-    public fun source(q: Q, stat: String, source: String, changed: Boolean) {
-        val added = HashMap<String, Int>()
-        q.inTransaction { tx ->
-            val id = statId(tx, stat, added)
-            if (changed) tx.exec("UPDATE {p}totals SET raw = -2 WHERE stat = ? AND server = ? AND raw <> -1", id, server)
-            tx.exec("DELETE FROM {p}sources WHERE stat = ? AND server = ?", id, server)
-            tx.exec("INSERT INTO {p}sources (stat, server, source) VALUES (?, ?, ?)", id, server, source)
-        }
-        remember(added)
-    }
 
-    private fun statNames(q: Q): Map<Int, String> {
+    internal fun statNames(q: Q): Map<Int, String> {
         val names = HashMap<Int, String>()
         for (row in q.rows("SELECT id, name FROM {p}stats")) {
             val name = row.str(1) ?: continue
@@ -308,134 +285,20 @@ public class Store(
         return Loaded(players, totals, days)
     }
 
-    /** One player's rows on this server, for working out what changed since. */
-    public fun local(q: Q, player: Int): List<Local> {
-        val stats = statNames(q)
-        val rows = ArrayList<Local>()
-        for (row in q.rows("SELECT stat, value, raw FROM {p}totals WHERE player = ? AND server = ?", player, server)) {
-            val stat = stats[row.num(0).toInt()] ?: continue
-            rows += Local(stat, row.num(1), row.num(2))
-        }
-        return rows
-    }
 
     // ---- saving ----
 
-    /**
-     * Writes one save in one transaction, and tells the other servers of a network about it in the
-     * same one. Returns the database id of each of the save's players, in order (new players get
-     * theirs here).
-     */
-    public fun save(q: Q, save: Save, feed: ChangeFeed?): IntArray {
-        val added = HashMap<String, Int>()
-        val ids = q.inTransaction { tx ->
-            val ids = players(tx, save.players)
-            for (row in save.totals) {
-                val args = arrayOf<Any?>(ids[row.player], statId(tx, row.stat, added), server, row.value, row.raw, if (row.readAt > 0) row.readAt else save.at)
-                when {
-                    tx.mysql -> tx.exec(
-                        "INSERT INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)" +
-                            " ON DUPLICATE KEY UPDATE value = VALUES(value), raw = VALUES(raw), updated = VALUES(updated)", *args,
-                    )
-                    tx.upserts -> tx.exec(
-                        "INSERT INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)" +
-                            " ON CONFLICT (player, stat, server) DO UPDATE SET value = excluded.value, raw = excluded.raw, updated = excluded.updated", *args,
-                    )
-                    else -> {
-                        tx.exec("UPDATE {p}totals SET value = ?, raw = ?, updated = ? WHERE player = ? AND stat = ? AND server = ?", args[3], args[4], args[5], args[0], args[1], args[2])
-                        tx.exec("INSERT OR IGNORE INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)", *args)
-                    }
-                }
-            }
-            for (row in save.daily) addTo(tx, "daily", "day", ids[row.player], statId(tx, row.stat, added), save.day, row.delta)
-            if (save.players.isNotEmpty()) tx.publish(feed, "saved", serverName)
-            ids
-        }
-        remember(added)
-        return ids
-    }
 
-    private fun players(q: Q, rows: List<PlayerRow>): IntArray {
-        val ids = IntArray(rows.size)
-        for ((i, row) in rows.withIndex()) {
-            if (row.dbId == 0) {
-                ids[i] = insertPlayer(q, row)
-                continue
-            }
-            ids[i] = row.dbId
-            update(q, row, row.dbId)
-        }
-        return ids
-    }
 
-    private fun update(q: Q, row: PlayerRow, id: Int) {
-        q.exec(
-            "UPDATE {p}players SET name = ?, name_lower = ?, first_join = ?, last_seen = ?, hidden = CASE WHEN ? = 1 THEN ? ELSE hidden END, excluded = ? WHERE id = ?",
-            row.name, row.name?.lowercase(), row.firstJoin, row.lastSeen, if (row.writeHidden) 1 else 0, if (row.hidden) 1 else 0, if (row.excluded) 1 else 0, id,
-        )
-    }
 
-    /** A player's id, adding them if no server has yet. */
-    private fun insertPlayer(q: Q, row: PlayerRow): Int {
-        val existing = playerId(q, row.uuid)
-        if (existing > 0) {
-            update(q, row, existing)
-            return existing
-        }
-        q.exec(
-            insertIgnore(q) + " INTO {p}players (uuid, name, name_lower, first_join, last_seen, hidden, excluded) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            row.uuid.toString(), row.name, row.name?.lowercase(), row.firstJoin, row.lastSeen, if (row.hidden) 1 else 0, if (row.excluded) 1 else 0,
-        )
-        val id = playerId(q, row.uuid)
-        if (id == 0) throw DbFailed(DbError(DbError.Kind.CONSTRAINT, "couldn't add the player ${row.uuid}"))
-        return id
-    }
 
     public fun playerId(q: Q, uuid: PlayerRef): Int = q.rows("SELECT id FROM {p}players WHERE uuid = ?", uuid.toString()).firstOrNull()?.num(0)?.toInt() ?: 0
 
-    /** Adds to a daily or monthly row, making it if it's new. */
-    private fun addTo(q: Q, table: String, column: String, player: Int, stat: Int, key: Int, delta: Long) {
-        val insert = "INSERT INTO {p}$table (player, stat, server, $column, delta) VALUES (?, ?, ?, ?, ?)"
-        when {
-            q.mysql -> q.exec("$insert ON DUPLICATE KEY UPDATE delta = delta + VALUES(delta)", player, stat, server, key, delta)
-            q.upserts -> q.exec("$insert ON CONFLICT (player, stat, server, $column) DO UPDATE SET delta = delta + excluded.delta", player, stat, server, key, delta)
-            else -> {
-                val changed = q.exec("UPDATE {p}$table SET delta = delta + ? WHERE player = ? AND stat = ? AND server = ? AND $column = ?", delta, player, stat, server, key)
-                if (changed == 0) q.exec(insert, player, stat, server, key, delta)
-            }
-        }
-    }
 
-    /** Sets whether a stored player is hidden from the website, right away, and tells the network. */
-    public fun hide(q: Q, player: Int, uuid: PlayerRef, hidden: Boolean, feed: ChangeFeed?) {
-        q.inTransaction { tx ->
-            tx.exec("UPDATE {p}players SET hidden = ? WHERE id = ?", if (hidden) 1 else 0, player)
-            tx.publish(feed, "player", uuid.toString())
-        }
-    }
 
-    /** Whether a player is hidden, as stored: for a change another server made. */
-    public fun hidden(q: Q, uuid: PlayerRef): Boolean? = q.rows("SELECT hidden FROM {p}players WHERE uuid = ?", uuid.toString()).firstOrNull()?.let { it.num(0) != 0L }
 
     // ---- folding old days into months ----
 
-    /**
-     * Adds this server's daily rows from before [beforeDay] into monthly rows and deletes them, a day
-     * per transaction. Each server folds only its own rows, so two servers never add the same day
-     * twice. Returns how many days were folded.
-     */
-    public fun fold(q: Q, beforeDay: Int, maxDays: Int): Int {
-        val days = q.rows("SELECT DISTINCT day FROM {p}daily WHERE server = ? AND day < ? ORDER BY day", server, beforeDay).take(maxDays).map { it.num(0).toInt() }
-        for (day in days) {
-            q.inTransaction { tx ->
-                val rows = tx.rows("SELECT player, stat, delta FROM {p}daily WHERE server = ? AND day = ?", server, day)
-                val month = Calendar.month(day)
-                for (row in rows) addTo(tx, "monthly", "month", row.num(0).toInt(), row.num(1).toInt(), month, row.num(2))
-                tx.exec("DELETE FROM {p}daily WHERE server = ? AND day = ?", server, day)
-            }
-        }
-        return days.size
-    }
 
     // ---- for profile pages ----
 
@@ -448,26 +311,7 @@ public class Store(
     /** A profile's history and, in network mode, each server's numbers. */
     public class History(public val days: List<Day>, public val servers: List<ServerValue>)
 
-    /** A player's daily rows from [fromDay], added up across servers on a [network], then each server's all-time values. On a reader. */
-    public fun history(q: Q, player: Int, fromDay: Int, network: Boolean): History {
-        val stats = statNames(q)
-        val days = ArrayList<Day>()
-        val daySql = "SELECT day, stat, SUM(delta) FROM {p}daily WHERE player = ? AND day >= ?" + (if (network) "" else " AND server = $server") +
-            " GROUP BY day, stat ORDER BY day"
-        for (row in q.rows(daySql, player, fromDay)) {
-            days += Day(row.num(0).toInt(), stats[row.num(1).toInt()] ?: continue, row.num(2))
-        }
-        val servers = ArrayList<ServerValue>()
-        if (network) {
-            for (row in q.rows("SELECT s.name, t.stat, t.value FROM {p}totals t JOIN {p}servers s ON s.id = t.server WHERE t.player = ?", player)) {
-                servers += ServerValue(row.str(0) ?: continue, stats[row.num(1).toInt()] ?: continue, row.num(2))
-            }
-        }
-        return History(days, servers)
-    }
 
-    /** Every server's name, for the proxy's status. */
-    public fun servers(q: Q): List<String> = q.rows("SELECT name FROM {p}servers ORDER BY name").mapNotNull { it.str(0) }
 
     // ---- the import ----
 
@@ -480,48 +324,12 @@ public class Store(
         public val counters: Map<String, Boolean>,
     )
 
-    /** Adds imported players and their values, never over a row already there: a player xStats already counts keeps their numbers. Returns how many values were added. */
-    public fun importRows(q: Q, players: List<Imported>): Int {
-        val before = totalRows(q)
-        val added = HashMap<String, Int>()
-        q.inTransaction { tx ->
-            for (player in players) {
-                val id = importPlayer(tx, player)
-                for ((stat, value) in player.values) {
-                    tx.exec(
-                        insertIgnore(tx) + " INTO {p}totals (player, stat, server, value, raw, updated) VALUES (?, ?, ?, ?, ?, ?)",
-                        id, statId(tx, stat, added), server, value, if (player.counters[stat] == true) value else -1L,
-                        // Older than anything counted since: when they were last seen in the files.
-                        player.lastSeen,
-                    )
-                }
-                // What xStats counts itself (playtime, sessions) from a player who joined before the
-                // import: their row holds only what was counted since install, and the file has all of
-                // it. The higher wins, so importing again adds nothing.
-                for ((stat, value) in player.values) {
-                    if (player.counters[stat] == true) continue
-                    tx.exec("UPDATE {p}totals SET value = ? WHERE player = ? AND stat = ? AND server = ? AND value < ?", value, id, statId(tx, stat, added), server, value)
-                }
-            }
-        }
-        remember(added)
-        return (totalRows(q) - before).toInt()
-    }
 
-    private fun importPlayer(q: Q, player: Imported): Int {
-        val existing = playerId(q, player.uuid)
-        if (existing > 0) return existing
-        return insertPlayer(q, PlayerRow(player.uuid, 0, player.name, 0, player.lastSeen, false, false, false))
-    }
 
-    private fun totalRows(q: Q): Long = q.rows("SELECT COUNT(*) FROM {p}totals WHERE server = ?", server).firstOrNull()?.num(0) ?: 0
 
     /** A flag kept in the meta table, such as whether the import has run on this server. */
     public fun flag(q: Q, name: String): Boolean = q.rows("SELECT value FROM {p}meta WHERE name = ?", "$name:$server").isNotEmpty()
 
-    public fun setFlag(q: Q, name: String) {
-        q.exec(insertIgnore(q) + " INTO {p}meta (name, value) VALUES (?, '1')", "$name:$server")
-    }
 
     // ---- in-world boards ----
 
@@ -542,36 +350,10 @@ public class Store(
             BoardRow(it.num(0).toInt(), it.str(1) ?: "", it.dbl(2), it.dbl(3), it.dbl(4), it.dbl(5).toFloat(), it.str(6) ?: "", it.str(7) ?: "all")
         }
 
-    public fun addBoard(q: Q, board: BoardRow): Int {
-        val id = q.inTransaction { tx ->
-            tx.exec(
-                "INSERT INTO {p}boards (server, world, x, y, z, yaw, stat, period) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                server, board.world, board.x, board.y, board.z, board.yaw, board.stat, board.period,
-            )
-            tx.rows("SELECT MAX(id) FROM {p}boards WHERE server = ?", server).firstOrNull()?.num(0)?.toInt() ?: 0
-        }
-        if (id == 0) throw DbFailed(DbError(DbError.Kind.CONSTRAINT, "the new board got no id"))
-        return id
-    }
 
-    public fun removeBoard(q: Q, id: Int): Boolean = q.exec("DELETE FROM {p}boards WHERE id = ? AND server = ?", id, server) > 0
 
-    /** Rows in the totals, daily and monthly tables, for `/xstats status`. */
-    public fun rowCounts(q: Q): LongArray =
-        longArrayOf(count(q, "totals"), count(q, "daily"), count(q, "monthly"))
 
-    private fun count(q: Q, table: String): Long = q.rows("SELECT COUNT(*) FROM {p}$table").firstOrNull()?.num(0) ?: 0
 
-    /** `/xstats forget`: every row about one player, on every server. Returns how many were deleted. */
-    public fun forget(q: Q, uuid: PlayerRef, feed: ChangeFeed?): Long = q.inTransaction { tx ->
-        val id = playerId(tx, uuid)
-        if (id == 0) return@inTransaction 0L
-        var deleted = 0L
-        for (table in listOf("totals", "daily", "monthly")) deleted += tx.exec("DELETE FROM {p}$table WHERE player = ?", id)
-        deleted += tx.exec("DELETE FROM {p}players WHERE id = ?", id)
-        tx.publish(feed, "player", uuid.toString())
-        deleted
-    }
 
     public companion object {
         /** The SQLite file, in the plugin's folder: 1.x's. */
@@ -587,6 +369,6 @@ public class Store(
                 ?: throw DbFailed(DbError(DbError.Kind.CONSTRAINT, "couldn't add $name to $table"))
         }
 
-        private fun insertIgnore(q: Q): String = if (q.mysql) "INSERT IGNORE" else "INSERT OR IGNORE"
+        internal fun insertIgnore(q: Q): String = if (q.mysql) "INSERT IGNORE" else "INSERT OR IGNORE"
     }
 }

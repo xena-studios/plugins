@@ -171,7 +171,7 @@ public class XStatsPlugin(
 
     private val registered = ArrayList<Definitions.Registered>()
 
-    public val engine: Engine = Engine(catalog, settings(XStatsConfig.defaults), log, ::now, readOnly = server.proxy)
+    public val engine: Engine = Engine(catalog, settings(XStatsConfig.defaults), log, platform.clock, readOnly = server.proxy)
 
     /** The database, or `null` before it's open. */
     @Volatile

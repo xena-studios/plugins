@@ -20,6 +20,10 @@ import co.xenastudios.xstats.stat.StatDef
 import co.xenastudios.xstats.store.DbFailed
 import co.xenastudios.xstats.store.Store
 import kotlin.math.floor
+import co.xenastudios.xstats.store.addBoard
+import co.xenastudios.xstats.store.rowCounts
+import co.xenastudios.xstats.store.servers
+import co.xenastudios.xstats.store.removeBoard
 
 /** What the commands do, made the first time one runs, not as the server starts. */
 internal class Actions private constructor(private val plugin: XStatsPlugin) {

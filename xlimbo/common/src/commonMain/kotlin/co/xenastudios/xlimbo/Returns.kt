@@ -46,12 +46,17 @@ public class Returns internal constructor(private val plugin: XLimboPlugin) : Mo
 
     private var checking = false
 
+    private var ticking: WhileOccupied? = null
+
     override fun enable(context: ModuleContext) {
         val now = plugin.now()
         // Kept from before a reload restarted the queue; only players nobody saw arrive start now.
         for (player in plugin.server.online()) history.arrivedIfUnknown(player, now)
         history.prune(now)
-        context.scheduler.every(Where.Global, 1.seconds) { tick() }
+        // Once a second while anyone is in limbo; an empty limbo has nobody to send back.
+        // The main server coming up while limbo was empty is nothing to announce to whoever
+        // arrives next (as when the tick ran with nobody here and used it up).
+        ticking = plugin.occupy(context, 1.seconds, started = { cameUp = false }) { tick() }
         val config = plugin.config
         checking = plugin.route == ReturnRoute.PROXY && config[XLimboConfig.serverCheck.enabled]
         if (checking) {
@@ -64,6 +69,8 @@ public class Returns internal constructor(private val plugin: XLimboPlugin) : Mo
     }
 
     override fun disable() {
+        ticking?.let(plugin::release)
+        ticking = null
         if (plugin.returns === this) plugin.returns = null
     }
 
@@ -78,6 +85,7 @@ public class Returns internal constructor(private val plugin: XLimboPlugin) : Mo
     internal fun enqueue(player: PlayerRef): Boolean {
         if (up != true) return false
         if (queue.add(player)) publish()
+        ticking?.wake()
         return true
     }
 

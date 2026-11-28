@@ -30,6 +30,7 @@ class FakeLimboServer(private val scheduler: VirtualScheduler) : LimboServer, On
     val equipped = ArrayList<PlayerRef>()
     val listening = HashMap<Int, XLimboPlugin>()
     var syncs = 0
+    var sweeps = 0
     var ready = true
     var teleportWorks = true
     var plugin: XLimboPlugin? = null
@@ -99,6 +100,10 @@ class FakeLimboServer(private val scheduler: VirtualScheduler) : LimboServer, On
 
     override fun sync(config: Config) {
         syncs++
+    }
+
+    override fun sweep() {
+        sweeps++
     }
 
     override fun listen(switch: Int, plugin: XLimboPlugin): AutoCloseable {

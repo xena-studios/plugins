@@ -30,7 +30,6 @@ import co.xenastudios.core.common.module.ModuleSet
 import co.xenastudios.core.common.permission.PermissionRegistrar
 import co.xenastudios.core.common.platform.Platform
 import co.xenastudios.core.common.scheduler.Where
-import co.xenastudios.core.common.scheduler.every
 import co.xenastudios.core.common.scheduler.now
 import co.xenastudios.core.common.text.Component
 import co.xenastudios.core.common.update.UpdateChecker
@@ -49,6 +48,7 @@ import co.xenastudios.xlimbo.api.event.ReturnedEvent
 import co.xenastudios.xlimbo.config.XLimboConfig
 import kotlin.concurrent.Volatile
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /** What the plugin's files said when they were last read: the config, the lang files, and the problems found. */
 public class Loaded(
@@ -124,6 +124,17 @@ public class XLimboPlugin(
     @Volatile
     public var returns: Returns? = null
         internal set
+
+    // What repeats only while someone is in limbo (the action bar, the queue, the sweep): woken by
+    // each arrival, each stops itself once limbo is empty. Server thread.
+    internal val whileOccupied: MutableSet<WhileOccupied> = LinkedHashSet()
+
+    /** Whether anyone is in limbo now. */
+    internal fun occupied(): Boolean {
+        val server = server
+        for (player in server.online()) if (server.isInLimbo(player)) return true
+        return false
+    }
 
     // /join's last use per player, in elapsed milliseconds. Server thread.
     private val joinCooldowns = HashMap<PlayerRef, Long>()
@@ -268,7 +279,7 @@ public class XLimboPlugin(
         want(Switch.BUILD_GUARD, c[p.buildGuard.enabled])
         val cleanup = c[p.entities.cleanupIntervalSeconds]
         // Keyed by the interval, so a changed interval restarts the sweep.
-        want(Switch.CLEANUP, cleanup > 0, "protect.cleanup.$cleanup")
+        if (cleanup > 0) on["protect.cleanup.$cleanup"] = Make(SWEEP)
         return on
     }
 
@@ -277,6 +288,7 @@ public class XLimboPlugin(
         override fun invoke(): Module = when (kind) {
             RETURNS -> Returns(this@XLimboPlugin)
             ACTION_BAR -> ActionBar(this@XLimboPlugin)
+            SWEEP -> Sweep(this@XLimboPlugin)
             else -> Listen(kind)
         }
     }
@@ -314,6 +326,7 @@ public class XLimboPlugin(
         }
         history.arrived(player, now)
         server.equip(player, config)
+        for (work in whileOccupied.toList()) work.wake()
         // A moment later: a client's language reaches the server after it joins (a proxy's switch
         // too), and the welcome is in it.
         platform.scheduler.run(Where.on(player), WELCOME_DELAY) {
@@ -532,6 +545,7 @@ public class XLimboPlugin(
 
         private const val RETURNS = 100
         private const val ACTION_BAR = 101
+        private const val SWEEP = 102
     }
 }
 
@@ -540,9 +554,17 @@ public class XLimboPlugin(
  * back. Keyed by its interval, so a changed interval restarts it.
  */
 internal class ActionBar(private val plugin: XLimboPlugin) : Module {
+    private var work: WhileOccupied? = null
+
     override fun enable(context: ModuleContext) {
         val ticks = plugin.config[XLimboConfig.actionBar.intervalTicks]
-        context.scheduler.every(Where.Global, (ticks * 50L).milliseconds) { show() }
+        // Only while someone is in limbo to see it.
+        work = plugin.occupy(context, (ticks * 50L).milliseconds) { show() }
+    }
+
+    override fun disable() {
+        work?.let(plugin::release)
+        work = null
     }
 
     // Keyed by its interval; the rest is read as it runs.
@@ -569,4 +591,40 @@ internal class ActionBar(private val plugin: XLimboPlugin) : Module {
             bar?.let { server.actionBar(player, it) }
         }
     }
+}
+
+/** Removes stray entities from the limbo world every `cleanup-interval-seconds`, while anyone is in it. */
+internal class Sweep(private val plugin: XLimboPlugin) : Module {
+    private var work: WhileOccupied? = null
+
+    override fun enable(context: ModuleContext) {
+        val seconds = plugin.config[XLimboConfig.protections.entities.cleanupIntervalSeconds]
+        work = plugin.occupy(context, seconds.seconds) { plugin.server.sweep() }
+    }
+
+    override fun disable() {
+        work?.let(plugin::release)
+        work = null
+    }
+
+    // Keyed by its interval: nothing else to read again.
+    override fun reload(context: ModuleContext): Boolean = true
+}
+
+/** [action] every [period] on the server thread while anyone is in limbo, from now if someone is; stopped with [release]. */
+internal fun XLimboPlugin.occupy(
+    context: ModuleContext,
+    period: kotlin.time.Duration,
+    started: () -> Unit = {},
+    action: () -> Unit,
+): WhileOccupied =
+    WhileOccupied(context.scheduler, period, ::occupied, started, action).also {
+        whileOccupied += it
+        it.wake()
+    }
+
+/** Stops [work] and forgets it: its module turned off. */
+internal fun XLimboPlugin.release(work: WhileOccupied) {
+    whileOccupied -= work
+    work.stop()
 }

@@ -11,9 +11,9 @@ import co.xenastudios.core.common.admin.PlayerData
 import co.xenastudios.core.common.admin.PlayerDataRegistry
 import co.xenastudios.core.common.admin.PlayerLookup
 import co.xenastudios.xstats.data.Engine
+import co.xenastudios.xstats.data.forgot
 import co.xenastudios.xstats.store.Q
 import co.xenastudios.xstats.store.forget
-import co.xenastudios.xstats.data.forgot
 
 /** What `/xstats debug` and `/xstats forget` run on, made the first time each runs: not as the server starts. */
 internal object AdminParts {

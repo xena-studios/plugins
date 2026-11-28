@@ -5,8 +5,8 @@ import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.api.WorldRef
 import co.xenastudios.core.api.javaUuid
 import co.xenastudios.core.bukkit.BukkitPlatform
-import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.scheduler.TICK
+import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.text.Component
 import co.xenastudios.xstats.BoardHost

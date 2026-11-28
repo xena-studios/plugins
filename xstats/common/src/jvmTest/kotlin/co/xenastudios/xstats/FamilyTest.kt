@@ -7,10 +7,10 @@ import co.xenastudios.xmoney.api.TransactionKind
 import co.xenastudios.xmoney.api.XMoney
 import co.xenastudios.xmoney.api.XMoneyApi
 import co.xenastudios.xmoney.api.event.BalanceChangedEvent
+import co.xenastudios.xstats.api.Period
 import co.xenastudios.xvote.api.XVote
 import co.xenastudios.xvote.api.XVoteApi
 import co.xenastudios.xvote.api.event.VoteRewardedEvent
-import co.xenastudios.xstats.api.Period
 import java.lang.reflect.Proxy
 import kotlin.test.AfterTest
 import kotlin.test.Test

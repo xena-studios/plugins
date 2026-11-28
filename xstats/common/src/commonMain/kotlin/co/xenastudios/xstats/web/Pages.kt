@@ -9,13 +9,13 @@ import co.xenastudios.xstats.api.Period
 import co.xenastudios.xstats.config.XStatsConfig
 import co.xenastudios.xstats.data.Board
 import co.xenastudios.xstats.data.PlayerRecord
+import co.xenastudios.xstats.data.search
+import co.xenastudios.xstats.data.visibleRank
 import co.xenastudios.xstats.stat.Catalog
 import co.xenastudios.xstats.stat.Format
 import co.xenastudios.xstats.stat.StatDef
 import co.xenastudios.xstats.store.Store
 import kotlin.concurrent.Volatile
-import co.xenastudios.xstats.data.search
-import co.xenastudios.xstats.data.visibleRank
 
 /** JSON written as it goes, for the web API: objects, arrays, and every value escaped. */
 public class Json {

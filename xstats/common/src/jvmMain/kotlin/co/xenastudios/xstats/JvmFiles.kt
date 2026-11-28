@@ -21,11 +21,11 @@ import co.xenastudios.xstats.data.Zone
 import co.xenastudios.xstats.data.Zones
 import co.xenastudios.xstats.store.Store
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files as NioFiles
 import java.nio.file.Path
 import java.time.DateTimeException
 import java.time.Instant
 import java.time.ZoneId
-import java.nio.file.Files as NioFiles
 
 /**
  * xStats' files on a JVM server or proxy: the family's `config.yml`, then `config.yml` in the

@@ -22,8 +22,6 @@ import co.xenastudios.xstats.XStatsPlugin
 import co.xenastudios.xstats.api.XStatsApi
 import co.xenastudios.xstats.config.XStatsConfig
 import co.xenastudios.xstats.data.Event
-import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
@@ -34,6 +32,8 @@ import org.bukkit.event.server.PluginDisableEvent
 import org.bukkit.event.server.PluginEnableEvent
 import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
+import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 
 /**
  * xStats on Paper, Folia, Spigot and CraftBukkit, 1.13 on: the shared plugin on platform-bukkit,

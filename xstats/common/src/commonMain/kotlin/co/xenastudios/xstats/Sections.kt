@@ -3,12 +3,12 @@ package co.xenastudios.xstats
 import co.xenastudios.core.api.PlayerRef
 import co.xenastudios.core.common.concurrentMap
 import co.xenastudios.core.common.locked
+import co.xenastudios.core.common.text.Component
+import co.xenastudios.xstats.api.Period
 import co.xenastudios.xstats.api.ProfileLine
 import co.xenastudios.xstats.api.ProfileSection
-import co.xenastudios.xstats.api.Period
 import co.xenastudios.xstats.data.Board
 import co.xenastudios.xstats.store.Store
-import co.xenastudios.core.common.text.Component
 import kotlin.concurrent.Volatile
 
 /**

@@ -7,13 +7,13 @@ import co.xenastudios.xstats.stat.StatDef
 import co.xenastudios.xstats.store.DbFailed
 import co.xenastudios.xstats.store.Q
 import co.xenastudios.xstats.store.Store
-import co.xenastudios.xstats.store.sources
-import co.xenastudios.xstats.store.source
+import co.xenastudios.xstats.store.fold
+import co.xenastudios.xstats.store.hidden
+import co.xenastudios.xstats.store.hide
 import co.xenastudios.xstats.store.local
 import co.xenastudios.xstats.store.save
-import co.xenastudios.xstats.store.hide
-import co.xenastudios.xstats.store.hidden
-import co.xenastudios.xstats.store.fold
+import co.xenastudios.xstats.store.source
+import co.xenastudios.xstats.store.sources
 
 // The save, as extension functions of the Engine in a file of their own: everything that applies
 // what's queued and writes it, loaded with the first save (five minutes after a start), not as the

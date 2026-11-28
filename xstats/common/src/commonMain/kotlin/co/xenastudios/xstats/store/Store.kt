@@ -11,7 +11,6 @@ import co.xenastudios.core.common.db.Sql
 import co.xenastudios.core.common.db.SqlSession
 import co.xenastudios.core.common.db.SqlValue
 import co.xenastudios.core.common.db.Statement
-import co.xenastudios.xstats.data.Calendar
 
 /**
  * xStats' tables: 1.x's, byte for byte, so either jar reads the other's database

@@ -10,21 +10,21 @@ import co.xenastudios.core.common.locked
 import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.text.Component
-import co.xenastudios.xstats.data.Engine
 import co.xenastudios.xstats.api.Period
 import co.xenastudios.xstats.api.event.PrivacyChangeEvent
 import co.xenastudios.xstats.config.XStatsConfig
 import co.xenastudios.xstats.data.Calendar
+import co.xenastudios.xstats.data.Engine
 import co.xenastudios.xstats.data.PlayerRecord
 import co.xenastudios.xstats.stat.Format
 import co.xenastudios.xstats.stat.StatDef
 import co.xenastudios.xstats.store.DbFailed
 import co.xenastudios.xstats.store.Store
-import kotlin.math.floor
 import co.xenastudios.xstats.store.addBoard
+import co.xenastudios.xstats.store.removeBoard
 import co.xenastudios.xstats.store.rowCounts
 import co.xenastudios.xstats.store.servers
-import co.xenastudios.xstats.store.removeBoard
+import kotlin.math.floor
 
 /** What the commands do, made the first time one runs, not as the server starts. */
 internal class Actions private constructor(private val plugin: XStatsPlugin) {

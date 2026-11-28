@@ -7,7 +7,6 @@ import co.xenastudios.core.api.event.EventBus
 import co.xenastudios.core.api.event.EventType
 import co.xenastudios.core.api.newPending
 import co.xenastudios.core.api.onSettled
-import co.xenastudios.core.api.pendingOf
 import co.xenastudios.core.api.resolve
 import co.xenastudios.core.common.Outcome
 import co.xenastudios.core.common.admin.PasteService
@@ -29,11 +28,9 @@ import co.xenastudios.core.common.i18n.MessageKey
 import co.xenastudios.core.common.i18n.Translations
 import co.xenastudios.core.common.locked
 import co.xenastudios.core.common.module.Module
-import co.xenastudios.core.common.module.ModuleContext
 import co.xenastudios.core.common.module.ModuleSet
 import co.xenastudios.core.common.permission.PermissionRegistrar
 import co.xenastudios.core.common.platform.Platform
-import co.xenastudios.core.common.scheduler.TICK
 import co.xenastudios.core.common.scheduler.Task
 import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.core.common.update.UpdateChecker
@@ -48,8 +45,6 @@ import co.xenastudios.xstats.api.StatsProfile
 import co.xenastudios.xstats.api.XStats
 import co.xenastudios.xstats.api.XStatsApi
 import co.xenastudios.xstats.api.event.LeaderboardChangeEvent
-import co.xenastudios.xstats.api.event.StatChangeEvent
-import co.xenastudios.xstats.api.event.StatsSavedEvent
 import co.xenastudios.xstats.config.XStatsConfig
 import co.xenastudios.xstats.data.Board
 import co.xenastudios.xstats.data.Calendar
@@ -63,7 +58,6 @@ import co.xenastudios.xstats.store.Q
 import co.xenastudios.xstats.store.Store
 import co.xenastudios.xstats.store.Tables
 import kotlin.concurrent.Volatile
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 

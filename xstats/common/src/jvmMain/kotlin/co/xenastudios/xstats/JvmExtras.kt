@@ -5,11 +5,15 @@ import co.xenastudios.core.common.Outcome
 import co.xenastudios.core.common.i18n.MessageKey
 import co.xenastudios.core.common.module.Module
 import co.xenastudios.core.common.module.ModuleContext
+import co.xenastudios.core.common.scheduler.Where
 import co.xenastudios.xstats.config.XStatsConfig
 import co.xenastudios.xstats.data.PlayerRecord
 import co.xenastudios.xstats.store.DbFailed
 import co.xenastudios.xstats.store.Q
 import co.xenastudios.xstats.store.Store
+import co.xenastudios.xstats.store.history
+import co.xenastudios.xstats.store.importRows
+import co.xenastudios.xstats.store.setFlag
 import co.xenastudios.xstats.web.Json
 import co.xenastudios.xstats.web.Page
 import co.xenastudios.xstats.web.Pages
@@ -28,9 +32,7 @@ import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
-import co.xenastudios.xstats.store.history
-import co.xenastudios.xstats.store.importRows
-import co.xenastudios.xstats.store.setFlag
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * What only the JVM has, for every JVM platform: the website (on the JDK's own HTTP server), its
@@ -278,6 +280,9 @@ public class JvmExtras(
 
     // ---- the import ----
 
+    // Seconds the first start's import has waited for a world.
+    private var worldWaits = 0
+
     override fun importHistory(plugin: XStatsPlugin, firstStart: Boolean, reply: (MessageKey, List<Pair<String, Any>>) -> Unit) {
         if (!importing.compareAndSet(false, true)) return
         try {
@@ -296,7 +301,12 @@ public class JvmExtras(
         val db = plugin.database
         val store = plugin.engine.store
         if (world == null || db == null || store == null) {
-            if (!firstStart) reply(XStatsMessages.importNoWorld, emptyList())
+            if (!firstStart) {
+                reply(XStatsMessages.importNoWorld, emptyList())
+            } else if (db != null && worldWaits++ < WORLD_WAITS) {
+                // On Fabric the world comes after the mods start, and the database can open first: try again in a second.
+                plugin.platform.scheduler.run(Where.Async, delay = 1.seconds) { _ -> importHistory(plugin, true, reply) }
+            }
             return
         }
         val folders = StatsFiles.folders(world)
@@ -352,5 +362,8 @@ public class JvmExtras(
 
     private companion object {
         const val CHUNK = 500
+
+        // Two minutes: a world slower than that to load has its import with /xstats import.
+        const val WORLD_WAITS = 120
     }
 }

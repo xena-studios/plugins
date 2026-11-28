@@ -52,6 +52,12 @@ public class XSampleMod {
         // nothing). bStats has no NeoForge platform, so there's no metrics call here.
         platform.checkUpdates("xsample", sample.admin.updates, SampleConfig.updates.settings(SampleConfig.defaults)) { translations }
         NeoForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, ServerStoppingEvent::class.java) { _ -> sample.disable() }
+        //? if !forge {
+        // The world hooks' mixins on this Minecraft line, once the server runs (WorldCheck).
+        NeoForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, net.neoforged.neoforge.event.server.ServerStartedEvent::class.java) { event ->
+            WorldCheck.run(platform, event.server)
+        }
+        //?}
         platform.log.info("Enabled on ${platform.name} (Kotlin ${KotlinVersion.CURRENT})")
     }
 }

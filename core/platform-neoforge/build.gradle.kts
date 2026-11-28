@@ -73,6 +73,24 @@ sourceSets.test {
     runtimeClasspath += sourceSets.main.get().compileClasspath
 }
 
+// The world hooks are mixins in Mojang's names, which Forge 1.20.1 doesn't run (SRG): its node
+// has none of them, and NeoForgePlatform.world isn't there.
+if (forge) {
+    sourceSets.main {
+        java.exclude("co/xenastudios/core/neoforge/mixin/**")
+        kotlin.exclude("co/xenastudios/core/neoforge/world/**")
+        resources.exclude("xena-world.mixins.json")
+    }
+}
+
+// The world hooks' mixins' config, written with this line's Java for its compatibility level,
+// as platform-fabric's is; the mod carrying them relocates and names it (xena.neoforge-mod).
+tasks.processResources {
+    val java = "JAVA_" + minOf(requiredJava.majorVersion.toInt(), 21)
+    inputs.property("java", java)
+    filesMatching("xena-world.mixins.json") { expand("java" to java) }
+}
+
 tasks.test {
     // Minecraft's classes start its logging, which writes logs/ where the tests run.
     val runIn = layout.buildDirectory.dir("test-run")

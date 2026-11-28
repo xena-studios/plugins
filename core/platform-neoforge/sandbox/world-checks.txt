@@ -1,0 +1,3 @@
+# The world hooks on NeoForge (not Forge 1.20.1): WorldCheck, as the server starts, hears an
+# explosion and stops an item's spawn through the mixins (scripts/boot-neoforge.sh --checks).
+logged: WORLD PASS

@@ -36,6 +36,7 @@ plugins {
 }
 
 val mod = extensions.create<XenaNeoForgeModExtension>("xenaNeoForgeMod")
+mod.worldHooks.convention(false)
 
 // R8, only on Google's repository. ModDevGradle adds repositories to its projects too.
 repositories {
@@ -68,6 +69,21 @@ val jar = tasks.named<Jar>("jar") {
     // Each library's own manifest and module files; ours win.
     exclude("META-INF/MANIFEST.MF", "META-INF/*.kotlin_module", "META-INF/maven/**", "META-INF/versions/**")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // The world hooks' mixin config, as the mod's own (its name and package are the mod's, as the
+    // relocation below makes the mixins'), or nothing when the mod doesn't use them.
+    val id = mod.id
+    val hooks = mod.worldHooks
+    inputs.property("worldHooks", hooks)
+    eachFile {
+        if (path == "xena-world.mixins.json") {
+            if (!hooks.get()) {
+                exclude()
+            } else {
+                path = "${id.get()}-world.mixins.json"
+                filter { line -> line.replace("\"co.xenastudios.core.", "\"co.xenastudios.${id.get()}.core.") }
+            }
+        }
+    }
 }
 
 val relocateJar = tasks.register<ShadowJar>("relocateJar") {

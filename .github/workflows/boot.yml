@@ -1405,6 +1405,8 @@ jobs:
         run: |
           args=()
           [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks core/platform-neoforge/sandbox/client-checks.txt)
+          # The world hooks are NeoForge's alone (Forge 1.20.1 runs SRG names).
+          [[ $LOADER != neoforge ]] || args+=(--checks core/platform-neoforge/sandbox/world-checks.txt)
           scripts/boot-neoforge.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks core/platform-neoforge/sandbox/boot-checks.txt "${args[@]}" \
             core/platform-neoforge/build/libs/xsample-"$LOADER"-*+"$VERSION".jar

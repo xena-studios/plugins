@@ -25,6 +25,8 @@ if (forge) {
     apply(plugin = "net.neoforged.moddev")
     configure<net.neoforged.moddevgradle.dsl.NeoForgeExtension> { version = sc.properties["deps.neoforge"] }
 }
+// The core's world hooks, which WorldCheck checks on each NeoForge line (not Forge 1.20.1's).
+xenaNeoForgeMod.worldHooks = !forge
 
 version = "1.0.0+${sc.current.version}"
 base.archivesName = if (forge) "xsample-forge" else "xsample-neoforge"

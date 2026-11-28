@@ -873,7 +873,9 @@ async function xlimits () {
     await hear(de('Dieser Chunk hat 1 von 1 hopper.', 'This chunk has 1 of 1 hopper.'), from) != null, `heard ${JSON.stringify(heard.slice(from)).slice(0, 400)}`)
   await sleep(1000)
   check('the refused hopper isn\'t there', bot.blockAt(above(spots[1])).name !== 'hopper', `there: ${bot.blockAt(above(spots[1])).name}`)
-  for (let i = 0; i < 3; i++) bot.chat('/summon cow ~ ~ ~')
+  // NoAI, so none wanders into the next chunk before the egg (the player can stand at its edge),
+  // which would leave the chunk under its cap and let the egg through.
+  for (let i = 0; i < 3; i++) bot.chat('/summon cow ~ ~ ~ {NoAI:1b}')
   await sleep(1500)
   bot.chat(`/give ${username} cow_spawn_egg 1`)
   check('the client holds a spawn egg', await hold('cow_spawn_egg'), 'no egg given')

@@ -5,7 +5,7 @@ sidebar:
   order: 2
 ---
 
-Drop the jar in `plugins/` and start the server. xStats starts counting straight away with 14 stats: playtime, sessions, player kills, deaths, mobs killed, blocks mined, distance travelled, fish caught, jumps, damage dealt, animals bred, villager trades, items enchanted and raids won.
+[Install it](/xstats/install/) and start the server. xStats starts counting straight away with 14 stats: playtime, sessions, player kills, deaths, mobs killed, blocks mined, distance travelled, fish caught, jumps, damage dealt, animals bred, villager trades, items enchanted and raids won.
 
 ## History from before xStats
 
@@ -40,7 +40,7 @@ stats:
 | `a + b + c` | Several of the above added up, as long as they count the same thing (all distances, say). |
 | `xstats:playtime` | Time online, leaving out time a player didn't move their camera at all between two saves. |
 | `xstats:sessions` | Times joined. |
-| `papi:%placeholder%` | Any PlaceholderAPI value, read at every save and when the player leaves: `papi:%vault_eco_balance%`, a jobs level. |
+| `papi:%placeholder%` | Any PlaceholderAPI value, read at every save and when the player leaves: `papi:%vault_eco_balance%`, a jobs level. Bukkit only: on Fabric it reads nothing. |
 
 The rest of a stat's settings:
 
@@ -51,7 +51,7 @@ The rest of a stat's settings:
 - `in-game`: show it on `/stats` and `/leaderboard`. Placeholders work either way.
 - `website`: show it on the website and in its API.
 
-The id (`diamonds`) is what placeholders and `/leaderboard` use, so it can't be one placeholders would read as something else: it can't start with `top_` or `rank_`, or end with `_raw`, `_all`, `_daily`, `_weekly` or `_monthly`. A stat removed from the config keeps its numbers in the database, and comes back with them if you add it again.
+The id (`diamonds`) is what placeholders and `/leaderboard` use, so it can't be one placeholders would read as something else: it can't start with `top_` or `rank_`, or end with `_raw`, `_all`, `_daily`, `_weekly` or `_monthly`. A stat removed from the config keeps its numbers in the database, and comes back with them if you add it again. A stat this server's Minecraft is too old for (`raid_win` before 1.14) reads 0 here, and the console says so once.
 
 `time_since_death` and `time_since_rest` go back to 0 by themselves, so they can't be counted up; xStats refuses them as sources.
 
@@ -69,13 +69,13 @@ A `papi:` stat goes up and down with its placeholder, such as a balance. Only ri
 
 ## Leaving players out
 
-Players with `xstats.leaderboard.exclude` are left out of every leaderboard, such as staff. Nobody has it unless you give it, operators included. With `leaderboards.exclude-banned` on, players banned with `/ban` are left out too, from the next save. Turning it off brings them back on `/xstats reload`. Their stats are still counted, and show on `/stats`.
+Players with `xstats.leaderboard.exclude` are left out of every leaderboard, such as staff, and so are players xVanish hides, while they're hidden. Nobody has it unless you give it, operators included. With `leaderboards.exclude-banned` on, players banned with `/ban` are left out too, from the next save. Turning it off brings them back on `/xstats reload`. Their stats are still counted, and show on `/stats`.
 
 ## Boards in the world
 
-`/xstats board add <stat> [daily|weekly|monthly|all]` places a leaderboard just above where you stand: a Paper text display, no hologram plugin needed. It's updated at every save. `/xstats board list` lists them with their ids, and `/xstats board remove <id>` takes one down. From the console, add the world and coordinates: `/xstats board add kills monthly world 0.5 80 0.5`.
+`/xstats board add <stat> [daily|weekly|monthly|all]` places a leaderboard just above where you stand: a text display, no hologram plugin needed, on Paper, Folia and Spigot 1.19.4 and newer. It's updated at every save. `/xstats board list` lists them with their ids, and `/xstats board remove <id>` takes one down. From the console, add the world and coordinates: `/xstats board add kills monthly world 0.5 80 0.5`.
 
-The title, each line and the text when nobody's on it yet are in `leaderboards.boards`. Boards aren't saved with the world: each appears when its chunk loads, so one removed while its chunk was unloaded never leaves anything behind.
+How many places each shows is `leaderboards.boards.lines`; the title, each line and the text when nobody's on it yet are `boards.*` in [`lang/`](/xstats/messages/). Boards aren't saved with the world: each appears when its chunk loads, so one removed while its chunk was unloaded never leaves anything behind.
 
 ## Privacy
 

@@ -23,7 +23,7 @@ The server, its stats and their totals. Made at each save, cached for a minute.
 ```json
 {
   "api": 1,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "name": "My Server",
   "tagline": "",
   "logo": "/brand/logo.png",

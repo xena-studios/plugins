@@ -1,0 +1,4 @@
+# A real client on the server (scripts/budgets/bots/client.js, xstats), an operator through
+# --seed scripts/boot-seeds/client, its client in German: /stats, three jumps read at a save,
+# /leaderboard jumps with the player on it, and /stats private there and back.
+client: --plugin xstats --timeout 120

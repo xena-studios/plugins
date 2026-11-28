@@ -1,0 +1,46 @@
+# Paper and Folia from 1.19.3 read this instead of plugin.yml; Spigot and older Paper ignore it.
+# The same plugin, with its libraries handed to Paper by the core's loader from the family's
+# cache rather than resolved by Paper from plugin.yml's libraries: at every boot (DECISIONS.md).
+name: xStats
+version: '${version}'
+main: co.xenastudios.xstats.bukkit.XStatsBootstrap
+# The core's, relocated into the plugin's package with the rest of it.
+loader: co.xenastudios.xstats.core.loader.paper.PaperLibraryLoader
+api-version: '1.19'
+folia-supported: true
+description: Player stats, leaderboards and a website.
+website: https://plugins.xenastudios.co/xstats/
+authors: [Xena Studios]
+dependencies:
+  server:
+    # Optional: xStats' placeholders, an expansion of PlaceholderAPI's classes.
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    # Optional: the family's stats. Each is reached through its own API by name, by reflection,
+    # so none joins xStats' classpath; loaded first, so xStats hears their events from the start.
+    xVote:
+      load: BEFORE
+      required: false
+    xMoney:
+      load: BEFORE
+      required: false
+    xBans:
+      load: BEFORE
+      required: false
+    xTeleport:
+      load: BEFORE
+      required: false
+    xRewind:
+      load: BEFORE
+      required: false
+    xMarket:
+      load: BEFORE
+      required: false
+    zChat:
+      load: BEFORE
+      required: false
+    xVanish:
+      load: BEFORE
+      required: false

@@ -1,0 +1,10 @@
+{
+  "id": "xstats",
+  "name": "xStats",
+  "version": "${version}",
+  "description": "Player stats, leaderboards and a website. On the proxy: every server's stats, for network leaderboards and player lookups wherever a player is.",
+  "url": "https://plugins.xenastudios.co/xstats/",
+  "authors": ["Xena Studios"],
+  "dependencies": [],
+  "main": "co.xenastudios.xstats.velocity.XStatsVelocityBootstrap"
+}

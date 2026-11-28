@@ -1,0 +1,22 @@
+---
+title: Install
+description: "Install xStats on your server or proxy: the steps for Paper, Folia, Spigot, Fabric and Velocity."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="xstats" />
+
+On the first start xStats writes `config.yml`, one file per language in `lang/` and its SQLite database `stats.db`, in `plugins/xStats/` (Bukkit), `plugins/xstats/` (Velocity) or `config/xstats/` (Fabric). Then it reads every player's history from the world's stats files, off the server's threads. Fabric servers and the proxy have no database driver of their own, so the one xStats needs (SQLite's, or MySQL's) is downloaded once into the family's `libraries/` folder.
+
+- [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) is optional on Bukkit, for placeholders and for `papi:` stats; on Fabric, [Text Placeholder API](https://modrinth.com/mod/placeholder-api) for placeholders.
+- On a network, give every server the same MySQL or MariaDB database, and add xStats to the proxy for network leaderboards: see [Networks](/xstats/networks/).
+- With other Xena plugins installed (xVote, xMoney, xBans, xTeleport, xRewind, xMarket, zChat), their stats are kept with nothing to set up.
+
+## Coming from 1.x
+
+Replace the jar and restart: see [Upgrading from 1.x](/xstats/upgrade/). The [1.x docs](/xstats/v1/) stay up while 1.x gets fixes.

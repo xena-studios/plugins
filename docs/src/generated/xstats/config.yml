@@ -2,73 +2,36 @@
 # Docs: https://plugins.xenastudios.co/xstats/configuration/
 #
 # Apply changes with /xstats reload. A bad value falls back to its default with a
-# warning in the console; xStats never stops over config. All text is MiniMessage:
-# https://plugins.xenastudios.co/start/formatting/
+# warning in the console; xStats never stops over config. The messages are in lang/.
 
 # Managed by the plugin, to carry your settings forward on updates. Don't edit it.
-config-version: 1
+config-version: 2
 
-# The look xStats' messages share. The default messages use these as tags, so changing
-# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
-# <#3EC407>, or <gold><bold>.
-theme:
-  # <prefix> starts the default messages. Make it your server's name, such as
-  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
-  prefix: "<#3EC407>»</#3EC407> "
-  # The colour of message text that has no tag of its own.
-  base: "<gray>"
-  # <highlight>: names and values, such as a player or a speed.
-  highlight: "<#3EC407>"
-  # <success>: something turned on or done.
-  success: "<#5EE08A>"
-  # <error>: something refused or turned off.
-  error: "<#FF6B6B>"
-
-# What players are told.
+# How this plugin's messages look, and the language they're in. shared uses the
+# setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is
+# this plugin's own.
 messages:
-  error:
-    # The console or a command block ran a command only players can use.
-    player-only: "<prefix><error>Only players can use this command."
-    # The sender lacks the command's permission.
-    no-permission: "<prefix><error>You don't have permission to do that."
-    # No online player has that name. <player> is the name typed.
-    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
-    # The command was typed wrong. <usage> is how to type it.
-    usage: "<prefix><error>Usage:</error> <usage>"
-    # The command hit an error. The console has the details.
-    failed: "<prefix><error>Something went wrong. The console has the details."
-  # /stats. <player> is whose; <first-join> and <last-seen> are when; <playtime> and <kd>
-  # (kills per death) are filled in when the playtime, kills and deaths stats exist.
-  profile-header: "<prefix><highlight><player></highlight>'s stats <dark_gray>·</dark_gray> joined <white><first-join></white>, last seen <white><last-seen></white>"
-  # One stat. <stat>, <value>, and <rank>: their place on the all-time board, or blank.
-  profile-line: "  <gray><stat>:</gray> <white><value></white><rank>"
-  # How <rank> looks when they have one.
-  profile-rank: " <dark_gray>#<rank></dark_gray>"
-  # A section another plugin adds. <title> is its heading.
-  profile-section: "<prefix><highlight><title>"
-  # One of its lines: <label> and <value>.
-  profile-section-line: "  <gray><label>:</gray> <white><value>"
-  # After the stats, when web.public-url is set. <url> is their page.
-  profile-link: "<prefix><click:open_url:'<url>'><hover:show_text:'Open in your browser'><highlight><underlined>See it on the website</underlined></highlight></hover></click>"
-  # <player> is the name typed.
-  never-joined: "<prefix><error><highlight><player></highlight> has never played here."
-  private-on: "<prefix><success>Your stats are hidden</success> from the website. Leaderboards in game still show you."
-  private-off: "<prefix>Your stats are <highlight>on the website</highlight> again."
-  # /leaderboard. <stat>, <period>.
-  top-header: "<prefix><highlight><stat></highlight> <dark_gray>·</dark_gray> <period>"
-  # <rank>, <player>, <value>.
-  top-line: "  <gray><rank>.</gray> <white><player></white> <dark_gray>-</dark_gray> <highlight><value>"
-  # The line for the player reading it, when they're on the page.
-  top-line-self: "  <highlight><rank>. <player></highlight> <dark_gray>-</dark_gray> <highlight><value>"
-  top-empty: "<prefix>Nobody's on this leaderboard yet."
-  # <stat> is what was typed; <stats> the ones there are.
-  unknown-stat: "<prefix><error>There's no stat called <highlight><stat></highlight>.</error> Try: <stats>"
-  # <stat> has no daily, weekly or monthly numbers.
-  no-periods: "<prefix><error><highlight><stat></highlight> is only counted all time."
-  # Under a page of /leaderboard. See the docs for <next> and <previous>.
-  page-footer: "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>"
-  # Before the database is open, just after startup.
-  not-ready: "<prefix><error>Stats are still loading. Try again in a moment."
+  # The language players see messages in: auto for each player's own (their client's
+  # language setting), or one language for everyone, such as de or pt-BR.
+  language: "shared"
+  # The language of the console, and of players whose language has no file in lang/.
+  default-language: "shared"
+
+  # The look every message shares, used in messages as tags: <prefix>, <highlight>,
+  # <success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,
+  # italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>.
+  theme:
+    # <prefix> starts the default messages. Make it your server's name, such as
+    # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+    prefix: "shared"
+    # The colour of message text that has no tag of its own.
+    base: "shared"
+    # <highlight>: names and values, such as a player or a speed.
+    highlight: "shared"
+    # <success>: something turned on or done.
+    success: "shared"
+    # <error>: something refused or turned off.
+    error: "shared"
 
 # The commands players use. Blank permission means everyone may.
 commands:
@@ -92,10 +55,11 @@ commands:
 #   source: where the numbers come from:
 #     one of Minecraft's own stats, as /scoreboard names them: player_kills, jump,
 #       mined:diamond_ore, killed:zombie, crafted:* (every item). Add several with +.
+#       A stat this server's Minecraft doesn't have reads 0.
 #     xstats:playtime (time online, not counting time standing still with the camera
 #       unmoved) or xstats:sessions (times joined).
 #     papi:%placeholder%: a PlaceholderAPI value, such as papi:%vault_eco_balance%,
-#       read every save and when the player leaves.
+#       read every save and when the player leaves. Bukkit only.
 #   unit: auto, count, time, distance or damage. auto works it out from the source.
 #   decimals: for papi values with decimals, such as 2 for a balance.
 #   periods: also count it per day, week and month, for leaderboards and the website.
@@ -238,26 +202,22 @@ leaderboards:
   size: 100
   # Leave players banned with /ban out of leaderboards. Players with
   # xstats.leaderboard.exclude are always left out, such as staff; nobody has it unless
-  # given it, operators included.
+  # given it, operators included. So are players xVanish hides, while they're hidden.
   exclude-banned: true
   # Places on each page of /leaderboard.
   per-page: 10
 
-  # Leaderboards in the world: Paper text displays, placed with /xstats board.
+  # Leaderboards in the world, placed with /xstats board: text displays, so Minecraft
+  # 1.19.4 or newer on Paper, Folia and Spigot. Their words are boards.* in lang/.
   boards:
     # Places each in-world board shows.
     lines: 10
-    # The top line. <stat> and <period> are filled in.
-    title: "<#3EC407><bold><stat></bold></#3EC407>\n<gray><period>"
-    # Each place: <rank>, <player>, <value>.
-    line: "<gray><rank>.</gray> <white><player></white> <#3EC407><value>"
-    # When nobody is on it yet.
-    empty: "<gray>Nobody yet"
 
-# Days, weeks and months, for daily, weekly and monthly leaderboards.
+# Days, weeks and months, for daily, weekly and monthly leaderboards. Their names are
+# periods.* in lang/.
 periods:
   # The time zone days start in, such as Europe/London or America/New_York. Blank uses
-  # the server's own.
+  # the server's own. On a network, give every server and the proxy the same one.
   timezone: ""
   # The day weeks start on.
   week-starts: "monday"
@@ -265,16 +225,9 @@ periods:
   # and all-time numbers stay right while the database stays small.
   keep-daily-days: 90
 
-  # How periods are named to players.
-  names:
-    daily: "Today"
-    weekly: "This week"
-    monthly: "This month"
-    all: "All time"
-
 # The stats website and its JSON API, served by xStats itself on its own port. Off until
 # you turn it on: see https://plugins.xenastudios.co/xstats/website/ for safe setups,
-# behind a reverse proxy or a tunnel.
+# behind a reverse proxy or a tunnel. On a network, run it on one server or on the proxy.
 web:
   # Serve the website and the API.
   enabled: false
@@ -330,15 +283,58 @@ web:
     surface: "#1a222b"
     text: "#e6edf3"
 
+# Stats from the other Xena plugins, kept like xStats' own (on /stats, /leaderboard,
+# placeholders and the website) once the plugin is installed. Each one can be turned off.
+integrations:
+  # xvote_votes: votes paid on this server.
+  xvote: true
+  # xmoney_balance (the balance, the latest any server saw) and xmoney_earned (money
+  # received: payments, rewards, sales).
+  xmoney: true
+  # xbans_punishments: bans, mutes, kicks and warnings a player received.
+  xbans: true
+  # xteleport_teleports: homes, warps, spawn and tpa.
+  xteleport: true
+  # xrewind_rollbacks: blocks a member of staff put back with rollbacks.
+  xrewind: true
+  # xmarket_bought and xmarket_sold: items bought from and sold to the market.
+  xmarket: true
+  # zchat_messages: chat messages sent.
+  zchat: true
+
+# xStats on the proxy (Velocity): every server's stats, read from the database they share
+# (storage, with network.enabled), for network leaderboards and player lookups wherever
+# a player is. Read on the proxy only.
+proxy:
+
+  # /networkstats [player]: a player's stats on the whole network.
+  stats:
+    enabled: true
+    # The command's name on the proxy.
+    name: "networkstats"
+    aliases: ["nstats"]
+    permission: ""
+
+  # /networkleaderboard <stat> [period] [page]: a leaderboard of the whole network.
+  leaderboard:
+    enabled: true
+    # The command's name on the proxy.
+    name: "networkleaderboard"
+    aliases: ["nlb", "networklb"]
+    permission: ""
+  # Most often the proxy reads the network's stats again after a server saves. The
+  # servers save every collecting.save-every-minutes, so this rarely matters.
+  refresh-seconds: 30
+
 # This server's name in the database, for networks: each server's stats are kept apart
-# under it and added up for the network. Letters, digits, - and _.
+# under it and added up for the network. Letters, digits, - and _. Applies on restart.
 server-name: "main"
 
-# Where stats are kept. sqlite needs nothing set up. Use mysql for a network, so every
-# server shares one set of stats and one website. A change here applies on restart.
+# Where this plugin keeps its data. Read at startup only: restart after changing it.
 storage:
   # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
   # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  # shared keeps it in the database every Xena plugin can share, set in plugins/Xena/config.yml.
   type: "sqlite"
   # Put in front of every table's name, so plugins and servers can share one database.
   table-prefix: "xstats_"
@@ -353,21 +349,27 @@ storage:
     # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
     properties: ""
 
+  # The connections used to read, beside the one that writes.
+  pool:
+    # How many: 0 picks for the database (1 for SQLite, 2 for MySQL). More helps only a
+    # MySQL server that many reads wait on.
+    readers: 0
+
 # For servers sharing one MySQL database: each server hears about the others' saves
-# and /stats private, and its leaderboards count the whole network.
+# and /stats private, and its leaderboards count the whole network. The proxy needs it.
+# Applies on restart.
 network:
-  # On when several servers share this plugin's MySQL or MariaDB database, so a change
-  # made on one (a ban, a payment) reaches the others within a few seconds.
-  # Leave it off for a single server: it does nothing on SQLite.
+  # On when several servers share this plugin's MySQL or MariaDB database. Leave it off
+  # for a single server: it does nothing on SQLite.
   enabled: false
   # Seconds between checks for the other servers' changes.
   check-every: 3
 
-# Tells you when a new version is out.
-update-checker:
-  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
-  # only the plugin version, the platform and the Minecraft version.
-  enabled: true
-  # Logged, and shown to admins when they join, when a newer version is out.
-  # <plugin>, <current>, <latest> and <url> are filled in.
-  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"
+# Telling you when a newer version is out: in the console, and to players with
+# <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
+# sending only the plugin's version, the platform and the Minecraft version.
+updates:
+  # Whether to ask at all.
+  check: true
+  # Which releases to hear of: release, beta (betas and releases) or alpha (everything).
+  channel: "release"

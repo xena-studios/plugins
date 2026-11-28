@@ -134,7 +134,7 @@
       "icon": "plugins/xplots/icon.svg",
       "banner": "plugins/xplots/banner.png",
       "version": "1.0.2",
-      "folia": true,
+      "folia": false,
       "jarBudgetKb": 330,
       "api": true,
       "docs": "/xplots/",

@@ -1,0 +1,17 @@
+name: xStats
+version: '${version}'
+main: co.xenastudios.xstats.bukkit.XStatsBootstrap
+# 1.13, xStats' floor: the statistics by block, item and mob, and the stats files' format.
+api-version: '1.13'
+folia-supported: true
+description: Player stats, leaderboards and a website.
+website: https://plugins.xenastudios.co/xstats/
+authors: [Xena Studios]
+# Optional: xStats' placeholders and placeholder stats (PlaceholderAPI), and the family's stats,
+# each loaded first when it's there so xStats hears its events from the start.
+softdepend: [PlaceholderAPI, xVote, xMoney, xBans, xTeleport, xRewind, xMarket, zChat, xVanish]
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+# No commands or permissions here: they're registered at runtime, so every change to them applies
+# on /xstats reload.

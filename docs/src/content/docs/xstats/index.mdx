@@ -1,0 +1,70 @@
+---
+title: xStats
+description: "xStats: free, open-source player stats, daily, weekly and monthly leaderboards, placeholders and a stats website your server hosts itself, for Paper, Folia, Spigot, Fabric and Velocity."
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Current version: **2.0.0**
+
+xStats gives players their stats, everyone leaderboards, and you placeholders and a stats website your server hosts itself, without a separate web host, an account or a sign-in. It reads the stats Minecraft already counts, adds playtime that leaves out time away from the keyboard, and can keep any PlaceholderAPI value, or another plugin's numbers, as a stat too.
+
+- **Every feature free.** No premium version, no early-access builds, nothing behind a Patreon.
+- **History from day one.** On first start xStats reads every player's stats from the world's own files, so leaderboards aren't empty.
+- **Leaderboards by day, week, month and all time.** `/lb kills monthly`, placeholders such as `%xstats_top_kills_monthly_1_name%`, and boards in the world, with banned and vanished players and anyone you choose left out.
+- **A website, built in.** Player search, profiles with heads and 30-day charts, leaderboards and server totals, in your server's name, logo and colours, served by xStats itself or copied anywhere. There's a documented JSON API for building your own. See [The website](/xstats/website/).
+- **The whole network.** Servers sharing one MySQL database add their stats up, and xStats on Velocity answers network leaderboards and lookups wherever a player is. See [Networks](/xstats/networks/).
+- **The family's stats.** With xVote, xMoney, xBans, xTeleport, xRewind, xMarket or zChat installed, their numbers (votes, money earned, teleports...) are stats like any other, with nothing to set up.
+- **Private when players want.** `/stats private` takes a player off the website. xStats stores no IP addresses and shows only the stats you choose.
+
+:::caution[Not released yet]
+2.0 isn't released yet: it ships with the other plugins' rewrites. Until then 1.0.1 is the release, and these pages are a preview. The [1.x docs](/xstats/v1/) stay up while 1.x gets fixes.
+:::
+
+:::note[Coming from xStats 1.x?]
+Replace the jar and restart: your stats, boards and settings are read as they are, your edited messages move to `lang/en.yml`, and the old config is kept as `config.yml.bak-v1`. See [Upgrading from 1.x](/xstats/upgrade/).
+:::
+
+## Where it runs
+
+One jar for every Bukkit-family server from 1.13 to the newest, Folia included, a jar per Minecraft line on Fabric (server-side only: players install nothing), and a jar for Velocity.
+
+<Reference plugin="xstats" show="platforms" />
+
+| | |
+| --- | --- |
+| **Paper and Folia** | Everything, with boards in the world on 1.19.4 and newer. Each player is read on their own thread, so Folia's regions never wait on each other. |
+| **Spigot and CraftBukkit** | The same. Boards need text displays, so 1.19.4 or newer. |
+| **Fabric** | Minecraft's stats, playtime, sessions, the family's stats, the website and leaderboards. Placeholders through [Text Placeholder API](https://modrinth.com/mod/placeholder-api) when it's installed; no PlaceholderAPI stats and no boards in the world. |
+| **Velocity** | The network's view: every server's stats from the database they share, `/networkstats`, `/networkleaderboard` and the website for the whole network. It counts nothing itself. See [Networks](/xstats/networks/). |
+
+## How it runs
+
+- **One save, every five minutes.** It's xStats' only repeating task. It reads each online player's stats on that player's own thread, a few players a tick, so a full server is never read in one tick. Reading Minecraft's stats is a lookup in the counters the server already keeps: no listener for kills, blocks or movement.
+- **Nothing is written per event.** Other plugins' changes and joins wait in memory, and every save is one transaction on the database's own thread.
+- **Leaderboards are worked out during the save** and kept in memory. Placeholders, `/leaderboard`, boards in the world and the website's leaderboard pages never ask the database.
+- **Small database.** Each player has one running total per stat, plus one row per stat for each day it went up (only for stats you give periods). Days older than 90 are added into their month.
+- **AFK-aware playtime** comes from the same save: a player who hasn't moved their camera since the last one isn't counted.
+- **Nothing is lost to a crash** of Minecraft's own stats: xStats keeps the last reading of each counter, and the next reading makes up the difference. Playtime and placeholder stats lose at most one save's worth.
+- **The website** runs on Java's built-in web server, only while it's on, with a limit per visitor and the pages everyone sees made once per save.
+
+## Storage
+
+Stats are kept in SQLite out of the box, in `plugins/xStats/stats.db`, or in MySQL/MariaDB, in [documented tables](/xstats/database/). They're 1.x's tables, so going back to 1.0.1 reads them as they are. Several servers can share one MySQL database: see [Networks](/xstats/networks/).
+
+## What else it does
+
+- **Every change applies on reload**, except `storage`, `server-name` and `network`, which wait for a restart.
+- **Every reply in the player's language**: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese. See [Messages](/xstats/messages/).
+- **For developers:** stats, ranks and leaderboards from memory, stats of your own, profile sections and events, the same on every platform. See [Developer API](/xstats/developer-api/).
+
+## Getting started
+
+1. [Install it](/xstats/install/). Stats are kept in SQLite out of the box, with nothing to set up.
+2. Choose your stats and leaderboards: [Setting up](/xstats/setting-up/).
+3. Turn on the website: [The website](/xstats/website/).
+4. Every command and permission: [Commands](/xstats/commands/). Placeholders: [Placeholders](/xstats/placeholders/).
+5. Several servers? [Networks](/xstats/networks/).

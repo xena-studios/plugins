@@ -16,6 +16,8 @@ It's plain HTML, CSS and JavaScript, about 65 KiB, shipped inside the jar.
 
 It runs on Java's own web server, so there's nothing else to install, and it can't change anything: it only answers `GET` requests, has no admin pages and nothing to log in to.
 
+It runs on any server, Fabric included, or on the proxy: on a [network](/xstats/networks/), turn it on in one place only, on a server or on Velocity, and it shows the whole network.
+
 ## Turn it on
 
 It's off until you turn it on, so a port is never opened without you knowing.

@@ -174,6 +174,26 @@ jobs:
             fi
           done
           echo "No Fabric jars in this release"
+      # And the NeoForge jars, from platform-neoforge's own build, the same way.
+      - uses: actions/cache/restore@v6
+        with:
+          path: ~/.gradle/caches/neoformruntime
+          key: neoformruntime-${{ hashFiles('core/platform-neoforge/settings.gradle.kts', 'core/platform-neoforge/stonecutter.properties.toml') }}
+          restore-keys: neoformruntime-
+      - name: Build the NeoForge jars
+        env:
+          PROJECTS: ${{ steps.tags.outputs.projects }}
+        run: |
+          for project in $PROJECTS; do
+            dir=${project#:}
+            if grep -q 'ReleasePlatform.NEOFORGE' "${dir//://}/build.gradle.kts"; then
+              ./gradlew -p core/platform-neoforge collect
+              ./gradlew -p core/platform-neoforge --stop
+              pkill -f KotlinCompileDaemon || true
+              exit 0
+            fi
+          done
+          echo "No NeoForge jars in this release"
       - name: Build every jar
         # Each plugin's jars, SHA256SUMS, release.json, changelog section, update posts and the
         # site's entry, in release/<plugin>/. Reads the brand catalog for the store listing.

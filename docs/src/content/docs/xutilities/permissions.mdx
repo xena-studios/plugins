@@ -7,6 +7,6 @@ sidebar:
 
 import Reference from "../../../components/reference/Reference.astro";
 
-Every command has its own permission, and commands with a `[player]` form a second one for using it on someone else. They're the defaults below: rename any in the [config](/xutilities/configuration/) (`permission: "essentials.fly"`), or set one blank (`""`) to let everyone use it. Permissions default to operators, except `/ping` and link commands, which are everyone's. On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api; without one, operators (level 2) have the operator permissions.
+Every command has its own permission, and commands with a `[player]` form a second one for using it on someone else. They're the defaults below: rename any in the [config](/xutilities/configuration/) (`permission: "essentials.fly"`), or set one blank (`""`) to let everyone use it. Permissions default to operators, except `/ping` and link commands, which are everyone's. On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api, and on NeoForge through NeoForge's permission API; without one, operators (level 2) have the operator permissions.
 
 <Reference plugin="xutilities" show="permissions" />

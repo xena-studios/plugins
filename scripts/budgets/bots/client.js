@@ -825,13 +825,24 @@ async function xlimits () {
   // entity without an event; a new world's animals stand about, seen on 1.13.2).
   const feet = bot.entity.position.floored()
   const solid = (p) => bot.blockAt(p) && bot.blockAt(p).boundingBox === 'block'
-  const free = (p) => bot.blockAt(p) && bot.blockAt(p).name === 'air' &&
-    !Object.values(bot.entities).some((e) => e !== bot.entity && e.position &&
+  const noMob = (p) => !Object.values(bot.entities).some((e) => e !== bot.entity && e.position &&
       Math.abs(e.position.x - (p.x + 0.5)) < 0.7 + (e.width || 1) / 2 && Math.abs(e.position.z - (p.z + 0.5)) < 0.7 + (e.width || 1) / 2 &&
       e.position.y < p.y + 1.5 && e.position.y + (e.height || 2) > p.y - 0.5)
-  const spots = [new Vec3(1, -1, 0), new Vec3(-1, -1, 0), new Vec3(0, -1, 1), new Vec3(0, -1, -1), new Vec3(1, -1, 1), new Vec3(-1, -1, -1),
-    new Vec3(2, -1, 0), new Vec3(-2, -1, 0), new Vec3(0, -1, 2), new Vec3(0, -1, -2)]
-    .map((o) => feet.plus(o)).filter((p) => chunkOf(p) === here && solid(p) && free(p.plus(new Vec3(0, 1, 0))))
+  const free = (p) => bot.blockAt(p) && bot.blockAt(p).name === 'air' && noMob(p)
+  const near = [new Vec3(1, -1, 0), new Vec3(-1, -1, 0), new Vec3(0, -1, 1), new Vec3(0, -1, -1), new Vec3(1, -1, 1), new Vec3(-1, -1, -1),
+    new Vec3(2, -1, 0), new Vec3(-2, -1, 0), new Vec3(0, -1, 2), new Vec3(0, -1, -2), new Vec3(2, -1, 2), new Vec3(-2, -1, -2)]
+    .map((o) => feet.plus(o)).filter((p) => chunkOf(p) === here)
+  let spots = near.filter((p) => solid(p) && free(p.plus(new Vec3(0, 1, 0))))
+  if (spots.length < 2) {
+    // A random world's ground (grass, flowers, a slope, the chunk's edge) can leave too few: make
+    // two, stone with air above, where no mob stands.
+    for (const p of near.filter((q) => noMob(q.plus(new Vec3(0, 1, 0)))).slice(0, 4)) {
+      bot.chat(`/setblock ${p.x} ${p.y} ${p.z} stone`)
+      bot.chat(`/setblock ${p.x} ${p.y + 1} ${p.z} air`)
+    }
+    await sleep(1500)
+    spots = near.filter((p) => solid(p) && free(p.plus(new Vec3(0, 1, 0))))
+  }
   check('two ground blocks in the player\'s chunk', spots.length >= 2, `found ${spots.length}`)
   if (spots.length < 2) return finish()
   // The given item can take a moment to arrive, and the server must know the new held slot before

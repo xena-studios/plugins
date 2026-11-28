@@ -80,7 +80,10 @@ class NetworkTest {
     @Test
     fun aBanScopedToOneServerKeepsThemOffThatServerOnly() {
         a.run("ban Friend server:b griefing on b")
-        everyoneUntil("the scoped ban at the proxy") { proxy.plugin.backend!!.active.size > 0 }
+        // The proxy and b each read it from the database in their own time: wait for both.
+        everyoneUntil("the scoped ban at the proxy and on b") {
+            proxy.plugin.backend!!.active.size > 0 && b.plugin.banOnJoin(friend, null) != null
+        }
         assertNull(proxy.plugin.banOnJoin(friend, null, null), "the network's door lets them in")
         assertNotNull(proxy.plugin.banOnJoin(friend, null, "b"), "but not onto b")
         assertNull(proxy.plugin.banOnJoin(friend, null, "a"))

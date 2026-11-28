@@ -171,13 +171,22 @@ class InProgressTest {
         // Changes every few milliseconds for the whole backup: never read the same twice.
         fun changing(during: () -> Backup.Result): Backup.Result {
             val stop = AtomicBoolean()
+            val appended = AtomicInteger()
             val writer = thread(name = "append") {
                 while (!stop.get()) {
                     Files.write(file, byteArrayOf(1), StandardOpenOption.APPEND)
+                    appended.incrementAndGet()
                     Thread.sleep(3)
                 }
             }
             try {
+                // Changing before the backup looks at it, however late the writer's thread starts:
+                // else it can still match the last backup's copy and be taken from there unread.
+                val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
+                while (appended.get() < 2) {
+                    assertTrue(System.nanoTime() < deadline, "the writer never started")
+                    Thread.sleep(1)
+                }
                 return during()
             } finally {
                 stop.set(true)

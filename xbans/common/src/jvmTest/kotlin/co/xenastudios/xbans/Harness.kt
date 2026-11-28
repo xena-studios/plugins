@@ -95,13 +95,14 @@ class TestPlatform(threading: Threading = Threading.MAIN_THREAD, val storage0: M
 /** A server's players, as xBans' adapter would see them: what each was sent, who was kicked, what the console read. */
 class FakeBansServer(override val proxy: Boolean = false) : BansServer, OnlinePlayers, LanguageSource {
     class Player(val ref: PlayerRef, val name: String, val address: String?, val permissions: MutableSet<String>, var weight: Int = 0, var locale: String? = null) {
-        val received: MutableList<String> = java.util.Collections.synchronizedList(ArrayList())
+        // Written from the database's threads while a test reads: each read sees a snapshot.
+        val received: MutableList<String> = java.util.concurrent.CopyOnWriteArrayList()
     }
 
     val players: MutableMap<PlayerRef, Player> = java.util.concurrent.ConcurrentHashMap()
-    val console: MutableList<String> = java.util.Collections.synchronizedList(ArrayList())
-    val kicked: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(ArrayList())
-    val dispatched: MutableList<String> = java.util.Collections.synchronizedList(ArrayList())
+    val console: MutableList<String> = java.util.concurrent.CopyOnWriteArrayList()
+    val kicked: MutableList<Pair<String, String>> = java.util.concurrent.CopyOnWriteArrayList()
+    val dispatched: MutableList<String> = java.util.concurrent.CopyOnWriteArrayList()
     /** Players who never joined, as the server's lookup finds them (an offline-mode server's uuids). */
     val known: MutableMap<String, PlayerRef> = java.util.concurrent.ConcurrentHashMap()
 

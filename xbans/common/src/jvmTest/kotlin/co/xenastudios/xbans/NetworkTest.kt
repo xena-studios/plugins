@@ -66,8 +66,10 @@ class NetworkTest {
     fun aMuteOnOneServerStopsChatOnAnother() {
         b.server.join("Friend")
         a.run("mute Friend 1h spam")
-        everyoneUntil("the mute on b") { b.plugin.muteOf(friend) != null }
-        assertTrue(b.server.players.getValue(friend).received.any { "You were muted" in it }, "b tells them, as they're on b")
+        // b holds the mute before it tells them (on the database's thread): wait for what they're told.
+        val received = b.server.players.getValue(friend).received
+        everyoneUntil("b telling them, as they're on b") { received.any { "You were muted" in it } }
+        assertNotNull(b.plugin.muteOf(friend), "the mute on b")
         assertTrue(b.plugin.mutedMessage(friend, b.plugin.muteOf(friend)!!)!!.plain().contains("You're muted for"))
     }
 

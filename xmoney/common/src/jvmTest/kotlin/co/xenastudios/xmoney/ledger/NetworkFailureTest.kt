@@ -54,9 +54,11 @@ class NetworkFailureTest {
         // A deposit's save finds the database gone, and waits for it.
         ledger.deposit(steve, one, CAUSE)
         awaitDown()
-        val started = System.nanoTime()
-        assertEquals(Status.UNAVAILABLE, ledger.withdraw(steve, 10 * one, CAUSE).await().status)
-        assertTrue(System.nanoTime() - started < 500_000_000, "a withdrawal waited for a database that's away")
+        // Refused before withdraw returns: nothing waits for a database that's away (a time
+        // limit here would only measure how busy the machine is).
+        val refused = ledger.withdraw(steve, 10 * one, CAUSE)
+        assertTrue(refused.isDone, "a withdrawal waited for a database that's away")
+        assertEquals(Status.UNAVAILABLE, refused.await().status)
         faults.down = false
         ledger.flush().await(30)
         assertEquals(101 * one, stored())
@@ -80,8 +82,14 @@ class NetworkFailureTest {
     @Test
     fun aStartedChangeCantBeAbandonedAndIsWaitedFor() {
         faults.slow = 100
+        val before = faults.executions.get()
         val result = ledger.withdraw(steve, 10 * one, CAUSE)
-        Thread.sleep(50)
+        // Started: its first statement is running (and crawling), however long the writer took to get to it.
+        val deadline = System.nanoTime() + 15_000_000_000L
+        while (faults.executions.get() == before) {
+            assertTrue(System.nanoTime() < deadline, "the writer never started the withdrawal")
+            Thread.sleep(1)
+        }
         assertFalse(ledger.abandon(result, Outcome(Status.UNAVAILABLE, 0, steve.balance)), "a started change was abandoned")
         faults.slow = 0
         assertEquals(Status.SUCCESS, result.await().status)

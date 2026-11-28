@@ -43,8 +43,11 @@ class KillTest {
                 "-cp", System.getProperty("java.class.path"), Child::class.java.name, server.toString(), repo.toString(), kill.toString(),
             ).redirectErrorStream(true).redirectOutput(dir.resolve("child-$kill.log").toFile()).start()
             try {
-                // Let it get going, then kill it somewhere in the middle of its work.
-                Thread.sleep(900L + random.nextInt(1500))
+                // Once it's working (a JVM's start takes its own time on a busy machine), kill it
+                // somewhere in the middle of its work. The first child finishes a backup first, so
+                // there's always one to restore.
+                awaitLine(child, dir.resolve("child-$kill.log"), if (kill == 0) "backup " else "working")
+                Thread.sleep(random.nextInt(1500).toLong())
             } finally {
                 child.destroyForcibly()
                 child.waitFor(30, TimeUnit.SECONDS)
@@ -64,6 +67,17 @@ class KillTest {
         assertTrue(seen > 0, "the child never finished a backup; see ${dir.resolve("child-0.log")}")
     }
 
+    // Waits for the child to print a line starting with [start], for at most two minutes.
+    private fun awaitLine(child: Process, log: Path, start: String) {
+        val deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(2)
+        while (true) {
+            if (Files.exists(log) && Files.readAllLines(log).any { it.startsWith(start) }) return
+            check(child.isAlive) { "the child stopped before \"$start\"; see $log" }
+            check(System.nanoTime() < deadline) { "the child didn't print \"$start\" within two minutes; see $log" }
+            Thread.sleep(20)
+        }
+    }
+
     /** Backs up, changes the server, cleans up, forever, until killed. */
     object Child {
         @JvmStatic
@@ -73,6 +87,7 @@ class KillTest {
             val random = Random(args[2].toLong())
             val temp = repo.resolveSibling("temp")
             var round = 0
+            println("working")
             while (true) {
                 Repository.open(LocalBackend(repo), temp, true).use { repository ->
                     repository.lock(true).use {

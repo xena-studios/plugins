@@ -1,0 +1,27 @@
+# What each Minecraft line builds against. The versions themselves are in settings.gradle.kts.
+# Kotlin for Forge brings the Kotlin stdlib to the server (ROADMAP.md, Kotlin stdlib); its Kotlin
+# must be the rewrite's (gradle/libs.versions.toml), or a mod would call a stdlib it lacks. Each
+# line takes the newest Kotlin for Forge for its Minecraft (5.x for 1.20.6 to 1.21.8, 6.x from
+# 1.21.9), and a mod asks for at least that one.
+
+["1.21.1"]
+deps.neoforge = "21.1.268"
+# The oldest NeoForge a mod accepts on the line: the first stable build.
+mod.neoforge_compat = "[21.1.0,)"
+mod.mc_compat = "[1.21.1]"
+deps.kff = "5.13.0"
+mod.kff_compat = "[5.13.0,)"
+
+["1.21.11"]
+deps.neoforge = "21.11.48"
+mod.neoforge_compat = "[21.11.0,)"
+mod.mc_compat = "[1.21.11]"
+deps.kff = "6.5.0"
+mod.kff_compat = "[6.5.0,)"
+
+["26.3"]
+deps.neoforge = "26.3.0.118"
+mod.neoforge_compat = "[26.3.0.0,)"
+mod.mc_compat = "[26.3]"
+deps.kff = "6.5.0"
+mod.kff_compat = "[6.5.0,)"

@@ -1,0 +1,5 @@
+# A real client on NeoForge (scripts/boot-neoforge.sh --checks, with --seed scripts/boot-seeds/client
+# so the client is an operator), after boot-checks.txt: scripts/budgets/bots/client.js joins in
+# German, runs and completes xSample's commands, chats through the core's chat bridge, and
+# switches to English. xSample's NeoForge sandbox ships no lang/ files, so its replies are English.
+client:

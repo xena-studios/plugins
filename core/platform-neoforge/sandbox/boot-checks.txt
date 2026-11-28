@@ -1,0 +1,18 @@
+# What scripts/boot-neoforge.sh checks on each Minecraft line with xSample, after the server starts.
+logged: [xSample] Enabled on
+# A player-only command from the console: our dispatcher's answer, through Brigadier.
+run: xsample
+expect: Only players can use this command.
+# An argument our parser refuses, with our usage line.
+run: xsample give Nobody 5
+expect: No player called Nobody is online.
+# The admin reload: on the global thread's next tick, so the tick scheduler ran it.
+run: xsample reload
+expect: Reloaded xSample: 2 modules on.
+# The reload put the rebuilt commands back on Brigadier in place of the old ones.
+run: coins
+expect: Only players can use this command.
+# The debug report: health checks, then the report written to config/xsample/debug/, since the
+# sample has no paste service.
+run: xsample debug
+expect: Debug report saved as

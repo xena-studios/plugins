@@ -1,0 +1,32 @@
+# xSample on NeoForge: the core's sample plugin, for boot tests. Never released.
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+
+[[mods]]
+modId = "xsample"
+version = "${version}"
+displayName = "xSample"
+description = "The core's sample plugin on NeoForge, for boot tests. Never released."
+
+[[dependencies.xsample]]
+modId = "neoforge"
+type = "required"
+versionRange = "${neoforge}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.xsample]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "BOTH"
+
+# The Kotlin stdlib.
+[[dependencies.xsample]]
+modId = "kotlinforforge"
+type = "required"
+versionRange = "${kff}"
+ordering = "NONE"
+side = "BOTH"

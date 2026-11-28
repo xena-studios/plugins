@@ -72,7 +72,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    # Every plugin's Fabric jars, three Minecraft lines each, then every release set.
+    timeout-minutes: 90
     permissions:
       contents: read
     outputs:
@@ -144,6 +145,10 @@ jobs:
             echo "dry-run=$dry_run"
           } >>"$GITHUB_OUTPUT"
           echo "Releasing ${tags[*]} from $(git rev-parse --short HEAD) (dry run: $dry_run)"
+          # The root build's daemons (Gradle's and Kotlin's) would sit beside the Fabric build's on a
+          # 7 GB runner, which starves the runner until it's lost: each build runs alone.
+          ./gradlew --stop
+          pkill -f KotlinCompileDaemon || true
       # Plugins with Fabric jars have them built by platform-fabric's own build (DECISIONS.md,
       # "platform-fabric"), which the root build's releaseAssemble then reads from its build/libs.
       - uses: actions/cache/restore@v6
@@ -159,6 +164,8 @@ jobs:
             dir=${project#:}
             if grep -q 'ReleasePlatform.FABRIC' "${dir//://}/build.gradle.kts"; then
               ./gradlew -p core/platform-fabric collect
+              ./gradlew -p core/platform-fabric --stop
+              pkill -f KotlinCompileDaemon || true
               exit 0
             fi
           done

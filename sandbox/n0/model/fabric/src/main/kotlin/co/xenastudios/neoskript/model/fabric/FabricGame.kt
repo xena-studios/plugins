@@ -158,7 +158,12 @@ public class FabricGame(internal val core: FabricPlatform, internal val server: 
         override fun give(player: Any, item: Any) {
             val p = player as ServerPlayer
             val stack = item as ItemStack
-            if (!p.inventory.add(stack) || !stack.isEmpty) p.drop(stack, false, false)
+            if (p.inventory.add(stack) && stack.isEmpty) return
+            // One of the two calls that differ between 1.21.11 and 26.3 here (core's stonecutter constants).
+            //? if item_prediction {
+            p.drop(stack, false, net.minecraft.util.Prediction.SERVER_ONLY)
+            //?} else
+            //p.drop(stack, false, false)
         }
         override fun heldItem(player: Any): Any? = (player as ServerPlayer).mainHandItem.takeIf { !it.isEmpty }
         override fun online(): List<Any> = server.playerList.players.toList()

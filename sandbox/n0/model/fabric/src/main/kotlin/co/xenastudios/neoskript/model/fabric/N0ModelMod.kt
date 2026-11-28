@@ -12,7 +12,6 @@ import net.minecraft.core.BlockPos
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.EntitySpawnReason
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.level.block.Blocks
 
@@ -44,12 +43,9 @@ public object N0ModelMod : ModInitializer {
         val level = server.overworld()
         val positions = List(2) { BlockPos(it, 200, 0) }
         positions.forEach { level.setBlock(it, Blocks.STONE.defaultBlockState(), 3) }
-        val zombies = List(2) {
-            net.minecraft.world.entity.EntityType.ZOMBIE.create(level, EntitySpawnReason.COMMAND)!!.also { z ->
-                z.setPos(0.5 + it, 201.0, 0.5)
-                level.addFreshEntity(z)
-            }
-        }
+        // Spawned through the model: EntityType.ZOMBIE moved between 1.21.11 and 26.3.
+        val zombieType = game.entityTypes.byId("zombie")!!
+        val zombies = List(2) { game.entities.spawn(zombieType, co.xenastudios.core.api.Location(game.worlds.ref(level), 0.5 + it, 201.0, 0.5)) as LivingEntity }
         val damageEvents = zombies.map { FabricDamageEvent(it, level.damageSources().generic(), 3f) }
         // Two of each, taking turns, read back as Any from an array in each loop, as on Paper:
         // zombies, blocks, the level, events, positions.

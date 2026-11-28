@@ -37,7 +37,12 @@ public class N0ModelPlugin : JavaPlugin() {
         val start = { _: ScheduledTask? ->
             val problems = Check.run(game, script)
             if (problems.isEmpty()) logger.info("MODEL PASS on ${game.platform}") else logger.severe("MODEL FAIL: " + problems.joinToString("; "))
-            if (!java.lang.Boolean.getBoolean("n0.nobench")) bench(world)
+            when {
+                java.lang.Boolean.getBoolean("n0.nobench") -> {}
+                // Folia's watchdog reports a region held for 5 s, and the loop takes about 10: Paper's numbers stand for both.
+                game.folia -> logger.info("BENCH done (skipped on Folia: the loop would hold its region past the watchdog)")
+                else -> bench(world)
+            }
         }
         if (game.folia) {
             Bukkit.getRegionScheduler().run(this, world, 0, 0) { start(it) }

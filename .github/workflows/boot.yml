@@ -13,7 +13,8 @@ name: Boot
 # NeoForge's oldest and newest lines, a real client on the oldest and the family test on the newest;
 # for the proxies, Velocity's floor (3.4.0) and newest and BungeeCord, the newest Velocity in
 # front of Paper 1.21.11 and BungeeCord in front of Spigot 1.8.8 with a real client joining
-# through the proxy (scripts/boot-proxy.sh). The whole matrix nightly and by hand, Waterfall
+# through the proxy (scripts/boot-proxy.sh); SpongeVanilla at API 8 (1.16.5) and the newest
+# (scripts/boot-sponge.sh), and SpongeVanilla's newest release nightly. The whole matrix nightly and by hand, Waterfall
 # among it. Pull requests always run, so `boot-ok` always reports.
 on:
   pull_request:
@@ -49,6 +50,7 @@ jobs:
       fabric: ${{ steps.matrix.outputs.fabric }}
       neoforge: ${{ steps.matrix.outputs.neoforge }}
       proxy: ${{ steps.matrix.outputs.proxy }}
+      sponge: ${{ steps.matrix.outputs.sponge }}
     steps:
       - uses: actions/checkout@v7
       # As the Plugins workflow: the changed files from the files API, everything if that fails.
@@ -129,6 +131,15 @@ jobs:
             {id: "bungeecord", name: "BungeeCord", proxy: "bungeecord", side: "bungee", backend: "spigot", "backend-version": "1.8.8", buildtools: 8, pr: true},
             {id: "waterfall", name: "Waterfall", proxy: "waterfall", side: "bungee"}
           ] | map({version: "", backend: "", "backend-version": "", buildtools: 0, pr: false, "allow-failure": false} + .)')
+          # SpongeVanilla, as Sponge publishes it (<Minecraft>-<API>): the floor, API 8 on 1.16.5,
+          # on the newest Java it starts on (17: its Mixin can't read Java 21's classes); the newest
+          # recommended release; and the newest build, a release candidate for 26.3 on API 21. One
+          # jar for all three (decisions/2026-11-28-platform-sponge.md).
+          sponge=$(jq -nc '[
+            {id: "sponge-1.16.5", name: "SpongeVanilla 1.16.5 (API 8)", version: "1.16.5-8.2.0", java: 17, pr: true},
+            {id: "sponge-1.21.10", name: "SpongeVanilla 1.21.10 (API 17)", version: "1.21.10-17.0.0", java: 21},
+            {id: "sponge-26.3", name: "SpongeVanilla 26.3 (API 21)", version: "26.3-21.0.0-RC2827", java: 25, pr: true}
+          ] | map({pr: false, "allow-failure": false} + .)')
           # A pull request runs its platforms' `pr` cells; nightly and by hand, all of them.
           pick() {
             if [[ $FULL == true ]]; then echo "$2"
@@ -140,6 +151,7 @@ jobs:
           echo "fabric=$(pick fabric "$fabric")" | tee -a "$GITHUB_OUTPUT"
           echo "neoforge=$(pick neoforge "$neoforge")" | tee -a "$GITHUB_OUTPUT"
           echo "proxy=$(pick proxy "$proxy")" | tee -a "$GITHUB_OUTPUT"
+          echo "sponge=$(pick sponge "$sponge")" | tee -a "$GITHUB_OUTPUT"
 
   # xSample's, xTwin's, xUtilities', zChat's, xMoney's, xTeleport's and xBans' Bukkit jars (with xMoney's
   # two test plugins), once for every Bukkit cell.
@@ -189,6 +201,37 @@ jobs:
             xlimbo/bukkit/build/r8/xLimbo.jar
             xplots/bukkit/build/r8/xPlots.jar
             xstats/bukkit/build/r8/xStats.jar
+          if-no-files-found: error
+
+  # xSample's and the rewritten plugins' Sponge jars, once for every Sponge cell: one jar for every API line.
+  build-sponge:
+    needs: changes
+    if: needs.changes.outputs.sponge != '[]'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      # assemble shrinks each jar with R8 (build/r8/); checkJarBudget fails one over its line in
+      # gradle/jar-budgets.txt, and checkApiFloor and checkApiNewest one calling what API 8 or the
+      # newest API lacks unchecked.
+      - run: >-
+          ./gradlew :core:core-testing:sample:sponge:assemble
+          :core:core-testing:sample:sponge:checkJarBudget :core:core-testing:sample:sponge:checkApiFloor :core:core-testing:sample:sponge:checkApiNewest
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sponge-jars
+          # The R8 jars, kept at their paths from the repo's root.
+          path: |
+            core/core-testing/sample/sponge/build/r8/XSample-Sponge.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -1506,8 +1549,57 @@ jobs:
 
   # The one check to require: passes when every job above passed, was skipped because nothing
   # it covers changed, or failed in a cell allowed to fail; fails when any other failed.
+  # Each Sponge cell: xSample, then each rewritten plugin's Sponge jar, alone, with its console checks
+  # and a clean stop (scripts/boot-sponge.sh).
+  sponge:
+    needs: [changes, build-sponge]
+    if: needs.changes.outputs.sponge != '[]'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    continue-on-error: ${{ matrix.cell.allow-failure }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.changes.outputs.sponge) }}
+    name: boot (${{ matrix.cell.name }})
+    env:
+      VERSION: ${{ matrix.cell.version }}
+    steps:
+      - uses: actions/checkout@v7
+      # One jar, so upload-artifact kept only its name: it goes back to its folder. With more
+      # than one, the artifact keeps their paths from the repo's root, and this is ".".
+      - uses: actions/download-artifact@v8
+        with:
+          name: sponge-jars
+          path: core/core-testing/sample/sponge/build/r8
+      # SpongeVanilla's jar, and the Minecraft jar and libraries it downloads on its first start.
+      - uses: actions/cache@v6
+        with:
+          path: .cache/sponge
+          key: sponge-${{ matrix.cell.version }}
+      - id: java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.cell.java }}
+      - name: boot xSample
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-sponge.sh --version "$VERSION" --java "$JAVA" \
+            --checks core/core-testing/sample/sponge/boot-checks.txt \
+            core/core-testing/sample/sponge/build/r8/XSample-Sponge.jar
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: boot-logs-${{ matrix.cell.id }}
+          path: build/boot/*/console.log
+          if-no-files-found: ignore
+
   boot-ok:
-    needs: [changes, build-bukkit, build-fabric, build-neoforge, build-proxy, bukkit, fabric, neoforge, proxy, budgets, benchmarks]
+    needs: [changes, build-bukkit, build-fabric, build-neoforge, build-proxy, build-sponge, bukkit, fabric, neoforge, proxy, sponge, budgets, benchmarks]
     if: always()
     runs-on: ubuntu-26.04
     timeout-minutes: 5

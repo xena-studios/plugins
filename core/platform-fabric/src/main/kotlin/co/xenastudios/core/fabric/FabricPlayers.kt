@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 import net.minecraft.network.chat.Component as McComponent
@@ -24,7 +25,7 @@ import net.minecraft.network.chat.Component as McComponent
 /** The player's reference: by UUID, as everywhere. */
 public val ServerPlayer.ref: PlayerRef get() = PlayerRef.of(uuid.toKotlinUuid())
 
-/** The world's reference: its dimension's id, such as `minecraft:overworld`. */
+/** The world's reference: its dimension's id, such as `minecraft:overworld`. Made once per dimension. */
 public val Level.ref: WorldRef get() = worldRef(dimension())
 
 /** Where the entity is, and which way it faces. */
@@ -36,11 +37,27 @@ public fun MinecraftServer.level(world: WorldRef): ServerLevel? = allLevels.firs
 /** The player [player] names, if they're online. */
 public fun MinecraftServer.player(player: PlayerRef): ServerPlayer? = playerList.getPlayer(player.uuid.toJavaUuid())
 
+// One reference per dimension: hot paths ask a block or an entity for its world on every event.
+// Keyed by the dimension's ResourceKey (Minecraft keeps one per id), never by the level, so a
+// level a mod unloads isn't held; a mod that makes dimensions by the thousand clears the lot now
+// and then rather than keeping them all.
+private val worldRefs = ConcurrentHashMap<ResourceKey<Level>, WorldRef>()
+
+internal const val MAX_WORLD_REFS: Int = 256
+
 private fun worldRef(key: ResourceKey<Level>): WorldRef =
     //? if identifier {
-    WorldRef.of(key.identifier().toString())
+    cachedWorldRef(worldRefs, key) { it.identifier().toString() }
     //?} else
-    //WorldRef.of(key.location().toString())
+    //cachedWorldRef(worldRefs, key) { it.location().toString() }
+
+/** [cache]'s reference for [key], made from [name] the first time; the cache is cleared once it holds 256. */
+internal inline fun <K : Any> cachedWorldRef(cache: ConcurrentHashMap<K, WorldRef>, key: K, name: (K) -> String): WorldRef {
+    cache[key]?.let { return it }
+    if (cache.size >= MAX_WORLD_REFS) cache.clear()
+    val made = WorldRef.of(name(key))
+    return cache.putIfAbsent(key, made) ?: made
+}
 
 /**
  * The players online, for the core's player arguments: found by name in any case, and listed

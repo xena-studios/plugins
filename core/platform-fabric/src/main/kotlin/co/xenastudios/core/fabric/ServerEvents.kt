@@ -21,7 +21,10 @@ public class PlayerJoinEvent(
     }
 }
 
-/** A player left, or was disconnected. Fired on the server thread, while they're still in the player list. */
+/**
+ * A player left, or was disconnected. Fired on the server thread, even when Minecraft reports the
+ * disconnect from a network thread; by then they may be out of the player list already.
+ */
 public class PlayerQuitEvent(
     /** Who left. */
     public val player: PlayerRef,

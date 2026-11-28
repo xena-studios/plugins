@@ -40,7 +40,9 @@ public class FolderStorage(
         return io(path) {
             val file = file(path)
             Files.createDirectories(file.parent)
-            val temp = file.resolveSibling("${file.fileName}.tmp")
+            // Each write gets its own temporary file: plugins sharing plugins/Xena/ can save the same
+            // file at once, and a shared temporary name lets one move the other's away mid-write.
+            val temp = Files.createTempFile(file.toAbsolutePath().parent, ".${file.fileName}.", ".tmp")
             try {
                 Files.write(temp, bytes)
                 try {
@@ -65,7 +67,7 @@ public class FolderStorage(
     override fun list(folder: StoragePath): Outcome<List<String>, StorageError> = io(folder) {
         val dir = file(folder)
         if (!Files.isDirectory(dir)) return@io emptyList()
-        Files.newDirectoryStream(dir).use { entries -> entries.map { it.fileName.toString() }.sorted() }
+        Files.newDirectoryStream(dir).use { entries -> entries.map { it.fileName.toString() }.filterNot { it.startsWith(".") && it.endsWith(".tmp") }.sorted() }
     }
 
     private fun file(path: StoragePath): Path = path.names.fold(root) { at, name -> at.resolve(name) }

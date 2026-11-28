@@ -151,10 +151,15 @@ public class ConfigFile(
     }
 
     internal companion object {
+        /** Tests only: the temporary file a write uses, to make the write fail on purpose. */
+        @JvmStatic internal var blockedTemp: Path? = null
+
         /** Writes beside [file] and moves it into place, so a crash never leaves half a file. */
         fun writeAtomically(file: Path, text: String) {
             file.toAbsolutePath().parent?.let { Files.createDirectories(it) }
-            val temp = file.resolveSibling("${file.fileName}.tmp")
+            // Each write gets its own temporary file: plugins sharing plugins/Xena/ can save the same
+            // file at once, and a shared temporary name lets one move the other's away mid-write.
+            val temp = blockedTemp ?: Files.createTempFile(file.toAbsolutePath().parent, ".${file.fileName}.", ".tmp")
             try {
                 Files.write(temp, text.toByteArray(StandardCharsets.UTF_8))
                 try {

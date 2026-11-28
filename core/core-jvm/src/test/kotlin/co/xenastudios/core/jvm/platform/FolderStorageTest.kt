@@ -74,4 +74,26 @@ class FolderStorageTest {
         assertEquals(StorageError.Kind.DENIED, error.kind)
         assertEquals("locked/b.txt", error.path)
     }
+
+    @Test
+    fun twoPluginsSavingTheSameFileAtOnceBothSucceed() {
+        // Two plugins' cores share plugins/Xena/: each has its own FolderStorage on the same folder.
+        val other = FolderStorage(dir.resolve("XSample"))
+        val start = java.util.concurrent.CountDownLatch(1)
+        val failures = java.util.concurrent.ConcurrentLinkedQueue<String>()
+        val writers = listOf(storage, other).mapIndexed { n, store ->
+            Thread {
+                start.await()
+                repeat(300) { i ->
+                    val written = store.writeText(StoragePath.of("config.yml"), "writer: $n\nround: $i\n")
+                    if (written is Outcome.Err) failures += written.error.detail
+                }
+            }.also { it.start() }
+        }
+        start.countDown()
+        writers.forEach { it.join(30_000) }
+        assertTrue(failures.isEmpty(), "writes failed: ${failures.take(3)}")
+        assertTrue(ok(storage.readText(StoragePath.of("config.yml")))!!.startsWith("writer: "))
+        assertEquals(listOf("config.yml"), ok(storage.list(StoragePath.ROOT)))
+    }
 }

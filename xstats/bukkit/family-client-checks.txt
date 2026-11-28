@@ -1,0 +1,11 @@
+# xStats keeping the family's stats, with a real client (xstats/bukkit/boot.sh --family, on the
+# Boot workflow's `client` cells): beside xMoney, xBans, xTeleport, xRewind, xMarket and zChat,
+# Joiner (an operator, through --seed scripts/boot-seeds/client) chats, goes home, buys and sells,
+# rolls back a block and kicks Friend, and after a save each stat's leaderboard has the player
+# counted (scripts/budgets/bots/client.js, xstats-family).
+logged: Keeping xBans' stats: xbans_punishments.
+logged: Keeping xTeleport's stats: xteleport_teleports.
+logged: Keeping xMarket's stats: xmarket_bought, xmarket_sold.
+logged: Keeping zChat's stats: zchat_messages.
+logged: Keeping xRewind's stats: xrewind_rollbacks.
+client: --plugin xstats-family --timeout 180

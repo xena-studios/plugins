@@ -50,8 +50,9 @@ import net.minecraft.resources.Identifier
  * its command tree; the database is opened (its driver downloaded the first time: Fabric servers have
  * none) and every player read off the server thread. Minecraft's own counters are read from each
  * player's stat counter at each save, on the server thread; joins and quits are the only events.
- * Placeholders join Text Placeholder API when it's installed (`%xstats:stat kills%`). There are no
- * boards in the world (Bukkit's text displays) and no PlaceholderAPI stats here.
+ * Placeholders join Text Placeholder API when it's installed (`%xstats:stat kills%`), and placeholder
+ * stats (`papi:%player:statistic jump%`) are filled through it. Boards in the world are Minecraft's
+ * text displays ([FabricBoards]).
  */
 public object XStatsMod : ModInitializer {
     override fun onInitialize() {
@@ -97,6 +98,8 @@ public object XStatsMod : ModInitializer {
                 if (open == true) platform.scheduler.run(Where.Global) { _ -> hooks = FamilyHooks(xstats, Shared).also { it.hookAll() } }
             }
             if (FabricLoader.getInstance().isModLoaded("placeholder-api")) {
+                server.placeholders = PlaceholderStats.find()
+                if (server.placeholders == null) xstats.log.warn("This Text Placeholder API is one xStats doesn't know, so placeholder stats are skipped.")
                 try {
                     TextPlaceholders.register(xstats, Identifier.tryParse("xstats:stat")!!, Identifier.tryParse("xstats:kd")!!)
                 } catch (e: Exception) {
@@ -163,6 +166,20 @@ public object XStatsMod : ModInitializer {
  */
 internal class FabricStatsServer(private val platform: FabricPlatform, private val cache: PlayerCache) : StatsServer, VanillaReader {
     private fun server(): MinecraftServer? = platform.server
+
+    /** Fills placeholder stats, while Text Placeholder API is installed; `null` otherwise. */
+    @Volatile
+    var placeholders: PlaceholderStats? = null
+
+    @Volatile
+    private var placeholderFailed = false
+
+    private val madeBoards: FabricBoards by lazy { FabricBoards(platform) }
+
+    override val boards: co.xenastudios.xstats.BoardHost get() = madeBoards
+
+    /** The worlds, as a board names them: Minecraft's own by their id's path (`overworld`), which a command can type. */
+    override fun worlds(): List<String> = server()?.allLevels?.map { madeBoards.name(it.ref) }.orEmpty()
 
     private fun player(ref: PlayerRef): ServerPlayer? = server()?.player(ref)
 
@@ -244,7 +261,13 @@ internal class FabricStatsServer(private val platform: FabricPlatform, private v
         val online = player(player) ?: return null
         val counter = online.stats
         val raw = LongArray(stats.width) { Event.Sample.NOT_READ }
+        val fill = if (placeholders && !placeholderFailed) this.placeholders else null
         for (stat in stats.stats) {
+            val placeholder = stat.source as? StatDef.Placeholder
+            if (placeholder != null) {
+                if (fill != null) placeholder(online, fill, placeholder.placeholder, stat.decimals)?.let { raw[stat.index] = it }
+                continue
+            }
             val source = stat.source as? StatDef.Vanillas ?: continue
             val prepared = source.prepared as? Prepared ?: continue
             var sum = 0L
@@ -257,5 +280,17 @@ internal class FabricStatsServer(private val platform: FabricPlatform, private v
         }
         return Event.Sample(player, online.scoreboardName, System.currentTimeMillis(), raw, online.yRot, online.xRot,
             platform.permissions.has(online, "xstats.leaderboard.exclude"), quit)
+    }
+
+    private fun placeholder(player: ServerPlayer, fill: PlaceholderStats, placeholder: String, decimals: Int): Long? = try {
+        co.xenastudios.xstats.stat.Numbers.parse(fill.fill(player, placeholder), decimals)
+    } catch (e: Exception) {
+        placeholderFailed = true
+        platform.log.warn("Couldn't fill in $placeholder for a stat: $e. Placeholder stats are skipped until the next restart.")
+        null
+    } catch (e: LinkageError) {
+        placeholderFailed = true
+        platform.log.warn("Couldn't fill in $placeholder for a stat: $e. Placeholder stats are skipped until the next restart.")
+        null
     }
 }

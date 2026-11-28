@@ -11,7 +11,8 @@ The rewrite: the same commands, permissions, settings, stats, boards and website
 - **The whole network on the proxy.** With xStats on Velocity sharing the servers' MySQL database (with `network.enabled`), `/networkstats` and `/networkleaderboard` answer from memory wherever a player is, even on a server without xStats, and the website can run there for the whole network. See [Networks](https://plugins.xenastudios.co/xstats/networks/).
 - **The family's stats.** With xVote, xMoney, xBans, xTeleport, xRewind, xMarket or zChat installed, their numbers are stats like any other: `xvote_votes`, `xmoney_balance` and `xmoney_earned`, `xbans_punishments`, `xteleport_teleports`, `xrewind_rollbacks`, `xmarket_bought` and `xmarket_sold`, `zchat_messages`. Each can be turned off under `integrations`.
 - **Players xVanish hides** are left out of leaderboards while they're hidden, and shown as offline on the website.
-- **Placeholders on Fabric** through Text Placeholder API: `%xstats:stat kills_monthly%` and the rest, and `%xstats:kd%`.
+- **Placeholders on Fabric** through Text Placeholder API: `%xstats:stat kills_monthly%` and the rest, and `%xstats:kd%`; and `papi:` stats from its placeholders (`papi:%player:statistic jump%`).
+- **Boards in the world on Fabric**, as Minecraft's text displays, the same `/xstats board` commands as on Paper.
 - **Messages in your players' languages**: English, German, Spanish, French, Brazilian Portuguese, Russian, Polish or Simplified Chinese, in `lang/`.
 - **`/xstats forget <player>`** deletes everything xStats keeps about a player, for an erasure request, and **`/xstats debug`** writes a report to share when asking for help.
 - **For developers**: the API is the same on every platform, with players as `PlayerRef`s; `registerStat` takes decimals, `unregisterStats` takes a plugin's stats out of use, and two cancellable events join the two 1.x had: `StatChangeEvent` and `PrivacyChangeEvent`.

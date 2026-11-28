@@ -67,7 +67,8 @@ public object Definitions {
     /** Endings placeholders add to a stat's id: `%xstats_kills_daily%`, `%xstats_kills_raw%`. */
     private val SUFFIXES = listOf("_raw", "_all", "_daily", "_weekly", "_monthly")
 
-    private val PLACEHOLDER = Regex("%[^%\\s]+%")
+    // A placeholder, and on Fabric (Text Placeholder API) its argument after a space: %player:statistic jump%.
+    private val PLACEHOLDER = Regex("%[^%\\s]+( [^%]+)?%")
 
     /**
      * Why an id can't be used, or `null` if it can: one placeholders would read as another stat's

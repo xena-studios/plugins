@@ -1,0 +1,32 @@
+# xTwin on NeoForge: the family test's second mod. Never released.
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+
+[[mods]]
+modId = "xtwin"
+version = "${version}"
+displayName = "xTwin"
+description = "The family test's second mod on NeoForge. Never released."
+
+[[dependencies.xtwin]]
+modId = "neoforge"
+type = "required"
+versionRange = "${neoforge}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.xtwin]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "BOTH"
+
+# The Kotlin stdlib.
+[[dependencies.xtwin]]
+modId = "kotlinforforge"
+type = "required"
+versionRange = "${kff}"
+ordering = "NONE"
+side = "BOTH"

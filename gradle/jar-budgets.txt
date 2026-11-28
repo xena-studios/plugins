@@ -52,6 +52,17 @@
 :core:platform-fabric:twin:1.20.1 295
 :core:platform-fabric:twin:1.21.11 300
 :core:platform-fabric:twin:26.3 310
+# xSample on NeoForge (core/platform-neoforge/sandbox, its own build), one jar a Minecraft line:
+# the adapter and the core relocated, Kotlin for Forge's stdlib and the YAML parser downloaded,
+# no world hooks yet: 356 KiB shrunk (1,518 KiB before). Lines size + about 10%.
+:core:platform-neoforge:sandbox:1.21.1 390
+:core:platform-neoforge:sandbox:1.21.11 390
+:core:platform-neoforge:sandbox:26.3 390
+# xTwin on NeoForge, the family test's second mod, packaged as every mod is (xena.neoforge-mod):
+# 280 KiB. Never released.
+:core:platform-neoforge:twin:1.21.1 310
+:core:platform-neoforge:twin:1.21.11 310
+:core:platform-neoforge:twin:26.3 310
 
 # xUtilities 3.0 (M2, the pilot), shrunk: 508 KiB on Bukkit (with bStats, the update checker,
 # Paper's loader and its startup list), over the 500 KiB target with the reason recorded in

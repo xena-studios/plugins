@@ -33,6 +33,13 @@
 -keep interface **.loader.PluginEntry { *; }
 -keepclassmembers class * implements **.loader.PluginEntry { public void load(); }
 -keep class * extends **.loader.bukkit.BukkitBootstrap { <init>(); }
+# The loader's classes keep their names, in the loader's package. When nothing else can add the
+# libraries (Strategy.ISOLATED, which an owner can also choose, and a plugin's command line) the
+# loader makes a class loader of the plugin's own that asks the plugin's loader for the loader's
+# package and loads the rest from the jar first. Repackaged into the plugin's package with
+# everything else, the loader's classes would be loaded from the jar a second time, and
+# PluginEntry would be two types: the plugin couldn't start that way.
+-keep,allowshrinking,allowoptimization class co.xenastudios.**.core.loader.** { }
 # The proxies' shims keep their names, which the other Xena plugins on a proxy find them by
 # (JvmFamilyBoard.fromShims), and their members: Guice fills in VelocityBootstrap's fields and
 # Velocity calls its @Subscribe methods, both by reflection.

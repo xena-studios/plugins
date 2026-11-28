@@ -1,0 +1,12 @@
+# Two real clients on Fabric with xMoney beside xVote (scripts/boot-fabric.sh with xMoney's jar,
+# --seed xmoney-seed and --seed scripts/boot-seeds/client), after boot-checks.txt: real Votifier v2
+# votes signed with the seeded token, one for Friend before Friend has ever joined, paid as Friend
+# joins, one for Joiner, paid at once with 25 through xMoney's API and recorded as xVote's, and
+# /vote in German (scripts/budgets/bots/client.js, xvote --xmoney; English on 1.20.1).
+logged: Money rewards are paid through xMoney.
+client: --plugin xvote --xmoney --vote-token xvote-boot-test --timeout 120
+logged: Vote for Friend from PlanetMinecraft.com (v2): held until Friend first joins.
+logged: Paying Friend for 1 votes from while they were away.
+logged: Vote for Joiner from PlanetMinecraft.com (v2): paid.
+run: eco history Joiner
+expect: xVote

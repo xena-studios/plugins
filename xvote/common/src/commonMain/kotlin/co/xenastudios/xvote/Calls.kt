@@ -23,24 +23,21 @@ import kotlin.time.Duration.Companion.seconds
  * of its own, loaded with the first of them, not as the server starts (decisions/2026-11-25-a-lighter-core.md).
  */
 internal object Calls {
-    /** The rest of [XVotePlugin.stop], off the server's threads: closing the receiver waits for its thread. */
+    /**
+     * The rest of [XVotePlugin.stop], on the caller's thread, which waits for it anyway (closing the
+     * receiver waits for its thread): not handed to the async scheduler, which Folia closes to a
+     * plugin before its disable runs, so the database was never closed there.
+     */
     fun stop(plugin: XVotePlugin): Pending<Unit> {
         val done = newPending<Unit>()
-        val receiver = plugin.receiver
+        plugin.receiver?.close()
+        val backend = plugin.backend ?: return done.also { it.resolve(Unit) }
         val votes = plugin.madeVotes
-        val backend = plugin.backend
-        plugin.platform.scheduler.run(Where.Async) { _ ->
-            receiver?.close()
-            if (backend == null) {
-                done.resolve(Unit)
-                return@run
-            }
-            backend.feed?.close()
-            if (votes == null) {
-                backend.database.close().onSettled { _, _ -> done.resolve(Unit) }
-            } else {
-                votes.shutdown().onSettled { _, _ -> backend.database.close().onSettled { _, _ -> done.resolve(Unit) } }
-            }
+        backend.feed?.close()
+        if (votes == null) {
+            backend.database.close().onSettled { _, _ -> done.resolve(Unit) }
+        } else {
+            votes.shutdown().onSettled { _, _ -> backend.database.close().onSettled { _, _ -> done.resolve(Unit) } }
         }
         return done
     }

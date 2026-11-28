@@ -84,7 +84,12 @@ public object XVoteMod : ModInitializer {
             // Every mod shares one class loader, so xMoney's API is found by name once mods are up.
             XMoneyEconomy.shared()?.let { api ->
                 val (economy, why) = XMoneyEconomy.of(api)
-                if (economy != null) xvote.economy = economy else xvote.log.warn("Couldn't pay money rewards through xMoney: $why")
+                if (economy != null) {
+                    xvote.economy = economy
+                    xvote.log.info("Money rewards are paid through xMoney.")
+                } else {
+                    xvote.log.warn("Couldn't pay money rewards through xMoney: $why")
+                }
             }
         }
         // The update checker; bStats has no Fabric platform, so there's no metrics here.

@@ -1048,13 +1048,22 @@ jobs:
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks xmarket/fabric/boot-checks.txt "${args[@]}" \
             "$libs"/xmarket-fabric-*+"$VERSION".jar
+      # xVote alone: test votes through its receiver, the lists, the imports' refusals, a reload and
+      # debug; on a `client` cell beside xMoney, with two real clients and real Votifier v2 votes: one
+      # for Friend before Friend has ever joined, paid as Friend joins, one for Joiner, paid at once
+      # with 25 through xMoney's API, and /vote in German (xvote/fabric/xmoney-client-checks.txt).
       - name: boot xVote
         env:
           JAVA: ${{ steps.java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
         run: |
+          libs=core/platform-fabric/build/libs
+          args=()
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --seed xvote/fabric/xmoney-seed
+            --checks xvote/fabric/xmoney-client-checks.txt "$libs"/xmoney-fabric-*+"$VERSION".jar)
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
-            --checks xvote/fabric/boot-checks.txt \
-            core/platform-fabric/build/libs/xvote-fabric-*+"$VERSION".jar
+            --checks xvote/fabric/boot-checks.txt "${args[@]}" \
+            "$libs"/xvote-fabric-*+"$VERSION".jar
       - name: boot xRewind
         env:
           JAVA: ${{ steps.java.outputs.path }}

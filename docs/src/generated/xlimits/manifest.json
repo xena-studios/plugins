@@ -1,0 +1,2038 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xlimits",
+    "name": "xLimits",
+    "version": "unspecified",
+    "description": "Farm, entity and redstone limits."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.13.2",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "spigot",
+      "name": "Spigot",
+      "kind": "server",
+      "minVersion": "1.13.2",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "release",
+      "since": "1.0.0"
+    },
+    {
+      "id": "neoforge",
+      "name": "NeoForge",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "xlimits",
+      "usage": "/xlimits [info|here|top|near|restore|tp|reload|debug|import]",
+      "aliases": [
+        "limits"
+      ],
+      "description": "Shows xLimits' version, and holds its commands.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xlimits info",
+          "usage": "/xlimits info",
+          "aliases": [],
+          "description": "Shows xLimits' version.",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimits here",
+          "usage": "/xlimits here",
+          "aliases": [],
+          "description": "What's in your chunk against each limit, the load profile on, and the server's own settings.",
+          "permission": "xlimits.here",
+          "playerOnly": true,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimits top",
+          "usage": "/xlimits top [what]",
+          "aliases": [],
+          "description": "The busiest loaded chunks, each clickable to teleport.",
+          "permission": "xlimits.top",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "what",
+              "type": "choice",
+              "required": false,
+              "greedy": false,
+              "description": "entities, blocks or redstone.",
+              "choices": [
+                "entities",
+                "blocks",
+                "redstone"
+              ]
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimits near",
+          "usage": "/xlimits near <player> [what]",
+          "aliases": [],
+          "description": "The busiest chunks around one player.",
+          "permission": "xlimits.top",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player",
+              "required": true,
+              "greedy": false,
+              "description": "Whom.",
+              "choices": []
+            },
+            {
+              "name": "what",
+              "type": "choice",
+              "required": false,
+              "greedy": false,
+              "description": "entities, blocks or redstone.",
+              "choices": [
+                "entities",
+                "blocks",
+                "redstone"
+              ]
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimits restore",
+          "usage": "/xlimits restore",
+          "aliases": [],
+          "description": "Puts every slowed mob back to normal and pauses farm slowing until a reload: run it before removing xLimits.",
+          "permission": "xlimits.restore",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": true,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimits tp",
+          "usage": "/xlimits tp <world> <x> <y> <z>",
+          "aliases": [],
+          "description": "Teleports you to a place, as the alerts' and /xlimits top's buttons do.",
+          "permission": "xlimits.teleport",
+          "playerOnly": true,
+          "arguments": [
+            {
+              "name": "world",
+              "type": "word",
+              "required": true,
+              "greedy": false,
+              "description": "The world.",
+              "choices": []
+            },
+            {
+              "name": "x",
+              "type": "integer",
+              "required": true,
+              "greedy": false,
+              "description": "x.",
+              "choices": []
+            },
+            {
+              "name": "y",
+              "type": "integer",
+              "required": true,
+              "greedy": false,
+              "description": "y.",
+              "choices": []
+            },
+            {
+              "name": "z",
+              "type": "integer",
+              "required": true,
+              "greedy": false,
+              "description": "z.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xlimits reload",
+          "usage": "/xlimits reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "xlimits.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xlimits debug",
+          "usage": "/xlimits debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "xlimits.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xlimits import",
+          "usage": "/xlimits import <source> [dry-run]",
+          "aliases": [],
+          "description": "Imports data from another plugin.",
+          "permission": "xlimits.admin.import",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "source",
+              "type": "choice",
+              "required": true,
+              "greedy": false,
+              "description": "The plugin to import from.",
+              "choices": [
+                "farmcontrol",
+                "insights"
+              ]
+            },
+            {
+              "name": "dry-run",
+              "type": "choice",
+              "required": false,
+              "greedy": false,
+              "description": "Counts what would be imported, changing nothing.",
+              "choices": [
+                "--dry-run"
+              ]
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xlimits.here",
+      "description": "See what's in your chunk against each limit with /xlimits here.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimits here"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xlimits.top",
+      "description": "Find the busiest chunks with /xlimits top and /xlimits near.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimits top",
+        "xlimits near"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xlimits.teleport",
+      "description": "Teleport to a chunk from /xlimits top and the alerts.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimits tp"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xlimits.restore",
+      "description": "Put every slowed mob back to normal with /xlimits restore.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimits restore"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xlimits.alerts",
+      "description": "Be told when a chunk reaches a limit and when a load profile turns on or off.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xlimits.bypass",
+      "description": "Place blocks, use spawn eggs, breed and tame past every limit. No one has it until it's given, operators included.",
+      "default": "nobody",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xlimits.admin",
+      "description": "Every admin subcommand of xLimits, and its update notices.",
+      "default": "op",
+      "children": {
+        "xlimits.admin.reload": true,
+        "xlimits.admin.debug": true,
+        "xlimits.admin.import": true,
+        "xlimits.admin.update": true
+      },
+      "commands": [],
+      "builtIn": true
+    },
+    {
+      "node": "xlimits.admin.reload",
+      "description": "Use /xlimits reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimits reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xlimits.admin.debug",
+      "description": "Use /xlimits debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimits debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xlimits.admin.import",
+      "description": "Use /xlimits import.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xlimits import"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xlimits.admin.update",
+      "description": "Hear about newer versions of xLimits when joining.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 1,
+    "header": [
+      "xLimits: farm, entity and redstone limits.",
+      "Docs: https://plugins.xenastudios.co/xlimits/configuration/",
+      "",
+      "Apply changes with /xlimits reload. Everything applies at once; nothing that's already",
+      "in the world is removed by a limit, only new spawns, placements and the like are refused.",
+      "A bad value falls back to its default with a warning in the console. The messages are",
+      "in lang/."
+    ],
+    "entries": [
+      {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "command",
+        "type": "section",
+        "comment": [],
+        "choices": [],
+        "entries": [
+          {
+            "path": "command.aliases",
+            "type": "list<string>",
+            "comment": [
+              "Other names for /xlimits."
+            ],
+            "default": [
+              "limits"
+            ],
+            "defaultText": "[\"limits\"]",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "worlds",
+        "type": "section",
+        "comment": [
+          "Where the limits apply."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "worlds.exempt",
+            "type": "list<string>",
+            "comment": [
+              "Worlds xLimits leaves alone, by folder name (world_nether)."
+            ],
+            "default": [],
+            "defaultText": "[]",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "worlds.overrides",
+            "type": "world limits",
+            "comment": [
+              "Limits that differ in one world, by world and then by limit, such as",
+              "  world_nether: { hopper: 32, monsters: 40 }",
+              "Any entity, block, tnt, falling_blocks, portal_items or pets limit can be set here."
+            ],
+            "default": {},
+            "defaultText": "{}",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "entities",
+        "type": "section",
+        "comment": [
+          "A cap per chunk on mobs, vehicles, armour stands and item frames. Past it, new ones",
+          "don't spawn; nothing already there is removed. Next to Paper's spawn-limits and",
+          "per-player-mob-spawns, which cover natural spawning only: this also covers breeding,",
+          "spawn eggs, dispensers and placing."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "entities.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "entities.limits",
+            "type": "limits",
+            "comment": [
+              "By group or entity type. The groups: animals, monsters, villagers, water (fish,",
+              "squid, axolotls), ambient (bats), golems, vehicles (boats and minecarts),",
+              "armor_stands, item_frames (with paintings), and your own below. A type is its",
+              "Minecraft id: cow, zombified_piglin. Each one that matches a mob is checked."
+            ],
+            "default": {
+              "animals": "80",
+              "monsters": "70",
+              "villagers": "50",
+              "vehicles": "40",
+              "armor_stands": "40",
+              "item_frames": "150"
+            },
+            "defaultText": "{animals: 80, monsters: 70, villagers: 50, vehicles: 40, armor_stands: 40, item_frames: 150}",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "entities.groups",
+            "type": "groups",
+            "comment": [
+              "Groups of your own, by name, each a list of entity types, such as",
+              "  raiders: [pillager, vindicator, evoker, ravager]"
+            ],
+            "default": {},
+            "defaultText": "{}",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "entities.routes",
+            "type": "list<enum>",
+            "comment": [
+              "Which ways of coming to be the caps refuse: natural, spawner, breeding, egg, spawn-egg,",
+              "dispenser, placed and other (golems, plugins, commands, slimes splitting). A route",
+              "that isn't listed is never refused."
+            ],
+            "default": [
+              "natural",
+              "spawner",
+              "breeding",
+              "egg",
+              "spawn-egg",
+              "dispenser",
+              "placed"
+            ],
+            "defaultText": "[\"natural\", \"spawner\", \"breeding\", \"egg\", \"spawn-egg\", \"dispenser\", \"placed\"]",
+            "choices": [
+              "natural",
+              "spawner",
+              "breeding",
+              "egg",
+              "spawn-egg",
+              "dispenser",
+              "placed",
+              "other"
+            ],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "farms",
+        "type": "section",
+        "comment": [
+          "Farm slowing: when one group in a chunk passes its threshold, those mobs are slowed",
+          "instead of removed, and go back to normal when the count falls. Checked at a spawn or",
+          "breed in the chunk and as it loads, never on a timer. Named, tamed and leashed mobs are",
+          "left alone. Next to Paper's collisions.max-entity-collisions, which applies to every mob",
+          "everywhere: this only touches a crammed farm. Run /xlimits restore before removing xLimits."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "farms.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "farms.rules",
+            "type": "farm rules",
+            "comment": [
+              "By group or entity type: a threshold, and the actions, any of no-collisions (they",
+              "don't push each other), no-ai (they stop pathfinding but still breed, drop and can be",
+              "killed) and no-breeding. Such as",
+              "  monsters: { threshold: 60, actions: [no-collisions] }"
+            ],
+            "default": {
+              "animals": {
+                "threshold": "32",
+                "actions": [
+                  "no-collisions"
+                ]
+              }
+            },
+            "defaultText": "{animals: {threshold: 32, actions: [\"no-collisions\"]}}",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "farms.villagers",
+            "type": "boolean",
+            "comment": [
+              "Slow villagers too. Off, because iron farms and trading halls depend on their AI."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "blocks",
+        "type": "section",
+        "comment": [
+          "A cap per chunk on blocks. Placing one past it is refused with a message. Next to",
+          "Paper's hopper settings, which make each hopper cheaper but don't limit how many."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "blocks.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "blocks.limits",
+            "type": "limits",
+            "comment": [
+              "By block id or one of your groups below."
+            ],
+            "default": {
+              "hopper": "80",
+              "spawner": "12",
+              "piston": "128",
+              "sticky_piston": "128",
+              "observer": "128"
+            },
+            "defaultText": "{hopper: 80, spawner: 12, piston: 128, sticky_piston: 128, observer: 128}",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "blocks.groups",
+            "type": "groups",
+            "comment": [
+              "Groups of blocks of your own, each counted together, such as",
+              "  redstone: [repeater, comparator, redstone_torch]"
+            ],
+            "default": {},
+            "defaultText": "{}",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "redstone",
+        "type": "section",
+        "comment": [
+          "Redstone clocks: how often one block's power changes in a short window. Past the",
+          "limit it's broken (it drops as an item) and staff are told where. Next to Paper's",
+          "alternate-current, which makes redstone cheaper but doesn't stop a clock left running."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "redstone.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "redstone.changes",
+            "type": "integer",
+            "comment": [
+              "Changes allowed in the window."
+            ],
+            "default": 60,
+            "defaultText": "60",
+            "choices": [],
+            "min": 4,
+            "max": 100000,
+            "entries": []
+          },
+          {
+            "path": "redstone.window",
+            "type": "duration",
+            "comment": [],
+            "default": "5s",
+            "defaultText": "\"5s\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "tnt",
+        "type": "section",
+        "comment": [
+          "A cap per chunk on primed TNT and falling sand, gravel and concrete powder. Past it,",
+          "TNT stays a block and sand doesn't fall. Off by default, because cannon servers set",
+          "their own numbers. Next to Paper's max-tnt-per-tick, which is server-wide, so one chunk",
+          "can use all of it."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "tnt.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "tnt.primed",
+            "type": "integer",
+            "comment": [
+              "Primed TNT per chunk."
+            ],
+            "default": 64,
+            "defaultText": "64",
+            "choices": [],
+            "min": 0,
+            "max": 100000,
+            "entries": []
+          },
+          {
+            "path": "tnt.falling",
+            "type": "integer",
+            "comment": [
+              "Falling blocks per chunk."
+            ],
+            "default": 128,
+            "defaultText": "128",
+            "choices": [],
+            "min": 0,
+            "max": 100000,
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "portals",
+        "type": "section",
+        "comment": [
+          "A rate limit on items and other entities going through the portals of one chunk, so",
+          "item spam and portal chunk loaders can't flood the other side. Players and what they",
+          "ride are never limited. Off by default."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "portals.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "portals.entities",
+            "type": "integer",
+            "comment": [
+              "Entities allowed through in the window."
+            ],
+            "default": 40,
+            "defaultText": "40",
+            "choices": [],
+            "min": 1,
+            "max": 100000,
+            "entries": []
+          },
+          {
+            "path": "portals.window",
+            "type": "duration",
+            "comment": [],
+            "default": "10s",
+            "defaultText": "\"10s\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "pets",
+        "type": "section",
+        "comment": [
+          "A cap on how many tamed mobs one player owns. Past it, taming fails with a message;",
+          "pets they already have are kept. Counted in memory from the owner on each mob, as",
+          "they're seen. Off by default."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "pets.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "pets.limit",
+            "type": "integer",
+            "comment": [
+              "Pets of every kind together."
+            ],
+            "default": 50,
+            "defaultText": "50",
+            "choices": [],
+            "min": 0,
+            "max": 100000,
+            "entries": []
+          },
+          {
+            "path": "pets.per-type",
+            "type": "limits",
+            "comment": [
+              "Per entity type, such as { wolf: 10, cat: 10 }."
+            ],
+            "default": {},
+            "defaultText": "{}",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "profiles",
+        "type": "section",
+        "comment": [
+          "Load profiles: stricter limits that turn on while the server is busy. A profile turns",
+          "on when its condition holds, stays on for minimum-time, and turns off at its off value.",
+          "It only tightens new spawns, placements and the farm thresholds. On Folia each region",
+          "has its own profile, from its own TPS. Off by default."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "profiles.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "profiles.minimum-time",
+            "type": "duration",
+            "comment": [],
+            "default": "2m",
+            "defaultText": "\"2m\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "profiles.list",
+            "type": "profiles",
+            "comment": [
+              "By name; a later one wins over an earlier one. when: players-online-above, tps-below",
+              "or mspt-above (Paper; Folia has no MSPT, so use tps-below there). on and off: the",
+              "values it turns on and off at. scale: every limit and threshold times this. limits:",
+              "limits set outright, such as { animals: 30, hopper: 40 }."
+            ],
+            "default": {
+              "busy": {
+                "when": "players-online-above",
+                "on": "80",
+                "off": "70",
+                "scale": "0.8",
+                "limits": {}
+              },
+              "strained": {
+                "when": "tps-below",
+                "on": "17",
+                "off": "19",
+                "scale": "0.5",
+                "limits": {}
+              }
+            },
+            "defaultText": "{busy: {when: \"players-online-above\", \"on\": 80, \"off\": 70, scale: 0.8, limits: {}}, strained: {when: \"tps-below\", \"on\": 17, \"off\": 19, scale: 0.5, limits: {}}}",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "alerts",
+        "type": "section",
+        "comment": [
+          "Staff with xlimits.alerts are told the first time a chunk reaches a limit, with a",
+          "button to teleport there, and when a load profile turns on or off."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "alerts.enabled",
+            "type": "boolean",
+            "comment": [],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "alerts.cooldown",
+            "type": "duration",
+            "comment": [
+              "At most once per chunk this often."
+            ],
+            "default": "5m",
+            "defaultText": "\"5m\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "alerts.who-built",
+            "type": "string",
+            "comment": [
+              "With xRewind installed, the alert's \"who built this\" button runs this command at",
+              "the place. Blank for no button."
+            ],
+            "default": "xrewind lookup radius:16 world:<world> x:<x> y:<y> z:<z>",
+            "defaultText": "\"xrewind lookup radius:16 world:<world> x:<x> y:<y> z:<z>\"",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "updates",
+        "type": "section",
+        "comment": [
+          "Telling you when a newer version is out: in the console, and to players with",
+          "<plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,",
+          "sending only the plugin's version, the platform and the Minecraft version."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "updates.check",
+            "type": "boolean",
+            "comment": [
+              "Whether to ask at all."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "updates.channel",
+            "type": "enum",
+            "comment": [
+              "Which releases to hear of: release, beta (betas and releases) or alpha (everything)."
+            ],
+            "default": "release",
+            "defaultText": "\"release\"",
+            "choices": [
+              "release",
+              "beta",
+              "alpha"
+            ],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [],
+  "messages": [
+    {
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.update.available",
+      "english": "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+      "comment": [
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page."
+      ],
+      "placeholders": [
+        "plugin",
+        "current",
+        "latest",
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
+      ],
+      "placeholders": [
+        "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "core.reload.done",
+      "english": "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+      "comment": [
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise."
+      ],
+      "placeholders": [
+        "plugin",
+        "count",
+        "has_one",
+        "has_many"
+      ]
+    },
+    {
+      "key": "core.reload.problem",
+      "english": "<gold>!</gold> Problem: <problem>",
+      "comment": [
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too."
+      ],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "core.reload.module-off",
+      "english": "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+      "comment": [
+        "/<plugin> reload: a module that failed, and why, in English."
+      ],
+      "placeholders": [
+        "module",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.reload.failed",
+      "english": "<prefix><error>Reloading <plugin> failed; the console has the details.",
+      "comment": [
+        "/<plugin> reload: something went wrong; the settings from before are still in use."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.command.unknown",
+      "english": "<prefix><error>Unknown command.",
+      "comment": [
+        "Rare: a command that went away as it was typed."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.no-permission",
+      "english": "<prefix><error>You don't have permission to do that.",
+      "comment": [
+        "The sender lacks the command's permission."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.players-only",
+      "english": "<prefix><error>Only players can use this command.",
+      "comment": [
+        "The console or a command block ran a command only players can use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.usage",
+      "english": "<prefix><error>Usage:</error> <usage>",
+      "comment": [
+        "The command was typed with missing or extra words. <usage> is how to type it."
+      ],
+      "placeholders": [
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.unknown-player",
+      "english": "<prefix><error>No player called <highlight><player></highlight> is online.",
+      "comment": [
+        "No player the sender can see is online by the name typed (<player>)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.command.not-a-number",
+      "english": "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+      "comment": [
+        "A number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-an-integer",
+      "english": "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+      "comment": [
+        "A whole number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-small",
+      "english": "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+      "comment": [
+        "A number below the least the command takes (<min>)."
+      ],
+      "placeholders": [
+        "input",
+        "min",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-large",
+      "english": "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+      "comment": [
+        "A number above the most the command takes (<max>)."
+      ],
+      "placeholders": [
+        "input",
+        "max",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-a-choice",
+      "english": "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+      "comment": [
+        "A word that isn't one of those the command takes (<choices>, comma-separated)."
+      ],
+      "placeholders": [
+        "input",
+        "choices",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.invalid",
+      "english": "<prefix><error><reason></error> Usage: <usage>",
+      "comment": [
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.cooldown",
+      "english": "<prefix><error>You can use that again in <time>.",
+      "comment": [
+        "The command has a cooldown. <time> is how long is left."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.confirm",
+      "english": "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+      "comment": [
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is."
+      ],
+      "placeholders": [
+        "line",
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.error",
+      "english": "<prefix><error>Something went wrong running that command; the console has the details.",
+      "comment": [
+        "The command hit an error. The console has what happened."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "info",
+      "english": "<prefix>xLimits <highlight><version></highlight> on <platform>: <count> limits on. <gray>/xlimits here | top | near | restore | reload | debug | import",
+      "comment": [
+        "/xlimits on its own."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "count"
+      ]
+    },
+    {
+      "key": "limit.entity",
+      "english": "<prefix><error>This chunk has <count> of <max> <limit>.</error> No more can be added here.",
+      "comment": [
+        "To a player whose spawn egg, breeding, boat, minecart, armour stand or item frame was refused."
+      ],
+      "placeholders": [
+        "limit",
+        "count",
+        "max"
+      ]
+    },
+    {
+      "key": "limit.block",
+      "english": "<prefix><error>This chunk has <count> of <max> <limit>.</error> Place it in another chunk.",
+      "comment": [
+        "To a player whose block was refused."
+      ],
+      "placeholders": [
+        "limit",
+        "count",
+        "max"
+      ]
+    },
+    {
+      "key": "limit.tnt",
+      "english": "<prefix><error>This chunk already has <count> of <max> primed TNT.</error>",
+      "comment": [
+        "To a player whose TNT didn't prime."
+      ],
+      "placeholders": [
+        "count",
+        "max"
+      ]
+    },
+    {
+      "key": "limit.pets",
+      "english": "<prefix><error>You have <count> of <max> pets<type>.</error> Pets you have are kept.",
+      "comment": [
+        "To a player whose taming failed. <type> is \" of this kind\" for a cap per type, else blank."
+      ],
+      "placeholders": [
+        "count",
+        "max",
+        "type"
+      ]
+    },
+    {
+      "key": "limit.pets-of-type",
+      "english": " of this kind",
+      "comment": [
+        "Filled into limit.pets for a cap per type."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "alert.reached",
+      "english": "<prefix><gold>⚠</gold> <highlight><limit></highlight> reached at <world> <x>, <z> (<count>/<max>). <click:run_command:'/xlimits tp <world> <x> <y> <z>'><hover:show_text:'Teleport there'><highlight>[Teleport]</highlight></hover></click><who_built>",
+      "comment": [
+        "To staff with xlimits.alerts, the first time a chunk reaches a limit (alerts.cooldown)."
+      ],
+      "placeholders": [
+        "limit",
+        "world",
+        "x",
+        "y",
+        "z",
+        "count",
+        "max",
+        "who_built"
+      ]
+    },
+    {
+      "key": "alert.who-built",
+      "english": " <click:run_command:'/<command>'><hover:show_text:'Look it up in xRewind'><highlight>[Who built this]</highlight></hover></click>",
+      "comment": [
+        "The alert's xRewind button, with xRewind installed."
+      ],
+      "placeholders": [
+        "command"
+      ]
+    },
+    {
+      "key": "alert.redstone",
+      "english": "<prefix><gold>⚠</gold> A redstone clock at <world> <x> <y> <z> changed <count> times in <window> and was broken. <click:run_command:'/xlimits tp <world> <x> <y> <z>'><hover:show_text:'Teleport there'><highlight>[Teleport]</highlight></hover></click><who_built>",
+      "comment": [
+        "To staff as a redstone clock is stopped."
+      ],
+      "placeholders": [
+        "world",
+        "x",
+        "y",
+        "z",
+        "count",
+        "window",
+        "who_built"
+      ]
+    },
+    {
+      "key": "alert.profile-on",
+      "english": "<prefix><gold>⚠</gold> Load profile <highlight><profile></highlight> is on<where>: <reason>.",
+      "comment": [
+        "To staff as a load profile turns on."
+      ],
+      "placeholders": [
+        "profile",
+        "where",
+        "reason"
+      ]
+    },
+    {
+      "key": "alert.profile-off",
+      "english": "<prefix>Load profile <highlight><profile></highlight> is off<where>; <now> now.",
+      "comment": [
+        "To staff as a load profile turns off."
+      ],
+      "placeholders": [
+        "profile",
+        "where",
+        "now"
+      ]
+    },
+    {
+      "key": "alert.profile-where",
+      "english": " in the region at <world> <x>, <z>",
+      "comment": [
+        "On Folia, where a region's profile changed."
+      ],
+      "placeholders": [
+        "world",
+        "x",
+        "z"
+      ]
+    },
+    {
+      "key": "alert.reason-players",
+      "english": "<value> players online, over <on>",
+      "comment": [],
+      "placeholders": [
+        "value",
+        "on"
+      ]
+    },
+    {
+      "key": "alert.reason-tps",
+      "english": "TPS <value>, under <on>",
+      "comment": [],
+      "placeholders": [
+        "value",
+        "on"
+      ]
+    },
+    {
+      "key": "alert.reason-mspt",
+      "english": "<value> ms a tick, over <on>",
+      "comment": [],
+      "placeholders": [
+        "value",
+        "on"
+      ]
+    },
+    {
+      "key": "here.header",
+      "english": "<prefix>Chunk <highlight><world> <x>, <z></highlight>, profile <highlight><profile></highlight>:",
+      "comment": [
+        "/xlimits here, first."
+      ],
+      "placeholders": [
+        "world",
+        "x",
+        "z",
+        "profile"
+      ]
+    },
+    {
+      "key": "here.line",
+      "english": " <gray>•</gray> <limit>: <highlight><count></highlight> of <max>",
+      "comment": [
+        "One limit in /xlimits here."
+      ],
+      "placeholders": [
+        "limit",
+        "count",
+        "max"
+      ]
+    },
+    {
+      "key": "here.full",
+      "english": " <gray>•</gray> <limit>: <error><count> of <max></error>",
+      "comment": [
+        "One limit in /xlimits here that's reached."
+      ],
+      "placeholders": [
+        "limit",
+        "count",
+        "max"
+      ]
+    },
+    {
+      "key": "here.slowed",
+      "english": " <gray>•</gray> <limit> farm: <highlight>slowed</highlight> (<count>, over <max>)",
+      "comment": [
+        "A farm rule slowing mobs here."
+      ],
+      "placeholders": [
+        "limit",
+        "count",
+        "max"
+      ]
+    },
+    {
+      "key": "here.none",
+      "english": " <gray>No limits are on.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "here.exempt",
+      "english": "<prefix>This world is exempt (worlds.exempt): nothing is limited here.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "here.server",
+      "english": "<gray>The server's own settings here: <settings>",
+      "comment": [
+        "Paper's and Spigot's settings next to xLimits'."
+      ],
+      "placeholders": [
+        "settings"
+      ]
+    },
+    {
+      "key": "here.unlimited",
+      "english": "no limit",
+      "comment": [
+        "In place of a number for a limit an area has none of."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "top.header",
+      "english": "<prefix>The busiest chunks by <what>:",
+      "comment": [
+        "/xlimits top and near, first."
+      ],
+      "placeholders": [
+        "what"
+      ]
+    },
+    {
+      "key": "near.header",
+      "english": "<prefix>The busiest chunks around <highlight><player></highlight> by <what>:",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "what"
+      ]
+    },
+    {
+      "key": "top.line",
+      "english": " <gray><rank>.</gray> <click:run_command:'/xlimits tp <world> <bx> 100 <bz>'><hover:show_text:'Teleport there'><highlight><world> <x>, <z></highlight></hover></click>: <entities> entities, <blocks> block entities<redstone>",
+      "comment": [
+        "One chunk; clicking it teleports there."
+      ],
+      "placeholders": [
+        "rank",
+        "world",
+        "x",
+        "z",
+        "bx",
+        "bz",
+        "entities",
+        "blocks",
+        "redstone"
+      ]
+    },
+    {
+      "key": "top.redstone",
+      "english": ", <count> redstone changes",
+      "comment": [],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "top.none",
+      "english": "<prefix>No chunks are loaded.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "top.counting",
+      "english": "<prefix>Counting the loaded chunks...",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "restore.done",
+      "english": "<prefix><success>Restored <count> slowed mobs.</success> Farm slowing is paused until /xlimits reload or a restart.",
+      "comment": [],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "restore.started",
+      "english": "<prefix>Restoring every slowed mob in the loaded chunks...",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "tp.unknown-world",
+      "english": "<prefix><error>There's no world called <world>.",
+      "comment": [],
+      "placeholders": [
+        "world"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "key": "xlimits:limit_reached",
+      "className": "co.xenastudios.xlimits.api.event.LimitReachedEvent",
+      "description": "Something is about to be refused at a limit. Cancel it to allow it after all.",
+      "cancellable": true,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xlimits:farm_slowed",
+      "className": "co.xenastudios.xlimits.api.event.FarmSlowedEvent",
+      "description": "A crammed farm's mobs are about to be slowed. Cancel it to leave them be.",
+      "cancellable": true,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xlimits:farm_restored",
+      "className": "co.xenastudios.xlimits.api.event.FarmRestoredEvent",
+      "description": "A farm's mobs went back to normal as their count fell.",
+      "cancellable": false,
+      "since": "1.0.0"
+    },
+    {
+      "key": "xlimits:profile_changed",
+      "className": "co.xenastudios.xlimits.api.event.ProfileChangedEvent",
+      "description": "A load profile turned on or off.",
+      "cancellable": false,
+      "since": "1.0.0"
+    }
+  ]
+}

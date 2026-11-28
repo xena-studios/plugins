@@ -1,0 +1,21 @@
+---
+title: Commands
+description: "Every xLimits command: /xlimits here, top, near, restore and tp, and the admin subcommands, with their arguments and permissions."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+`<angle brackets>` are required, `[square brackets]` optional. `/limits` is the same as `/xlimits` (`command.aliases`).
+
+| | |
+| --- | --- |
+| `/xlimits here` | Your chunk against every limit, the load profile on there, farms being slowed, and the server's own settings beside them (Paper's `max-entity-collisions`, Spigot's `hopper-transfer` and the like). Blocks are counted afresh for it. |
+| `/xlimits top [entities\|blocks\|redstone]` | The ten busiest loaded chunks, each clickable to teleport there. |
+| `/xlimits near <player> [entities\|blocks\|redstone]` | The same, within four chunks of a player. |
+| `/xlimits restore` | Puts every slowed mob back to normal, and pauses farm slowing until a reload or a restart (chunks that load meanwhile are restored too). Typed twice to confirm. Run it before removing xLimits. |
+| `/xlimits tp <world> <x> <y> <z>` | What the alerts' and `top`'s buttons run: a teleport to a safe spot there. |
+| `/xlimits import farmcontrol\|insights [--dry-run]` | Writes FarmControl's or Insights' limits into `config.yml`. See [Switching](/xlimits/switching/). |
+
+<Reference plugin="xlimits" show="commands" />

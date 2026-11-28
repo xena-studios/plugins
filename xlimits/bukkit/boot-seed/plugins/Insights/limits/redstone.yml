@@ -1,0 +1,9 @@
+# Insights limits, in its own format, for xLimits' import (import-checks.txt).
+limit:
+  name: "Redstone"
+  type: "GROUP"
+  limit: 64
+  materials:
+    - "REPEATER"
+    - "COMPARATOR"
+    - "OBSERVER"

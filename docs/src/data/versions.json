@@ -11,6 +11,7 @@
     { "id": "xvanish", "name": "xVanish", "newest": 1, "older": [], "unreleased": {} },
     { "id": "xmarket", "name": "xMarket", "newest": 1, "older": [], "unreleased": {} },
     { "id": "xrewind", "newest": 2, "older": [1], "unreleased": { "version": "1.1.1", "jarBudgetKb": 350 } },
+    { "id": "xlimits", "name": "xLimits", "newest": 1, "older": [], "unreleased": {} },
     { "id": "xsample", "name": "xSample", "hidden": true, "newest": 1, "older": [0] }
   ]
 }

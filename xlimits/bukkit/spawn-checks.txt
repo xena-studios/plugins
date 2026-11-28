@@ -1,0 +1,12 @@
+# Spawning past a cap, from the console's /summon (boot.sh adds these on Paper and Spigot; Folia's
+# console can't summon into a region): the seeded cap of 3 cows per chunk refuses the fourth,
+# staff (the console) are alerted once, and /xlimits top counts them. Chunk 0, 0 is kept loaded
+# first where the server can (1.14 on); 1.13 keeps its spawn loaded, around 0, 0.
+run: forceload add 0 0
+run: summon cow 8 70 8
+run: summon cow 8 70 8
+run: summon cow 8 70 8
+run: summon cow 8 70 8
+expect: cow reached at world 8
+run: xlimits top
+expect: 1. world

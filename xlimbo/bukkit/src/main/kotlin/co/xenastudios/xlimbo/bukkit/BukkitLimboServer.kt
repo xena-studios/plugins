@@ -170,15 +170,20 @@ internal class BukkitLimboServer(
     @Volatile
     private var syncPending = false
 
+    /** Whether the server is still loading its worlds: set by an xLimbo that starts as the first of them loads. */
+    @Volatile
+    var loadingWorlds = false
+
     // xLimbo enables before the server's worlds load (load: STARTUP), so a world in bukkit.yml can
     // use its generator; its own world can only be made once they're loaded, on the first tick.
     // Bukkit's scheduler keeps running while an empty server is paused (#67).
     override fun sync(config: Config) {
-        if (server.worlds.isEmpty()) {
+        if (loadingWorlds || server.worlds.isEmpty()) {
             if (!syncPending) {
                 syncPending = true
                 platform.scheduler.run(co.xenastudios.core.common.scheduler.Where.Global) {
                     syncPending = false
+                    loadingWorlds = false
                     world.sync(WorldSettings.of(xlimbo.config, platform.log))
                 }
             }

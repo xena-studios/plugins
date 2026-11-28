@@ -22,6 +22,7 @@ A rewrite on the new core. Replace the jar and restart: your 2.x config is carri
 - `/xlimbo list` (who's in limbo and their place in line), `/xlimbo send <player>`, `/xlimbo back <player|all>`, and the admin subcommands every Xena plugin has: `/xlimbo reload`, `debug` (a report to share when asking for help) and `forget`.
 - The welcome is sent a second after a player joins, once their client has said which language it's in.
 - **No work while limbo is empty.** The action bar, the return queue and the entity sweep run only while someone is in limbo, and start again with the next arrival.
+- **A lighter start.** xLimbo is enabled before the worlds load, as before, so a world in `bukkit.yml` can use its generator, but starts as the first of them loads: by then its classes have loaded on a thread of their own, so the server's thread spends about a third of the time on it (about 45 ms instead of 130 on two cores).
 
 ### Changed
 

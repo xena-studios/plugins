@@ -134,12 +134,12 @@
       "icon": "plugins/xplots/icon.svg",
       "banner": "plugins/xplots/banner.png",
       "version": "1.0.2",
-      "folia": false,
+      "folia": true,
       "jarBudgetKb": 330,
-      "api": false,
+      "api": true,
       "docs": "/xplots/",
       "modrinth": null,
-      "maven": null
+      "maven": "co.xenastudios.xplots:xplots-api"
     },
     {
       "id": "xteleport",

@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind|xlimits|xlimbo|xlimbo-family] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind|xlimits|xlimbo|xlimbo-family|xplots] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>] [--fabric] [--fixed-language]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -47,7 +47,10 @@
 // Friend, and /join goes out with its cooldown), or xLimbo as a world on a server with xTeleport and
 // xVanish beside it (xlimbo-family, send-back.via: teleport: Joiner sets xTeleport's spawn and sends
 // Friend into limbo in adventure mode; Joiner, vanished, follows and isn't counted for Friend;
-// Friend's /join takes them back through xTeleport's spawn, their game mode given back).
+// Friend's /join takes them back through xTeleport's spawn, their game mode given back), or xPlots'
+// (Joiner makes a field of two plots beside them, rents one through its sign and menu, paid through xMoney with --xmoney; Friend, no operator, can't break a block in it
+// until Joiner adds them with /plots add; and with --xmoney, xTeleport beside it lists the plot home
+// in /homes and /home takes Joiner there; all in German).
 //
 // The same scenarios run on Fabric (scripts/boot-fabric.sh's "client:" step, which adds --fabric):
 // a check that differs there by design takes Fabric's side, as each says (xUtilities' /back,
@@ -666,6 +669,7 @@ async function run () {
   if (plugin === 'xlimits') return xlimits()
   if (plugin === 'xlimbo') return xlimbo()
   if (plugin === 'xlimbo-family') return xlimboFamily()
+  if (plugin === 'xplots') return xplots()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")
@@ -970,6 +974,87 @@ async function xlimboFamily () {
   check('Joiner is back at spawn', distance(bot.entity.position, spawn) < 2, `at ${bot.entity.position}, spawn ${spawn}`)
   await command('/vanish', de('wieder sichtbar', 'visible'), 'Joiner shows again')
   try { friend.bot.quit() } catch {}
+  finish()
+}
+
+// xPlots as a player meets it: Joiner (an operator, in German) makes a field of two 5×5 plots
+// beside where they stand, rents the first through its sign and menu (with --xmoney, paid through
+// xMoney, xTeleport beside it), and Friend, who isn't an operator, can't break a block in it until
+// Joiner adds them as a member. With --xmoney, the plot home is in xTeleport's /homes and /home.
+async function xplots () {
+  const opened = (ms = 8000) => new Promise((resolve) => {
+    const timer = setTimeout(() => { bot.removeListener('windowOpen', on); resolve(null) }, ms)
+    const on = (w) => { clearTimeout(timer); resolve(w) }
+    bot.once('windowOpen', on)
+  })
+  const title = (w) => JSON.stringify(w && w.title)
+  const at = bot.entity.position.floored()
+  const g = at.y - 1
+  const x0 = at.x + 3
+  const z0 = at.z + 3
+  // Flat ground of dirt under the field and the path beside it, clear air above: the world's own
+  // terrain doesn't matter.
+  await command(`/fill ${x0 - 2} ${g} ${z0 - 3} ${x0 + 13} ${g} ${z0 + 7} minecraft:dirt`, '', 'the ground is made')
+  await command(`/fill ${x0 - 2} ${g + 1} ${z0 - 3} ${x0 + 13} ${g + 6} ${z0 + 7} minecraft:air`, '', 'the air above is cleared')
+  await sleep(1000)
+  await command(`/xplots select world ${x0} ${g} ${z0} ${x0 + 11} ${g + 6} ${z0 + 4}`, de('Ausgewählt', 'Selected'), '/xplots select takes the corners')
+  await command('/xplots field create client size:5 path:2', '= 2', 'the field is previewed')
+  await command('/xplots confirm', de('Erstellt:', 'Made'), 'the field is made, in German')
+  if (withXMoney) await command(`/eco give ${username} 1000`, username, '/eco gives the client money through xMoney')
+  const Vec3 = bot.entity.position.constructor
+  const signAt = new Vec3(x0, g + 1, z0 + 5)
+  let sign = null
+  for (let waited = 0; waited < 8000 && !(sign && sign.name.includes('sign')); waited += 250) {
+    await sleep(250)
+    sign = bot.blockAt(signAt)
+  }
+  check("the plot's sign stands on the path", sign != null && sign.name.includes('sign'), `found ${sign && sign.name} at ${signAt}`)
+  if (!sign || !sign.name.includes('sign')) return finish()
+  // Within reach of the sign, on the path in front of it.
+  await command(`/tp ${username} ${x0 + 0.5} ${g + 1} ${z0 + 7.5}`, '', 'Joiner walks up to the sign')
+  await sleep(1500)
+  let w = opened()
+  await bot.activateBlock(sign)
+  w = await w
+  check('clicking a free plot\'s sign opens the rent menu, in German', w != null && title(w).includes(de('mieten', 'Rent')), `window ${title(w)}`)
+  if (!w) return finish()
+  const from = heard.length
+  try { await bot.clickWindow(11, 0, 0) } catch (e) { /* the menu closes as it rents */ }
+  check('renting from the menu pays and rents', await hear(de('Du hast', 'You rented'), from) != null, `heard ${JSON.stringify(heard.slice(from))}`)
+  if (bot.currentWindow) bot.closeWindow(bot.currentWindow)
+  if (withXMoney) await command('/balance', de('Kontostand: $900.00', 'Balance: $900.00'), 'xMoney took the rent')
+  // Friend, no operator, beside the plot: a block in it can't be broken until they're a member.
+  const target = new Vec3(x0 + 2, g + 1, z0 + 2)
+  await command(`/setblock ${target.x} ${target.y} ${target.z} minecraft:dirt`, '', 'a block in the plot')
+  const friend = friendBot({ version: false })
+  check('Friend joins', await friend.until(() => friend.spawned), 'Friend never spawned')
+  await sleep(1500)
+  await command(`/tp Friend ${x0 + 2.5} ${g + 1} ${z0 - 1.5}`, '', 'Friend stands on the path beside the plot')
+  await sleep(1500)
+  const dig = async () => {
+    const block = friend.bot.blockAt(target)
+    if (block && block.name !== 'air') {
+      try { await friend.bot.dig(block, true) } catch (e) { /* refused or out of reach: what's checked is the block */ }
+    }
+    await sleep(1500)
+    const now = bot.blockAt(target)
+    return now ? now.name : null
+  }
+  let left = await dig()
+  check("Friend, not a member, can't break a block in the plot", left === 'dirt', `the block is ${left}`)
+  await command('/plots add Friend', de('Hinzugefügt:', 'Added'), '/plots add makes Friend a member, in German')
+  left = await dig()
+  check('as a member, Friend can', left === 'air', `the block is ${left}`)
+  try { friend.bot.quit() } catch {}
+  if (withXMoney) {
+    await command('/homes', 'client-1', "xTeleport's /homes lists the plot home")
+    bot.chat(`/tp ${username} ~ ~ ~30`)
+    await sleep(1500)
+    await command('/home client-1', de('Willkommen in client-1', 'Welcome to client-1'), '/home goes to the plot home, through xTeleport')
+    await sleep(1000)
+    const d = Math.hypot(bot.entity.position.x - (x0 + 0.5), bot.entity.position.z - (z0 + 5.5))
+    check('Joiner is at the plot\'s front', d < 2, `at ${bot.entity.position}`)
+  }
   finish()
 }
 

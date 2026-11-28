@@ -249,6 +249,14 @@ check "xRewind's real-client checks" xrewind/bukkit/client-checks.txt \
   $'tasks=:build :xrewind:api:build :xrewind:bukkit:build :xrewind:common:build\nchecks=\nboot=bukkit'
 check "xRewind's Fabric mod (platform-fabric's build)" xrewind/fabric/src/main/kotlin/co/xenastudios/xrewind/fabric/FabricRewindServer.kt \
   $'tasks=:build :xrewind:api:build :xrewind:bukkit:build :xrewind:common:build\nchecks=\nboot=fabric'
+check "xPlots' common code" xplots/common/src/commonMain/kotlin/co/xenastudios/xplots/XPlotsPlugin.kt \
+  $'tasks=:build :xplots:api:build :xplots:bukkit:build :xplots:common:build\nchecks=\nboot=bukkit'
+check "xPlots' API" xplots/api/src/commonMain/kotlin/co/xenastudios/xplots/api/XPlotsApi.kt \
+  $'tasks=:build :xplots:api:build :xplots:bukkit:build :xplots:common:build\nchecks=\nboot=bukkit'
+check "xPlots' Bukkit adapter" xplots/bukkit/src/main/kotlin/co/xenastudios/xplots/bukkit/BukkitPlotServer.kt \
+  $'tasks=:build :xplots:api:build :xplots:bukkit:build :xplots:common:build\nchecks=\nboot=bukkit'
+check "xPlots' WorldGuard checks" xplots/bukkit/worldguard-checks.txt \
+  $'tasks=:build :xplots:api:build :xplots:bukkit:build :xplots:common:build\nchecks=\nboot=bukkit'
 check "xLimits' common code" xlimits/common/src/commonMain/kotlin/co/xenastudios/xlimits/XLimitsPlugin.kt \
   $'tasks=:build :xlimits:api:build :xlimits:bukkit:build :xlimits:common:build\nchecks=\nboot=bukkit fabric'
 check "xLimits' API" xlimits/api/src/commonMain/kotlin/co/xenastudios/xlimits/api/XLimitsApi.kt \

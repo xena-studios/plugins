@@ -1,0 +1,19 @@
+name: xPlots
+version: '${version}'
+main: co.xenastudios.xplots.bukkit.XPlotsBootstrap
+# 1.13 at least: block data, which every plot's saved blocks are, starts there.
+api-version: '1.13'
+folia-supported: true
+description: Rentable plots, set up in a minute.
+website: https://plugins.xenastudios.co/xplots/
+authors: [Xena Studios]
+# Optional, each found when it's needed, and loaded first when it's there: rent through xMoney (or
+# any economy registered with Vault), one region per field with WorldGuard, WorldEdit's selection,
+# plot homes in xTeleport, rollbacks in a plot with xRewind, xVanish's hidden players, and
+# PlaceholderAPI's placeholders.
+softdepend: [xMoney, Vault, WorldGuard, WorldEdit, FastAsyncWorldEdit, xTeleport, xRewind, xVanish, PlaceholderAPI]
+# Spigot 1.16.5 (May 2021 builds on) and Paper download these; older servers ignore the key,
+# and the shim downloads them instead.
+libraries:${libraries}
+# No commands or permissions here: they're registered at runtime, so every change applies on
+# /xplots reload.

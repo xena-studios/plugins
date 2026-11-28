@@ -1,0 +1,21 @@
+---
+title: Permissions
+description: "Every xPlots permission, and who has it by default."
+sidebar:
+  order: 3.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+1.x's permissions, with 1.x's defaults:
+
+| Permission | Default | What it allows |
+| --- | --- | --- |
+| `xplots.use` | Everyone | Renting plots, and `/plots`. |
+| `xplots.limit.<n>` | Nobody | Renting up to `<n>` plots at once, instead of `max-plots`. The highest one a player has counts. |
+| `xplots.warmup.bypass` | Operators | Teleporting without the warmup. |
+| `xplots.bypass` | Operators | Building and opening anything in any field. |
+| `xplots.rollback` | Everyone | 2.0: `/plots rollback`, in your own plot only (needs xRewind). |
+| `xplots.admin` | Operators | Every `/xplots` command, and the update notices. Each admin subcommand also has its own, `xplots.admin.<subcommand>`. |
+
+<Reference plugin="xplots" show="permissions" />

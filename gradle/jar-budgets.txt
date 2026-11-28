@@ -180,6 +180,14 @@
 # migration, the Paper and Spigot ways of contents and items, the three Bukkit events, and seven
 # translations. 1.x ran only on Paper 1.21.11+, with the old core. Line: size + about 10%.
 :xrewind:bukkit 880
+# xPlots 2.0 (M13), shrunk: 863 KiB on Bukkit (with its startup list), over the 500 KiB target
+# (and 1.x's 290) with the reason recorded in decisions/2026-11-28-xplots-2.md: about 420 KiB the
+# shared core it reaches, the rest xPlots' own with its first API: the grid and protection's
+# decisions, 1.x's listeners, the store, renting and renewals with their crash recovery, signs,
+# snapshots and resets, the menus, staff's commands, the 1.x migration, the bridges to xMoney,
+# xTeleport, xRewind, xVanish, WorldGuard and WorldEdit, ten Bukkit events, and seven translations.
+# 1.x ran only on Paper 1.21.11+, with the old core. Line: size + about 9%.
+:xplots:bukkit 940
 # On Fabric, 686-701 KiB, shrunk before Loom remaps it, its core relocated and the world hooks'
 # mixins carried as they are (xena.fabric-mod); lines size + about 10%.
 :core:platform-fabric:xrewind:1.20.1 755

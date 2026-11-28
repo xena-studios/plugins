@@ -1,0 +1,268 @@
+public final class co/xenastudios/xplots/api/Access : java/lang/Enum {
+	public static final field ALLOW Lco/xenastudios/xplots/api/Access;
+	public static final field DEFAULT Lco/xenastudios/xplots/api/Access;
+	public static final field DENY Lco/xenastudios/xplots/api/Access;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xplots/api/Access;
+	public static fun values ()[Lco/xenastudios/xplots/api/Access;
+}
+
+public abstract interface class co/xenastudios/xplots/api/AccessRule {
+	public abstract fun access (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/core/api/WorldRef;III)Lco/xenastudios/xplots/api/Access;
+}
+
+public final class co/xenastudios/xplots/api/ChangeResult : java/lang/Enum {
+	public static final field ALREADY Lco/xenastudios/xplots/api/ChangeResult;
+	public static final field CANCELLED Lco/xenastudios/xplots/api/ChangeResult;
+	public static final field Companion Lco/xenastudios/xplots/api/ChangeResult$Companion;
+	public static final field DONE Lco/xenastudios/xplots/api/ChangeResult;
+	public static final field NOT_MEMBER Lco/xenastudios/xplots/api/ChangeResult;
+	public static final field NOT_READY Lco/xenastudios/xplots/api/ChangeResult;
+	public static final field NOT_RENTED Lco/xenastudios/xplots/api/ChangeResult;
+	public static final field NO_PLOT Lco/xenastudios/xplots/api/ChangeResult;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun isDone ()Z
+	public static final fun of (Ljava/lang/String;)Lco/xenastudios/xplots/api/ChangeResult;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xplots/api/ChangeResult;
+	public static fun values ()[Lco/xenastudios/xplots/api/ChangeResult;
+}
+
+public final class co/xenastudios/xplots/api/ChangeResult$Companion {
+	public final fun of (Ljava/lang/String;)Lco/xenastudios/xplots/api/ChangeResult;
+}
+
+public final class co/xenastudios/xplots/api/EndReason : java/lang/Enum {
+	public static final field ABANDONED Lco/xenastudios/xplots/api/EndReason;
+	public static final field EVICTED Lco/xenastudios/xplots/api/EndReason;
+	public static final field EXPIRED Lco/xenastudios/xplots/api/EndReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xplots/api/EndReason;
+	public static fun values ()[Lco/xenastudios/xplots/api/EndReason;
+}
+
+public final class co/xenastudios/xplots/api/FieldInfo {
+	public fun <init> (Ljava/lang/String;Lco/xenastudios/core/api/WorldRef;Lco/xenastudios/xplots/api/PlotBox;Ljava/util/List;IZ)V
+	public final fun getArea ()Lco/xenastudios/xplots/api/PlotBox;
+	public final fun getHasWarp ()Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlots ()Ljava/util/List;
+	public final fun getRented ()I
+	public final fun getWorld ()Lco/xenastudios/core/api/WorldRef;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xplots/api/PlotBox {
+	public fun <init> (IIIIII)V
+	public final fun contains (III)Z
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDepth ()I
+	public final fun getHeight ()I
+	public final fun getMaxX ()I
+	public final fun getMaxY ()I
+	public final fun getMaxZ ()I
+	public final fun getMinX ()I
+	public final fun getMinY ()I
+	public final fun getMinZ ()I
+	public final fun getWidth ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class co/xenastudios/xplots/api/PlotInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILco/xenastudios/core/api/WorldRef;Lco/xenastudios/xplots/api/PlotBox;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;JLjava/util/Map;IZ)V
+	public final fun getBox ()Lco/xenastudios/xplots/api/PlotBox;
+	public final fun getExpiresAt ()J
+	public final fun getField ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getMembers ()Ljava/util/Map;
+	public final fun getNumber ()I
+	public final fun getOwner ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getOwnerName ()Ljava/lang/String;
+	public final fun getResetting ()Z
+	public final fun getSlots ()I
+	public final fun getWorld ()Lco/xenastudios/core/api/WorldRef;
+	public final fun isFree ()Z
+	public fun toString ()Ljava/lang/String;
+	public final fun trusts (Lco/xenastudios/core/api/PlayerRef;)Z
+}
+
+public final class co/xenastudios/xplots/api/PlotLimits {
+	public static final field INSTANCE Lco/xenastudios/xplots/api/PlotLimits;
+	public static final field MAX_SLOTS I
+}
+
+public abstract interface class co/xenastudios/xplots/api/PriceModifier {
+	public abstract fun price (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/xplots/api/RentKind;D)D
+}
+
+public abstract interface class co/xenastudios/xplots/api/RegionBackend {
+	public abstract fun define (Ljava/lang/String;Lco/xenastudios/core/api/WorldRef;Lco/xenastudios/xplots/api/PlotBox;)V
+	public abstract fun remove (Ljava/lang/String;Lco/xenastudios/core/api/WorldRef;)V
+}
+
+public final class co/xenastudios/xplots/api/RentKind : java/lang/Enum {
+	public static final field PAY Lco/xenastudios/xplots/api/RentKind;
+	public static final field RENEW Lco/xenastudios/xplots/api/RentKind;
+	public static final field RENT Lco/xenastudios/xplots/api/RentKind;
+	public static final field SLOT Lco/xenastudios/xplots/api/RentKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lco/xenastudios/xplots/api/RentKind;
+	public static fun values ()[Lco/xenastudios/xplots/api/RentKind;
+}
+
+public final class co/xenastudios/xplots/api/XPlots {
+	public static final field INSTANCE Lco/xenastudios/xplots/api/XPlots;
+	public static final fun api ()Lco/xenastudios/xplots/api/XPlotsApi;
+	public static final fun isEnabled ()Z
+	public static final fun register (Lco/xenastudios/xplots/api/XPlotsApi;)V
+}
+
+public abstract interface class co/xenastudios/xplots/api/XPlotsApi {
+	public abstract fun addMember (Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun evict (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun extend (Ljava/lang/String;J)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun field (Ljava/lang/String;)Lco/xenastudios/xplots/api/FieldInfo;
+	public abstract fun fields ()Ljava/util/List;
+	public abstract fun getEvents ()Lco/xenastudios/core/api/event/EventBus;
+	public abstract fun getVersion ()Ljava/lang/String;
+	public abstract fun isInField (Lco/xenastudios/core/api/WorldRef;III)Z
+	public abstract fun isReady ()Z
+	public abstract fun mayBuild (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/core/api/WorldRef;III)Z
+	public abstract fun plot (Ljava/lang/String;)Lco/xenastudios/xplots/api/PlotInfo;
+	public abstract fun plotAt (Lco/xenastudios/core/api/WorldRef;III)Lco/xenastudios/xplots/api/PlotInfo;
+	public abstract fun plotsOf (Lco/xenastudios/core/api/PlayerRef;)Ljava/util/List;
+	public abstract fun price (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/xplots/api/RentKind;I)Ljava/lang/Double;
+	public abstract fun registerAccessRule (Ljava/lang/String;Lco/xenastudios/xplots/api/AccessRule;)V
+	public abstract fun registerPriceModifier (Ljava/lang/String;Lco/xenastudios/xplots/api/PriceModifier;)V
+	public abstract fun registerRegionBackend (Ljava/lang/String;Lco/xenastudios/xplots/api/RegionBackend;)V
+	public abstract fun removeMember (Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun setOwner (Ljava/lang/String;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public abstract fun unregisterAll (Ljava/lang/String;)V
+}
+
+public final class co/xenastudios/xplots/api/event/MemberAddEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xplots/api/event/MemberAddEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Z)V
+	public final fun getByStaff ()Z
+	public final fun getMember ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+}
+
+public final class co/xenastudios/xplots/api/event/MemberAddEvent$Companion {
+}
+
+public final class co/xenastudios/xplots/api/event/MemberAddedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xplots/api/event/MemberAddedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)V
+	public final fun getMember ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+}
+
+public final class co/xenastudios/xplots/api/event/MemberAddedEvent$Companion {
+}
+
+public final class co/xenastudios/xplots/api/event/MemberRemoveEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xplots/api/event/MemberRemoveEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Z)V
+	public final fun getByStaff ()Z
+	public final fun getMember ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+}
+
+public final class co/xenastudios/xplots/api/event/MemberRemoveEvent$Companion {
+}
+
+public final class co/xenastudios/xplots/api/event/MemberRemovedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xplots/api/event/MemberRemovedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;)V
+	public final fun getMember ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+}
+
+public final class co/xenastudios/xplots/api/event/MemberRemovedEvent$Companion {
+}
+
+public final class co/xenastudios/xplots/api/event/PlotClaimEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xplots/api/event/PlotClaimEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/xplots/api/PlotInfo;D)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+	public final fun getPrice ()D
+}
+
+public final class co/xenastudios/xplots/api/event/PlotClaimEvent$Companion {
+}
+
+public final class co/xenastudios/xplots/api/event/PlotClaimedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xplots/api/event/PlotClaimedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Ljava/lang/String;Lco/xenastudios/xplots/api/PlotInfo;D)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+	public final fun getPrice ()D
+}
+
+public final class co/xenastudios/xplots/api/event/PlotClaimedEvent$Companion {
+}
+
+public final class co/xenastudios/xplots/api/event/PlotUnclaimEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xplots/api/event/PlotUnclaimEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/xplots/api/EndReason;)V
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+	public final fun getReason ()Lco/xenastudios/xplots/api/EndReason;
+}
+
+public final class co/xenastudios/xplots/api/event/PlotUnclaimEvent$Companion {
+}
+
+public final class co/xenastudios/xplots/api/event/PlotUnclaimedEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xplots/api/event/PlotUnclaimedEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/xplots/api/EndReason;)V
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+	public final fun getReason ()Lco/xenastudios/xplots/api/EndReason;
+}
+
+public final class co/xenastudios/xplots/api/event/PlotUnclaimedEvent$Companion {
+}
+
+public final class co/xenastudios/xplots/api/event/RentPaidEvent : co/xenastudios/core/api/event/Event {
+	public static final field Companion Lco/xenastudios/xplots/api/event/RentPaidEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/xplots/api/RentKind;ID)V
+	public final fun getKind ()Lco/xenastudios/xplots/api/RentKind;
+	public final fun getPeriods ()I
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+	public final fun getPrice ()D
+}
+
+public final class co/xenastudios/xplots/api/event/RentPaidEvent$Companion {
+}
+
+public final class co/xenastudios/xplots/api/event/RentPayEvent : co/xenastudios/core/api/event/CancellableEvent {
+	public static final field Companion Lco/xenastudios/xplots/api/event/RentPayEvent$Companion;
+	public static final field TYPE Lco/xenastudios/core/api/event/EventType;
+	public fun <init> (Lco/xenastudios/core/api/PlayerRef;Lco/xenastudios/xplots/api/PlotInfo;Lco/xenastudios/xplots/api/RentKind;ID)V
+	public final fun getKind ()Lco/xenastudios/xplots/api/RentKind;
+	public final fun getPeriods ()I
+	public final fun getPlayer ()Lco/xenastudios/core/api/PlayerRef;
+	public final fun getPlot ()Lco/xenastudios/xplots/api/PlotInfo;
+	public final fun getPrice ()D
+}
+
+public final class co/xenastudios/xplots/api/event/RentPayEvent$Companion {
+}
+

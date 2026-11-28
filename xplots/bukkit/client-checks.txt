@@ -1,0 +1,5 @@
+# A real client on the server (boot.sh ... --family --seed scripts/boot-seeds/client --checks client-checks.txt):
+# Joiner, an operator in German, makes a field, rents a plot through its sign and menu paid through
+# xMoney, Friend can't break a block in it until Joiner adds them, and xTeleport's /homes and /home
+# take Joiner to the plot home (scripts/budgets/bots/client.js, xplots).
+client: --plugin xplots --xmoney --timeout 150

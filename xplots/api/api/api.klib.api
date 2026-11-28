@@ -1,0 +1,368 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xplots.api/Access : kotlin/Enum<co.xenastudios.xplots.api/Access> { // co.xenastudios.xplots.api/Access|null[0]
+    enum entry ALLOW // co.xenastudios.xplots.api/Access.ALLOW|null[0]
+    enum entry DEFAULT // co.xenastudios.xplots.api/Access.DEFAULT|null[0]
+    enum entry DENY // co.xenastudios.xplots.api/Access.DENY|null[0]
+
+    final val entries // co.xenastudios.xplots.api/Access.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xplots.api/Access> // co.xenastudios.xplots.api/Access.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xplots.api/Access // co.xenastudios.xplots.api/Access.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xplots.api/Access> // co.xenastudios.xplots.api/Access.values|values#static(){}[0]
+}
+
+final enum class co.xenastudios.xplots.api/ChangeResult : kotlin/Enum<co.xenastudios.xplots.api/ChangeResult> { // co.xenastudios.xplots.api/ChangeResult|null[0]
+    enum entry ALREADY // co.xenastudios.xplots.api/ChangeResult.ALREADY|null[0]
+    enum entry CANCELLED // co.xenastudios.xplots.api/ChangeResult.CANCELLED|null[0]
+    enum entry DONE // co.xenastudios.xplots.api/ChangeResult.DONE|null[0]
+    enum entry NOT_MEMBER // co.xenastudios.xplots.api/ChangeResult.NOT_MEMBER|null[0]
+    enum entry NOT_READY // co.xenastudios.xplots.api/ChangeResult.NOT_READY|null[0]
+    enum entry NOT_RENTED // co.xenastudios.xplots.api/ChangeResult.NOT_RENTED|null[0]
+    enum entry NO_PLOT // co.xenastudios.xplots.api/ChangeResult.NO_PLOT|null[0]
+
+    final val entries // co.xenastudios.xplots.api/ChangeResult.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xplots.api/ChangeResult> // co.xenastudios.xplots.api/ChangeResult.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val isDone // co.xenastudios.xplots.api/ChangeResult.isDone|{}isDone[0]
+        final fun <get-isDone>(): kotlin/Boolean // co.xenastudios.xplots.api/ChangeResult.isDone.<get-isDone>|<get-isDone>(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xplots.api/ChangeResult // co.xenastudios.xplots.api/ChangeResult.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xplots.api/ChangeResult> // co.xenastudios.xplots.api/ChangeResult.values|values#static(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api/ChangeResult.Companion|null[0]
+        final fun of(kotlin/String): co.xenastudios.xplots.api/ChangeResult // co.xenastudios.xplots.api/ChangeResult.Companion.of|of(kotlin.String){}[0]
+    }
+}
+
+final enum class co.xenastudios.xplots.api/EndReason : kotlin/Enum<co.xenastudios.xplots.api/EndReason> { // co.xenastudios.xplots.api/EndReason|null[0]
+    enum entry ABANDONED // co.xenastudios.xplots.api/EndReason.ABANDONED|null[0]
+    enum entry EVICTED // co.xenastudios.xplots.api/EndReason.EVICTED|null[0]
+    enum entry EXPIRED // co.xenastudios.xplots.api/EndReason.EXPIRED|null[0]
+
+    final val entries // co.xenastudios.xplots.api/EndReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xplots.api/EndReason> // co.xenastudios.xplots.api/EndReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xplots.api/EndReason // co.xenastudios.xplots.api/EndReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xplots.api/EndReason> // co.xenastudios.xplots.api/EndReason.values|values#static(){}[0]
+}
+
+final enum class co.xenastudios.xplots.api/RentKind : kotlin/Enum<co.xenastudios.xplots.api/RentKind> { // co.xenastudios.xplots.api/RentKind|null[0]
+    enum entry PAY // co.xenastudios.xplots.api/RentKind.PAY|null[0]
+    enum entry RENEW // co.xenastudios.xplots.api/RentKind.RENEW|null[0]
+    enum entry RENT // co.xenastudios.xplots.api/RentKind.RENT|null[0]
+    enum entry SLOT // co.xenastudios.xplots.api/RentKind.SLOT|null[0]
+
+    final val entries // co.xenastudios.xplots.api/RentKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xplots.api/RentKind> // co.xenastudios.xplots.api/RentKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xplots.api/RentKind // co.xenastudios.xplots.api/RentKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xplots.api/RentKind> // co.xenastudios.xplots.api/RentKind.values|values#static(){}[0]
+}
+
+abstract fun interface co.xenastudios.xplots.api/AccessRule { // co.xenastudios.xplots.api/AccessRule|null[0]
+    abstract fun access(co.xenastudios.core.api/PlayerRef, co.xenastudios.xplots.api/PlotInfo?, co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int): co.xenastudios.xplots.api/Access // co.xenastudios.xplots.api/AccessRule.access|access(co.xenastudios.core.api.PlayerRef;co.xenastudios.xplots.api.PlotInfo?;co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+}
+
+abstract fun interface co.xenastudios.xplots.api/PriceModifier { // co.xenastudios.xplots.api/PriceModifier|null[0]
+    abstract fun price(co.xenastudios.core.api/PlayerRef, co.xenastudios.xplots.api/PlotInfo, co.xenastudios.xplots.api/RentKind, kotlin/Double): kotlin/Double // co.xenastudios.xplots.api/PriceModifier.price|price(co.xenastudios.core.api.PlayerRef;co.xenastudios.xplots.api.PlotInfo;co.xenastudios.xplots.api.RentKind;kotlin.Double){}[0]
+}
+
+abstract interface co.xenastudios.xplots.api/RegionBackend { // co.xenastudios.xplots.api/RegionBackend|null[0]
+    abstract fun define(kotlin/String, co.xenastudios.core.api/WorldRef, co.xenastudios.xplots.api/PlotBox) // co.xenastudios.xplots.api/RegionBackend.define|define(kotlin.String;co.xenastudios.core.api.WorldRef;co.xenastudios.xplots.api.PlotBox){}[0]
+    abstract fun remove(kotlin/String, co.xenastudios.core.api/WorldRef) // co.xenastudios.xplots.api/RegionBackend.remove|remove(kotlin.String;co.xenastudios.core.api.WorldRef){}[0]
+}
+
+abstract interface co.xenastudios.xplots.api/XPlotsApi { // co.xenastudios.xplots.api/XPlotsApi|null[0]
+    abstract val events // co.xenastudios.xplots.api/XPlotsApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xplots.api/XPlotsApi.events.<get-events>|<get-events>(){}[0]
+    abstract val isReady // co.xenastudios.xplots.api/XPlotsApi.isReady|{}isReady[0]
+        abstract fun <get-isReady>(): kotlin/Boolean // co.xenastudios.xplots.api/XPlotsApi.isReady.<get-isReady>|<get-isReady>(){}[0]
+    abstract val version // co.xenastudios.xplots.api/XPlotsApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xplots.api/XPlotsApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun addMember(kotlin/String, co.xenastudios.core.api/PlayerRef, kotlin/String): co.xenastudios.core.api/Pending<co.xenastudios.xplots.api/ChangeResult> // co.xenastudios.xplots.api/XPlotsApi.addMember|addMember(kotlin.String;co.xenastudios.core.api.PlayerRef;kotlin.String){}[0]
+    abstract fun evict(kotlin/String): co.xenastudios.core.api/Pending<co.xenastudios.xplots.api/ChangeResult> // co.xenastudios.xplots.api/XPlotsApi.evict|evict(kotlin.String){}[0]
+    abstract fun extend(kotlin/String, kotlin/Long): co.xenastudios.core.api/Pending<co.xenastudios.xplots.api/ChangeResult> // co.xenastudios.xplots.api/XPlotsApi.extend|extend(kotlin.String;kotlin.Long){}[0]
+    abstract fun field(kotlin/String): co.xenastudios.xplots.api/FieldInfo? // co.xenastudios.xplots.api/XPlotsApi.field|field(kotlin.String){}[0]
+    abstract fun fields(): kotlin.collections/List<co.xenastudios.xplots.api/FieldInfo> // co.xenastudios.xplots.api/XPlotsApi.fields|fields(){}[0]
+    abstract fun isInField(co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int): kotlin/Boolean // co.xenastudios.xplots.api/XPlotsApi.isInField|isInField(co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    abstract fun mayBuild(co.xenastudios.core.api/PlayerRef, co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int): kotlin/Boolean // co.xenastudios.xplots.api/XPlotsApi.mayBuild|mayBuild(co.xenastudios.core.api.PlayerRef;co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    abstract fun plot(kotlin/String): co.xenastudios.xplots.api/PlotInfo? // co.xenastudios.xplots.api/XPlotsApi.plot|plot(kotlin.String){}[0]
+    abstract fun plotAt(co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int): co.xenastudios.xplots.api/PlotInfo? // co.xenastudios.xplots.api/XPlotsApi.plotAt|plotAt(co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    abstract fun plotsOf(co.xenastudios.core.api/PlayerRef): kotlin.collections/List<co.xenastudios.xplots.api/PlotInfo> // co.xenastudios.xplots.api/XPlotsApi.plotsOf|plotsOf(co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun price(co.xenastudios.core.api/PlayerRef, kotlin/String, co.xenastudios.xplots.api/RentKind, kotlin/Int): kotlin/Double? // co.xenastudios.xplots.api/XPlotsApi.price|price(co.xenastudios.core.api.PlayerRef;kotlin.String;co.xenastudios.xplots.api.RentKind;kotlin.Int){}[0]
+    abstract fun registerAccessRule(kotlin/String, co.xenastudios.xplots.api/AccessRule) // co.xenastudios.xplots.api/XPlotsApi.registerAccessRule|registerAccessRule(kotlin.String;co.xenastudios.xplots.api.AccessRule){}[0]
+    abstract fun registerPriceModifier(kotlin/String, co.xenastudios.xplots.api/PriceModifier) // co.xenastudios.xplots.api/XPlotsApi.registerPriceModifier|registerPriceModifier(kotlin.String;co.xenastudios.xplots.api.PriceModifier){}[0]
+    abstract fun registerRegionBackend(kotlin/String, co.xenastudios.xplots.api/RegionBackend) // co.xenastudios.xplots.api/XPlotsApi.registerRegionBackend|registerRegionBackend(kotlin.String;co.xenastudios.xplots.api.RegionBackend){}[0]
+    abstract fun removeMember(kotlin/String, co.xenastudios.core.api/PlayerRef): co.xenastudios.core.api/Pending<co.xenastudios.xplots.api/ChangeResult> // co.xenastudios.xplots.api/XPlotsApi.removeMember|removeMember(kotlin.String;co.xenastudios.core.api.PlayerRef){}[0]
+    abstract fun setOwner(kotlin/String, co.xenastudios.core.api/PlayerRef, kotlin/String): co.xenastudios.core.api/Pending<co.xenastudios.xplots.api/ChangeResult> // co.xenastudios.xplots.api/XPlotsApi.setOwner|setOwner(kotlin.String;co.xenastudios.core.api.PlayerRef;kotlin.String){}[0]
+    abstract fun unregisterAll(kotlin/String) // co.xenastudios.xplots.api/XPlotsApi.unregisterAll|unregisterAll(kotlin.String){}[0]
+}
+
+final class co.xenastudios.xplots.api.event/MemberAddEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xplots.api.event/MemberAddEvent|null[0]
+    constructor <init>(co.xenastudios.xplots.api/PlotInfo, co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin/Boolean) // co.xenastudios.xplots.api.event/MemberAddEvent.<init>|<init>(co.xenastudios.xplots.api.PlotInfo;co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.Boolean){}[0]
+
+    final val byStaff // co.xenastudios.xplots.api.event/MemberAddEvent.byStaff|{}byStaff[0]
+        final fun <get-byStaff>(): kotlin/Boolean // co.xenastudios.xplots.api.event/MemberAddEvent.byStaff.<get-byStaff>|<get-byStaff>(){}[0]
+    final val member // co.xenastudios.xplots.api.event/MemberAddEvent.member|{}member[0]
+        final fun <get-member>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xplots.api.event/MemberAddEvent.member.<get-member>|<get-member>(){}[0]
+    final val name // co.xenastudios.xplots.api.event/MemberAddEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xplots.api.event/MemberAddEvent.name.<get-name>|<get-name>(){}[0]
+    final val plot // co.xenastudios.xplots.api.event/MemberAddEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/MemberAddEvent.plot.<get-plot>|<get-plot>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/MemberAddEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/MemberAddEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/MemberAddEvent> // co.xenastudios.xplots.api.event/MemberAddEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api.event/MemberAddedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xplots.api.event/MemberAddedEvent|null[0]
+    constructor <init>(co.xenastudios.xplots.api/PlotInfo, co.xenastudios.core.api/PlayerRef, kotlin/String) // co.xenastudios.xplots.api.event/MemberAddedEvent.<init>|<init>(co.xenastudios.xplots.api.PlotInfo;co.xenastudios.core.api.PlayerRef;kotlin.String){}[0]
+
+    final val member // co.xenastudios.xplots.api.event/MemberAddedEvent.member|{}member[0]
+        final fun <get-member>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xplots.api.event/MemberAddedEvent.member.<get-member>|<get-member>(){}[0]
+    final val name // co.xenastudios.xplots.api.event/MemberAddedEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xplots.api.event/MemberAddedEvent.name.<get-name>|<get-name>(){}[0]
+    final val plot // co.xenastudios.xplots.api.event/MemberAddedEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/MemberAddedEvent.plot.<get-plot>|<get-plot>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/MemberAddedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/MemberAddedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/MemberAddedEvent> // co.xenastudios.xplots.api.event/MemberAddedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api.event/MemberRemoveEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xplots.api.event/MemberRemoveEvent|null[0]
+    constructor <init>(co.xenastudios.xplots.api/PlotInfo, co.xenastudios.core.api/PlayerRef, kotlin/String, kotlin/Boolean) // co.xenastudios.xplots.api.event/MemberRemoveEvent.<init>|<init>(co.xenastudios.xplots.api.PlotInfo;co.xenastudios.core.api.PlayerRef;kotlin.String;kotlin.Boolean){}[0]
+
+    final val byStaff // co.xenastudios.xplots.api.event/MemberRemoveEvent.byStaff|{}byStaff[0]
+        final fun <get-byStaff>(): kotlin/Boolean // co.xenastudios.xplots.api.event/MemberRemoveEvent.byStaff.<get-byStaff>|<get-byStaff>(){}[0]
+    final val member // co.xenastudios.xplots.api.event/MemberRemoveEvent.member|{}member[0]
+        final fun <get-member>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xplots.api.event/MemberRemoveEvent.member.<get-member>|<get-member>(){}[0]
+    final val name // co.xenastudios.xplots.api.event/MemberRemoveEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xplots.api.event/MemberRemoveEvent.name.<get-name>|<get-name>(){}[0]
+    final val plot // co.xenastudios.xplots.api.event/MemberRemoveEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/MemberRemoveEvent.plot.<get-plot>|<get-plot>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/MemberRemoveEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/MemberRemoveEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/MemberRemoveEvent> // co.xenastudios.xplots.api.event/MemberRemoveEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api.event/MemberRemovedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xplots.api.event/MemberRemovedEvent|null[0]
+    constructor <init>(co.xenastudios.xplots.api/PlotInfo, co.xenastudios.core.api/PlayerRef, kotlin/String) // co.xenastudios.xplots.api.event/MemberRemovedEvent.<init>|<init>(co.xenastudios.xplots.api.PlotInfo;co.xenastudios.core.api.PlayerRef;kotlin.String){}[0]
+
+    final val member // co.xenastudios.xplots.api.event/MemberRemovedEvent.member|{}member[0]
+        final fun <get-member>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xplots.api.event/MemberRemovedEvent.member.<get-member>|<get-member>(){}[0]
+    final val name // co.xenastudios.xplots.api.event/MemberRemovedEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xplots.api.event/MemberRemovedEvent.name.<get-name>|<get-name>(){}[0]
+    final val plot // co.xenastudios.xplots.api.event/MemberRemovedEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/MemberRemovedEvent.plot.<get-plot>|<get-plot>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/MemberRemovedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/MemberRemovedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/MemberRemovedEvent> // co.xenastudios.xplots.api.event/MemberRemovedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api.event/PlotClaimEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xplots.api.event/PlotClaimEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, co.xenastudios.xplots.api/PlotInfo, kotlin/Double) // co.xenastudios.xplots.api.event/PlotClaimEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;co.xenastudios.xplots.api.PlotInfo;kotlin.Double){}[0]
+
+    final val name // co.xenastudios.xplots.api.event/PlotClaimEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xplots.api.event/PlotClaimEvent.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xplots.api.event/PlotClaimEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xplots.api.event/PlotClaimEvent.player.<get-player>|<get-player>(){}[0]
+    final val plot // co.xenastudios.xplots.api.event/PlotClaimEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/PlotClaimEvent.plot.<get-plot>|<get-plot>(){}[0]
+    final val price // co.xenastudios.xplots.api.event/PlotClaimEvent.price|{}price[0]
+        final fun <get-price>(): kotlin/Double // co.xenastudios.xplots.api.event/PlotClaimEvent.price.<get-price>|<get-price>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/PlotClaimEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/PlotClaimEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/PlotClaimEvent> // co.xenastudios.xplots.api.event/PlotClaimEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api.event/PlotClaimedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xplots.api.event/PlotClaimedEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, kotlin/String, co.xenastudios.xplots.api/PlotInfo, kotlin/Double) // co.xenastudios.xplots.api.event/PlotClaimedEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;kotlin.String;co.xenastudios.xplots.api.PlotInfo;kotlin.Double){}[0]
+
+    final val name // co.xenastudios.xplots.api.event/PlotClaimedEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xplots.api.event/PlotClaimedEvent.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xplots.api.event/PlotClaimedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xplots.api.event/PlotClaimedEvent.player.<get-player>|<get-player>(){}[0]
+    final val plot // co.xenastudios.xplots.api.event/PlotClaimedEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/PlotClaimedEvent.plot.<get-plot>|<get-plot>(){}[0]
+    final val price // co.xenastudios.xplots.api.event/PlotClaimedEvent.price|{}price[0]
+        final fun <get-price>(): kotlin/Double // co.xenastudios.xplots.api.event/PlotClaimedEvent.price.<get-price>|<get-price>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/PlotClaimedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/PlotClaimedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/PlotClaimedEvent> // co.xenastudios.xplots.api.event/PlotClaimedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api.event/PlotUnclaimEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xplots.api.event/PlotUnclaimEvent|null[0]
+    constructor <init>(co.xenastudios.xplots.api/PlotInfo, co.xenastudios.xplots.api/EndReason) // co.xenastudios.xplots.api.event/PlotUnclaimEvent.<init>|<init>(co.xenastudios.xplots.api.PlotInfo;co.xenastudios.xplots.api.EndReason){}[0]
+
+    final val plot // co.xenastudios.xplots.api.event/PlotUnclaimEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/PlotUnclaimEvent.plot.<get-plot>|<get-plot>(){}[0]
+    final val reason // co.xenastudios.xplots.api.event/PlotUnclaimEvent.reason|{}reason[0]
+        final fun <get-reason>(): co.xenastudios.xplots.api/EndReason // co.xenastudios.xplots.api.event/PlotUnclaimEvent.reason.<get-reason>|<get-reason>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/PlotUnclaimEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/PlotUnclaimEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/PlotUnclaimEvent> // co.xenastudios.xplots.api.event/PlotUnclaimEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api.event/PlotUnclaimedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xplots.api.event/PlotUnclaimedEvent|null[0]
+    constructor <init>(co.xenastudios.xplots.api/PlotInfo, co.xenastudios.xplots.api/EndReason) // co.xenastudios.xplots.api.event/PlotUnclaimedEvent.<init>|<init>(co.xenastudios.xplots.api.PlotInfo;co.xenastudios.xplots.api.EndReason){}[0]
+
+    final val plot // co.xenastudios.xplots.api.event/PlotUnclaimedEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/PlotUnclaimedEvent.plot.<get-plot>|<get-plot>(){}[0]
+    final val reason // co.xenastudios.xplots.api.event/PlotUnclaimedEvent.reason|{}reason[0]
+        final fun <get-reason>(): co.xenastudios.xplots.api/EndReason // co.xenastudios.xplots.api.event/PlotUnclaimedEvent.reason.<get-reason>|<get-reason>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/PlotUnclaimedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/PlotUnclaimedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/PlotUnclaimedEvent> // co.xenastudios.xplots.api.event/PlotUnclaimedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api.event/RentPaidEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xplots.api.event/RentPaidEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xplots.api/PlotInfo, co.xenastudios.xplots.api/RentKind, kotlin/Int, kotlin/Double) // co.xenastudios.xplots.api.event/RentPaidEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xplots.api.PlotInfo;co.xenastudios.xplots.api.RentKind;kotlin.Int;kotlin.Double){}[0]
+
+    final val kind // co.xenastudios.xplots.api.event/RentPaidEvent.kind|{}kind[0]
+        final fun <get-kind>(): co.xenastudios.xplots.api/RentKind // co.xenastudios.xplots.api.event/RentPaidEvent.kind.<get-kind>|<get-kind>(){}[0]
+    final val periods // co.xenastudios.xplots.api.event/RentPaidEvent.periods|{}periods[0]
+        final fun <get-periods>(): kotlin/Int // co.xenastudios.xplots.api.event/RentPaidEvent.periods.<get-periods>|<get-periods>(){}[0]
+    final val player // co.xenastudios.xplots.api.event/RentPaidEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xplots.api.event/RentPaidEvent.player.<get-player>|<get-player>(){}[0]
+    final val plot // co.xenastudios.xplots.api.event/RentPaidEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/RentPaidEvent.plot.<get-plot>|<get-plot>(){}[0]
+    final val price // co.xenastudios.xplots.api.event/RentPaidEvent.price|{}price[0]
+        final fun <get-price>(): kotlin/Double // co.xenastudios.xplots.api.event/RentPaidEvent.price.<get-price>|<get-price>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/RentPaidEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/RentPaidEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/RentPaidEvent> // co.xenastudios.xplots.api.event/RentPaidEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api.event/RentPayEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xplots.api.event/RentPayEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef, co.xenastudios.xplots.api/PlotInfo, co.xenastudios.xplots.api/RentKind, kotlin/Int, kotlin/Double) // co.xenastudios.xplots.api.event/RentPayEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef;co.xenastudios.xplots.api.PlotInfo;co.xenastudios.xplots.api.RentKind;kotlin.Int;kotlin.Double){}[0]
+
+    final val kind // co.xenastudios.xplots.api.event/RentPayEvent.kind|{}kind[0]
+        final fun <get-kind>(): co.xenastudios.xplots.api/RentKind // co.xenastudios.xplots.api.event/RentPayEvent.kind.<get-kind>|<get-kind>(){}[0]
+    final val periods // co.xenastudios.xplots.api.event/RentPayEvent.periods|{}periods[0]
+        final fun <get-periods>(): kotlin/Int // co.xenastudios.xplots.api.event/RentPayEvent.periods.<get-periods>|<get-periods>(){}[0]
+    final val player // co.xenastudios.xplots.api.event/RentPayEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef // co.xenastudios.xplots.api.event/RentPayEvent.player.<get-player>|<get-player>(){}[0]
+    final val plot // co.xenastudios.xplots.api.event/RentPayEvent.plot|{}plot[0]
+        final fun <get-plot>(): co.xenastudios.xplots.api/PlotInfo // co.xenastudios.xplots.api.event/RentPayEvent.plot.<get-plot>|<get-plot>(){}[0]
+    final val price // co.xenastudios.xplots.api.event/RentPayEvent.price|{}price[0]
+        final fun <get-price>(): kotlin/Double // co.xenastudios.xplots.api.event/RentPayEvent.price.<get-price>|<get-price>(){}[0]
+
+    final object Companion { // co.xenastudios.xplots.api.event/RentPayEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xplots.api.event/RentPayEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xplots.api.event/RentPayEvent> // co.xenastudios.xplots.api.event/RentPayEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xplots.api/FieldInfo { // co.xenastudios.xplots.api/FieldInfo|null[0]
+    constructor <init>(kotlin/String, co.xenastudios.core.api/WorldRef, co.xenastudios.xplots.api/PlotBox, kotlin.collections/List<kotlin/String>, kotlin/Int, kotlin/Boolean) // co.xenastudios.xplots.api/FieldInfo.<init>|<init>(kotlin.String;co.xenastudios.core.api.WorldRef;co.xenastudios.xplots.api.PlotBox;kotlin.collections.List<kotlin.String>;kotlin.Int;kotlin.Boolean){}[0]
+
+    final val area // co.xenastudios.xplots.api/FieldInfo.area|{}area[0]
+        final fun <get-area>(): co.xenastudios.xplots.api/PlotBox // co.xenastudios.xplots.api/FieldInfo.area.<get-area>|<get-area>(){}[0]
+    final val hasWarp // co.xenastudios.xplots.api/FieldInfo.hasWarp|{}hasWarp[0]
+        final fun <get-hasWarp>(): kotlin/Boolean // co.xenastudios.xplots.api/FieldInfo.hasWarp.<get-hasWarp>|<get-hasWarp>(){}[0]
+    final val name // co.xenastudios.xplots.api/FieldInfo.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xplots.api/FieldInfo.name.<get-name>|<get-name>(){}[0]
+    final val plots // co.xenastudios.xplots.api/FieldInfo.plots|{}plots[0]
+        final fun <get-plots>(): kotlin.collections/List<kotlin/String> // co.xenastudios.xplots.api/FieldInfo.plots.<get-plots>|<get-plots>(){}[0]
+    final val rented // co.xenastudios.xplots.api/FieldInfo.rented|{}rented[0]
+        final fun <get-rented>(): kotlin/Int // co.xenastudios.xplots.api/FieldInfo.rented.<get-rented>|<get-rented>(){}[0]
+    final val world // co.xenastudios.xplots.api/FieldInfo.world|{}world[0]
+        final fun <get-world>(): co.xenastudios.core.api/WorldRef // co.xenastudios.xplots.api/FieldInfo.world.<get-world>|<get-world>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xplots.api/FieldInfo.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xplots.api/PlotBox { // co.xenastudios.xplots.api/PlotBox|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // co.xenastudios.xplots.api/PlotBox.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val depth // co.xenastudios.xplots.api/PlotBox.depth|{}depth[0]
+        final fun <get-depth>(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.depth.<get-depth>|<get-depth>(){}[0]
+    final val height // co.xenastudios.xplots.api/PlotBox.height|{}height[0]
+        final fun <get-height>(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.height.<get-height>|<get-height>(){}[0]
+    final val maxX // co.xenastudios.xplots.api/PlotBox.maxX|{}maxX[0]
+        final fun <get-maxX>(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.maxX.<get-maxX>|<get-maxX>(){}[0]
+    final val maxY // co.xenastudios.xplots.api/PlotBox.maxY|{}maxY[0]
+        final fun <get-maxY>(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.maxY.<get-maxY>|<get-maxY>(){}[0]
+    final val maxZ // co.xenastudios.xplots.api/PlotBox.maxZ|{}maxZ[0]
+        final fun <get-maxZ>(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.maxZ.<get-maxZ>|<get-maxZ>(){}[0]
+    final val minX // co.xenastudios.xplots.api/PlotBox.minX|{}minX[0]
+        final fun <get-minX>(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.minX.<get-minX>|<get-minX>(){}[0]
+    final val minY // co.xenastudios.xplots.api/PlotBox.minY|{}minY[0]
+        final fun <get-minY>(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.minY.<get-minY>|<get-minY>(){}[0]
+    final val minZ // co.xenastudios.xplots.api/PlotBox.minZ|{}minZ[0]
+        final fun <get-minZ>(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.minZ.<get-minZ>|<get-minZ>(){}[0]
+    final val width // co.xenastudios.xplots.api/PlotBox.width|{}width[0]
+        final fun <get-width>(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.width.<get-width>|<get-width>(){}[0]
+
+    final fun contains(kotlin/Int, kotlin/Int, kotlin/Int): kotlin/Boolean // co.xenastudios.xplots.api/PlotBox.contains|contains(kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.xplots.api/PlotBox.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.xplots.api/PlotBox.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.xplots.api/PlotBox.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xplots.api/PlotInfo { // co.xenastudios.xplots.api/PlotInfo|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/Int, co.xenastudios.core.api/WorldRef, co.xenastudios.xplots.api/PlotBox, co.xenastudios.core.api/PlayerRef?, kotlin/String?, kotlin/Long, kotlin.collections/Map<co.xenastudios.core.api/PlayerRef, kotlin/String>, kotlin/Int, kotlin/Boolean) // co.xenastudios.xplots.api/PlotInfo.<init>|<init>(kotlin.String;kotlin.String;kotlin.Int;co.xenastudios.core.api.WorldRef;co.xenastudios.xplots.api.PlotBox;co.xenastudios.core.api.PlayerRef?;kotlin.String?;kotlin.Long;kotlin.collections.Map<co.xenastudios.core.api.PlayerRef,kotlin.String>;kotlin.Int;kotlin.Boolean){}[0]
+
+    final val box // co.xenastudios.xplots.api/PlotInfo.box|{}box[0]
+        final fun <get-box>(): co.xenastudios.xplots.api/PlotBox // co.xenastudios.xplots.api/PlotInfo.box.<get-box>|<get-box>(){}[0]
+    final val expiresAt // co.xenastudios.xplots.api/PlotInfo.expiresAt|{}expiresAt[0]
+        final fun <get-expiresAt>(): kotlin/Long // co.xenastudios.xplots.api/PlotInfo.expiresAt.<get-expiresAt>|<get-expiresAt>(){}[0]
+    final val field // co.xenastudios.xplots.api/PlotInfo.field|{}field[0]
+        final fun <get-field>(): kotlin/String // co.xenastudios.xplots.api/PlotInfo.field.<get-field>|<get-field>(){}[0]
+    final val id // co.xenastudios.xplots.api/PlotInfo.id|{}id[0]
+        final fun <get-id>(): kotlin/String // co.xenastudios.xplots.api/PlotInfo.id.<get-id>|<get-id>(){}[0]
+    final val isFree // co.xenastudios.xplots.api/PlotInfo.isFree|{}isFree[0]
+        final fun <get-isFree>(): kotlin/Boolean // co.xenastudios.xplots.api/PlotInfo.isFree.<get-isFree>|<get-isFree>(){}[0]
+    final val members // co.xenastudios.xplots.api/PlotInfo.members|{}members[0]
+        final fun <get-members>(): kotlin.collections/Map<co.xenastudios.core.api/PlayerRef, kotlin/String> // co.xenastudios.xplots.api/PlotInfo.members.<get-members>|<get-members>(){}[0]
+    final val number // co.xenastudios.xplots.api/PlotInfo.number|{}number[0]
+        final fun <get-number>(): kotlin/Int // co.xenastudios.xplots.api/PlotInfo.number.<get-number>|<get-number>(){}[0]
+    final val owner // co.xenastudios.xplots.api/PlotInfo.owner|{}owner[0]
+        final fun <get-owner>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xplots.api/PlotInfo.owner.<get-owner>|<get-owner>(){}[0]
+    final val ownerName // co.xenastudios.xplots.api/PlotInfo.ownerName|{}ownerName[0]
+        final fun <get-ownerName>(): kotlin/String? // co.xenastudios.xplots.api/PlotInfo.ownerName.<get-ownerName>|<get-ownerName>(){}[0]
+    final val resetting // co.xenastudios.xplots.api/PlotInfo.resetting|{}resetting[0]
+        final fun <get-resetting>(): kotlin/Boolean // co.xenastudios.xplots.api/PlotInfo.resetting.<get-resetting>|<get-resetting>(){}[0]
+    final val slots // co.xenastudios.xplots.api/PlotInfo.slots|{}slots[0]
+        final fun <get-slots>(): kotlin/Int // co.xenastudios.xplots.api/PlotInfo.slots.<get-slots>|<get-slots>(){}[0]
+    final val world // co.xenastudios.xplots.api/PlotInfo.world|{}world[0]
+        final fun <get-world>(): co.xenastudios.core.api/WorldRef // co.xenastudios.xplots.api/PlotInfo.world.<get-world>|<get-world>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xplots.api/PlotInfo.toString|toString(){}[0]
+    final fun trusts(co.xenastudios.core.api/PlayerRef): kotlin/Boolean // co.xenastudios.xplots.api/PlotInfo.trusts|trusts(co.xenastudios.core.api.PlayerRef){}[0]
+}
+
+final object co.xenastudios.xplots.api/PlotLimits { // co.xenastudios.xplots.api/PlotLimits|null[0]
+    final val MAX_SLOTS // co.xenastudios.xplots.api/PlotLimits.MAX_SLOTS|{}MAX_SLOTS[0]
+        final fun <get-MAX_SLOTS>(): kotlin/Int // co.xenastudios.xplots.api/PlotLimits.MAX_SLOTS.<get-MAX_SLOTS>|<get-MAX_SLOTS>(){}[0]
+}
+
+final object co.xenastudios.xplots.api/XPlots { // co.xenastudios.xplots.api/XPlots|null[0]
+    final fun api(): co.xenastudios.xplots.api/XPlotsApi // co.xenastudios.xplots.api/XPlots.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xplots.api/XPlots.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xplots.api/XPlotsApi?) // co.xenastudios.xplots.api/XPlots.register|register(co.xenastudios.xplots.api.XPlotsApi?){}[0]
+}

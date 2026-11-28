@@ -1,0 +1,16 @@
+# With WorldGuard and WorldEdit (boot.sh --worldguard): a field gets 1.x's region, one that
+# allows building so a world-wide build deny doesn't block plots, and loses it when deleted.
+run: xplots select world 300 64 300 311 70 304
+expect: Selected
+run: xplots field create guarded size:5 path:2
+expect: = 2 plots of
+run: xplots confirm
+expect: Made field guarded
+run: rg info xplots-guarded -w world
+expect: xplots-guarded
+run: xplots info
+expect: xPlots 2.0.0 on
+run: xplots field delete guarded
+expect: Delete guarded
+run: xplots confirm
+expect: Deleted guarded

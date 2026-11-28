@@ -6,6 +6,7 @@
 <a href="https://plugins.xenastudios.co/xplots/download/"><img alt="Available on GitHub" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/github.svg"></a>
 <img alt="Runs on Paper" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/paper.svg">
 <img alt="Runs on Purpur" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/purpur.svg">
+<img alt="Runs on Folia" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/folia.svg">
 <a href="https://plugins.xenastudios.co/xplots/"><img alt="Read the Docs" height="32" src="https://cdn.jsdelivr.net/gh/xena-studios/brand@1/badges/plugins/xplots/compact/docs.svg"></a>
 <!-- badges:end -->
 
@@ -28,29 +29,27 @@ Needs Paper 1.21.11 or newer (or Purpur) and Java 21 or newer. Uses SQLite out o
 From the repo root (setup, tests and pull requests are in [CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ```sh
-./gradlew :xplots:build       # compile, test, and check the jar's size budget
-./gradlew :xplots:runServer   # a Paper server with xPlots, in xplots/run/
+./gradlew :xplots:common:build :xplots:bukkit:build            # tests on the JVM and wasmWasi, the R8 jar and its budget
+./gradlew :xplots:bukkit:runServer                             # a Paper server with the jar, in xplots/bukkit/run/
+xplots/bukkit/boot.sh paper 26.3 --worldguard --java <JDK 25>  # the boot checks on a real server, WorldGuard beside it
+xplots/bukkit/boot.sh paper 1.21.11 --family                   # beside xMoney, xTeleport, xRewind and xVanish
+./gradlew :xplots:api:updateKotlinAbi                          # after a deliberate API change
+./gradlew :xplots:common:updateXenaManifest                    # after changing a command, setting or message: the docs' reference
 ```
 
 ```
-src/main/java/co/xenastudios/xplots/
-  XPlots.java      the plugin: loads plots at startup, and in setup turns on its listeners and commands
-  model/           fields, plots and leases in memory, the grid maths, and the index events ask
-  storage/         the tables, read once at startup, and the one thread that writes changes in order
-  protect/         who may build, open and use what, in plots and on paths
-  rent/            renting, paying, members and slots; Vault and item currency; the expiry timer
-  reset/           plot snapshots, and putting plots back a few milliseconds per tick
-  sign/            plot signs, rewritten only when what they show changes
-  setup/           the wand, selections, the particle preview, and making and deleting fields and plots
-  menu/            the plot menus
-  play/            sign clicks, the wand, joins, and teleport warmups
-  hook/            WorldGuard regions and PlaceholderAPI, each loaded only when installed
-  command/         /xplots and /plots
-boot-checks.txt    console commands CI runs on a real Paper server, and what each must log
-CHANGELOG.md       one section per release; the release workflow publishes it
+api/                the developer API (co.xenastudios.xplots:xplots-api), platform-neutral, Kotlin Multiplatform
+common/             all of xPlots' logic, Kotlin Multiplatform (no java.*): the config and its 1.x migration, fields,
+                    plots and the grid, the database (1.x's tables), renting and renewals, signs, snapshots and
+                    resets, protection's decisions, the menus and commands; on the JVM the files, the database,
+                    deflate, and the bridges to xMoney's, xTeleport's, xRewind's and xVanish's APIs
+bukkit/             the adapter for Paper, Folia, Spigot and CraftBukkit 1.13+: protection's listeners, blocks,
+                    signs, items, WorldGuard's regions and WorldEdit's selection (called by name), Vault
+CHANGELOG.md        one section per release; the release workflow publishes it
+modrinth.md         the Modrinth project page, published when it changes on main
 ```
 
-The shared core (reloading, config migration, the theme, the update checker, bStats, the database) is in [`core/`](../core).
+The shared core (reloading, config, messages, menus, the database layer, the family, the update checker, bStats) is in [`core/`](../core).
 
 ## Licence
 

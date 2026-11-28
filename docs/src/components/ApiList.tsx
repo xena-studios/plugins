@@ -3,6 +3,7 @@
 import Link from "fumadocs-core/link";
 import catalog from "../data/plugins.json" with { type: "json" };
 import { iconOf } from "./icons.ts";
+import { guideOf } from "../plugins.ts";
 
 const apis = catalog.plugins.filter((p) => p.maven);
 
@@ -22,7 +23,7 @@ export default function ApiList() {
             <tr key={p.id}>
               <td className="api-plugin">
                 <img src={iconOf(p.id)} alt="" width="24" height="24" />
-                <Link href={`${p.docs}developer-api/`}>{p.name}</Link>
+                <Link href={guideOf(p.id, p.docs)}>{p.name}</Link>
               </td>
               <td>
                 <code>
@@ -30,7 +31,7 @@ export default function ApiList() {
                 </code>
               </td>
               <td>
-                <Link href={`${p.docs}developer-api/`}>Guide</Link>
+                <Link href={guideOf(p.id, p.docs)}>Guide</Link>
                 {" · "}
                 <Link href={`/api/${p.id}/`}>Reference</Link>
                 {p.released ? (

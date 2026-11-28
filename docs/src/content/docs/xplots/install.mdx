@@ -1,0 +1,31 @@
+---
+title: Install
+description: "Install xPlots on your server: the steps for Paper, Folia and Spigot."
+sidebar:
+  order: 1
+---
+
+import InstallTabs from "../../../components/plugin/InstallTabs.astro";
+
+Pick your platform.
+
+<InstallTabs plugin="xplots" />
+
+On the first start xPlots writes `config.yml`, one file per language in `lang/`, and its SQLite database `plots.db`, in `plugins/xPlots/`. Settings every Xena plugin shares, such as the language and the look of messages, are in `plugins/Xena/config.yml`.
+
+The database is read off the server thread as xPlots starts, in a moment: until it has been, no player can change a block (xPlots can't tell yet where its fields are), so a plot is never unprotected.
+
+## Rent
+
+Rent is paid through the server's economy: [xMoney](/xmoney/) when it's installed, or any economy plugin through [Vault](https://www.spigotmc.org/resources/vault.34315/) (EssentialsX, CMI). Or set `currency.type: item` to take an item such as a box server's Coin. See [Configuration](/xplots/configuration/#currency).
+
+## Optional
+
+- **WorldGuard** (7.0 on): one region per field that allows building, so a world-wide `build deny` doesn't block plots.
+- **WorldEdit** (7.0 on): `/xplots select` with no corners takes your WorldEdit selection.
+- **xTeleport**, **xRewind**, **xVanish**: plot homes in `/homes`, `/plots rollback`, and vanished players left out of the member picker.
+- **PlaceholderAPI**: `%xplots_owned%`, `%xplots_time_left%`, `%xplots_plot%`, `%xplots_plot_owner%`.
+
+## Coming from 1.x
+
+Replace the jar and restart: see [Upgrading from 1.x](/xplots/upgrade/).

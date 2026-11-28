@@ -43,7 +43,7 @@ By [Xena Studios](https://xenastudios.co). Each does one job, costs next to noth
 | <img src="docs/src/assets/plugins/xlimbo.svg" width="40" alt=""> | **[xLimbo](xlimbo)** | Never drop a player again. | [Docs](https://plugins.xenastudios.co/xlimbo/) · [Modrinth](https://modrinth.com/plugin/xlimbo) |
 | <img src="docs/src/assets/plugins/xbackup.svg" width="40" alt=""> | **[xBackup](xbackup)** | Backups that cost nothing. Restores you can trust. | [Docs](https://plugins.xenastudios.co/xbackup/) · [Download](https://plugins.xenastudios.co/xbackup/download/) |
 
-All eleven need Paper 1.21.11+ and Java 21+. xUtilities, zChat, xRewind, xTeleport, xVote, xBans, xMoney, xStats and xBackup also run on Folia. Download them from [GitHub](https://github.com/xena-studios/plugins/releases), and xUtilities, zChat and xLimbo from [Modrinth](https://modrinth.com/organization/xena-studios) too; the [docs](https://plugins.xenastudios.co) cover setup, commands, permissions and config.
+All eleven need Paper 1.21.11+ and Java 21+. xUtilities, zChat, xRewind, xPlots, xTeleport, xVote, xBans, xMoney, xStats and xBackup also run on Folia. Download them from [GitHub](https://github.com/xena-studios/plugins/releases), and xUtilities, zChat and xLimbo from [Modrinth](https://modrinth.com/organization/xena-studios) too; the [docs](https://plugins.xenastudios.co) cover setup, commands, permissions and config.
 <!-- catalog:end -->
 
 [NeoSkript](neoskript), the fast drop-in replacement for Skript, lives here too, with its own site at [neoskript.dev](https://neoskript.dev).

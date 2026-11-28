@@ -1,0 +1,4749 @@
+{
+  "$schema": "../manifest.schema.json",
+  "formatVersion": 1,
+  "plugin": {
+    "id": "xplots",
+    "name": "xPlots",
+    "version": "unspecified",
+    "description": "Rentable plots, set up in a minute."
+  },
+  "platforms": [
+    {
+      "id": "paper",
+      "name": "Paper",
+      "kind": "server",
+      "minVersion": "1.13",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "folia",
+      "name": "Folia",
+      "kind": "server",
+      "minVersion": "1.20.6",
+      "maxVersion": "latest",
+      "java": 21,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "spigot",
+      "name": "Spigot",
+      "kind": "server",
+      "minVersion": "1.13",
+      "maxVersion": "latest",
+      "java": 8,
+      "status": "release",
+      "since": "2.0.0"
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    },
+    {
+      "id": "neoforge",
+      "name": "NeoForge",
+      "kind": "server",
+      "minVersion": "1.20.1",
+      "maxVersion": "latest",
+      "java": 17,
+      "status": "planned"
+    }
+  ],
+  "commands": [
+    {
+      "path": "plots",
+      "usage": "/plots [add|remove|home|warp|rollback]",
+      "aliases": [
+        "plot"
+      ],
+      "description": "Your plots: rent, members, teleport.",
+      "permission": "xplots.use",
+      "playerOnly": true,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "plots add",
+          "usage": "/plots add <player>",
+          "aliases": [],
+          "description": "Adds a member to your plot: the one you're standing in, or your only one.",
+          "playerOnly": true,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "name",
+              "required": true,
+              "greedy": false,
+              "description": "Who: they must have played here.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "plots remove",
+          "usage": "/plots remove <player>",
+          "aliases": [],
+          "description": "Removes a member from your plot.",
+          "playerOnly": true,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "name",
+              "required": true,
+              "greedy": false,
+              "description": "Which member.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "plots home",
+          "usage": "/plots home [plot]",
+          "aliases": [],
+          "description": "Teleports to your plot, after the warmup.",
+          "playerOnly": true,
+          "arguments": [
+            {
+              "name": "plot",
+              "type": "name",
+              "required": false,
+              "greedy": false,
+              "description": "Which of your plots.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "plots warp",
+          "usage": "/plots warp [field]",
+          "aliases": [],
+          "description": "Teleports to a field's warp.",
+          "playerOnly": true,
+          "arguments": [
+            {
+              "name": "field",
+              "type": "name",
+              "required": false,
+              "greedy": false,
+              "description": "Which field.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "plots rollback",
+          "usage": "/plots rollback <player> [time]",
+          "aliases": [],
+          "description": "Undoes what a player did in your plot, with xRewind: the last day, or as long as you say.",
+          "permission": "xplots.rollback",
+          "playerOnly": true,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "name",
+              "required": true,
+              "greedy": false,
+              "description": "Whose changes.",
+              "choices": []
+            },
+            {
+              "name": "time",
+              "type": "duration",
+              "required": false,
+              "greedy": false,
+              "description": "How far back: 30m, 6h, 2d. A day if left out.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "xplots",
+      "usage": "/xplots [info|wand|select|field|plot|confirm|cancel|reload|debug|forget]",
+      "aliases": [],
+      "description": "Rentable plots, set up in a minute: xPlots' staff commands.",
+      "playerOnly": false,
+      "arguments": [],
+      "executable": true,
+      "confirm": false,
+      "builtIn": false,
+      "subcommands": [
+        {
+          "path": "xplots info",
+          "usage": "/xplots info",
+          "aliases": [],
+          "description": "Shows xPlots' version, its fields and where they're kept.",
+          "permission": "xplots.admin",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xplots wand",
+          "usage": "/xplots wand",
+          "aliases": [],
+          "description": "The selection wand.",
+          "permission": "xplots.admin",
+          "playerOnly": true,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xplots select",
+          "usage": "/xplots select [corners]",
+          "aliases": [],
+          "description": "Selects by typing the corners, as from the console; with none, your WorldEdit selection.",
+          "permission": "xplots.admin",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "corners",
+              "type": "text",
+              "required": false,
+              "greedy": true,
+              "description": "<world> <x1> <y1> <z1> <x2> <y2> <z2>",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xplots field",
+          "usage": "/xplots field <create|delete|list|info|set|signs|setwarp>",
+          "aliases": [],
+          "description": "Fields: create, delete, list, info, set, signs, setwarp.",
+          "permission": "xplots.admin",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": false,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": [
+            {
+              "path": "xplots field create",
+              "usage": "/xplots field create <name> <options>",
+              "aliases": [],
+              "description": "Splits the selection into a field of plots and previews it.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "name",
+                  "type": "word",
+                  "required": true,
+                  "greedy": false,
+                  "description": "The field's name: plots are named after it.",
+                  "choices": []
+                },
+                {
+                  "name": "options",
+                  "type": "options",
+                  "required": true,
+                  "greedy": true,
+                  "description": "size:<n or WxD> and path:<n>, such as size:5 path:2.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots field delete",
+              "usage": "/xplots field delete <field>",
+              "aliases": [],
+              "description": "Deletes a field and its plots, after you confirm.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "field",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which field.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots field list",
+              "usage": "/xplots field list",
+              "aliases": [],
+              "description": "Every field, and how many of its plots are rented.",
+              "playerOnly": false,
+              "arguments": [],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots field info",
+              "usage": "/xplots field info <field>",
+              "aliases": [],
+              "description": "A field's size and its settings.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "field",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which field.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots field set",
+              "usage": "/xplots field set <field> <setting> <value>",
+              "aliases": [],
+              "description": "Changes one of a field's settings.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "field",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which field.",
+                  "choices": []
+                },
+                {
+                  "name": "setting",
+                  "type": "setting",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which setting.",
+                  "choices": [
+                    "price",
+                    "period",
+                    "max-prepaid",
+                    "starting-slots",
+                    "max-slots",
+                    "slot-price",
+                    "reset",
+                    "abandon-refund",
+                    "sign-position",
+                    "sign-rotation",
+                    "auto-renew"
+                  ]
+                },
+                {
+                  "name": "value",
+                  "type": "value",
+                  "required": true,
+                  "greedy": true,
+                  "description": "Its value, or default for the config's.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots field signs",
+              "usage": "/xplots field signs <field>",
+              "aliases": [],
+              "description": "Moves every sign in the field to where its sign settings say.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "field",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which field.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots field setwarp",
+              "usage": "/xplots field setwarp <field> [remove]",
+              "aliases": [],
+              "description": "Sets the field's warp where you stand, or removes it.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "field",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which field.",
+                  "choices": []
+                },
+                {
+                  "name": "remove",
+                  "type": "choice",
+                  "required": false,
+                  "greedy": false,
+                  "description": "remove takes it away.",
+                  "choices": [
+                    "remove"
+                  ]
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "xplots plot",
+          "usage": "/xplots plot <create|delete|info|evict|reset|setowner|addmember|removemember|rollback>",
+          "aliases": [],
+          "description": "Plots: create, delete, info, evict, reset, setowner, addmember, removemember, rollback.",
+          "permission": "xplots.admin",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": false,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": [
+            {
+              "path": "xplots plot create",
+              "usage": "/xplots plot create <field>",
+              "aliases": [],
+              "description": "Makes one plot from the selection, in the field.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "field",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which field.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots plot delete",
+              "usage": "/xplots plot delete [plot]",
+              "aliases": [],
+              "description": "Deletes a plot.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "plot",
+                  "type": "name",
+                  "required": false,
+                  "greedy": false,
+                  "description": "Which plot: the one you stand in if left out.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots plot info",
+              "usage": "/xplots plot info [plot]",
+              "aliases": [],
+              "description": "A plot's size, owner, time left and members.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "plot",
+                  "type": "name",
+                  "required": false,
+                  "greedy": false,
+                  "description": "Which plot.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots plot evict",
+              "usage": "/xplots plot evict [plot]",
+              "aliases": [],
+              "description": "Ends its rent now.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "plot",
+                  "type": "name",
+                  "required": false,
+                  "greedy": false,
+                  "description": "Which plot.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots plot reset",
+              "usage": "/xplots plot reset [plot]",
+              "aliases": [],
+              "description": "Puts it back as it was made. The renter keeps it.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "plot",
+                  "type": "name",
+                  "required": false,
+                  "greedy": false,
+                  "description": "Which plot.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots plot setowner",
+              "usage": "/xplots plot setowner <plot> <player>",
+              "aliases": [],
+              "description": "Gives a plot to a player.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "plot",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which plot.",
+                  "choices": []
+                },
+                {
+                  "name": "player",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Who.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots plot addmember",
+              "usage": "/xplots plot addmember <plot> <player>",
+              "aliases": [],
+              "description": "Adds a member, ignoring slots.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "plot",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which plot.",
+                  "choices": []
+                },
+                {
+                  "name": "player",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Who.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots plot removemember",
+              "usage": "/xplots plot removemember <plot> <player>",
+              "aliases": [],
+              "description": "Removes a member.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "plot",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which plot.",
+                  "choices": []
+                },
+                {
+                  "name": "player",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Who.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            },
+            {
+              "path": "xplots plot rollback",
+              "usage": "/xplots plot rollback <plot> <time> <player>",
+              "aliases": [],
+              "description": "Undoes what a player did in the plot, with xRewind.",
+              "playerOnly": false,
+              "arguments": [
+                {
+                  "name": "plot",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Which plot.",
+                  "choices": []
+                },
+                {
+                  "name": "time",
+                  "type": "duration",
+                  "required": true,
+                  "greedy": false,
+                  "description": "How far back: 30m, 6h, 2d.",
+                  "choices": []
+                },
+                {
+                  "name": "player",
+                  "type": "name",
+                  "required": true,
+                  "greedy": false,
+                  "description": "Whose changes.",
+                  "choices": []
+                }
+              ],
+              "executable": true,
+              "confirm": false,
+              "builtIn": false,
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "xplots confirm",
+          "usage": "/xplots confirm",
+          "aliases": [],
+          "description": "Makes what's waiting: a previewed field, or deleting one.",
+          "permission": "xplots.admin",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xplots cancel",
+          "usage": "/xplots cancel",
+          "aliases": [],
+          "description": "Drops what's waiting.",
+          "permission": "xplots.admin",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": false,
+          "subcommands": []
+        },
+        {
+          "path": "xplots reload",
+          "usage": "/xplots reload",
+          "aliases": [],
+          "description": "Reloads config.yml and the language files, and applies them.",
+          "permission": "xplots.admin.reload",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xplots debug",
+          "usage": "/xplots debug",
+          "aliases": [],
+          "description": "Checks the database, dependencies and platform, then prints a paste link for support.",
+          "permission": "xplots.admin.debug",
+          "playerOnly": false,
+          "arguments": [],
+          "executable": true,
+          "confirm": false,
+          "builtIn": true,
+          "subcommands": []
+        },
+        {
+          "path": "xplots forget",
+          "usage": "/xplots forget <player>",
+          "aliases": [],
+          "description": "Deletes everything kept about one player.",
+          "permission": "xplots.admin.forget",
+          "playerOnly": false,
+          "arguments": [
+            {
+              "name": "player",
+              "type": "player name or UUID",
+              "required": true,
+              "greedy": false,
+              "description": "The player whose data is deleted, online or not.",
+              "choices": []
+            }
+          ],
+          "executable": true,
+          "confirm": true,
+          "builtIn": true,
+          "subcommands": []
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "node": "xplots.use",
+      "description": "Renting plots, and /plots.",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "plots"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xplots.warmup.bypass",
+      "description": "Teleporting with /plots home and /plots warp without the warmup.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xplots.bypass",
+      "description": "Building and opening anything in any field.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": false
+    },
+    {
+      "node": "xplots.rollback",
+      "description": "Undoing what a member did in your own plot with /plots rollback (needs xRewind 2.0).",
+      "default": "everyone",
+      "children": {},
+      "commands": [
+        "plots rollback"
+      ],
+      "builtIn": false
+    },
+    {
+      "node": "xplots.admin",
+      "description": "Every admin subcommand of xPlots, and its update notices.",
+      "default": "op",
+      "children": {
+        "xplots.admin.reload": true,
+        "xplots.admin.debug": true,
+        "xplots.admin.forget": true,
+        "xplots.admin.update": true
+      },
+      "commands": [
+        "xplots info",
+        "xplots wand",
+        "xplots select",
+        "xplots field",
+        "xplots plot",
+        "xplots confirm",
+        "xplots cancel"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xplots.admin.reload",
+      "description": "Use /xplots reload.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xplots reload"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xplots.admin.debug",
+      "description": "Use /xplots debug.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xplots debug"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xplots.admin.forget",
+      "description": "Use /xplots forget.",
+      "default": "op",
+      "children": {},
+      "commands": [
+        "xplots forget"
+      ],
+      "builtIn": true
+    },
+    {
+      "node": "xplots.admin.update",
+      "description": "Hear about newer versions of xPlots when joining.",
+      "default": "op",
+      "children": {},
+      "commands": [],
+      "builtIn": true
+    }
+  ],
+  "config": {
+    "version": 2,
+    "header": [
+      "xPlots: rentable plots, set up in a minute.",
+      "Docs: https://plugins.xenastudios.co/xplots/configuration/",
+      "",
+      "Apply changes with /xplots reload: everything applies but storage. A bad value falls back to",
+      "its default with a warning in the console; xPlots never stops over config. The messages, the",
+      "signs' lines and the menus' text are in lang/."
+    ],
+    "entries": [
+      {
+        "path": "messages",
+        "type": "section",
+        "comment": [
+          "How this plugin's messages look, and the language they're in. shared uses the",
+          "setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is",
+          "this plugin's own."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "messages.language",
+            "type": "language",
+            "comment": [
+              "The language players see messages in: auto for each player's own (their client's",
+              "language setting), or one language for everyone, such as de or pt-BR."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.default-language",
+            "type": "language",
+            "comment": [
+              "The language of the console, and of players whose language has no file in lang/."
+            ],
+            "default": "shared",
+            "defaultText": "\"shared\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "messages.theme",
+            "type": "section",
+            "comment": [
+              "The look every message shares, used in messages as tags: <prefix>, <highlight>,",
+              "<success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,",
+              "italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "messages.theme.prefix",
+                "type": "string",
+                "comment": [
+                  "<prefix> starts the default messages. Make it your server's name, such as",
+                  "\"<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> \", or blank for none."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.base",
+                "type": "style",
+                "comment": [
+                  "The colour of message text that has no tag of its own."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.highlight",
+                "type": "style",
+                "comment": [
+                  "<highlight>: names and values, such as a player or a speed."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.success",
+                "type": "style",
+                "comment": [
+                  "<success>: something turned on or done."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "messages.theme.error",
+                "type": "style",
+                "comment": [
+                  "<error>: something refused or turned off."
+                ],
+                "default": "shared",
+                "defaultText": "\"shared\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "plots",
+        "type": "section",
+        "comment": [
+          "Every field's settings, unless the field changes one with /xplots field set. Times are",
+          "written like 3d, 12h or 1d12h."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "plots.price",
+            "type": "number",
+            "comment": [
+              "What one period of rent costs."
+            ],
+            "default": 100,
+            "defaultText": "100",
+            "choices": [],
+            "min": 0,
+            "entries": []
+          },
+          {
+            "path": "plots.period",
+            "type": "duration",
+            "comment": [
+              "How long one payment of rent lasts."
+            ],
+            "default": "3d",
+            "defaultText": "\"3d\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "plots.max-prepaid",
+            "type": "duration",
+            "comment": [
+              "The most rent that can be paid ahead. A player can pay again while there's room, so a",
+              "plot is never lost to a missed window."
+            ],
+            "default": "1w",
+            "defaultText": "\"1w\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "plots.starting-slots",
+            "type": "integer",
+            "comment": [
+              "Members a new rental can add, besides the owner, who doesn't take a slot."
+            ],
+            "default": 1,
+            "defaultText": "1",
+            "choices": [],
+            "min": 0,
+            "max": 45,
+            "entries": []
+          },
+          {
+            "path": "plots.max-slots",
+            "type": "integer",
+            "comment": [
+              "The most member slots a plot can have, after buying more."
+            ],
+            "default": 3,
+            "defaultText": "3",
+            "choices": [],
+            "min": 0,
+            "max": 45,
+            "entries": []
+          },
+          {
+            "path": "plots.slot-price",
+            "type": "number",
+            "comment": [
+              "What one more member slot costs."
+            ],
+            "default": 50,
+            "defaultText": "50",
+            "choices": [],
+            "min": 0,
+            "entries": []
+          },
+          {
+            "path": "plots.reset",
+            "type": "boolean",
+            "comment": [
+              "Put a plot back as it was when it was made, once its rent runs out or it's abandoned.",
+              "Anything built in it is lost, items in chests included."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "plots.abandon-refund",
+            "type": "integer",
+            "comment": [
+              "How much of the unused rent abandoning a plot gives back, in percent."
+            ],
+            "default": 0,
+            "defaultText": "0",
+            "choices": [],
+            "min": 0,
+            "max": 100,
+            "entries": []
+          },
+          {
+            "path": "plots.auto-renew",
+            "type": "boolean",
+            "comment": [
+              "2.0: renew rent on its own for one more period as it runs out (an hour before), from",
+              "the owner's balance, online or not, so a plot isn't lost while they're away. Needs an",
+              "economy (currency.type: economy); an owner can turn it off for their plot in its menu.",
+              "Each renewal is charged once, even across a crash or a restart."
+            ],
+            "default": false,
+            "defaultText": "false",
+            "choices": [],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "currency",
+        "type": "section",
+        "comment": [
+          "What rent is paid with."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "currency.type",
+            "type": "enum",
+            "comment": [
+              "economy uses the server's economy: xMoney's, when it's installed (each payment in its",
+              "ledger, with the plot), or any economy plugin's through Vault (EssentialsX, CMI). vault,",
+              "1.x's name, is the same. item takes the item below from the player's inventory."
+            ],
+            "default": "economy",
+            "defaultText": "\"economy\"",
+            "choices": [
+              "economy",
+              "vault",
+              "item"
+            ],
+            "entries": []
+          },
+          {
+            "path": "currency.item",
+            "type": "section",
+            "comment": [
+              "For type: item."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "currency.item.material",
+                "type": "string",
+                "comment": [],
+                "default": "gold_nugget",
+                "defaultText": "\"gold_nugget\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "currency.item.name",
+                "type": "string",
+                "comment": [
+                  "The item's name as players see it, without colours, such as \"Coin\". Blank takes any",
+                  "item of the material."
+                ],
+                "default": "Coin",
+                "defaultText": "\"Coin\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "currency.item.custom-model-data",
+                "type": "integer",
+                "comment": [
+                  "The item's custom model data, for a resource pack's coin. 0 takes any."
+                ],
+                "default": 0,
+                "defaultText": "0",
+                "choices": [],
+                "min": 0,
+                "entries": []
+              },
+              {
+                "path": "currency.item.singular",
+                "type": "string",
+                "comment": [
+                  "How amounts are written: \"1 Coin\", \"5 Coins\"."
+                ],
+                "default": "Coin",
+                "defaultText": "\"Coin\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "currency.item.plural",
+                "type": "string",
+                "comment": [],
+                "default": "Coins",
+                "defaultText": "\"Coins\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "max-plots",
+        "type": "integer",
+        "comment": [
+          "How many plots a player may rent at once. A player with xplots.limit.<n> may rent <n>",
+          "instead, the highest they have."
+        ],
+        "default": 1,
+        "defaultText": "1",
+        "choices": [],
+        "min": 0,
+        "max": 10000,
+        "entries": []
+      },
+      {
+        "path": "signs",
+        "type": "section",
+        "comment": [
+          "Plot signs. What they say is in lang/ (signs.free, signs.rented, signs.expiring), four",
+          "lines each."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "signs.expiring-below",
+            "type": "duration",
+            "comment": [
+              "A rented plot's sign shows signs.expiring once its rent runs out within this."
+            ],
+            "default": "1d",
+            "defaultText": "\"1d\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "signs.material",
+            "type": "string",
+            "comment": [
+              "The sign placed for each plot: any standing sign, such as dark_oak_sign. Before 1.14, sign."
+            ],
+            "default": "oak_sign",
+            "defaultText": "\"oak_sign\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "signs.position",
+            "type": "enum",
+            "comment": [
+              "Where on a plot's front edge its sign stands: middle, left-corner or right-corner, as",
+              "seen from the walkway looking at the plot. A field can change it with",
+              "/xplots field set <field> sign-position. Signs already placed move with",
+              "/xplots field signs <field>."
+            ],
+            "default": "left-corner",
+            "defaultText": "\"left-corner\"",
+            "choices": [
+              "middle",
+              "left-corner",
+              "right-corner"
+            ],
+            "entries": []
+          },
+          {
+            "path": "signs.rotation",
+            "type": "enum",
+            "comment": [
+              "Which way a sign faces: straight at the walkway, or diagonal: turned 45° out from its",
+              "corner, so it reads from both walkways where they cross. Any sign can also be turned",
+              "by hand: sneak and right click it with the wand."
+            ],
+            "default": "straight",
+            "defaultText": "\"straight\"",
+            "choices": [
+              "straight",
+              "diagonal"
+            ],
+            "entries": []
+          }
+        ]
+      },
+      {
+        "path": "menus",
+        "type": "section",
+        "comment": [
+          "The plot menus' items, by their ids. Their titles, names and lore are in lang/ (menus.*)."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "menus.filler",
+            "type": "string",
+            "comment": [
+              "Fills the empty slots. air leaves them empty."
+            ],
+            "default": "gray_stained_glass_pane",
+            "defaultText": "\"gray_stained_glass_pane\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "menus.rent",
+            "type": "section",
+            "comment": [
+              "Clicking a free plot's sign."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "menus.rent.info",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.rent.info.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "oak_sign",
+                    "defaultText": "\"oak_sign\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.rent.confirm",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.rent.confirm.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "lime_concrete",
+                    "defaultText": "\"lime_concrete\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.rent.cancel",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.rent.cancel.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "red_concrete",
+                    "defaultText": "\"red_concrete\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "path": "menus.plot",
+            "type": "section",
+            "comment": [
+              "Clicking your own plot's sign, or /plots."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "menus.plot.info",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.info.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "oak_sign",
+                    "defaultText": "\"oak_sign\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.plot.pay",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.pay.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "clock",
+                    "defaultText": "\"clock\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.plot.pay-full",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.pay-full.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "gray_dye",
+                    "defaultText": "\"gray_dye\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.plot.members",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.members.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "player_head",
+                    "defaultText": "\"player_head\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.plot.buy-slot",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.buy-slot.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "emerald",
+                    "defaultText": "\"emerald\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.plot.slots-full",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.slots-full.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "gray_dye",
+                    "defaultText": "\"gray_dye\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.plot.home",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.home.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "ender_pearl",
+                    "defaultText": "\"ender_pearl\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.plot.abandon",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.abandon.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "barrier",
+                    "defaultText": "\"barrier\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.plot.renew-on",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.renew-on.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "lime_dye",
+                    "defaultText": "\"lime_dye\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.plot.renew-off",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.plot.renew-off.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "gray_dye",
+                    "defaultText": "\"gray_dye\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "path": "menus.list",
+            "type": "section",
+            "comment": [
+              "/plots with more than one plot."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "menus.list.plot",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.list.plot.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "oak_sign",
+                    "defaultText": "\"oak_sign\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "path": "menus.members",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "menus.members.member",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.members.member.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "player_head",
+                    "defaultText": "\"player_head\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.members.add",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.members.add.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "lime_dye",
+                    "defaultText": "\"lime_dye\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.members.back",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.members.back.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "arrow",
+                    "defaultText": "\"arrow\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "path": "menus.picker",
+            "type": "section",
+            "comment": [
+              "Adding a member: heads of the players online."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "menus.picker.player",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.picker.player.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "player_head",
+                    "defaultText": "\"player_head\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.picker.previous",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.picker.previous.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "arrow",
+                    "defaultText": "\"arrow\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.picker.next",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.picker.next.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "arrow",
+                    "defaultText": "\"arrow\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.picker.back",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.picker.back.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "arrow",
+                    "defaultText": "\"arrow\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "path": "menus.abandon",
+            "type": "section",
+            "comment": [],
+            "choices": [],
+            "entries": [
+              {
+                "path": "menus.abandon.confirm",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.abandon.confirm.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "red_concrete",
+                    "defaultText": "\"red_concrete\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.abandon.cancel",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.abandon.cancel.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "lime_concrete",
+                    "defaultText": "\"lime_concrete\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "path": "menus.admin",
+            "type": "section",
+            "comment": [
+              "Staff clicking a plot with the wand."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "menus.admin.info",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.admin.info.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "oak_sign",
+                    "defaultText": "\"oak_sign\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.admin.home",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.admin.home.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "ender_pearl",
+                    "defaultText": "\"ender_pearl\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.admin.evict",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.admin.evict.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "iron_door",
+                    "defaultText": "\"iron_door\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              },
+              {
+                "path": "menus.admin.reset",
+                "type": "section",
+                "comment": [],
+                "choices": [],
+                "entries": [
+                  {
+                    "path": "menus.admin.reset.material",
+                    "type": "string",
+                    "comment": [],
+                    "default": "tnt",
+                    "defaultText": "\"tnt\"",
+                    "choices": [],
+                    "entries": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "teleport-warmup",
+        "type": "integer",
+        "comment": [
+          "Seconds to stand still before /plots home and /plots warp teleport. xplots.warmup.bypass",
+          "skips it. With xTeleport installed, plot homes are also in /homes, with xTeleport's own warmup."
+        ],
+        "default": 3,
+        "defaultText": "3",
+        "choices": [],
+        "min": 0,
+        "max": 600,
+        "entries": []
+      },
+      {
+        "path": "reset-ms-per-tick",
+        "type": "integer",
+        "comment": [
+          "How long putting a plot back may work each tick, in milliseconds. A tick is 50. A small",
+          "plot takes a fraction of one."
+        ],
+        "default": 5,
+        "defaultText": "5",
+        "choices": [],
+        "min": 1,
+        "max": 40,
+        "entries": []
+      },
+      {
+        "path": "storage",
+        "type": "section",
+        "comment": [
+          "Where this plugin keeps its data. Read at startup only: restart after changing it."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "storage.type",
+            "type": "enum",
+            "comment": [
+              "sqlite keeps everything in one file in the plugin's folder, with nothing to set up.",
+              "mysql (or MariaDB) is for networks, or servers with a lot of history.",
+              "shared keeps it in the database every Xena plugin can share, set in plugins/Xena/config.yml."
+            ],
+            "default": "sqlite",
+            "defaultText": "\"sqlite\"",
+            "choices": [
+              "sqlite",
+              "mysql",
+              "shared"
+            ],
+            "entries": []
+          },
+          {
+            "path": "storage.table-prefix",
+            "type": "string",
+            "comment": [
+              "Put in front of every table's name, so plugins and servers can share one database."
+            ],
+            "default": "xplots_",
+            "defaultText": "\"xplots_\"",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "storage.mysql",
+            "type": "section",
+            "comment": [
+              "Only for type: mysql."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "storage.mysql.host",
+                "type": "string",
+                "comment": [],
+                "default": "localhost",
+                "defaultText": "\"localhost\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.port",
+                "type": "integer",
+                "comment": [],
+                "default": 3306,
+                "defaultText": "3306",
+                "choices": [],
+                "min": 1,
+                "max": 65535,
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.database",
+                "type": "string",
+                "comment": [],
+                "default": "minecraft",
+                "defaultText": "\"minecraft\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.username",
+                "type": "string",
+                "comment": [],
+                "default": "minecraft",
+                "defaultText": "\"minecraft\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.password",
+                "type": "string",
+                "comment": [],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              },
+              {
+                "path": "storage.mysql.properties",
+                "type": "string",
+                "comment": [
+                  "Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC."
+                ],
+                "default": "",
+                "defaultText": "\"\"",
+                "choices": [],
+                "entries": []
+              }
+            ]
+          },
+          {
+            "path": "storage.pool",
+            "type": "section",
+            "comment": [
+              "The connections used to read, beside the one that writes."
+            ],
+            "choices": [],
+            "entries": [
+              {
+                "path": "storage.pool.readers",
+                "type": "integer",
+                "comment": [
+                  "How many: 0 picks for the database (1 for SQLite, 2 for MySQL). More helps only a",
+                  "MySQL server that many reads wait on."
+                ],
+                "default": 0,
+                "defaultText": "0",
+                "choices": [],
+                "min": 0,
+                "max": 16,
+                "entries": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "updates",
+        "type": "section",
+        "comment": [
+          "Telling you when a newer version is out: in the console, and to players with",
+          "<plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,",
+          "sending only the plugin's version, the platform and the Minecraft version."
+        ],
+        "choices": [],
+        "entries": [
+          {
+            "path": "updates.check",
+            "type": "boolean",
+            "comment": [
+              "Whether to ask at all."
+            ],
+            "default": true,
+            "defaultText": "true",
+            "choices": [],
+            "entries": []
+          },
+          {
+            "path": "updates.channel",
+            "type": "enum",
+            "comment": [
+              "Which releases to hear of: release, beta (betas and releases) or alpha (everything)."
+            ],
+            "default": "release",
+            "defaultText": "\"release\"",
+            "choices": [
+              "release",
+              "beta",
+              "alpha"
+            ],
+            "entries": []
+          }
+        ]
+      }
+    ]
+  },
+  "placeholders": [
+    {
+      "name": "owned",
+      "description": "How many plots the player rents.",
+      "example": "1",
+      "needsPlayer": true,
+      "forms": {
+        "PlaceholderAPI": "%xplots_owned%",
+        "MiniPlaceholders": "<xplots_owned>",
+        "Text Placeholder API": "%xplots:owned%"
+      }
+    },
+    {
+      "name": "time_left",
+      "description": "Time left on the player's plot that runs out soonest.",
+      "example": "2d 4h",
+      "needsPlayer": true,
+      "forms": {
+        "PlaceholderAPI": "%xplots_time_left%",
+        "MiniPlaceholders": "<xplots_time_left>",
+        "Text Placeholder API": "%xplots:time_left%"
+      }
+    },
+    {
+      "name": "plot",
+      "description": "The plot the player is standing in.",
+      "example": "box-12",
+      "needsPlayer": true,
+      "forms": {
+        "PlaceholderAPI": "%xplots_plot%",
+        "MiniPlaceholders": "<xplots_plot>",
+        "Text Placeholder API": "%xplots:plot%"
+      }
+    },
+    {
+      "name": "plot_owner",
+      "description": "Who rents the plot the player is standing in.",
+      "example": "Steve",
+      "needsPlayer": true,
+      "forms": {
+        "PlaceholderAPI": "%xplots_plot_owner%",
+        "MiniPlaceholders": "<xplots_plot_owner>",
+        "Text Placeholder API": "%xplots:plot_owner%"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "key": "core.pages.footer",
+      "english": "<gray>Page <page> of <pages></gray><has_previous> <click:run_command:'<previous>'><hover:show_text:'<previous>'><highlight>« Previous</highlight></hover></click></has_previous><has_next> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next »</highlight></hover></click></has_next>",
+      "comment": [
+        "Under a long list in chat (/homes, /history, ...) when it has more than one page.",
+        "<previous> and <next> are the list's command for those pages; what's inside",
+        "<has_previous>...</has_previous> or <has_next>...</has_next> shows only when there's such a page."
+      ],
+      "placeholders": [
+        "page",
+        "pages",
+        "previous",
+        "next",
+        "has_previous",
+        "has_next"
+      ]
+    },
+    {
+      "key": "core.update.available",
+      "english": "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open the download page'><highlight><underlined><url></underlined></highlight></hover></click>",
+      "comment": [
+        "In the console, and to players with <plugin>.admin.update as they join, when a newer version is out",
+        "on the update channel the config picks. <url> is its download page."
+      ],
+      "placeholders": [
+        "plugin",
+        "current",
+        "latest",
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.checking",
+      "english": "<prefix>Checking <highlight><plugin></highlight>...",
+      "comment": [
+        "/<plugin> debug, before the health checks' results."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.debug.database.ok",
+      "english": "<success>✔</success> Database: <highlight><database></highlight> answered in <millis> ms.",
+      "comment": [
+        "/<plugin> debug: the database answered. <database> is where it is, such as \"MySQL at db:3306/minecraft\"."
+      ],
+      "placeholders": [
+        "database",
+        "millis"
+      ]
+    },
+    {
+      "key": "core.debug.database.failed",
+      "english": "<error>✘</error> Database: <highlight><database></highlight> can't be reached: <reason>",
+      "comment": [
+        "/<plugin> debug: the database didn't answer. <reason> is the driver's, in English."
+      ],
+      "placeholders": [
+        "database",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.ok",
+      "english": "<success>✔</success> Dependencies: <names>.",
+      "comment": [
+        "/<plugin> debug: every plugin or mod it depends on is there. <names> lists them, or says none."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.optional",
+      "english": "<gold>!</gold> Dependencies: <names> not installed, so what needs them is off.",
+      "comment": [
+        "/<plugin> debug: optional plugins or mods that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.dependencies.missing",
+      "english": "<error>✘</error> Dependencies: <highlight><names></highlight> missing.",
+      "comment": [
+        "/<plugin> debug: plugins or mods it needs that aren't installed."
+      ],
+      "placeholders": [
+        "names"
+      ]
+    },
+    {
+      "key": "core.debug.threading.ok",
+      "english": "<success>✔</success> Threads: tasks run where they should (<threading>).",
+      "comment": [
+        "/<plugin> debug: a task on the global thread and one off it each ran where it should.",
+        "<threading> is how the server runs work, in English: \"Folia's regions\", \"one main thread\"."
+      ],
+      "placeholders": [
+        "threading"
+      ]
+    },
+    {
+      "key": "core.debug.threading.failed",
+      "english": "<error>✘</error> Threads: <reason>",
+      "comment": [
+        "/<plugin> debug: a task ran on the wrong thread, or didn't run. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.config.ok",
+      "english": "<success>✔</success> Config: read without problems.",
+      "comment": [
+        "/<plugin> debug: the config and language files had nothing wrong when they were last read."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.debug.config.problems",
+      "english": "<gold>!</gold> Config: problems found (<count>), the first: <first>",
+      "comment": [
+        "/<plugin> debug: problems found the last time the files were read; the console and the report have them all."
+      ],
+      "placeholders": [
+        "count",
+        "first"
+      ]
+    },
+    {
+      "key": "core.debug.modules.ok",
+      "english": "<success>✔</success> Modules: <count> on.",
+      "comment": [
+        "/<plugin> debug: every module the config turns on is running."
+      ],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "core.debug.modules.failed",
+      "english": "<error>✘</error> Modules: <highlight><modules></highlight> turned off after failing.",
+      "comment": [
+        "/<plugin> debug: modules that failed. The report says why."
+      ],
+      "placeholders": [
+        "modules"
+      ]
+    },
+    {
+      "key": "core.debug.check-broken",
+      "english": "<error>✘</error> <check>: <reason>",
+      "comment": [
+        "/<plugin> debug: a check that didn't finish. <check> is its name and <reason> why, in English."
+      ],
+      "placeholders": [
+        "check",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.debug.uploaded",
+      "english": "<prefix>Debug report: <click:open_url:'<url>'><hover:show_text:'Open it'><highlight><url></highlight></hover></click>. Share this link when asking for help; passwords and tokens are removed.",
+      "comment": [
+        "/<plugin> debug: the report's link at a paste service (mclo.gs)."
+      ],
+      "placeholders": [
+        "url"
+      ]
+    },
+    {
+      "key": "core.debug.saved",
+      "english": "<prefix>Couldn't upload the debug report (<reason>), so it's in <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug: the upload failed, so the report was written to a file. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.saved-locally",
+      "english": "<prefix>Debug report saved as <highlight><file></highlight> in the plugin's folder.",
+      "comment": [
+        "/<plugin> debug, when uploading is turned off."
+      ],
+      "placeholders": [
+        "file"
+      ]
+    },
+    {
+      "key": "core.debug.failed",
+      "english": "<prefix><error>Couldn't save the debug report: <reason></error>",
+      "comment": [
+        "/<plugin> debug: the report couldn't be uploaded or written. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.not-found",
+      "english": "<prefix><error>There's no <source> data here to import.</error>",
+      "comment": [
+        "/<plugin> import: the other plugin's files or tables weren't found."
+      ],
+      "placeholders": [
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.busy",
+      "english": "<prefix><error>An import is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> import while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.import.dry-run",
+      "english": "<prefix>Dry run from <source>: <highlight><importable></highlight> of <total> records would be imported, <skipped> skipped. Nothing was changed.",
+      "comment": [
+        "/<plugin> import <source> --dry-run: what a real run would do."
+      ],
+      "placeholders": [
+        "source",
+        "importable",
+        "total",
+        "skipped"
+      ]
+    },
+    {
+      "key": "core.import.started",
+      "english": "<prefix>Importing from <source> (records: <highlight><total></highlight>)...",
+      "comment": [
+        "/<plugin> import: the run starts."
+      ],
+      "placeholders": [
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.resumed",
+      "english": "<prefix>Carrying on the import from <source> where it stopped, after <done> of <total> records...",
+      "comment": [
+        "/<plugin> import: a run that stopped before is carried on."
+      ],
+      "placeholders": [
+        "source",
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "core.import.progress",
+      "english": "<prefix><done> of <total> records from <source>...",
+      "comment": [
+        "/<plugin> import: progress, every few seconds."
+      ],
+      "placeholders": [
+        "done",
+        "total",
+        "source"
+      ]
+    },
+    {
+      "key": "core.import.record-failed",
+      "english": "<prefix><error>Skipped <record>: <reason></error>",
+      "comment": [
+        "/<plugin> import: one record that failed. The import carries on; the console lists them all."
+      ],
+      "placeholders": [
+        "record",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.import.done",
+      "english": "<prefix><success>Imported from <source>: <imported>.</success> Skipped: <skipped>, failed: <failed>.",
+      "comment": [
+        "/<plugin> import: the run finished."
+      ],
+      "placeholders": [
+        "imported",
+        "source",
+        "skipped",
+        "failed"
+      ]
+    },
+    {
+      "key": "core.import.stopped",
+      "english": "<prefix><error>The import from <source> stopped: <reason></error> Run it again to carry on where it left off.",
+      "comment": [
+        "/<plugin> import: the run stopped, such as when the other plugin's database went away. <reason> is in English."
+      ],
+      "placeholders": [
+        "source",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.migrate.same",
+      "english": "<prefix><error>The data is already in <type>.</error>",
+      "comment": [
+        "/<plugin> migrate to the storage type in use."
+      ],
+      "placeholders": [
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.busy",
+      "english": "<prefix><error>A migration is already running; wait for it to finish.</error>",
+      "comment": [
+        "/<plugin> migrate while one is running."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.migrate.not-empty",
+      "english": "<prefix><error>The <type> database already has data (<tables>).</error> Add --force to replace it with this server's.",
+      "comment": [
+        "/<plugin> migrate: the target isn't empty. <tables> lists its tables with their rows."
+      ],
+      "placeholders": [
+        "type",
+        "tables"
+      ]
+    },
+    {
+      "key": "core.migrate.started",
+      "english": "<prefix>Copying the data from <from> to <type>...",
+      "comment": [
+        "/<plugin> migrate: the copy starts."
+      ],
+      "placeholders": [
+        "from",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.table",
+      "english": "<prefix>Copied <table> (rows: <rows>).",
+      "comment": [
+        "/<plugin> migrate: one table is copied."
+      ],
+      "placeholders": [
+        "rows",
+        "table"
+      ]
+    },
+    {
+      "key": "core.migrate.done",
+      "english": "<prefix><success>Moved the data to <type> and checked it (rows: <rows>).</success> The plugin now uses <type>.",
+      "comment": [
+        "/<plugin> migrate: done; the config's storage type was changed and applied."
+      ],
+      "placeholders": [
+        "rows",
+        "type"
+      ]
+    },
+    {
+      "key": "core.migrate.failed",
+      "english": "<prefix><error>Moving the data to <type> failed: <reason></error> The plugin still uses <from>.",
+      "comment": [
+        "/<plugin> migrate: it failed, and the storage type wasn't changed. <reason> is in English."
+      ],
+      "placeholders": [
+        "type",
+        "reason",
+        "from"
+      ]
+    },
+    {
+      "key": "core.forget.unknown",
+      "english": "<prefix><error>No player called <player> has played here.</error>",
+      "comment": [
+        "/<plugin> forget: the name isn't one the server knows. A UUID works too."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.forget.done",
+      "english": "<prefix><success>Forgot <player>.</success> Records deleted: <records>.",
+      "comment": [
+        "/<plugin> forget: done."
+      ],
+      "placeholders": [
+        "player",
+        "records"
+      ]
+    },
+    {
+      "key": "core.forget.partly",
+      "english": "<prefix><error>Some of <player>'s data couldn't be deleted (<failed>).</error> Records deleted: <records>. Run it again.",
+      "comment": [
+        "/<plugin> forget: part of it failed. <failed> lists what, with why, in English."
+      ],
+      "placeholders": [
+        "player",
+        "failed",
+        "records"
+      ]
+    },
+    {
+      "key": "core.reload.done",
+      "english": "<prefix>Reloaded <plugin>: <count> <has_one>module</has_one><has_many>modules</has_many> on.",
+      "comment": [
+        "/<plugin> reload: config.yml and the language files were read again and applied.",
+        "What's inside <has_one>...</has_one> shows when one module is on, <has_many>...</has_many> otherwise."
+      ],
+      "placeholders": [
+        "plugin",
+        "count",
+        "has_one",
+        "has_many"
+      ]
+    },
+    {
+      "key": "core.reload.problem",
+      "english": "<gold>!</gold> Problem: <problem>",
+      "comment": [
+        "/<plugin> reload: one line per problem found in the files, in English. The console has them too."
+      ],
+      "placeholders": [
+        "problem"
+      ]
+    },
+    {
+      "key": "core.reload.module-off",
+      "english": "<error>✘</error> Module <highlight><module></highlight> is off: <reason>",
+      "comment": [
+        "/<plugin> reload: a module that failed, and why, in English."
+      ],
+      "placeholders": [
+        "module",
+        "reason"
+      ]
+    },
+    {
+      "key": "core.reload.failed",
+      "english": "<prefix><error>Reloading <plugin> failed; the console has the details.",
+      "comment": [
+        "/<plugin> reload: something went wrong; the settings from before are still in use."
+      ],
+      "placeholders": [
+        "plugin"
+      ]
+    },
+    {
+      "key": "core.command.unknown",
+      "english": "<prefix><error>Unknown command.",
+      "comment": [
+        "Rare: a command that went away as it was typed."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.no-permission",
+      "english": "<prefix><error>You don't have permission to do that.",
+      "comment": [
+        "The sender lacks the command's permission."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.players-only",
+      "english": "<prefix><error>Only players can use this command.",
+      "comment": [
+        "The console or a command block ran a command only players can use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "core.command.usage",
+      "english": "<prefix><error>Usage:</error> <usage>",
+      "comment": [
+        "The command was typed with missing or extra words. <usage> is how to type it."
+      ],
+      "placeholders": [
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.unknown-player",
+      "english": "<prefix><error>No player called <highlight><player></highlight> is online.",
+      "comment": [
+        "No player the sender can see is online by the name typed (<player>)."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "core.command.not-a-number",
+      "english": "<prefix><error>\"<input>\" isn't a number.</error> Usage: <usage>",
+      "comment": [
+        "A number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-an-integer",
+      "english": "<prefix><error>\"<input>\" isn't a whole number.</error> Usage: <usage>",
+      "comment": [
+        "A whole number was expected. <input> is what was typed."
+      ],
+      "placeholders": [
+        "input",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-small",
+      "english": "<prefix><error><input> is less than <min>.</error> Usage: <usage>",
+      "comment": [
+        "A number below the least the command takes (<min>)."
+      ],
+      "placeholders": [
+        "input",
+        "min",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.too-large",
+      "english": "<prefix><error><input> is more than <max>.</error> Usage: <usage>",
+      "comment": [
+        "A number above the most the command takes (<max>)."
+      ],
+      "placeholders": [
+        "input",
+        "max",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.not-a-choice",
+      "english": "<prefix><error>\"<input>\" isn't one of <choices>.</error> Usage: <usage>",
+      "comment": [
+        "A word that isn't one of those the command takes (<choices>, comma-separated)."
+      ],
+      "placeholders": [
+        "input",
+        "choices",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.invalid",
+      "english": "<prefix><error><reason></error> Usage: <usage>",
+      "comment": [
+        "What was typed can't be used: true or false, a length of time, a name. <reason> is in English."
+      ],
+      "placeholders": [
+        "reason",
+        "usage"
+      ]
+    },
+    {
+      "key": "core.command.cooldown",
+      "english": "<prefix><error>You can use that again in <time>.",
+      "comment": [
+        "The command has a cooldown. <time> is how long is left."
+      ],
+      "placeholders": [
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.confirm",
+      "english": "<prefix>Type <highlight>/<line></highlight> again within <time> to confirm.",
+      "comment": [
+        "A command that needs confirming, such as forget. <line> is the command, <time> how long there is."
+      ],
+      "placeholders": [
+        "line",
+        "time"
+      ]
+    },
+    {
+      "key": "core.command.error",
+      "english": "<prefix><error>Something went wrong running that command; the console has the details.",
+      "comment": [
+        "The command hit an error. The console has what happened."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "info",
+      "english": "<prefix>xPlots <highlight><version></highlight> on <platform>: <highlight><fields></highlight> fields, <highlight><plots></highlight> plots, in <storage>. Rent: <rent>. <gray>/xplots wand | field | plot | reload | debug",
+      "comment": [
+        "/xplots on its own, and /xplots info. <rent> is what rent is paid through: xMoney, Vault's economy, the item, or none yet."
+      ],
+      "placeholders": [
+        "version",
+        "platform",
+        "fields",
+        "plots",
+        "storage",
+        "rent"
+      ]
+    },
+    {
+      "key": "rented",
+      "english": "<prefix><success>You rented</success> <highlight><plot></highlight> for <price>. It's yours for <time>.",
+      "comment": [
+        "<plot>, <price>, <time>: what was rented, for what, and for how long."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "time",
+        "period",
+        "owner",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "cant-afford",
+      "english": "<prefix><error>You need <highlight><price></highlight> for that.",
+      "comment": [
+        "<price> is what it costs."
+      ],
+      "placeholders": [
+        "price"
+      ]
+    },
+    {
+      "key": "limit-reached",
+      "english": "<prefix><error>You can't rent more than <highlight><max></highlight> at once.",
+      "comment": [
+        "<max> is the player's limit."
+      ],
+      "placeholders": [
+        "max"
+      ]
+    },
+    {
+      "key": "taken",
+      "english": "<prefix><error>Someone rented that plot first.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "paid",
+      "english": "<prefix><success>Paid</success> <highlight><price></highlight>. <highlight><plot></highlight> is yours for <time>.",
+      "comment": [
+        "Rent paid. <price>, <plot>, <time> left now."
+      ],
+      "placeholders": [
+        "price",
+        "plot",
+        "time",
+        "period",
+        "owner",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "prepaid-full",
+      "english": "<prefix><error>Rent can be paid at most <highlight><max></highlight> ahead.",
+      "comment": [
+        "<max> is max-prepaid."
+      ],
+      "placeholders": [
+        "max"
+      ]
+    },
+    {
+      "key": "abandoned",
+      "english": "<prefix><highlight><plot></highlight> is no longer yours.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "refunded",
+      "english": "<prefix>You got back <highlight><price></highlight>.",
+      "comment": [
+        "<price> is what came back."
+      ],
+      "placeholders": [
+        "price"
+      ]
+    },
+    {
+      "key": "slot-bought",
+      "english": "<prefix><success>Bought a member slot</success> for <highlight><plot></highlight>. It has <slots> now.",
+      "comment": [
+        "<slots> is how many it has now."
+      ],
+      "placeholders": [
+        "plot",
+        "slots"
+      ]
+    },
+    {
+      "key": "slots-full",
+      "english": "<prefix><error><highlight><plot></highlight> has no free member slots. Buy one in its menu: <highlight>/plots</highlight>.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "max-slots",
+      "english": "<prefix><error><highlight><plot></highlight> has as many member slots as it can.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "member-added",
+      "english": "<prefix><success>Added</success> <highlight><player></highlight> to <plot>.",
+      "comment": [
+        "<player> was added to <plot>."
+      ],
+      "placeholders": [
+        "player",
+        "plot"
+      ]
+    },
+    {
+      "key": "member-removed",
+      "english": "<prefix>Removed <highlight><player></highlight> from <plot>.",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "plot"
+      ]
+    },
+    {
+      "key": "added-you",
+      "english": "<prefix><highlight><owner></highlight> added you to <highlight><plot></highlight>. You can build there now.",
+      "comment": [
+        "To the player added. <owner>, <plot>."
+      ],
+      "placeholders": [
+        "owner",
+        "plot"
+      ]
+    },
+    {
+      "key": "removed-you",
+      "english": "<prefix>You were removed from <highlight><plot></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "already-member",
+      "english": "<prefix><error><highlight><player></highlight> is already a member.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "not-member",
+      "english": "<prefix><error><highlight><player></highlight> isn't a member.",
+      "comment": [],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "not-yourself",
+      "english": "<prefix><error>You own it, so you don't need a slot.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "never-joined",
+      "english": "<prefix><error><highlight><player></highlight> has never played here.",
+      "comment": [
+        "<player> has never joined this server."
+      ],
+      "placeholders": [
+        "player"
+      ]
+    },
+    {
+      "key": "no-plots",
+      "english": "<prefix><error>You don't rent a plot. Click a free plot's sign to rent one.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "which-plot",
+      "english": "<prefix><error>You have more than one plot: stand in the one you mean, or use <highlight>/plots</highlight>.",
+      "comment": [
+        "Several plots and none chosen."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "not-yours",
+      "english": "<prefix><error>That plot isn't yours.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "rented-by",
+      "english": "<prefix><highlight><plot></highlight> is rented by <highlight><owner></highlight> for <time>. Members: <members>.",
+      "comment": [
+        "Clicking someone else's sign. <plot>, <owner>, <time>, and <members>: their names, or no-members."
+      ],
+      "placeholders": [
+        "plot",
+        "owner",
+        "time",
+        "members",
+        "price",
+        "period",
+        "slots",
+        "max-slots",
+        "size"
+      ]
+    },
+    {
+      "key": "no-members",
+      "english": "none",
+      "comment": [
+        "What <members> says for a plot with none."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "expires-soon",
+      "english": "<prefix><highlight><plot></highlight>'s rent runs out in <highlight><time></highlight>. Pay more with <highlight>/plots</highlight>, or it's reset and anything in it is lost, chests included.",
+      "comment": [
+        "<plot>'s rent runs out in <time>."
+      ],
+      "placeholders": [
+        "plot",
+        "time"
+      ]
+    },
+    {
+      "key": "expired",
+      "english": "<prefix><highlight><plot></highlight>'s rent ran out, so it's free again.",
+      "comment": [
+        "To the owner, if online."
+      ],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "teleporting",
+      "english": "<prefix>Teleporting in <highlight><seconds>s</highlight>. Don't move.",
+      "comment": [
+        "<seconds> to wait."
+      ],
+      "placeholders": [
+        "seconds"
+      ]
+    },
+    {
+      "key": "teleport-cancelled",
+      "english": "<prefix><error>Teleport cancelled: you moved.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "no-warp",
+      "english": "<prefix><error><highlight><field></highlight> has no warp.",
+      "comment": [
+        "/plots warp with no warp set. <field> is the field."
+      ],
+      "placeholders": [
+        "field"
+      ]
+    },
+    {
+      "key": "protected-here",
+      "english": "<error>You can't do that in this plot.",
+      "comment": [
+        "On the action bar, when a player can't build or open something there."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "unavailable",
+      "english": "<prefix><error>That isn't available right now.",
+      "comment": [
+        "Something xPlots needs isn't working, such as the economy. The console says what."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "loading",
+      "english": "<prefix><error>xPlots is still reading its plots. Try again in a moment.",
+      "comment": [
+        "2.0: the database is read off the server thread as it starts."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "renewed",
+      "english": "<prefix><success>Renewed</success> <highlight><plot></highlight> for <price>. It's yours for <time>.",
+      "comment": [
+        "Rent renewed on its own (auto-renew). To the owner if online, else when they next join."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "time"
+      ]
+    },
+    {
+      "key": "renew-failed",
+      "english": "<prefix><error>Couldn't renew <highlight><plot></highlight>: it needs <highlight><price></highlight>. Pay with <highlight>/plots</highlight> before it runs out.",
+      "comment": [
+        "A renewal the owner's balance didn't cover."
+      ],
+      "placeholders": [
+        "plot",
+        "price"
+      ]
+    },
+    {
+      "key": "renew-on",
+      "english": "<prefix><highlight><plot></highlight> now renews on its own, an hour before it runs out.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "renew-off",
+      "english": "<prefix><highlight><plot></highlight> no longer renews on its own.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "rollback.done",
+      "english": "<prefix><success>Undid</success> <highlight><count></highlight> changes <highlight><player></highlight> made in <plot>.",
+      "comment": [
+        "/plots rollback: xRewind rolled the player's changes back, in the plot only."
+      ],
+      "placeholders": [
+        "count",
+        "player",
+        "plot"
+      ]
+    },
+    {
+      "key": "rollback.none",
+      "english": "<prefix><highlight><player></highlight> changed nothing in <plot> in that time.",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "plot"
+      ]
+    },
+    {
+      "key": "rollback.working",
+      "english": "<prefix><gray>Looking through xRewind's history...",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.unavailable",
+      "english": "<prefix><error>Rolling back in a plot needs xRewind 2.0, which isn't installed.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "rollback.failed",
+      "english": "<prefix><error>xRewind couldn't roll that back: <reason>",
+      "comment": [
+        "<reason> is xRewind's, in English."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "signs.free",
+      "english": "<dark_green><bold>FOR RENT<newline><plot><newline><price><newline><period>",
+      "comment": [
+        "What plot signs say, four lines (split with <newline>). <plot> is the plot's name, <price> and",
+        "<period> its rent, <owner> who rents it, <time> how long is left, <slots> and <max-slots> its",
+        "member slots, <size> its size. A plot nobody rents."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size"
+      ]
+    },
+    {
+      "key": "signs.rented",
+      "english": "<dark_red><bold>RENTED<newline><owner><newline><time> left<newline><slots>/<max-slots> members",
+      "comment": [],
+      "placeholders": [
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "plot",
+        "price",
+        "period",
+        "size"
+      ]
+    },
+    {
+      "key": "signs.expiring",
+      "english": "<gold><bold>RENTED<newline><owner><newline><red><time> left<newline><slots>/<max-slots> members",
+      "comment": [
+        "A rented plot whose rent runs out within signs.expiring-below."
+      ],
+      "placeholders": [
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "plot",
+        "price",
+        "period",
+        "size"
+      ]
+    },
+    {
+      "key": "menus.rent.title",
+      "english": "Rent <plot>?",
+      "comment": [
+        "Clicking a free plot's sign."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.rent.info.name",
+      "english": "<highlight><plot>",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.rent.info.lore",
+      "english": "<gray>Size: <white><size><newline><gray>Rent: <white><price></white> per <period><newline><gray>Member slots: <white><max-slots><newline><newline><gray>Anything you build is reset<newline><gray>when the rent runs out.",
+      "comment": [],
+      "placeholders": [
+        "price",
+        "period",
+        "max-slots",
+        "size",
+        "plot",
+        "owner",
+        "time",
+        "slots",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.rent.confirm.name",
+      "english": "<success>Rent for <price>",
+      "comment": [],
+      "placeholders": [
+        "price",
+        "plot",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.rent.confirm.lore",
+      "english": "<gray>Lasts <period>. Pay more any time<newline><gray>from /plots.",
+      "comment": [],
+      "placeholders": [
+        "period",
+        "plot",
+        "price",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.rent.cancel.name",
+      "english": "<error>Cancel",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.rent.cancel.lore",
+      "english": "",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.title",
+      "english": "<plot>",
+      "comment": [
+        "Clicking your own plot's sign, or /plots."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.info.name",
+      "english": "<highlight><plot>",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.info.lore",
+      "english": "<gray>Time left: <white><time><newline><gray>Members: <white><slots>/<max-slots><newline><gray>Size: <white><size>",
+      "comment": [],
+      "placeholders": [
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.pay.name",
+      "english": "<success>Pay <periods>× rent",
+      "comment": [
+        "<periods> is 1, 2 or 3; <price> what that costs; <time> how long it adds."
+      ],
+      "placeholders": [
+        "periods",
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.pay.lore",
+      "english": "<gray>Costs <white><price><newline><gray>Adds <white><time>",
+      "comment": [],
+      "placeholders": [
+        "price",
+        "time",
+        "plot",
+        "period",
+        "owner",
+        "slots",
+        "max-slots",
+        "size",
+        "members",
+        "periods"
+      ]
+    },
+    {
+      "key": "menus.plot.pay-full.name",
+      "english": "<gray>Pay <periods>× rent",
+      "comment": [
+        "Shown instead when paying would go past max-prepaid."
+      ],
+      "placeholders": [
+        "periods",
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.pay-full.lore",
+      "english": "<gray>That's more than can be<newline><gray>paid ahead.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members",
+        "periods"
+      ]
+    },
+    {
+      "key": "menus.plot.members.name",
+      "english": "<highlight>Members",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.members.lore",
+      "english": "<gray><slots> of <max-slots> slots used<newline><gray>Click to add or remove.",
+      "comment": [],
+      "placeholders": [
+        "slots",
+        "max-slots",
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.buy-slot.name",
+      "english": "<success>Buy a member slot",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.buy-slot.lore",
+      "english": "<gray>Costs <white><price><newline><gray>Up to <max-slots>.",
+      "comment": [],
+      "placeholders": [
+        "price",
+        "max-slots",
+        "plot",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.slots-full.name",
+      "english": "<gray>Member slots full",
+      "comment": [
+        "Shown instead when the plot has max-slots."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.slots-full.lore",
+      "english": "<gray>This plot has as many<newline><gray>as it can.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.home.name",
+      "english": "<highlight>Teleport here",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.home.lore",
+      "english": "",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.abandon.name",
+      "english": "<error>Abandon",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.abandon.lore",
+      "english": "<gray>Give the plot up. It's reset,<newline><gray>and what's in it is lost.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.renew-on.name",
+      "english": "<success>Renews on its own",
+      "comment": [
+        "2.0: with auto-renew, rent renewing from your balance. Click to turn it off."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.renew-on.lore",
+      "english": "<gray>An hour before it runs out,<newline><gray>one more <period> for <price>.<newline><gray>Click to turn it off.",
+      "comment": [],
+      "placeholders": [
+        "price",
+        "period",
+        "plot",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.renew-off.name",
+      "english": "<gray>Doesn't renew on its own",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.plot.renew-off.lore",
+      "english": "<gray>Click to renew it each <period><newline><gray>for <price>, from your balance.",
+      "comment": [],
+      "placeholders": [
+        "price",
+        "period",
+        "plot",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.list.title",
+      "english": "Your plots",
+      "comment": [
+        "/plots with more than one plot."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.list.plot.name",
+      "english": "<highlight><plot>",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.list.plot.lore",
+      "english": "<gray>Time left: <white><time><newline><gray>Click to manage.",
+      "comment": [],
+      "placeholders": [
+        "time",
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.members.title",
+      "english": "Members of <plot>",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.members.member.name",
+      "english": "<highlight><player>",
+      "comment": [
+        "<player> is the member."
+      ],
+      "placeholders": [
+        "player",
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.members.member.lore",
+      "english": "<gray>Click to remove.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members",
+        "player"
+      ]
+    },
+    {
+      "key": "menus.members.add.name",
+      "english": "<success>Add a member",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.members.add.lore",
+      "english": "<gray><slots> of <max-slots> slots used",
+      "comment": [],
+      "placeholders": [
+        "slots",
+        "max-slots",
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.members.back.name",
+      "english": "<gray>Back",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.members.back.lore",
+      "english": "",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.picker.title",
+      "english": "Add a member",
+      "comment": [
+        "Adding a member: heads of the players online who can be seen (vanished players aren't)."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.picker.player.name",
+      "english": "<highlight><player>",
+      "comment": [],
+      "placeholders": [
+        "player",
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.picker.player.lore",
+      "english": "<gray>Click to add.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members",
+        "player"
+      ]
+    },
+    {
+      "key": "menus.picker.previous.name",
+      "english": "<gray>Previous page",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.picker.previous.lore",
+      "english": "",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.picker.next.name",
+      "english": "<gray>Next page",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.picker.next.lore",
+      "english": "",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.picker.back.name",
+      "english": "<gray>Back",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.picker.back.lore",
+      "english": "",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.abandon.title",
+      "english": "Abandon <plot>?",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.abandon.confirm.name",
+      "english": "<error>Abandon <plot>",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.abandon.confirm.lore",
+      "english": "<gray>It's reset, and anything<newline><gray>in it is lost.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.abandon.cancel.name",
+      "english": "<success>Keep it",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.abandon.cancel.lore",
+      "english": "",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.admin.title",
+      "english": "<plot> (staff)",
+      "comment": [
+        "Staff clicking a plot with the wand."
+      ],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.admin.info.name",
+      "english": "<highlight><plot>",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.admin.info.lore",
+      "english": "<gray>Owner: <white><owner><newline><gray>Time left: <white><time><newline><gray>Members: <white><members>",
+      "comment": [],
+      "placeholders": [
+        "owner",
+        "time",
+        "members",
+        "plot",
+        "price",
+        "period",
+        "slots",
+        "max-slots",
+        "size"
+      ]
+    },
+    {
+      "key": "menus.admin.home.name",
+      "english": "<highlight>Teleport to the sign",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.admin.home.lore",
+      "english": "",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.admin.evict.name",
+      "english": "<error>Evict",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.admin.evict.lore",
+      "english": "<gray>End the rent now. The plot<newline><gray>is reset if its field says so.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.admin.reset.name",
+      "english": "<error>Reset",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "menus.admin.reset.lore",
+      "english": "<gray>Put the plot back as it was<newline><gray>made. The renter keeps it.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "price",
+        "period",
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "size",
+        "members"
+      ]
+    },
+    {
+      "key": "staff.wand",
+      "english": "<prefix>Left click one corner of the plot area and right click the other, then <highlight>/xplots field create</highlight>.",
+      "comment": [
+        "1.x's staff replies were English only."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "staff.wand-name",
+      "english": "<gold>xPlots wand",
+      "comment": [
+        "The wand's name and lore."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "staff.wand-lore",
+      "english": "<gray>Left click: first corner<newline><gray>Right click: second corner<newline><gray>Sneak + right click: move the nearest sign here<newline><gray>Sneak + left click: a plot's staff menu",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.corner",
+      "english": "<prefix>Corner <which> set at <highlight><x> <y> <z></highlight><size>.",
+      "comment": [
+        "<size> is staff.corner-size once both are set."
+      ],
+      "placeholders": [
+        "which",
+        "x",
+        "y",
+        "z",
+        "size"
+      ]
+    },
+    {
+      "key": "staff.corner-size",
+      "english": " (<width> × <height> × <depth>)",
+      "comment": [],
+      "placeholders": [
+        "width",
+        "height",
+        "depth"
+      ]
+    },
+    {
+      "key": "staff.selected",
+      "english": "<prefix>Selected <highlight><width> × <height> × <depth></highlight> in <world>.",
+      "comment": [],
+      "placeholders": [
+        "width",
+        "height",
+        "depth",
+        "world"
+      ]
+    },
+    {
+      "key": "staff.no-selection",
+      "english": "<prefix><error>Select the area first: <highlight>/xplots wand</highlight>, then click two corners, or <highlight>/xplots select</highlight> with WorldEdit's selection.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.no-world",
+      "english": "<prefix><error>There's no world called <world>.",
+      "comment": [],
+      "placeholders": [
+        "world"
+      ]
+    },
+    {
+      "key": "staff.no-worldedit",
+      "english": "<prefix><error>Type the corners (<highlight>/xplots select \\<world> \\<x1> \\<y1> \\<z1> \\<x2> \\<y2> \\<z2></highlight>), or make a WorldEdit selection first.",
+      "comment": [
+        "/xplots select with no corners, and no WorldEdit selection to use."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "staff.selection-world-gone",
+      "english": "<prefix><error>The selection's world isn't loaded.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.preview",
+      "english": "<prefix><highlight><cols> × <rows> = <count></highlight> plots of <size>, <path>-block paths<outlined>. <click:run_command:'/xplots confirm'><hover:show_text:'/xplots confirm'><success>[Confirm]</success></hover></click> <click:run_command:'/xplots cancel'><hover:show_text:'/xplots cancel'><error>[Cancel]</error></hover></click>",
+      "comment": [
+        "A field's preview. <outlined> is staff.outlined for a player, nothing for the console."
+      ],
+      "placeholders": [
+        "cols",
+        "rows",
+        "count",
+        "size",
+        "path",
+        "outlined"
+      ]
+    },
+    {
+      "key": "staff.outlined",
+      "english": ", outlined around you",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.making",
+      "english": "<prefix>Making <highlight><field></highlight>...",
+      "comment": [],
+      "placeholders": [
+        "field"
+      ]
+    },
+    {
+      "key": "staff.made",
+      "english": "<prefix><success>Made</success> field <highlight><field></highlight>: <count> plots, each with its sign. Settings: <highlight>/xplots field info <field></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "field",
+        "count"
+      ]
+    },
+    {
+      "key": "staff.nothing-waiting",
+      "english": "<prefix><error>Nothing is waiting to be confirmed.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.cancelled",
+      "english": "<prefix>Cancelled. Nothing changed.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.delete-ask",
+      "english": "<prefix>Delete <highlight><field></highlight> and its <count> plots<rented>? Signs come down; blocks stay. <click:run_command:'/xplots confirm'><hover:show_text:'/xplots confirm'><error>[Delete]</error></hover></click> <click:run_command:'/xplots cancel'><hover:show_text:'/xplots cancel'><success>[Keep]</success></hover></click>",
+      "comment": [
+        "<rented> is staff.delete-rented when some are rented."
+      ],
+      "placeholders": [
+        "field",
+        "count",
+        "rented"
+      ]
+    },
+    {
+      "key": "staff.delete-rented",
+      "english": ", <error><count> of them rented, with no refund</error>",
+      "comment": [],
+      "placeholders": [
+        "count"
+      ]
+    },
+    {
+      "key": "staff.deleted",
+      "english": "<prefix>Deleted <highlight><field></highlight>. Its blocks are as they were.",
+      "comment": [],
+      "placeholders": [
+        "field"
+      ]
+    },
+    {
+      "key": "staff.no-fields",
+      "english": "<prefix>No fields yet. Start with <highlight>/xplots wand</highlight>.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.fields",
+      "english": "<prefix>Fields:",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.field-line",
+      "english": " <highlight><field></highlight> in <world>: <rented> of <count> rented",
+      "comment": [],
+      "placeholders": [
+        "field",
+        "world",
+        "rented",
+        "count"
+      ]
+    },
+    {
+      "key": "staff.field-info",
+      "english": "<prefix><highlight><field></highlight> in <world> at <x> <y> <z>: <count> plots of <size>, <rented> rented.",
+      "comment": [
+        "Above a field's settings, one staff.setting each."
+      ],
+      "placeholders": [
+        "field",
+        "world",
+        "x",
+        "y",
+        "z",
+        "count",
+        "size",
+        "rented"
+      ]
+    },
+    {
+      "key": "staff.setting",
+      "english": " <key>: <highlight><value></highlight><own>",
+      "comment": [
+        "<own> is staff.own for the field's own."
+      ],
+      "placeholders": [
+        "key",
+        "value",
+        "own"
+      ]
+    },
+    {
+      "key": "staff.own",
+      "english": " (this field's own)",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.warp-line",
+      "english": " warp: <warp>",
+      "comment": [
+        "<warp> is staff.warp-set or no-members."
+      ],
+      "placeholders": [
+        "warp"
+      ]
+    },
+    {
+      "key": "staff.warp-set-word",
+      "english": "set",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.no-field",
+      "english": "<prefix><error>There's no field called <field>.",
+      "comment": [],
+      "placeholders": [
+        "field"
+      ]
+    },
+    {
+      "key": "staff.no-plot",
+      "english": "<prefix><error>There's no plot called <plot>. Plots are named like box-12.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "staff.not-a-setting",
+      "english": "<prefix><error><key> isn't a setting. Use one of: <keys>.",
+      "comment": [],
+      "placeholders": [
+        "key",
+        "keys"
+      ]
+    },
+    {
+      "key": "staff.bad-setting",
+      "english": "<prefix><error><key> <reason>.",
+      "comment": [
+        "A value a setting can't take. <reason> says why, in English."
+      ],
+      "placeholders": [
+        "key",
+        "reason"
+      ]
+    },
+    {
+      "key": "staff.set-default",
+      "english": "<prefix><field> now uses the config's <highlight><key></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "field",
+        "key"
+      ]
+    },
+    {
+      "key": "staff.set",
+      "english": "<prefix>Set <field>'s <highlight><key></highlight> to <highlight><value></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "field",
+        "key",
+        "value"
+      ]
+    },
+    {
+      "key": "staff.signs-moved",
+      "english": "<prefix>Moved <count> signs in <field> to <highlight><placement></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "count",
+        "field",
+        "placement"
+      ]
+    },
+    {
+      "key": "staff.signs-same",
+      "english": "<prefix>Every sign in <field> is already <highlight><placement></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "field",
+        "placement"
+      ]
+    },
+    {
+      "key": "staff.warp-removed",
+      "english": "<prefix>Removed <field>'s warp.",
+      "comment": [],
+      "placeholders": [
+        "field"
+      ]
+    },
+    {
+      "key": "staff.warp-set",
+      "english": "<prefix>Set <field>'s warp here: <highlight>/plots warp <field></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "field"
+      ]
+    },
+    {
+      "key": "staff.warp-world",
+      "english": "<prefix><error>Stand in <world>, the field's world.",
+      "comment": [],
+      "placeholders": [
+        "world"
+      ]
+    },
+    {
+      "key": "staff.plot-made",
+      "english": "<prefix><success>Made</success> <highlight><plot></highlight>. Its sign is outside its south edge, placed as the field's signs are; sneak and right click with the wand to move it.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "staff.plot-deleted",
+      "english": "<prefix>Deleted <highlight><plot></highlight>. Its blocks are as they were.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "staff.plot-info",
+      "english": "<prefix><highlight><plot></highlight>, <size>, <from> to <to><rest>",
+      "comment": [
+        "<rest> is staff.plot-free or staff.plot-rented, then staff.plot-resetting if it is."
+      ],
+      "placeholders": [
+        "plot",
+        "size",
+        "from",
+        "to",
+        "rest"
+      ]
+    },
+    {
+      "key": "staff.plot-free",
+      "english": ": free.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.plot-rented",
+      "english": "<newline> Owner: <highlight><owner></highlight>, <time> left<newline> Members (<slots>/<max-slots>): <members><newline> Renews on its own: <renews>",
+      "comment": [],
+      "placeholders": [
+        "owner",
+        "time",
+        "slots",
+        "max-slots",
+        "members",
+        "renews"
+      ]
+    },
+    {
+      "key": "staff.plot-resetting",
+      "english": "<newline> Being put back now.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.not-rented",
+      "english": "<prefix><error><plot> isn't rented.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "staff.evicted",
+      "english": "<prefix>Evicted <owner> from <highlight><plot></highlight>.",
+      "comment": [],
+      "placeholders": [
+        "owner",
+        "plot"
+      ]
+    },
+    {
+      "key": "staff.reset",
+      "english": "<prefix>Put <highlight><plot></highlight> back as it was made.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "staff.resetting",
+      "english": "<prefix>Putting <highlight><plot></highlight> back as it was made.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "staff.owner-set",
+      "english": "<prefix><highlight><plot></highlight> is <owner>'s, for <time>.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "owner",
+        "time"
+      ]
+    },
+    {
+      "key": "staff.not-in-plot",
+      "english": "<prefix><error>That isn't in a plot.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.sign-turned",
+      "english": "<prefix>Turned <highlight><plot></highlight>'s sign to face <facing>.",
+      "comment": [],
+      "placeholders": [
+        "plot",
+        "facing"
+      ]
+    },
+    {
+      "key": "staff.sign-moved",
+      "english": "<prefix>Moved <highlight><plot></highlight>'s sign here.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "staff.no-plot-near",
+      "english": "<prefix><error>No plot within 16 blocks of there.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.in-the-way",
+      "english": "<prefix><error>There's something in the way there.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.refused",
+      "english": "<prefix><error>Another plugin stopped that.",
+      "comment": [
+        "A listener cancelled the change."
+      ],
+      "placeholders": []
+    },
+    {
+      "key": "staff.problem",
+      "english": "<prefix><error><reason>",
+      "comment": [
+        "Why a field or plot can't go there: one of staff.why-*."
+      ],
+      "placeholders": [
+        "reason"
+      ]
+    },
+    {
+      "key": "staff.why-name",
+      "english": "Field names are up to 24 lowercase letters, digits and _.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.why-taken",
+      "english": "There's already a field called <field>.",
+      "comment": [],
+      "placeholders": [
+        "field"
+      ]
+    },
+    {
+      "key": "staff.why-too-small",
+      "english": "Not even one plot of that size fits in the selection.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.why-too-many",
+      "english": "<count> plots is more than the <max> a field can have. Check the plot size.",
+      "comment": [],
+      "placeholders": [
+        "count",
+        "max"
+      ]
+    },
+    {
+      "key": "staff.why-overlaps-field",
+      "english": "That overlaps the field <field>.",
+      "comment": [],
+      "placeholders": [
+        "field"
+      ]
+    },
+    {
+      "key": "staff.why-overlaps-plot",
+      "english": "That overlaps the plot <plot>.",
+      "comment": [],
+      "placeholders": [
+        "plot"
+      ]
+    },
+    {
+      "key": "staff.why-other-world",
+      "english": "That's in another world from <field>.",
+      "comment": [],
+      "placeholders": [
+        "field"
+      ]
+    },
+    {
+      "key": "staff.why-too-wide",
+      "english": "A plot can be at most 256 blocks across.",
+      "comment": [],
+      "placeholders": []
+    },
+    {
+      "key": "staff.bad-number",
+      "english": "<prefix><error><value> should be a whole number from <min> to <max>.",
+      "comment": [],
+      "placeholders": [
+        "value",
+        "min",
+        "max"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "key": "xplots:claim",
+      "className": "co.xenastudios.xplots.api.event.PlotClaimEvent",
+      "description": "A player is about to rent a free plot (or staff give one). Cancel it to refuse: nothing is charged.",
+      "cancellable": true,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xplots:claimed",
+      "className": "co.xenastudios.xplots.api.event.PlotClaimedEvent",
+      "description": "A player rented a plot, with what they paid.",
+      "cancellable": false,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xplots:unclaim",
+      "className": "co.xenastudios.xplots.api.event.PlotUnclaimEvent",
+      "description": "A plot's rent is about to end: abandoned, run out or evicted. Cancel it to keep it rented.",
+      "cancellable": true,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xplots:unclaimed",
+      "className": "co.xenastudios.xplots.api.event.PlotUnclaimedEvent",
+      "description": "A plot's rent ended, with its old owner and members.",
+      "cancellable": false,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xplots:member_add",
+      "className": "co.xenastudios.xplots.api.event.MemberAddEvent",
+      "description": "A member is about to be added to a plot. Cancel it to refuse.",
+      "cancellable": true,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xplots:member_added",
+      "className": "co.xenastudios.xplots.api.event.MemberAddedEvent",
+      "description": "A member was added.",
+      "cancellable": false,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xplots:member_remove",
+      "className": "co.xenastudios.xplots.api.event.MemberRemoveEvent",
+      "description": "A member is about to be removed. Cancel it to keep them.",
+      "cancellable": true,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xplots:member_removed",
+      "className": "co.xenastudios.xplots.api.event.MemberRemovedEvent",
+      "description": "A member was removed.",
+      "cancellable": false,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xplots:rent_pay",
+      "className": "co.xenastudios.xplots.api.event.RentPayEvent",
+      "description": "Rent is about to be paid ahead, renewed (owner online or not) or a slot bought. Cancel it and nothing is charged.",
+      "cancellable": true,
+      "since": "2.0.0"
+    },
+    {
+      "key": "xplots:rent_paid",
+      "className": "co.xenastudios.xplots.api.event.RentPaidEvent",
+      "description": "Rent was paid, renewed or a slot bought, with the plot's new time or slots.",
+      "cancellable": false,
+      "since": "2.0.0"
+    }
+  ]
+}

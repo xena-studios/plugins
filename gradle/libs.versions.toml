@@ -17,8 +17,6 @@ placeholderapi = "2.12.3"
 vault-api = "1.7.1"
 # xMoney ships this inside its jar: the Vault 1 and VaultUnlocked 2 API classes.
 vaultunlocked-api = "2.20"
-worldguard = "7.0.14"
-worldedit = "7.3.9"
 # Tests only: Paper ships its own SQLite and MySQL drivers, which the plugins use.
 sqlite-jdbc = "3.49.1.0"
 mysql-connector = "9.2.0"
@@ -93,10 +91,6 @@ mockbukkit = { module = "org.mockbukkit.mockbukkit:mockbukkit-v1.21", version.re
 placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
 vault-api = { module = "com.github.MilkBowl:VaultAPI", version.ref = "vault-api" }
 vaultunlocked-api = { module = "net.milkbowl.vault:VaultUnlockedAPI", version.ref = "vaultunlocked-api" }
-worldguard-bukkit = { module = "com.sk89q.worldguard:worldguard-bukkit", version.ref = "worldguard" }
-worldguard-core = { module = "com.sk89q.worldguard:worldguard-core", version.ref = "worldguard" }
-worldedit-bukkit = { module = "com.sk89q.worldedit:worldedit-bukkit", version.ref = "worldedit" }
-worldedit-core = { module = "com.sk89q.worldedit:worldedit-core", version.ref = "worldedit" }
 bstats-bukkit = { module = "org.bstats:bstats-bukkit", version.ref = "bstats" }
 mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql-connector" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }

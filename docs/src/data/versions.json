@@ -1,5 +1,5 @@
 {
-  "//": "Plugins whose docs have more than one major. /<id>/ is always the newest major; each older one's pages live in src/content/docs/<id>/v<major>/, frozen but for fixes from the maintenance branch, with a version switch by every title (src/plugins.ts). Add a plugin here, and move its pages into v<old>/, in the pull request that merges its rewrite: astro.config.ts then redirects every page of the old major that the new one doesn't have. Until the rewrite is released, its line has \"unreleased\": the last release's version and jar budget, which the brand catalog keeps showing, while /<id>/ serves the old major's pages as before and the new major's are built, hidden, at /<id>/next/. Deleting \"unreleased\" from the line, in the release's pull request, is the switch (README.md, Versions). A plugin that isn't in the brand catalog needs a name; hidden keeps it out of navigation, search, the sitemap and search engines (xsample, the core's sample plugin, which proves the pages and is never released).",
+  "//": "Plugins whose docs have more than one major. /<id>/ is always the newest major; each older one's pages live in src/content/docs/<id>/v<major>/, frozen but for fixes from the maintenance branch, with a version switch by every title (src/plugins.ts). Add a plugin here, and move its pages into v<old>/, in the pull request that merges its rewrite: astro.config.ts then redirects every page of the old major that the new one doesn't have. Until the rewrite is released, its line has \"unreleased\": the last release's version and jar budget, which the brand catalog keeps showing, while /<id>/ serves the old major's pages as before and the new major's are built, hidden, at /<id>/next/. Deleting \"unreleased\" from the line, in the release's pull request, is the switch (README.md, Versions). \"api\": false says the last release had no developer API (xPlots 1.x), so the API's guide is linked at /<id>/next/ meanwhile. A plugin that isn't in the brand catalog needs a name; hidden keeps it out of navigation, search, the sitemap and search engines (xsample, the core's sample plugin, which proves the pages and is never released).",
   "plugins": [
     { "id": "xutilities", "newest": 3, "older": [2], "unreleased": { "version": "2.1.0", "jarBudgetKb": 200 } },
     { "id": "zchat", "newest": 4, "older": [3], "unreleased": { "version": "3.2.0", "jarBudgetKb": 210 } },
@@ -13,6 +13,7 @@
     { "id": "xrewind", "newest": 2, "older": [1], "unreleased": { "version": "1.1.1", "jarBudgetKb": 350 } },
     { "id": "xlimits", "name": "xLimits", "newest": 1, "older": [], "unreleased": {} },
     { "id": "xlimbo", "newest": 3, "older": [2], "unreleased": { "version": "2.1.0", "jarBudgetKb": 220 } },
+    { "id": "xplots", "newest": 2, "older": [1], "unreleased": { "version": "1.0.2", "jarBudgetKb": 330, "api": false } },
     { "id": "xsample", "name": "xSample", "hidden": true, "newest": 1, "older": [0] }
   ]
 }

@@ -28,7 +28,7 @@
       "enabled": false
     },
     {
-      "description": "xPlots compiles against the newest WorldGuard and WorldEdit built for Java 21 (xplots/build.gradle.kts). Later ones are Java 25 class files, which JDK 21 can't read, so they're bumped by hand when the build moves to Java 25.",
+      "description": "NeoSkript compiles against WorldGuard and WorldEdit built for Java 21 (neoskript/gradle/libs.versions.toml); later ones are Java 25 class files, which JDK 21 can't read, so they're bumped by hand. xPlots calls them by name and boots against Modrinth's jars, pinned with their sha256 in xplots/bukkit/boot.sh.",
       "matchPackageNames": [
         "com.sk89q.worldguard:**",
         "com.sk89q.worldedit:**"

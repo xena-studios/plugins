@@ -122,14 +122,21 @@ internal object NeoForgeLibraries {
 
         override fun loadClass(name: String, resolve: Boolean): Class<*> {
             if (fromGame.get()) {
-                synchronized(getClassLoadingLock(name)) {
-                    val found = findLoadedClass(name) ?: try {
-                        findClass(name)
-                    } catch (_: ClassNotFoundException) {
-                        return previous.loadClass(name)
+                // Defining the class loads its supertypes through here too (the stdlib's, often),
+                // and those must go to the game's loader first again.
+                fromGame.set(false)
+                try {
+                    synchronized(getClassLoadingLock(name)) {
+                        val found = findLoadedClass(name) ?: try {
+                            findClass(name)
+                        } catch (_: ClassNotFoundException) {
+                            return previous.loadClass(name)
+                        }
+                        if (resolve) resolveClass(found)
+                        return found
                     }
-                    if (resolve) resolveClass(found)
-                    return found
+                } finally {
+                    fromGame.set(true)
                 }
             }
             try {

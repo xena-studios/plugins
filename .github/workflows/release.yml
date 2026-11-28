@@ -3,8 +3,9 @@ name: Release
 # The rewrite's release (ROADMAP.md, "Build, CI and releases"; decisions/2026-11-27-the-release-set.md).
 # One run releases one or more plugins, each as <plugin>-v<version>, such as xbans-v2.0.0, with
 # every jar its build declares (xenaRelease in build-logic's xena.release), to GitHub Releases,
-# Modrinth, Hangar, voxel.shop and CurseForge, with checksums and build attestations, and writes
-# the SpigotMC and BuiltByBit update posts to paste. A store the plugin has no project on yet is
+# Modrinth, Hangar, voxel.shop and CurseForge, with checksums and build attestations, its developer
+# API to Maven Central (co.xenastudios.<plugin>:<plugin>-api and -api-bukkit, xena.release-api), and
+# writes the SpigotMC and BuiltByBit update posts to paste. A store the plugin has no project on yet is
 # skipped. Each version must match its plugin's build, its CHANGELOG.md must have a released
 # "## <version>" section, and its line in docs/src/data/versions.json must have no "unreleased".
 #
@@ -33,6 +34,8 @@ on:
     paths:
       - .github/workflows/release.yml
       - build-logic/src/main/kotlin/xena.release.gradle.kts
+      - build-logic/src/main/kotlin/xena.release-api.gradle.kts
+      - build-logic/src/main/kotlin/co/xenastudios/gradle/MavenApi.kt
       - build-logic/src/main/kotlin/XenaReleaseExtension.kt
       - build-logic/src/main/kotlin/co/xenastudios/gradle/BbCode.kt
       - build-logic/src/main/kotlin/co/xenastudios/gradle/CurseForgePublish.kt
@@ -73,7 +76,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    # Every plugin's Fabric jars, three Minecraft lines each, then every release set.
+    timeout-minutes: 90
     permissions:
       contents: read
     outputs:
@@ -145,6 +149,10 @@ jobs:
             echo "dry-run=$dry_run"
           } >>"$GITHUB_OUTPUT"
           echo "Releasing ${tags[*]} from $(git rev-parse --short HEAD) (dry run: $dry_run)"
+          # The root build's daemons (Gradle's and Kotlin's) would sit beside the Fabric build's on a
+          # 7 GB runner, which starves the runner until it's lost: each build runs alone.
+          ./gradlew --stop
+          pkill -f KotlinCompileDaemon || true
       # Plugins with Fabric jars have them built by platform-fabric's own build (DECISIONS.md,
       # "platform-fabric"), which the root build's releaseAssemble then reads from its build/libs.
       - uses: actions/cache/restore@v6
@@ -160,6 +168,8 @@ jobs:
             dir=${project#:}
             if grep -q 'ReleasePlatform.FABRIC' "${dir//://}/build.gradle.kts"; then
               ./gradlew -p core/platform-fabric collect
+              ./gradlew -p core/platform-fabric --stop
+              pkill -f KotlinCompileDaemon || true
               exit 0
             fi
           done
@@ -284,7 +294,9 @@ jobs:
           path: release
       - uses: actions/attest-build-provenance@v4
         with:
-          subject-path: release/*/*.jar
+          subject-path: |
+            release/*/*.jar
+            release/*/maven/**/*.jar
 
   # One job per store, each with only its own token, so a store that fails can be rerun alone
   # (re-run failed jobs) and a build script can't reach the other stores' tokens. Each publishes
@@ -340,6 +352,86 @@ jobs:
         run: |
           read -ra projects <<<"$PROJECTS"
           ./gradlew "${projects[@]/%/:$TASK}" -Pxena.release.root=release --continue
+
+  # Each plugin's API to Maven Central, which can't take a release back. Runs no project code: the
+  # bundles the build job wrote (release/<plugin>/maven/, checked by the verify job against
+  # Central's requirements) are signed here with gpg and uploaded to the Central Portal's API, so the
+  # signing key and the Portal's token never reach a build script. A bundle Central already has is
+  # skipped, so a rerun goes on to the rest.
+  maven:
+    needs: [build, verify, attest]
+    if: needs.build.outputs.dry-run == 'false'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: release
+      - name: Check the secrets
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          missing=()
+          for name in MAVEN_CENTRAL_USERNAME MAVEN_CENTRAL_PASSWORD SIGNING_KEY SIGNING_PASSWORD; do
+            [[ -n ${!name} ]] || missing+=("$name")
+          done
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "::error::Maven Central needs ${missing[*]} in the release environment: a Central Portal user token (central.sonatype.com, View Account, Generate User Token) as MAVEN_CENTRAL_USERNAME and MAVEN_CENTRAL_PASSWORD, and the ASCII-armored key that signs co.xenastudios as SIGNING_KEY with its passphrase. Nothing was sent to Maven Central."
+            exit 1
+          fi
+      - name: Sign and upload
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          export GNUPGHOME=$RUNNER_TEMP/gnupg
+          mkdir -m 700 "$GNUPGHOME"
+          gpg --batch --import <<<"$SIGNING_KEY"
+          auth=$(printf '%s:%s' "$MAVEN_CENTRAL_USERNAME" "$MAVEN_CENTRAL_PASSWORD" | base64 -w0)
+          api=https://central.sonatype.com/api/v1/publisher
+          for repo in release/*/maven; do
+            [[ -d $repo ]] || continue
+            tag=$(jq -r .tag "${repo%/maven}/release.json")
+            # The first POM's coordinates: every artifact of a plugin's bundle has its group and version.
+            pom=$(find "$repo" -name '*.pom' | head -1)
+            rel=${pom#"$repo"/}
+            version=$(basename "$(dirname "$rel")")
+            artifact=$(basename "$(dirname "$(dirname "$rel")")")
+            group=$(dirname "$(dirname "$(dirname "$rel")")"); group=${group//\//.}
+            published=$(curl -fsS -H "Authorization: Bearer $auth" \
+              "$api/published?namespace=$group&name=$artifact&version=$version" | jq -r .published)
+            if [[ $published == true ]]; then
+              echo "Maven Central already has $group:$artifact:$version; skipping $tag's bundle"
+              continue
+            fi
+            find "$repo" -type f ! -name '*.md5' ! -name '*.sha1' ! -name '*.sha256' ! -name '*.sha512' ! -name '*.asc' -print0 |
+              while IFS= read -r -d '' file; do
+                gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --armor --detach-sign "$file" <<<"$SIGNING_PASSWORD"
+              done
+            (cd "$repo" && zip -qr "$RUNNER_TEMP/$tag-maven.zip" .)
+            id=$(curl -fsS -H "Authorization: Bearer $auth" -F "bundle=@$RUNNER_TEMP/$tag-maven.zip" \
+              "$api/upload?publishingType=AUTOMATIC&name=$tag")
+            echo "Uploaded $tag's bundle as deployment $id"
+            # Central checks the bundle, then publishes it: wait for either answer.
+            for _ in $(seq 60); do
+              state=$(curl -fsS -X POST -H "Authorization: Bearer $auth" "$api/status?id=$id" | jq -r .deploymentState)
+              case $state in
+                PUBLISHING | PUBLISHED) echo "$tag: $state"; break ;;
+                FAILED) echo "::error::Maven Central refused $tag's bundle (deployment $id): see central.sonatype.com, Deployments"; exit 1 ;;
+              esac
+              sleep 10
+            done
+            [[ $state == PUBLISHING || $state == PUBLISHED ]] || { echo "::error::$tag's deployment $id is still $state after 10 minutes"; exit 1; }
+          done
 
   # Each GitHub release, with its tag on the released commit: every jar, the checksums and the
   # update posts. Runs no project code (no checkout, no Gradle), so it's the only job that can

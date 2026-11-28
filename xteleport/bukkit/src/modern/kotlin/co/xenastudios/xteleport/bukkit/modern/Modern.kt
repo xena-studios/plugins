@@ -1,6 +1,7 @@
 package co.xenastudios.xteleport.bukkit.modern
 
 import org.bukkit.HeightMap
+import org.bukkit.Keyed
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
@@ -40,8 +41,14 @@ internal fun waterlogged(block: Block): Boolean = (block.blockData as? Waterlogg
 /** 1.15 on: the highest block that stops movement (leaves count, grass doesn't). */
 internal fun highest(world: World, x: Int, z: Int): Int = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING)
 
-/** 1.16 on: the biome as Minecraft names it, without its namespace. */
-internal fun biome(world: World, x: Int, y: Int, z: Int): String = world.getBiome(x, y, z).key.key
+/**
+ * 1.16 on: the biome as Minecraft names it, without its namespace. Through [Keyed]: Biome is an
+ * enum before 1.21.3 and an interface after, so a call on Biome itself (compiled against Paper's
+ * API, an `invokeinterface`) fails on 1.16 to 1.21.2 with IncompatibleClassChangeError.
+ */
+internal fun biome(world: World, x: Int, y: Int, z: Int): String = keyOf(world.getBiome(x, y, z))
+
+private fun keyOf(keyed: Keyed): String = keyed.key.key
 
 /** 1.17 on: the world's floor, roof and logical height. */
 internal fun minHeight(world: World): Int = world.minHeight

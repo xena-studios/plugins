@@ -498,9 +498,7 @@ public class XStatsPlugin(
     // The config's stats, then the registered ones, as the catalog.
     private fun rebuildStats(warnings: MutableList<String>? = null) {
         val list = locked(registered) { registered.toList() }
-        val stats = Definitions.build(config[XStatsConfig.stats], list, catalog, server.vanilla) { warning ->
-            if (warnings != null) warnings += "config.yml: $warning" else log.warn("config.yml: $warning")
-        }
+        val stats = Definitions.build(config[XStatsConfig.stats], list, catalog, server.vanilla, Warn(warnings, log, false), Warn(null, log, true))
         catalog.set(stats)
     }
 
@@ -808,6 +806,17 @@ internal class Repeating(private val plugin: XStatsPlugin, private val kind: Int
 /** Whether a player is vanished, from the family's cache (xVanish keeps it): left off leaderboards. */
 internal class Vanished(private val plugin: XStatsPlugin) : (PlayerRef) -> Boolean {
     override fun invoke(player: PlayerRef): Boolean = plugin.cache?.isVanished(player) ?: false
+}
+
+/** A problem with a stat in the config: into [into] as the config loads, else to the log; a [note] is only information. */
+internal class Warn(private val into: MutableList<String>?, private val log: co.xenastudios.core.common.platform.Log, private val note: Boolean) : (String) -> Unit {
+    override fun invoke(text: String) {
+        when {
+            note -> log.info("config.yml: $text")
+            into != null -> into += "config.yml: $text"
+            else -> log.warn("config.yml: $text")
+        }
+    }
 }
 
 /** Someone went private or public: the website's pages again, on the database thread. */

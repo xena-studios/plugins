@@ -27,7 +27,7 @@ public object StatsFiles {
 
     /** The folder with the world's level.dat, where players' files are kept. On 26.x the main world's own folder is three below it. */
     public fun levelRoot(world: Path): Path {
-        var at: Path? = world.toAbsolutePath()
+        var at: Path? = world.toAbsolutePath().normalize()
         var up = 0
         while (up <= 3 && at != null) {
             if (Files.isRegularFile(at.resolve("level.dat"))) return at

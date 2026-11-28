@@ -97,11 +97,13 @@ public object Definitions {
         catalog: Catalog,
         reader: VanillaReader?,
         warn: (String) -> Unit,
+        /** Told what isn't wrong but worth knowing: a stat this server's Minecraft is too old for. */
+        note: (String) -> Unit = warn,
     ): List<StatDef> {
         val stats = ArrayList<StatDef>()
         for ((id, stat) in settings) {
             try {
-                stats += define(id, stat, catalog, reader, warn)
+                stats += define(id, stat, catalog, reader, note)
             } catch (e: IllegalArgumentException) {
                 warn("stats.$id: ${e.message}. It's left out until that's fixed.")
             }
@@ -119,7 +121,7 @@ public object Definitions {
         return stats
     }
 
-    internal fun define(id: String, settings: StatSettings, catalog: Catalog, reader: VanillaReader?, warn: (String) -> Unit): StatDef {
+    internal fun define(id: String, settings: StatSettings, catalog: Catalog, reader: VanillaReader?, note: (String) -> Unit): StatDef {
         require(ID.matches(id)) { "an id is 1 to 32 lowercase letters, digits and _" }
         clash(id)?.let { throw IllegalArgumentException(it) }
         val source = settings.source.trim()
@@ -163,7 +165,7 @@ public object Definitions {
                 val prepared = reader?.prepare(terms)
                 // A part this server's Minecraft doesn't have yet reads 0 (the newest mounts, on an older server).
                 if (prepared != null && prepared.missing.size == terms.size) {
-                    warn("stats.$id: this server's Minecraft has none of ${prepared.missing.joinToString(", ")}, so it reads 0 here.")
+                    note("stats.$id: this server's Minecraft has none of ${prepared.missing.joinToString(", ")}, so it reads 0 here.")
                 }
                 parsed = StatDef.Vanillas(terms, prepared)
                 unit = first ?: StatUnit.COUNT

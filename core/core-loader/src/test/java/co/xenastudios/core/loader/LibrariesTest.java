@@ -173,4 +173,102 @@ class LibrariesTest {
             assertNull(Libraries.find("fixture.Probe", own));
         }
     }
+
+    /**
+     * Old Bukkit's plugin class loader (1.8.8 to 1.16.4) as the loader sees it: a URLClassLoader
+     * with the {@code findClass(String, boolean)} other plugins' loaders define classes through.
+     */
+    static final class OldBukkit extends URLClassLoader {
+        OldBukkit(ClassLoader server) {
+            super(new URL[0], server);
+        }
+
+        Class<?> findClass(String name, boolean checkGlobal) throws ClassNotFoundException {
+            return super.findClass(name);
+        }
+    }
+
+    /**
+     * Java 9 and later's application class loader, the server's on old Bukkit, as the loader sees
+     * it: no URLClassLoader, but the method {@code Instrumentation} adds a jar with.
+     */
+    static final class AppLike extends ClassLoader {
+        private final List<URL> jars = new ArrayList<>();
+
+        AppLike(ClassLoader parent) {
+            super(parent);
+        }
+
+        void appendToClassPathForInstrumentation(String path) throws IOException {
+            jars.add(java.nio.file.Paths.get(path).toUri().toURL());
+        }
+
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+            try (URLClassLoader jar = new URLClassLoader(jars.toArray(new URL[0]), null)) {
+                try (java.io.InputStream in = jar.getResourceAsStream(name.replace('.', '/') + ".class")) {
+                    if (in == null) {
+                        throw new ClassNotFoundException(name);
+                    }
+                    byte[] bytes = in.readAllBytes();
+                    return defineClass(name, bytes, 0, bytes.length);
+                }
+            } catch (IOException e) {
+                throw new ClassNotFoundException(name, e);
+            }
+        }
+    }
+
+    @Test
+    void onOldBukkitTheLibrariesGoToTheServersClassLoader() throws Exception {
+        // Every plugin's loader asks the server's first, under its locks, so no plugin's loader
+        // defines a library class for another without its lock (two at once: LinkageError).
+        try (URLClassLoader server = new URLClassLoader(new URL[0], getClass().getClassLoader());
+             OldBukkit first = new OldBukkit(server); OldBukkit second = new OldBukkit(server)) {
+            Libraries.Loaded loaded = Libraries.load(List.of(library), first, null, mirrored(), 17, null, logger);
+            assertSame(first, loaded.loader());
+            assertEquals(Strategy.LOOKUP, loaded.strategy());
+            assertSame(server, Class.forName("fixture.Probe", false, first).getClassLoader());
+            assertEquals(1, log.size(), log.toString());
+            Fixtures.assertContains(log.get(0), "INFO Loaded probe 1.0 through the JDK's trusted lookup on the server's class loader");
+            // The next plugin finds it there: nothing to add.
+            Libraries.Loaded next = Libraries.load(List.of(library), second, null, cache, 17, null, logger);
+            assertNull(next.strategy());
+            assertSame(server, Class.forName("fixture.Probe", false, second).getClassLoader());
+        }
+    }
+
+    @Test
+    void onNewerJavaTheServersClassLoaderIsAppendedToAsInstrumentationDoes() throws Exception {
+        AppLike server = new AppLike(getClass().getClassLoader());
+        try (OldBukkit own = new OldBukkit(server)) {
+            Libraries.Loaded loaded = Libraries.load(List.of(library), own, null, mirrored(), 21, null, logger);
+            assertEquals(Strategy.LOOKUP, loaded.strategy());
+            assertSame(server, Class.forName("fixture.Probe", false, own).getClassLoader());
+            assertEquals("hi", Class.forName("fixture.Probe", true, own).getMethod("hi").invoke(null));
+        }
+    }
+
+    @Test
+    void onOldBukkitAServerLoaderThatTakesNoJarFallsBackToThePluginsWithAWarning() throws Exception {
+        ClassLoader server = new ClassLoader(getClass().getClassLoader()) {};
+        try (OldBukkit own = new OldBukkit(server)) {
+            Libraries.Loaded loaded = Libraries.load(List.of(library), own, null, mirrored(), 21, null, logger);
+            assertSame(own, loaded.loader());
+            assertEquals(Strategy.LOOKUP, loaded.strategy());
+            assertSame(own, Class.forName("fixture.Probe", false, own).getClassLoader());
+            Fixtures.assertContains(log.get(0), "WARNING Couldn't add the libraries to the server's class loader (lookup on the server's class loader: ",
+                "plugins starting at the same time can break each other's classes");
+        }
+    }
+
+    @Test
+    void onOldBukkitIsolatedStaysTheOwnersChoice() throws Exception {
+        Path pluginJar = Fixtures.jar(dir, "plugin", Map.of("own.Entry", "package own; public class Entry {}"));
+        try (URLClassLoader server = new URLClassLoader(new URL[0], getClass().getClassLoader()); OldBukkit own = new OldBukkit(server)) {
+            Libraries.Loaded loaded = Libraries.load(List.of(library), own, pluginJar.toUri().toURL(), mirrored(), 21, Strategy.ISOLATED, logger);
+            assertEquals(Strategy.ISOLATED, loaded.strategy());
+            assertNull(Libraries.find("fixture.Probe", server));
+        }
+    }
 }

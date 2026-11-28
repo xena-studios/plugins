@@ -1,0 +1,7 @@
+limit:
+  name: "Beds"
+  type: "GROUP"
+  limit: 64
+  regex: true
+  materials:
+    - "^.*_BED\\b"

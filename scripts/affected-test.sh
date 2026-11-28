@@ -249,6 +249,16 @@ check "xRewind's real-client checks" xrewind/bukkit/client-checks.txt \
   $'tasks=:build :xrewind:api:build :xrewind:bukkit:build :xrewind:common:build\nchecks=\nboot=bukkit'
 check "xRewind's Fabric mod (platform-fabric's build)" xrewind/fabric/src/main/kotlin/co/xenastudios/xrewind/fabric/FabricRewindServer.kt \
   $'tasks=:build :xrewind:api:build :xrewind:bukkit:build :xrewind:common:build\nchecks=\nboot=fabric'
+check "xLimits' common code" xlimits/common/src/commonMain/kotlin/co/xenastudios/xlimits/XLimitsPlugin.kt \
+  $'tasks=:build :xlimits:api:build :xlimits:bukkit:build :xlimits:common:build\nchecks=\nboot=bukkit fabric'
+check "xLimits' API" xlimits/api/src/commonMain/kotlin/co/xenastudios/xlimits/api/XLimitsApi.kt \
+  $'tasks=:build :xlimits:api:build :xlimits:bukkit:build :xlimits:common:build\nchecks=\nboot=bukkit fabric'
+check "xLimits' Bukkit adapter" xlimits/bukkit/src/main/kotlin/co/xenastudios/xlimits/bukkit/BukkitLimitsServer.kt \
+  $'tasks=:build :xlimits:api:build :xlimits:bukkit:build :xlimits:common:build\nchecks=\nboot=bukkit'
+check "xLimits' boot seed" xlimits/bukkit/boot-seed/plugins/xLimits/config.yml \
+  $'tasks=:build :xlimits:api:build :xlimits:bukkit:build :xlimits:common:build\nchecks=\nboot=bukkit'
+check "xLimits' Fabric mod (platform-fabric's build)" xlimits/fabric/src/main/kotlin/co/xenastudios/xlimits/fabric/FabricLimitsServer.kt \
+  $'tasks=:build :xlimits:api:build :xlimits:bukkit:build :xlimits:common:build\nchecks=\nboot=fabric'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 check "Today's plugin" xstats/src/main/java/co/xenastudios/xstats/XStats.java \
   $'units=xstats\ncompile=:xstats:compileJava :xstats:api:compileJava\nchecks=xstats/boot-checks.txt\nboot='

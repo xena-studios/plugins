@@ -1,0 +1,4 @@
+limit:
+  name: "Tiles"
+  type: "TILE"
+  limit: 256

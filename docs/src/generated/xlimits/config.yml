@@ -1,0 +1,190 @@
+# xLimits: farm, entity and redstone limits.
+# Docs: https://plugins.xenastudios.co/xlimits/configuration/
+#
+# Apply changes with /xlimits reload. Everything applies at once; nothing that's already
+# in the world is removed by a limit, only new spawns, placements and the like are refused.
+# A bad value falls back to its default with a warning in the console. The messages are
+# in lang/.
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# How this plugin's messages look, and the language they're in. shared uses the
+# setting in plugins/Xena/config.yml, which every Xena plugin reads; anything else is
+# this plugin's own.
+messages:
+  # The language players see messages in: auto for each player's own (their client's
+  # language setting), or one language for everyone, such as de or pt-BR.
+  language: "shared"
+  # The language of the console, and of players whose language has no file in lang/.
+  default-language: "shared"
+
+  # The look every message shares, used in messages as tags: <prefix>, <highlight>,
+  # <success> and <error>. Colours are names (gray, gold) or hex (#B48CFF), with bold,
+  # italic, underlined, strikethrough or obfuscated if you like: <#B48CFF><bold>.
+  theme:
+    # <prefix> starts the default messages. Make it your server's name, such as
+    # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+    prefix: "shared"
+    # The colour of message text that has no tag of its own.
+    base: "shared"
+    # <highlight>: names and values, such as a player or a speed.
+    highlight: "shared"
+    # <success>: something turned on or done.
+    success: "shared"
+    # <error>: something refused or turned off.
+    error: "shared"
+
+command:
+  # Other names for /xlimits.
+  aliases: ["limits"]
+
+# Where the limits apply.
+worlds:
+  # Worlds xLimits leaves alone, by folder name (world_nether).
+  exempt: []
+  # Limits that differ in one world, by world and then by limit, such as
+  #   world_nether: { hopper: 32, monsters: 40 }
+  # Any entity, block, tnt, falling_blocks, portal_items or pets limit can be set here.
+  overrides: {}
+
+# A cap per chunk on mobs, vehicles, armour stands and item frames. Past it, new ones
+# don't spawn; nothing already there is removed. Next to Paper's spawn-limits and
+# per-player-mob-spawns, which cover natural spawning only: this also covers breeding,
+# spawn eggs, dispensers and placing.
+entities:
+  enabled: true
+  # By group or entity type. The groups: animals, monsters, villagers, water (fish,
+  # squid, axolotls), ambient (bats), golems, vehicles (boats and minecarts),
+  # armor_stands, item_frames (with paintings), and your own below. A type is its
+  # Minecraft id: cow, zombified_piglin. Each one that matches a mob is checked.
+  limits:
+    animals: 80
+    monsters: 70
+    villagers: 50
+    vehicles: 40
+    armor_stands: 40
+    item_frames: 150
+  # Groups of your own, by name, each a list of entity types, such as
+  #   raiders: [pillager, vindicator, evoker, ravager]
+  groups: {}
+  # Which ways of coming to be the caps refuse: natural, spawner, breeding, egg, spawn-egg,
+  # dispenser, placed and other (golems, plugins, commands, slimes splitting). A route
+  # that isn't listed is never refused.
+  routes: ["natural", "spawner", "breeding", "egg", "spawn-egg", "dispenser", "placed"]
+
+# Farm slowing: when one group in a chunk passes its threshold, those mobs are slowed
+# instead of removed, and go back to normal when the count falls. Checked at a spawn or
+# breed in the chunk and as it loads, never on a timer. Named, tamed and leashed mobs are
+# left alone. Next to Paper's collisions.max-entity-collisions, which applies to every mob
+# everywhere: this only touches a crammed farm. Run /xlimits restore before removing xLimits.
+farms:
+  enabled: true
+  # By group or entity type: a threshold, and the actions, any of no-collisions (they
+  # don't push each other), no-ai (they stop pathfinding but still breed, drop and can be
+  # killed) and no-breeding. Such as
+  #   monsters: { threshold: 60, actions: [no-collisions] }
+  rules:
+    animals:
+      threshold: 32
+      actions: ["no-collisions"]
+  # Slow villagers too. Off, because iron farms and trading halls depend on their AI.
+  villagers: false
+
+# A cap per chunk on blocks. Placing one past it is refused with a message. Next to
+# Paper's hopper settings, which make each hopper cheaper but don't limit how many.
+blocks:
+  enabled: true
+  # By block id or one of your groups below.
+  limits:
+    hopper: 80
+    spawner: 12
+    piston: 128
+    sticky_piston: 128
+    observer: 128
+  # Groups of blocks of your own, each counted together, such as
+  #   redstone: [repeater, comparator, redstone_torch]
+  groups: {}
+
+# Redstone clocks: how often one block's power changes in a short window. Past the
+# limit it's broken (it drops as an item) and staff are told where. Next to Paper's
+# alternate-current, which makes redstone cheaper but doesn't stop a clock left running.
+redstone:
+  enabled: false
+  # Changes allowed in the window.
+  changes: 60
+  window: "5s"
+
+# A cap per chunk on primed TNT and falling sand, gravel and concrete powder. Past it,
+# TNT stays a block and sand doesn't fall. Off by default, because cannon servers set
+# their own numbers. Next to Paper's max-tnt-per-tick, which is server-wide, so one chunk
+# can use all of it.
+tnt:
+  enabled: false
+  # Primed TNT per chunk.
+  primed: 64
+  # Falling blocks per chunk.
+  falling: 128
+
+# A rate limit on items and other entities going through the portals of one chunk, so
+# item spam and portal chunk loaders can't flood the other side. Players and what they
+# ride are never limited. Off by default.
+portals:
+  enabled: false
+  # Entities allowed through in the window.
+  entities: 40
+  window: "10s"
+
+# A cap on how many tamed mobs one player owns. Past it, taming fails with a message;
+# pets they already have are kept. Counted in memory from the owner on each mob, as
+# they're seen. Off by default.
+pets:
+  enabled: false
+  # Pets of every kind together.
+  limit: 50
+  # Per entity type, such as { wolf: 10, cat: 10 }.
+  per-type: {}
+
+# Load profiles: stricter limits that turn on while the server is busy. A profile turns
+# on when its condition holds, stays on for minimum-time, and turns off at its off value.
+# It only tightens new spawns, placements and the farm thresholds. On Folia each region
+# has its own profile, from its own TPS. Off by default.
+profiles:
+  enabled: false
+  minimum-time: "2m"
+  # By name; a later one wins over an earlier one. when: players-online-above, tps-below
+  # or mspt-above (Paper; Folia has no MSPT, so use tps-below there). on and off: the
+  # values it turns on and off at. scale: every limit and threshold times this. limits:
+  # limits set outright, such as { animals: 30, hopper: 40 }.
+  list:
+    busy:
+      when: "players-online-above"
+      "on": 80
+      "off": 70
+      scale: 0.8
+      limits: {}
+    strained:
+      when: "tps-below"
+      "on": 17
+      "off": 19
+      scale: 0.5
+      limits: {}
+
+# Staff with xlimits.alerts are told the first time a chunk reaches a limit, with a
+# button to teleport there, and when a load profile turns on or off.
+alerts:
+  enabled: true
+  # At most once per chunk this often.
+  cooldown: "5m"
+  # With xRewind installed, the alert's "who built this" button runs this command at
+  # the place. Blank for no button.
+  who-built: "xrewind lookup radius:16 world:<world> x:<x> y:<y> z:<z>"
+
+# Telling you when a newer version is out: in the console, and to players with
+# <plugin>.admin.update when they join. Asks Modrinth once a day, off the server's threads,
+# sending only the plugin's version, the platform and the Minecraft version.
+updates:
+  # Whether to ask at all.
+  check: true
+  # Which releases to hear of: release, beta (betas and releases) or alpha (everything).
+  channel: "release"

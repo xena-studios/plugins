@@ -1,0 +1,183 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xlimits.api/LimitKind : kotlin/Enum<co.xenastudios.xlimits.api/LimitKind> { // co.xenastudios.xlimits.api/LimitKind|null[0]
+    enum entry BLOCK // co.xenastudios.xlimits.api/LimitKind.BLOCK|null[0]
+    enum entry ENTITY // co.xenastudios.xlimits.api/LimitKind.ENTITY|null[0]
+    enum entry FALLING_BLOCK // co.xenastudios.xlimits.api/LimitKind.FALLING_BLOCK|null[0]
+    enum entry PET // co.xenastudios.xlimits.api/LimitKind.PET|null[0]
+    enum entry PORTAL // co.xenastudios.xlimits.api/LimitKind.PORTAL|null[0]
+    enum entry REDSTONE // co.xenastudios.xlimits.api/LimitKind.REDSTONE|null[0]
+    enum entry TNT // co.xenastudios.xlimits.api/LimitKind.TNT|null[0]
+
+    final val entries // co.xenastudios.xlimits.api/LimitKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xlimits.api/LimitKind> // co.xenastudios.xlimits.api/LimitKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xlimits.api/LimitKind // co.xenastudios.xlimits.api/LimitKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xlimits.api/LimitKind> // co.xenastudios.xlimits.api/LimitKind.values|values#static(){}[0]
+}
+
+final enum class co.xenastudios.xlimits.api/SlowAction : kotlin/Enum<co.xenastudios.xlimits.api/SlowAction> { // co.xenastudios.xlimits.api/SlowAction|null[0]
+    enum entry NO_AI // co.xenastudios.xlimits.api/SlowAction.NO_AI|null[0]
+    enum entry NO_BREEDING // co.xenastudios.xlimits.api/SlowAction.NO_BREEDING|null[0]
+    enum entry NO_COLLISIONS // co.xenastudios.xlimits.api/SlowAction.NO_COLLISIONS|null[0]
+
+    final val entries // co.xenastudios.xlimits.api/SlowAction.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xlimits.api/SlowAction> // co.xenastudios.xlimits.api/SlowAction.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xlimits.api/SlowAction // co.xenastudios.xlimits.api/SlowAction.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xlimits.api/SlowAction> // co.xenastudios.xlimits.api/SlowAction.values|values#static(){}[0]
+}
+
+final enum class co.xenastudios.xlimits.api/SpawnRoute : kotlin/Enum<co.xenastudios.xlimits.api/SpawnRoute> { // co.xenastudios.xlimits.api/SpawnRoute|null[0]
+    enum entry BREEDING // co.xenastudios.xlimits.api/SpawnRoute.BREEDING|null[0]
+    enum entry DISPENSER // co.xenastudios.xlimits.api/SpawnRoute.DISPENSER|null[0]
+    enum entry EGG // co.xenastudios.xlimits.api/SpawnRoute.EGG|null[0]
+    enum entry NATURAL // co.xenastudios.xlimits.api/SpawnRoute.NATURAL|null[0]
+    enum entry OTHER // co.xenastudios.xlimits.api/SpawnRoute.OTHER|null[0]
+    enum entry PLACED // co.xenastudios.xlimits.api/SpawnRoute.PLACED|null[0]
+    enum entry SPAWNER // co.xenastudios.xlimits.api/SpawnRoute.SPAWNER|null[0]
+    enum entry SPAWN_EGG // co.xenastudios.xlimits.api/SpawnRoute.SPAWN_EGG|null[0]
+
+    final val entries // co.xenastudios.xlimits.api/SpawnRoute.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xlimits.api/SpawnRoute> // co.xenastudios.xlimits.api/SpawnRoute.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xlimits.api/SpawnRoute // co.xenastudios.xlimits.api/SpawnRoute.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xlimits.api/SpawnRoute> // co.xenastudios.xlimits.api/SpawnRoute.values|values#static(){}[0]
+}
+
+abstract fun interface co.xenastudios.xlimits.api/LimitProvider { // co.xenastudios.xlimits.api/LimitProvider|null[0]
+    abstract fun limit(co.xenastudios.core.api/Location, kotlin/String, kotlin/Int): kotlin/Int // co.xenastudios.xlimits.api/LimitProvider.limit|limit(co.xenastudios.core.api.Location;kotlin.String;kotlin.Int){}[0]
+}
+
+abstract interface co.xenastudios.xlimits.api/XLimitsApi { // co.xenastudios.xlimits.api/XLimitsApi|null[0]
+    abstract val events // co.xenastudios.xlimits.api/XLimitsApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xlimits.api/XLimitsApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.xlimits.api/XLimitsApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xlimits.api/XLimitsApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun activeProfile(co.xenastudios.xlimits.api/ChunkRef): kotlin/String // co.xenastudios.xlimits.api/XLimitsApi.activeProfile|activeProfile(co.xenastudios.xlimits.api.ChunkRef){}[0]
+    abstract fun count(co.xenastudios.xlimits.api/ChunkRef, kotlin/String): kotlin/Int // co.xenastudios.xlimits.api/XLimitsApi.count|count(co.xenastudios.xlimits.api.ChunkRef;kotlin.String){}[0]
+    abstract fun limit(co.xenastudios.xlimits.api/ChunkRef, kotlin/String): kotlin/Int // co.xenastudios.xlimits.api/XLimitsApi.limit|limit(co.xenastudios.xlimits.api.ChunkRef;kotlin.String){}[0]
+    abstract fun limits(): kotlin.collections/List<kotlin/String> // co.xenastudios.xlimits.api/XLimitsApi.limits|limits(){}[0]
+    abstract fun register(co.xenastudios.xlimits.api/LimitProvider): co.xenastudios.core.api.event/Subscription // co.xenastudios.xlimits.api/XLimitsApi.register|register(co.xenastudios.xlimits.api.LimitProvider){}[0]
+}
+
+final class co.xenastudios.xlimits.api.event/FarmRestoredEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xlimits.api.event/FarmRestoredEvent|null[0]
+    constructor <init>(co.xenastudios.xlimits.api/ChunkRef, kotlin/String, kotlin/Int) // co.xenastudios.xlimits.api.event/FarmRestoredEvent.<init>|<init>(co.xenastudios.xlimits.api.ChunkRef;kotlin.String;kotlin.Int){}[0]
+
+    final val chunk // co.xenastudios.xlimits.api.event/FarmRestoredEvent.chunk|{}chunk[0]
+        final fun <get-chunk>(): co.xenastudios.xlimits.api/ChunkRef // co.xenastudios.xlimits.api.event/FarmRestoredEvent.chunk.<get-chunk>|<get-chunk>(){}[0]
+    final val group // co.xenastudios.xlimits.api.event/FarmRestoredEvent.group|{}group[0]
+        final fun <get-group>(): kotlin/String // co.xenastudios.xlimits.api.event/FarmRestoredEvent.group.<get-group>|<get-group>(){}[0]
+    final val restored // co.xenastudios.xlimits.api.event/FarmRestoredEvent.restored|{}restored[0]
+        final fun <get-restored>(): kotlin/Int // co.xenastudios.xlimits.api.event/FarmRestoredEvent.restored.<get-restored>|<get-restored>(){}[0]
+
+    final object Companion { // co.xenastudios.xlimits.api.event/FarmRestoredEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xlimits.api.event/FarmRestoredEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xlimits.api.event/FarmRestoredEvent> // co.xenastudios.xlimits.api.event/FarmRestoredEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xlimits.api.event/FarmSlowedEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xlimits.api.event/FarmSlowedEvent|null[0]
+    constructor <init>(co.xenastudios.xlimits.api/ChunkRef, kotlin/String, kotlin/Int, kotlin/Int, kotlin.collections/Set<co.xenastudios.xlimits.api/SlowAction>) // co.xenastudios.xlimits.api.event/FarmSlowedEvent.<init>|<init>(co.xenastudios.xlimits.api.ChunkRef;kotlin.String;kotlin.Int;kotlin.Int;kotlin.collections.Set<co.xenastudios.xlimits.api.SlowAction>){}[0]
+
+    final val actions // co.xenastudios.xlimits.api.event/FarmSlowedEvent.actions|{}actions[0]
+        final fun <get-actions>(): kotlin.collections/Set<co.xenastudios.xlimits.api/SlowAction> // co.xenastudios.xlimits.api.event/FarmSlowedEvent.actions.<get-actions>|<get-actions>(){}[0]
+    final val chunk // co.xenastudios.xlimits.api.event/FarmSlowedEvent.chunk|{}chunk[0]
+        final fun <get-chunk>(): co.xenastudios.xlimits.api/ChunkRef // co.xenastudios.xlimits.api.event/FarmSlowedEvent.chunk.<get-chunk>|<get-chunk>(){}[0]
+    final val count // co.xenastudios.xlimits.api.event/FarmSlowedEvent.count|{}count[0]
+        final fun <get-count>(): kotlin/Int // co.xenastudios.xlimits.api.event/FarmSlowedEvent.count.<get-count>|<get-count>(){}[0]
+    final val group // co.xenastudios.xlimits.api.event/FarmSlowedEvent.group|{}group[0]
+        final fun <get-group>(): kotlin/String // co.xenastudios.xlimits.api.event/FarmSlowedEvent.group.<get-group>|<get-group>(){}[0]
+    final val threshold // co.xenastudios.xlimits.api.event/FarmSlowedEvent.threshold|{}threshold[0]
+        final fun <get-threshold>(): kotlin/Int // co.xenastudios.xlimits.api.event/FarmSlowedEvent.threshold.<get-threshold>|<get-threshold>(){}[0]
+
+    final object Companion { // co.xenastudios.xlimits.api.event/FarmSlowedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xlimits.api.event/FarmSlowedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xlimits.api.event/FarmSlowedEvent> // co.xenastudios.xlimits.api.event/FarmSlowedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xlimits.api.event/LimitReachedEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xlimits.api.event/LimitReachedEvent|null[0]
+    constructor <init>(co.xenastudios.xlimits.api/LimitKind, kotlin/String, co.xenastudios.core.api/Location, co.xenastudios.core.api/PlayerRef?, co.xenastudios.xlimits.api/SpawnRoute?, kotlin/Int, kotlin/Int) // co.xenastudios.xlimits.api.event/LimitReachedEvent.<init>|<init>(co.xenastudios.xlimits.api.LimitKind;kotlin.String;co.xenastudios.core.api.Location;co.xenastudios.core.api.PlayerRef?;co.xenastudios.xlimits.api.SpawnRoute?;kotlin.Int;kotlin.Int){}[0]
+
+    final val chunk // co.xenastudios.xlimits.api.event/LimitReachedEvent.chunk|{}chunk[0]
+        final fun <get-chunk>(): co.xenastudios.xlimits.api/ChunkRef // co.xenastudios.xlimits.api.event/LimitReachedEvent.chunk.<get-chunk>|<get-chunk>(){}[0]
+    final val count // co.xenastudios.xlimits.api.event/LimitReachedEvent.count|{}count[0]
+        final fun <get-count>(): kotlin/Int // co.xenastudios.xlimits.api.event/LimitReachedEvent.count.<get-count>|<get-count>(){}[0]
+    final val group // co.xenastudios.xlimits.api.event/LimitReachedEvent.group|{}group[0]
+        final fun <get-group>(): kotlin/String // co.xenastudios.xlimits.api.event/LimitReachedEvent.group.<get-group>|<get-group>(){}[0]
+    final val kind // co.xenastudios.xlimits.api.event/LimitReachedEvent.kind|{}kind[0]
+        final fun <get-kind>(): co.xenastudios.xlimits.api/LimitKind // co.xenastudios.xlimits.api.event/LimitReachedEvent.kind.<get-kind>|<get-kind>(){}[0]
+    final val limit // co.xenastudios.xlimits.api.event/LimitReachedEvent.limit|{}limit[0]
+        final fun <get-limit>(): kotlin/Int // co.xenastudios.xlimits.api.event/LimitReachedEvent.limit.<get-limit>|<get-limit>(){}[0]
+    final val location // co.xenastudios.xlimits.api.event/LimitReachedEvent.location|{}location[0]
+        final fun <get-location>(): co.xenastudios.core.api/Location // co.xenastudios.xlimits.api.event/LimitReachedEvent.location.<get-location>|<get-location>(){}[0]
+    final val player // co.xenastudios.xlimits.api.event/LimitReachedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xlimits.api.event/LimitReachedEvent.player.<get-player>|<get-player>(){}[0]
+    final val route // co.xenastudios.xlimits.api.event/LimitReachedEvent.route|{}route[0]
+        final fun <get-route>(): co.xenastudios.xlimits.api/SpawnRoute? // co.xenastudios.xlimits.api.event/LimitReachedEvent.route.<get-route>|<get-route>(){}[0]
+
+    final object Companion { // co.xenastudios.xlimits.api.event/LimitReachedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xlimits.api.event/LimitReachedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xlimits.api.event/LimitReachedEvent> // co.xenastudios.xlimits.api.event/LimitReachedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xlimits.api.event/ProfileChangedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xlimits.api.event/ProfileChangedEvent|null[0]
+    constructor <init>(kotlin/String, kotlin/String, co.xenastudios.xlimits.api/ChunkRef, kotlin/Boolean) // co.xenastudios.xlimits.api.event/ProfileChangedEvent.<init>|<init>(kotlin.String;kotlin.String;co.xenastudios.xlimits.api.ChunkRef;kotlin.Boolean){}[0]
+
+    final val chunk // co.xenastudios.xlimits.api.event/ProfileChangedEvent.chunk|{}chunk[0]
+        final fun <get-chunk>(): co.xenastudios.xlimits.api/ChunkRef // co.xenastudios.xlimits.api.event/ProfileChangedEvent.chunk.<get-chunk>|<get-chunk>(){}[0]
+    final val from // co.xenastudios.xlimits.api.event/ProfileChangedEvent.from|{}from[0]
+        final fun <get-from>(): kotlin/String // co.xenastudios.xlimits.api.event/ProfileChangedEvent.from.<get-from>|<get-from>(){}[0]
+    final val perRegion // co.xenastudios.xlimits.api.event/ProfileChangedEvent.perRegion|{}perRegion[0]
+        final fun <get-perRegion>(): kotlin/Boolean // co.xenastudios.xlimits.api.event/ProfileChangedEvent.perRegion.<get-perRegion>|<get-perRegion>(){}[0]
+    final val to // co.xenastudios.xlimits.api.event/ProfileChangedEvent.to|{}to[0]
+        final fun <get-to>(): kotlin/String // co.xenastudios.xlimits.api.event/ProfileChangedEvent.to.<get-to>|<get-to>(){}[0]
+
+    final object Companion { // co.xenastudios.xlimits.api.event/ProfileChangedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xlimits.api.event/ProfileChangedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xlimits.api.event/ProfileChangedEvent> // co.xenastudios.xlimits.api.event/ProfileChangedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xlimits.api/ChunkRef { // co.xenastudios.xlimits.api/ChunkRef|null[0]
+    constructor <init>(co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int) // co.xenastudios.xlimits.api/ChunkRef.<init>|<init>(co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int){}[0]
+
+    final val world // co.xenastudios.xlimits.api/ChunkRef.world|{}world[0]
+        final fun <get-world>(): co.xenastudios.core.api/WorldRef // co.xenastudios.xlimits.api/ChunkRef.world.<get-world>|<get-world>(){}[0]
+    final val x // co.xenastudios.xlimits.api/ChunkRef.x|{}x[0]
+        final fun <get-x>(): kotlin/Int // co.xenastudios.xlimits.api/ChunkRef.x.<get-x>|<get-x>(){}[0]
+    final val z // co.xenastudios.xlimits.api/ChunkRef.z|{}z[0]
+        final fun <get-z>(): kotlin/Int // co.xenastudios.xlimits.api/ChunkRef.z.<get-z>|<get-z>(){}[0]
+
+    final fun center(kotlin/Double = ...): co.xenastudios.core.api/Location // co.xenastudios.xlimits.api/ChunkRef.center|center(kotlin.Double){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.xlimits.api/ChunkRef.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.xlimits.api/ChunkRef.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.xlimits.api/ChunkRef.toString|toString(){}[0]
+
+    final object Companion { // co.xenastudios.xlimits.api/ChunkRef.Companion|null[0]
+        final fun of(co.xenastudios.core.api/Location): co.xenastudios.xlimits.api/ChunkRef // co.xenastudios.xlimits.api/ChunkRef.Companion.of|of(co.xenastudios.core.api.Location){}[0]
+    }
+}
+
+final object co.xenastudios.xlimits.api/XLimits { // co.xenastudios.xlimits.api/XLimits|null[0]
+    final const val BYPASS_PERMISSION // co.xenastudios.xlimits.api/XLimits.BYPASS_PERMISSION|{}BYPASS_PERMISSION[0]
+        final fun <get-BYPASS_PERMISSION>(): kotlin/String // co.xenastudios.xlimits.api/XLimits.BYPASS_PERMISSION.<get-BYPASS_PERMISSION>|<get-BYPASS_PERMISSION>(){}[0]
+    final const val NO_LIMIT // co.xenastudios.xlimits.api/XLimits.NO_LIMIT|{}NO_LIMIT[0]
+        final fun <get-NO_LIMIT>(): kotlin/Int // co.xenastudios.xlimits.api/XLimits.NO_LIMIT.<get-NO_LIMIT>|<get-NO_LIMIT>(){}[0]
+
+    final val SLOWED_TAG // co.xenastudios.xlimits.api/XLimits.SLOWED_TAG|{}SLOWED_TAG[0]
+        final fun <get-SLOWED_TAG>(): kotlin/String // co.xenastudios.xlimits.api/XLimits.SLOWED_TAG.<get-SLOWED_TAG>|<get-SLOWED_TAG>(){}[0]
+
+    final fun api(): co.xenastudios.xlimits.api/XLimitsApi // co.xenastudios.xlimits.api/XLimits.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xlimits.api/XLimits.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xlimits.api/XLimitsApi?) // co.xenastudios.xlimits.api/XLimits.register|register(co.xenastudios.xlimits.api.XLimitsApi?){}[0]
+}

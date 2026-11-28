@@ -1,0 +1,54 @@
+---
+title: xLimits
+description: "xLimits: farm, entity and redstone limits on Paper, Folia, Spigot and Fabric. Caps per chunk that refuse what's new and remove nothing, crammed farms slowed instead of wiped, players told why, and no repeating tasks."
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Current version: **1.0.0**
+
+xLimits caps and slows the things that overload a server instead of deleting them on a timer, tells players why, and shows staff where the load is. It's limits and diagnostics, not a "lag fixer": it can't make slow hardware fast, and it never wipes entities.
+
+- **Caps per chunk that remove nothing.** Mobs, vehicles, armour stands and item frames per chunk, by group (`animals`, `monsters`, `villagers`, ...) or by type. Past a cap, new ones don't come: natural spawns, spawners, breeding, eggs, spawn eggs, dispensers and placing. What's already there stays.
+- **Farm slowing.** A crammed pen past its threshold stops pushing itself around (no collisions), stops pathfinding (no AI) or stops breeding, and goes back to normal as it empties. Named, tamed and leashed mobs are left alone, villagers too unless you ask.
+- **Block caps.** Hoppers, spawners, pistons, observers, or any block or group of blocks per chunk. Placing one past its cap is refused with a message.
+- **Redstone clocks, TNT, falling blocks, portals and pets.** A clock that changes too often is broken (it drops) and staff are told where; primed TNT and falling sand per chunk; items through a chunk's portals per few seconds; tamed mobs per player. Each off until you turn it on.
+- **Load profiles.** Stricter limits that turn on while the server is busy (players online, TPS, MSPT), with hysteresis and a minimum time on. On Folia each region has its own.
+- **Players are told why.** "This chunk has 40 of 40 hopper." Staff get an alert the first time a chunk reaches a limit, with a teleport button and, with xRewind, "who built this".
+- **Finding the problem.** `/xlimits here` shows your chunk against every limit and the server's own settings beside them; `/xlimits top` and `near` list the busiest chunks.
+- **Next to Paper's settings, never a copy of them.** Every feature names the Paper setting it sits next to: see [Recommended Paper settings](/xlimits/paper-settings/).
+- **A way back.** A slowed mob carries a marker, so a restart or a crash never leaves it slowed for good, and `/xlimits restore` puts every one back.
+- **In your players' languages**, and **easy to switch to** from FarmControl and Insights: see [Switching](/xlimits/switching/).
+
+:::caution[Not released yet]
+1.0 isn't released yet: it ships with the other plugins' rewrites. These pages are a preview.
+:::
+
+## Where it runs
+
+One jar for every Bukkit-family server from 1.13 to the newest, Folia included, and a jar per Minecraft line on Fabric, server-side only: players install nothing.
+
+<Reference plugin="xlimits" show="platforms" />
+
+| | |
+| --- | --- |
+| **Paper and Folia** | Everything. On Folia every check runs on the region that owns the chunk, counts are per chunk and never shared between regions, and each region has its own load profile from its own TPS. Folia has no MSPT, so `mspt-above` profiles say so at startup. `/xlimits top` and `restore` cover the chunks around online players, as Folia has no list of every loaded chunk. |
+| **Spigot and CraftBukkit** | Everything but `tps-below` and `mspt-above` profiles (Spigot doesn't say its TPS); farm slowing's `no-ai` needs 1.15. Below 1.19.4 primed TNT is refused as it spawns and put back as a block. |
+| **Fabric** | Entity and block caps, farm slowing's `no-collisions` (through a scoreboard team), pets, `here`, `top`, `near`, `restore` and the alerts. Fabric has no events for redstone, TNT, falling blocks or portals, and no per-mob switches for `no-ai` and `no-breeding`, so those aren't there; profiles read players online only. |
+
+## How it works
+
+**No repeating tasks.** Nothing scans the world on a timer. A limit is checked when a limited thing tries to happen (a spawn, a breed, a placement), on the thread that owns the chunk. The chunk's entities are counted at most once a second and remembered, with what was allowed since added, so a busy spawner costs one count a second, not one per attempt. Blocks are counted once per chunk (block entities from the chunk's own list, other blocks from a snapshot off the server's threads), then kept up to date from placements and breaks.
+
+**Listeners only for what's configured.** No redstone limit, no redstone listener. A spawn of a kind no limit names returns after one array read.
+
+**Nothing stored.** No database. A slowed mob carries scoreboard tags (`xlimits.slowed`, and one per action), so it's restored right after a restart.
+
+See [Performance](/xlimits/performance/) for what it costs.
+
+## Admin commands
+
+`/xlimits here`, `top`, `near`, `restore`, `reload`, `debug` and `import farmcontrol|insights`. See [Commands](/xlimits/commands/).

@@ -1,0 +1,13 @@
+# What scripts/boot-fabric.sh checks on each Minecraft line with xLimits, from the console.
+logged: [xLimits] xLimits 1.0.0 on
+run: xlimits info
+expect: xLimits 1.0.0 on
+run: xlimits here
+expect: Only players can use this command.
+run: xlimits top
+expect: Counting the loaded chunks...
+run: xlimits reload
+expect: Reloaded xLimits
+run: xlimits debug
+expect: Modules:
+expect: Debug report saved as debug/debug-

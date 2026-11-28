@@ -1,0 +1,15 @@
+# xLimits for the boot tests (boot.sh seeds it): small caps the console's /summon and a real
+# client reach, with every route refused, other (commands) among them.
+config-version: 1
+entities:
+  limits:
+    cow: 3
+  routes: [natural, spawner, breeding, egg, spawn-egg, dispenser, placed, other]
+farms:
+  rules:
+    cow:
+      threshold: 2
+      actions: [no-collisions]
+blocks:
+  limits:
+    hopper: 1

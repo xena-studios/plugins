@@ -1,0 +1,10 @@
+version: 9
+world-settings:
+  default:
+    profiles:
+      proactive:
+        - nerf-animal-farms
+        - trim-villagers
+    reactive-mode-settings:
+      trigger-mspt-threshold: 45.0
+      untrigger-mspt-threshold: 35.0

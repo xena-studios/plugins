@@ -40,6 +40,10 @@
 # --seed copies a folder's contents into the server's folder before each boot, for files a
 # server wants before its first start: Leaf's loader writes config/leaf-loader.yml and stops
 # on a first start, so its boot is seeded with scripts/boot-seeds/leaf.
+#
+# --property key=value adds a line to the server.properties each boot writes, such as
+# use-native-transport=false for Spigot 1.8.8 on Java 16 and later on Linux, whose Netty can't
+# read a buffer's address there, so a client's connection is reset.
 set -euo pipefail
 
 project=paper
@@ -48,6 +52,7 @@ server_jar=""
 java_home=""
 jvm=()
 seeds=()
+properties=()
 steps=()
 jars=()
 while (($#)); do
@@ -58,6 +63,7 @@ while (($#)); do
     --java) java_home=$2; shift 2 ;;
     --jvm) jvm+=("$2"); shift 2 ;;
     --seed) seeds+=("$(cd "$2" && pwd)"); shift 2 ;;
+    --property) properties+=("$2"); shift 2 ;;
     --run) steps+=("run: $2"); shift 2 ;;
     --expect) steps+=("expect: $2"); shift 2 ;;
     --logged) steps+=("logged: $2"); shift 2 ;;
@@ -204,6 +210,7 @@ simulation-distance=2
 spawn-protection=0
 ${2:+pause-when-empty-seconds=$2}
 EOF
+  for property in "${properties[@]+"${properties[@]}"}"; do echo "$property" >>"$dir/server.properties"; done
 
   mkfifo "$dir/stdin"
   (cd "$dir" && exec "$java" -Xms512M -Xmx1G ${jvm[@]+"${jvm[@]}"} -jar "$server_jar" "$nogui" <stdin >"$log" 2>&1) &

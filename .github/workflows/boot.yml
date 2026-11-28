@@ -7,8 +7,8 @@ name: Boot
 #
 # Per pull request, the platforms it touches (scripts/affected.sh's `boot`: a change in core/
 # or the samples) at their floor and newest: Spigot 1.8.8 and Paper for Bukkit, the oldest and
-# newest lines for Fabric, with the family test on the newest of each and Spigot 1.8.8, and a
-# real client joining Spigot 1.8.8 and Paper 1.21.11, the newest Minecraft mineflayer speaks, and
+# newest lines for Fabric, with the family test on the newest of each and Spigot 1.8.8 (on Java 8,
+# then 21), and a real client joining Spigot 1.8.8 and Paper 1.21.11, the newest Minecraft mineflayer speaks, and
 # Fabric 1.20.1 and 1.21.11 (mineflayer can't join 26.3 yet: decisions/2026-11-27-real-clients-on-fabric.md);
 # for the proxies, Velocity's floor (3.4.0) and newest and BungeeCord, the newest Velocity in
 # front of Paper 1.21.11 and BungeeCord in front of Spigot 1.8.8 with a real client joining
@@ -62,7 +62,8 @@ jobs:
           scripts/affected.sh <<< "$files" | tee -a "$GITHUB_OUTPUT"
       # The matrix, one cell per server. A cell's `pr` puts it in pull requests' runs, `family`
       # adds the family test, `client` a real client joining (scripts/budgets/bots/client.js, on
-      # a version mineflayer speaks), and `allow-failure` lets it fail without failing the run,
+      # a version mineflayer speaks), `newest-java` the family test once more on a newer Java than
+      # the cell's own, with a real client on a `client` cell, and `allow-failure` lets it fail without failing the run,
       # for a server with no stable download. A fork's version is its own newest unless given.
       - id: matrix
         env:
@@ -84,7 +85,7 @@ jobs:
             {id: "paper", name: "Paper \($newest)", server: "paper", version: $newest, pr: true, family: true},
             {id: "paper-1.21.11", name: "Paper 1.21.11", server: "paper", version: "1.21.11", pr: true, client: true},
             {id: "folia", name: "Folia \($newest)", server: "folia", version: $newest},
-            {id: "spigot-1.8.8", name: "Spigot 1.8.8", server: "spigot", version: "1.8.8", buildtools: 8, pr: true, family: true, client: true},
+            {id: "spigot-1.8.8", name: "Spigot 1.8.8", server: "spigot", version: "1.8.8", buildtools: 8, pr: true, family: true, client: true, "newest-java": 21},
             {id: "spigot-1.13.2", name: "Spigot 1.13.2", server: "spigot", version: "1.13.2", buildtools: 8, pr: true},
             {id: "spigot-1.16.5", name: "Spigot 1.16.5", server: "spigot", version: "1.16.5", buildtools: 8},
             {id: "spigot", name: "Spigot \($newest)", server: "spigot", version: $newest, buildtools: 25},
@@ -93,7 +94,7 @@ jobs:
             {id: "leaves", name: "Leaves", server: "leaves"},
             {id: "shreddedpaper", name: "ShreddedPaper", server: "shreddedpaper", regions: true},
             {id: "canvas", name: "Canvas", server: "canvas", regions: true, "allow-failure": true}
-          ] | map({version: "", buildtools: 0, pr: false, family: false, client: false, seed: "", regions: false, "allow-failure": false} + .)')
+          ] | map({version: "", buildtools: 0, pr: false, family: false, client: false, seed: "", regions: false, "newest-java": 0, "allow-failure": false} + .)')
           # Quilt runs the newest line's Fabric jar through its own loader and installer. Real
           # clients join the oldest line and 1.21.11, the newest mineflayer speaks (it can't join
           # 26.x past 26.1 yet, so the newest line has none).
@@ -148,9 +149,9 @@ jobs:
       # gradle/jar-budgets.txt.
       - run: >-
           ./gradlew :core:core-testing:sample:bukkit:assemble :core:core-testing:twin:bukkit:assemble :xutilities:bukkit:assemble :zchat:bukkit:assemble
-          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble :xvote:bukkit:assemble :xbackup:bukkit:assemble :xrewind:bukkit:assemble
+          :xmoney:bukkit:assemble :xmoney:vault-consumer:assemble :xmoney:hook-consumer:assemble :xteleport:bukkit:assemble :xbans:bukkit:assemble :xvanish:bukkit:assemble :xmarket:bukkit:assemble :xvote:bukkit:assemble :xbackup:bukkit:assemble :xrewind:bukkit:assemble :xlimits:bukkit:assemble
           :core:core-testing:sample:bukkit:checkJarBudget :core:core-testing:twin:bukkit:checkJarBudget :xutilities:bukkit:checkJarBudget :zchat:bukkit:checkJarBudget
-          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget :xbackup:bukkit:checkJarBudget :xrewind:bukkit:checkJarBudget
+          :xmoney:bukkit:checkJarBudget :xteleport:bukkit:checkJarBudget :xbans:bukkit:checkJarBudget :xvanish:bukkit:checkJarBudget :xmarket:bukkit:checkJarBudget :xvote:bukkit:checkJarBudget :xbackup:bukkit:checkJarBudget :xrewind:bukkit:checkJarBudget :xlimits:bukkit:checkJarBudget
       - uses: actions/upload-artifact@v7
         with:
           name: bukkit-jars
@@ -170,6 +171,7 @@ jobs:
             xvote/bukkit/build/r8/xVote.jar
             xbackup/bukkit/build/r8/xBackup.jar
             xrewind/bukkit/build/r8/xRewind.jar
+            xlimits/bukkit/build/r8/xLimits.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -388,7 +390,8 @@ jobs:
                      xmoney/hook-consumer/build/libs/hook-consumer.jar zchat/bukkit/build/r8/zChat.jar \
                      xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar xmarket/bukkit/build/r8/xMarket.jar \
                      xvote/bukkit/build/r8/xVote.jar \
-                     xbackup/bukkit/build/r8/xBackup.jar xrewind/bukkit/build/r8/xRewind.jar; do
+                     xbackup/bukkit/build/r8/xBackup.jar xrewind/bukkit/build/r8/xRewind.jar \
+                     xlimits/bukkit/build/r8/xLimits.jar; do
             [[ -f $jar ]] || { echo "::error::$jar is missing: the bukkit-jars artifact landed somewhere else"; find . -name '*.jar' -path '*build/*' | head -20; exit 1; }
           done
       # xMoney beside vault-consumer (a plugin.yml plugin that depends on Vault) and, on Paper and
@@ -577,6 +580,31 @@ jobs:
           [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
           [[ $CLIENT != true && $ID != spigot-1.13.2 ]] || args+=(--seed scripts/boot-seeds/client --checks xrewind/bukkit/client-checks.txt)
           xrewind/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
+      # xLimits alone, from 1.13 (its floor; older cells skip it): every console command, the
+      # imports from FarmControl's and Insights' files, a reload and debug, with small caps seeded;
+      # off Folia's regions, /summon past a cap, refused, with the staff alert (spawn-checks.txt);
+      # on a `client` cell and at its floor (Spigot 1.13.2), a real client in German has a spawn
+      # egg and a second hopper refused and is told why (xlimits/bukkit/client-checks.txt).
+      - name: boot xLimits
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.java.outputs.path }}
+          SEED: ${{ matrix.cell.seed }}
+          REGIONS: ${{ matrix.cell.regions }}
+          CLIENT: ${{ matrix.cell.client || matrix.cell.id == 'spigot-1.13.2' }}
+          RESOLVED: ${{ steps.server.outputs.version }}
+        run: |
+          if [[ -n $RESOLVED && $(printf '%s\n' "$RESOLVED" 1.13 | sort -V | head -1) != 1.13 ]]; then
+            echo "xLimits starts at 1.13; this is $RESOLVED."
+            exit 0
+          fi
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          args=()
+          [[ -z $SEED ]] || args+=(--seed "$SEED")
+          [[ $REGIONS != true ]] || args+=(--logged "REGIONS threading")
+          [[ $REGIONS != true ]] || export XLIMITS_SPAWNS=false
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks xlimits/bukkit/client-checks.txt)
+          xlimits/bukkit/boot.sh "${target[@]}" --java "$JAVA" "${args[@]}"
       # The family test: xTwin, xUtilities, zChat, xTeleport, xBans, xVanish, xMarket, xVote, xBackup and (from 1.13) xRewind beside xSample, each with its own relocated core,
       # seeing one board, one player cache and plugins/Xena/ (core/core-testing/twin/family-checks.txt),
       # and each answering its own commands.
@@ -598,6 +626,35 @@ jobs:
             xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar xmarket/bukkit/build/r8/xMarket.jar \
             xvote/bukkit/build/r8/xVote.jar xbackup/bukkit/build/r8/xBackup.jar \
             "${rewind[@]}"
+      # On a `newest-java` cell, the family test once more on that Java, and on a `client` cell
+      # with a real client joining: Spigot 1.8.8 runs the cell on Java 8, but owners start it on
+      # 21 too, where plugins sharing the stdlib broke each other's classes as they started
+      # together (decisions/2026-11-28-old-bukkit-libraries-in-the-servers-class-loader.md).
+      - id: newest-java
+        if: matrix.cell.family && matrix.cell.newest-java != 0
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.cell.newest-java }}
+      - name: family test on the newest Java
+        if: matrix.cell.family && matrix.cell.newest-java != 0
+        env:
+          JAR: ${{ steps.jar.outputs.jar }}
+          JAVA: ${{ steps.newest-java.outputs.path }}
+          CLIENT: ${{ matrix.cell.client }}
+        run: |
+          if [[ -n $JAR ]]; then target=("$JAR"); else target=("$SERVER" "$VERSION"); fi
+          # Spigot 1.8.8's Netty can't use Linux's native transport past Java 15 (it resets a
+          # client's connection), so this boot turns it off, as owners on a newer Java do.
+          args=(--property use-native-transport=false)
+          [[ $CLIENT != true ]] || args+=(--seed scripts/boot-seeds/client --checks core/core-testing/sample/bukkit/client-checks.txt)
+          core/core-testing/sample/bukkit/boot.sh "${target[@]}" --java "$JAVA" --jvm -Dxena.debug.paste=false "${args[@]}" \
+            --checks core/core-testing/twin/family-checks.txt --checks xutilities/bukkit/boot-checks.txt --checks zchat/bukkit/boot-checks.txt \
+            --checks xteleport/bukkit/boot-checks.txt --checks xbans/bukkit/boot-checks.txt --checks xvanish/bukkit/boot-checks.txt --checks xmarket/bukkit/boot-checks.txt \
+            --checks xvote/bukkit/boot-checks.txt --checks xbackup/bukkit/boot-checks.txt \
+            core/core-testing/twin/bukkit/build/r8/XTwin.jar xutilities/bukkit/build/r8/xUtilities.jar zchat/bukkit/build/r8/zChat.jar \
+            xteleport/bukkit/build/r8/xTeleport.jar xbans/bukkit/build/r8/xBans.jar xvanish/bukkit/build/r8/xVanish.jar xmarket/bukkit/build/r8/xMarket.jar \
+            xvote/bukkit/build/r8/xVote.jar xbackup/bukkit/build/r8/xBackup.jar
       # The runtime budgets are the `budgets` job's, on a server of their own: a boot test's
       # server is shared with its checks, which would skew the numbers.
       - if: failure()
@@ -1009,6 +1066,13 @@ jobs:
           scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
             --checks xrewind/fabric/boot-checks.txt "${args[@]}" \
             "$libs"/xrewind-fabric-*+"$VERSION".jar
+      - name: boot xLimits
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-fabric.sh --loader "$LOADER" --version "$VERSION" --java "$JAVA" \
+            --checks xlimits/fabric/boot-checks.txt \
+            core/platform-fabric/build/libs/xlimits-fabric-*+"$VERSION".jar
       # xMoney beside zChat: zChat's formats get xMoney's <balance> through zChat's placeholder seam.
       - name: xMoney beside zChat
         if: matrix.cell.family
@@ -1153,6 +1217,12 @@ jobs:
           scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
             --out build/budgets/xrewind \
             xrewind/bukkit/build/r8/xRewind.jar
+      - name: runtime budgets, xLimits (newest Paper)
+        run: |
+          newest=$(sed -n 's/^xena\.ciNewestMinecraft=//p' gradle.properties)
+          scripts/budgets/check.sh --version "$newest" --java "$JAVA_HOME_25_X64" --bots 0 --idle 30 --settle 15 \
+            --out build/budgets/xlimits \
+            xlimits/bukkit/build/r8/xLimits.jar
       # Its startup is reported, not budgeted: Paper 1.21.11 loads a plugin about 4 times
       # slower than 26.3 on these 2-core runners (its JIT threads and loader, not our code: the
       # server thread spends 6-7 ms of CPU in our enable), and startup is budgeted, failing, on

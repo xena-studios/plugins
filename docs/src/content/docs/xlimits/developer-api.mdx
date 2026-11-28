@@ -1,0 +1,57 @@
+---
+title: Developer API
+description: "Build on xLimits: counts and limits per chunk, limits of your own for an area, and the events, the same on every platform."
+sidebar:
+  order: 10
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+xLimits' API is the same on Paper, Folia, Spigot and Fabric. Get it with `XLimits.api()` once xLimits is enabled (add it to your plugin's `depend`, or `softdepend` and check `XLimits.isEnabled()` first). On Bukkit it's also in the services manager, as `XLimitsApi`.
+
+:::caution[Not on Maven Central yet]
+The API isn't published until 1.0 is released. Its coordinates will be `co.xenastudios.xlimits:xlimits-api:1.0.0`; until then, compile against the plugin's jar.
+:::
+
+## Reading
+
+Counts are per chunk and belong to the thread that owns the chunk (Folia's region), so ask there:
+
+```java
+XLimitsApi api = XLimits.api();
+ChunkRef chunk = new ChunkRef(WorldRef.of("world"), 12, -3);
+int hoppers = api.count(chunk, "hopper");   // -1 for a name no limit uses
+int max = api.limit(chunk, "hopper");       // XLimits.NO_LIMIT for none
+String profile = api.activeProfile(chunk);  // "normal" when none is on
+```
+
+## Limits of your own
+
+A `LimitProvider` changes any limit for an area: a bigger plot allows a bigger farm, an arena has none. It's asked on the chunk's thread every time a limit is checked there, so it answers from memory; providers are asked in the order they were added, each given what the one before returned.
+
+```java
+Subscription sub = api.register((location, group, configured) -> {
+    Plot plot = plots.at(location);
+    if (plot == null) return configured;
+    if (plot.isArena()) return XLimits.NO_LIMIT;
+    return group.equals("animals") ? configured * plot.tier() : configured;
+});
+// later: sub.cancel();
+```
+
+## Events
+
+On `api.getEvents()`, fired only when something listens, on the chunk's thread. On Bukkit they're also Bukkit events in `co.xenastudios.xlimits.api.bukkit` (`BukkitLimitReachedEvent` and the rest), for Skript and plain listeners.
+
+- `LimitReachedEvent`: something is about to be refused at a limit. **Cancel it to allow it after all.** It says the kind of limit, its name, the place, the player (if any), how the entity came to be, and the count and limit.
+- `FarmSlowedEvent`: a crammed farm is about to be slowed. Cancel it to leave it be.
+- `FarmRestoredEvent`: a farm's mobs went back to normal as their count fell.
+- `ProfileChangedEvent`: a load profile turned on or off.
+
+```java
+api.getEvents().subscribe(LimitReachedEvent.TYPE, event -> {
+    if (event.getKind() == LimitKind.BLOCK && isEventArena(event.getLocation())) event.setCancelled(true);
+});
+```
+
+<Reference plugin="xlimits" show="events" />

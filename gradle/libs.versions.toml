@@ -41,6 +41,8 @@ minotaur = "2.10.0"
 hangar-publish = "0.1.4"
 # Publishes each plugin's API to Maven Central through the Central Portal, as NeoSkript does.
 maven-publish = "0.37.0"
+# Dokka, for the rewrite's published APIs (xena.release-api): their javadoc jars and /api/<plugin>/.
+dokka = "2.3.0"
 # xBackup's SFTP and FTP remotes. Never shaded: xBackup downloads the jar the first time a
 # remote needs it and checks it against the SHA-256 in its Libraries class, which a test
 # compares with these.
@@ -145,3 +147,4 @@ run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-paper" }
 minotaur = { id = "com.modrinth.minotaur", version.ref = "minotaur" }
 hangar-publish = { id = "io.papermc.hangar-publish-plugin", version.ref = "hangar-publish" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "xlimits",
+  "version": "${version}",
+  "name": "xLimits",
+  "description": "Farm, entity and block limits: caps per chunk that refuse what's new, slow crammed farms and tell players why. Server-side: players install nothing.",
+  "authors": ["Xena Studios"],
+  "contact": {
+    "homepage": "https://plugins.xenastudios.co/xlimits/",
+    "sources": "https://github.com/xena-studios/plugins",
+    "issues": "https://github.com/xena-studios/plugins/issues"
+  },
+  "license": "GPL-3.0-only",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      { "adapter": "kotlin", "value": "co.xenastudios.xlimits.fabric.XLimitsMod" }
+    ]
+  },
+  "mixins": ["xlimits-world.mixins.json"],
+  "depends": {
+    "fabricloader": "${loader}",
+    "minecraft": "${minecraft}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${flk}"
+  }
+}

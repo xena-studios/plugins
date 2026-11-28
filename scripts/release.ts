@@ -4,7 +4,7 @@
 // take a release back.
 //
 //   node scripts/release.ts <plugin>[@<version>]... [--dry-run] [--no-push]
-//   node scripts/release.ts --together [<plugin>...] [--dry-run] [--no-push] [--site-data <dir>] [--date <YYYY-MM-DD>]
+//   node scripts/release.ts --together [<plugin>...] --from-run <run id> | --site-data <dir> [--dry-run] [--no-push] [--date <YYYY-MM-DD>]
 //   node scripts/release.ts --tag <pr-number | plugin...> [--dry-run]
 //   node scripts/release.ts --site-data <dir>
 //
@@ -17,11 +17,12 @@
 //     that serves the new major at /<plugin>/ (docs/README.md, Unreleased rewrites);
 //   - renames a new plugin's modrinth.draft.md to modrinth.md, its store page from then on;
 //   - adds the release to docs/src/data/releases/<plugin>.json, the download picker's list:
-//     every jar with its size and SHA-256, from a build of the release set here (Gradle's
-//     releaseAssemble into build/release-set/, the Fabric jars first), or from a release
-//     folder given with --site-data, such as the Release workflow's dry-run artifact. The
-//     build is reproducible, and the Release workflow refuses to upload jars that aren't the
-//     bytes this file records;
+//     every jar with its size and SHA-256, as CI built it: from a Release dry run on main
+//     (gh workflow run release.yml -f tags=all, then --from-run <its id>, which downloads its
+//     release artifact into build/release-set/), or from a release folder given with
+//     --site-data. Not from a local build: R8's output depends on the machine (macOS and Linux
+//     give different bytes), while two CI runs give the same. The Release workflow refuses to
+//     upload jars that aren't the bytes this file records;
 //   - regenerates docs/src/data/plugins.json and DECISIONS.md, as below.
 // --site-data <dir> alone rewrites those releases files' entries from a release folder
 // (<dir>/<plugin>/site-release.json), when the Release workflow says the jars it built differ.
@@ -511,17 +512,18 @@ function readEntry(dir: string, id: string): SiteEntry {
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
-/** Builds every plugin's release set into build/release-set/<id>/ with Gradle, as release.yml's build job does. */
-function buildSet(ids: string[], date: string) {
-  const info = run(path.join(ROOT, "gradlew"), ["-q", "releaseInfo"])
-    .split("\n")
-    .map((l) => l.trim().split(/\s+/))
-    .filter((f) => f.length === 4);
-  const projects = ids.map((id) => info.find((f) => f[0] === id)?.[1] ?? fail(`no project on main releases ${id} (xena.release)`));
-  fs.rmSync(path.join(ROOT, SET), { recursive: true, force: true });
-  console.log("building the release set (the Fabric jars first; this takes a while)...");
-  run(path.join(ROOT, "gradlew"), ["-q", "-p", "core/platform-fabric", "collect"]);
-  run(path.join(ROOT, "gradlew"), ["-q", ...projects.map((p) => `${p}:releaseAssemble`), `-Pxena.release.root=${SET}`, `-Pxena.release.date=${date}`, "-Pxena.release.dryRun=true"]);
+/** A Release run's release artifact (every plugin's release folder) into build/release-set/. */
+function downloadRun(id: string): string {
+  if (!/^\d+$/.test(id)) fail(`--from-run ${id} isn't a workflow run id`);
+  const dir = path.join(ROOT, SET);
+  fs.rmSync(dir, { recursive: true, force: true });
+  const runInfo = JSON.parse(run("gh", ["run", "view", id, "--json", "workflowName,headSha,conclusion,headBranch"]));
+  if (runInfo.workflowName !== "Release") fail(`run ${id} is ${runInfo.workflowName}'s, not the Release workflow's`);
+  if (runInfo.conclusion !== "success") fail(`Release run ${id} ended in ${runInfo.conclusion}; use one that passed`);
+  const main = git("rev-parse", "origin/main");
+  if (runInfo.headSha !== main) console.warn(`release: run ${id} built ${runInfo.headSha.slice(0, 7)}, not origin/main (${main.slice(0, 7)}); the release pull request's own dry run checks its jars again`);
+  run("gh", ["run", "download", id, "-n", "release", "-D", dir]);
+  return dir;
 }
 
 interface Together {
@@ -568,12 +570,16 @@ function planTogether(id: string): Together | string[] {
   return { id, name: plugin.name, version, edits, renames };
 }
 
-function together(args: string[], options: { dryRun: boolean; push: boolean; siteData?: string; date: string }) {
+function together(args: string[], options: { dryRun: boolean; push: boolean; siteData?: string; fromRun?: string; date: string }) {
   const ids = args.length ? args : versionLines.filter((l) => l.unreleased && !l.hidden).map((l) => l.id);
   if (!ids.length) fail(`no plugin in ${VERSIONS} is unreleased, so there's nothing to release together`);
   const dupe = ids.find((id, i) => ids.indexOf(id) !== i);
   if (dupe) fail(`${dupe} is listed twice`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(options.date)) fail(`--date ${options.date} isn't YYYY-MM-DD`);
+  if (!options.siteData === !options.fromRun) {
+    fail("--together needs the jars as CI built them: --from-run <id> of a passing Release dry run on main",
+      "(gh workflow run release.yml --ref main -f tags=all), or --site-data <a release folder>; not both");
+  }
   if (!options.dryRun) requireClean();
   fetchOrigin();
 
@@ -593,7 +599,7 @@ function together(args: string[], options: { dryRun: boolean; push: boolean; sit
     const indent = (s: string) => s.replaceAll("\n", "\n      ");
     for (const e of p.edits) console.log(`  ${e.file}\n    - ${indent(e.old.trimEnd())}\n    + ${indent(e.new.trimEnd())}`);
     for (const [from, to] of p.renames) console.log(`  ${from} -> ${to}`);
-    console.log(`  ${RELEASES}/${p.id}.json: + ${p.version}, from ${options.siteData ?? SET}/${p.id}/site-release.json`);
+    console.log(`  ${RELEASES}/${p.id}.json: + ${p.version} (${options.date}), from ${options.siteData ?? `Release run ${options.fromRun}`}: ${p.id}/site-release.json`);
   }
   console.log(`  docs/src/data/plugins.json and DECISIONS.md, regenerated\n\nbranch ${branch}\ncommit "${title}"`);
   if (options.dryRun) {
@@ -608,10 +614,9 @@ function together(args: string[], options: { dryRun: boolean; push: boolean; sit
     if (git("ls-remote", "--heads", "origin", branch)) fail(`origin already has a ${branch} branch`);
   }
   if (git("branch", "--list", branch)) fail(`there's already a ${branch} branch here; delete it first`);
-  // The jars are built from main as it is, before any edit: the edits change no code.
-  const dir = options.siteData ? path.resolve(options.siteData) : path.join(ROOT, SET);
-  if (!options.siteData) buildSet(ids, options.date);
-  const entries = new Map(plans.map((p) => [p.id, readEntry(dir, p.id)]));
+  // The jars are CI's build of main as it is: the release's edits change no code.
+  const dir = options.siteData ? path.resolve(options.siteData) : downloadRun(options.fromRun!);
+  const entries = new Map(plans.map((p) => [p.id, { ...readEntry(dir, p.id), date: options.date }]));
   for (const p of plans) {
     if (entries.get(p.id)!.version !== p.version) fail(`${dir}/${p.id} is ${entries.get(p.id)!.version}, not ${p.version}`);
   }
@@ -676,9 +681,9 @@ function siteData(dir: string) {
 // ---------------------------------------------------------------------------------------
 
 const argv = process.argv.slice(2);
-// Flags that take a value: --site-data <dir>, --date <YYYY-MM-DD>.
+// Flags that take a value: --site-data <dir>, --from-run <id>, --date <YYYY-MM-DD>.
 const valued = new Map<string, string>();
-for (const f of ["--site-data", "--date"]) {
+for (const f of ["--site-data", "--from-run", "--date"]) {
   const i = argv.indexOf(f);
   if (i >= 0) {
     if (!argv[i + 1] || argv[i + 1].startsWith("--")) fail(`${f} needs a value`);
@@ -696,6 +701,7 @@ try {
       dryRun: flags.has("--dry-run"),
       push: !flags.has("--no-push"),
       siteData: valued.get("--site-data"),
+      fromRun: valued.get("--from-run"),
       date: valued.get("--date") ?? new Date().toISOString().slice(0, 10),
     });
   } else if (valued.has("--site-data")) siteData(valued.get("--site-data")!);

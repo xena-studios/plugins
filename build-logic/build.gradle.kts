@@ -9,6 +9,7 @@ dependencies {
     implementation(plugin(libs.plugins.minotaur))
     implementation(plugin(libs.plugins.hangar.publish))
     implementation(plugin(libs.plugins.maven.publish))
+    implementation(plugin(libs.plugins.dokka))
     // The rewrite's Kotlin conventions (xena.kmp, xena.kotlin-jvm, xena.kmp-api).
     implementation(libs.kotlin.gradle.plugin)
     // Reads each API's class files for its signature check.

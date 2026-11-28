@@ -227,14 +227,16 @@ jobs:
       # gradle/jar-budgets.txt, and checkApiFloor and checkApiNewest one calling what API 8 or the
       # newest API lacks unchecked.
       - run: >-
-          ./gradlew :core:core-testing:sample:sponge:assemble
+          ./gradlew :core:core-testing:sample:sponge:assemble :xutilities:sponge:assemble
           :core:core-testing:sample:sponge:checkJarBudget :core:core-testing:sample:sponge:checkApiFloor :core:core-testing:sample:sponge:checkApiNewest
+          :xutilities:sponge:checkJarBudget :xutilities:sponge:checkApiFloor :xutilities:sponge:checkApiNewest
       - uses: actions/upload-artifact@v7
         with:
           name: sponge-jars
           # The R8 jars, kept at their paths from the repo's root.
           path: |
             core/core-testing/sample/sponge/build/r8/XSample-Sponge.jar
+            xutilities/sponge/build/r8/xUtilities-Sponge.jar
           if-no-files-found: error
 
   # platform-fabric's own build (DECISIONS.md: a build of its own, which the root build and the
@@ -1586,12 +1588,11 @@ jobs:
       VERSION: ${{ matrix.cell.version }}
     steps:
       - uses: actions/checkout@v7
-      # One jar, so upload-artifact kept only its name: it goes back to its folder. With more
-      # than one, the artifact keeps their paths from the repo's root, and this is ".".
+      # The artifact keeps the jars' paths from the repo's root (it has more than one).
       - uses: actions/download-artifact@v8
         with:
           name: sponge-jars
-          path: core/core-testing/sample/sponge/build/r8
+          path: .
       # SpongeVanilla's jar, and the Minecraft jar and libraries it downloads on its first start.
       - uses: actions/cache@v6
         with:
@@ -1609,6 +1610,12 @@ jobs:
           scripts/boot-sponge.sh --version "$VERSION" --java "$JAVA" \
             --checks core/core-testing/sample/sponge/boot-checks.txt \
             core/core-testing/sample/sponge/build/r8/XSample-Sponge.jar
+      - name: boot xUtilities
+        env:
+          JAVA: ${{ steps.java.outputs.path }}
+        run: |
+          scripts/boot-sponge.sh --version "$VERSION" --java "$JAVA" \
+            --checks xutilities/sponge/boot-checks.txt xutilities/sponge/build/r8/xUtilities-Sponge.jar
       - if: always()
         uses: actions/upload-artifact@v7
         with:

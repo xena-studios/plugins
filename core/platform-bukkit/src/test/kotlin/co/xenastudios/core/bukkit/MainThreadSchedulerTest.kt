@@ -160,10 +160,11 @@ class MainThreadSchedulerTest {
         }
         assertTrue(third.await(5, TimeUnit.SECONDS))
         task.cancel()
-        Thread.sleep(50)
-        val after = runs.get()
-        Thread.sleep(50)
-        assertEquals(after, runs.get())
+        val atCancel = runs.get()
+        // A run already under way when it was cancelled may still finish (it counts first,
+        // whenever its thread gets to it); none starts after.
+        Thread.sleep(100)
+        assertTrue(runs.get() <= atCancel + 1, "ran ${runs.get() - atCancel} times after it was cancelled")
     }
 
     @Test
@@ -177,7 +178,9 @@ class MainThreadSchedulerTest {
             }
         }
         assertTrue(done.await(5, TimeUnit.SECONDS))
-        Thread.sleep(50)
+        // Logged after the task's own finally block, on the worker: wait for it, not a fixed time.
+        val deadline = System.nanoTime() + 15_000_000_000L
+        while (log.errors.isEmpty() && System.nanoTime() < deadline) Thread.sleep(2)
         assertEquals(listOf("An async task failed"), log.errors)
     }
 

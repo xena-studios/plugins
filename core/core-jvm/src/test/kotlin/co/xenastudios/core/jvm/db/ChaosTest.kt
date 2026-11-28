@@ -113,9 +113,13 @@ class ChaosTest {
         chaos.down = true
         chaos.statementsLeft.set(1)
         val waiting = (1..20).map { insert(database, it) }
-        Thread.sleep(300)
+        // The writer finds it gone in its own time: wait for it to say so, not a fixed while.
+        val deadline = System.nanoTime() + 15_000_000_000L
+        while (log.lines.none { it.message.startsWith("Lost the SQLite database chaos.db") }) {
+            assertTrue(System.nanoTime() < deadline, "the writer never noticed the database was down: ${log.lines}")
+            Thread.sleep(5)
+        }
         assertTrue(waiting.none { it.isDone }, "nothing is reported written while the database is down")
-        assertTrue(log.lines.any { it.message.startsWith("Lost the SQLite database chaos.db") })
         chaos.down = false
         waiting.forEach { assertEquals(Outcome.Ok(Unit), it.await()) }
         assertTrue(log.lines.any { it.message.startsWith("the SQLite database chaos.db is back") })

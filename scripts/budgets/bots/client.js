@@ -7,7 +7,7 @@
 // and quit in the family's player cache, with the language) is xSample's PlatformCheck. Prints
 // each check, then CLIENT PASS and exits 0, or CLIENT FAIL and exits 1.
 //
-//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind|xlimits|xlimbo|xlimbo-family|xplots] [--zchat] [--xmoney]
+//   node client.js <port> [--name Joiner] [--timeout 90] [--plugin xsample|xutilities|zchat|zchat-network|xmoney|xteleport|xbans|xbans-network|xvanish|xvanish-network|xvote|xvote-network|xmarket|xbackup|xrewind|xlimits|xlimbo|xlimbo-family|xplots|xstats|xstats-network] [--zchat] [--xmoney]
 //     [--version 1.21.11] [--forge xena:xsample] [--vote-port 8192] [--vote-token <token>] [--fabric] [--fixed-language]
 //
 // --plugin picks whose commands it checks: xSample's (the default), xUtilities' (/fly,
@@ -670,6 +670,8 @@ async function run () {
   if (plugin === 'xlimbo') return xlimbo()
   if (plugin === 'xlimbo-family') return xlimboFamily()
   if (plugin === 'xplots') return xplots()
+  if (plugin === 'xstats') return xstats()
+  if (plugin === 'xstats-network') return xstatsNetwork()
   await command('/xsample', 'You have', 'a player-run command answers the player')
   // Chat through the core's chat bridge: xSample's format, drawn once and sent back to the sender too.
   await command('hello from the client', `[xSample] ${username}: hello from the client`, "chat in xSample's format")
@@ -1055,6 +1057,46 @@ async function xplots () {
     const d = Math.hypot(bot.entity.position.x - (x0 + 0.5), bot.entity.position.z - (z0 + 5.5))
     check('Joiner is at the plot\'s front', d < 2, `at ${bot.entity.position}`)
   }
+  finish()
+}
+
+// Jumps a few times, as Minecraft counts in the jump stat, which xStats reads at its next save.
+async function jumps (times) {
+  for (let i = 0; i < times; i++) {
+    bot.setControlState('jump', true)
+    await sleep(400)
+    bot.setControlState('jump', false)
+    await sleep(700)
+  }
+}
+
+// xStats as a player uses it, replies drawn from its lang/de.yml: their stats, a save that reads the
+// jumps Minecraft counted, the leaderboard with them on it, and /stats private there and back.
+async function xstats () {
+  await command('/stats', de('Statistiken von', "'s stats"), '/stats answers in German')
+  await jumps(3)
+  await command('/xstats save', de('Gespeichert', 'Saved'), '/xstats save reads the jumps')
+  await command('/leaderboard jumps', `${username}`, "/leaderboard jumps has the player on it")
+  await command('/stats private', de('verborgen', 'hidden'), '/stats private hides them from the website')
+  await command('/stats private', de('wieder', 'again'), '/stats private shows them again')
+  finish()
+}
+
+// xStats across a network: Joiner jumps on lobby, lobby saves, and the proxy's network leaderboard
+// (read from the database the servers share, again once lobby's save reaches it) has Joiner on it.
+async function xstatsNetwork () {
+  await jumps(3)
+  await command('/xstats save', de('Gespeichert', 'Saved'), "lobby's /xstats save reads the jumps")
+  // The proxy reads the network's numbers again within its refresh (proxy.refresh-seconds: 5 here).
+  let got = null
+  for (let tries = 0; tries < 6 && got == null; tries++) {
+    await sleep(3000)
+    const from = heard.length
+    bot.chat('/networkleaderboard jumps')
+    got = await hear(username, from, 4000)
+  }
+  check("the proxy's /networkleaderboard jumps has Joiner, counted on lobby", got != null, `heard ${JSON.stringify(heard.slice(-6)).slice(0, 400)}`)
+  await command(`/networkstats ${username}`, de('Statistiken von', "'s stats"), "the proxy's /networkstats answers in German")
   finish()
 }
 

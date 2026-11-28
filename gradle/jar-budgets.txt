@@ -213,3 +213,8 @@
 # the return queue and its status ping, the thirteen protections, the commands, the family's
 # bridges and the Bukkit events, plus the seven translations and bStats.
 :xlimbo:bukkit 620
+:xstats:bukkit 1200
+:xstats:velocity 1100
+:core:platform-fabric:xstats:1.20.1 1100
+:core:platform-fabric:xstats:1.21.11 1100
+:core:platform-fabric:xstats:26.3 1100

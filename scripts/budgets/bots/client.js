@@ -137,7 +137,9 @@ async function xutilities () {
   if (onFabric) {
     // Fabric has no teleport event, so /back remembers deaths there, not vanilla's /tp (the
     // docs' platform table): away with /tp, die there, respawn, and /back returns to the spot.
-    await command(`/tp ${username} ~ ~ ~40`, 'Teleported', 'vanilla /tp moves the player away')
+    // 100 blocks: a respawn lands anywhere within the spawn radius (10 by default) of the world's
+    // spawn, so the death spot has to be well beyond that for "respawned away" to mean something.
+    await command(`/tp ${username} ~ ~ ~100`, 'Teleported', 'vanilla /tp moves the player away')
     await sleep(1500)
     const died = bot.entity.position.clone()
     await command('/back', de('Du hast keinen Ort, zu dem du zurückkehren kannst.', 'You have nowhere to go back to.'), "/back doesn't hear vanilla /tp on Fabric")
@@ -145,7 +147,7 @@ async function xutilities () {
     await new Promise((resolve) => bot.once('spawn', resolve))
     await sleep(1500)
     const flat = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2)
-    check('the player respawned away from where they died', flat(bot.entity.position, died) > 30, `at ${bot.entity.position}, died at ${died}`)
+    check('the player respawned away from where they died', flat(bot.entity.position, died) > 60, `at ${bot.entity.position}, died at ${died}`)
     await command('/back', de('Zurück zu deinem vorherigen Ort', 'Teleported back to your previous location'), '/back after a death')
     await sleep(1000)
     check('/back took the player to where they died', flat(bot.entity.position, died) < 1.5, `at ${bot.entity.position}, died at ${died}`)

@@ -524,7 +524,7 @@ PY
       xena="$dir/plugins/Xena"
     fi
     if [[ $boot == 0 ]]; then
-      start_proxy "$dir" "-Xlog:class+load=info:file=$dir/classload.log:uptimemillis"
+      start_proxy "$dir" "-Xlog:class+load=info,class+init=info:file=$dir/classload.log:uptimemillis"
       # The JVM's uptime as the proxy said it was done, give or take the half second start_proxy polls.
       done_ms=$(tail -1 "$dir/classload.log" | sed -nE 's/^\[([0-9]+)ms\].*/\1/p')
       [[ -n $done_ms ]] || fail "the class-loading log has no uptime"

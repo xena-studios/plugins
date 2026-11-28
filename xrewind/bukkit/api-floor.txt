@@ -29,6 +29,7 @@ net/kyori/adventure/text/serializer/gson/GsonComponentSerializer
 net/kyori/adventure/text/serializer/legacy/LegacyComponentSerializer
 org/bukkit/Chunk.addPluginChunkTicket(Lorg/bukkit/plugin/Plugin;)Z
 org/bukkit/Chunk.removePluginChunkTicket(Lorg/bukkit/plugin/Plugin;)Z
+org/bukkit/Keyed
 org/bukkit/Server.getAsyncScheduler()Lio/papermc/paper/threadedregions/scheduler/AsyncScheduler;
 org/bukkit/Server.getGlobalRegionScheduler()Lio/papermc/paper/threadedregions/scheduler/GlobalRegionScheduler;
 org/bukkit/Server.getRegionScheduler()Lio/papermc/paper/threadedregions/scheduler/RegionScheduler;
@@ -44,6 +45,7 @@ org/bukkit/block/Sign.setWaxed(Z)V
 org/bukkit/block/sign/Side
 org/bukkit/block/sign/SignSide
 org/bukkit/entity/Entity.getScheduler()Lio/papermc/paper/threadedregions/scheduler/EntityScheduler;
+org/bukkit/entity/EntityType.getKey()Lorg/bukkit/NamespacedKey;
 org/bukkit/entity/Player.sendActionBar(Lnet/kyori/adventure/text/Component;)V
 org/bukkit/inventory/ItemStack.deserializeBytes([B)Lorg/bukkit/inventory/ItemStack;
 org/bukkit/inventory/ItemStack.deserializeItemsFromBytes([B)[Lorg/bukkit/inventory/ItemStack;

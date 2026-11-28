@@ -24,6 +24,7 @@ net/kyori/adventure/text/format/TextColor
 net/kyori/adventure/text/format/TextDecoration
 net/kyori/adventure/text/format/TextDecoration$State
 net/kyori/adventure/text/logger/slf4j/ComponentLogger
+org/bukkit/Keyed
 org/bukkit/Server.getAsyncScheduler()Lio/papermc/paper/threadedregions/scheduler/AsyncScheduler;
 org/bukkit/Server.getAverageTickTime()D
 org/bukkit/Server.getGlobalRegionScheduler()Lio/papermc/paper/threadedregions/scheduler/GlobalRegionScheduler;

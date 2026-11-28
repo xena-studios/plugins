@@ -26,6 +26,7 @@ net/kyori/adventure/text/format/TextColor
 net/kyori/adventure/text/format/TextDecoration
 net/kyori/adventure/text/format/TextDecoration$State
 net/kyori/adventure/text/logger/slf4j/ComponentLogger
+org/bukkit/Keyed
 org/bukkit/Material.CAVE_AIRLorg/bukkit/Material;
 org/bukkit/Material.VOID_AIRLorg/bukkit/Material;
 org/bukkit/Material.createBlockData()Lorg/bukkit/block/data/BlockData;

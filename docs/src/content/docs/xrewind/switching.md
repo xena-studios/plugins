@@ -1,13 +1,13 @@
 ---
 title: Switching from CoreProtect
-description: Move to xRewind and keep your history.
+description: "Move to xRewind and keep your CoreProtect history."
 sidebar:
   order: 4
 ---
 
 xRewind uses CoreProtect's command syntax, so `/co` habits carry over as `/xr`, and it can bring your CoreProtect history with it.
 
-1. Install xRewind next to CoreProtect and start the server once. Leave CoreProtect where it is for now: xRewind reads its database through CoreProtect's own `config.yml`, whether that's SQLite (`database.db`) or MySQL.
+1. Install xRewind next to CoreProtect and start the server once. Leave CoreProtect where it is for now: xRewind reads its database through CoreProtect's own `config.yml`, whether that's SQLite (`database.db`, opened read-only) or MySQL. It reads it with the server's own driver, or, on a server without one, downloads the driver it needs for the import.
 2. From the console, run:
 
    ```
@@ -28,7 +28,7 @@ xRewind uses CoreProtect's command syntax, so `/co` habits carry over as `/xr`, 
 | Signs, chat, commands | Text history |
 | Players and `#sources` | The same names, players with their uuids |
 
-Item drops and pickups, and entity spawns, aren't imported.
+Item drops and pickups, and entity spawns, aren't imported. CoreProtect is a Bukkit plugin, so on Fabric there's nothing to import.
 
 Importing twice would duplicate everything, so a second `/xr import coreprotect` refuses, unless you add `#again`. That includes after an import that stopped partway (the server stopped, or CoreProtect's MySQL went away): what came across stays, so `#again` shows it twice. If that matters, `/xr purge` can't pick out imported history, so it's best to let an import finish.
 

@@ -1,0 +1,4 @@
+# A real client on the Fabric server (scripts/boot-fabric.sh's client steps, #213): Joiner, an
+# operator, breaks a block and places one; a lookup shows both, a rollback puts them back, an undo
+# reverts it, and the inspector turns on and off (scripts/budgets/bots/client.js, xrewind).
+client: --plugin xrewind --fabric --timeout 120

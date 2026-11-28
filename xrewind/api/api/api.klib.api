@@ -1,0 +1,311 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+final enum class co.xenastudios.xrewind.api/Action : kotlin/Enum<co.xenastudios.xrewind.api/Action> { // co.xenastudios.xrewind.api/Action|null[0]
+    enum entry ADD // co.xenastudios.xrewind.api/Action.ADD|null[0]
+    enum entry BREAK // co.xenastudios.xrewind.api/Action.BREAK|null[0]
+    enum entry CHAT // co.xenastudios.xrewind.api/Action.CHAT|null[0]
+    enum entry CLICK // co.xenastudios.xrewind.api/Action.CLICK|null[0]
+    enum entry COMMAND // co.xenastudios.xrewind.api/Action.COMMAND|null[0]
+    enum entry JOIN // co.xenastudios.xrewind.api/Action.JOIN|null[0]
+    enum entry KILL // co.xenastudios.xrewind.api/Action.KILL|null[0]
+    enum entry PLACE // co.xenastudios.xrewind.api/Action.PLACE|null[0]
+    enum entry QUIT // co.xenastudios.xrewind.api/Action.QUIT|null[0]
+    enum entry REMOVE // co.xenastudios.xrewind.api/Action.REMOVE|null[0]
+    enum entry SIGN // co.xenastudios.xrewind.api/Action.SIGN|null[0]
+
+    final val entries // co.xenastudios.xrewind.api/Action.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xrewind.api/Action> // co.xenastudios.xrewind.api/Action.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): co.xenastudios.xrewind.api/Action // co.xenastudios.xrewind.api/Action.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<co.xenastudios.xrewind.api/Action> // co.xenastudios.xrewind.api/Action.values|values#static(){}[0]
+}
+
+abstract fun interface co.xenastudios.xrewind.api/BlockFilter { // co.xenastudios.xrewind.api/BlockFilter|null[0]
+    abstract fun includes(kotlin/String, kotlin/Int, kotlin/Int, kotlin/Int): kotlin/Boolean // co.xenastudios.xrewind.api/BlockFilter.includes|includes(kotlin.String;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+}
+
+abstract fun interface co.xenastudios.xrewind.api/LogFilter { // co.xenastudios.xrewind.api/LogFilter|null[0]
+    abstract fun logs(co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/String): kotlin/Boolean // co.xenastudios.xrewind.api/LogFilter.logs|logs(co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.String){}[0]
+}
+
+abstract interface co.xenastudios.xrewind.api/Plan { // co.xenastudios.xrewind.api/Plan|null[0]
+    abstract val blocks // co.xenastudios.xrewind.api/Plan.blocks|{}blocks[0]
+        abstract fun <get-blocks>(): kotlin.collections/List<co.xenastudios.xrewind.api/PlanBlock> // co.xenastudios.xrewind.api/Plan.blocks.<get-blocks>|<get-blocks>(){}[0]
+    abstract val items // co.xenastudios.xrewind.api/Plan.items|{}items[0]
+        abstract fun <get-items>(): kotlin.collections/List<co.xenastudios.xrewind.api/PlanItem> // co.xenastudios.xrewind.api/Plan.items.<get-items>|<get-items>(){}[0]
+    abstract val kind // co.xenastudios.xrewind.api/Plan.kind|{}kind[0]
+        abstract fun <get-kind>(): co.xenastudios.xrewind.api/Plan.Kind // co.xenastudios.xrewind.api/Plan.kind.<get-kind>|<get-kind>(){}[0]
+    abstract val unreadable // co.xenastudios.xrewind.api/Plan.unreadable|{}unreadable[0]
+        abstract fun <get-unreadable>(): kotlin/Int // co.xenastudios.xrewind.api/Plan.unreadable.<get-unreadable>|<get-unreadable>(){}[0]
+
+    final enum class Kind : kotlin/Enum<co.xenastudios.xrewind.api/Plan.Kind> { // co.xenastudios.xrewind.api/Plan.Kind|null[0]
+        enum entry RESTORE // co.xenastudios.xrewind.api/Plan.Kind.RESTORE|null[0]
+        enum entry ROLLBACK // co.xenastudios.xrewind.api/Plan.Kind.ROLLBACK|null[0]
+        enum entry UNDO // co.xenastudios.xrewind.api/Plan.Kind.UNDO|null[0]
+
+        final val entries // co.xenastudios.xrewind.api/Plan.Kind.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xrewind.api/Plan.Kind> // co.xenastudios.xrewind.api/Plan.Kind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): co.xenastudios.xrewind.api/Plan.Kind // co.xenastudios.xrewind.api/Plan.Kind.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<co.xenastudios.xrewind.api/Plan.Kind> // co.xenastudios.xrewind.api/Plan.Kind.values|values#static(){}[0]
+    }
+}
+
+abstract interface co.xenastudios.xrewind.api/XRewindApi { // co.xenastudios.xrewind.api/XRewindApi|null[0]
+    abstract val events // co.xenastudios.xrewind.api/XRewindApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xrewind.api/XRewindApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.xrewind.api/XRewindApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xrewind.api/XRewindApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun apply(co.xenastudios.xrewind.api/Plan): co.xenastudios.core.api/Pending<co.xenastudios.xrewind.api/RollbackResult> // co.xenastudios.xrewind.api/XRewindApi.apply|apply(co.xenastudios.xrewind.api.Plan){}[0]
+    abstract fun flush(): co.xenastudios.core.api/Pending<kotlin/Boolean> // co.xenastudios.xrewind.api/XRewindApi.flush|flush(){}[0]
+    abstract fun logChange(co.xenastudios.xrewind.api/Actor, co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/String, kotlin/String) // co.xenastudios.xrewind.api/XRewindApi.logChange|logChange(co.xenastudios.xrewind.api.Actor;co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.String;kotlin.String){}[0]
+    abstract fun logContainerChange(co.xenastudios.xrewind.api/Actor, co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/String, kotlin/Int) // co.xenastudios.xrewind.api/XRewindApi.logContainerChange|logContainerChange(co.xenastudios.xrewind.api.Actor;co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.String;kotlin.Int){}[0]
+    abstract fun logPlacement(co.xenastudios.xrewind.api/Actor, co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/String) // co.xenastudios.xrewind.api/XRewindApi.logPlacement|logPlacement(co.xenastudios.xrewind.api.Actor;co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.String){}[0]
+    abstract fun logRemoval(co.xenastudios.xrewind.api/Actor, co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/String) // co.xenastudios.xrewind.api/XRewindApi.logRemoval|logRemoval(co.xenastudios.xrewind.api.Actor;co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.String){}[0]
+    abstract fun lookup(co.xenastudios.xrewind.api/Query): co.xenastudios.core.api/Pending<kotlin.collections/List<co.xenastudios.xrewind.api/Entry>> // co.xenastudios.xrewind.api/XRewindApi.lookup|lookup(co.xenastudios.xrewind.api.Query){}[0]
+    abstract fun planRestore(co.xenastudios.xrewind.api/Query): co.xenastudios.core.api/Pending<co.xenastudios.xrewind.api/Plan> // co.xenastudios.xrewind.api/XRewindApi.planRestore|planRestore(co.xenastudios.xrewind.api.Query){}[0]
+    abstract fun planRollback(co.xenastudios.xrewind.api/Query): co.xenastudios.core.api/Pending<co.xenastudios.xrewind.api/Plan> // co.xenastudios.xrewind.api/XRewindApi.planRollback|planRollback(co.xenastudios.xrewind.api.Query){}[0]
+    abstract fun registerFilter(kotlin/String, co.xenastudios.xrewind.api/LogFilter) // co.xenastudios.xrewind.api/XRewindApi.registerFilter|registerFilter(kotlin.String;co.xenastudios.xrewind.api.LogFilter){}[0]
+    abstract fun unregisterAll(kotlin/String) // co.xenastudios.xrewind.api/XRewindApi.unregisterAll|unregisterAll(kotlin.String){}[0]
+}
+
+final class co.xenastudios.xrewind.api.event/LookupEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xrewind.api.event/LookupEvent|null[0]
+    constructor <init>(co.xenastudios.core.api/PlayerRef?, kotlin/String?, co.xenastudios.xrewind.api/Query, kotlin/Int) // co.xenastudios.xrewind.api.event/LookupEvent.<init>|<init>(co.xenastudios.core.api.PlayerRef?;kotlin.String?;co.xenastudios.xrewind.api.Query;kotlin.Int){}[0]
+
+    final val name // co.xenastudios.xrewind.api.event/LookupEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String? // co.xenastudios.xrewind.api.event/LookupEvent.name.<get-name>|<get-name>(){}[0]
+    final val page // co.xenastudios.xrewind.api.event/LookupEvent.page|{}page[0]
+        final fun <get-page>(): kotlin/Int // co.xenastudios.xrewind.api.event/LookupEvent.page.<get-page>|<get-page>(){}[0]
+    final val player // co.xenastudios.xrewind.api.event/LookupEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xrewind.api.event/LookupEvent.player.<get-player>|<get-player>(){}[0]
+    final val query // co.xenastudios.xrewind.api.event/LookupEvent.query|{}query[0]
+        final fun <get-query>(): co.xenastudios.xrewind.api/Query // co.xenastudios.xrewind.api.event/LookupEvent.query.<get-query>|<get-query>(){}[0]
+
+    final object Companion { // co.xenastudios.xrewind.api.event/LookupEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xrewind.api.event/LookupEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xrewind.api.event/LookupEvent> // co.xenastudios.xrewind.api.event/LookupEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xrewind.api.event/RollbackEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xrewind.api.event/RollbackEvent|null[0]
+    constructor <init>(co.xenastudios.xrewind.api/Plan, co.xenastudios.core.api/PlayerRef?, kotlin/String?) // co.xenastudios.xrewind.api.event/RollbackEvent.<init>|<init>(co.xenastudios.xrewind.api.Plan;co.xenastudios.core.api.PlayerRef?;kotlin.String?){}[0]
+
+    final val name // co.xenastudios.xrewind.api.event/RollbackEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String? // co.xenastudios.xrewind.api.event/RollbackEvent.name.<get-name>|<get-name>(){}[0]
+    final val plan // co.xenastudios.xrewind.api.event/RollbackEvent.plan|{}plan[0]
+        final fun <get-plan>(): co.xenastudios.xrewind.api/Plan // co.xenastudios.xrewind.api.event/RollbackEvent.plan.<get-plan>|<get-plan>(){}[0]
+    final val player // co.xenastudios.xrewind.api.event/RollbackEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xrewind.api.event/RollbackEvent.player.<get-player>|<get-player>(){}[0]
+
+    final object Companion { // co.xenastudios.xrewind.api.event/RollbackEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xrewind.api.event/RollbackEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xrewind.api.event/RollbackEvent> // co.xenastudios.xrewind.api.event/RollbackEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xrewind.api.event/RollbackFinishedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xrewind.api.event/RollbackFinishedEvent|null[0]
+    constructor <init>(co.xenastudios.xrewind.api/Plan, co.xenastudios.xrewind.api/RollbackResult, co.xenastudios.core.api/PlayerRef?, kotlin/String?) // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.<init>|<init>(co.xenastudios.xrewind.api.Plan;co.xenastudios.xrewind.api.RollbackResult;co.xenastudios.core.api.PlayerRef?;kotlin.String?){}[0]
+
+    final val name // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.name|{}name[0]
+        final fun <get-name>(): kotlin/String? // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.name.<get-name>|<get-name>(){}[0]
+    final val plan // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.plan|{}plan[0]
+        final fun <get-plan>(): co.xenastudios.xrewind.api/Plan // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.plan.<get-plan>|<get-plan>(){}[0]
+    final val player // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.player.<get-player>|<get-player>(){}[0]
+    final val result // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.result|{}result[0]
+        final fun <get-result>(): co.xenastudios.xrewind.api/RollbackResult // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.result.<get-result>|<get-result>(){}[0]
+
+    final object Companion { // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xrewind.api.event/RollbackFinishedEvent> // co.xenastudios.xrewind.api.event/RollbackFinishedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xrewind.api/Actor { // co.xenastudios.xrewind.api/Actor|null[0]
+    final val isPlayer // co.xenastudios.xrewind.api/Actor.isPlayer|{}isPlayer[0]
+        final fun <get-isPlayer>(): kotlin/Boolean // co.xenastudios.xrewind.api/Actor.isPlayer.<get-isPlayer>|<get-isPlayer>(){}[0]
+    final val name // co.xenastudios.xrewind.api/Actor.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xrewind.api/Actor.name.<get-name>|<get-name>(){}[0]
+    final val player // co.xenastudios.xrewind.api/Actor.player|{}player[0]
+        final fun <get-player>(): co.xenastudios.core.api/PlayerRef? // co.xenastudios.xrewind.api/Actor.player.<get-player>|<get-player>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // co.xenastudios.xrewind.api/Actor.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // co.xenastudios.xrewind.api/Actor.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // co.xenastudios.xrewind.api/Actor.toString|toString(){}[0]
+
+    final object Companion { // co.xenastudios.xrewind.api/Actor.Companion|null[0]
+        final fun player(co.xenastudios.core.api/PlayerRef, kotlin/String): co.xenastudios.xrewind.api/Actor // co.xenastudios.xrewind.api/Actor.Companion.player|player(co.xenastudios.core.api.PlayerRef;kotlin.String){}[0]
+        final fun source(kotlin/String): co.xenastudios.xrewind.api/Actor // co.xenastudios.xrewind.api/Actor.Companion.source|source(kotlin.String){}[0]
+    }
+}
+
+final class co.xenastudios.xrewind.api/Entry { // co.xenastudios.xrewind.api/Entry|null[0]
+    constructor <init>(kotlin.time/Instant, kotlin/String, kotlin/String, kotlin/Int, kotlin/Int, kotlin/Int, co.xenastudios.xrewind.api/Action, kotlin/String, kotlin/String?, kotlin/Int, kotlin/Boolean) // co.xenastudios.xrewind.api/Entry.<init>|<init>(kotlin.time.Instant;kotlin.String;kotlin.String;kotlin.Int;kotlin.Int;kotlin.Int;co.xenastudios.xrewind.api.Action;kotlin.String;kotlin.String?;kotlin.Int;kotlin.Boolean){}[0]
+
+    final val action // co.xenastudios.xrewind.api/Entry.action|{}action[0]
+        final fun <get-action>(): co.xenastudios.xrewind.api/Action // co.xenastudios.xrewind.api/Entry.action.<get-action>|<get-action>(){}[0]
+    final val actor // co.xenastudios.xrewind.api/Entry.actor|{}actor[0]
+        final fun <get-actor>(): kotlin/String // co.xenastudios.xrewind.api/Entry.actor.<get-actor>|<get-actor>(){}[0]
+    final val after // co.xenastudios.xrewind.api/Entry.after|{}after[0]
+        final fun <get-after>(): kotlin/String? // co.xenastudios.xrewind.api/Entry.after.<get-after>|<get-after>(){}[0]
+    final val amount // co.xenastudios.xrewind.api/Entry.amount|{}amount[0]
+        final fun <get-amount>(): kotlin/Int // co.xenastudios.xrewind.api/Entry.amount.<get-amount>|<get-amount>(){}[0]
+    final val rolledBack // co.xenastudios.xrewind.api/Entry.rolledBack|{}rolledBack[0]
+        final fun <get-rolledBack>(): kotlin/Boolean // co.xenastudios.xrewind.api/Entry.rolledBack.<get-rolledBack>|<get-rolledBack>(){}[0]
+    final val target // co.xenastudios.xrewind.api/Entry.target|{}target[0]
+        final fun <get-target>(): kotlin/String // co.xenastudios.xrewind.api/Entry.target.<get-target>|<get-target>(){}[0]
+    final val time // co.xenastudios.xrewind.api/Entry.time|{}time[0]
+        final fun <get-time>(): kotlin.time/Instant // co.xenastudios.xrewind.api/Entry.time.<get-time>|<get-time>(){}[0]
+    final val world // co.xenastudios.xrewind.api/Entry.world|{}world[0]
+        final fun <get-world>(): kotlin/String // co.xenastudios.xrewind.api/Entry.world.<get-world>|<get-world>(){}[0]
+    final val x // co.xenastudios.xrewind.api/Entry.x|{}x[0]
+        final fun <get-x>(): kotlin/Int // co.xenastudios.xrewind.api/Entry.x.<get-x>|<get-x>(){}[0]
+    final val y // co.xenastudios.xrewind.api/Entry.y|{}y[0]
+        final fun <get-y>(): kotlin/Int // co.xenastudios.xrewind.api/Entry.y.<get-y>|<get-y>(){}[0]
+    final val z // co.xenastudios.xrewind.api/Entry.z|{}z[0]
+        final fun <get-z>(): kotlin/Int // co.xenastudios.xrewind.api/Entry.z.<get-z>|<get-z>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xrewind.api/Entry.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xrewind.api/PlanBlock { // co.xenastudios.xrewind.api/PlanBlock|null[0]
+    constructor <init>(kotlin/String, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/String) // co.xenastudios.xrewind.api/PlanBlock.<init>|<init>(kotlin.String;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.String){}[0]
+
+    final val target // co.xenastudios.xrewind.api/PlanBlock.target|{}target[0]
+        final fun <get-target>(): kotlin/String // co.xenastudios.xrewind.api/PlanBlock.target.<get-target>|<get-target>(){}[0]
+    final val world // co.xenastudios.xrewind.api/PlanBlock.world|{}world[0]
+        final fun <get-world>(): kotlin/String // co.xenastudios.xrewind.api/PlanBlock.world.<get-world>|<get-world>(){}[0]
+    final val x // co.xenastudios.xrewind.api/PlanBlock.x|{}x[0]
+        final fun <get-x>(): kotlin/Int // co.xenastudios.xrewind.api/PlanBlock.x.<get-x>|<get-x>(){}[0]
+    final val y // co.xenastudios.xrewind.api/PlanBlock.y|{}y[0]
+        final fun <get-y>(): kotlin/Int // co.xenastudios.xrewind.api/PlanBlock.y.<get-y>|<get-y>(){}[0]
+    final val z // co.xenastudios.xrewind.api/PlanBlock.z|{}z[0]
+        final fun <get-z>(): kotlin/Int // co.xenastudios.xrewind.api/PlanBlock.z.<get-z>|<get-z>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xrewind.api/PlanBlock.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xrewind.api/PlanItem { // co.xenastudios.xrewind.api/PlanItem|null[0]
+    constructor <init>(kotlin/String, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/String, kotlin/Int) // co.xenastudios.xrewind.api/PlanItem.<init>|<init>(kotlin.String;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.String;kotlin.Int){}[0]
+
+    final val amount // co.xenastudios.xrewind.api/PlanItem.amount|{}amount[0]
+        final fun <get-amount>(): kotlin/Int // co.xenastudios.xrewind.api/PlanItem.amount.<get-amount>|<get-amount>(){}[0]
+    final val item // co.xenastudios.xrewind.api/PlanItem.item|{}item[0]
+        final fun <get-item>(): kotlin/String // co.xenastudios.xrewind.api/PlanItem.item.<get-item>|<get-item>(){}[0]
+    final val world // co.xenastudios.xrewind.api/PlanItem.world|{}world[0]
+        final fun <get-world>(): kotlin/String // co.xenastudios.xrewind.api/PlanItem.world.<get-world>|<get-world>(){}[0]
+    final val x // co.xenastudios.xrewind.api/PlanItem.x|{}x[0]
+        final fun <get-x>(): kotlin/Int // co.xenastudios.xrewind.api/PlanItem.x.<get-x>|<get-x>(){}[0]
+    final val y // co.xenastudios.xrewind.api/PlanItem.y|{}y[0]
+        final fun <get-y>(): kotlin/Int // co.xenastudios.xrewind.api/PlanItem.y.<get-y>|<get-y>(){}[0]
+    final val z // co.xenastudios.xrewind.api/PlanItem.z|{}z[0]
+        final fun <get-z>(): kotlin/Int // co.xenastudios.xrewind.api/PlanItem.z.<get-z>|<get-z>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xrewind.api/PlanItem.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xrewind.api/Query { // co.xenastudios.xrewind.api/Query|null[0]
+    final val actions // co.xenastudios.xrewind.api/Query.actions|{}actions[0]
+        final fun <get-actions>(): kotlin.collections/Set<co.xenastudios.xrewind.api/Action> // co.xenastudios.xrewind.api/Query.actions.<get-actions>|<get-actions>(){}[0]
+    final val area // co.xenastudios.xrewind.api/Query.area|{}area[0]
+        final fun <get-area>(): co.xenastudios.xrewind.api/Query.Area // co.xenastudios.xrewind.api/Query.area.<get-area>|<get-area>(){}[0]
+    final val blocks // co.xenastudios.xrewind.api/Query.blocks|{}blocks[0]
+        final fun <get-blocks>(): kotlin.collections/Set<kotlin/String> // co.xenastudios.xrewind.api/Query.blocks.<get-blocks>|<get-blocks>(){}[0]
+    final val centerX // co.xenastudios.xrewind.api/Query.centerX|{}centerX[0]
+        final fun <get-centerX>(): kotlin/Int // co.xenastudios.xrewind.api/Query.centerX.<get-centerX>|<get-centerX>(){}[0]
+    final val centerY // co.xenastudios.xrewind.api/Query.centerY|{}centerY[0]
+        final fun <get-centerY>(): kotlin/Int // co.xenastudios.xrewind.api/Query.centerY.<get-centerY>|<get-centerY>(){}[0]
+    final val centerZ // co.xenastudios.xrewind.api/Query.centerZ|{}centerZ[0]
+        final fun <get-centerZ>(): kotlin/Int // co.xenastudios.xrewind.api/Query.centerZ.<get-centerZ>|<get-centerZ>(){}[0]
+    final val excludedBlocks // co.xenastudios.xrewind.api/Query.excludedBlocks|{}excludedBlocks[0]
+        final fun <get-excludedBlocks>(): kotlin.collections/Set<kotlin/String> // co.xenastudios.xrewind.api/Query.excludedBlocks.<get-excludedBlocks>|<get-excludedBlocks>(){}[0]
+    final val excludedUsers // co.xenastudios.xrewind.api/Query.excludedUsers|{}excludedUsers[0]
+        final fun <get-excludedUsers>(): kotlin.collections/List<kotlin/String> // co.xenastudios.xrewind.api/Query.excludedUsers.<get-excludedUsers>|<get-excludedUsers>(){}[0]
+    final val filter // co.xenastudios.xrewind.api/Query.filter|{}filter[0]
+        final fun <get-filter>(): co.xenastudios.xrewind.api/BlockFilter? // co.xenastudios.xrewind.api/Query.filter.<get-filter>|<get-filter>(){}[0]
+    final val limit // co.xenastudios.xrewind.api/Query.limit|{}limit[0]
+        final fun <get-limit>(): kotlin/Int // co.xenastudios.xrewind.api/Query.limit.<get-limit>|<get-limit>(){}[0]
+    final val maxX // co.xenastudios.xrewind.api/Query.maxX|{}maxX[0]
+        final fun <get-maxX>(): kotlin/Int // co.xenastudios.xrewind.api/Query.maxX.<get-maxX>|<get-maxX>(){}[0]
+    final val maxY // co.xenastudios.xrewind.api/Query.maxY|{}maxY[0]
+        final fun <get-maxY>(): kotlin/Int // co.xenastudios.xrewind.api/Query.maxY.<get-maxY>|<get-maxY>(){}[0]
+    final val maxZ // co.xenastudios.xrewind.api/Query.maxZ|{}maxZ[0]
+        final fun <get-maxZ>(): kotlin/Int // co.xenastudios.xrewind.api/Query.maxZ.<get-maxZ>|<get-maxZ>(){}[0]
+    final val minX // co.xenastudios.xrewind.api/Query.minX|{}minX[0]
+        final fun <get-minX>(): kotlin/Int // co.xenastudios.xrewind.api/Query.minX.<get-minX>|<get-minX>(){}[0]
+    final val minY // co.xenastudios.xrewind.api/Query.minY|{}minY[0]
+        final fun <get-minY>(): kotlin/Int // co.xenastudios.xrewind.api/Query.minY.<get-minY>|<get-minY>(){}[0]
+    final val minZ // co.xenastudios.xrewind.api/Query.minZ|{}minZ[0]
+        final fun <get-minZ>(): kotlin/Int // co.xenastudios.xrewind.api/Query.minZ.<get-minZ>|<get-minZ>(){}[0]
+    final val radius // co.xenastudios.xrewind.api/Query.radius|{}radius[0]
+        final fun <get-radius>(): kotlin/Int // co.xenastudios.xrewind.api/Query.radius.<get-radius>|<get-radius>(){}[0]
+    final val seconds // co.xenastudios.xrewind.api/Query.seconds|{}seconds[0]
+        final fun <get-seconds>(): kotlin/Long // co.xenastudios.xrewind.api/Query.seconds.<get-seconds>|<get-seconds>(){}[0]
+    final val users // co.xenastudios.xrewind.api/Query.users|{}users[0]
+        final fun <get-users>(): kotlin.collections/List<kotlin/String> // co.xenastudios.xrewind.api/Query.users.<get-users>|<get-users>(){}[0]
+    final val world // co.xenastudios.xrewind.api/Query.world|{}world[0]
+        final fun <get-world>(): kotlin/String? // co.xenastudios.xrewind.api/Query.world.<get-world>|<get-world>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xrewind.api/Query.toString|toString(){}[0]
+
+    final enum class Area : kotlin/Enum<co.xenastudios.xrewind.api/Query.Area> { // co.xenastudios.xrewind.api/Query.Area|null[0]
+        enum entry BOX // co.xenastudios.xrewind.api/Query.Area.BOX|null[0]
+        enum entry GLOBAL // co.xenastudios.xrewind.api/Query.Area.GLOBAL|null[0]
+        enum entry RADIUS // co.xenastudios.xrewind.api/Query.Area.RADIUS|null[0]
+        enum entry WORLD // co.xenastudios.xrewind.api/Query.Area.WORLD|null[0]
+
+        final val entries // co.xenastudios.xrewind.api/Query.Area.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<co.xenastudios.xrewind.api/Query.Area> // co.xenastudios.xrewind.api/Query.Area.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): co.xenastudios.xrewind.api/Query.Area // co.xenastudios.xrewind.api/Query.Area.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<co.xenastudios.xrewind.api/Query.Area> // co.xenastudios.xrewind.api/Query.Area.values|values#static(){}[0]
+    }
+
+    final class Builder { // co.xenastudios.xrewind.api/Query.Builder|null[0]
+        final fun actions(kotlin/Array<out co.xenastudios.xrewind.api/Action>...): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.actions|actions(kotlin.Array<out|co.xenastudios.xrewind.api.Action>...){}[0]
+        final fun area(co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.area|area(co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+        final fun blocks(kotlin/Array<out kotlin/String>...): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.blocks|blocks(kotlin.Array<out|kotlin.String>...){}[0]
+        final fun build(): co.xenastudios.xrewind.api/Query // co.xenastudios.xrewind.api/Query.Builder.build|build(){}[0]
+        final fun excludeBlocks(kotlin/Array<out kotlin/String>...): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.excludeBlocks|excludeBlocks(kotlin.Array<out|kotlin.String>...){}[0]
+        final fun excludeUsers(kotlin/Array<out kotlin/String>...): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.excludeUsers|excludeUsers(kotlin.Array<out|kotlin.String>...){}[0]
+        final fun filter(co.xenastudios.xrewind.api/BlockFilter): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.filter|filter(co.xenastudios.xrewind.api.BlockFilter){}[0]
+        final fun global(): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.global|global(){}[0]
+        final fun limit(kotlin/Int): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.limit|limit(kotlin.Int){}[0]
+        final fun radius(co.xenastudios.core.api/WorldRef, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.radius|radius(co.xenastudios.core.api.WorldRef;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+        final fun time(kotlin/Long): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.time|time(kotlin.Long){}[0]
+        final fun users(kotlin/Array<out kotlin/String>...): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.users|users(kotlin.Array<out|kotlin.String>...){}[0]
+        final fun world(co.xenastudios.core.api/WorldRef): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Builder.world|world(co.xenastudios.core.api.WorldRef){}[0]
+    }
+
+    final object Companion { // co.xenastudios.xrewind.api/Query.Companion|null[0]
+        final fun builder(): co.xenastudios.xrewind.api/Query.Builder // co.xenastudios.xrewind.api/Query.Companion.builder|builder(){}[0]
+    }
+}
+
+final class co.xenastudios.xrewind.api/RollbackResult { // co.xenastudios.xrewind.api/RollbackResult|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Long, co.xenastudios.xrewind.api/Plan) // co.xenastudios.xrewind.api/RollbackResult.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Long;co.xenastudios.xrewind.api.Plan){}[0]
+
+    final val applied // co.xenastudios.xrewind.api/RollbackResult.applied|{}applied[0]
+        final fun <get-applied>(): kotlin/Int // co.xenastudios.xrewind.api/RollbackResult.applied.<get-applied>|<get-applied>(){}[0]
+    final val skipped // co.xenastudios.xrewind.api/RollbackResult.skipped|{}skipped[0]
+        final fun <get-skipped>(): kotlin/Int // co.xenastudios.xrewind.api/RollbackResult.skipped.<get-skipped>|<get-skipped>(){}[0]
+    final val tookMillis // co.xenastudios.xrewind.api/RollbackResult.tookMillis|{}tookMillis[0]
+        final fun <get-tookMillis>(): kotlin/Long // co.xenastudios.xrewind.api/RollbackResult.tookMillis.<get-tookMillis>|<get-tookMillis>(){}[0]
+    final val undo // co.xenastudios.xrewind.api/RollbackResult.undo|{}undo[0]
+        final fun <get-undo>(): co.xenastudios.xrewind.api/Plan // co.xenastudios.xrewind.api/RollbackResult.undo.<get-undo>|<get-undo>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xrewind.api/RollbackResult.toString|toString(){}[0]
+}
+
+final object co.xenastudios.xrewind.api/XRewind { // co.xenastudios.xrewind.api/XRewind|null[0]
+    final fun api(): co.xenastudios.xrewind.api/XRewindApi // co.xenastudios.xrewind.api/XRewind.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xrewind.api/XRewind.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xrewind.api/XRewindApi?) // co.xenastudios.xrewind.api/XRewind.register|register(co.xenastudios.xrewind.api.XRewindApi?){}[0]
+}

@@ -1,0 +1,5 @@
+# A real client on the server (boot.sh ... --seed scripts/boot-seeds/client --checks client-checks.txt):
+# Joiner, an operator in German, breaks a block and places one; a lookup shows both, a rollback
+# puts them back as they were, an undo reverts it, and the inspector turns on and off
+# (scripts/budgets/bots/client.js, xrewind).
+client: --plugin xrewind --timeout 120

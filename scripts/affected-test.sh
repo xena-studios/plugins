@@ -228,6 +228,16 @@ check "xVote's Velocity side" xvote/velocity/src/main/kotlin/co/xenastudios/xvot
   $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=proxy'
 check "xVote's network test" xvote/velocity/network.sh \
   $'tasks=:build :xvote:api:build :xvote:bukkit:build :xvote:bungee:build :xvote:common:build :xvote:velocity:build\nchecks=\nboot=proxy'
+check "xRewind's common code" xrewind/common/src/commonMain/kotlin/co/xenastudios/xrewind/log/Writer.kt \
+  $'tasks=:build :xrewind:api:build :xrewind:bukkit:build :xrewind:common:build\nchecks=\nboot=bukkit fabric'
+check "xRewind's API" xrewind/api/src/commonMain/kotlin/co/xenastudios/xrewind/api/XRewindApi.kt \
+  $'tasks=:build :xrewind:api:build :xrewind:bukkit:build :xrewind:common:build\nchecks=\nboot=bukkit fabric'
+check "xRewind's Bukkit adapter" xrewind/bukkit/src/main/kotlin/co/xenastudios/xrewind/bukkit/BukkitRewindServer.kt \
+  $'tasks=:build :xrewind:api:build :xrewind:bukkit:build :xrewind:common:build\nchecks=\nboot=bukkit'
+check "xRewind's real-client checks" xrewind/bukkit/client-checks.txt \
+  $'tasks=:build :xrewind:api:build :xrewind:bukkit:build :xrewind:common:build\nchecks=\nboot=bukkit'
+check "xRewind's Fabric mod (platform-fabric's build)" xrewind/fabric/src/main/kotlin/co/xenastudios/xrewind/fabric/FabricRewindServer.kt \
+  $'tasks=:build :xrewind:api:build :xrewind:bukkit:build :xrewind:common:build\nchecks=\nboot=fabric'
 check "Today's core (core/src)" core/src/main/java/co/xenastudios/core/XenaPlugin.java everything
 check "Today's plugin" xstats/src/main/java/co/xenastudios/xstats/XStats.java \
   $'units=xstats\ncompile=:xstats:compileJava :xstats:api:compileJava\nchecks=xstats/boot-checks.txt\nboot='

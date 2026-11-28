@@ -1,0 +1,100 @@
+# xRewind on a real Bukkit-family server, from the console (scripts/boot-test.sh --checks,
+# through boot.sh): 1.x's checks, on 2.0. The database opens on an async task with the SQLite
+# driver the server ships.
+logged: xRewind 2.0.0 on
+logged: Storage ready: the SQLite database history.db, schema 1.
+run: xrewind info
+expect: xRewind 2.0.0 on
+run: xrewind reload
+expect: Reloaded xRewind
+
+# Subcommands beside reload and info, and the writer ready for the database.
+run: xr status
+expect: Problem: none
+
+# A lookup runs its SQL against the real database and replies: for a player with no history.
+run: xr lookup w:world t:1h u:Nobody
+expect: Nothing found.
+run: xr lookup t:1h
+expect: From the console, add w:<world> or r:#global.
+
+# Rollback's checks, and its SQL on a real database.
+run: xr rollback u:Steve
+expect: Add a time
+run: xr rollback t:1h
+expect: From the console, use r:#world with w:<world>, or r:#global.
+# For a player with no history: a world that isn't flat has sand falling as it starts, logged.
+run: xr rollback t:1h r:#global u:Nobody
+expect: Nothing to change.
+run: xr undo
+expect: Nothing to undo.
+
+# The whole loop on a real server (1.14 on, for forceload): TNT blows up a block of planks and a
+# double chest, and a rollback puts them back with what each half held. The reloads let the
+# server tick between steps. Folia's console can't test blocks with execute, so it checks only
+# what xRewind says. Spigot 1.13.2's loop is its real client's (client-checks.txt).
+paper run: forceload add 96 96 111 111
+paper expect: Marked
+folia run: forceload add 96 96 111 111
+folia expect: Marked
+paper run: xr reload
+paper expect: Reloaded xRewind
+folia run: xr reload
+folia expect: Reloaded xRewind
+folia run: xr reload
+folia expect: Reloaded xRewind
+paper run: fill 100 70 100 104 74 104 minecraft:oak_planks
+paper expect: Successfully filled
+folia run: fill 100 70 100 104 74 104 minecraft:oak_planks
+folia expect: Successfully filled
+paper run: setblock 102 71 103 minecraft:chest[facing=north,type=left]{Items:[{Slot:0b,id:"minecraft:diamond",count:5}]}
+paper expect: Changed the block
+paper run: setblock 101 71 103 minecraft:chest[facing=north,type=right]{Items:[{Slot:0b,id:"minecraft:emerald",count:3}]}
+paper expect: Changed the block
+paper run: summon minecraft:tnt 102 72 102 {fuse:0}
+paper expect: Summoned new
+folia run: summon minecraft:tnt 102 72 102 {fuse:0}
+folia expect: Summoned new
+paper run: xr reload
+paper expect: Reloaded xRewind
+paper run: xr reload
+paper expect: Reloaded xRewind
+folia run: xr reload
+folia expect: Reloaded xRewind
+folia run: xr reload
+folia expect: Reloaded xRewind
+paper run: execute if block 102 72 102 minecraft:air run say BLOWN UP
+paper expect: BLOWN UP
+paper run: xr lookup u:#tnt r:#global #count
+paper expect: Lookup:
+folia run: xr lookup u:#tnt r:#global #count
+folia expect: Lookup:
+paper run: xr rollback u:#tnt t:1h r:#global
+paper expect: Rolled back
+folia run: xr rollback u:#tnt t:1h r:#global
+folia expect: Rolled back
+paper run: execute if block 102 72 102 minecraft:oak_planks run say PUT BACK
+paper expect: PUT BACK
+paper run: execute if items block 102 71 103 container.* minecraft:diamond run say CHEST FULL
+paper expect: CHEST FULL
+# Each half of a double chest comes back with its own items.
+paper run: execute if items block 101 71 103 container.* minecraft:emerald run say OTHER HALF FULL
+paper expect: OTHER HALF FULL
+paper run: xr undo
+paper expect: Undid
+folia run: xr undo
+folia expect: Undid
+paper run: execute if block 102 72 102 minecraft:air run say UNDONE
+paper expect: UNDONE
+
+# Purge and import on a real database.
+run: xr purge t:1h
+expect: Purge history at least a day old
+run: xr purge t:30d
+expect: Purged
+run: xr import coreprotect
+expect: there's no plugins/CoreProtect/config.yml.
+
+# The admin subcommands, and the debug report written to the plugin's folder.
+run: xrewind debug
+expect: Checking xRewind

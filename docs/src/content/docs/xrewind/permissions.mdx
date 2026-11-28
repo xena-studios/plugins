@@ -1,0 +1,14 @@
+---
+title: Permissions
+description: "Every xRewind permission, and who has it by default."
+sidebar:
+  order: 2.5
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+Each subcommand has its own permission, operators' by default, 1.x's: `xrewind.inspect`, `xrewind.lookup` (lookups, `page` and `near`), `xrewind.lookup.chat` (chat and commands, which are more private than blocks), `xrewind.rollback` (`rollback`, `apply`, `cancel` and `undo`), `xrewind.rollback.global` (past `rollback.max-radius`, `r:#world` and `r:#global`), `xrewind.restore`, `xrewind.purge` and `xrewind.status`. `xrewind.admin` grants the admin subcommands (`reload`, `debug`, `forget`, and `import` and `info` as in 1.x) and the update notices, each also on its own as `xrewind.admin.<subcommand>`.
+
+On Fabric, LuckPerms and other permission mods answer through fabric-permissions-api; without one, operators (level 2) have the operator permissions.
+
+<Reference plugin="xrewind" show="permissions" />

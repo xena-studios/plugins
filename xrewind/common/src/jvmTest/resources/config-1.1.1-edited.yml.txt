@@ -1,0 +1,211 @@
+# xRewind: every change, logged. Any of it, undone.
+# Docs: https://plugins.xenastudios.co/xrewind/configuration/
+#
+# Apply changes with /xrewind reload (or /xr reload). A bad value falls back to its
+# default with a warning in the console; xRewind never stops over config. All text is
+# MiniMessage:
+# https://plugins.xenastudios.co/start/formatting/
+
+# Managed by the plugin, to carry your settings forward on updates. Don't edit it.
+config-version: 1
+
+# The look xRewind's messages share. The default messages use these as tags, so changing
+# a colour here restyles them all. Write a style as MiniMessage tags: <gray>,
+# <#3DD6C6>, or <gold><bold>.
+theme:
+  # <prefix> starts the default messages. Make it your server's name, such as
+  # "<dark_gray>[<gradient:#B48CFF:#5EE08A>MyServer</gradient>]</dark_gray> ", or blank for none.
+  prefix: "<gold>[Rewind]</gold> "
+  # The colour of message text that has no tag of its own.
+  base: "<gray>"
+  # <highlight>: names and values, such as a player or a speed.
+  highlight: "<#B48CFF>"
+  # <success>: something turned on or done.
+  success: "<#5EE08A>"
+  # <error>: something refused or turned off.
+  error: "<#FF6B6B>"
+
+# Messages the commands share.
+messages:
+  error:
+    # The console or a command block ran a command only players can use.
+    player-only: "<prefix><error>Only players can use this command."
+    # The sender lacks the command's permission.
+    no-permission: "<prefix><error>You don't have permission to do that."
+    # No online player has that name. <player> is the name typed.
+    player-not-found: "<prefix><error>No player named <highlight><player></highlight> is online."
+    # The command was typed wrong. <usage> is how to type it.
+    usage: "<prefix><error>Usage:</error> <usage>"
+    # The command hit an error. The console has the details.
+    failed: "<prefix><error>Something went wrong. The console has the details."
+
+  # Lookups and the inspector.
+  lookup:
+    # Above a page of results. <count> is how many there are in all.
+    header: "<gold>History:</gold> <count> changes"
+    # Above the history of one block, from the inspector. <x>, <y>, <z>, <world>.
+    header-at: "<prefix>History of <highlight><x> <y> <z></highlight> in <world>"
+    # One change. <ago> is how long ago, <user> who, <action> what they did, <block> what
+    # to (a block, items, a mob, or what they wrote), <x> <y> <z> <world> where.
+    line: "<gray><ago> ago</gray> <highlight><user></highlight> <action> <highlight><block></highlight> <gray>at <x> <y> <z></gray>"
+    # A change that's been rolled back.
+    line-undone: "<strikethrough><gray><ago> ago</gray> <user> <action> <block> <gray>at <x> <y> <z></gray></strikethrough> <gray>(undone)"
+    # Below a page. <page>, <pages>, and <next>: the command for the next page.
+    footer: "<gray>Page <page> of <pages></gray> <click:run_command:'<next>'><hover:show_text:'<next>'><highlight>Next page »"
+    # Nothing matched.
+    none: "<prefix>Nothing found."
+    # Sent while waiting on the database.
+    working: "<prefix><gray>Looking..."
+    # The parameters were wrong. <reason> says how.
+    invalid: "<prefix><error><reason>"
+    # There's no previous lookup for /xrewind page.
+    no-previous: "<prefix><error>Look something up first, then use /xrewind page."
+    # The database isn't ready yet.
+    not-ready: "<prefix><error>The database isn't ready yet. /xrewind status says why."
+    inspector-on: "<prefix>Inspector <success>on</success>. Click a block to see its history; place one to see what was there."
+    inspector-off: "<prefix>Inspector <highlight>off</highlight>."
+
+    # The words for each kind of change, as <action> shows them.
+    words:
+      placed: "placed"
+      broke: "broke"
+      clicked: "used"
+      added: "added"
+      took: "took"
+      killed: "killed"
+      wrote: "wrote"
+      said: "said"
+      ran: "ran"
+      joined: "joined"
+      quit: "quit"
+
+  # Rollbacks, restores, previews and undo.
+  rollback:
+    # A rollback or restore without t:.
+    need-time: "<prefix><error>Add a time, such as <highlight>t:1h</highlight>, so it can't reach further back than you meant."
+    # Past max-radius without permission. <max> is the limit.
+    too-far: "<prefix><error>That's past the <highlight><max></highlight>-block limit. r:#world, r:#global and bigger radii need <highlight>xrewind.rollback.global</highlight>."
+    # Another one is already running.
+    busy: "<prefix><error>Another rollback is running. Wait for it to finish."
+    nothing: "<prefix>Nothing to change."
+    # A #preview is showing. <count> is how many blocks.
+    preview: "<prefix>Previewing <highlight><count></highlight> blocks, for you only. <click:run_command:'/xrewind apply'><hover:show_text:'/xrewind apply'><success>[Apply]</success></hover></click> <click:run_command:'/xrewind cancel'><hover:show_text:'/xrewind cancel'><error>[Cancel]</error></hover></click>"
+    no-preview: "<prefix><error>You have no preview. Add #preview to a rollback or restore."
+    cancelled: "<prefix>Preview cancelled. Nothing changed."
+    # On the action bar while it works. <verb>, <done>, <total>.
+    progress: "<highlight><verb></highlight>: <done> of <total> blocks"
+    # When it's finished. <verb>, <count>, <seconds>.
+    done: "<prefix><success><verb></success> <highlight><count></highlight> blocks in <seconds>s."
+    # Stored blocks this server couldn't read. <count>.
+    skipped: "<prefix><error><count> blocks were stored by a Minecraft version this one can't read, and were left as they are."
+    no-undo: "<prefix><error>Nothing to undo. Undo works on your last rollback or restore since the server started."
+    # Another plugin stopped a rollback, restore or undo before it started.
+    stopped: "<prefix><error>Another plugin stopped it before it started. Nothing changed."
+    verbs:
+      rollback: "Undone"
+      restore: "Restored"
+      undo: "Undid"
+
+  # /xrewind purge and /xrewind import.
+  upkeep:
+    # A purge of less than a day.
+    purge-too-recent: "<prefix><error>Purge history at least a day old: <highlight>t:1d</highlight> or more."
+    purging: "<prefix><gray>Purging..."
+    # <count> changes deleted; <time> how old.
+    purged: "<prefix><success>Purged</success> <highlight><count></highlight> changes older than <time>."
+    # <source> is where CoreProtect's history is read from.
+    importing: "<prefix>Importing CoreProtect's history from <highlight><source></highlight>. Logging carries on meanwhile; the console shows progress."
+    # <count> changes imported in <seconds>s.
+    imported: "<prefix><success>Imported</success> <highlight><count></highlight> changes from CoreProtect in <seconds>s."
+    # It was imported before. <date>.
+    imported-before: "<prefix><error>CoreProtect's history was already imported (<date>). <highlight>#again</highlight> imports it again, and what came across before shows twice."
+    # CoreProtect's database couldn't be read. <reason>.
+    import-failed: "<prefix><error>Couldn't read CoreProtect's history: <reason>"
+    import-running: "<prefix><error>An import is already running."
+    # The server stopped a purge partway. <count> changes were deleted by then.
+    purge-interrupted: "<prefix><error>The purge was stopped partway, after deleting <highlight><count></highlight> changes. Run it again to finish."
+    # The server stopped an import partway.
+    import-interrupted: "<prefix><error>The import was stopped partway. Run it again with <highlight>#again</highlight>; what came across before shows twice."
+
+# Where the history is kept. Changing it on /xrewind reload switches to the new one;
+# history isn't copied across.
+storage:
+  # sqlite keeps everything in one file in the plugin's folder, with nothing to set up.
+  # mysql (or MariaDB) is for networks, or servers with a lot of history.
+  type: "sqlite"
+  # Put in front of every table's name, so plugins and servers can share one database.
+  table-prefix: "xrewind_"
+
+  # Only for type: mysql.
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "minecraft"
+    username: "minecraft"
+    password: ""
+    # Extra connection settings, as in a JDBC URL: useSSL=true&serverTimezone=UTC.
+    properties: ""
+
+# What's logged. Something that's off isn't even listened for, so it costs nothing.
+# Changes apply on /xrewind reload.
+log:
+  # Blocks players break, with what they held, and blocks that fall off with them.
+  block-break: true
+  # Blocks players place, and what they replaced.
+  block-place: true
+  # Blocks explosions destroy. TNT is put down to whoever lit it.
+  explosions: true
+  # Blocks burnt away, and fires players light.
+  fire: true
+  # Buckets, and flowing water or lava destroying a block. Plain spreading isn't logged.
+  liquids: true
+  # Blocks pistons move.
+  pistons: true
+  # Endermen, withers, ravagers, falling sand. Sheep eating grass and villagers farming aren't.
+  mobs: true
+  # Text written on signs.
+  signs: true
+  # Items players put into or take out of containers.
+  containers: true
+  # Items hoppers and droppers move. Busy on farms.
+  hoppers: false
+  # Mobs and players killed by players.
+  kills: true
+  # Doors, trapdoors, gates, levers and buttons players use.
+  clicks: false
+  # Leaves decaying.
+  leaf-decay: false
+  # Players joining and quitting, and where.
+  sessions: true
+  # Chat messages. Off by default for players' privacy; lookups need xrewind.lookup.chat.
+  chat: true
+  # Commands players run. Off by default; lookups need xrewind.lookup.chat.
+  commands: false
+  # Worlds nothing is logged in, by name.
+  excluded-worlds: []
+
+# Rollbacks and restores. Blocks are set a few milliseconds per tick, chunk by chunk, so
+# even a big one doesn't freeze the server, and without physics, so nothing cascades.
+rollback:
+  # How long a rollback may work each tick, in milliseconds. A tick is 50.
+  ms-per-tick: 10
+  # The radius, in blocks, when a rollback doesn't give one with r:.
+  default-radius: 10
+  # The largest r: without the xrewind.rollback.global permission, which r:#world and
+  # r:#global also need.
+  max-radius: 250
+
+# Deleting old history, so the database doesn't grow forever.
+purge:
+  # Delete history older than this many days, once a day. 0 keeps everything. A
+  # rollback can't reach further back than what's kept.
+  keep-days: 90
+
+# Tells you when a new version is out.
+update-checker:
+  # Ask Modrinth for the newest version at startup and every 24 hours. It sends
+  # only the plugin version, the platform and the Minecraft version.
+  enabled: false
+  # Logged, and shown to admins when they join, when a newer version is out.
+  # <plugin>, <current>, <latest> and <url> are filled in.
+  message: "<prefix><plugin> <highlight><latest></highlight> is out (you have <current>): <click:open_url:'<url>'><hover:show_text:'Open on Modrinth'><highlight><underlined><url>"

@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.frontend.structure;
+
+import co.xenastudios.neoskript.frontend.source.Text;
+import java.util.Locale;
+
+/**
+ * A top-level part of a script: usually a section, or a single line such as {@code using <feature>}. The
+ * kind only says which parser handles it next. Events are every section that isn't one of the fixed
+ * structures, and the event registry decides whether they exist.
+ */
+public record Structure(Kind kind, Node node) {
+
+    public enum Kind {
+        OPTIONS,
+        VARIABLES,
+        ALIASES,
+        FUNCTION,
+        COMMAND,
+        EVENT,
+        /** {@code using <experimental feature>}, a single line. */
+        USING,
+        /** Skript's {@code auto reload}: a single line, or a section of entries. */
+        AUTO_RELOAD
+    }
+
+    /** Skript's pattern for {@code auto reload}: {@code auto[matically] reload [(this|the) script]}. */
+    private static final java.util.regex.Pattern AUTO_RELOAD_PATTERN = java.util.regex.Pattern.compile(
+            "auto(?:matically)? reload(?: (?:this|the) script)?", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    /** Whether {@code key} is Skript's {@code auto reload} structure. */
+    public static boolean isAutoReload(String key) {
+        return AUTO_RELOAD_PATTERN.matcher(key.strip()).matches();
+    }
+
+    /**
+     * The structure's section. Every kind except {@link Kind#USING} is a section; {@link Kind#AUTO_RELOAD}
+     * can be either.
+     */
+    public Node.Section section() {
+        if (node instanceof Node.Section section) {
+            return section;
+        }
+        throw new IllegalStateException(kind + " structure on line " + node.line().number() + " has no section");
+    }
+
+    /** Skript's {@code using [[the] experiment] <.+>}: what follows it is the experiment's name. */
+    private static final java.util.regex.Pattern USING_PATTERN = java.util.regex.Pattern.compile(
+            "using (?:(?:the )?experiment )?(.+)", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    /** The experiment a {@code using} line names, as written, or {@code null} if it isn't a {@code using} line. */
+    public static String usingName(Line line) {
+        java.util.regex.Matcher matcher = USING_PATTERN.matcher(line.text().strip());
+        return matcher.matches() ? matcher.group(1).strip() : null;
+    }
+
+    /** The kind of a single-line structure, or {@code null} if the line isn't one. */
+    public static Kind simpleKindOf(Line line) {
+        if (isAutoReload(line.text())) {
+            return Kind.AUTO_RELOAD;
+        }
+        return Text.lower(line.text()).startsWith("using ") ? Kind.USING : null;
+    }
+
+    public static Kind kindOf(Line header) {
+        String key = Text.lower(header.key());
+        return switch (key) {
+            case "options" -> Kind.OPTIONS;
+            case "variables" -> Kind.VARIABLES;
+            case "aliases" -> Kind.ALIASES;
+            default -> {
+                if (isAutoReload(key)) {
+                    yield Kind.AUTO_RELOAD;
+                }
+                if (key.startsWith("function ") || key.startsWith("local function ")) {
+                    yield Kind.FUNCTION;
+                }
+                yield key.startsWith("command ") ? Kind.COMMAND : Kind.EVENT;
+            }
+        };
+    }
+}

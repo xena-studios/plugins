@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.runtime;
+
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+/** The experimental features each script turns on with {@code using X}, like {@code using script reflection}. */
+public final class ScriptFeatures {
+
+    private static final Map<String, Set<String>> FEATURES = new ConcurrentHashMap<>();
+
+    /**
+     * Skript's experiments, by code name, with what a script may write for each ({@code using script
+     * reflection} is {@code reflection}). The last three are Skript's test features.
+     */
+    private static final Map<String, java.util.regex.Pattern> EXPERIMENTS = Map.ofEntries(
+            Map.entry("examples", pattern("examples")),
+            Map.entry("queues", pattern("queues")),
+            Map.entry("for loop", pattern("for( each)? loops?")),
+            Map.entry("reflection", pattern("(script )?reflection")),
+            Map.entry("catch runtime errors", pattern("error catching( section)?")),
+            Map.entry("type hints", pattern("(local variable )?type hints")),
+            Map.entry("damage source", pattern("damage sources?")),
+            Map.entry("equippable components", pattern("equippable components")),
+            Map.entry("example feature", pattern("example feature")),
+            Map.entry("deprecated feature", pattern("deprecated feature")),
+            Map.entry("test", pattern("test(ing)?|fizz ?buzz")));
+
+    private static java.util.regex.Pattern pattern(String regex) {
+        return java.util.regex.Pattern.compile(regex);
+    }
+
+    /** The script being compiled on this thread, for syntax that only exists with an experiment. */
+    private static final ThreadLocal<String> COMPILING = new ThreadLocal<>();
+
+    private ScriptFeatures() {}
+
+    /** Marks {@code script} as being compiled on this thread, or none if {@code null}. */
+    public static void compiling(String script) {
+        if (script == null) {
+            COMPILING.remove();
+        } else {
+            COMPILING.set(script);
+        }
+    }
+
+    /** The script being compiled on this thread, or {@code null}. */
+    public static String compilingScript() {
+        return COMPILING.get();
+    }
+
+    /** Whether the script being compiled on this thread uses {@code feature}. */
+    public static boolean compilingUses(String feature) {
+        String script = COMPILING.get();
+        return script != null && uses(script, feature);
+    }
+
+    /** Records what {@code script} uses ({@code using ...}), replacing what it used before. */
+    public static void set(String script, Set<String> features) {
+        if (features.isEmpty()) {
+            FEATURES.remove(script);
+        } else {
+            FEATURES.put(script, features.stream().map(ScriptFeatures::codeName).collect(java.util.stream.Collectors.toUnmodifiableSet()));
+        }
+    }
+
+    /** Whether {@code script} uses {@code feature}, by any of its names. */
+    public static boolean uses(String script, String feature) {
+        Set<String> features = FEATURES.get(script);
+        return features != null && features.contains(codeName(feature));
+    }
+
+    /** The experiments Skript 2.17.0 includes by default, or has deprecated, by code name. */
+    private static final Set<String> MAINSTREAM = Set.of("for loop", "damage source");
+    private static final Set<String> DEPRECATED = Set.of("deprecated feature");
+
+    /** Skript's warning for {@code using <name>}, as its {@code StructUsing} gives it, or {@code null}. */
+    public static String usingWarning(String name) {
+        String code = codeName(name);
+        if (MAINSTREAM.contains(code)) {
+            return "The experimental feature '" + name + "' is now included by default and is no longer required.";
+        }
+        if (DEPRECATED.contains(code)) {
+            return "The experimental feature '" + name + "' is deprecated and may be removed in future versions.";
+        }
+        return EXPERIMENTS.containsKey(code) ? null : "The experimental feature '" + name + "' was not found.";
+    }
+
+    /** Each experiment's code name, with the regex for what a script may write for it, for the syntax export. */
+    public static Map<String, String> experiments() {
+        Map<String, String> experiments = new java.util.HashMap<>();
+        EXPERIMENTS.forEach((name, pattern) -> experiments.put(name, pattern.pattern()));
+        return experiments;
+    }
+
+    /** The experiment {@code name} is written for, by its code name, or the name itself if it isn't one. */
+    public static String codeName(String name) {
+        String normal = name.strip().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+        if (EXPERIMENTS.containsKey(normal)) {
+            return normal;
+        }
+        for (Map.Entry<String, java.util.regex.Pattern> experiment : EXPERIMENTS.entrySet()) {
+            if (experiment.getValue().matcher(normal).matches()) {
+                return experiment.getKey();
+            }
+        }
+        return normal;
+    }
+}

@@ -1,0 +1,21 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+out/
+
+# run-paper dev servers
+run/
+
+# OS
+.DS_Store
+.harness-cache/
+.claude/worktrees/
+
+# Eclipse/VS Code Java output
+bin/

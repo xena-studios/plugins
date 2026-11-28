@@ -1,0 +1,108 @@
+---
+// One page per kind of syntax, as Skript's docs have: a sidebar with the categories and every entry's name, a
+// search with filters across the top, and every element of the kind as a card. Anchors are the element's slug,
+// so links can point at one element.
+import Base from "../../layouts/Base.astro";
+import SyntaxNav from "../../components/syntax/SyntaxNav.astro";
+import SearchBar from "../../components/syntax/SearchBar.astro";
+import Entry from "../../components/syntax/Entry.astro";
+import Attribution from "../../components/syntax/Attribution.astro";
+import { categories, sinceOptions, syntax, type Category } from "../../lib/syntax";
+
+export function getStaticPaths() {
+  return categories.map((category) => ({ params: { category: category.path }, props: { category } }));
+}
+
+const { category } = Astro.props as { category: Category };
+const items =
+  category.kind === "type"
+    ? syntax.types.map((item) => ({ kind: "type" as const, item }))
+    : category.kind === "function"
+      ? syntax.functions.map((item) => ({ kind: "function" as const, item }))
+      : syntax.elements.filter((e) => e.kind === category.kind).map((item) => ({ kind: "element" as const, item }));
+const noun = category.label.toLowerCase();
+const one = noun.replace(/s$/, "");
+const counted = (n: number) => `${n} ${n === 1 ? one : noun}`;
+---
+<Base
+  title={`${category.label}: NeoSkript syntax`}
+  description={`Every one of NeoSkript's ${category.count} ${noun}, with patterns, descriptions and examples. ${category.blurb}`}
+  path={`/syntax/${category.path}/`}
+>
+  <div class="ref">
+    <SyntaxNav current={category.path} names={items.map(({ item }) => ({ slug: item.slug, name: item.name }))} />
+
+    <div class="main" data-noun={noun} data-one={one} data-category={category.path}>
+      <SearchBar current={category.path} versions={sinceOptions(items.map(({ item }) => item))} count={counted(items.length)} placeholder={`Search ${noun}: name, id or pattern`} />
+
+      <header class="head">
+        <h1>{category.label}</h1>
+        <p class="lead">{category.blurb}</p>
+        {category.kind === "structure" && (
+          <p class="note">
+            Event triggers, commands, functions, options, variables and aliases are read by NeoSkript's script parser
+            itself rather than registered as syntax, so they aren't in the registry this page is made from.
+          </p>
+        )}
+      </header>
+
+      <div class="entries">
+        {items.map((props) => <Entry {...props} category={noun} />)}
+        <p class="empty" hidden>No {noun} match. <a href="/syntax/" id="search-all">Search all syntax</a></p>
+      </div>
+      <Attribution />
+    </div>
+  </div>
+</Base>
+
+<script>
+  import "../../scripts/syntax-filter";
+</script>
+
+<style>
+  .ref {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+  .main {
+    min-width: 0;
+    max-width: 64rem;
+    padding: 1.5rem clamp(1rem, 0.4rem + 3vw, 3rem) clamp(4rem, 2.5rem + 5vw, 7rem);
+  }
+  .head {
+    padding-block: 1.5rem 1.5rem;
+  }
+  h1 {
+    font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem);
+    letter-spacing: -0.035em;
+  }
+  .lead {
+    margin-top: 0.75rem;
+  }
+  .note {
+    margin-top: 1rem;
+    max-width: 62ch;
+    color: var(--muted);
+    font-size: 0.9375rem;
+  }
+  .entries {
+    margin-bottom: 2.5rem;
+  }
+  .empty {
+    padding: 2rem 1.25rem;
+    border: 1px dashed var(--rule);
+    border-radius: 4px;
+    color: var(--muted);
+  }
+  .empty a {
+    color: var(--text);
+  }
+  @media (max-width: 60rem) {
+    .ref {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .main {
+      padding-top: 1rem;
+    }
+  }
+</style>

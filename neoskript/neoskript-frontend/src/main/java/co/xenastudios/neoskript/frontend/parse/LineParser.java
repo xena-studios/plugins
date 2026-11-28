@@ -1,0 +1,2586 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.frontend.parse;
+
+import co.xenastudios.neoskript.frontend.source.Text;
+import co.xenastudios.neoskript.frontend.pattern.CompiledPattern;
+import co.xenastudios.neoskript.frontend.pattern.MatchResult;
+import co.xenastudios.neoskript.frontend.pattern.PatternIndex;
+import co.xenastudios.neoskript.frontend.pattern.PlaceholderResolver;
+import co.xenastudios.neoskript.frontend.pattern.PlaceholderSpec;
+import co.xenastudios.neoskript.frontend.registry.FunctionInfo;
+import co.xenastudios.neoskript.frontend.registry.RegexRole;
+import co.xenastudios.neoskript.frontend.registry.SyntaxInfo;
+import co.xenastudios.neoskript.frontend.registry.SyntaxKind;
+import co.xenastudios.neoskript.frontend.registry.SyntaxRegistry;
+import co.xenastudios.neoskript.frontend.registry.TypeInfo;
+import co.xenastudios.neoskript.frontend.registry.TypeRef;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+/**
+ * Parses one line: its statement, and every expression in it. Results are memoized by span and what's
+ * expected there, so trying many patterns never parses the same sub-expression twice.
+ *
+ * <p>An expression is tried as, in order: a parenthesized expression, a literal (string, number, boolean,
+ * timespan, time, or a closed-set literal of an expected type), a variable, a function call, a registered
+ * expression, a list, and finally an unresolved word literal for types the frontend can't list.
+ */
+final class LineParser {
+
+    private static final Object IN_PROGRESS = new Object();
+    private static final Object FAILED = new Object();
+    // \p{N} spelled out as its three categories: TeaVM (the browser parser) has no \p{N}.
+    private static final Pattern FUNCTION_NAME = Pattern.compile("[\\p{L}_][\\p{L}\\p{Nd}\\p{Nl}\\p{No}_]*");
+    /** Words with a bracketed part first, as in {@code (first element of X)'s tag contents}. */
+    private static final Pattern BRACKETED_WORDS = Pattern.compile("\\([\\p{L}\\p{Nd}' ()\\-+*/^.]*");
+
+    private final ParserContext context;
+    private final SyntaxRegistry registry;
+    /** The event values the line can use, or {@code null} for any. Fixed for the line, so the memo holds. */
+    private final co.xenastudios.neoskript.frontend.registry.EventValues.Scope eventScope;
+    private boolean refusedEventValues;
+    private boolean refusedSkriptValues;
+    /** Whether an event value refused was written as words a value can be read from: not 'the' or 'event-' ones. */
+    private boolean refusedWords;
+    private final String input;
+    private final String lowerInput;
+    private final Map<Key, Object> memo = new HashMap<>();
+    /** Whether syntax that only works in other events is taken too, once nothing else reads the text. */
+    private boolean anyEvent;
+    /** What was parsed while code had to stand without unresolved words, kept apart from the rest. */
+    private final Map<Key, Object> strictMemo = new HashMap<>();
+    /** Whether an outer parse is in its first, strict pass: nested ones then stay strict too. */
+    private boolean strictOuter;
+    /** How many times a placeholder was refused for starting inside a token like {@code arg-1}. */
+    private int tokenSplits;
+    /** How many times code in a regex part was turned down for leaning on unresolved words. */
+    private int unresolvedCode;
+    private String functionProblem;
+    private String problem;
+    /** The first problem with code in a text's {@code %...%} while a function's argument is parsed. */
+    private String embeddedProblem;
+    /** The first error for experimental syntax the script can't use, which Skript reports above others. */
+    private String experimentProblem;
+    /** Spans that matched experimental syntax the script can't use: as in Skript, they aren't words to resolve. */
+    private final java.util.Set<Long> experimentalSpans = new java.util.HashSet<>();
+    /** Per kind, the unindexed patterns whose required literals all occur somewhere in the line. */
+    private final Map<SyntaxKind, List<PatternIndex.Entry<SyntaxRegistry.Candidate>>> viableUnindexed =
+            new EnumMap<>(SyntaxKind.class);
+    /** Per kind, whether each pattern (by index order) could match somewhere in the line; null = unknown. */
+    private final Map<SyntaxKind, Boolean[]> viable = new EnumMap<>(SyntaxKind.class);
+
+    /**
+     * A memo key. {@code what} is a kind or an interned {@link Expected}, so it's compared by identity. A parse that
+     * takes syntax for other events too ({@code anyEvent}) is kept apart, so a later parse doesn't reuse its reading.
+     */
+    private record Key(int start, int end, Object what, boolean anyEvent) {
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof Key key && key.start == start && key.end == end && key.what == what
+                    && key.anyEvent == anyEvent;
+        }
+
+        @Override
+        public int hashCode() {
+            return ((start * 31 + end) * 31 + System.identityHashCode(what)) * 2 + (anyEvent ? 1 : 0);
+        }
+    }
+
+    /** Whether variables are held to their type hints; off to find which one is wrong after a line fails. */
+    private boolean checkHints = true;
+
+    LineParser(ParserContext context, String input, boolean checkHints) {
+        this(context, input);
+        this.checkHints = checkHints;
+    }
+
+    LineParser(ParserContext context, String input) {
+        this.context = context;
+        this.registry = context.registry();
+        this.eventScope = context.eventScope();
+        this.input = input;
+        this.lowerInput = Text.lower(input);
+    }
+
+    String input() {
+        return input;
+    }
+
+    private int steps;
+
+    /** Checks now and then that the line hasn't run out of time: see {@link ParserContext#startLine}. */
+    private void spend() {
+        if ((++steps & 255) == 0) {
+            context.checkTime();
+        }
+    }
+
+    /** Thrown when a line takes longer to read than {@link ParserContext#LINE_TIME_LIMIT_NANOS}. */
+    static final class TooComplex extends RuntimeException {
+        TooComplex() {
+            super(TOO_COMPLEX, null, false, false);
+        }
+    }
+
+    /** The error for a line that took too long to read. */
+    static final String TOO_COMPLEX = "This line is too complex to be understood. Split it into shorter lines";
+
+    // ---------------------------------------------------------------- statements and other syntax
+
+    ParsedSyntax effect(int start, int end) {
+        return syntax(SyntaxKind.EFFECT, start, end, false);
+    }
+
+    ParsedSyntax condition(int start, int end) {
+        return syntax(SyntaxKind.CONDITION, start, end, false);
+    }
+
+    ParsedSyntax section(int start, int end) {
+        return syntax(SyntaxKind.SECTION, start, end, false);
+    }
+
+    /** Matches an event header. Everything in it has to be a literal, as in Skript. */
+    ParsedSyntax event(int start, int end) {
+        return syntax(SyntaxKind.EVENT, start, end, true);
+    }
+
+    ParsedSyntax structure(int start, int end) {
+        return syntax(SyntaxKind.STRUCTURE, start, end, false);
+    }
+
+    /** The whole of {@code [start, end)} as a call to a known function, or {@code null}. */
+    Expr.FunctionCall call(int start, int end) {
+        int[] span = trim(start, end);
+        Object result = memoized(span[0], span[1], "call", () -> functionCall(span[0], span[1], false));
+        return result instanceof Expr.FunctionCall call ? call : null;
+    }
+
+    private ParsedSyntax syntax(SyntaxKind kind, int start, int end, boolean literalOnly) {
+        int[] span = trim(start, end);
+        Object result = memoized(span[0], span[1], kind, () -> matchSyntax(kind, span[0], span[1], literalOnly, null));
+        return result instanceof ParsedSyntax syntax ? syntax : null;
+    }
+
+    /**
+     * Matches the text as one of {@code kind}. Placeholders can't start inside a token like {@code arg-1}
+     * ({@code arg-1 * arg-2} isn't {@code arg - (1 * arg-2)}), unless nothing parses otherwise.
+     */
+    private Object matchSyntax(SyntaxKind kind, int start, int end, boolean literalOnly, Expected expected) {
+        if (start >= end) {
+            return null;
+        }
+        int rejected = tokenSplits;
+        int leaning = unresolvedCode;
+        // First, conditions and code inside the syntax may not lean on unresolved words, so 'assert X is 2 to
+        // fail' is the assertion of 'X is 2' failing, not of 'X is <2 to fail>'; only if nothing else works may they.
+        // Inside an outer strict pass, nested syntax stays strict, so a split like 'set whether X is going to explode
+        // to true' isn't taken with its code leaning on unresolved words when another split needs none.
+        boolean outer = strictOuter;
+        strictOuter = true;
+        Object result;
+        try {
+            result = matchSyntax(kind, start, end, literalOnly, expected, false, true);
+        } finally {
+            strictOuter = outer;
+        }
+        if (result == null && unresolvedCode != leaning && !outer) {
+            result = matchSyntax(kind, start, end, literalOnly, expected, false, false);
+        }
+        return result != null || tokenSplits == rejected ? result
+                : matchSyntax(kind, start, end, literalOnly, expected, true, false);
+    }
+
+    private Object matchSyntax(SyntaxKind kind, int start, int end, boolean literalOnly, Expected expected,
+            boolean splitTokens, boolean strictCode) {
+        String text = input.substring(start, end);
+        String lower = lowerInput.substring(start, end);
+        PatternIndex<SyntaxRegistry.Candidate> index = registry.index(kind);
+        Object fallback = null;
+        int fallbackUnresolved = Integer.MAX_VALUE;
+        // A type property turned down for its values' type, written in full: then a reading leaning on unresolved
+        // words isn't taken instead, as Skript's error for the property is the line's.
+        boolean propertyRefused = false;
+        // Whether syntax that only works in other events matched, and was passed over.
+        boolean otherEvents = false;
+        List<PatternIndex.Entry<SyntaxRegistry.Candidate>> indexed = new ArrayList<>();
+        for (PatternIndex.Entry<SyntaxRegistry.Candidate> entry : index.indexed(text)) {
+            if (isViable(kind, entry)) {
+                indexed.add(entry);
+            }
+        }
+        for (PatternIndex.Entry<SyntaxRegistry.Candidate> entry : PatternIndex.merge(indexed, viableUnindexed(kind))) {
+            SyntaxRegistry.Candidate candidate = entry.owner();
+            SyntaxInfo syntax = candidate.syntax();
+            if (expected != null && !returnTypeFits(syntax, expected)) {
+                continue;
+            }
+            // A kind of entity alone is the event's entity only where an entity type can't go.
+            // ('delete pig' too: a literal can't be changed.)
+            if (syntax.regexRoles().contains(RegexRole.BARE_ENTITY) && !bareEntityFits(expected)) {
+                continue;
+            }
+            CompiledPattern pattern = syntax.patterns().get(candidate.pattern());
+            if (!pattern.couldMatch(lower)) {
+                continue;
+            }
+            // First without placeholders that lean on unresolved words, so a split that needs none wins over an
+            // earlier one that does: 'draw X over 5 seconds at test-location' isn't 'draw X <over (5 seconds at
+            // test) - location>'. Only if a placeholder was turned down for them is it tried again with them.
+            boolean[] leaned = new boolean[1];
+            MatchResult match = pattern.match(input, start, end,
+                    resolver(syntax, literalOnly, splitTokens, strictCode, leaned));
+            if (match == null && leaned[0]) {
+                match = pattern.match(input, start, end, resolver(syntax, literalOnly, splitTokens, strictCode, null));
+            }
+            if (match == null) {
+                continue;
+            }
+            ParsedSyntax parsed = new ParsedSyntax(syntax, candidate.pattern(), match);
+            // Syntax that only works in other events is tried last, as Skript's fails to set up there and Skript
+            // tries the next: 'the result' in a placeholder isn't the smelted item.
+            if (eventScope != null && !anyEvent && !eventScope.allowsSyntax(syntax, candidate.pattern())) {
+                otherEvents = true;
+                continue;
+            }
+            // An event value the code can't have isn't one, so another reading is tried, as Skript's fails to
+            // initialize: 'amount of slots of {_inv}' in 'on load' is the inventory's number of slots.
+            if (eventScope != null && hasTypeRole(syntax) && !eventValueAllowed(parsed, text)) {
+                // Skript's event value expression fails to set up, with its error, where Skript has one for it.
+                String missing = skriptEventValue(parsed, text) ? missingEventValue(parsed, text) : null;
+                if (missing != null) {
+                    problem(missing);
+                }
+                refusedEventValues = true;
+                refusedSkriptValues |= skriptEventValue(parsed, text);
+                String written = Text.lower(text.strip());
+                refusedWords |= !written.startsWith("the ") && !written.startsWith("event-");
+                continue;
+            }
+            if (eventScope != null && !leftOutAllowed(syntax, pattern, match)) {
+                refusedEventValues = true;
+                refusedSkriptValues = true;
+                continue;
+            }
+            // A type property of values whose type can't have it isn't one, with Skript's error for it.
+            String unpropertied = propertyProblem(parsed);
+            if (unpropertied != null) {
+                problem(unpropertied);
+                if (!hasUnresolved(parsed)) {
+                    propertyRefused = true;
+                    // Of those, Skript's error is for the one taking the most: 'name of 5 + 1' is of '5 + 1'.
+                    if (propertyProblem == null || start < propertySpan[0] || start == propertySpan[0] && end > propertySpan[1]) {
+                        propertyProblem = unpropertied;
+                        propertySpan[0] = start;
+                        propertySpan[1] = end;
+                    }
+                    propertyRefusals.add(start);
+                }
+                continue;
+            }
+            // Words no type reads can't be an operand, as Skript's arithmetic can't convert its unparsed literal to
+            // any operation's type and fails to set up.
+            // Nor can a condition's or expression's: Skript's elements can't read text no type takes and fail to set
+            // up, with no error of their own ('clicked block is tagged as "minecraft:all_signs"' is the tag's error;
+            // 'assert X contains Y with "..."' isn't X containing 'Y with "..."'). Effects keep it, for their errors.
+            if (kind != SyntaxKind.EFFECT && kind != SyntaxKind.SECTION && parsed.match().values().stream()
+                    .anyMatch(value -> value instanceof Expr.Unresolved words && !words.verified()
+                            && !Literals.isWords(words.text()))) {
+                continue;
+            }
+            if (syntax.id().equals("ExprArithmetic") && parsed.match().values().stream()
+                    .anyMatch(value -> value instanceof Expr.Unresolved words && !words.verified() && !anyLiteral(words.text()))) {
+                continue;
+            }
+            if (syntax.id().equals("ExprArithmetic") && !arithmeticOperands(parsed)) {
+                arithmeticProblem(parsed);
+                continue;
+            }
+            // A for loop's key and value go into variables, as Skript's refuses anything else: 'loop all players
+            // in world "world"' is a loop over those players.
+            if (syntax.id().equals("SecFor") && !parsed.match().values().subList(0, parsed.match().values().size() - 1)
+                    .stream().allMatch(Expr.Variable.class::isInstance)) {
+                continue;
+            }
+            // 'past X' only for what can have that state, as Skript's init refuses the rest: 'future xp level - past exp
+            // level' is the difference of two levels. (Which event values have one is for the compiler to say.)
+            if (syntax.id().equals("ExprTimeState") && parsed.match().values().getFirst() instanceof Expr timed
+                    && !mayHaveTimeState(timed)) {
+                // Skript's init first refuses any time state after a wait; else it names the expression as it writes it.
+                boolean future = candidate.pattern() >= 2;
+                problem(() -> {
+                    if (context.delay() == co.xenastudios.neoskript.frontend.registry.DelayState.DELAYED) {
+                        return "Cannot use time states after the event has already passed";
+                    }
+                    String message = (timed instanceof Expr.Syntax inner ? described(inner.syntax(),
+                            input.substring(timed.start(), timed.end())) : input.substring(timed.start(), timed.end()).strip())
+                            + " does not have a " + (future ? "future" : "past") + " state";
+                    // Skript sets the expression up first: if it can't be used here, that's the error.
+                    causes.put(message, timed);
+                    return message;
+                }, SEMANTIC_ERROR);
+                continue;
+            }
+            // A direction after a direction word is another one written out, as Skript's init refuses anything else:
+            // 'size of blocks 3 below location below {_l}' isn't '(size of ...) below {_l}'.
+            if (syntax.id().equals("ExprDirection") && candidate.pattern() == 0 && parsed.match().values().size() > 1
+                    && parsed.match().values().get(1) instanceof Expr next
+                    && !(next instanceof Expr.Syntax direction && direction.syntax().syntax().id().equals("ExprDirection")
+                            && direction.syntax().pattern() == 0)) {
+                continue;
+            }
+            // Excluding values from one value isn't, as Skript's init refuses it: 'size of {_l::*} except 5' is the
+            // size of the list without 5.
+            if (syntax.id().equals("ExprExcept") && parsed.match().values().getFirst() instanceof Expr source
+                    && !(source instanceof Expr.ListOf) && Plurality.single(source, registry)) {
+                problem("Must provide a list containing more than one object to exclude objects from.");
+                continue;
+            }
+            // An inventory of items in an inventory isn't one, as Skript's init refuses it (its issue 6290): 'items in
+            // the player's inventory' are the items.
+            if (syntax.id().equals("ExprInventory") && parsed.match().values().getFirst() instanceof Expr.Syntax holders
+                    && holders.syntax().syntax().id().equals("ExprItemsIn")) {
+                continue;
+            }
+            // 'transformed' only of what may be several values, as Skript's init refuses one, with no error of its own.
+            if (syntax.id().equals("ExprTransform") && parsed.match().values().getFirst() instanceof Expr source
+                    && !(source instanceof Expr.ListOf) && Plurality.single(source, registry)) {
+                continue;
+            }
+            // 'recursive X' only for what can give nested lists, as Skript's init refuses the rest: 'recursive size of
+            // {_l::*}' is the list's recursive size.
+            if (syntax.id().equals("ExprRecursive") && parsed.match().values().getFirst() instanceof Expr nested
+                    && !nestable(nested)) {
+                problem(input.substring(nested.start(), nested.end()).strip() + " does not support nested structures.");
+                continue;
+            }
+            // Indices and a recursive size only of a list variable, as Skript's init refuses anything else, so the
+            // parser tries the next way to read the line: '(indices of {_n::*}, size of {_n::*})' is two values, the
+            // indices and the size, not the indices of a list of both (issue #33).
+            String listOnly = listOnlyProblem(syntax.id(), parsed);
+            if (listOnly != null) {
+                problem(listOnly);
+                continue;
+            }
+            // 'all colours' only for types whose values can be listed; 'all players' is something else's.
+            if (syntax.id().equals("ExprSets") && !parsed.match().regexValues().isEmpty()
+                    && !(parsed.match().regexValues().getFirst() instanceof TypeRef ref && registry.isEnumerable(ref.type().id())
+                            && (candidate.pattern() == 0 || ref.plural()))) {
+                continue;
+            }
+            // Positions or indices in a list need a list, and indices one with indices, as Skript's init refuses:
+            // '(index of "o" in {_t}, last index of "o" in {_t})' is two positions in a text.
+            if (syntax.id().equals("ExprIndicesOfValue") && candidate.pattern() > 0
+                    && parsed.match().values().get(1) instanceof Expr haystack) {
+                String words = input.substring(haystack.start(), haystack.end()).strip();
+                if (Plurality.single(haystack, registry)) {
+                    problem("'" + words + "' can only ever have one value at most, thus the 'indices of x in"
+                            + " list' expression has no effect.");
+                    continue;
+                }
+                if (candidate.pattern() == 2 && !(haystack instanceof Expr.Variable || haystack instanceof Expr.Syntax
+                        || haystack instanceof Expr.FunctionCall)) {
+                    problem("'" + words + "' is not a keyed expression. You can only get the indices of a keyed"
+                            + " expression.");
+                    continue;
+                }
+            }
+            // Filtering one value isn't filtering, as Skript's filter refuses: '"1" parsed as "%integer%" where [...]'.
+            if (syntax.id().equals("ExprFilter") && parsed.match().values().getFirst() instanceof Expr filtered
+                    && Plurality.single(filtered, registry)) {
+                continue;
+            }
+            // Arithmetic with no operation for its operands' types isn't, as Skript's init refuses it: '{_l} * 1 second'.
+            List<String> arithmetic = syntax.id().equals("ExprArithmetic") ? arithmeticTypes(parsed) : null;
+            if (arithmetic != null && arithmetic.isEmpty()) {
+                // With Skript's error when both types are known: 'division can't be performed on a text component
+                // and an integer'.
+                arithmeticProblem(parsed);
+                continue;
+            }
+            Object result = parsed;
+            String type = expected == null ? null : returnType(parsed);
+            if (expected != null && arithmetic != null && !expected.anything() && !expected.literalOnly()
+                    && arithmetic.stream().noneMatch(each -> expected.accepts(each, registry))) {
+                // Arithmetic whose values can't be any type wanted can't be converted to one: Skript then tries
+                // nothing else here. 'health of {_e} / max health of {_e}' is the health divided.
+                if (!hasUnresolved(parsed)) {
+                    problem(text.strip() + " is " + notOfType(expected), NOT_AN_EXPRESSION);
+                    break;
+                }
+                continue;
+            }
+            if (expected != null && !expected.accepts(type, registry)) {
+                // An expression of any type that turns out not to be one wanted: Skript parses it, then can't
+                // convert it ('the clicked block is not a living entity'). An event value is one of any type
+                // written 'event-x'; a bare entity's name is Skript's entity expression, only ever an entity.
+                boolean anyType = registry.isAnyTyped(syntax.id()) || (hasTypeRole(syntax)
+                        ? Text.lower(text.strip()).replaceFirst("^the ", "").startsWith("event-")
+                        : SyntaxRegistry.OBJECT.equals(syntax.returnType()));
+                if (anyType && !expected.literalOnly() && !expected.types().isEmpty() && !hasUnresolved(parsed)) {
+                    problem(described(parsed, text) + " is " + notOfType(expected), NOT_AN_EXPRESSION);
+                    // Skript takes the first expression that initialises, then can't convert it: no other is tried.
+                    break;
+                }
+                continue;
+            }
+            // Experimental syntax only exists for scripts using its experiment, as in Skript.
+            SyntaxRegistry.Experimental experimental = registry.experimental(syntax);
+            if (experimental != null && !context.using(experimental.experiment())) {
+                if (!experimental.silent()) {
+                    problem(experimental.error());
+                    if (experimentProblem == null) {
+                        experimentProblem = experimental.error();
+                    }
+                    experimentalSpans.add(span(start, end));
+                }
+                continue;
+            }
+            if (expected != null) {
+                result = new Expr.Syntax(start, end, parsed, type);
+                // Several values can't go where one does: 'test location' isn't the entities called 'test'.
+                if (expected.onlyOne() && Plurality.plural((Expr) result, registry)) {
+                    problem("'" + text.strip() + "' can only be a single " + typeNames(expected) + ", not more.");
+                    // As Skript checks this after taking the first expression that initialises, no other is tried:
+                    // '(first element of player's tool's block tags)' is the block tags of the first element.
+                    if (!hasUnresolved(parsed)) {
+                        break;
+                    }
+                    continue;
+                }
+            }
+            // A parse that leans on unresolved words only wins if nothing parses without them, as Skript
+            // only accepts real literals: 'loot context at test-location' isn't '(...test) - location'.
+            if (!hasUnresolved(parsed)) {
+                return result;
+            }
+            // Of those, the one leaning on the least text: 'last spawned firework is set' isn't a comparison with 'set'.
+            int unresolved = countUnresolved(parsed);
+            if (unresolved < fallbackUnresolved) {
+                fallback = result;
+                fallbackUnresolved = unresolved;
+            }
+        }
+        Object found = propertyRefused && fallbackUnresolved > 0 ? null : fallback;
+        if (otherEvents) {
+            // Nothing else reads it without leaning on unresolved words: the syntax for other events does, and gives
+            // its error when it's set up, as Skript keeps that error over words that aren't anything.
+            boolean before = anyEvent;
+            anyEvent = true;
+            try {
+                Object other = matchSyntax(kind, start, end, literalOnly, expected, splitTokens, strictCode);
+                if (other != null) {
+                    found = other;
+                }
+            } finally {
+                anyEvent = before;
+            }
+        }
+        return found;
+    }
+
+    /** Whether {@code expr} might have a past or future state: an event value, or syntax that may have one. */
+    private boolean mayHaveTimeState(Expr expr) {
+        return switch (expr) {
+            case Expr.Syntax syntax -> hasTypeRole(syntax.syntax().syntax())
+                    || registry.hasTimeStates(syntax.syntax().syntax().id())
+                    || syntax.syntax().syntax().id().equals("ExprTimeState");
+            case Expr.ListOf list -> list.items().stream().anyMatch(this::mayHaveTimeState);
+            default -> false;
+        };
+    }
+
+    /**
+     * Whether {@code expr} can give nested lists, as Skript's {@code returnNestedStructures}: a list variable, or the
+     * indices of one, keyed or not.
+     */
+    private static boolean nestable(Expr expr) {
+        return switch (expr) {
+            case Expr.Variable variable -> variable.list();
+            case Expr.Syntax syntax -> switch (syntax.syntax().syntax().id()) {
+                case "ExprIndices", "ExprKeyed", "ExprRecursive" -> syntax.syntax().match().values().getFirst() instanceof Expr inner
+                        && nestable(inner);
+                default -> false;
+            };
+            default -> false;
+        };
+    }
+
+    /**
+     * Whether {@code position} is just after a letter and a hyphen, as the {@code 1} of {@code arg-1}: there
+     * the hyphen is part of a word, not a minus sign.
+     */
+    private boolean splitsToken(int position) {
+        // ...or of a hyphenated word, as the 'value' of 'loop-value': only if nothing else parses is it split there.
+        return position >= 2 && position < input.length() && Character.isLetterOrDigit(input.charAt(position))
+                && input.charAt(position - 1) == '-' && Character.isLetter(input.charAt(position - 2));
+    }
+
+    /**
+     * Skript's error for a type property ({@code name of 5}) whose values can't have it, as its
+     * {@code PropertyBaseSyntax.getBadTypesErrorMessage}, or {@code null} if they can (or might). Of several, all
+     * must be able to; the error names the types that don't have it themselves.
+     */
+    private String propertyProblem(ParsedSyntax parsed) {
+        SyntaxRegistry.PropertySyntax property = registry.propertySyntax(parsed.syntax());
+        if (property == null || property.argument() >= parsed.match().values().size()
+                || !(parsed.match().values().get(property.argument()) instanceof Expr owners)) {
+            return null;
+        }
+        String name = property.property().apply(parsed.match().tags());
+        // 'amount of X and Y' counts them.
+        if (name == null || property.counts() && !parsed.match().hasTag("s") && !Plurality.single(owners, registry)) {
+            return null;
+        }
+        List<Expr> parts = owners instanceof Expr.ListOf list ? list.items() : List.of(owners);
+        boolean convertible = true;
+        boolean axes = name.length() == 1;
+        java.util.Set<String> lacking = new java.util.LinkedHashSet<>();
+        for (Expr part : parts) {
+            String type = propertyOwnerType(part);
+            if (type == null || part instanceof Expr.Unresolved || part instanceof Expr.ListOf) {
+                return null;
+            }
+            // A text written out is converted while loading, as Skript's literals are, which gives nothing here.
+            boolean itself = part instanceof Expr.Text text && text.embedded().isEmpty();
+            convertible &= itself ? registry.hasPropertyItself(type, name) : registry.hasProperty(type, name);
+            if (!registry.hasPropertyItself(type, name)) {
+                lacking.add(type);
+            }
+            axes &= itself ? registry.hasPropertyItself(type, AXES) : registry.hasProperty(type, AXES);
+        }
+        if (convertible) {
+            return null;
+        }
+        // Things with components, but none on this axis: 'w of vector(1, 2, 3)'.
+        if (axes) {
+            return "None of the types returned by " + expressionText(owners) + " have an "
+                    + Text.lower(name) + " axis component.";
+        }
+        List<String> names = new ArrayList<>();
+        for (String type : lacking) {
+            TypeInfo info = registry.type(type);
+            names.add(info == null ? type : Text.lower(info.name()));
+        }
+        String joined = names.size() <= 1 ? String.join("", names)
+                : String.join(", ", names.subList(0, names.size() - 1)) + " and " + names.getLast();
+        return "The expression '" + expressionText(owners) + "' returns the following types that do not have the "
+                + name + " property: " + joined;
+    }
+
+    /**
+     * The type of a type property's values: arithmetic on whole numbers is a whole number, and on numbers a
+     * number, as Skript's arithmetic returns; anything else its own type.
+     */
+    private static String propertyOwnerType(Expr expr) {
+        if (!(expr instanceof Expr.Syntax syntax) || !syntax.syntax().syntax().id().equals("ExprArithmetic")) {
+            return expr.type();
+        }
+        boolean whole = true;
+        for (Object operand : syntax.syntax().match().values()) {
+            String type = operand instanceof Expr inner ? propertyOwnerType(inner) : null;
+            if (!"integer".equals(type) && !"number".equals(type)) {
+                return expr.type();
+            }
+            whole &= type.equals("integer");
+        }
+        return whole ? "integer" : "number";
+    }
+
+    /**
+     * Skript's WXYZ property, whose syntax ({@code x of %objects%}) is each axis's property by its letter: what has
+     * it but not the axis gets Skript's error for that.
+     */
+    private static final String AXES = "wxyz component";
+
+    /** An expression as Skript's errors write it: without brackets around it, and a list in brackets. */
+    private String expressionText(Expr expr) {
+        String text = input.substring(expr.start(), expr.end()).strip();
+        while (text.length() > 1 && text.charAt(0) == '(' && Scanner.parenEnd(text, 0, text.length()) == text.length()) {
+            text = text.substring(1, text.length() - 1).strip();
+        }
+        return expr instanceof Expr.ListOf ? "(" + text + ")" : text;
+    }
+
+    /** Types arithmetic works on; an operand of another known type rules arithmetic out, as in Skript. */
+    private static final java.util.Set<String> ARITHMETIC_TYPES = java.util.Set.of(SyntaxRegistry.OBJECT, "number",
+            "integer", "long", "timespan", "date", "time", "timeperiod", "string", "vector", "location", "experience",
+            // Vault's money, when it's hooked.
+            "money");
+
+    /** Whether arithmetic's operands could be added: {@code the script named X + "y"} isn't arithmetic. */
+    private boolean arithmeticOperands(ParsedSyntax parsed) {
+        for (Object value : parsed.match().values()) {
+            if (value instanceof Expr expr && expr.type() != null && !ARITHMETIC_TYPES.contains(expr.type())
+                    && registry.type(expr.type()) != null) {
+                return false;
+            }
+            // A word only types without arithmetic have, like 'red': 'red-blue kob' isn't a subtraction.
+            if (value instanceof Expr.Unresolved unresolved && onlyNonArithmetic(Literals.normalize(unresolved.text()))) {
+                return false;
+            }
+        }
+        return wordsFitOperation(parsed);
+    }
+
+    /**
+     * Whether words against an operand of a known type can be read as a type an operation with it takes, as Skript's
+     * arithmetic converts its unparsed literal to those types and fails to set up when it can't: with SkBee, 'custom
+     * model data -1' isn't a data component type take away 1.
+     */
+    private boolean wordsFitOperation(ParsedSyntax parsed) {
+        List<Object> values = parsed.match().values();
+        if (parsed.pattern() >= SKRIPT_OPERATIONS.length || values.size() != 2) {
+            return true;
+        }
+        for (int side = 0; side < 2; side++) {
+            if (!(values.get(side) instanceof Expr.Unresolved words) || !words.verified()) {
+                continue;
+            }
+            Object other = values.get(1 - side);
+            String known = other instanceof Expr expr && !(expr instanceof Expr.Unresolved) && !(expr instanceof Expr.Variable)
+                    ? expr.type() : null;
+            if (known == null || known.equals(SyntaxRegistry.OBJECT) || registry.type(known) == null) {
+                continue;
+            }
+            List<String> wanted = new ArrayList<>();
+            for (String[] operation : SKRIPT_OPERATIONS[parsed.pattern()]) {
+                if (isOperand(known, operation[1 - side])) {
+                    wanted.add(operation[side]);
+                }
+            }
+            if (wanted.isEmpty()) {
+                continue;
+            }
+            String normalized = Literals.normalize(words.text());
+            boolean fits = false;
+            for (TypeInfo type : registry.types()) {
+                boolean reads = type.openLiterals() ? registry.isLiteral(type, words.text()) : type.literals().contains(normalized);
+                if (reads && wanted.stream().anyMatch(operand -> isOperand(type.id(), operand))) {
+                    fits = true;
+                    break;
+                }
+            }
+            if (!fits) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Skript's names of its operators, by {@code ExprArithmetic}'s pattern. */
+    private static final List<String> OPERATIONS = List.of("addition", "subtraction", "multiplication", "division",
+            "exponentiation");
+
+    /**
+     * Skript's error for arithmetic refused for its operands' types, when both are of a known type: {@code
+     * subtraction can't be performed on an entity and a block}.
+     */
+    private void arithmeticProblem(ParsedSyntax parsed) {
+        List<Object> values = parsed.match().values();
+        if (values.size() != 2 || parsed.pattern() >= OPERATIONS.size()) {
+            return;
+        }
+        // A literal operand is Skript's unparsed literal, of any type until converted: its errors with any type
+        // aren't given ('message / 2' says nothing).
+        if (values.stream().anyMatch(Expr.Literal.class::isInstance)) {
+            return;
+        }
+        String[] names = new String[2];
+        for (int i = 0; i < 2; i++) {
+            TypeInfo type = values.get(i) instanceof Expr expr && !(expr instanceof Expr.Unresolved) && expr.type() != null
+                    && !expr.type().equals(SyntaxRegistry.OBJECT) ? registry.type(expr.type()) : null;
+            if (type == null) {
+                return;
+            }
+            String name = Text.lower(type.name());
+            names[i] = ("aeiou".indexOf(name.charAt(0)) >= 0 ? "an " : "a ") + name;
+        }
+        problem(OPERATIONS.get(parsed.pattern()) + " can't be performed on " + names[0] + " and " + names[1]);
+    }
+
+    private boolean onlyNonArithmetic(String word) {
+        boolean named = false;
+        for (TypeInfo type : registry.types()) {
+            if (type.literals().contains(word)) {
+                if (ARITHMETIC_TYPES.contains(type.id())) {
+                    return false;
+                }
+                named = true;
+            }
+        }
+        return named;
+    }
+
+    /** {@code code}, unless {@code strict} and it leans on unresolved words; counts each one turned down. */
+    private ParsedSyntax strict(ParsedSyntax code, boolean strict) {
+        // Words a type's parser took, like 'wooden hoe', are as good as resolved.
+        if (strict && code != null && countUnresolved(code) > 0) {
+            unresolvedCode++;
+            return null;
+        }
+        return code;
+    }
+
+    private static boolean hasUnresolved(ParsedSyntax parsed) {
+        for (Object value : parsed.match().values()) {
+            if (value instanceof Expr expr && hasUnresolved(expr)) {
+                return true;
+            }
+        }
+        for (Object value : parsed.match().regexValues()) {
+            if ((value instanceof Expr expr && hasUnresolved(expr))
+                    || (value instanceof ParsedSyntax inner && hasUnresolved(inner))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** How much of the line {@code parsed} leaves to unresolved words. */
+    static int countUnresolved(ParsedSyntax parsed) {
+        int count = 0;
+        for (Object value : parsed.match().values()) {
+            if (value instanceof Expr expr) {
+                count += countUnresolved(expr);
+            }
+        }
+        for (Object value : parsed.match().regexValues()) {
+            if (value instanceof Expr expr) {
+                count += countUnresolved(expr);
+            } else if (value instanceof ParsedSyntax inner) {
+                count += countUnresolved(inner);
+            }
+        }
+        return count;
+    }
+
+    /** Skript's warnings about the lists in what was parsed of this line, added to the line's warnings. */
+    void listWarnings(Object parsed) {
+        listWarnings(input, parsed, warnings, registry, bracketedLists);
+    }
+
+    /** Skript's warnings about the lists in what was parsed of this line, added to {@code into}. */
+    void listWarnings(Object parsed, java.util.Set<String> into) {
+        listWarnings(input, parsed, into, registry, bracketedLists);
+    }
+
+    static void listWarnings(String input, Object parsed, java.util.Set<String> into) {
+        listWarnings(input, parsed, into, null, java.util.Set.of());
+    }
+
+    /**
+     * Lists read as all that's in a pair of brackets ('(1, 2)'), by identity. Skript's parser reads those again on
+     * their own and throws that parse's warnings away, so they don't warn; a list that is the argument of syntax in
+     * brackets ('(size of {_a::*}, 2)'), or in a pattern's own brackets, still does.
+     */
+    private final java.util.Set<Expr.ListOf> bracketedLists =
+            java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+    /**
+     * Skript's warnings about the lists in {@code parsed}, whose positions are in {@code input}: a list of more
+     * than one value joined only by commas, which is an 'and' list, and one with both 'and' and 'or'.
+     */
+    static void listWarnings(String input, Object parsed, java.util.Set<String> into, SyntaxRegistry registry) {
+        listWarnings(input, parsed, into, registry, java.util.Set.of());
+    }
+
+    private static void listWarnings(String input, Object parsed, java.util.Set<String> into, SyntaxRegistry registry,
+            java.util.Set<Expr.ListOf> bracketed) {
+        switch (parsed) {
+            case ParsedSyntax syntax -> {
+                // An addon's call whose arguments Skript parses as a function's (skript-reflect's Java calls): its
+                // own lists aren't warned about, but what's inside them is.
+                boolean quiet = registry != null && registry.quietLists(syntax.syntax().id());
+                for (Object value : syntax.match().values()) {
+                    if (quiet && value instanceof Expr.ListOf list) {
+                        list.items().forEach(item -> listWarnings(input, item, into, registry, bracketed));
+                    } else {
+                        listWarnings(input, value, into, registry, bracketed);
+                    }
+                }
+                syntax.match().regexValues().forEach(value -> listWarnings(input, value, into, registry, bracketed));
+            }
+            case Expr.Syntax syntax -> listWarnings(input, syntax.syntax(), into, registry, bracketed);
+            case Expr.ListOf list -> {
+                if (!bracketed.contains(list)) {
+                    listWarning(input, list, into, registry);
+                }
+                list.items().forEach(item -> listWarnings(input, item, into, registry, bracketed));
+            }
+            // Skript throws away the warnings parsing function arguments gives.
+            case Expr.FunctionCall call -> {}
+            case Expr.Text text -> text.embedded().forEach(part -> listWarnings(input, part, into, registry, bracketed));
+            case Expr.Variable variable ->
+                    variable.embedded().forEach(part -> listWarnings(input, part, into, registry, bracketed));
+            case null, default -> {}
+        }
+    }
+
+    /** Skript's {@code parseExpressionList} warnings for one list, from the words between its items. */
+    private static void listWarning(String input, Expr.ListOf list, java.util.Set<String> into,
+            SyntaxRegistry registry) {
+        List<Expr> items = list.items();
+        if (items.size() < 2 || list.end() > input.length()) {
+            return;
+        }
+        String text = input.substring(list.start(), list.end()).strip();
+        Boolean and = null;
+        for (int i = 1; i < items.size(); i++) {
+            int from = items.get(i - 1).end();
+            int to = items.get(i).start();
+            if (from > to || to > input.length()) {
+                return;
+            }
+            // Brackets around an item aren't part of the delimiter.
+            String delimiter = Text.lower(input.substring(from, to).replaceAll("^[\\s)]+|[\\s(]+$", ""));
+            if (delimiter.equals(",")) {
+                continue;
+            }
+            boolean or = !delimiter.endsWith("nor") && delimiter.endsWith("or");
+            if (and == null) {
+                and = !or;
+            } else if (and != !or) {
+                into.add(":List has multiple 'and' or 'or', will default to 'and'. Use brackets if you want to define"
+                        + " multiple lists. List: " + text);
+                and = true;
+            }
+        }
+        if (and == null && (registry == null || !registry.missingAndOrOff())) {
+            into.add("conjunction:List is missing 'and' or 'or', defaulting to 'and': " + text);
+        }
+    }
+
+    static int countUnresolved(Expr expr) {
+        return switch (expr) {
+            // Words a type's parser has accepted are as good as resolved.
+            case Expr.Unresolved unresolved -> unresolved.verified() ? 0 : unresolved.end() - unresolved.start();
+            case Expr.Syntax syntax -> countUnresolved(syntax.syntax());
+            case Expr.ListOf list -> list.items().stream().mapToInt(LineParser::countUnresolved).sum();
+            case Expr.FunctionCall call -> call.arguments().stream().filter(a -> a != null)
+                    .mapToInt(LineParser::countUnresolved).sum();
+            case Expr.Text text -> text.embedded().stream().mapToInt(LineParser::countUnresolved).sum();
+            case Expr.Variable variable -> variable.embedded().stream().mapToInt(LineParser::countUnresolved).sum();
+            case Expr.Literal literal -> 0;
+        };
+    }
+
+    private static boolean hasUnresolved(Expr expr) {
+        return switch (expr) {
+            case Expr.Unresolved unresolved -> true;
+            case Expr.Syntax syntax -> hasUnresolved(syntax.syntax());
+            case Expr.ListOf list -> list.items().stream().anyMatch(LineParser::hasUnresolved);
+            case Expr.FunctionCall call ->
+                    call.arguments().stream().anyMatch(a -> a != null && hasUnresolved(a));
+            case Expr.Text text -> text.embedded().stream().anyMatch(LineParser::hasUnresolved);
+            case Expr.Variable variable -> variable.embedded().stream().anyMatch(LineParser::hasUnresolved);
+            case Expr.Literal literal -> false;
+        };
+    }
+
+    private boolean isViable(SyntaxKind kind, PatternIndex.Entry<SyntaxRegistry.Candidate> entry) {
+        Boolean[] known = viable.computeIfAbsent(kind, k -> new Boolean[registry.index(k).size()]);
+        Boolean result = known[entry.order()];
+        if (result == null) {
+            result = entry.pattern().couldMatchWithin(lowerInput);
+            known[entry.order()] = result;
+        }
+        return result;
+    }
+
+    private List<PatternIndex.Entry<SyntaxRegistry.Candidate>> viableUnindexed(SyntaxKind kind) {
+        return viableUnindexed.computeIfAbsent(kind, k -> registry.index(k).unindexed().stream()
+                .filter(e -> isViable(k, e))
+                .toList());
+    }
+
+    private static final java.util.regex.Pattern LOOP_VALUE_NAME =
+            java.util.regex.Pattern.compile("(.+?)(?:-\\d+)?", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    private boolean isLoopValueName(String text) {
+        java.util.regex.Matcher name = LOOP_VALUE_NAME.matcher(text.strip());
+        if (!name.matches()) {
+            return false;
+        }
+        String word = Text.lower(name.group(1));
+        return word.equals("value") || word.equals("index") || word.equals("counter") || word.equals("iteration")
+                || registry.resolveType(word) != null || registry.isLoopValueName(word);
+    }
+
+    /** Whether an event value the line can't use was turned down: only then could parsing with any differ. */
+    boolean refusedEventValues() {
+        return refusedEventValues;
+    }
+
+    /**
+     * Whether one of those was an event value Skript also has an expression for, so its error is Skript's: a
+     * left-out placeholder's, {@code event-<type>}, or a kind of entity ({@code player's tool}), not {@code the
+     * potion effect type category}.
+     */
+    boolean refusedSkriptValues() {
+        return refusedSkriptValues;
+    }
+
+    /** Whether an event value the code can't have was turned down, written as words a value can be read from. */
+    boolean refusedWords() {
+        return refusedWords;
+    }
+
+    private boolean skriptEventValue(ParsedSyntax parsed, String text) {
+        if (text.strip().regionMatches(true, 0, "event-", 0, 6)) {
+            return true;
+        }
+        for (Object value : parsed.match().regexValues()) {
+            if (value instanceof TypeRef ref) {
+                return registry.isSubtype(ref.type().id(), "entity");
+            }
+        }
+        return false;
+    }
+
+    /** Whether the placeholders {@code match} left out can be, where the event's value may have to stand for them. */
+    private boolean leftOutAllowed(SyntaxInfo syntax, CompiledPattern pattern, MatchResult match) {
+        List<Object> values = match.values();
+        PlaceholderSpec[] specs = null;
+        for (int i = 0; i < values.size(); i++) {
+            if (values.get(i) == null) {
+                specs = specs != null ? specs : context.specs(pattern);
+                if (i < specs.length && specs[i] != null && !eventScope.allowsLeftOut(syntax, specs[i])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** Skript's error for the event value {@code parsed} the line can't use, or {@code null}. */
+    private String missingEventValue(ParsedSyntax parsed, String text) {
+        for (Object value : parsed.match().regexValues()) {
+            if (value instanceof TypeRef ref) {
+                return eventScope.missing(parsed.syntax(), ref, text.strip());
+            }
+        }
+        return null;
+    }
+
+    /** Whether {@code parsed}, if it's an event value, is one the line can use. */
+    private boolean eventValueAllowed(ParsedSyntax parsed, String text) {
+        for (Object value : parsed.match().regexValues()) {
+            if (value instanceof TypeRef ref) {
+                return eventScope.allows(parsed.syntax(), ref, text.strip());
+            }
+        }
+        return true;
+    }
+
+    private boolean bareEntityFits(Expected expected) {
+        if (expected == null) {
+            return false;
+        }
+        if (expected.anything()) {
+            return expected.changeable();
+        }
+        return !expected.accepts("entitytype", registry) && expected.types().stream().anyMatch(t ->
+                registry.isSubtype("entity", t.id()) || registry.isSubtype(t.id(), "entity")
+                        || registry.isConvertible("entity", t.id()));
+    }
+
+    private boolean returnTypeFits(SyntaxInfo syntax, Expected expected) {
+        // Expressions whose type comes from a regex (event-<type>) are checked after matching.
+        return syntax.returnType() == null || hasTypeRole(syntax) || registry.isAnyTyped(syntax.id())
+                || expected.accepts(syntax.returnType(), registry);
+    }
+
+    private static boolean hasTypeRole(SyntaxInfo syntax) {
+        return syntax.regexRoles().contains(RegexRole.TYPE) || syntax.regexRoles().contains(RegexRole.TYPE_OR_ENTITY)
+                || syntax.regexRoles().contains(RegexRole.BARE_ENTITY);
+    }
+
+    private String returnType(ParsedSyntax parsed) {
+        for (Object value : parsed.match().regexValues()) {
+            if (value instanceof TypeRef ref) {
+                return ref.type().id();
+            }
+        }
+        if (parsed.syntax().id().equals("ExprArithmetic") && parsed.match().values().size() == 2) {
+            return arithmeticType(parsed);
+        }
+        String type = parsed.syntax().returnType();
+        if (SyntaxRegistry.OBJECT.equals(type)) {
+            String typed = registry.typeOf(parsed.syntax(), parsed.pattern(), parsed.match());
+            if (typed != null) {
+                return typed;
+            }
+        }
+        Integer typedBy = ARGUMENT_TYPED.get(parsed.syntax().id());
+        if (typedBy != null && typedBy < parsed.match().values().size()
+                && parsed.match().values().get(typedBy) instanceof Expr argument
+                && !(argument instanceof Expr.Variable) && argument.type() != null) {
+            // '3 of stone': its argument's values, with an amount, as Skript's return type is its argument's. Words
+            // a type's parser took are of the first type the placeholder wants that takes them.
+            if (argument instanceof Expr.Unresolved words && words.verified()) {
+                PlaceholderSpec[] specs = context.specs(parsed.syntax().patterns().get(parsed.pattern()));
+                if (typedBy < specs.length && specs[typedBy] != null) {
+                    for (String name : specs[typedBy].types()) {
+                        TypeRef ref = registry.resolveType(name);
+                        if (ref != null && ref.type().openLiterals() && registry.isLiteral(ref.type(), words.text())) {
+                            return ref.type().id();
+                        }
+                    }
+                }
+            }
+            return argument.type();
+        }
+        if (CHOOSING.contains(parsed.syntax().id())) {
+            // 'X if C otherwise Y', 'X otherwise Y': one of its values, so their type when they share one.
+            String shared = null;
+            for (Object value : parsed.match().values()) {
+                String own = value instanceof Expr expr && !(expr instanceof Expr.Variable) ? expr.type() : null;
+                if (own == null || own.equals(SyntaxRegistry.OBJECT) || shared != null && !shared.equals(own)) {
+                    return SyntaxRegistry.OBJECT;
+                }
+                shared = own;
+            }
+            return shared == null ? SyntaxRegistry.OBJECT : shared;
+        }
+        return type == null ? SyntaxRegistry.OBJECT : type;
+    }
+
+    /**
+     * Skript's arithmetic operations (its DefaultOperations, the text module's and Vault's money), by operator as
+     * {@code ExprArithmetic}'s patterns have them: the left type, the right type and the result's type.
+     */
+    private static final String[][][] SKRIPT_OPERATIONS = {
+        {{"number", "number", "number"}, {"timespan", "timespan", "timespan"}, {"date", "timespan", "date"},
+            {"vector", "vector", "vector"}, {"string", "string", "string"}, {"textcomponent", "textcomponent", "textcomponent"},
+            {"textcomponent", "string", "textcomponent"}, {"string", "textcomponent", "textcomponent"},
+            {"money", "money", "money"}},
+        {{"number", "number", "number"}, {"timespan", "timespan", "timespan"}, {"date", "timespan", "date"},
+            {"vector", "vector", "vector"}, {"money", "money", "money"}},
+        {{"number", "number", "number"}, {"timespan", "number", "timespan"}, {"number", "timespan", "timespan"},
+            {"vector", "vector", "vector"}, {"vector", "number", "vector"}, {"number", "vector", "vector"},
+            {"money", "money", "money"}},
+        {{"number", "number", "number"}, {"timespan", "number", "timespan"}, {"timespan", "timespan", "number"},
+            {"vector", "vector", "vector"}, {"vector", "number", "vector"}, {"money", "money", "money"}},
+        {{"number", "number", "number"}},
+    };
+
+    /**
+     * The type of arithmetic's values, as Skript's {@code ExprArithmetic} works it out: one type if its operations can
+     * only give one, else any type.
+     */
+    private String arithmeticType(ParsedSyntax parsed) {
+        List<String> types = arithmeticTypes(parsed);
+        return types == null || types.size() != 1 ? SyntaxRegistry.OBJECT : types.getFirst();
+    }
+
+    /**
+     * The types arithmetic's values can be, as Skript's {@code ExprArithmetic} works them out (its return type and
+     * {@code knownReturnTypes}): of the operation for its operands' types; with one of any type, of the operations
+     * with the other's type; with both of any type, of any operation with the operator. Whole numbers added, taken
+     * away or multiplied are a whole number. Empty if no operation fits, {@code null} if it can't be told.
+     */
+    private List<String> arithmeticTypes(ParsedSyntax parsed) {
+        if (parsed.pattern() >= SKRIPT_OPERATIONS.length || parsed.match().values().size() != 2) {
+            return null;
+        }
+        String[] types = new String[2];
+        for (int i = 0; i < 2; i++) {
+            Object operand = parsed.match().values().get(i);
+            if (operand instanceof Expr.Unresolved) {
+                // Words are read as what the operation takes, so they say nothing yet.
+                return null;
+            }
+            String type = operand instanceof Expr expr ? expr.type() : null;
+            types[i] = type == null || registry.type(type) == null ? SyntaxRegistry.OBJECT : type;
+        }
+        boolean leftKnown = !types[0].equals(SyntaxRegistry.OBJECT);
+        boolean rightKnown = !types[1].equals(SyntaxRegistry.OBJECT);
+        List<String> results = new ArrayList<>();
+        for (String[] operation : SKRIPT_OPERATIONS[parsed.pattern()]) {
+            if (leftKnown && !isOperand(types[0], operation[0]) || rightKnown && !isOperand(types[1], operation[1])) {
+                continue;
+            }
+            String result = operation[2].equals("number") && parsed.pattern() < 3 && types[0].equals("integer")
+                    && types[1].equals("integer") ? "integer" : operation[2];
+            if (registry.type(result) != null && !results.contains(result)) {
+                results.add(result);
+            }
+            if (leftKnown && rightKnown) {
+                break;
+            }
+        }
+        return results;
+    }
+
+    /** Whether a value of {@code type} can be an operand of {@code wanted}: it is one, or converts to one. */
+    private boolean isOperand(String type, String wanted) {
+        return type.equals(wanted) || registry.isSubtype(type, wanted) || registry.isConvertible(type, wanted);
+    }
+
+    /** Expressions that give one of their arguments' values. */
+    private static final java.util.Set<String> CHOOSING = java.util.Set.of("ExprTernary", "ExprDefaultValue");
+
+    /** Expressions whose values are of the type of one of their arguments, by its index. */
+    private static final Map<String, Integer> ARGUMENT_TYPED = Map.of("ExprXOf", 1);
+
+    /**
+     * Resolves a pattern's placeholders and regexes. With {@code leaned} given, placeholders whose expression leans
+     * on unresolved words are turned down, and {@code leaned[0]} is set when one is.
+     */
+    private PlaceholderResolver resolver(SyntaxInfo syntax, boolean literalOnly, boolean splitTokens, boolean strictCode,
+            boolean[] leaned) {
+        return new PlaceholderResolver() {
+            @Override
+            public void step() {
+                spend();
+            }
+
+            @Override
+            public Object resolve(String text, int start, int end, PlaceholderSpec spec) {
+                spend();
+                if (!splitTokens && splitsToken(start)) {
+                    tokenSplits++;
+                    return null;
+                }
+                Expected expected = context.expected(spec);
+                Expr value = expression(start, end, literalOnly ? context.intern(expected.asLiteralOnly()) : expected);
+                // Words alone where any value goes are Skript's unparsed literal, which its parser takes at the first
+                // split it tries, as the placeholder's own reading: 'broadcast <the 1st element> in <{queue}>'.
+                if (leaned != null && value != null && countUnresolved(value) > 0
+                        && !(value instanceof Expr.Unresolved && expected.anything())) {
+                    leaned[0] = true;
+                    return null;
+                }
+                return value;
+            }
+
+            @Override
+            public boolean regexAfterRest(int index) {
+                RegexRole role = syntax.regexRole(index);
+                return role == RegexRole.TYPE || role == RegexRole.TYPE_OR_ENTITY;
+            }
+
+            @Override
+            public boolean unparsed(Object value) {
+                return value instanceof Expr.Unresolved words && !words.verified() && !anyLiteral(words.text());
+            }
+
+            @Override
+            public Object resolveRegex(String text, int start, int end, int index, java.util.regex.MatchResult match) {
+                return switch (syntax.regexRole(index)) {
+                    case ANY -> match;
+                    case CONDITION -> {
+                        ParsedSyntax condition = condition(start, end);
+                        // Skript's 'do if' sets up its effect, then its condition, failing with its own error.
+                        if (condition == null && syntax.id().equals("EffDoIf")) {
+                            problem("Can't understand this condition: " + input.substring(start, end).strip());
+                        }
+                        yield strict(condition, strictCode);
+                    }
+                    case EFFECT -> {
+                        ParsedSyntax effect = effect(start, end);
+                        yield effect != null ? strict(effect, strictCode) : call(start, end);
+                    }
+                    case EXPRESSION -> expression(start, end, Expected.OBJECTS);
+                    case TYPE -> {
+                        TypeRef ref = typeName(start, end);
+                        if (ref == null && eventScope != null && start >= 6
+                                && input.regionMatches(true, start - 6, "event-", 0, 6)) {
+                            // Skript's 'event-<words>' asks for a value named so when they name no type, which
+                            // no event has: its error, if nothing else reads the line.
+                            String unnamed = eventScope.unnamed(input.substring(start, end).strip());
+                            if (unnamed != null) {
+                                problem(unnamed);
+                            }
+                        }
+                        yield ref;
+                    }
+                    case TYPE_OR_ENTITY -> {
+                        TypeRef ref = typeName(start, end);
+                        TypeInfo entity = registry.type("entity");
+                        yield ref != null || entity == null || !registry.isEntityTypeLiteral(input.substring(start, end))
+                                ? ref : new TypeRef(entity, false);
+                    }
+                    case BARE_ENTITY -> {
+                        String words = input.substring(start, end);
+                        TypeInfo entity = registry.type("entity");
+                        if (words.regionMatches(true, 0, "a ", 0, 2) || words.regionMatches(true, 0, "an ", 0, 3)) {
+                            yield null;
+                        }
+                        yield entity != null && registry.isEntityTypeLiteral(words) && !registry.isItemTypeLiteral(words)
+                                ? new TypeRef(entity, false) : null;
+                    }
+                    case LOOP_VALUE -> isLoopValueName(text.substring(start, end)) ? match : null;
+                    case NOT_CONDITION -> condition(start, end) == null ? match : null;
+                    case CODE -> {
+                        Object code = condition(start, end);
+                        if (code == null) {
+                            code = effect(start, end);
+                        }
+                        yield code != null ? strict((ParsedSyntax) code, strictCode) : expression(start, end, Expected.OBJECTS);
+                    }
+                };
+            }
+        };
+    }
+
+    /**
+     * Whether some type's parser takes {@code words}, as Skript's {@code Classes.parse(words, Object.class)}. Its
+     * parsers don't take 'the': 'the stone' and 'the player' are nothing there, though 'a stone' is an item.
+     */
+    private boolean anyLiteral(String words) {
+        if (Text.lower(words.strip()).startsWith("the ")) {
+            return false;
+        }
+        if (context.isItemAlias(words)) {
+            return true;
+        }
+        String normalized = Literals.normalize(words);
+        for (TypeInfo type : registry.types()) {
+            if (type.openLiterals() ? registry.isLiteral(type, words) : type.literals().contains(normalized)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** A type name or entity name, as in {@code event-player} or {@code the zombie}. */
+    private TypeRef typeName(int start, int end) {
+        String name = Literals.normalize(input.substring(start, end));
+        TypeRef ref = registry.resolveType(name);
+        if (ref == null && registry.isEntityName(name)) {
+            TypeInfo entity = registry.type("entity");
+            return entity == null ? null : new TypeRef(entity, false);
+        }
+        return ref;
+    }
+
+    // ---------------------------------------------------------------- expressions
+
+    /** Parses {@code [start, end)} as what's expected there, or returns {@code null}. */
+    Expr expression(int start, int end, Expected expected) {
+        int[] span = trim(start, end);
+        Object result = memoized(span[0], span[1], expected, () -> parseExpression(span[0], span[1], expected));
+        return result instanceof Expr expr ? expr : null;
+    }
+
+    /**
+     * Skript's error for indices or a recursive size of something that isn't a list variable, or {@code null} if it
+     * is one: NeoSkript's compiler only works on list variables there, and Skript's init refuses most else.
+     */
+    private String listOnlyProblem(String id, ParsedSyntax parsed) {
+        boolean indices = id.equals("ExprIndices");
+        if (!indices && !id.equals("ExprAmount-recursive")) {
+            return null;
+        }
+        Object value = parsed.match().values().isEmpty() ? null : parsed.match().values().getFirst();
+        if (value instanceof Expr argument && (indices ? keyedSource(argument) : listVariable(argument))) {
+            return null;
+        }
+        // A recursive size of several list variables is all of theirs, as in Skript.
+        if (!indices && value instanceof Expr.ListOf several && several.and()
+                && several.items().stream().allMatch(item -> item instanceof Expr.Variable variable && variable.list())) {
+            return null;
+        }
+        if (indices) {
+            return "The indices expression may only be used with keyed expressions";
+        }
+        if (!(value instanceof Expr argument)) {
+            return null;
+        }
+        String written = input.substring(argument.start(), argument.end()).strip();
+        if (Plurality.single(argument, registry)) {
+            return "'" + written + "' can only ever have one value at most, thus the 'recursive size of ...' expression"
+                    + " is useless. Use '... exists' instead to find out whether the expression has a value.";
+        }
+        List<Expr> items = argument instanceof Expr.ListOf list ? list.items() : List.of(argument);
+        for (Expr item : items) {
+            if (!(item instanceof Expr.Variable)) {
+                return "Getting the recursive size of a list only applies to variables, thus the '"
+                        + input.substring(item.start(), item.end()).strip() + "' expression is useless.";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Whether {@code expr} gives its values' indices, as Skript's {@code KeyProviderExpression.canReturnKeys}: a list
+     * variable, {@code keyed} anything, a function call, or {@code recursive}, {@code filtered}, an element of, a
+     * value within or (with one value for each) {@code transformed} something that does.
+     */
+    private boolean keyedSource(Expr expr) {
+        return switch (expr) {
+            case Expr.Variable variable -> variable.list();
+            case Expr.FunctionCall call -> true;
+            case Expr.Syntax syntax -> {
+                List<Object> values = syntax.syntax().match().values();
+                Expr inner = values.isEmpty() || !(values.getFirst() instanceof Expr first) ? null : first;
+                yield switch (syntax.syntax().syntax().id()) {
+                    case "ExprKeyed" -> true;
+                    case "ExprRecursive", "ExprFilter", "ExprCast" -> inner != null && keyedSource(inner);
+                    case "ExprElement" -> values.getLast() instanceof Expr last && keyedSource(last);
+                    case "ExprTransform" -> inner != null && keyedSource(inner)
+                            && syntax.syntax().match().regexValues().getFirst() instanceof Expr mapping
+                            && Plurality.single(mapping, registry);
+                    default -> false;
+                };
+            }
+            default -> false;
+        };
+    }
+
+    /** Whether {@code expr} is a list variable, or {@code keyed} of one. */
+    private static boolean listVariable(Expr expr) {
+        if (expr instanceof Expr.Syntax keyed && keyed.syntax().syntax().id().equals("ExprKeyed")
+                && !keyed.syntax().match().values().isEmpty()
+                && keyed.syntax().match().values().getFirst() instanceof Expr inner) {
+            expr = inner;
+        }
+        return expr instanceof Expr.Variable variable && variable.list();
+    }
+
+    private Expr parseExpression(int start, int end, Expected expected) {
+        if (start >= end) {
+            return null;
+        }
+        // The best error found reading this text, as Skript's parse log for it keeps: an unparsed literal keeps it.
+        String[] frame = {null, "0"};
+        frames.push(frame);
+        Expr expr;
+        try {
+            expr = parseExpressionLogged(start, end, expected);
+        } finally {
+            frames.pop();
+        }
+        // Words read as a value only because a type's parser takes them ('stone') aren't, where reading them as an
+        // expression gave an error: Skript keeps that error ('player' where there's no player in the event).
+        if (expr instanceof Expr.Unresolved words && (!words.verified() || anyValueOnly(words, expected))
+                && frame[0] != null && expected.anything()) {
+            return new Expr.Unresolved(words.start(), words.end(), words.text(), false, frame[0], causes.get(frame[0]));
+        }
+        return expr;
+    }
+
+    /** Whether words are verified only because some type's parser takes them where any value goes. */
+    private boolean anyValueOnly(Expr.Unresolved words, Expected expected) {
+        return words.verified() && expected.anything() && !context.isItemAlias(words.text());
+    }
+
+    /** The problems found so far, to drop those found after: see {@link #restore}. */
+    private record Problems(String problem, int quality, String experiment, List<String[]> frames) {}
+
+    private Problems problems() {
+        List<String[]> copies = new ArrayList<>();
+        for (String[] frame : frames) {
+            copies.add(frame.clone());
+        }
+        return new Problems(problem, problemQuality, experimentProblem, copies);
+    }
+
+    private void restore(Problems problems) {
+        problem = problems.problem();
+        problemQuality = problems.quality();
+        experimentProblem = problems.experiment();
+        int i = 0;
+        for (String[] frame : frames) {
+            if (i < problems.frames().size()) {
+                frame[0] = problems.frames().get(i)[0];
+                frame[1] = problems.frames().get(i)[1];
+            }
+            i++;
+        }
+    }
+
+    /** The errors of the texts being read, innermost first: see {@link #parseExpression}. */
+    private final java.util.Deque<String[]> frames = new java.util.ArrayDeque<>();
+
+    private Expr parseExpressionLogged(int start, int end, Expected expected) {
+        int leaning = unresolvedCode;
+        char first = input.charAt(start);
+        char last = input.charAt(end - 1);
+        if (first == '\u201C' || first == '\u201D' || last == '\u201C' || last == '\u201D') {
+            // As Skript's parser refuses them where an expression starts or ends.
+            problem("Pretty quotes are not allowed, change to regular quotes (\")");
+            return null;
+        }
+        Expr expr = single(start, end, expected);
+        if (expr != null && !(expr instanceof Expr.Unresolved) && hasUnresolved(expr)) {
+            // Words a type's parser takes whole are that literal, not syntax leaning on unresolved words, as
+            // Skript's syntax can't take words it can't parse: 'baby normal-normal panda' isn't a subtraction.
+            Expr whole = verifiedLiteral(start, end, expected);
+            if (whole != null) {
+                expr = whole;
+            }
+        }
+        if (expr != null && expected.plural() && hasUnresolved(expr)) {
+            // Leaning on unresolved words loses to a list that doesn't: '1 or 0 or -1' isn't '(1 or 0 or) - 1'.
+            // Nor to one whose words are known literals: 'the block at the event-location and an oak sign'
+            // isn't '(the block at the event) - (location and an oak sign)'.
+            Expr list = list(start, end, expected);
+            if (list != null && (!hasUnresolved(list) || countUnresolved(list) < countUnresolved(expr))) {
+                expr = list;
+            }
+        }
+        if (expr == null && expected.plural()) {
+            // A literal that has 'and' in it, like 'diamond sword of unbreaking 3 and sharpness 10', is one value
+            // if a type's parser takes all of it, as in Skript.
+            expr = wholeLiteral(start, end, expected);
+        }
+        if (expr == null && expected.plural()) {
+            expr = list(start, end, expected);
+        }
+        if (expr == null) {
+            expr = unresolved(start, end, expected);
+        }
+        // (Not where a reading was only turned down for now for leaning on words: it's read again with them, first.)
+        if (expr == null && expected.anything() && !expected.literalOnly() && listItems == 0 && unresolvedCode == leaning
+                && !experimentalSpans.contains(span(start, end))
+                && !(input.charAt(start) == '(' && Scanner.parenEnd(input, start, end) == end)
+                && Scanner.listSeparators(input, start, end, new boolean[1]).isEmpty()) {
+            // Where only any value goes, Skript makes anything it can't read that isn't a list, or in brackets (read
+            // again on its own), an unparsed literal for the syntax to make sense of ('(first element of player's
+            // tool's block tags)'s tag contents'), keeping the best error found reading it.
+            expr = new Expr.Unresolved(start, end, input.substring(start, end), false);
+        }
+        if (expr != null && expected.changeable() && !isChangeable(expr)) {
+            return null;
+        }
+        if (expr != null && expected.onlyOne() && Plurality.plural(expr, registry)) {
+            // Several values where only one goes, as Skript's parser checks. A word that may yet be a value of
+            // the type ('dirt', not the entities called that) is still one.
+            Expr word = unresolved(start, end, expected);
+            if (word != null) {
+                return word;
+            }
+            problem("'" + input.substring(start, end) + "' can only be a single " + typeNames(expected) + ", not more.");
+            return null;
+        }
+        if (expr instanceof Expr.Variable variable && variable.list() && expected.mixed()) {
+            // Skript can't tell which of a placeholder's types a variable's values will be when only some take
+            // several, as in '%inventories/strings/numbered%', so a list variable there is an error.
+            problem("'" + input.substring(start, end) + "' can only be a single " + typeNames(expected) + ", not more.");
+            return null;
+        }
+        return expr;
+    }
+
+    /** {@code parsed}, written as {@code text}, as Skript's {@code toString} writes it in errors. */
+    private String described(ParsedSyntax parsed, String text) {
+        List<String> arguments = new ArrayList<>();
+        for (Object value : parsed.match().values()) {
+            arguments.add(value instanceof Expr.Syntax inner ? described(inner.syntax(), input.substring(inner.start(), inner.end()))
+                    : value instanceof Expr expr ? input.substring(expr.start(), expr.end()).strip() : null);
+        }
+        String described = registry.describe(parsed.syntax(), parsed.pattern(), parsed.match(), arguments);
+        return described != null ? described : text.strip();
+    }
+
+    /** Skript's {@code notOfType}: {@code not a loot table}, {@code neither a text nor a number}. */
+    private static String notOfType(Expected expected) {
+        List<TypeInfo> types = expected.types();
+        StringBuilder not = new StringBuilder(types.size() == 1 ? "not " : "neither ");
+        for (int i = 0; i < types.size(); i++) {
+            if (i > 0) {
+                not.append(i == types.size() - 1 ? " nor " : ", ");
+            }
+            String name = Text.lower(types.get(i).name());
+            not.append("aeiou".indexOf(name.charAt(0)) >= 0 ? "an " : "a ").append(name);
+        }
+        return not.toString();
+    }
+
+    /** The types expected, as Skript lists them in errors: {@code number, text or player}. */
+    private static String typeNames(Expected expected) {
+        List<TypeInfo> types = expected.types();
+        if (types.isEmpty()) {
+            return "object";
+        }
+        StringBuilder names = new StringBuilder();
+        for (int i = 0; i < types.size(); i++) {
+            if (i > 0) {
+                names.append(i == types.size() - 1 ? " or " : ", ");
+            }
+            names.append(Text.lower(types.get(i).name()));
+        }
+        return names.toString();
+    }
+
+    private Expr single(int start, int end, Expected expected) {
+        char first = input.charAt(start);
+        String text = input.substring(start, end);
+
+        if (first == '(' && Scanner.parenEnd(input, start, end) == end) {
+            // As Skript's parseExpressionList reads what's in brackets again on its own and returns without printing
+            // its log, the errors of what's in brackets are dropped when it isn't of a type wanted: '(the equippable
+            // component of {_item})' says nothing where an item component goes. Where any value goes, it's an
+            // unparsed literal that keeps them, unless no words may go there ('%~objects%'): then there's no unparsed
+            // literal, and 'indices of (recursive {_t})' says nothing either (issue #79).
+            Problems before = expected.anything() && !expected.changeable() ? null : problems();
+            Expr inner = expression(start + 1, end - 1, expected);
+            if (inner instanceof Expr.ListOf list) {
+                // A copy, so only this reading of the list is the bracketed one: see bracketedLists.
+                Expr.ListOf copy = new Expr.ListOf(list.start(), list.end(), list.items(), list.and(), list.type());
+                bracketedLists.add(copy);
+                return copy;
+            }
+            if (inner != null) {
+                return inner;
+            }
+            if (before != null) {
+                restore(before);
+            }
+        }
+        if (first == '"') {
+            Expr string = text(start, end, expected);
+            if (string != null) {
+                return string;
+            }
+        }
+        Expr literal = literal(start, end, text, expected);
+        if (literal != null) {
+            return literal;
+        }
+        if (expected.literalOnly()) {
+            return null;
+        }
+        if (first == '{' && Scanner.braceEnd(input, start, end, null) == end) {
+            Expr variable = variable(start, end);
+            return variable instanceof Expr.Variable v && !hintFits(v, expected) ? null : variable;
+        }
+        Expr call = functionCall(start, end, true);
+        if (call != null) {
+            return expected.accepts(call.type(), registry) ? call : null;
+        }
+        Object syntax = matchSyntax(SyntaxKind.EXPRESSION, start, end, false, expected);
+        return syntax instanceof Expr expr ? expr : null;
+    }
+
+    private Expr text(int start, int end, Expected expected) {
+        List<int[]> embedded = new ArrayList<>();
+        if (Scanner.stringEnd(input, start, end, embedded) != end) {
+            return null;
+        }
+        // Skript also reads world names from strings: world "world".
+        if (!expected.accepts("string", registry) && !expected.hasType("world")) {
+            // Skript parses it as text all the same, then says it's not what's wanted. (Code in it may not
+            // parse, which Skript's text then fails on instead, so only plain text is said to be.)
+            // Not where only a literal goes, which Skript reads without parsing an expression.
+            if (!expected.types().isEmpty() && embedded.isEmpty() && !expected.literalOnly()) {
+                problem(input.substring(start, end) + " is " + notOfType(expected), NOT_AN_EXPRESSION);
+            }
+            return null;
+        }
+        if (expected.literalOnly() && !embedded.isEmpty()) {
+            return null;
+        }
+        List<Expr> parts = new ArrayList<>();
+        for (int[] part : embedded) {
+            Expr expr = embedded(part[0], part[1]);
+            if (expr == null) {
+                return null;
+            }
+            parts.add(expr);
+        }
+        return new Expr.Text(start, end, parts);
+    }
+
+    /**
+     * The code in a text's or variable name's {@code %...%}. As Skript parses it as expressions only, a literal
+     * there isn't understood ({@code "%1%"}, {@code "%stone%"}), nor is a list with one, with Skript's errors.
+     */
+    private Expr embedded(int start, int end) {
+        Expr expr = expression(start, end, Expected.OBJECTS);
+        String code = input.substring(start, end);
+        if (expr == null || isLiteral(expr)) {
+            problem("Can't understand this expression: " + code);
+            if (embeddedProblem == null) {
+                embeddedProblem = "Can't understand this expression: " + code;
+            }
+            return null;
+        }
+        if (expr instanceof Expr.ListOf list && list.items().stream().anyMatch(LineParser::isLiteral)) {
+            Expr first = list.items().getFirst();
+            String firstText = input.substring(first.start(), first.end()).strip();
+            boolean commas = input.substring(first.end(), end).stripLeading().startsWith(",");
+            problem(!commas ? "Can't understand this expression: " + code
+                    : isLiteral(first) ? "Invalid brackets/variables/text in '" + firstText + ",'"
+                    : first instanceof Expr.Variable ? "Variables cannot be used here."
+                    : "Can't understand this expression: " + code);
+            return null;
+        }
+        return expr;
+    }
+
+    /** Whether an expression is a literal: written values, or words nothing but a type's parser reads. */
+    private static boolean isLiteral(Expr expr) {
+        return expr instanceof Expr.Literal || expr instanceof Expr.Unresolved;
+    }
+
+    private Expr literal(int start, int end, String text, Expected expected) {
+        String number = Literals.numberType(text);
+        if (number != null) {
+            return expected.accepts(number, registry) ? new Expr.Literal(start, end, number, text) : null;
+        }
+        if (Literals.isBoolean(text) && expected.accepts("boolean", registry)) {
+            return new Expr.Literal(start, end, "boolean", text);
+        }
+        if (Literals.isTimespan(text) && expected.accepts("timespan", registry)
+                && (!Literals.isBareUnit(text) || expected.hasType("timespan"))) {
+            return new Expr.Literal(start, end, "timespan", text);
+        }
+        if (Literals.isTime(text) && expected.accepts("time", registry)) {
+            return new Expr.Literal(start, end, "time", text);
+        }
+        String normalized = Literals.normalize(text);
+        TypeInfo named = null;
+        for (TypeInfo type : expected.types()) {
+            if (type.literals().contains(normalized)) {
+                if (named != null) {
+                    // A word several types have, like 'normal' (an environment and a panda gene): what it is
+                    // depends on what it's used with, so the compiler decides.
+                    return null;
+                }
+                named = type;
+            }
+        }
+        if (named != null) {
+            return new Expr.Literal(start, end, named.id(), text);
+        }
+        return specifiedLiteral(start, end, text, expected);
+    }
+
+    /**
+     * Skript's pattern for a literal with its type given ({@code SkriptParser.LITERAL_SPECIFICATION_PATTERN}): when the
+     * type isn't one, that's its error.
+     */
+    private static final java.util.regex.Pattern SKRIPT_SPECIFIED =
+            java.util.regex.Pattern.compile("[^,():/\"\\[\\]}{]+ \\(([\\w\\p{L} ]+)\\)");
+
+    /** A literal with its type given in parentheses, like {@code black (wolf variant)}. */
+    private Expr specifiedLiteral(int start, int end, String text, Expected expected) {
+        java.util.regex.Matcher skript = SKRIPT_SPECIFIED.matcher(text);
+        if (skript.matches()) {
+            // As Skript's parseSpecifiedLiteral: 'indices of (5)' is the words 'indices of' of a type '5'.
+            String named = skript.group(1).replaceFirst("(?i)^the ", "");
+            if (registry.resolveType(Literals.normalize(named)) == null) {
+                problem("A " + named + " is not a valid type.");
+                return null;
+            }
+        }
+        java.util.regex.Matcher matcher = Literals.SPECIFIED.matcher(text);
+        if (!matcher.matches()) {
+            return null;
+        }
+        TypeRef ref = registry.resolveType(Literals.normalize(matcher.group(2)));
+        if (ref == null) {
+            return null;
+        }
+        TypeInfo type = ref.type();
+        if (!expected.accepts(type.id(), registry)) {
+            // A narrower kind of the type named, where that's wanted: 'all chickens (entity type)' are plural ones.
+            TypeInfo narrower = null;
+            for (TypeInfo wanted : expected.types()) {
+                if (narrower == null && !wanted.id().equals(type.id()) && registry.isSubtype(wanted.id(), type.id())) {
+                    narrower = wanted;
+                }
+            }
+            if (narrower == null) {
+                return null;
+            }
+            type = narrower;
+        }
+        String value = Literals.normalize(matcher.group(1));
+        // Open types check the words with the type's own parser: 'size of all chickens (entity type)' isn't one.
+        boolean valid = type.literals().contains(value) || ((type.openLiterals() || type.literals().isEmpty())
+                && Literals.isWords(value) && registry.mightBeLiteral(type, value)) || registry.parses(type, value);
+        return valid ? new Expr.Literal(start, end, type.id(), text) : null;
+    }
+
+    /** Why a variable didn't fit, by its type hints, for the line's error; or {@code null}. */
+    private String hintProblem;
+
+    /** Skript's error for the type property turned down for its values' type; or {@code null}. */
+    private String propertyProblem;
+
+    /** Where the type property {@link #propertyProblem} is for starts and ends. */
+    private final int[] propertySpan = new int[2];
+
+    /** Where each type property turned down for its values' type starts. */
+    private final List<Integer> propertyRefusals = new ArrayList<>();
+
+    /**
+     * Skript's error for the type property turned down for its values' type, written in full ({@code name
+     * of 5}), if it's the line's error: nothing else parses ({@code parsed} is {@code null}), or only by reading the
+     * property's words as words nothing understands. Else {@code null}.
+     */
+    String propertyProblem(Object parsed) {
+        if (propertyProblem == null || parsed == null) {
+            return propertyProblem;
+        }
+        List<Expr.Unresolved> unknown = new ArrayList<>();
+        unknownWords(parsed, unknown);
+        for (Expr.Unresolved words : unknown) {
+            for (int start : propertyRefusals) {
+                if (words.start() <= start && start < words.end()) {
+                    return propertyProblem;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** The words nothing understands in {@code value}, those no type's parser has taken. */
+    private static void unknownWords(Object value, List<Expr.Unresolved> found) {
+        switch (value) {
+            case Expr.Unresolved unresolved when !unresolved.verified() -> found.add(unresolved);
+            case Expr.Syntax syntax -> unknownWords(syntax.syntax(), found);
+            case ParsedSyntax syntax -> {
+                syntax.match().values().forEach(inner -> unknownWords(inner, found));
+                syntax.match().regexValues().forEach(inner -> unknownWords(inner, found));
+            }
+            case Expr.ListOf list -> list.items().forEach(item -> unknownWords(item, found));
+            case Expr.FunctionCall call -> call.arguments().forEach(argument -> unknownWords(argument, found));
+            case Expr.Text text -> text.embedded().forEach(inner -> unknownWords(inner, found));
+            case Expr.Variable variable -> variable.embedded().forEach(inner -> unknownWords(inner, found));
+            case null, default -> { }
+        }
+    }
+
+    String hintProblem() {
+        return hintProblem;
+    }
+
+    /**
+     * Whether a variable may be what's expected by its type hints, as in Skript: {@code {_x}} holding an
+     * integer can't be a text. If not, the reason is kept for the line's error.
+     */
+    boolean hintFits(Expr.Variable variable, Expected expected) {
+        TypeHints hints = context.hints();
+        if (!checkHints || !hints.active() || expected.anything() || !StatementParser.simple(variable)) {
+            return true;
+        }
+        java.util.Set<String> types = hints.get(variable.name());
+        if (types.isEmpty()) {
+            return true;
+        }
+        for (TypeInfo wanted : expected.types()) {
+            for (String type : types) {
+                if (registry.isAssignable(type, wanted.id())) {
+                    return true;
+                }
+            }
+        }
+        hintProblem = "Expected variable '{" + variable.name() + "}' to be "
+                + typeNames(expected.types().stream().map(TypeInfo::id).toList()) + ", but it is " + typeNames(types);
+        // As Skript logs it while parsing, so an unparsed literal around it keeps it.
+        problem(hintProblem);
+        return false;
+    }
+
+    /** Types as Skript lists them in hints: {@code an integer or boolean (yes/no)}. */
+    private String typeNames(java.util.Collection<String> ids) {
+        List<String> names = new ArrayList<>();
+        for (String id : ids) {
+            TypeInfo info = registry.type(id);
+            String name = info == null ? id : Text.lower(info.name());
+            names.add(name.equals("boolean") ? "boolean (yes/no)" : name);
+        }
+        String joined = names.size() == 1 ? names.getFirst()
+                : String.join(", ", names.subList(0, names.size() - 1)) + " or " + names.getLast();
+        return ("aeiou".indexOf(joined.charAt(0)) >= 0 ? "an " : "a ") + joined;
+    }
+
+    private Expr variable(int start, int end) {
+        List<int[]> embedded = new ArrayList<>();
+        Scanner.braceEnd(input, start, end, embedded);
+        String name = input.substring(start + 1, end - 1);
+        if (name.isBlank() || !validVariableName(name)) {
+            return null;
+        }
+        List<Expr> parts = new ArrayList<>();
+        for (int[] part : embedded) {
+            Expr expr = embedded(part[0], part[1]);
+            if (expr == null) {
+                return null;
+            }
+            parts.add(expr);
+        }
+        variableWarnings(name.strip());
+        return new Expr.Variable(start, end, name, name.startsWith("_"), name.endsWith("::*"), parts);
+    }
+
+    /** The characters Skript reserves at the start of variables' names. */
+    private static final String RESERVED_TOKENS = "~.+$!&^*";
+
+    /** Skript's warnings about a variable's name as it makes the variable ({@code Variable.newInstance}). */
+    private void variableWarnings(String name) {
+        if (name.isEmpty()) {
+            return;
+        }
+        char first = name.charAt(0);
+        if (RESERVED_TOKENS.indexOf(first) >= 0) {
+            warnings.add(":The character '" + first + "' is reserved at the start of variable names, "
+                    + "and may be restricted in future versions");
+        }
+        String stripped = name.startsWith("_") || name.startsWith("-") ? name.substring(1) : name;
+        if (stripped.startsWith("%")) {
+            String script = context.scriptName();
+            // The script's name without '.sk', as Skript cuts it.
+            String prefix = script.length() >= 3 ? script.substring(0, script.length() - 3) : "";
+            warnings.add("starting:Starting a variable's name with an expression is discouraged ({" + name + "}). "
+                    + "You could prefix it with the script's name: {" + prefix + "::" + name + "}");
+        }
+    }
+
+    /** Warnings found while parsing the line, as Skript gives them, for the statement parser to report. */
+    private final java.util.Set<String> warnings = new java.util.LinkedHashSet<>();
+
+    java.util.Set<String> warnings() {
+        return warnings;
+    }
+
+    /**
+     * Whether a variable's name is one, as Skript's parser checks: no braces outside its expressions, and
+     * the separator {@code ::} and list asterisk where they can go (else the problem is kept for the line's
+     * error). A single {@code :} is only warned about.
+     */
+    private boolean validVariableName(String raw) {
+        // Text outside the expressions in it ('%...%'), where braces aren't allowed.
+        StringBuilder outside = new StringBuilder();
+        boolean inExpression = false;
+        int depth = 0;
+        for (char c : raw.toCharArray()) {
+            if (c == '%' && depth == 0) {
+                inExpression = !inExpression;
+                continue;
+            }
+            if (inExpression) {
+                if (c == '{') {
+                    depth++;
+                } else if (c == '}') {
+                    depth--;
+                }
+            } else if (c == '{' || c == '}') {
+                return false;
+            } else {
+                outside.append(c);
+            }
+        }
+        String name = raw.startsWith("_") ? raw.substring(1).strip() : raw.strip();
+        if (name.startsWith("::") || name.endsWith("::")) {
+            problem("A variable's name must neither start nor end with the separator '::' (error in variable {" + name + "})");
+            return false;
+        }
+        String plain = outside.toString();
+        int asterisks = (int) plain.chars().filter(c -> c == '*').count();
+        if (asterisks > 0 && !(asterisks == 1 && name.endsWith("::*"))) {
+            problem("A variable's name must not contain any asterisks except at the end after '::' to denote a list"
+                    + " variable, e.g. {variable::*} (error in variable {" + name + "})");
+            return false;
+        }
+        if (name.contains("::::")) {
+            problem("A variable's name must not contain the separator '::' multiple times in a row (error in variable {"
+                    + name + "})");
+            return false;
+        }
+        if (name.replace("::", "").contains(":")) {
+            warnings.add("colon:If you meant to make the variable {" + name + "} a list, its name should contain '::'."
+                    + " Having a single ':' does nothing!");
+        }
+        return true;
+    }
+
+    /** Skript's error for a variable's name with a {@code %} that starts no expression. */
+    static final String ODD_PERCENTS = "The percent sign is used for expressions (e.g. %player%). To insert a '%' type it"
+            + " twice: %%.";
+
+    /**
+     * Skript's error for a line with a variable whose name has a {@code %} that starts no expression, as
+     * {@code {x::%%y%}}, or {@code null}. Skript finds where a variable ends by its braces alone, so it gets
+     * as far as the variable's name. (A text like that is already the line's error, as its closing quote is
+     * taken to be in an expression.)
+     */
+    static String oddPercents(String line) {
+        boolean inText = false;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '"') {
+                inText = !inText;
+            } else if (c == '{' && !inText) {
+                int depth = 0;
+                int end = i;
+                for (; end < line.length(); end++) {
+                    if (line.charAt(end) == '{') {
+                        depth++;
+                    } else if (line.charAt(end) == '}' && --depth == 0) {
+                        break;
+                    }
+                }
+                if (end == line.length()) {
+                    return null;
+                }
+                if (line.substring(i, end).chars().filter(ch -> ch == '%').count() % 2 != 0) {
+                    return ODD_PERCENTS;
+                }
+                i = end;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@code name(arguments)} for a known function. Each comma-separated argument goes to the next
+     * parameter, or to the one it names ({@code name: value}). If exactly one overload takes the arguments
+     * as given, it's called; if several do, the call is ambiguous. Only if none do can an overload whose
+     * last parameter takes a list take the extra values. Problems are recorded in Skript's wording, for
+     * the line's error.
+     */
+    private Expr.FunctionCall functionCall(int start, int end, boolean needsValue) {
+        // As in Skript, which parses function arguments with their warnings thrown away.
+        java.util.Set<String> before = new java.util.HashSet<>(warnings);
+        try {
+            return parseFunctionCall(start, end, needsValue);
+        } finally {
+            warnings.retainAll(before);
+        }
+    }
+
+    private Expr.FunctionCall parseFunctionCall(int start, int end, boolean needsValue) {
+        int open = input.indexOf('(', start);
+        if (open <= start || open >= end || !FUNCTION_NAME.matcher(input.substring(start, open)).matches()
+                || Scanner.parenEnd(input, open, end) != end) {
+            return null;
+        }
+        String name = input.substring(start, open);
+        List<FunctionInfo> overloads = context.functions(name);
+        int[] inner = trim(open + 1, end - 1);
+        List<int[]> pieces = inner[0] >= inner[1] ? List.of() : Scanner.split(input, inner[0], inner[1], ',');
+        if (overloads.isEmpty()) {
+            functionProblem("The function " + name + "(" + describe(pieces) + ") does not exist.");
+            return null;
+        }
+        List<Expr.FunctionCall> matches = new ArrayList<>();
+        String problem = null;
+        for (FunctionInfo function : overloads) {
+            if (needsValue && function.returnType() == null) {
+                continue;
+            }
+            Object result = arguments(function, pieces, inner, false);
+            if (result instanceof List<?> arguments) {
+                matches.add(call(start, end, function, arguments));
+            } else if (result instanceof String error && error.equals(OR_IN_ARGUMENTS)) {
+                functionProblem(error);
+                return null;
+            } else if (result instanceof String error && (problem == null
+                    || function.parameters().size() == pieces.size())) {
+                problem = error;
+            }
+        }
+        if (matches.size() == 1) {
+            return matches.getFirst();
+        }
+        if (matches.size() > 1) {
+            functionProblem("Cannot determine which function named '" + name + "' to call");
+            return null;
+        }
+        for (FunctionInfo function : overloads) {
+            if (!needsValue || function.returnType() != null) {
+                if (arguments(function, pieces, inner, true) instanceof List<?> arguments) {
+                    return call(start, end, function, arguments);
+                }
+            }
+        }
+        if (needsValue && matches.isEmpty()) {
+            // A function that returns nothing, used for a value: what uses it says why that can't work, as in
+            // Skript ('a slot can't be set to foo()').
+            for (FunctionInfo function : overloads) {
+                if (function.returnType() == null && arguments(function, pieces, inner, false) instanceof List<?> arguments) {
+                    return call(start, end, function, arguments);
+                }
+            }
+        }
+        boolean onlyUnknownNames = pieces.stream().anyMatch(piece -> argumentName(piece) != null)
+                && pieces.stream().map(this::argumentName).noneMatch(n -> n != null
+                        && overloads.stream().anyMatch(f -> parameterIndex(f.parameters(), n) >= 0));
+        functionProblem(problem != null && !onlyUnknownNames
+                ? problem
+                : "The function " + name + "(" + describe(pieces) + ") does not exist." + intended(overloads, pieces));
+        return null;
+    }
+
+    /**
+     * Skript's guess at the function meant, for its error: of those whose parameters take every argument whose
+     * type is known, the one whose number of parameters is closest to the number of arguments.
+     */
+    private String intended(List<FunctionInfo> overloads, List<int[]> pieces) {
+        List<String> known = new ArrayList<>();
+        for (int[] piece : pieces) {
+            String named = argumentName(piece);
+            int valueStart = named == null ? piece[0] : input.indexOf(':', piece[0]) + 1;
+            Expr value = expression(valueStart, piece[1], Expected.OBJECTS);
+            if (value != null && countUnresolved(value) == 0 && value.type() != null && !value.type().equals(SyntaxRegistry.OBJECT)) {
+                known.add(value.type());
+            }
+        }
+        FunctionInfo best = null;
+        for (FunctionInfo function : overloads) {
+            List<String> left = new ArrayList<>(known);
+            for (FunctionInfo.Parameter parameter : function.parameters()) {
+                left.stream().filter(type -> registry.isAssignable(type, parameter.type())).findFirst().ifPresent(left::remove);
+            }
+            if (left.isEmpty() && (best == null || Math.abs(pieces.size() - function.parameters().size())
+                    < Math.abs(pieces.size() - best.parameters().size()))) {
+                best = function;
+            }
+        }
+        if (best == null) {
+            return "";
+        }
+        List<String> parameters = new ArrayList<>();
+        for (FunctionInfo.Parameter parameter : best.parameters()) {
+            co.xenastudios.neoskript.frontend.registry.TypeInfo info = registry.type(parameter.type());
+            String type = info == null ? parameter.type() : Text.lower(info.name());
+            parameters.add(parameter.name() + ": " + (parameter.plural() ? SyntaxRegistry.plural(type) : type));
+        }
+        return " Did you mean to use the function '" + (best.localTo() != null ? "local " : "") + best.name() + "("
+                + String.join(", ", parameters) + ")'?";
+    }
+
+    @SuppressWarnings("unchecked")
+    private Expr.FunctionCall call(int start, int end, FunctionInfo function, List<?> arguments) {
+        String type = function.returnType() == null ? SyntaxRegistry.OBJECT : function.returnType();
+        return new Expr.FunctionCall(start, end, function, (List<Expr>) arguments, type);
+    }
+
+    /**
+     * Maps the argument pieces to {@code function}'s parameters. Returns the arguments by parameter, an
+     * error message, or {@code null} if the function just doesn't take that many arguments. With
+     * {@code absorb}, a list parameter at the end takes all the remaining arguments.
+     */
+    private Object arguments(FunctionInfo function, List<int[]> pieces, int[] inner, boolean absorb) {
+        List<FunctionInfo.Parameter> parameters = function.parameters();
+        boolean anyNamed = pieces.stream().anyMatch(piece -> argumentName(piece) != null);
+        if (absorb) {
+            // Only plain values are absorbed into a list parameter, never named arguments.
+            // As Skript, only a function whose one parameter is a list takes any number of values.
+            if (anyNamed || parameters.size() != 1 || !parameters.getLast().plural() || pieces.size() <= parameters.size()) {
+                return null;
+            }
+            int[] last = {pieces.get(parameters.size() - 1)[0], inner[1]};
+            pieces = new ArrayList<>(pieces.subList(0, parameters.size() - 1));
+            pieces.add(last);
+        }
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (int[] piece : pieces) {
+            String named = argumentName(piece);
+            if (named != null && !names.add(named)) {
+                // Checked first, as Skript does, whichever function it would be.
+                return "A value has already been assigned to parameter '" + named + "'";
+            }
+        }
+        if (pieces.size() > parameters.size()) {
+            // More arguments than it takes: not this function, as Skript skips it before parsing any.
+            return null;
+        }
+        if (mixesNamedAndUnnamed(pieces, parameters)) {
+            return "Mixing named and unnamed arguments is not allowed";
+        }
+        // A function whose one parameter is a list, as Skript sorts its 'list references' from its 'exact' ones.
+        boolean listFunction = parameters.size() == 1 && parameters.getFirst().plural();
+        Expr[] byParameter = new Expr[parameters.size()];
+        int next = 0;
+        for (int p = 0; p < pieces.size(); p++) {
+            int[] piece = pieces.get(p);
+            int index = next;
+            int valueStart = piece[0];
+            String named = argumentName(piece);
+            if (named != null) {
+                int found = parameterIndex(parameters, named);
+                if (found >= 0) {
+                    index = found;
+                    valueStart = input.indexOf(':', piece[0]) + 1;
+                } else if (pieces.subList(p + 1, pieces.size()).stream().anyMatch(q -> argumentName(q) != null)) {
+                    return "The argument named '" + named + "' is unexpected";
+                }
+            }
+            if (index >= parameters.size()) {
+                return null;
+            }
+            FunctionInfo.Parameter parameter = parameters.get(index);
+            if (byParameter[index] != null) {
+                return "A value has already been assigned to parameter '" + parameter.name() + "'";
+            }
+            TypeRef ref = registry.resolveType(parameter.type());
+            // Skript only checks the number of values when the function runs, so lists are accepted here.
+            Expected expected = ref == null ? Expected.OBJECTS : context.expected(new TypeRef(ref.type(), true));
+            String outerEmbedded = embeddedProblem;
+            embeddedProblem = null;
+            Expr argument;
+            String embeddedError;
+            try {
+                argument = expression(valueStart, piece[1], expected);
+            } finally {
+                embeddedError = embeddedProblem;
+                embeddedProblem = outerEmbedded;
+            }
+            if (argument == null) {
+                int[] value = trim(valueStart, piece[1]);
+                String written = input.substring(value[0], value[1]);
+                if (listFunction && nestedList(value[0], value[1])) {
+                    // A list with a list in it, for a function whose one parameter is a list: there's no such
+                    // function, as Skript's getListReferences has it.
+                    return null;
+                }
+                if (embeddedError != null && written.startsWith("\"")) {
+                    // Skript's error for the text's code is the one it gives, as the best error found.
+                    return embeddedError;
+                }
+                if (ref == null || ref.type().id().equals(SyntaxRegistry.OBJECT)) {
+                    // Words Skript keeps as an unparsed literal, which no type then reads, unless they're a list.
+                    int[] words = written.startsWith("(") && Scanner.parenEnd(input, value[0], value[1]) == value[1]
+                            ? trim(value[0] + 1, value[1] - 1) : value;
+                    if (Scanner.listSeparators(input, words[0], words[1], new boolean[1]).isEmpty()) {
+                        return "Can't understand this expression: '" + input.substring(words[0], words[1]) + "'";
+                    }
+                }
+                String typeName = ref == null ? parameter.type() : Text.lower(ref.type().name());
+                return "Can't understand the argument for the parameter '" + parameter.name() + "' with type '"
+                        + typeName + "': " + written + ".";
+            }
+            if (argument instanceof Expr.ListOf list && !list.and()) {
+                return OR_IN_ARGUMENTS;
+            }
+            if (listFunction && argument instanceof Expr.ListOf list
+                    && list.items().stream().anyMatch(Expr.ListOf.class::isInstance)) {
+                // A list of lists isn't an argument of a function whose one parameter is a list: 'f(ns: (1, (2, 3)))'.
+                // Other functions take one, as Skript's exact references do: 'show("x", ((1, 2), 3))'.
+                return null;
+            }
+            if (!parameter.plural() && Plurality.plural(argument, registry) && ref != null) {
+                // Read as one value where that's what the parameter takes: 'axolotl' is the entity type there.
+                Expr one = expression(valueStart, piece[1], context.expected(new TypeRef(ref.type(), false)));
+                if (one != null) {
+                    argument = one;
+                }
+            }
+            if (!parameter.plural() && Plurality.plural(argument, registry)) {
+                // Several values for a parameter that takes one, as Skript checks when it parses the call.
+                String expectedName = ref == null ? parameter.type() : Text.lower(ref.type().name());
+                TypeInfo given = argument.type() == null ? null : registry.type(argument.type());
+                String givenName = given == null ? "objects" : SyntaxRegistry.plural(Text.lower(given.name()));
+                return "Expected type " + expectedName + " for argument '" + parameter.name() + "', but "
+                        + input.substring(valueStart, piece[1]).strip() + " is of type " + givenName + ".";
+            }
+            byParameter[index] = argument;
+            next = index + 1;
+        }
+        for (int i = 0; i < parameters.size(); i++) {
+            if (byParameter[i] == null && !parameters.get(i).optional()) {
+                return null;
+            }
+        }
+        return java.util.Arrays.asList(byParameter);
+    }
+
+    /** Skript's error for an argument that's an 'or' list, after which it tries no other function. */
+    static final String OR_IN_ARGUMENTS = "Function arguments cannot be seperated by an 'or'. Put the 'or' into a second"
+            + " set of parentheses if you want to make it a single parameter, e.g. 'give(player, (sword or axe))'";
+
+    /** Whether {@code [start, end)} is a list in brackets with a list in brackets in it: {@code (1, (2, 3))}. */
+    private boolean nestedList(int start, int end) {
+        if (start >= end || input.charAt(start) != '(') {
+            return false;
+        }
+        for (int i = start + 1; i < end; i++) {
+            char c = input.charAt(i);
+            if (c == '"') {
+                i = Scanner.stringEnd(input, i, end, null) - 1;
+            } else if (c == '{') {
+                i = Scanner.braceEnd(input, i, end, null) - 1;
+            } else if (c == '(' && !Character.isLetterOrDigit(input.charAt(i - 1)) && input.charAt(i - 1) != '_') {
+                // Brackets, not a function's: 'vector(1, 2, 3)' is one value.
+                int close = Scanner.parenEnd(input, i, end);
+                if (close > 0 && !Scanner.listSeparators(input, i + 1, close - 1, new boolean[1]).isEmpty()) {
+                    return true;
+                }
+            }
+            if (i < 0) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether an unnamed argument follows a named one that's out of order: named arguments then have to be
+     * in parameter order, each at or after its own position.
+     */
+    private boolean mixesNamedAndUnnamed(List<int[]> pieces, List<FunctionInfo.Parameter> parameters) {
+        boolean namedSeen = false;
+        boolean unnamedAfterNamed = false;
+        for (int[] piece : pieces) {
+            boolean isNamed = argumentName(piece) != null;
+            unnamedAfterNamed |= namedSeen && !isNamed;
+            namedSeen |= isNamed;
+        }
+        if (!unnamedAfterNamed) {
+            return false;
+        }
+        int last = -1;
+        for (int p = 0; p < pieces.size(); p++) {
+            String named = argumentName(pieces.get(p));
+            int index = named == null ? -1 : parameterIndex(parameters, named);
+            if (index < 0) {
+                continue;
+            }
+            if (index < p || index < last) {
+                return true;
+            }
+            // An unnamed argument after the last parameter, named: 'location(..., pitch: 4, 5)'.
+            if (index != p && index == parameters.size() - 1 && p + 1 < pieces.size()
+                    && argumentName(pieces.get(p + 1)) == null) {
+                return true;
+            }
+            last = index;
+        }
+        return false;
+    }
+
+    private static int parameterIndex(List<FunctionInfo.Parameter> parameters, String name) {
+        for (int i = 0; i < parameters.size(); i++) {
+            if (parameters.get(i).name().equals(name)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** The name in a {@code name: value} argument, or {@code null}. */
+    private String argumentName(int[] piece) {
+        int colon = input.indexOf(':', piece[0]);
+        if (colon < 0 || colon >= piece[1]) {
+            return null;
+        }
+        String name = input.substring(piece[0], colon).strip();
+        return FUNCTION_NAME.matcher(name).matches() ? name : null;
+    }
+
+    /** The arguments' types as Skript describes them in errors: {@code integer, n: integers, ?}. */
+    private String describe(List<int[]> pieces) {
+        List<String> types = new ArrayList<>();
+        for (int[] piece : pieces) {
+            String named = argumentName(piece);
+            int valueStart = named == null ? piece[0] : input.indexOf(':', piece[0]) + 1;
+            Expr value = expression(valueStart, piece[1], Expected.OBJECTS);
+            String type;
+            if (value == null || countUnresolved(value) > 0) {
+                // What can't be read, as Skript writes it.
+                type = "?";
+            } else {
+                co.xenastudios.neoskript.frontend.registry.TypeInfo info = registry.type(value.type());
+                String typeName = info == null ? value.type() : Text.lower(info.name());
+                type = value instanceof Expr.ListOf ? SyntaxRegistry.plural(typeName) : typeName;
+            }
+            types.add(named == null ? type : named + ": " + type);
+        }
+        return String.join(", ", types);
+    }
+
+    private long span(int start, int end) {
+        int[] span = trim(start, end);
+        return ((long) span[0] << 32) | span[1];
+    }
+
+    /** The error for experimental syntax the script can't use that the line has, or {@code null}. */
+    String experimentProblem() {
+        return experimentProblem;
+    }
+
+    /** The first problem found with a function call in this line, in Skript's wording, or {@code null}. */
+    String functionProblem() {
+        return functionProblem != null ? functionProblem : experimentProblem != null ? experimentProblem : problem;
+    }
+
+    /** Whether {@code [start, end)} of the line is an expression of any type. */
+    boolean isExpression(int start, int end) {
+        return expression(start, end, Expected.OBJECTS) != null;
+    }
+
+    /** A problem found while parsing, reported if the line doesn't parse at all. */
+    private void problem(String found) {
+        problem(found, SEMANTIC_ERROR);
+    }
+
+    /** Skript's error qualities ({@code ErrorQuality}): a value that isn't of the type wanted is a lesser error. */
+    private static final int NOT_AN_EXPRESSION = 1;
+    private static final int SEMANTIC_ERROR = 2;
+
+    /** The quality of {@link #problem}. */
+    private int problemQuality;
+
+    /** The expressions problems are about, by problem: see {@link Expr.Unresolved#cause}. */
+    private final java.util.Map<String, Expr> causes = new java.util.HashMap<>();
+
+    /** {@link #problem(String, int)}, worked out only if it's kept. */
+    private void problem(java.util.function.Supplier<String> found, int quality) {
+        boolean kept = problem == null || quality > problemQuality;
+        for (String[] frame : frames) {
+            kept |= frame[0] == null || quality > Integer.parseInt(frame[1]);
+        }
+        if (kept) {
+            problem(found.get(), quality);
+        }
+    }
+
+    /**
+     * A problem found while parsing, of a quality, kept as Skript's parse log keeps its error: the first of the
+     * best quality.
+     */
+    private void problem(String found, int quality) {
+        if (problem == null || quality > problemQuality) {
+            problem = found;
+            problemQuality = quality;
+        }
+        for (String[] frame : frames) {
+            if (frame[0] == null || quality > Integer.parseInt(frame[1])) {
+                frame[0] = found;
+                frame[1] = Integer.toString(quality);
+            }
+        }
+    }
+
+    private void functionProblem(String problem) {
+        if (functionProblem == null) {
+            functionProblem = problem;
+        }
+        // Skript logs it where it reads the call, so the words around it that nothing reads keep it as theirs
+        // ('%nosuchfunc(1)%' in a text): see Expr.Unresolved#problem.
+        for (String[] frame : frames) {
+            if (frame[0] == null || SEMANTIC_ERROR > Integer.parseInt(frame[1])) {
+                frame[0] = problem;
+                frame[1] = Integer.toString(SEMANTIC_ERROR);
+            }
+        }
+    }
+
+    /**
+     * A list: items separated by {@code ,}, {@code and}, {@code or} or {@code nor}. Not every separator has
+     * to split the list ({@code characters between "a" and "f", 1} has an {@code and} inside an item), so
+     * this finds a choice of separators where every item parses, preferring more items.
+     */
+    private Expr list(int start, int end, Expected expected) {
+        boolean[] and = {true};
+        List<int[]> separators = Scanner.listSeparators(input, start, end, and);
+        if (separators.isEmpty()) {
+            return null;
+        }
+        Expected item = context.intern(expected.single());
+        int n = separators.size();
+        List<Expr> split = splitAtEverySeparator(start, end, separators, item, expected);
+        List<List<Expr>> reach = null;
+        if (split == null) {
+            reach = reachable(start, end, separators, item, expected);
+        }
+        List<Expr> items = split != null ? split : reach.get(n);
+        if (items == null) {
+            return null;
+        }
+        if (and[0] && items.size() > 1 && items.stream().anyMatch(each -> !expected.acceptsMany(each.type(), registry))) {
+            return null;
+        }
+        String type = items.stream().map(Expr::type).distinct().count() == 1 ? items.getFirst().type() : SyntaxRegistry.OBJECT;
+        return new Expr.ListOf(start, end, items, and[0], type);
+    }
+
+    /**
+     * The list split at every separator, if each item parses without leaning on unresolved words, else {@code null}.
+     * That's what {@link #reachable} would choose (no item leans on words, and no choice has more items), found
+     * without parsing every run of items as one: that made a list of a few hundred texts take minutes.
+     */
+    private List<Expr> splitAtEverySeparator(int start, int end, List<int[]> separators, Expected item,
+            Expected expected) {
+        List<Expr> items = new ArrayList<>(separators.size() + 1);
+        int from = start;
+        for (int k = 0; k <= separators.size(); k++) {
+            int itemEnd = k == separators.size() ? end : separators.get(k)[0];
+            Expr next = listItem(from, itemEnd, item, expected);
+            if (next == null || next instanceof Expr.Syntax && hasUnresolved(next)) {
+                return null;
+            }
+            items.add(next);
+            if (k < separators.size()) {
+                from = separators.get(k)[1];
+            }
+        }
+        return items;
+    }
+
+    /**
+     * For each separator k, the best items that cover {@code [start, separator k's start)}, or null if none parse;
+     * k == the number of separators is the end. Best is fewest items leaning on unresolved words, then most items.
+     */
+    private List<List<Expr>> reachable(int start, int end, List<int[]> separators, Expected item, Expected expected) {
+        int n = separators.size();
+        List<List<Expr>> reach = new ArrayList<>(java.util.Collections.nCopies(n + 1, (List<Expr>) null));
+        for (int k = 0; k <= n; k++) {
+            int itemEnd = k == n ? end : separators.get(k)[0];
+            Expr first = listItem(start, itemEnd, item, expected);
+            if (first != null && k < n) {
+                reach.set(k, List.of(first));
+            }
+            for (int j = 0; j < k; j++) {
+                if (reach.get(j) == null) {
+                    continue;
+                }
+                Expr next = listItem(separators.get(j)[1], itemEnd, item, expected);
+                if (next == null) {
+                    continue;
+                }
+                List<Expr> items = new ArrayList<>(reach.get(j));
+                items.add(next);
+                // Fewer items leaning on unresolved words, then more items: '1 or 0 or -1' is three numbers.
+                List<Expr> current = reach.get(k);
+                if (current == null || unresolvedItems(items) < unresolvedItems(current)
+                        || unresolvedItems(items) == unresolvedItems(current) && items.size() > current.size()) {
+                    reach.set(k, items);
+                }
+            }
+        }
+        return reach;
+    }
+
+    /** How many items are syntax leaning on unresolved words; words alone may still be a literal. */
+    private static int unresolvedItems(List<Expr> items) {
+        int count = 0;
+        for (Expr item : items) {
+            if (item instanceof Expr.Syntax && hasUnresolved(item)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** How deep in reading a list's items the parser is: an item is no unparsed literal of any text, as in Skript. */
+    private int listItems;
+
+    /** An item of a list: one value, or, in brackets, a list of its own, as in {@code 1, (2, 3)}. */
+    private Expr listItem(int start, int end, Expected item, Expected list) {
+        listItems++;
+        try {
+            return listItemRead(start, end, item, list);
+        } finally {
+            listItems--;
+        }
+    }
+
+    private Expr listItemRead(int start, int end, Expected item, Expected list) {
+        int[] span = trim(start, end);
+        if (span[0] < span[1] && input.charAt(span[0]) == '(' && Scanner.parenEnd(input, span[0], span[1]) == span[1]) {
+            Expr inner = expression(span[0], span[1], list);
+            if (inner != null) {
+                return inner;
+            }
+        }
+        return expression(start, end, item);
+    }
+
+    /** {@code [start, end)} as one verified literal of an open type, if it looks like a list but a parser takes it whole. */
+    private Expr wholeLiteral(int start, int end, Expected expected) {
+        String text = input.substring(start, end);
+        String lower = Text.lower(text);
+        if (!Literals.isWords(text) || (!lower.contains(" and ") && !lower.contains(",") && !lower.contains(" or "))) {
+            return null;
+        }
+        Iterable<TypeInfo> types = expected.anything() ? registry.types() : expected.types();
+        for (TypeInfo type : types) {
+            if (type.openLiterals() && registry.isLiteral(type, text)) {
+                return new Expr.Unresolved(start, end, text, true);
+            }
+        }
+        return null;
+    }
+
+    /** {@code [start, end)} as words an expected open type's parser takes, or {@code null}. */
+    private Expr verifiedLiteral(int start, int end, Expected expected) {
+        String text = input.substring(start, end);
+        if (expected.anything() || !Literals.isWords(text)) {
+            return null;
+        }
+        for (TypeInfo type : expected.types()) {
+            if (type.openLiterals() && registry.isLiteral(type, text)) {
+                return new Expr.Unresolved(start, end, text, true);
+            }
+        }
+        return null;
+    }
+
+    private Expr unresolved(int start, int end, Expected expected) {
+        String text = input.substring(start, end);
+        if (!Literals.isWords(text) || experimentalSpans.contains(span(start, end))) {
+            return null;
+        }
+        if (context.isItemAlias(text) && (expected.anything() || expected.types().stream().anyMatch(type ->
+                type.id().equals("itemtype") || registry.isConvertible("itemtype", type.id())))) {
+            return new Expr.Unresolved(start, end, text, true);
+        }
+        boolean open = expected.anything() || expected.types().stream()
+                .anyMatch(type -> type.openLiterals() && registry.mightBeLiteral(type, text))
+                || registry.isConvertibleLiteral(text, id -> expected.types().stream()
+                        .anyMatch(type -> !type.id().equals(id) && registry.isConvertible(id, type.id())));
+        if (!open) {
+            return null;
+        }
+        // Where any value goes, Skript reads the words with every type's parser (Classes.parse(words, Object.class)),
+        // so words one of them takes, like 'stone', are a value, not words leaning on nothing: '"%name of stone%"'.
+        // Words only an addon's strict type takes (an imported class) are known there too.
+        boolean verified = expected.types().stream().anyMatch(type -> type.openLiterals() && registry.isLiteral(type, text))
+                || expected.anything() && (anyLiteral(text) || registry.isAddonStrictLiteral(text));
+        return new Expr.Unresolved(start, end, text, verified);
+    }
+
+    private static boolean isChangeable(Expr expr) {
+        return switch (expr) {
+            case Expr.Literal literal -> false;
+            // Text is an expression in Skript, not a literal: 'assert "x" is set' parses.
+            case Expr.Text text -> true;
+            case Expr.Unresolved unresolved -> false;
+            case Expr.ListOf list -> list.items().stream().allMatch(LineParser::isChangeable);
+            default -> true;
+        };
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    private Object memoized(int start, int end, Object what, java.util.function.Supplier<Object> compute) {
+        Map<Key, Object> memo = strictOuter ? strictMemo : this.memo;
+        Key key = new Key(start, end, what, anyEvent);
+        Object cached = memo.get(key);
+        if (cached != null) {
+            return cached == IN_PROGRESS || cached == FAILED ? null : cached;
+        }
+        memo.put(key, IN_PROGRESS);
+        spend();
+        Object result = compute.get();
+        memo.put(key, result == null ? FAILED : result);
+        return result;
+    }
+
+    private int[] trim(int start, int end) {
+        while (start < end && Character.isWhitespace(input.charAt(start))) {
+            start++;
+        }
+        while (end > start && Character.isWhitespace(input.charAt(end - 1))) {
+            end--;
+        }
+        return new int[] {start, end};
+    }
+}

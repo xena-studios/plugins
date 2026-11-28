@@ -1,0 +1,178 @@
+---
+// The custom pages' shell: head, header, footer. The guides are Starlight's.
+// An app page (the parser) fills the window under the header and has no footer.
+import "../styles/site.css";
+import Logo from "../components/Logo.astro";
+import External from "../components/External.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { current, nav, repo } from "../lib/nav";
+
+interface Props { title: string; description: string; path: string; app?: boolean }
+const { title, description, path, app = false } = Astro.props;
+const url = new URL(path, Astro.site).href;
+const og = new URL("/og.png", Astro.site).href;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={url} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#110B13" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#FBF8FA" media="(prefers-color-scheme: light)" />
+    <!-- The theme the guides' picker chose, else the system's, before the first paint (tokens.css). -->
+    <script is:inline>
+      (() => {
+        let pick = null;
+        try { pick = localStorage.getItem("starlight-theme"); } catch {}
+        const light = pick === "light" || (pick !== "dark" && matchMedia("(prefers-color-scheme: light)").matches);
+        document.documentElement.dataset.theme = light ? "light" : "dark";
+      })();
+    </script>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="NeoSkript" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={url} />
+    <meta property="og:image" content={og} />
+    <meta property="og:image:alt" content="NeoSkript: Keep your scripts. Lose the lag." />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body class:list={{ app }}>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="wrap bar">
+        <a class="home" href="/" aria-label="NeoSkript home"><Logo name="neoskript" label="NeoSkript" class="wordmark on-dark" /><Logo name="neoskript-light" label="NeoSkript" class="wordmark on-light" /><Logo name="icon" label="NeoSkript" class="tile" /></a>
+        <nav aria-label="Main">
+          <ul>
+            {nav.map((item) => (
+              <li class={item.wide ? "wide" : undefined}><a href={item.href} aria-current={current(path, item.href) ? "page" : undefined}>{item.label}</a></li>
+            ))}
+            <li class="gh"><a href={repo}>GitHub<External /></a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    {!app && <SiteFooter />}
+  </body>
+</html>
+<style>
+  .skip {
+    position: absolute;
+    left: var(--gutter);
+    top: -4rem;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    background: var(--accent-fill);
+    color: var(--on-accent);
+    text-decoration: none;
+    z-index: 30;
+  }
+  .skip:focus {
+    top: 1rem;
+  }
+  /* The bar stays at the top while the page scrolls under it (not on the parser, which fills the window). */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 1px solid var(--rule);
+    background: color-mix(in srgb, var(--ground) 88%, transparent);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+  }
+  :global(body.app) .site-header {
+    position: static;
+    background: var(--ground);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    min-height: 4.5rem;
+  }
+  .home :global(.on-light),
+  :global([data-theme="light"]) .home :global(.on-dark) {
+    display: none;
+  }
+  :global([data-theme="light"]) .home :global(.on-light) {
+    display: block;
+  }
+  .home {
+    display: inline-flex;
+  }
+  .home :global(.logo) {
+    height: 1.75rem;
+    width: auto;
+  }
+  nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  nav a {
+    color: var(--muted);
+    font-size: 0.9375rem;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  nav a:hover,
+  nav a[aria-current="page"] {
+    color: var(--text);
+  }
+  /* The section you're in: text colour and a magenta underline. */
+  nav a[aria-current="page"] {
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.55em;
+  }
+  .home :global(.tile) {
+    display: none;
+  }
+  @media (max-width: 30rem) {
+    .bar {
+      gap: 1rem;
+    }
+    .home :global(.wordmark) {
+      height: 1.375rem;
+    }
+    nav ul {
+      flex-wrap: nowrap;
+      gap: 1rem;
+    }
+    nav a {
+      font-size: 0.875rem;
+    }
+    /* The wordmark and three links fit on a phone: Docs, Syntax, Download.
+       Parser (a tool for a bigger screen), Addons and GitHub are in the footer. */
+    nav .gh,
+    nav .wide {
+      display: none;
+    }
+  }
+  /* Narrower than any current phone: the .sk tile stands in for the wordmark. */
+  @media (max-width: 22rem) {
+    .home :global(.wordmark),
+    :global([data-theme="light"]) .home :global(.on-light) {
+      display: none;
+    }
+    .home :global(.tile) {
+      display: block;
+      height: 1.75rem;
+    }
+  }
+</style>

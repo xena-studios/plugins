@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.plugin;
+
+import co.xenastudios.neoskript.frontend.parse.ParsedStructure;
+import co.xenastudios.neoskript.frontend.source.Diagnostic;
+import co.xenastudios.neoskript.frontend.source.Severity;
+import co.xenastudios.neoskript.frontend.source.SourceFile;
+import co.xenastudios.neoskript.paper.TextComponentParser;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
+
+/**
+ * A loaded script's {@code auto reload} structure (Skript's StructAutoReload): every 2 seconds the script
+ * manager checks whether its file changed since it was last loaded and, if so, reloads just that script.
+ * What the reload says (that it's reloading, the script's errors and warnings, and how it went) goes to the
+ * console and the recipients, or to the players with the permission if there are none, in the same report
+ * {@code /sk reload} gives.
+ */
+final class AutoReload {
+
+    /** How often the file is checked, in ticks: Skript's 2 seconds. */
+    static final long PERIOD = 20 * 2;
+
+    /**
+     * Skript's {@code skript.prefix}, for what keeps Skript's look because tools and tutorials read it: script
+     * problems at load and runtime errors.
+     */
+    static final String SKRIPT_PREFIX = "<gray>[<gold>Skript<gray>] <reset>";
+
+    private final String script;
+    /** The recipients' names or UUIDs, in lower case. */
+    private final Set<String> recipients = new HashSet<>();
+    private final String permission;
+    /** The file's last modified time when the script was last (re)loaded, to compare with the file's. */
+    private long lastReload;
+    /** What stops the checks, once started. */
+    private Runnable stop = () -> {};
+
+    AutoReload(String script, ParsedStructure.AutoReload structure, long lastReload) {
+        this.script = script;
+        structure.recipients().forEach(recipient -> recipients.add(recipient.toLowerCase(Locale.ENGLISH)));
+        this.permission = structure.permission();
+        this.lastReload = lastReload;
+    }
+
+    long lastReload() {
+        return lastReload;
+    }
+
+    void lastReload(long lastReload) {
+        this.lastReload = lastReload;
+    }
+
+    void started(Runnable stop) {
+        this.stop = stop;
+    }
+
+    void stop() {
+        stop.run();
+    }
+
+    /**
+     * Who hears about a reload, as Skript works it out: the console, and the online recipients, or the online
+     * players with the permission if there are no recipients.
+     */
+    List<CommandSender> audience() {
+        List<CommandSender> senders = new ArrayList<>();
+        senders.add(Bukkit.getConsoleSender());
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (recipients.isEmpty()
+                    ? player.hasPermission(permission)
+                    : recipients.contains(player.getName().toLowerCase(Locale.ENGLISH))
+                            || recipients.contains(player.getUniqueId().toString())) {
+                senders.add(player);
+            }
+        }
+        return senders;
+    }
+
+    /** A problem the reload found, as Skript's log entries show one. */
+    static String describe(Diagnostic problem, SourceFile file) {
+        String code = "";
+        if (file != null && problem.line() >= 1 && problem.line() <= file.lines().size()) {
+            code = file.lines().get(problem.line() - 1).strip();
+        }
+        return describe(problem, code);
+    }
+
+    /** {@link #describe(Diagnostic, SourceFile)} with the line of code given. */
+    static String describe(Diagnostic problem, String code) {
+        TextComponentParser parser = TextComponentParser.instance();
+        String kind = problem.severity() == Severity.ERROR ? "error" : "warning";
+        // In config.yml's language, as Skript's: 'Satır 5: (script.sk)' in Turkish.
+        return format(kind + " line info", problem.line(), problem.file())
+                + format(kind + " details", parser.escape(problem.message()))
+                + format("line details", parser.escape(code));
+    }
+
+    /** One of Skript's {@code skript command.reload} messages, or the English one if a language file's is broken. */
+    private static String format(String key, Object... args) {
+        String full = "skript command.reload." + key;
+        try {
+            return String.format(co.xenastudios.neoskript.runtime.Language.get(full).replace("\\n", "\n"), args);
+        } catch (java.util.IllegalFormatException e) {
+            return String.format(co.xenastudios.neoskript.runtime.Language.ENGLISH.get(full).replace("\\n", "\n"), args);
+        }
+    }
+
+    /** Sends a formatted message, a line at a time to the console, as Skript's log redirection does. */
+    static void send(List<CommandSender> audience, String message) {
+        TextComponentParser parser = TextComponentParser.instance();
+        for (CommandSender sender : audience) {
+            if (sender instanceof ConsoleCommandSender) {
+                for (String line : message.split("\n")) {
+                    sender.sendMessage(parser.parse(line));
+                }
+            } else {
+                sender.sendMessage(parser.parse(message));
+            }
+        }
+    }
+}

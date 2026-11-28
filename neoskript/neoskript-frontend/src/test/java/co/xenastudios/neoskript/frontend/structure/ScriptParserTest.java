@@ -1,0 +1,208 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.frontend.structure;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import co.xenastudios.neoskript.frontend.source.Diagnostic;
+import co.xenastudios.neoskript.frontend.source.SourceFile;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+
+class ScriptParserTest {
+
+    private static ScriptParser.Result parse(String text) {
+        return ScriptParser.parse(new SourceFile("test.sk", text));
+    }
+
+    private static List<String> errors(ScriptParser.Result result) {
+        return result.diagnostics().stream().map(d -> d.line() + ": " + d.message()).toList();
+    }
+
+    @Test
+    void buildsNestedSections() {
+        ScriptParser.Result result = parse("""
+                command /home [<text>]:
+                \taliases: h
+                \ttrigger:
+                \t\tif arg-1 is set:
+                \t\t\tsend "a"
+                \t\telse:
+                \t\t\tsend "b"
+                \t\tsend "done"
+                """);
+        assertEquals(List.of(), result.diagnostics());
+        Structure command = result.structures().getFirst();
+        assertEquals(Structure.Kind.COMMAND, command.kind());
+        List<Node> entries = command.section().children();
+        assertEquals("aliases: h", entries.get(0).line().text());
+        Node.Section trigger = assertInstanceOf(Node.Section.class, entries.get(1));
+        assertEquals("trigger", trigger.line().key());
+        assertEquals(3, trigger.children().size());
+        Node.Section ifSection = assertInstanceOf(Node.Section.class, trigger.children().get(0));
+        assertEquals("if arg-1 is set", ifSection.line().key());
+        assertEquals("send \"a\"", ifSection.children().getFirst().line().text());
+        assertEquals(8, trigger.children().get(2).line().number());
+    }
+
+    @Test
+    void acceptsSpacesAndSkipsCommentsAndBlankLines() {
+        ScriptParser.Result result = parse("""
+                # a comment
+
+                on join:   # trailing
+                    # indented comment
+                    send "hi"
+
+                    send "there"
+                ###
+                on broken
+                  stuff:
+                ###
+                """);
+        assertEquals(List.of(), result.diagnostics());
+        assertEquals(1, result.structures().size());
+        Node.Section join = result.structures().getFirst().section();
+        assertEquals("on join", join.line().key());
+        assertEquals(List.of(5, 7), join.children().stream().map(n -> n.line().number()).toList());
+    }
+
+    @Test
+    void emptySectionsAreWarnedAbout() {
+        ScriptParser.Result result = parse("on join:\non quit:\n\tsend \"bye\"\n");
+        assertEquals(List.of("1: " + StructureParser.EMPTY_SECTION), errors(result));
+        assertEquals(List.of(), result.structures().get(0).section().children());
+        assertEquals(1, result.structures().get(1).section().children().size());
+    }
+
+    @Test
+    void sectionsRunningToTheEndAreOnlyEmptyIfNothingFollows() {
+        // As Skript: comments, blank lines or wrongly indented lines before the end don't make it empty.
+        assertEquals(List.of(), errors(parse("on join:\n\t# nothing\n\n")));
+        assertEquals(List.of("3: indentation error: expected 2 tabs, but found 3 tabs"),
+                errors(parse("on join:\n\tif true:\n\t\t\tsend \"a\"\n")));
+        assertEquals(List.of("2: " + StructureParser.EMPTY_SECTION), errors(parse("on join:\n\tif true:\n")));
+        assertEquals(List.of("2: " + StructureParser.EMPTY_SECTION), errors(parse("on join:\n\tif true:")));
+        assertEquals(List.of("1: " + StructureParser.EMPTY_SECTION), errors(parse("on join:\n# nothing\non quit:\n\tstop\n")));
+    }
+
+    @Test
+    void classifiesStructures() {
+        ScriptParser.Result result = parse("""
+                options:
+                \tx: 1
+                variables:
+                \t{a} = 1
+                aliases:
+                \tthing = stone
+                function f(n: number) :: number:
+                \treturn 1
+                local function g():
+                \tstop
+                command /x:
+                \ttrigger:
+                \t\tstop
+                every 5 minutes:
+                \tstop
+                on join:
+                \tstop
+                using local variable type hints
+                """);
+        assertEquals(List.of(Structure.Kind.OPTIONS, Structure.Kind.VARIABLES, Structure.Kind.ALIASES,
+                Structure.Kind.FUNCTION, Structure.Kind.FUNCTION, Structure.Kind.COMMAND, Structure.Kind.EVENT,
+                Structure.Kind.EVENT, Structure.Kind.USING), result.structures().stream().map(Structure::kind).toList());
+    }
+
+    @Test
+    void reportsCodeOutsideStructures() {
+        ScriptParser.Result result = parse("send \"hi\"\non join:\n\tstop\n");
+        assertEquals(List.of("1: Can't understand this structure: send \"hi\""), errors(result));
+        assertEquals(1, result.structures().size());
+    }
+
+    @Test
+    void reportsEachLineIndentedWrongly() {
+        ScriptParser.Result result = parse("""
+                on join:
+                \tsend "a"
+                \t\tsend "b"
+                \t\tsend "c"
+                \tsend "d"
+                """);
+        assertEquals(List.of("3: indentation error: expected 1 tab, but found 2 tabs",
+                "4: indentation error: expected 1 tab, but found 2 tabs"), errors(result));
+        assertEquals(2, result.structures().getFirst().section().children().size());
+    }
+
+    @Test
+    void reportsIndentationThatMatchesNoLevel() {
+        ScriptParser.Result result = parse("""
+                on join:
+                \t\tif true:
+                \t\t\tsend "a"
+                \tsend "b"
+                """);
+        // As Skript: the first indented line sets the indentation to two tabs.
+        assertEquals(List.of("3: indentation error: expected 4 tabs, but found 3 tabs",
+                "4: indentation error: expected 4 tabs, but found 1 tab"), errors(result));
+    }
+
+    @Test
+    void reportsMixedTabsAndSpaces() {
+        ScriptParser.Result result = parse("on join:\n    if true:\n\t\tsend \"a\"\n    send \"b\"\n");
+        assertEquals(List.of("3: indentation error: expected 8 spaces, but found 2 tabs",
+                "2: " + StructureParser.EMPTY_SECTION), errors(result));
+        assertEquals(2, result.structures().getFirst().section().children().size());
+    }
+
+    @Test
+    void substitutesOptionsIncludingNestedOnes() {
+        ScriptParser.Result result = parse("""
+                on join:
+                \tsend "{@prefix}hi {@colors.main}x{@colors.main}" # options can be used before they're defined
+                options:
+                \tprefix: &6[Server]&7 #
+                \tcolors:
+                \t\tmain: &b
+                """);
+        assertEquals(List.of(), result.diagnostics());
+        assertEquals(Map.of("prefix", "&6[Server]&7", "colors.main", "&b"), result.options());
+        Node send = result.structures().getFirst().section().children().getFirst();
+        assertEquals("send \"&6[Server]&7hi &bx&b\"", send.line().text());
+    }
+
+    @Test
+    void reportsUndefinedOptions() {
+        ScriptParser.Result result = parse("options:\n\ta: 1\non join:\n\tsend \"{@missing}\"\n");
+        assertEquals(List.of("4: undefined option {@missing}"), errors(result));
+        assertEquals(7, result.diagnostics().getFirst().column());
+    }
+
+    @Test
+    void leavesOptionsAsWrittenInAScriptWithNoOptionsSection() {
+        // As in Skript: with no options section there's nothing to replace them with, and no error.
+        ScriptParser.Result result = parse("on join:\n\tsend \"{@missing}\"\n");
+        assertEquals(List.of(), result.diagnostics());
+        Node send = result.structures().getFirst().section().children().getFirst();
+        assertEquals("send \"{@missing}\"", send.line().text());
+    }
+
+    @Test
+    void reportsAnOptionLineThatIsNotAnEntry() {
+        ScriptParser.Result result = parse("options:\n\ta: 1\n\tno colon here\n\tb: 2\n");
+        assertEquals(List.of("3: 'no colon here' is not an entry (like 'name : value')"), errors(result));
+        assertEquals(Map.of("a", "1", "b", "2"), result.options());
+    }
+
+    @Test
+    void handlesWindowsLineEndingsAndByteOrderMark() {
+        ScriptParser.Result result = parse("﻿on join:\r\n\tsend \"a\"\r\n");
+        assertEquals(List.of(), result.diagnostics());
+        assertEquals("on join", result.structures().getFirst().section().line().key());
+    }
+}

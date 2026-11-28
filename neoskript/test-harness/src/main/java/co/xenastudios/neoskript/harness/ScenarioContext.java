@@ -1,0 +1,146 @@
+/*
+ * Copyright (c) 2026 Xena Studios
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+package co.xenastudios.neoskript.harness;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/** What a scenario gets to work with for one environment. */
+public final class ScenarioContext {
+
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+
+    private final HarnessConfig config;
+    private final Environment environment;
+    private final Scenario scenario;
+    private final Downloads downloads;
+    private final ReferenceSkript referenceSkript;
+    private final Map<String, Object> summary = new LinkedHashMap<>();
+
+    ScenarioContext(
+            HarnessConfig config,
+            Environment environment,
+            Scenario scenario,
+            Downloads downloads,
+            ReferenceSkript referenceSkript) {
+        this.config = config;
+        this.environment = environment;
+        this.scenario = scenario;
+        this.downloads = downloads;
+        this.referenceSkript = referenceSkript;
+    }
+
+    public Environment environment() {
+        return environment;
+    }
+
+    public HarnessConfig config() {
+        return config;
+    }
+
+    public ReferenceSkript referenceSkript() {
+        return referenceSkript;
+    }
+
+    public Path neoskriptJar() {
+        return config.neoskriptJar();
+    }
+
+    /**
+     * The harness bot plugin. Its console commands make players join, chat, run commands and more, so
+     * a headless server fires real player events. See {@code test-harness/README.md} for the commands.
+     */
+    public Path botJar() {
+        return config.botJar();
+    }
+
+    /** The official addons' jars ({@code addons/}), each with its libraries shaded in. */
+    public java.util.List<Path> officialAddonJars() {
+        String jars = System.getProperty("harness.officialAddonJars", "");
+        return java.util.Arrays.stream(jars.split(java.util.regex.Pattern.quote(java.io.File.pathSeparator)))
+                .filter(jar -> !jar.isBlank()).map(Path::of).toList();
+    }
+
+    /** NeoSkriptCompat's jar ({@code neoskript-compat}), which stands in for Skript so Skript addons load. */
+    public Path compatJar() {
+        String jar = System.getProperty("harness.compatJar", "");
+        if (jar.isBlank()) {
+            throw new co.xenastudios.neoskript.harness.HarnessFailure("NeoSkriptCompat's jar wasn't given to the harness");
+        }
+        return Path.of(jar);
+    }
+
+    /** The example addon ({@code examples/example-addon}), which registers syntax through NeoSkript's API. */
+    public Path exampleAddonJar() {
+        return config.exampleAddonJar();
+    }
+
+    public Path skriptJar() throws IOException, InterruptedException {
+        return downloads.fetch(
+                referenceSkript.jarUrl(), referenceSkript.jarSha256(), "Skript-" + referenceSkript.version() + ".jar");
+    }
+
+    /** A pinned file, such as another plugin's jar, downloaded into the cache and checked against its SHA-256. */
+    public Path download(String url, String sha256, String fileName) throws IOException, InterruptedException {
+        return downloads.fetch(url, sha256, fileName);
+    }
+
+    /** Reads a script from {@code test-harness/scripts}. */
+    public String script(String name) throws IOException {
+        return Files.readString(config.scriptsDir().resolve(name));
+    }
+
+    /** A builder for a server in a fresh, empty directory for this scenario. */
+    public ServerBuilder server() throws IOException, InterruptedException {
+        return server(config.runsDir().resolve(environment.name()).resolve(scenario.name()));
+    }
+
+    /** A builder for a server in {@code runDir}, which is emptied first. */
+    public ServerBuilder server(Path runDir) throws IOException, InterruptedException {
+        return server(environment, runDir);
+    }
+
+    /** A builder for a server of another environment in {@code runDir}, which is emptied first. */
+    public ServerBuilder server(Environment environment, Path runDir) throws IOException, InterruptedException {
+        Environment.Download download = environment.download();
+        Path serverJar = downloads.fetch(download.url(), download.sha256(), environment.name() + ".jar");
+        deleteRecursively(runDir);
+        Files.createDirectories(runDir);
+        return new ServerBuilder(config, environment, serverJar, runDir);
+    }
+
+    /** Adds a value to this run's line in the summary and report. */
+    public void summary(String key, Object value) {
+        summary.put(key, value);
+    }
+
+    Map<String, Object> summary() {
+        return summary;
+    }
+
+    /** Writes a JSON report to {@code build/harness/reports/<environment>/<name>.json}. */
+    public Path writeReport(String name, Object report) throws IOException {
+        Path file = config.reportsDir().resolve(environment.name()).resolve(name + ".json");
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, GSON.toJson(report) + "\n");
+        return file;
+    }
+
+    static void deleteRecursively(Path dir) throws IOException {
+        if (!Files.exists(dir)) {
+            return;
+        }
+        try (var paths = Files.walk(dir)) {
+            for (Path path : paths.sorted(java.util.Comparator.reverseOrder()).toList()) {
+                Files.delete(path);
+            }
+        }
+    }
+}

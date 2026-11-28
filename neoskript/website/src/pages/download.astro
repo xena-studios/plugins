@@ -1,0 +1,315 @@
+---
+// Downloads, kept simple: one button for the latest release (a public beta,
+// until 1.0) with what you need to know beside it, the install in three
+// steps, then the rest (checking the jar, the development build, building from
+// source) in rows that open. The release and the development build are read
+// from GitHub Releases when the site builds (src/lib/release.ts). Before the
+// first release, the development build is the download.
+import Base from "../layouts/Base.astro";
+import External from "../components/External.astro";
+import { devBuild, latestRelease } from "../lib/release";
+
+const repo = "https://github.com/xena-studios/neoskript";
+const modrinth = "https://modrinth.com/plugin/neoskript";
+const cli = `${repo}/releases/tag/cli-v0.1.0`;
+const release = await latestRelease();
+const build = await devBuild();
+const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+// What the big button downloads: the release, or before there is one, the development build.
+const main = release
+  ? { name: `NeoSkript ${release.version}`, jar: release.jar, sha256: release.sha256, date: release.published }
+  : build
+    ? { name: "the development build", jar: build.jar, sha256: build.sha256, date: build.published }
+    : null;
+---
+<Base
+  title="Download NeoSkript"
+  description="Download NeoSkript, the drop-in replacement for Skript: the public beta for Paper and Folia, Minecraft 1.21.4 to 26.3, Java 21."
+  path="/download/"
+>
+  <section class="page">
+    <div class="wrap">
+      <h1 class="page-title">Download</h1>
+      <p class="lead">
+        {release?.beta
+          ? `NeoSkript ${release.version} is the public beta, released ${day(release.published)}. Try it on a test server before your live one.`
+          : release
+            ? `NeoSkript ${release.version}, released ${day(release.published)}.`
+            : "NeoSkript isn't released yet. The development build is the latest commit on main that passed CI on real Paper and Folia servers. Use it on a test server, not your live one."}
+      </p>
+
+      {main ? (
+        <div class="pane get">
+          <div class="pane-bar">
+            <span class="label">{release ? `NeoSkript ${release.version}` : "Development build"}</span>
+            <span class="label">{release?.beta ? "Public beta" : release ? "Release" : "Ahead of the release"} · {day(main.date)}</span>
+          </div>
+          <div class="actions">
+            <a class="btn btn-primary big" href={main.jar.url}>Download {main.name}</a>
+            {release && <a class="btn btn-secondary big" href={modrinth}>Get it on Modrinth<External /></a>}
+          </div>
+          <ul class="needs" aria-label="What you need">
+            <li><span class="label">Jar</span>{main.jar.name} · {mb(main.jar.size)}</li>
+            <li><span class="label">Server</span>Paper or Folia, Minecraft 1.21.4 to 26.3</li>
+            <li><span class="label">Java</span>21 or newer</li>
+            <li><span class="label">Price</span>Free and open source, GPL-3.0</li>
+          </ul>
+        </div>
+      ) : (
+        <p class="none">
+          There's nothing to download yet: CI publishes a development build from the next commit on main that passes.
+          Until then, build it from source below.
+        </p>
+      )}
+
+      <h2>Install</h2>
+      <ol class="steps">
+        <li><strong>Take out Skript.jar.</strong> Leave the <code>plugins/Skript</code> folder where it is. NeoSkript won't start next to Skript.</li>
+        <li><strong>Put the NeoSkript jar in <code>plugins/</code>.</strong></li>
+        <li><strong>Start the server.</strong> Your scripts and variables are copied over from Skript's folder, which is never changed.</li>
+      </ol>
+      <p class="more">
+        <a href="/docs/install/">The install guide</a>
+        <a href="/docs/moving-from-skript/">Moving from Skript</a>
+      </p>
+
+      <h2>Not sure your scripts will work?</h2>
+      <p class="check">
+        The script checker loads your scripts on a throwaway server, without running them, and lists every line
+        NeoSkript won't load. Get <a href={cli}>neoskript-cli 0.1.0<External /></a> and run it on your scripts folder:
+      </p>
+      <div class="pane cmd">
+        <div class="pane-bar"><span class="label">Terminal</span></div>
+        <pre class="pane-body"><code><span class="prompt" aria-hidden="true">$ </span>java -jar neoskript-cli-0.1.0.jar check plugins/Skript/scripts</code></pre>
+      </div>
+      <p class="check">Or paste a script into <a href="/parser/">the parser</a>, right here in your browser.</p>
+
+      <h2>More</h2>
+      <div class="more-rows">
+        {main?.sha256 && (
+          <details>
+            <summary>Check the download<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg></summary>
+            <div class="body">
+              <p>The jar's SHA-256. Compare it with <code>shasum -a 256 {main.jar.name}</code>:</p>
+              <p><code class="hash">{main.sha256}</code></p>
+              {release && <p><a href={release.page}>Release notes<External /></a></p>}
+            </div>
+          </details>
+        )}
+        {release && build && (
+          <details>
+            <summary>The development build<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg></summary>
+            <div class="body">
+              <p>
+                The latest commit on main that passed CI, ahead of the release: for trying what's next, not for a live
+                server. Built from <a href={`${repo}/commit/${build.commit}`}><code>{build.commit.slice(0, 7)}</code><External /></a>{" "}
+                on {day(build.published)}.
+              </p>
+              <p><a href={build.jar.url}>Download {build.jar.name}</a> · {mb(build.jar.size)}</p>
+              {build.sha256 && <p><code class="hash">{build.sha256}</code></p>}
+            </div>
+          </details>
+        )}
+        <details>
+          <summary>Build it from source<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg></summary>
+          <div class="body">
+            <p>
+              With JDK 21, run <code>./gradlew build</code> in <a href={repo}>the repository<External /></a>. The jar is
+              in <code>neoskript-plugin/build/libs/</code>.
+            </p>
+          </div>
+        </details>
+        <details>
+          <summary>Updates<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg></summary>
+          <div class="body">
+            <p>
+              NeoSkript tells you when a newer version is on Modrinth: in the console, and to players with
+              <code>skript.admin</code> when they join. <code>update-checker: false</code> in its config turns that off.
+              Every version is on <a href={`${repo}/releases`}>GitHub Releases<External /></a> too.
+            </p>
+          </div>
+        </details>
+        <details>
+          <summary>Found a difference from Skript?<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg></summary>
+          <div class="body">
+            <p>
+              If a script behaves differently than on Skript, <a href={`${repo}/issues/new/choose`}>open an issue<External /></a>{" "}
+              with the script and what each one did. Matching Skript is the point, so it's a bug we fix.
+            </p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(3.5rem, 2rem + 5vw, 6rem) clamp(4rem, 2.5rem + 5vw, 7rem);
+  }
+  .page > .wrap {
+    max-width: 64rem;
+    margin-inline: 0;
+    margin-left: max(0px, calc((100% - var(--max)) / 2));
+  }
+  .lead {
+    margin-top: 1.25rem;
+  }
+  h2 {
+    margin-top: clamp(3.5rem, 2.5rem + 3vw, 5rem);
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--rule);
+    font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+    letter-spacing: -0.03em;
+  }
+
+  /* The download: a pane naming the release, the buttons, then what you need. */
+  .get {
+    margin-top: clamp(2rem, 1.5rem + 2vw, 3rem);
+  }
+  .get .actions {
+    padding: clamp(1.25rem, 1rem + 1vw, 1.75rem) clamp(1rem, 0.75rem + 1vw, 1.75rem) 0;
+  }
+  .big {
+    height: 52px;
+    padding-inline: 1.75rem;
+    font-size: 1rem;
+  }
+  .needs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2.5rem;
+    margin: 1.5rem 0 0;
+    padding: 1.25rem clamp(1rem, 0.75rem + 1vw, 1.75rem) clamp(1.25rem, 1rem + 1vw, 1.75rem);
+    border-top: 1px solid var(--rule);
+    list-style: none;
+    color: var(--text);
+  }
+  .needs li {
+    display: grid;
+    gap: 0.2rem;
+  }
+  .none {
+    margin-top: 2rem;
+    color: var(--muted);
+    max-width: 62ch;
+  }
+
+  /* The install, in the order you do it. */
+  .steps {
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem clamp(1rem, 0.5rem + 2vw, 2.5rem);
+  }
+  .steps li {
+    counter-increment: step;
+    color: var(--muted);
+  }
+  .steps li::before {
+    content: counter(step);
+    display: block;
+    margin-bottom: 0.6rem;
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .steps strong {
+    display: block;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+  .more {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .check {
+    margin-top: 1rem;
+    color: var(--muted);
+    max-width: 66ch;
+  }
+  .check a {
+    color: var(--text);
+  }
+  .cmd {
+    margin-top: 1rem;
+  }
+  .cmd .pane-body {
+    font-size: 0.875rem;
+  }
+  .prompt {
+    color: var(--accent);
+    user-select: none;
+  }
+
+  /* The rest, as hairline rows that open. */
+  .more-rows {
+    margin-top: 1.25rem;
+  }
+  .more-rows details:first-child {
+    border-top: 0;
+  }
+  .more-rows details {
+    border-bottom: 1px solid var(--rule);
+  }
+  .more-rows summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    min-height: 44px;
+    padding-block: 1rem;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 600;
+  }
+  .more-rows summary::-webkit-details-marker {
+    display: none;
+  }
+  .more-rows summary:hover .chev {
+    stroke: var(--magenta);
+  }
+  .chev {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 180ms var(--ease), stroke 180ms var(--ease);
+  }
+  .more-rows details[open] .chev {
+    transform: rotate(180deg);
+  }
+  .body {
+    display: grid;
+    gap: 0.75rem;
+    padding-bottom: 1.25rem;
+    color: var(--muted);
+    max-width: 66ch;
+  }
+  .body a {
+    color: var(--text);
+  }
+  .hash {
+    overflow-wrap: anywhere;
+    font-size: 0.8125rem;
+  }
+
+  @media (max-width: 52rem) {
+    .steps {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

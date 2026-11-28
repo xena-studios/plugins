@@ -1,0 +1,295 @@
+/* The custom pages (landing, download, addons, the syntax reference and the
+   parser). The site reads like a server's console where that means
+   something: panes with a title strip, log lines over a timestamp gutter,
+   level tags. Everything else is Geist on the ground, hairline rows and pills,
+   as across Xena. Colours are tokens (tokens.css), in both themes. */
+@import "./tokens.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/jetbrains-mono";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 100%;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scrollbar-color: var(--rule) var(--ground);
+}
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ground);
+}
+main {
+  flex: 1;
+}
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+pre,
+figure {
+  margin: 0;
+}
+h1,
+h2,
+h3 {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+a {
+  color: inherit;
+  text-decoration-color: color-mix(in srgb, var(--text) 35%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color 180ms var(--ease), color 180ms var(--ease);
+}
+a:hover {
+  text-decoration-color: var(--accent);
+}
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--text);
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+code,
+pre,
+kbd {
+  font-family: var(--mono);
+  font-variant-ligatures: none;
+}
+:not(pre) > code {
+  font-size: 0.9em;
+}
+
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.label {
+  font-family: var(--label);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lead {
+  font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+  line-height: 1.65;
+  color: var(--muted);
+  max-width: 60ch;
+}
+.lead code {
+  color: var(--text);
+}
+
+/* Section rhythm: a hairline, then generous space, more above a heading than below it. */
+.section {
+  padding-block: clamp(4rem, 2.5rem + 5vw, 7.5rem);
+  border-top: 1px solid var(--rule);
+}
+.section-title {
+  font-size: clamp(1.875rem, 1.3rem + 2.2vw, 3rem);
+  line-height: 1.05;
+  max-width: 20ch;
+}
+.section-title + .lead {
+  margin-top: 1.25rem;
+}
+.page-title {
+  font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+/* Pills, 44px, as on xenastudios.co. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: 44px;
+  padding: 0 1.375rem;
+  border-radius: 999px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 180ms var(--ease), border-color 180ms var(--ease), color 180ms var(--ease);
+}
+.btn-primary {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--accent-fill) 86%, var(--text));
+}
+.btn-secondary {
+  border: 1px solid var(--rule);
+  color: var(--text);
+}
+.btn-secondary:hover {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--rule));
+}
+
+/* The console pane: a hairline frame, a title strip naming what runs in it,
+   and a body of log lines or code. The landing's replay, the output check,
+   the download page's commands and the guides' terminal frames share it. */
+.pane {
+  border: 1px solid var(--rule);
+  border-radius: var(--pane-radius);
+  background: var(--raised);
+  overflow: hidden;
+  min-width: 0;
+}
+.pane-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--ground);
+}
+.pane-bar .label {
+  font-size: 0.6875rem;
+}
+.pane-body {
+  padding: 0.875rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  overflow-x: auto;
+}
+
+/* One log line: an elapsed-time stamp, a level, the message. */
+.log {
+  display: grid;
+  grid-template-columns: 4.75rem 3.25rem minmax(0, 1fr);
+  column-gap: 0.75rem;
+  align-items: baseline;
+}
+.log .at {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.log .msg {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.log.cmd .msg {
+  color: var(--muted);
+}
+
+/* Level tags: the metadata of a log line, in JetBrains Mono caps. */
+.lvl {
+  font-family: var(--label);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lvl.done {
+  color: var(--accent);
+}
+
+/* The tools' icons (src/lib/icons.ts): strokes in currentColor, as the External arrow. */
+.icon {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* hidden means hidden, whatever display a component gives the element. */
+[hidden] {
+  display: none !important;
+}
+
+/* Read by screen readers, not shown. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* An app page (Base.astro's app prop, the parser): the window under the header, no footer. On a phone the
+   page scrolls instead, so its panels can stack. */
+@media (min-width: 60.0625rem) {
+  body.app {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body.app main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+
+/* Script syntax, as the brand sets code: keywords magenta, strings pale. */
+.kw {
+  color: var(--accent);
+}
+.str {
+  color: var(--string);
+}
+.punct,
+.comment {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+  }
+}

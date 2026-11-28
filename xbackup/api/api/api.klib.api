@@ -1,0 +1,141 @@
+// Klib ABI Dump
+// Targets: [wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <co.xenastudios:api>
+abstract interface co.xenastudios.xbackup.api/QuietMoment { // co.xenastudios.xbackup.api/QuietMoment|null[0]
+    abstract fun pause() // co.xenastudios.xbackup.api/QuietMoment.pause|pause(){}[0]
+    abstract fun resume() // co.xenastudios.xbackup.api/QuietMoment.resume|resume(){}[0]
+}
+
+abstract interface co.xenastudios.xbackup.api/StorageBackend { // co.xenastudios.xbackup.api/StorageBackend|null[0]
+    abstract fun delete(kotlin/String) // co.xenastudios.xbackup.api/StorageBackend.delete|delete(kotlin.String){}[0]
+    abstract fun describe(): kotlin/String // co.xenastudios.xbackup.api/StorageBackend.describe|describe(){}[0]
+    abstract fun get(kotlin/String): kotlin/ByteArray? // co.xenastudios.xbackup.api/StorageBackend.get|get(kotlin.String){}[0]
+    abstract fun list(kotlin/String): kotlin.collections/List<co.xenastudios.xbackup.api/StoredFile> // co.xenastudios.xbackup.api/StorageBackend.list|list(kotlin.String){}[0]
+    abstract fun put(kotlin/String, kotlin/String) // co.xenastudios.xbackup.api/StorageBackend.put|put(kotlin.String;kotlin.String){}[0]
+}
+
+abstract interface co.xenastudios.xbackup.api/XBackupApi { // co.xenastudios.xbackup.api/XBackupApi|null[0]
+    abstract val events // co.xenastudios.xbackup.api/XBackupApi.events|{}events[0]
+        abstract fun <get-events>(): co.xenastudios.core.api.event/EventBus // co.xenastudios.xbackup.api/XBackupApi.events.<get-events>|<get-events>(){}[0]
+    abstract val version // co.xenastudios.xbackup.api/XBackupApi.version|{}version[0]
+        abstract fun <get-version>(): kotlin/String // co.xenastudios.xbackup.api/XBackupApi.version.<get-version>|<get-version>(){}[0]
+
+    abstract fun backupNow(kotlin/String): co.xenastudios.core.api/Pending<co.xenastudios.xbackup.api/BackupSnapshot> // co.xenastudios.xbackup.api/XBackupApi.backupNow|backupNow(kotlin.String){}[0]
+    abstract fun getStatus(): co.xenastudios.xbackup.api/BackupStatus // co.xenastudios.xbackup.api/XBackupApi.getStatus|getStatus(){}[0]
+    abstract fun listSnapshots(): kotlin.collections/List<co.xenastudios.xbackup.api/BackupSnapshot> // co.xenastudios.xbackup.api/XBackupApi.listSnapshots|listSnapshots(){}[0]
+    abstract fun registerBackend(kotlin/String, kotlin/String, co.xenastudios.xbackup.api/StorageBackend) // co.xenastudios.xbackup.api/XBackupApi.registerBackend|registerBackend(kotlin.String;kotlin.String;co.xenastudios.xbackup.api.StorageBackend){}[0]
+    abstract fun registerQuietMoment(kotlin/String, kotlin/String, co.xenastudios.xbackup.api/QuietMoment) // co.xenastudios.xbackup.api/XBackupApi.registerQuietMoment|registerQuietMoment(kotlin.String;kotlin.String;co.xenastudios.xbackup.api.QuietMoment){}[0]
+    abstract fun registerSource(kotlin/String, kotlin/String, kotlin.collections/List<kotlin/String>) // co.xenastudios.xbackup.api/XBackupApi.registerSource|registerSource(kotlin.String;kotlin.String;kotlin.collections.List<kotlin.String>){}[0]
+    abstract fun unregisterBackend(kotlin/String) // co.xenastudios.xbackup.api/XBackupApi.unregisterBackend|unregisterBackend(kotlin.String){}[0]
+    abstract fun unregisterQuietMoment(kotlin/String) // co.xenastudios.xbackup.api/XBackupApi.unregisterQuietMoment|unregisterQuietMoment(kotlin.String){}[0]
+    abstract fun unregisterSources(kotlin/String) // co.xenastudios.xbackup.api/XBackupApi.unregisterSources|unregisterSources(kotlin.String){}[0]
+    open fun registerSource(kotlin/String, kotlin/String) // co.xenastudios.xbackup.api/XBackupApi.registerSource|registerSource(kotlin.String;kotlin.String){}[0]
+}
+
+final class co.xenastudios.xbackup.api.event/BackupFailedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xbackup.api.event/BackupFailedEvent|null[0]
+    constructor <init>(kotlin/String, kotlin/String) // co.xenastudios.xbackup.api.event/BackupFailedEvent.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val message // co.xenastudios.xbackup.api.event/BackupFailedEvent.message|{}message[0]
+        final fun <get-message>(): kotlin/String // co.xenastudios.xbackup.api.event/BackupFailedEvent.message.<get-message>|<get-message>(){}[0]
+    final val reason // co.xenastudios.xbackup.api.event/BackupFailedEvent.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xbackup.api.event/BackupFailedEvent.reason.<get-reason>|<get-reason>(){}[0]
+
+    final object Companion { // co.xenastudios.xbackup.api.event/BackupFailedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xbackup.api.event/BackupFailedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xbackup.api.event/BackupFailedEvent> // co.xenastudios.xbackup.api.event/BackupFailedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbackup.api.event/BackupFinishedEvent : co.xenastudios.core.api.event/Event { // co.xenastudios.xbackup.api.event/BackupFinishedEvent|null[0]
+    constructor <init>(co.xenastudios.xbackup.api/BackupSnapshot) // co.xenastudios.xbackup.api.event/BackupFinishedEvent.<init>|<init>(co.xenastudios.xbackup.api.BackupSnapshot){}[0]
+
+    final val snapshot // co.xenastudios.xbackup.api.event/BackupFinishedEvent.snapshot|{}snapshot[0]
+        final fun <get-snapshot>(): co.xenastudios.xbackup.api/BackupSnapshot // co.xenastudios.xbackup.api.event/BackupFinishedEvent.snapshot.<get-snapshot>|<get-snapshot>(){}[0]
+
+    final object Companion { // co.xenastudios.xbackup.api.event/BackupFinishedEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xbackup.api.event/BackupFinishedEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xbackup.api.event/BackupFinishedEvent> // co.xenastudios.xbackup.api.event/BackupFinishedEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbackup.api.event/BackupStartEvent : co.xenastudios.core.api.event/CancellableEvent { // co.xenastudios.xbackup.api.event/BackupStartEvent|null[0]
+    constructor <init>(kotlin/String) // co.xenastudios.xbackup.api.event/BackupStartEvent.<init>|<init>(kotlin.String){}[0]
+
+    final val reason // co.xenastudios.xbackup.api.event/BackupStartEvent.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xbackup.api.event/BackupStartEvent.reason.<get-reason>|<get-reason>(){}[0]
+
+    final object Companion { // co.xenastudios.xbackup.api.event/BackupStartEvent.Companion|null[0]
+        final val TYPE // co.xenastudios.xbackup.api.event/BackupStartEvent.Companion.TYPE|{}TYPE[0]
+            final fun <get-TYPE>(): co.xenastudios.core.api.event/EventType<co.xenastudios.xbackup.api.event/BackupStartEvent> // co.xenastudios.xbackup.api.event/BackupStartEvent.Companion.TYPE.<get-TYPE>|<get-TYPE>(){}[0]
+    }
+}
+
+final class co.xenastudios.xbackup.api/BackupSnapshot { // co.xenastudios.xbackup.api/BackupSnapshot|null[0]
+    constructor <init>(kotlin/String, kotlin.time/Instant, kotlin/Long, kotlin/String, kotlin/Long, kotlin/Long, kotlin/Long, kotlin/Long, kotlin/Boolean, kotlin.collections/List<kotlin/String>) // co.xenastudios.xbackup.api/BackupSnapshot.<init>|<init>(kotlin.String;kotlin.time.Instant;kotlin.Long;kotlin.String;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Boolean;kotlin.collections.List<kotlin.String>){}[0]
+
+    final val addedBytes // co.xenastudios.xbackup.api/BackupSnapshot.addedBytes|{}addedBytes[0]
+        final fun <get-addedBytes>(): kotlin/Long // co.xenastudios.xbackup.api/BackupSnapshot.addedBytes.<get-addedBytes>|<get-addedBytes>(){}[0]
+    final val bytes // co.xenastudios.xbackup.api/BackupSnapshot.bytes|{}bytes[0]
+        final fun <get-bytes>(): kotlin/Long // co.xenastudios.xbackup.api/BackupSnapshot.bytes.<get-bytes>|<get-bytes>(){}[0]
+    final val durationMillis // co.xenastudios.xbackup.api/BackupSnapshot.durationMillis|{}durationMillis[0]
+        final fun <get-durationMillis>(): kotlin/Long // co.xenastudios.xbackup.api/BackupSnapshot.durationMillis.<get-durationMillis>|<get-durationMillis>(){}[0]
+    final val files // co.xenastudios.xbackup.api/BackupSnapshot.files|{}files[0]
+        final fun <get-files>(): kotlin/Long // co.xenastudios.xbackup.api/BackupSnapshot.files.<get-files>|<get-files>(){}[0]
+    final val id // co.xenastudios.xbackup.api/BackupSnapshot.id|{}id[0]
+        final fun <get-id>(): kotlin/String // co.xenastudios.xbackup.api/BackupSnapshot.id.<get-id>|<get-id>(){}[0]
+    final val pauseMillis // co.xenastudios.xbackup.api/BackupSnapshot.pauseMillis|{}pauseMillis[0]
+        final fun <get-pauseMillis>(): kotlin/Long // co.xenastudios.xbackup.api/BackupSnapshot.pauseMillis.<get-pauseMillis>|<get-pauseMillis>(){}[0]
+    final val pinned // co.xenastudios.xbackup.api/BackupSnapshot.pinned|{}pinned[0]
+        final fun <get-pinned>(): kotlin/Boolean // co.xenastudios.xbackup.api/BackupSnapshot.pinned.<get-pinned>|<get-pinned>(){}[0]
+    final val reason // co.xenastudios.xbackup.api/BackupSnapshot.reason|{}reason[0]
+        final fun <get-reason>(): kotlin/String // co.xenastudios.xbackup.api/BackupSnapshot.reason.<get-reason>|<get-reason>(){}[0]
+    final val shortId // co.xenastudios.xbackup.api/BackupSnapshot.shortId|{}shortId[0]
+        final fun <get-shortId>(): kotlin/String // co.xenastudios.xbackup.api/BackupSnapshot.shortId.<get-shortId>|<get-shortId>(){}[0]
+    final val time // co.xenastudios.xbackup.api/BackupSnapshot.time|{}time[0]
+        final fun <get-time>(): kotlin.time/Instant // co.xenastudios.xbackup.api/BackupSnapshot.time.<get-time>|<get-time>(){}[0]
+    final val warnings // co.xenastudios.xbackup.api/BackupSnapshot.warnings|{}warnings[0]
+        final fun <get-warnings>(): kotlin.collections/List<kotlin/String> // co.xenastudios.xbackup.api/BackupSnapshot.warnings.<get-warnings>|<get-warnings>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xbackup.api/BackupSnapshot.toString|toString(){}[0]
+}
+
+final class co.xenastudios.xbackup.api/BackupStatus { // co.xenastudios.xbackup.api/BackupStatus|null[0]
+    constructor <init>(kotlin/String?, co.xenastudios.xbackup.api/BackupSnapshot?, kotlin.time/Instant?, kotlin/Int, kotlin/Long, kotlin/String?) // co.xenastudios.xbackup.api/BackupStatus.<init>|<init>(kotlin.String?;co.xenastudios.xbackup.api.BackupSnapshot?;kotlin.time.Instant?;kotlin.Int;kotlin.Long;kotlin.String?){}[0]
+
+    final val activity // co.xenastudios.xbackup.api/BackupStatus.activity|{}activity[0]
+        final fun <get-activity>(): kotlin/String? // co.xenastudios.xbackup.api/BackupStatus.activity.<get-activity>|<get-activity>(){}[0]
+    final val busy // co.xenastudios.xbackup.api/BackupStatus.busy|{}busy[0]
+        final fun <get-busy>(): kotlin/Boolean // co.xenastudios.xbackup.api/BackupStatus.busy.<get-busy>|<get-busy>(){}[0]
+    final val last // co.xenastudios.xbackup.api/BackupStatus.last|{}last[0]
+        final fun <get-last>(): co.xenastudios.xbackup.api/BackupSnapshot? // co.xenastudios.xbackup.api/BackupStatus.last.<get-last>|<get-last>(){}[0]
+    final val nextBackup // co.xenastudios.xbackup.api/BackupStatus.nextBackup|{}nextBackup[0]
+        final fun <get-nextBackup>(): kotlin.time/Instant? // co.xenastudios.xbackup.api/BackupStatus.nextBackup.<get-nextBackup>|<get-nextBackup>(){}[0]
+    final val problem // co.xenastudios.xbackup.api/BackupStatus.problem|{}problem[0]
+        final fun <get-problem>(): kotlin/String? // co.xenastudios.xbackup.api/BackupStatus.problem.<get-problem>|<get-problem>(){}[0]
+    final val repositoryBytes // co.xenastudios.xbackup.api/BackupStatus.repositoryBytes|{}repositoryBytes[0]
+        final fun <get-repositoryBytes>(): kotlin/Long // co.xenastudios.xbackup.api/BackupStatus.repositoryBytes.<get-repositoryBytes>|<get-repositoryBytes>(){}[0]
+    final val snapshots // co.xenastudios.xbackup.api/BackupStatus.snapshots|{}snapshots[0]
+        final fun <get-snapshots>(): kotlin/Int // co.xenastudios.xbackup.api/BackupStatus.snapshots.<get-snapshots>|<get-snapshots>(){}[0]
+}
+
+final class co.xenastudios.xbackup.api/StoredFile { // co.xenastudios.xbackup.api/StoredFile|null[0]
+    constructor <init>(kotlin/String, kotlin/Long) // co.xenastudios.xbackup.api/StoredFile.<init>|<init>(kotlin.String;kotlin.Long){}[0]
+
+    final val name // co.xenastudios.xbackup.api/StoredFile.name|{}name[0]
+        final fun <get-name>(): kotlin/String // co.xenastudios.xbackup.api/StoredFile.name.<get-name>|<get-name>(){}[0]
+    final val size // co.xenastudios.xbackup.api/StoredFile.size|{}size[0]
+        final fun <get-size>(): kotlin/Long // co.xenastudios.xbackup.api/StoredFile.size.<get-size>|<get-size>(){}[0]
+
+    final fun toString(): kotlin/String // co.xenastudios.xbackup.api/StoredFile.toString|toString(){}[0]
+}
+
+final object co.xenastudios.xbackup.api/XBackup { // co.xenastudios.xbackup.api/XBackup|null[0]
+    final fun api(): co.xenastudios.xbackup.api/XBackupApi // co.xenastudios.xbackup.api/XBackup.api|api(){}[0]
+    final fun isEnabled(): kotlin/Boolean // co.xenastudios.xbackup.api/XBackup.isEnabled|isEnabled(){}[0]
+    final fun register(co.xenastudios.xbackup.api/XBackupApi?) // co.xenastudios.xbackup.api/XBackup.register|register(co.xenastudios.xbackup.api.XBackupApi?){}[0]
+}

@@ -1,0 +1,13 @@
+# Paper and Folia from 1.19.3 read this instead of plugin.yml; Spigot and older Paper ignore it.
+# The same plugin, with its libraries handed to Paper by the core's loader from the family's cache
+# rather than resolved by Paper from plugin.yml's libraries: at every boot (DECISIONS.md).
+name: xBackup
+version: '${version}'
+main: co.xenastudios.xbackup.bukkit.XBackupBootstrap
+# The core's, relocated into the plugin's package with the rest of it.
+loader: co.xenastudios.xbackup.core.loader.paper.PaperLibraryLoader
+api-version: '1.19'
+folia-supported: true
+description: Incremental backups that cost almost nothing, and a restore you can trust.
+website: https://plugins.xenastudios.co/xbackup/
+authors: [Xena Studios]

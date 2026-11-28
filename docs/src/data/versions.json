@@ -7,6 +7,7 @@
     { "id": "xteleport", "newest": 2, "older": [1], "unreleased": { "version": "1.0.1", "jarBudgetKb": 330 } },
     { "id": "xbans", "newest": 2, "older": [1], "unreleased": { "version": "1.0.1", "jarBudgetKb": 400 } },
     { "id": "xvote", "newest": 2, "older": [1], "unreleased": { "version": "1.0.1", "jarBudgetKb": 350 } },
+    { "id": "xbackup", "newest": 2, "older": [1], "unreleased": { "version": "1.0.1", "jarBudgetKb": 530 } },
     { "id": "xvanish", "name": "xVanish", "newest": 1, "older": [], "unreleased": {} },
     { "id": "xmarket", "name": "xMarket", "newest": 1, "older": [], "unreleased": {} },
     { "id": "xrewind", "newest": 2, "older": [1], "unreleased": { "version": "1.1.1", "jarBudgetKb": 350 } },

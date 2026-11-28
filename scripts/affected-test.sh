@@ -187,6 +187,16 @@ check "xBans' Velocity door" xbans/velocity/src/main/kotlin/co/xenastudios/xbans
   $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=proxy'
 check "xBans' network test" xbans/bungee/network-checks.txt \
   $'tasks=:build :xbans:api:build :xbans:bukkit:build :xbans:bungee:build :xbans:common:build :xbans:velocity:build\nchecks=\nboot=proxy'
+check "xBackup's engine" xbackup/common/src/jvmMain/kotlin/co/xenastudios/xbackup/JvmEngine.kt \
+  $'tasks=:build :xbackup:api:build :xbackup:bukkit:build :xbackup:common:build\nchecks=\nboot=bukkit fabric'
+check "xBackup's API" xbackup/api/src/commonMain/kotlin/co/xenastudios/xbackup/api/XBackupApi.kt \
+  $'tasks=:build :xbackup:api:build :xbackup:bukkit:build :xbackup:common:build\nchecks=\nboot=bukkit fabric'
+check "xBackup's Bukkit pause" xbackup/bukkit/src/main/kotlin/co/xenastudios/xbackup/bukkit/BukkitPause.kt \
+  $'tasks=:build :xbackup:api:build :xbackup:bukkit:build :xbackup:common:build\nchecks=\nboot=bukkit'
+check "xBackup's family checks" xbackup/bukkit/family-checks.txt \
+  $'tasks=:build :xbackup:api:build :xbackup:bukkit:build :xbackup:common:build\nchecks=\nboot=bukkit'
+check "xBackup's Fabric mod (platform-fabric's build)" xbackup/fabric/src/main/kotlin/co/xenastudios/xbackup/fabric/FabricPause.kt \
+  $'checks=\nboot=fabric'
 check "xVanish's common code" xvanish/common/src/commonMain/kotlin/co/xenastudios/xvanish/XVanishPlugin.kt \
   $'tasks=:build :xvanish:api:build :xvanish:bukkit:build :xvanish:common:build\nchecks=\nboot=bukkit fabric proxy'
 check "xVanish's API" xvanish/api/src/commonMain/kotlin/co/xenastudios/xvanish/api/XVanishApi.kt \

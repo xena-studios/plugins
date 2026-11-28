@@ -1,0 +1,32 @@
+---
+title: Commands
+description: "xBackup's commands: backing up, listing, checking, restoring, cleaning up and copying, in game and from the command line."
+sidebar:
+  order: 2
+---
+
+import Reference from "../../../components/reference/Reference.astro";
+
+The commands are 1.x's. Every `/backup` subcommand has its own permission, `xbackup.<subcommand>`, which operators have, so a helper with `xbackup.list` and `xbackup.status` can look without changing anything: see [Permissions](/xbackup/permissions/). `/backup` also answers to `/backups` (`command.aliases` in the [config](/xbackup/configuration/)), and `/xbackup` to `/xb`.
+
+A backup's id is the 8 characters `/backup list` shows (4 are enough if they're unique); `latest` means the newest one. Paths are relative to the server folder: `world`, `world_nether`, `plugins/xRewind`, `server.properties`.
+
+- **`/backup restore <id|latest> [path...]`** shows what restoring would change; add `confirm` to stage it for the next start. See [Restoring](/xbackup/restoring/).
+- **`/backup copy <remote> tidy [confirm]`** lists the backups only the remote has; with `confirm`, it removes them and the data no backup here needs. See [what a copy removes](/xbackup/remotes/#what-a-copy-removes).
+- **`/backup link <remote> [code]`** links a Google Drive, OneDrive or Dropbox remote: see [Remotes](/xbackup/remotes/#cloud-drives).
+- **`/xbackup debug`** writes a report (versions, settings without passwords, the repository, recent errors) to share when asking for help; `/xbackup reload` applies the config and lang files; `/xbackup info` shows the version and the repository.
+
+<Reference plugin="xbackup" show="commands" />
+
+## From the command line
+
+The Bukkit jar also restores with the server stopped, and lists and checks backups. It needs Java 8 or newer, not the server, and works for a Fabric server's `config/xbackup/` too:
+
+```sh
+cd /path/to/server
+java -jar plugins/xBackup.jar list
+java -jar plugins/xBackup.jar restore latest --dry-run
+java -jar plugins/xBackup.jar verify --full
+```
+
+See [Restoring](/xbackup/restoring/#from-the-command-line).

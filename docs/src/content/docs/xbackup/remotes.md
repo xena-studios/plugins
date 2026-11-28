@@ -31,7 +31,7 @@ Settings a type doesn't use are ignored. Give each server its own `path`: two se
 
 ## Passwords
 
-Passwords, secret keys and Google Drive's client secret go in `plugins/xBackup/secrets.yml`, by remote name, never in `config.yml`. That way you can share your `config.yml` when asking for help, and it can be backed up and copied with everything else. `secrets.yml` is readable by the server's user only, and is never backed up or copied to a remote. If you put a `password` or `client-secret` in `config.yml` anyway, xBackup moves it to `secrets.yml` the next time the config loads.
+Passwords, secret keys and Google Drive's client secret go in `plugins/xBackup/secrets.yml` (`config/xbackup/secrets.yml` on Fabric), by remote name, never in `config.yml`. That way you can share your `config.yml` when asking for help, and it can be backed up and copied with everything else. `secrets.yml` is readable by the server's user only, and is never backed up or copied to a remote. If you put a `password` or `client-secret` in `config.yml` anyway, xBackup moves it to `secrets.yml` the next time the config loads.
 
 Nor are SFTP private key files, cloud drive tokens (`tokens.yml`) and `restore-settings.properties` ever backed up. All of them are readable by the server's user only; on Windows, xBackup sets their access list to the server's user alone. `restore-settings.properties` holds no passwords: the command-line restore reads them from `secrets.yml` itself, so write each value there on one line (in quotes if it has spaces or symbols).
 
